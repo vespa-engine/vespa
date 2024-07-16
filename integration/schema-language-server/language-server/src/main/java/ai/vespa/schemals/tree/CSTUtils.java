@@ -161,8 +161,8 @@ public class CSTUtils {
         while (
             currentNode != null
         ) {
-            Class<? extends Node> astClass = currentNode.getASTClass();
-            
+            Class<?> astClass = currentNode.getASTClass();
+
             if (astClass != null && (
                 SchemaIndex.IDENTIFIER_TYPE_MAP.containsKey(astClass) ||
                 SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP.containsKey(astClass)

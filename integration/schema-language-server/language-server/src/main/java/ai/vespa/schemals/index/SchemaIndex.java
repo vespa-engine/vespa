@@ -28,7 +28,7 @@ import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 
 public class SchemaIndex {
-    public static final HashMap<Class<? extends Node>, SymbolType> IDENTIFIER_TYPE_MAP = new HashMap<Class<? extends Node>, SymbolType>() {{
+    public static final HashMap<Class<?>, SymbolType> IDENTIFIER_TYPE_MAP = new HashMap<>() {{
         put(annotationElm.class, SymbolType.ANNOTATION);
         put(annotationOutside.class, SymbolType.ANNOTATION);
         put(rootSchema.class, SymbolType.SCHEMA);
@@ -41,7 +41,7 @@ public class SchemaIndex {
         put(functionElm.class, SymbolType.FUNCTION);
     }};
 
-    public static final HashMap<Class<? extends Node>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<Class<? extends Node>, SymbolType>() {{
+    public static final HashMap<Class<?>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<>() {{
         put(rankProfile.class, SymbolType.RANK_PROFILE);
         put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
         put(summaryInDocument.class, SymbolType.SUMMARY);
@@ -369,7 +369,7 @@ public class SchemaIndex {
 
         logger.println("\n === REFERENCES TO DEFINITIONS ===");
         for (var entry : definitionOfReference.entrySet()) {
-            String toPrint = String.format("%60s -> %s", entry.getKey(), entry.getValue());
+            String toPrint = String.format("%-50s -> %s", entry.getKey(), entry.getValue());
             logger.println(toPrint);
         }
 
