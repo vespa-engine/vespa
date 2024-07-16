@@ -127,7 +127,8 @@ public class Symbol {
         MAP_KEY,
         MAP_VALUE,
         PARAMETER,
-        QUERY_INPUT
+        QUERY_INPUT,
+        LABEL
     }
 
     public String toString() {

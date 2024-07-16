@@ -29,6 +29,7 @@ public class RankExpressionSymbolResolver {
         put("bm25", SymbolType.FIELD);
         put("attribute", SymbolType.FIELD);
         put("query", SymbolType.QUERY_INPUT);
+        put("distance", SymbolType.TYPE_UNKNOWN);
     }};
 
     /**
@@ -86,10 +87,17 @@ public class RankExpressionSymbolResolver {
 
     private static void findSymbolTypeOfBuiltInArgument(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         String identifier = node.getSymbol().getShortIdentifier();
+
         SymbolType arguemntType = rankExpressionBultInFunctions.get(identifier);
         if (arguemntType == null) return;
 
         List<SchemaNode> arguments = findRankExpressionArguments(node);
+
+        if (identifier.equals("distance")) {
+            context.logger().println("DISTANCE");
+            resolveDistanceFunction(node, arguments, diagnostics);
+            return;
+        }
 
         for (SchemaNode arg : arguments) {
             SchemaNode symbolNode = arg;
@@ -108,6 +116,47 @@ public class RankExpressionSymbolResolver {
                     symbol.setType(arguemntType);
                 }
             }
+        }
+    }
+
+    private static void resolveDistanceFunction(SchemaNode node, List<SchemaNode> argument, List<Diagnostic> diagnostics) {
+
+        if (argument.size() != 2) {
+            diagnostics.add(new Diagnostic(node.getRange(), "The distance function takes two argument (dimension, name)", DiagnosticSeverity.Error, ""));
+            return;
+        }
+
+        SchemaNode firstArgument = argument.get(0);
+        while (!firstArgument.hasSymbol() && firstArgument.size() > 0) {
+            firstArgument = firstArgument.get(0);
+        }
+
+        if (firstArgument.hasSymbol()) {
+            firstArgument.removeSymbol();
+        }
+
+        boolean isField = firstArgument.getText().equals("field");
+        boolean isLabel = firstArgument.getText().equals("label");
+
+        if (!isField && !isLabel) {
+            diagnostics.add(new Diagnostic(firstArgument.getRange(), "The first argument must be field or label", DiagnosticSeverity.Error, ""));
+            return;
+        }
+
+        SchemaNode secondArgument = argument.get(1);
+        while (!secondArgument.hasSymbol() && secondArgument.size() > 0) {
+            secondArgument = secondArgument.get(0);
+        }
+
+        if (!secondArgument.hasSymbol() && isField) {
+            return;
+        }
+
+        SymbolType newType = isField ? SymbolType.FIELD : SymbolType.LABEL;
+        secondArgument.setSymbolType(newType);
+
+        if (isLabel) {
+            secondArgument.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
     }
 
