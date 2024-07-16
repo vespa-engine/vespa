@@ -262,7 +262,7 @@ public class SchemaParserTest {
         BadFileTestCase[] tests = new BadFileTestCase[] {
             new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1), // TODO: check that the error is correct
-            //new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2)
+            new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2)
         };
 
         return Arrays.stream(tests)

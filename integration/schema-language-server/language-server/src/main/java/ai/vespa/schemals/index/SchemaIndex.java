@@ -400,7 +400,7 @@ public class SchemaIndex {
      * @param type The type of symbols to find.
      * @return A list of symbols found in the specified scope and of the given type.
      */
-    public List<Symbol> findSymbolTypesInScope(Symbol scope, SymbolType type) {
+    public List<Symbol> listSymbolsInScope(Symbol scope, SymbolType type) {
         return symbolDefinitions.get(type)
                                 .stream()
                                 .filter(symbol -> isInScope(symbol, scope))
