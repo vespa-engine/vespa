@@ -97,7 +97,7 @@ public class SchemaIndex {
      * @param fileURI the URI of the document to be cleared
      */
     public void clearDocument(String fileURI) {
-        
+
         // For each definition: remove their list of references and then remove the definition itself.
         for (var list : symbolDefinitions.values()) {
             for (int i = list.size() - 1; i >= 0; i--) {
@@ -115,15 +115,16 @@ public class SchemaIndex {
 
         var symbolReferencesIter = symbolReferences.entrySet().iterator();
         while (symbolReferencesIter.hasNext()) {
+            
             Map.Entry<Symbol, List<Symbol>> entry = symbolReferencesIter.next();
             Symbol key = entry.getKey();
+
             if (key.getFileURI() == fileURI) {
                 symbolReferencesIter.remove();
 
             } else {
                 for (int i = entry.getValue().size() - 1; i >= 0; i--) {
-                    logger.print(" " + i);
-                    if (entry.getValue().get(i).getFileURI() == fileURI) {
+                    if (entry.getValue().get(i).getFileURI().equals(fileURI)) {
                         entry.getValue().remove(i);
                     }
                 }
@@ -135,8 +136,8 @@ public class SchemaIndex {
         while (definitionOfReferenceIter.hasNext()) {
             var entry = definitionOfReferenceIter.next();
             if (
-                entry.getKey().getFileURI() == fileURI ||
-                entry.getValue().getFileURI() == fileURI
+                entry.getKey().getFileURI().equals(fileURI) ||
+                entry.getValue().getFileURI().equals(fileURI)
             ) {
                 definitionOfReferenceIter.remove();
             }
@@ -362,7 +363,7 @@ public class SchemaIndex {
      */
     public void dumpIndex() {
 
-        logger.println(" === SYMBOL DEFINITIONS === ");
+        logger.println("\n === SYMBOL DEFINITIONS === ");
         for (var entry : symbolDefinitions.entrySet()) {
             logger.println("TYPE: " + entry.getKey());
 
@@ -371,7 +372,7 @@ public class SchemaIndex {
             }
         }
 
-        logger.println(" === SYMBOL DEFINITION REFERENCES === ");
+        logger.println("\n === SYMBOL DEFINITION REFERENCES === ");
         for (var entry : symbolReferences.entrySet()) {
             logger.println(entry.getKey());
 
@@ -380,19 +381,19 @@ public class SchemaIndex {
             }
         }
 
-        logger.println(" === REFERENCES TO DEFINITIONS ===");
+        logger.println("\n === REFERENCES TO DEFINITIONS ===");
         for (var entry : definitionOfReference.entrySet()) {
-
-            logger.println(entry.getKey() + " -> " + entry.getValue());
+            String toPrint = String.format("%60s -> %s", entry.getKey(), entry.getValue());
+            logger.println(toPrint);
         }
 
-        logger.println(" === DOCUMENT INHERITANCE === ");
+        logger.println("\n === DOCUMENT INHERITANCE === ");
         documentInheritanceGraph.dumpAllEdges(logger);
 
-        logger.println(" === STRUCT INHERITANCE === ");
+        logger.println("\n === STRUCT INHERITANCE === ");
         structInheritanceGraph.dumpAllEdges(logger);
 
-        logger.println(" === RANK PROFILE INHERITANCE === ");
+        logger.println("\n === RANK PROFILE INHERITANCE === ");
         rankProfileInheritanceGraph.dumpAllEdges(logger);
     }
 }
