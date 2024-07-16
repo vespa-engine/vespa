@@ -90,6 +90,13 @@ public class IdentifySymbolDefinition extends Identifier {
         SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType != null) {
 
+            if (parent.isASTInstance(namedDocument.class) || parent.isASTInstance(rootSchema.class)) {
+                node.setSymbol(symbolType, context.fileURI());
+                node.setSymbolStatus(SymbolStatus.DEFINITION);
+                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+                return ret;
+            }
+
             Optional<Symbol> scope = findScope(node);
             if (scope.isEmpty()) return ret;
 
