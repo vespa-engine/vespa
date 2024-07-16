@@ -111,28 +111,30 @@ public class InheritanceResolver {
 
 
         // Look for redeclarations
-        SchemaNode structDefinitionElmNode = myStructDefinitionNode.getParent();
 
-        for (SchemaNode child : structDefinitionElmNode) {
-            if (!child.isSchemaASTInstance(structFieldDefinition.class)) continue;
-            if (child.size() < 2) continue;
+        Symbol structDefinitionSymbol = myStructDefinitionNode.getSymbol();
 
-            SchemaNode fieldIdentifierDef = child.get(1);
+        Set<String> inheritedFields = new HashSet<>();
+        List<Symbol> myFields = new ArrayList<>();
 
-            if (!fieldIdentifierDef.hasSymbol() || fieldIdentifierDef.getSymbol().getStatus() != SymbolStatus.INVALID) continue;
-
-            // It is marked as INVALID because it is a duplicate. Check if it belongs to the parent struct to display the appropriate error message
-            String fieldIdentifier = fieldIdentifierDef.getSymbol().getShortIdentifier();
-
-            if (context.schemaIndex().findSymbol(parentSymbol.get(), SymbolType.FIELD, fieldIdentifier).isPresent()) {
-                // TODO: quickfix
-                diagnostics.add(new Diagnostic(
-                    fieldIdentifierDef.getRange(),
-                    "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldIdentifier,
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
+        for (Symbol fieldSymbol : context.schemaIndex().findSymbolsInScope(structDefinitionSymbol, SymbolType.FIELD)) {
+            if (fieldSymbol.getScope().equals(structDefinitionSymbol)) {
+                myFields.add(fieldSymbol);
+            } else {
+                inheritedFields.add(fieldSymbol.getShortIdentifier());
             }
+        }
+
+        for (Symbol fieldSymbol : myFields) {
+            if (!inheritedFields.contains(fieldSymbol.getShortIdentifier())) continue;
+
+            // TODO: quickfix
+            diagnostics.add(new Diagnostic(
+                fieldSymbol.getNode().getRange(),
+                "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
+                DiagnosticSeverity.Error,
+                ""
+            ));
         }
     }
 

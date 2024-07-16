@@ -89,8 +89,6 @@ public class SchemaDocument implements DocumentManager {
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
-        // TODO: ask @Mangern what this function did
-        // schemaIndex.registerSchema(fileURI, this);
 
         logger.println("Parsing: " + fileURI);
         ParseContext context = getParseContext(content);

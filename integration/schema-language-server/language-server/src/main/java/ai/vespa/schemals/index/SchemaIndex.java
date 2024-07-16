@@ -126,6 +126,8 @@ public class SchemaIndex {
         }
 
         documentInheritanceGraph.clearInheritsList(fileURI);
+        // Add the node back:)
+        documentInheritanceGraph.createNodeIfNotExists(fileURI);
     }
 
     /**
@@ -166,14 +168,7 @@ public class SchemaIndex {
         if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
             return candidates;
         }
-
-        // logger.println("LOOKING FOR " + shortIdentifier + " in scope " + (scope == null ? "null" : scope.getLongIdentifier()));
-        // for (var sym : candidates) {
-        //     logger.println("    Cand: " + sym.getLongIdentifier());
-        // }
-
         while (scope != null) {
-            logger.println("    Current scope: " + scope.getLongIdentifier());
             for (Symbol candidate : candidates) {
                 // Check if candidate is in this scope
                 if (isInScope(candidate, scope))result.add(candidate);

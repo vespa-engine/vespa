@@ -10,6 +10,7 @@ import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.io.IOUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -82,9 +83,14 @@ public class SchemaParserTest {
 
     void checkDirectoryParses(String directoryPath) throws Exception {
         String directoryURI = new File(directoryPath).toURI().toString();
-        PrintStream logger = System.out;
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream logger = new PrintStream(outputStream);
+
+        //PrintStream logger = System.err;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
         schemaIndex.setWorkspaceURI(directoryURI);
+
         List<Diagnostic> diagnostics = new ArrayList<>();
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
@@ -95,9 +101,13 @@ public class SchemaParserTest {
             scheduler.addDocument(schemaURI);
         }
         scheduler.reparseInInheritanceOrder();
-        //scheduler.setReparseDescendants(true);
+        scheduler.setReparseDescendants(true);
 
         diagnostics.clear();
+
+        logger.flush();
+        outputStream.flush();
+        outputStream.reset();
 
         String testMessage = "\nFor directory: " + directoryPath;
         int numErrors = 0;
@@ -109,6 +119,10 @@ public class SchemaParserTest {
 
             numErrors += countErrors(diagnostics);
         }
+
+        testMessage += "\n\n\n FULL DUMP:\n";
+        testMessage += outputStream.toString();
+        testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
     }
