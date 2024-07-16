@@ -110,7 +110,7 @@ public class SchemaDocument implements DocumentManager {
  
         CSTUtils.printTree(logger, CST);
 
-        //schemaIndex.dumpIndex(logger);
+        schemaIndex.dumpIndex();
 
     }
 
@@ -305,7 +305,6 @@ public class SchemaDocument implements DocumentManager {
         }
 
         for (Identifier identifier : context.identifiers()) {
-            context.logger().println("IDENTIFIER " + identifier.getClass().getName());
             ret.addAll(identifier.identify(node));
         }
 

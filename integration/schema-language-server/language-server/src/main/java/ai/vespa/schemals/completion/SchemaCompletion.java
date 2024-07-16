@@ -28,7 +28,7 @@ public class SchemaCompletion {
 
         for (CompletionProvider provider : providers) {
             if (provider.match(context)) {
-                context.logger.println("Match with: " + provider.getClass().toString());
+                // context.logger.println("Match with: " + provider.getClass().toString());
                 ret.addAll(provider.getCompletionItems(context));
             }
         }

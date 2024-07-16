@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Optional;
 
@@ -60,6 +61,7 @@ public class SchemaIndex {
      * @param fileURI the URI of the document to be cleared
      */
     public void clearDocument(String fileURI) {
+
         for (var list : symbolDefinitions.values()) {
             for (int i = list.size() - 1; i >= 0; i--) {
                 if (list.get(i).getFileURI() == fileURI) {
@@ -68,13 +70,16 @@ public class SchemaIndex {
             }
         }
 
-        for (var entry : symbolReferences.entrySet()) {
+        var symbolReferencesIter = symbolReferences.entrySet().iterator();
+        while (symbolReferencesIter.hasNext()) {
+            Map.Entry<Symbol, List<Symbol>> entry = symbolReferencesIter.next();
             Symbol key = entry.getKey();
             if (key.getFileURI() == fileURI) {
-                symbolReferences.remove(key);
-            } else {
+                symbolReferencesIter.remove();
 
+            } else {
                 for (int i = entry.getValue().size() - 1; i >= 0; i--) {
+                    logger.print(" " + i);
                     if (entry.getValue().get(i).getFileURI() == fileURI) {
                         entry.getValue().remove(i);
                     }
@@ -83,13 +88,14 @@ public class SchemaIndex {
             }
         }
 
-        for (var entry : definitionOfReference.entrySet()) {
-
+        var definitionOfReferenceIter = definitionOfReference.entrySet().iterator();
+        while (definitionOfReferenceIter.hasNext()) {
+            var entry = definitionOfReferenceIter.next();
             if (
                 entry.getKey().getFileURI() == fileURI ||
                 entry.getValue().getFileURI() == fileURI
             ) {
-                definitionOfReference.remove(entry.getKey());
+                definitionOfReferenceIter.remove();
             }
         }
     }
