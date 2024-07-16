@@ -110,7 +110,7 @@ public class SchemaDocument implements DocumentManager {
  
         CSTUtils.printTree(logger, CST);
 
-        //schemaIndex.dumpIndex(logger);
+        schemaIndex.dumpIndex();
 
     }
 

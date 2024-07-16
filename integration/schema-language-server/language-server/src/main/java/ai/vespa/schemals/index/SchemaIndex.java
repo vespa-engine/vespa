@@ -11,15 +11,11 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
-import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.documentSummary;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
-import ai.vespa.schemals.parser.ast.identifierStr;
-import ai.vespa.schemals.parser.ast.identifierWithDashStr;
-import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -177,6 +173,7 @@ public class SchemaIndex {
         }
 
         while (scope != null) {
+            logger.println("    Current scope: " + scope.getLongIdentifier());
             for (Symbol candidate : candidates) {
                 // Check if candidate is in this scope
                 if (isInScope(candidate, scope))result.add(candidate);
@@ -192,14 +189,28 @@ public class SchemaIndex {
     private boolean isInScope(Symbol symbol, Symbol scope) {
         if (scope.getType() == SymbolType.RANK_PROFILE) {
             return !rankProfileInheritanceGraph.findFirstMatches(scope, 
-                    rankProfileDefinitionNode -> Boolean.valueOf(rankProfileDefinitionNode.equals(symbol.getScope()))).isEmpty();
+                    rankProfileDefinitionSymbol -> {
+                        if (rankProfileDefinitionSymbol.equals(symbol.getScope())) {
+                            return Boolean.valueOf(true);
+                        }
+                        return null;
+            }).isEmpty();
         } else if (scope.getType() == SymbolType.STRUCT) {
             return !structInheritanceGraph.findFirstMatches(scope, 
-                    structDefinitionNode -> Boolean.valueOf(structDefinitionNode.equals(symbol.getScope()))).isEmpty();
-        } else if (scope.getType() == SymbolType.SCHEMA || scope.getType() == SymbolType.DOCUMENT) {
+                    structDefinitionSymbol -> {
+                        if (structDefinitionSymbol.equals(symbol.getScope())) {
+                            return Boolean.valueOf(true);
+                        }
+                        return null;
+            }).isEmpty();
+        } else if ((symbol.getScope() == null || symbol.getScope().getType() == SymbolType.SCHEMA || symbol.getScope().getType() == SymbolType.DOCUMENT) && 
+                (scope.getType() == SymbolType.SCHEMA || scope.getType() == SymbolType.DOCUMENT)) {
             return !documentInheritanceGraph.findFirstMatches(scope.getFileURI(), 
                 ancestorURI -> {
-                    return Boolean.valueOf(symbol.getFileURI().equals(ancestorURI));
+                    if (symbol.getFileURI().equals(ancestorURI)) {
+                        return Boolean.valueOf(true);
+                    }
+                    return null;
                 }
             ).isEmpty();
         }
