@@ -144,7 +144,9 @@ WeightedSetTermBlueprint::createFilterSearch(FilterConstraint constraint) const
 std::unique_ptr<MatchingElementsSearch>
 WeightedSetTermBlueprint::create_matching_elements_search(const MatchingElementsFields &fields) const
 {
-    if (fields.has_field(_children_field.getName())) {
+    if (fields.has_struct_field(_children_field.getName())) {
+        return std::make_unique<WeightedSetTermMatchingElementsSearch>(*this, fields.get_enclosing_field(_children_field.getName()), _terms);
+    } else if (fields.has_field(_children_field.getName())) {
         return std::make_unique<WeightedSetTermMatchingElementsSearch>(*this, _children_field.getName(), _terms);
     } else {
         return {};
