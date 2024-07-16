@@ -37,7 +37,7 @@ double my_fast_sparse_singledim_lookup(const FastAddrMap *map, const CT *cells, 
 template <typename CT>
 void my_sparse_singledim_lookup_op(InterpretedFunction::State &state, uint64_t) {
     const auto &idx = state.peek(1).index();
-    const CT *cells = state.peek(1).cells().typify<CT>().cbegin();
+    const CT *cells = state.peek(1).cells().typify<CT>().data();
     int64_t number(state.peek(0).as_double());
     Handle handle = Handle::handle_from_number(number);
     double result = __builtin_expect(is_fast(idx), true)

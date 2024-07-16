@@ -231,7 +231,7 @@ struct CreateValueFromTensorSpec {
         auto builder = factory.create_value_builder<T>(type, map.keys_per_entry(), map.values_per_entry(), map.size());
         map.each_entry([&](const auto &keys, const auto &values)
                        {
-                           memcpy(builder->add_subspace(keys).begin(), values.begin(), values.size() * sizeof(T));
+                           memcpy(builder->add_subspace(keys).data(), values.data(), values.size() * sizeof(T));
                        });
         return builder->build(std::move(builder));
     }

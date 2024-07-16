@@ -80,14 +80,14 @@ generic_reduce(const Value &value, const ReduceParam &param) {
     ConstArrayRef<string_id*> keep_addr(sparse.keep_address);
     while (full_view->next_result(sparse.fetch_address, sparse.subspace)) {
         auto [tag, ignore] = map.lookup_or_add_entry(keep_addr);
-        AGGR *dst = map.get_values(tag).begin();
+        AGGR *dst = map.get_values(tag).data();
         auto sample = [&](size_t src_idx, size_t dst_idx) { dst[dst_idx].sample(cells[src_idx]); };
         param.dense_plan.execute(sparse.subspace * param.dense_plan.in_size, sample);
     }
     auto builder = param.factory.create_transient_value_builder<OCT>(param.res_type, param.sparse_plan.keep_dims.size(), param.dense_plan.out_size, map.size());
     map.each_entry([&](const auto &keys, const auto &values)
                    {
-                       OCT *dst = builder->add_subspace(keys).begin();
+                       OCT *dst = builder->add_subspace(keys).data();
                        for (const AGGR &aggr: values) {
                            *dst++ = aggr.result();
                        }
@@ -121,7 +121,7 @@ void my_generic_dense_reduce_op(State &state, uint64_t param_in) {
     auto out_cells = state.stash.create_uninitialized_array<OCT>(out_cells_size);
     if (num_subspaces > 0) {
         if constexpr (aggr::is_simple(AGGR::enum_value())) {
-            OCT *dst = out_cells.begin();
+            OCT *dst = out_cells.data();
             std::fill(out_cells.begin(), out_cells.end(), AGGR::null_value());
             auto combine = [&](size_t src_idx, size_t dst_idx) { dst[dst_idx] = AGGR::combine(dst[dst_idx], cells[src_idx]); };
             for (size_t i = 0; i < num_subspaces; ++i) {

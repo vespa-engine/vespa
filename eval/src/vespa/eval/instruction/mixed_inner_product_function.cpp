@@ -38,14 +38,14 @@ void my_mixed_inner_product_op(InterpretedFunction::State &state, uint64_t param
     size_t num_subspaces = index.size();
     size_t num_output_cells = num_subspaces * param.out_subspace_size;
     ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(num_output_cells);
-    const MCT *m_cp = m_cells.begin();
-    const VCT *v_cp = v_cells.begin();
+    const MCT *m_cp = m_cells.data();
+    const VCT *v_cp = v_cells.data();
     using dot_product = DotProduct<MCT,VCT>;
     for (OCT &out : out_cells) {
         out = dot_product::apply(m_cp, v_cp, param.vector_size);
         m_cp += param.vector_size;
     }
-    assert(m_cp == m_cells.end());
+    assert(m_cp == m_cells.data() + m_cells.size());
     state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
         

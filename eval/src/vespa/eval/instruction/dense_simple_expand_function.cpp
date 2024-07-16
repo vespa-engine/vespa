@@ -42,9 +42,9 @@ void my_simple_expand_op(State &state, uint64_t param) {
     auto inner_cells = state.peek(rhs_inner ? 0 : 1).cells().typify<ICT>();
     auto outer_cells = state.peek(rhs_inner ? 1 : 0).cells().typify<OCT>();
     auto dst_cells = state.stash.create_array<DCT>(params.result_size);
-    DCT *dst = dst_cells.begin();
+    DCT *dst = dst_cells.data();
     for (OCT outer_cell: outer_cells) {
-        apply_op2_vec_num(dst, inner_cells.begin(), outer_cell, inner_cells.size(), my_op);
+        apply_op2_vec_num(dst, inner_cells.data(), outer_cell, inner_cells.size(), my_op);
         dst += inner_cells.size();
     }
     state.pop_pop_push(state.stash.create<DenseValueView>(params.result_type, TypedCells(dst_cells)));
