@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.annotationElm;
@@ -157,27 +158,80 @@ public class SchemaIndex {
      * @return A list of symbols that match the given symbol.
      */
     public List<Symbol> findSymbols(Symbol scope, SymbolType type, String shortIdentifier) {
-        List<Symbol> result = new ArrayList<>();
-
         // First candidates are all symbols with correct type and correct short identifier
-        List<Symbol> candidates = symbolDefinitions.get(type)
-                                                   .stream()
-                                                   .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
-                                                   .toList();
 
         if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
-            return candidates;
+            return symbolDefinitions.get(type)
+                               .stream()
+                               .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                               .toList();
         }
-        while (scope != null) {
-            for (Symbol candidate : candidates) {
-                // Check if candidate is in this scope
-                if (isInScope(candidate, scope))result.add(candidate);
-            }
 
-            if (!result.isEmpty()) return result;
+        logger.println("Looking for symbol: " + shortIdentifier + " type " + type.toString());
+        while (scope != null) {
+            logger.println("  Checking scope: " + scope.getLongIdentifier());
+            List<Symbol> result = findSymbolsInScope(scope, type, shortIdentifier);
+
+            if (!result.isEmpty()) {
+                return result;
+            }
             scope = scope.getScope();
         }
 
+        return new ArrayList<>();
+    }
+
+    /*
+     * Given a scope, type and short identifier, find definitions defined inside the actual scope. 
+     * Will not search inheritance graphs.
+     */
+    private Optional<Symbol> findSymbolInConcreteScope(Symbol scope, SymbolType type, String shortIdentifier) {
+        List<Symbol> match = symbolDefinitions.get(type)
+                       .stream()
+                       .filter(symbolDefinition -> scope.equals(symbolDefinition.getScope()) && symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                       .toList();
+        if (match.isEmpty()) return Optional.empty();
+        return Optional.of(match.get(0));
+    }
+
+
+    /*
+     * Find symbols with given type and short identifier that are valid in scope
+     * Will search in inherited scopes
+     */
+    private List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type, String shortIdentifier) {
+        if (scope.getType() == SymbolType.RANK_PROFILE) {
+            return rankProfileInheritanceGraph.findFirstMatches(scope, rankProfileDefinitionSymbol -> {
+                var definedInScope = findSymbolInConcreteScope(rankProfileDefinitionSymbol, type, shortIdentifier);
+                if (definedInScope.isEmpty()) return null;
+                return definedInScope;
+            }).stream().map(result -> result.result.get()).toList();
+        } else if (scope.getType() == SymbolType.STRUCT) {
+            return structInheritanceGraph.findFirstMatches(scope, rankProfileDefinitionSymbol -> {
+                var definedInScope = findSymbolInConcreteScope(rankProfileDefinitionSymbol, type, shortIdentifier);
+                if (definedInScope.isEmpty()) return null;
+                return definedInScope;
+            }).stream().map(result -> result.result.get()).toList();
+        } else if (scope.getType() == SymbolType.DOCUMENT || scope.getType() == SymbolType.SCHEMA) {
+            return documentInheritanceGraph.findFirstMatches(scope.getFileURI(), ancestorURI -> {
+
+                List<Symbol> match = symbolDefinitions.get(type)
+                    .stream()
+                    .filter(symbolDefinition -> symbolDefinition.getFileURI().equals(ancestorURI) 
+                            && symbolDefinition.getScope() != null
+                            && (symbolDefinition.getScope().getType() == SymbolType.SCHEMA || symbolDefinition.getScope().getType() == SymbolType.DOCUMENT)
+                            && symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                    .toList();
+
+                if (match.isEmpty()) return null;
+
+                return Optional.of(match.get(0));
+            }).stream().map(result -> result.result.get()).toList();
+        }
+
+        Optional<Symbol> symbol = findSymbolInConcreteScope(scope, type, shortIdentifier);
+        List<Symbol> result = new ArrayList<>();
+        if (symbol.isPresent())result.add(symbol.get());
         return result;
     }
 
@@ -346,7 +400,7 @@ public class SchemaIndex {
      * @param type The type of symbols to find.
      * @return A list of symbols found in the specified scope and of the given type.
      */
-    public List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type) {
+    public List<Symbol> findSymbolTypesInScope(Symbol scope, SymbolType type) {
         return symbolDefinitions.get(type)
                                 .stream()
                                 .filter(symbol -> isInScope(symbol, scope))

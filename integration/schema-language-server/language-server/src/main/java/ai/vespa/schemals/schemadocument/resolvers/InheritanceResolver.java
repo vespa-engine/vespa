@@ -117,7 +117,7 @@ public class InheritanceResolver {
         Set<String> inheritedFields = new HashSet<>();
         List<Symbol> myFields = new ArrayList<>();
 
-        for (Symbol fieldSymbol : context.schemaIndex().findSymbolsInScope(structDefinitionSymbol, SymbolType.FIELD)) {
+        for (Symbol fieldSymbol : context.schemaIndex().findSymbolTypesInScope(structDefinitionSymbol, SymbolType.FIELD)) {
             if (fieldSymbol.getScope().equals(structDefinitionSymbol)) {
                 myFields.add(fieldSymbol);
             } else {

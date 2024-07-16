@@ -30,7 +30,7 @@ public class SchemaHover {
             if (res.isEmpty()) return null;
             structDefinitionSymbol = res;
         }
-        List<Symbol> fieldDefs = context.schemaIndex.findSymbolsInScope(structDefinitionSymbol.get(), SymbolType.FIELD);
+        List<Symbol> fieldDefs = context.schemaIndex.findSymbolTypesInScope(structDefinitionSymbol.get(), SymbolType.FIELD);
 
         String result = "### struct " + structDefinitionSymbol.get().getLongIdentifier() + "\n";
         for (Symbol fieldDef : fieldDefs) {
