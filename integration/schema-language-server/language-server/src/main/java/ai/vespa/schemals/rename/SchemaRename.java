@@ -55,7 +55,7 @@ public class SchemaRename {
         if (type == SymbolType.DOCUMENT) {
             type = SymbolType.SCHEMA;
 
-            symbol = context.schemaIndex.getSymbol(type, node.getText());
+            symbol = context.schemaIndex.getSchemaDefinition(node.getText());
         } else {
             symbol = context.schemaIndex.getSymbolDefinition(node.getSymbol());
         }

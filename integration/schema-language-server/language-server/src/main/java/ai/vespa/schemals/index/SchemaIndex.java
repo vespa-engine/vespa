@@ -201,9 +201,16 @@ public class SchemaIndex {
      * @param shortIdentifier the short identifier of the symbol to retrieve
      * @return an Optional containing the symbol if found, or an empty Optional if not found
      */
-    public Optional<Symbol> getSymbol(SymbolType type, String shortIdentifier) {
-        List<Symbol> list = symbolDefinitions.get(type);
+    public Optional<Symbol> getSchemaDefinition(String shortIdentifier) {
+        List<Symbol> list = symbolDefinitions.get(SymbolType.SCHEMA);
 
+        for (Symbol symbol : list) {
+            if (symbol.getShortIdentifier().equals(shortIdentifier)) {
+                return Optional.of(symbol);
+            }
+        }
+
+        list = symbolDefinitions.get(SymbolType.DOCUMENT);
         for (Symbol symbol : list) {
             if (symbol.getShortIdentifier().equals(shortIdentifier)) {
                 return Optional.of(symbol);

@@ -257,6 +257,6 @@ public class IdentifySymbolDefinition extends Identifier {
         String schemaName = document.getSchemaIdentifier();
         context.logger().println("Lookup for " + fileURI + " retuned " + schemaName);
         if (schemaName == null) return Optional.empty();
-        return context.schemaIndex().getSymbol(SymbolType.SCHEMA, schemaName);
+        return context.schemaIndex().getSchemaDefinition(schemaName);
     }
 }

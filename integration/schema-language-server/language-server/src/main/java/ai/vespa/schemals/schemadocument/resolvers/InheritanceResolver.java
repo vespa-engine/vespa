@@ -11,6 +11,8 @@ import java.util.Set;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import com.google.protobuf.Option;
+
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -52,7 +54,7 @@ public class InheritanceResolver {
         if (context.inheritsSchemaNode() != null) {
             String inheritsSchemaName = context.inheritsSchemaNode().getText();
 
-            Optional<Symbol> schemaSymbol = context.schemaIndex().getSymbol(SymbolType.SCHEMA, inheritsSchemaName);
+            Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(inheritsSchemaName);
 
             if (schemaSymbol.isPresent()) {
                 SchemaDocument parent = context.scheduler().getSchemaDocument(schemaSymbol.get().getFileURI());
@@ -139,7 +141,7 @@ public class InheritanceResolver {
         }
 
 
-        List<Symbol> parentSymbols = context.schemaIndex().findAllSymbolsWithSchemaScope(context.fileURI(), SymbolType.RANK_PROFILE, inheritedIdentifier);
+        List<Symbol> parentSymbols = context.schemaIndex().findSymbols(inheritanceNode.getSymbol());
 
         if (parentSymbols.isEmpty()) {
             context.logger().println("No parent symbols");
@@ -177,44 +179,46 @@ public class InheritanceResolver {
             return;
         }
 
-        List<Symbol> parentDefinitions = context.schemaIndex().getAllRankProfileParents(definitionSymbol);
+        // List<Symbol> parentDefinitions = context.schemaIndex().getAllRankProfileParents(definitionSymbol);
 
-        /*
-         * Look for colliding function names
-         * TODO: other stuff than functions
-         */
-        Map<String, String> seenFunctions = new HashMap<>();
-        for (Symbol parentDefinition : parentDefinitions) {
-            if (parentDefinition.equals(definitionSymbol)) continue;
+        // /*
+        //  * Look for colliding function names
+        //  * TODO: other stuff than functions
+        //  */
+        // Map<String, String> seenFunctions = new HashMap<>();
+        // for (Symbol parentDefinition : parentDefinitions) {
+        //     if (parentDefinition.equals(definitionSymbol)) continue;
 
-            List<Symbol> functionDefinitionsInParent = context.schemaIndex().getAllRankProfileFunctions(parentDefinition);
+        //     List<Symbol> functionDefinitionsInParent = context.schemaIndex().getAllRankProfileFunctions(parentDefinition);
 
-            context.logger().println("PROFILE " + parentDefinition.getLongIdentifier());
-            for (Symbol func : functionDefinitionsInParent) {
-                context.logger().println("    FUNC: " + func.getLongIdentifier());
-                if (seenFunctions.containsKey(func.getShortIdentifier())) {
-                    // TODO: quickfix
-                    diagnostics.add(new Diagnostic(
-                        inheritanceNode.getRange(),
-                        "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + 
-                        " defines function " + func.getShortIdentifier() + " which is already defined in " + seenFunctions.get(func.getShortIdentifier()),
-                        DiagnosticSeverity.Error,
-                        ""
-                    ));
-                }
-                seenFunctions.put(func.getShortIdentifier(), parentDefinition.getLongIdentifier());
-            }
-        }
+        //     context.logger().println("PROFILE " + parentDefinition.getLongIdentifier());
+        //     for (Symbol func : functionDefinitionsInParent) {
+        //         context.logger().println("    FUNC: " + func.getLongIdentifier());
+        //         if (seenFunctions.containsKey(func.getShortIdentifier())) {
+        //             // TODO: quickfix
+        //             diagnostics.add(new Diagnostic(
+        //                 inheritanceNode.getRange(),
+        //                 "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + 
+        //                 " defines function " + func.getShortIdentifier() + " which is already defined in " + seenFunctions.get(func.getShortIdentifier()),
+        //                 DiagnosticSeverity.Error,
+        //                 ""
+        //             ));
+        //         }
+        //         seenFunctions.put(func.getShortIdentifier(), parentDefinition.getLongIdentifier());
+        //     }
+        // }
     }
 
     private static Optional<String> resolveDocumentInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
         String schemaDocumentName = inheritanceNode.getText();
-        SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
-        if (parent == null) {
+        Optional<Symbol> symbol = context.schemaIndex().getSchemaDefinition(schemaDocumentName);
+
+        if (symbol.isEmpty()) {
             // Handled in resolve symbol references
             return Optional.empty();
         }
-        if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), parent.getFileURI())) {
+
+        if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), symbol.get().getFileURI())) {
             // Inheritance cycle
             // TODO: quickfix, get the chain?
             diagnostics.add(new Diagnostic(
@@ -227,7 +231,7 @@ public class InheritanceResolver {
         }
 
         inheritanceNode.setSymbolStatus(SymbolStatus.REFERENCE);
-        context.schemaIndex().insertSymbolReference(context.fileURI(), inheritanceNode);
-        return Optional.of(parent.getFileURI());
+        context.schemaIndex().insertSymbolReference(symbol.get(), inheritanceNode.getSymbol());
+        return Optional.of(symbol.get().getFileURI());
     }
 }

@@ -51,8 +51,10 @@ public class SchemaParserTest {
     ParseResult parseString(String input, String fileName) throws Exception {
         PrintStream logger = System.out;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, new ArrayList<>());
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
         schemaIndex.clearDocument(fileName);
-        ParseContext context = new ParseContext(input, logger, fileName, schemaIndex);
+        ParseContext context = new ParseContext(input, logger, fileName, schemaIndex, scheduler);
         context.useDocumentIdentifiers();
         return SchemaDocument.parseContent(context);
     }
