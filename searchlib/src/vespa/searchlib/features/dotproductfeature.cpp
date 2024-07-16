@@ -286,7 +286,7 @@ SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t d
     for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < allValues.size()); i++) {
         _scratch[i] = allValues[_queryIndexes[i]];
     }
-    return vespalib::ConstArrayRef(_scratch.data(), i);
+    return vespalib::ConstArrayRef<BaseType>(_scratch.data(), i);
 }
 
 }

@@ -21,6 +21,8 @@ using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 
+using namespace std::literals;
+
 namespace search {
 
 std::vector<char> as_vector(std::string_view value) {
@@ -197,18 +199,18 @@ void ExtendAttributeTest::testExtendRaw(AttributeVector& attr)
     auto* ext_attr = attr.getExtendInterface();
     EXPECT_NE(nullptr, ext_attr);
     add_doc(attr, 0);
-    ext_attr->add(as_vector("1.7"));
+    ext_attr->add(as_vector("1.7"sv));
     auto buf = attr.get_raw(0);
-    EXPECT_EQ(as_vector("1.7"), as_vector(buf));
-    ext_attr->add(vespalib::ConstArrayRef<char>(as_vector("2.3")));
+    EXPECT_EQ(as_vector("1.7"sv), as_vector(buf));
+    ext_attr->add(vespalib::ConstArrayRef<char>(as_vector("2.3"sv)));
     buf = attr.get_raw(0);
-    EXPECT_EQ(as_vector("2.3"), as_vector(buf));
+    EXPECT_EQ(as_vector("2.3"sv), as_vector(buf));
     add_doc(attr, 1);
-    ext_attr->add(as_vector("3.6"));
+    ext_attr->add(as_vector("3.6"sv));
     buf = attr.get_raw(1);
-    EXPECT_EQ(as_vector("3.6"), as_vector(buf));
+    EXPECT_EQ(as_vector("3.6"sv), as_vector(buf));
     buf = attr.get_raw(0);
-    EXPECT_EQ(as_vector("2.3"), as_vector(buf));
+    EXPECT_EQ(as_vector("2.3"sv), as_vector(buf));
     add_doc(attr, 2);
     ext_attr->add(zeros);
     buf = attr.get_raw(2);

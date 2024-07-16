@@ -31,7 +31,7 @@ EnumeratedMultiValueReadView<MultiValueType, RawMultiValueType, EnumEntryType>::
         *dst = multivalue::ValueBuilder<MultiValueType>::build(v, multivalue::get_weight(src));
         ++dst;
     }
-    return vespalib::ConstArrayRef(_copy.data(), raw.size());
+    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
 }
 
 using multivalue::WeightedValue;

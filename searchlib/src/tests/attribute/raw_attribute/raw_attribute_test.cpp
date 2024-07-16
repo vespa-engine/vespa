@@ -18,6 +18,7 @@ using search::attribute::Config;
 using search::attribute::SingleRawAttribute;
 using vespalib::ConstArrayRef;
 
+using namespace std::literals;
 
 std::vector<char> empty;
 vespalib::string hello("hello");
@@ -83,7 +84,7 @@ TEST_F(RawAttributeTest, can_set_and_clear_value)
     _attr->commit();
     EXPECT_EQ(empty, get_raw(1));
     _raw->set_raw(1, raw_hello);
-    EXPECT_EQ(as_vector(hello), get_raw(1));
+    EXPECT_EQ(as_vector(std::string_view(hello)), get_raw(1));
     _attr->clearDoc(1);
     EXPECT_EQ(empty, get_raw(1));
 }
@@ -121,7 +122,7 @@ TEST_F(RawAttributeTest, implements_serialize_for_sort) {
 
 TEST_F(RawAttributeTest, save_and_load)
 {
-    auto mini_test = as_vector("mini test");
+    auto mini_test = as_vector("mini test"sv);
     remove_saved_attr();
     _attr->addDocs(10);
     _attr->commit();
@@ -134,7 +135,7 @@ TEST_F(RawAttributeTest, save_and_load)
     EXPECT_EQ(11, _attr->getCommittedDocIdLimit());
     EXPECT_EQ(11, _attr->getStatus().getNumDocs());
     EXPECT_EQ(20, _attr->getCreateSerialNum());
-    EXPECT_EQ(as_vector("hello"), as_vector(_raw->get_raw(1)));
+    EXPECT_EQ(as_vector("hello"sv), as_vector(_raw->get_raw(1)));
     EXPECT_EQ(mini_test, as_vector(_raw->get_raw(2)));
     remove_saved_attr();
 }
@@ -149,7 +150,7 @@ TEST_F(RawAttributeTest, address_space_usage_is_reported)
     EXPECT_EQ(1u, all.size());
     EXPECT_EQ(1u, all.count(raw_store));
     EXPECT_EQ(1, all.at(raw_store).used());
-    _raw->set_raw(1, as_vector("foo"));
+    _raw->set_raw(1, as_vector("foo"sv));
     EXPECT_EQ(2, _attr->getAddressSpaceUsage().get_all().at(raw_store).used());
 }
 

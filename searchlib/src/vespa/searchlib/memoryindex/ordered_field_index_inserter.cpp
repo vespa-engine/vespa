@@ -98,10 +98,10 @@ OrderedFieldIndexInserter<interleaved_features>::flush()
         //XXX: Feature store leak, removed features not marked dead
         vespalib::datastore::EntryRef pidx(_dItr.getData().load_relaxed());
         postingListStore.apply(pidx,
-                               adds.begin(),
-                               adds.end(),
-                               removes.begin(),
-                               removes.end());
+                               adds.data(),
+                               adds.data() + adds.size(),
+                               removes.data(),
+                               removes.data() + removes.size());
         if (pidx != _dItr.getData().load_relaxed()) {
             _dItr.getWData().store_release(pidx);
         }

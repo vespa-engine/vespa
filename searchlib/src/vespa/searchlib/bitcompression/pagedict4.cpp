@@ -676,7 +676,7 @@ PageDict4PWriter::flushPage()
                        _countsSize - _countsWordOffset * 8;
     e.padBits(padding);
     if (_countsWordOffset > 0) {
-        e.writeBytes(vespalib::ConstArrayRef(_words.data(), _countsWordOffset));
+        e.writeBytes(vespalib::ConstArrayRef<char>(_words.data(), _countsWordOffset));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l3Word = _pendingCountsWord;
