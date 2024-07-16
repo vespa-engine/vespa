@@ -64,6 +64,8 @@ using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 
+using namespace std::literals;
+
 namespace {
 
 std::vector<char> as_vector(std::string_view value) {
@@ -216,7 +218,7 @@ TEST_F("require that single attributes are updated", Fixture)
         EXPECT_TRUE(std::isnan(vec->getFloat(3)));
     }
     {
-        auto vec = AttributeBuilder("in1/string", Config(BasicType::STRING)).fill({"first", "first", "first"}).get();
+        auto vec = AttributeBuilder("in1/string", Config(BasicType::STRING)).fill({"first"s, "first"s, "first"s}).get();
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(StringFieldValue::make("second")));
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(4u, vec->getNumDocs());
@@ -253,10 +255,10 @@ TEST_F("require that single attributes are updated", Fixture)
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
         f.applyValue(*vec, 4, std::make_unique<RawFieldValue>("third"));
         EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_EQUAL(as_vector("second"), as_vector(vec->get_raw(1)));
-        EXPECT_EQUAL(as_vector("first"), as_vector(vec->get_raw(2)));
-        EXPECT_EQUAL(as_vector(""), as_vector(vec->get_raw(3)));
-        EXPECT_EQUAL(as_vector("third"), as_vector(vec->get_raw(4)));
+        EXPECT_EQUAL(as_vector("second"sv), as_vector(vec->get_raw(1)));
+        EXPECT_EQUAL(as_vector("first"sv), as_vector(vec->get_raw(2)));
+        EXPECT_EQUAL(as_vector(""sv), as_vector(vec->get_raw(3)));
+        EXPECT_EQUAL(as_vector("third"sv), as_vector(vec->get_raw(4)));
     }
 }
 
