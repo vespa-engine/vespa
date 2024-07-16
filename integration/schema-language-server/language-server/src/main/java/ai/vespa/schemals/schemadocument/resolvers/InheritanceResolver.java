@@ -50,6 +50,10 @@ public class InheritanceResolver {
             if (inheritanceNode.getSymbol().getType() == SymbolType.RANK_PROFILE) {
                 resolveRankProfileInheritance(inheritanceNode, context, diagnostics);
             }
+
+            if (inheritanceNode.getSymbol().getType() == SymbolType.DOCUMENT_SUMMARY) {
+                resolveDocumentSummaryInheritance(inheritanceNode, context, diagnostics);
+            }
         }
 
         if (context.inheritsSchemaNode() != null) {
@@ -245,5 +249,33 @@ public class InheritanceResolver {
         inheritanceNode.setSymbolStatus(SymbolStatus.REFERENCE);
         context.schemaIndex().insertSymbolReference(symbol.get(), inheritanceNode.getSymbol());
         return Optional.of(symbol.get().getFileURI());
+    }
+
+    private static void resolveDocumentSummaryInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
+        SchemaNode myDocSummaryDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
+
+        if (myDocSummaryDefinitionNode == null) {
+            return;
+        }
+
+        if (!myDocSummaryDefinitionNode.hasSymbol()) {
+            return;
+        }
+
+        Optional<Symbol> parentSymbol = context.schemaIndex().findSymbol(inheritanceNode.getSymbol());
+        if (parentSymbol.isEmpty()) {
+            // Handled elsewhere
+            return;
+        }
+
+        if (!context.schemaIndex().tryRegisterDocumentSummaryInheritance(myDocSummaryDefinitionNode.getSymbol(), parentSymbol.get())) {
+            // TODO: get the chain?
+            diagnostics.add(new Diagnostic(
+                inheritanceNode.getRange(), 
+                "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this document summary.",
+                DiagnosticSeverity.Error, 
+                ""
+            ));
+        }
     }
 }

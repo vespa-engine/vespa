@@ -53,12 +53,14 @@ public class SchemaIndex {
     private InheritanceGraph<String> documentInheritanceGraph;
     private InheritanceGraph<Symbol> structInheritanceGraph;
     private InheritanceGraph<Symbol> rankProfileInheritanceGraph;
+    private InheritanceGraph<Symbol> documentSummaryInheritanceGraph;
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
-        this.documentInheritanceGraph    = new InheritanceGraph<>();
-        this.structInheritanceGraph      = new InheritanceGraph<>();
-        this.rankProfileInheritanceGraph = new InheritanceGraph<>();
+        this.documentInheritanceGraph        = new InheritanceGraph<>();
+        this.structInheritanceGraph          = new InheritanceGraph<>();
+        this.rankProfileInheritanceGraph     = new InheritanceGraph<>();
+        this.documentSummaryInheritanceGraph = new InheritanceGraph<>();
 
         this.symbolDefinitions     = new HashMap<>();
         this.symbolReferences      = new HashMap<>();
@@ -393,6 +395,17 @@ public class SchemaIndex {
      */
     public boolean tryRegisterRankProfileInheritance(Symbol childSymbol, Symbol parentSymbol) {
         return rankProfileInheritanceGraph.addInherits(childSymbol, parentSymbol);
+    }
+
+    /**
+     * Tries to register the inheritance relationship between a child document-summary and a parent document-summary.
+     *
+     * @param childSymbol The symbol representing the child document-summary.
+     * @param parentSymbol The symbol representing the parent document-summary.
+     * @return true if the inheritance relationship was successfully registered, true otherwise.
+     */
+    public boolean tryRegisterDocumentSummaryInheritance(Symbol childSymbol, Symbol parentSymbol) {
+        return documentSummaryInheritanceGraph.addInherits(childSymbol, parentSymbol);
     }
 
     /**

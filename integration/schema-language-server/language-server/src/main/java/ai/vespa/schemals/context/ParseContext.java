@@ -16,6 +16,7 @@ import ai.vespa.schemals.schemadocument.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.schemadocument.parser.IdentifyAnnotationReference;
 import ai.vespa.schemals.schemadocument.parser.IdentifySchemaInheritance;
 import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentSummaryInheritance;
 import ai.vespa.schemals.schemadocument.parser.IdentifyStructInheritance;
 import ai.vespa.schemals.schemadocument.parser.IdentifyRankProfileInheritance;
 import ai.vespa.schemals.schemadocument.parser.IdentifyDeprecatedToken;
@@ -64,6 +65,7 @@ public class ParseContext {
             add(new IdentifyDocumentInheritance(context));
             add(new IdentifyStructInheritance(context));
             add(new IdentifyRankProfileInheritance(context));
+            add(new IdentifyDocumentSummaryInheritance(context));
 
             add(new IdentifyDeprecatedToken(context));
             add(new IdentifyDirtyNodes(context));

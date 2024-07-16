@@ -64,6 +64,7 @@ public class SchemaDocument implements DocumentManager {
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
+        this.scheduler = scheduler;
     }
     
     public ParseContext getParseContext(String content) {
