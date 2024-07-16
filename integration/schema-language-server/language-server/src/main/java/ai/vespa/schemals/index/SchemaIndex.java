@@ -3,9 +3,11 @@ package ai.vespa.schemals.index;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -54,6 +56,9 @@ public class SchemaIndex {
     private InheritanceGraph<Symbol> structInheritanceGraph;
     private InheritanceGraph<Symbol> rankProfileInheritanceGraph;
     private InheritanceGraph<Symbol> documentSummaryInheritanceGraph;
+
+    // This is an inheritance graph, even though it doesn't model *inheritance* per se.
+    private InheritanceGraph<Symbol> documentReferenceGraph;
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
@@ -61,6 +66,7 @@ public class SchemaIndex {
         this.structInheritanceGraph          = new InheritanceGraph<>();
         this.rankProfileInheritanceGraph     = new InheritanceGraph<>();
         this.documentSummaryInheritanceGraph = new InheritanceGraph<>();
+        this.documentReferenceGraph          = new InheritanceGraph<>();
 
         this.symbolDefinitions     = new HashMap<>();
         this.symbolReferences      = new HashMap<>();
@@ -164,7 +170,14 @@ public class SchemaIndex {
         // First candidates are all symbols with correct type and correct short identifier
 
         if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
-            return symbolDefinitions.get(type)
+            List<Symbol> schemaDefinitions = 
+                symbolDefinitions.get(SymbolType.SCHEMA)
+                               .stream()
+                               .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                               .toList();
+
+            if (!schemaDefinitions.isEmpty()) return schemaDefinitions;
+            return symbolDefinitions.get(SymbolType.DOCUMENT)
                                .stream()
                                .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
                                .toList();
@@ -406,6 +419,10 @@ public class SchemaIndex {
      */
     public boolean tryRegisterDocumentSummaryInheritance(Symbol childSymbol, Symbol parentSymbol) {
         return documentSummaryInheritanceGraph.addInherits(childSymbol, parentSymbol);
+    }
+
+    public boolean tryRegisterDocumentReference(Symbol childSymbol, Symbol parentSymbol) {
+        return documentReferenceGraph.addInherits(childSymbol, parentSymbol);
     }
 
     /**

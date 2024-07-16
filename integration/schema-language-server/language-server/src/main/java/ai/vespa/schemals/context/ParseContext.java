@@ -32,6 +32,7 @@ public class ParseContext {
     private List<SchemaNode> unresolvedInheritanceNodes;
     private List<SchemaNode> unresolvedTypeNodes;
     private List<SchemaNode> unresolvedAnnotationReferenceNodes;
+    private List<SchemaNode> unresolvedDocumentReferenceNodes;
     private SchemaIndex schemaIndex;
     private SchemaNode inheritsSchemaNode;
     private SchemaDocumentScheduler scheduler;
@@ -44,6 +45,7 @@ public class ParseContext {
         this.unresolvedInheritanceNodes = new ArrayList<>();
         this.unresolvedTypeNodes = new ArrayList<>();
         this.unresolvedAnnotationReferenceNodes = new ArrayList<>();
+        this.unresolvedDocumentReferenceNodes = new ArrayList<>();
         this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>();
         this.scheduler = scheduler;
@@ -116,6 +118,10 @@ public class ParseContext {
         return this.unresolvedAnnotationReferenceNodes;
     }
 
+    public List<SchemaNode> unresolvedDocumentReferenceNodes() {
+        return this.unresolvedDocumentReferenceNodes;
+    }
+
     public SchemaIndex schemaIndex() {
         return this.schemaIndex;
     }
@@ -140,6 +146,10 @@ public class ParseContext {
         this.unresolvedInheritanceNodes.add(nameNode);
     }
 
+    public void addUnresolvedDocumentReferenceNode(SchemaNode node) {
+        this.unresolvedDocumentReferenceNodes.add(node);
+    }
+
     public void clearUnresolvedTypeNodes() {
         this.unresolvedTypeNodes.clear();
     }
@@ -150,6 +160,10 @@ public class ParseContext {
 
     public void clearUnresolvedInheritanceNodes() {
         this.unresolvedInheritanceNodes.clear();
+    }
+
+    public void clearUnresolvedDocumentReferenceNodes() {
+        this.unresolvedDocumentReferenceNodes.clear();
     }
 
     public SchemaNode inheritsSchemaNode() {

@@ -19,6 +19,7 @@ import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
 import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -37,6 +38,7 @@ public class IdentifySymbolReferences extends Identifier {
         put(fieldsElm.class, SymbolType.FIELD);
         put(rootSchema.class, SymbolType.SCHEMA);
         put(inheritsStruct.class, SymbolType.STRUCT);
+        put(referenceType.class, SymbolType.DOCUMENT);
     }};
 
     private static final HashMap<Class<?>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<?>, SymbolType>() {{
@@ -87,6 +89,10 @@ public class IdentifySymbolReferences extends Identifier {
             node.setSymbol(symbolType, context.fileURI());
         }
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
+
+        if (parent.isSchemaASTInstance(referenceType.class)) {
+            context.addUnresolvedDocumentReferenceNode(node);
+        }
 
         return ret;
     }
