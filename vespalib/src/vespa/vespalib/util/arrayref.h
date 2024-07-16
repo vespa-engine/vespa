@@ -8,7 +8,7 @@
 
 namespace vespalib {
 
-#define VESPALIB_ARRAYREF_IS_STD_SPAN 0
+#define VESPALIB_ARRAYREF_IS_STD_SPAN 1
 
 #if VESPALIB_ARRAYREF_IS_STD_SPAN
 
