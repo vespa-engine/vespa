@@ -203,7 +203,9 @@ template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::MatchingElementsSearch>
 DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_matching_elements_search(const MatchingElementsFields &fields) const
 {
-    if (fields.has_field(_iattr.getName())) {
+    if (fields.has_struct_field(_iattr.getName())) {
+        return queryeval::MatchingElementsSearch::create(_iattr, fields.get_enclosing_field(_iattr.getName()), _dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult>(_terms));
+    } else if (fields.has_field(_iattr.getName())) {
         return queryeval::MatchingElementsSearch::create(_iattr, _iattr.getName(), _dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult>(_terms));
     } else {
         return {};
