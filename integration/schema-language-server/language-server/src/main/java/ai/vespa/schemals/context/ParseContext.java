@@ -4,11 +4,25 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
 
-import ai.vespa.schemals.context.parser.*;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
+
+import ai.vespa.schemals.schemadocument.parser.Identifier;
+import ai.vespa.schemals.schemadocument.parser.IdentifyType;
+import ai.vespa.schemals.schemadocument.parser.IdentifySymbolDefinition;
+import ai.vespa.schemals.schemadocument.parser.IdentifySymbolReferences;
+import ai.vespa.schemals.schemadocument.parser.IdentifyAnnotationReference;
+import ai.vespa.schemals.schemadocument.parser.IdentifySchemaInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentSummaryInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyStructInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyRankProfileInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDeprecatedToken;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentlessSchema;
+import ai.vespa.schemals.schemadocument.parser.IdentifyNamedDocument;
 
 public class ParseContext { 
     private String content;
@@ -18,10 +32,12 @@ public class ParseContext {
     private List<SchemaNode> unresolvedInheritanceNodes;
     private List<SchemaNode> unresolvedTypeNodes;
     private List<SchemaNode> unresolvedAnnotationReferenceNodes;
+    private List<SchemaNode> unresolvedDocumentReferenceNodes;
     private SchemaIndex schemaIndex;
     private SchemaNode inheritsSchemaNode;
+    private SchemaDocumentScheduler scheduler;
 
-    public ParseContext(String content, PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
+    public ParseContext(String content, PrintStream logger, String fileURI, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler) {
         this.content = content;
         this.logger = logger;
         this.fileURI = fileURI;
@@ -29,8 +45,17 @@ public class ParseContext {
         this.unresolvedInheritanceNodes = new ArrayList<>();
         this.unresolvedTypeNodes = new ArrayList<>();
         this.unresolvedAnnotationReferenceNodes = new ArrayList<>();
-        ParseContext context = this;
+        this.unresolvedDocumentReferenceNodes = new ArrayList<>();
         this.inheritsSchemaNode = null;
+        this.identifiers = new ArrayList<>();
+        this.scheduler = scheduler;
+    }
+
+    /*
+     * Identifiers used when parsing a .sd file
+     */
+    public void useDocumentIdentifiers() {
+        ParseContext context = this;
         this.identifiers = new ArrayList<>() {{
             add(new IdentifyType(context));
 
@@ -38,14 +63,30 @@ public class ParseContext {
             add(new IdentifySymbolReferences(context));
             add(new IdentifyAnnotationReference(context));
 
+            add(new IdentifySchemaInheritance(context));
             add(new IdentifyDocumentInheritance(context));
             add(new IdentifyStructInheritance(context));
-            add(new IdentifySchemaInheritance(context));
+            add(new IdentifyRankProfileInheritance(context));
+            add(new IdentifyDocumentSummaryInheritance(context));
 
             add(new IdentifyDeprecatedToken(context));
             add(new IdentifyDirtyNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
+        }};
+    }
+
+    /*
+     * Identifiers used when parsing a .profile file
+     */
+    public void useRankProfileIdentifiers() {
+        ParseContext context = this;
+
+        this.identifiers = new ArrayList<>() {{
+            add(new IdentifySymbolDefinition(context));
+            add(new IdentifySymbolReferences(context));
+            add(new IdentifyRankProfileInheritance(context));
+            add(new IdentifyDirtyNodes(context));
         }};
     }
 
@@ -77,8 +118,16 @@ public class ParseContext {
         return this.unresolvedAnnotationReferenceNodes;
     }
 
+    public List<SchemaNode> unresolvedDocumentReferenceNodes() {
+        return this.unresolvedDocumentReferenceNodes;
+    }
+
     public SchemaIndex schemaIndex() {
         return this.schemaIndex;
+    }
+
+    public SchemaDocumentScheduler scheduler() {
+        return this.scheduler;
     }
 
     public void addIdentifier(Identifier identifier) {
@@ -97,6 +146,10 @@ public class ParseContext {
         this.unresolvedInheritanceNodes.add(nameNode);
     }
 
+    public void addUnresolvedDocumentReferenceNode(SchemaNode node) {
+        this.unresolvedDocumentReferenceNodes.add(node);
+    }
+
     public void clearUnresolvedTypeNodes() {
         this.unresolvedTypeNodes.clear();
     }
@@ -107,6 +160,10 @@ public class ParseContext {
 
     public void clearUnresolvedInheritanceNodes() {
         this.unresolvedInheritanceNodes.clear();
+    }
+
+    public void clearUnresolvedDocumentReferenceNodes() {
+        this.unresolvedDocumentReferenceNodes.clear();
     }
 
     public SchemaNode inheritsSchemaNode() {

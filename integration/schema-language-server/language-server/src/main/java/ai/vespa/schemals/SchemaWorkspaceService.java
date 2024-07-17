@@ -11,7 +11,7 @@ import org.eclipse.lsp4j.FileRename;
 import org.eclipse.lsp4j.RenameFilesParams;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
-import ai.vespa.schemals.context.SchemaDocumentScheduler;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class SchemaWorkspaceService implements WorkspaceService {
 

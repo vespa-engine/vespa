@@ -2,15 +2,18 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 
+import ai.vespa.schemals.schemadocument.DocumentManager;
+
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventContext {
 
     public final PrintStream logger;
     public final SchemaDocumentScheduler scheduler;
     public final SchemaIndex schemaIndex;
-    public final SchemaDocumentParser document;
+    public final DocumentManager document;
     public final SchemaMessageHandler messageHandler;
 
     public EventContext(

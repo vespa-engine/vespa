@@ -6,6 +6,7 @@ import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.completion.provider.*;
 import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 public class SchemaCompletion {
 
@@ -19,7 +20,9 @@ public class SchemaCompletion {
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
-        if (context.document.isInsideComment(context.position)) {
+        if (!(context.document instanceof SchemaDocument)) return ret; // TODO: completion in rank profile files
+
+        if (((SchemaDocument)context.document).isInsideComment(context.position)) {
             return ret;
         }
 

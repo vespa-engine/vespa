@@ -2,12 +2,14 @@ package ai.vespa.schemals.references;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Location;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaReferences {
@@ -17,7 +19,7 @@ public class SchemaReferences {
 
         ArrayList<Location> ret = new ArrayList<>();
 
-        SchemaNode node = context.document.getSymbolAtPosition(context.position);
+        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
         if (node == null) {
             return ret;
@@ -33,13 +35,14 @@ public class SchemaReferences {
         boolean originalSymbolIsDefinition = originalSymbol.getStatus() == SymbolStatus.DEFINITION;
         if (!originalSymbolIsDefinition) {
 
-            search = context.schemaIndex.findSymbol(originalSymbol);
-            if (search == null) {
+            Optional<Symbol> results = context.schemaIndex.getSymbolDefinition(originalSymbol);
+            if (results.isEmpty()) {
                 return ret;
             }
+            search = results.get();
         }
 
-        List<Symbol> symbols = context.schemaIndex.findSymbolReferences(search);
+        List<Symbol> symbols = context.schemaIndex.getSymbolReferences(search);
 
         if (!originalSymbolIsDefinition) {
             symbols.add(search);

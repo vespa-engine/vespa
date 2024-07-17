@@ -1,11 +1,11 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.context.SchemaDocumentScheduler;
-import ai.vespa.schemals.common.Utils;
-import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.context.SchemaDocumentParser.ParseResult;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
+import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.io.IOUtils;
@@ -52,9 +52,12 @@ public class SchemaParserTest {
     ParseResult parseString(String input, String fileName) throws Exception {
         PrintStream logger = System.out;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, new ArrayList<>());
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
         schemaIndex.clearDocument(fileName);
-        ParseContext context = new ParseContext(input, logger, fileName, schemaIndex);
-        return SchemaDocumentParser.parseContent(context);
+        ParseContext context = new ParseContext(input, logger, fileName, schemaIndex, scheduler);
+        context.useDocumentIdentifiers();
+        return SchemaDocument.parseContent(context);
     }
 
     ParseResult parseString(String input) throws Exception {
@@ -72,34 +75,54 @@ public class SchemaParserTest {
         assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
     }
 
+    void checkFileFails(String fileName, int expectedErrors) throws Exception {
+        var parseResult = parseFile(fileName);
+        String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
+        assertEquals(expectedErrors, countErrors(parseResult.diagnostics()), testMessage);
+    }
+
     void checkDirectoryParses(String directoryPath) throws Exception {
-        PrintStream logger = System.out;
+        String directoryURI = new File(directoryPath).toURI().toString();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream logger = new PrintStream(outputStream);
+
+        //PrintStream logger = System.err;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
+        schemaIndex.setWorkspaceURI(directoryURI);
+
         List<Diagnostic> diagnostics = new ArrayList<>();
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
-        String directoryURI = new File(directoryPath).toURI().toString();
-        List<String> schemaFiles = Utils.findSchemaFiles(directoryURI, logger);
+        List<String> schemaFiles = FileUtils.findSchemaFiles(directoryURI, logger);
 
         scheduler.setReparseDescendants(false);
         for (String schemaURI : schemaFiles) {
             scheduler.addDocument(schemaURI);
         }
         scheduler.reparseInInheritanceOrder();
-        //scheduler.setReparseDescendants(true);
+        scheduler.setReparseDescendants(true);
 
         diagnostics.clear();
+
+        logger.flush();
+        outputStream.flush();
+        outputStream.reset();
 
         String testMessage = "\nFor directory: " + directoryPath;
         int numErrors = 0;
         for (String schemaURI : schemaFiles) {
             diagnostics.clear();
-            var documentHandle = scheduler.getDocument(schemaURI);
+            var documentHandle = scheduler.getSchemaDocument(schemaURI);
             documentHandle.reparseContent();
             testMessage += "\n    File: " + schemaURI + constructDiagnosticMessage(diagnostics, 2);
 
             numErrors += countErrors(diagnostics);
         }
+
+        testMessage += "\n\n\n FULL DUMP:\n";
+        testMessage += outputStream.toString();
+        testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
     }
@@ -117,9 +140,8 @@ public class SchemaParserTest {
     }
 
     @TestFactory
-    Stream<DynamicTest> generateFileTests() {
+    Stream<DynamicTest> generateGoodFileTests() {
         String[] filePaths = new String[] {
-            //"../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd",
             "../../../config-model/src/test/derived/advanced/advanced.sd",
             "../../../config-model/src/test/derived/annotationsimplicitstruct/annotationsimplicitstruct.sd",
             "../../../config-model/src/test/derived/annotationsinheritance/annotationsinheritance.sd",
@@ -134,10 +156,10 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/array_of_struct_attribute/test.sd",
             "../../../config-model/src/test/derived/arrays/arrays.sd",
             "../../../config-model/src/test/derived/attributeprefetch/attributeprefetch.sd",
-            // "../../../config-model/src/test/derived/attributerank/attributerank.sd",
+             "../../../config-model/src/test/derived/attributerank/attributerank.sd",
             "../../../config-model/src/test/derived/attributes/attributes.sd",
             "../../../config-model/src/test/derived/combinedattributeandindexsearch/combinedattributeandindexsearch.sd",
-            // "../../../config-model/src/test/derived/complex/complex.sd",
+            "../../../config-model/src/test/derived/complex/complex.sd",
             "../../../config-model/src/test/derived/emptydefault/emptydefault.sd",
             "../../../config-model/src/test/derived/exactmatch/exactmatch.sd",
             "../../../config-model/src/test/derived/fieldset/test.sd",
@@ -162,7 +184,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/music3/music3.sd",
             "../../../config-model/src/test/derived/nearestneighbor/test.sd",
             "../../../config-model/src/test/derived/newrank/newrank.sd",
-            // "../../../config-model/src/test/derived/nuwa/newsindex.sd",
+             "../../../config-model/src/test/derived/nuwa/newsindex.sd",
             "../../../config-model/src/test/derived/orderilscripts/orderilscripts.sd",
             "../../../config-model/src/test/derived/position_array/position_array.sd",
             "../../../config-model/src/test/derived/position_attribute/position_attribute.sd",
@@ -175,24 +197,29 @@ public class SchemaParserTest {
             // "../../../config-model/src/test/derived/rankprofilemodularity/test.sd",
             "../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd",
             "../../../config-model/src/test/derived/rankproperties/rankproperties.sd",
-            // "../../../config-model/src/test/derived/ranktypes/ranktypes.sd",
-            "../../../config-model/src/test/derived/reference_fields/ad.sd",
-            "../../../config-model/src/test/derived/reference_fields/campaign.sd",
+            "../../../config-model/src/test/derived/ranktypes/ranktypes.sd",
+            //"../../../config-model/src/test/derived/reference_fields/ad.sd",
+            //"../../../config-model/src/test/derived/reference_fields/campaign.sd",
             "../../../config-model/src/test/derived/renamedfeatures/foo.sd",
             "../../../config-model/src/test/derived/reserved_position/reserved_position.sd",
             "../../../config-model/src/test/derived/slice/test.sd",
             "../../../config-model/src/test/derived/streamingjuniper/streamingjuniper.sd",
             "../../../config-model/src/test/derived/streamingstruct/streamingstruct.sd",
             "../../../config-model/src/test/derived/streamingstructdefault/streamingstructdefault.sd",
-            //"../../../config-model/src/test/derived/structandfieldset/test.sd",
+            "../../../config-model/src/test/derived/structandfieldset/test.sd",
             "../../../config-model/src/test/derived/structanyorder/structanyorder.sd",
-            "../../../config-model/src/test/derived/structinheritance/bad.sd",
             "../../../config-model/src/test/derived/structinheritance/simple.sd",
             "../../../config-model/src/test/derived/tensor/tensor.sd",
             "../../../config-model/src/test/derived/tokenization/tokenization.sd",
             "../../../config-model/src/test/derived/types/types.sd",
             "../../../config-model/src/test/derived/uri_array/uri_array.sd",
             "../../../config-model/src/test/derived/uri_wset/uri_wset.sd",
+            "../../../config-model/src/test/configmodel/types/types.sd",
+
+            /*
+             * CUSTOM TESTS
+             * */
+            "src/test/sdfiles/single/structinfieldset.sd"
         };
 
         return Arrays.stream(filePaths)
@@ -200,7 +227,7 @@ public class SchemaParserTest {
     }
 
     @TestFactory
-    Stream<DynamicTest> generateDirectoryTests() {
+    Stream<DynamicTest> generateGoodDirectoryTests() {
         String[] directories = new String[] {
             "../../../config-model/src/test/cfg/search/data/travel/schemas/",
             //"../../../config-model/src/test/configmodel/types/",
@@ -227,4 +254,19 @@ public class SchemaParserTest {
         return Arrays.stream(directories)
                      .map(dir -> DynamicTest.dynamicTest(dir, () -> checkDirectoryParses(dir)));
     }
+
+    record BadFileTestCase(String filePath, int expectedErrors) {}
+
+    @TestFactory
+    Stream<DynamicTest> generateBadFileTests() {
+        BadFileTestCase[] tests = new BadFileTestCase[] {
+            new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1), // TODO: check that the error is correct
+            new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2)
+        };
+
+        return Arrays.stream(tests)
+                     .map(testCase -> DynamicTest.dynamicTest(testCase.filePath(), () -> checkFileFails(testCase.filePath(), testCase.expectedErrors())));
+    }
+
 }

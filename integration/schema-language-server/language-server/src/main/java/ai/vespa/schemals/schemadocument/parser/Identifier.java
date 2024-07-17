@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context.parser;
+package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 

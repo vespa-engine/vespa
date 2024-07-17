@@ -5,9 +5,6 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
-import org.eclipse.lsp4j.WorkspaceEdit;
-
-import ai.vespa.schemals.context.EventContext;
 
 public class SchemaTextDocumentEdit {
     private ArrayList<TextEdit> textEdits;

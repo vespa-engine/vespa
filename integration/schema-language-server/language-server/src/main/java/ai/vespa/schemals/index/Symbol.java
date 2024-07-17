@@ -1,11 +1,10 @@
 package ai.vespa.schemals.index;
 
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
-
-import ai.vespa.schemals.context.SchemaDocumentParser;
 
 public class Symbol {
     private SchemaNode identifierNode;
@@ -13,17 +12,23 @@ public class Symbol {
     private String fileURI;
     private SymbolType type;
     private SymbolStatus status;
+    private String shortIdentifier;
 
-    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
         this.identifierNode = identifierNode;
         this.fileURI = fileURI;
         this.type = type;
         this.status = SymbolStatus.UNRESOLVED;
+        this.scope = scope;
+        this.shortIdentifier = shortIdentifier;
+    }
+
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
+        this(identifierNode, type, fileURI, null, identifierNode.getText());
     }
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
-        this(identifierNode, type, fileURI);
-        this.scope = scope;
+        this(identifierNode, type, fileURI, scope, identifierNode.getText());
     }
 
     public String getFileURI() { return fileURI; }
@@ -38,9 +43,22 @@ public class Symbol {
     public void setStatus(SymbolStatus status) { this.status = status; }
     public SymbolStatus getStatus() { return status; }
 
+    public Symbol getScope() { return scope; }
+
+    // TODO: not quite sure if this kind of equality check is good
+    public boolean isInScope(Symbol scope) {
+        if (scope == null || this.scope == null) return false;
+        return this.scope.equals(scope);
+    }
+
+    public String getScopeIdentifier() {
+        if (this.scope == null) return "";
+        return this.scope.getLongIdentifier();
+    }
+
     public SchemaNode getNode() { return identifierNode; }
 
-    public String getShortIdentifier() { return identifierNode.getText(); }
+    public String getShortIdentifier() { return shortIdentifier; }
 
     public String getLongIdentifier() {
         if (scope == null) {
@@ -65,6 +83,7 @@ public class Symbol {
         return (
             this.fileURI.equals(other.fileURI) &&
             this.type == other.type &&
+            this.status == other.status &&
             this.getNode() != null &&
             other.getNode() != null &&
             this.getNode().getRange() != null &&
@@ -87,7 +106,8 @@ public class Symbol {
         DEFINITION,
         REFERENCE,
         UNRESOLVED,
-        INVALID
+        INVALID,
+        BUILTIN_REFERENCE // reference to stuff like "default" that doesn't have a definition in our CSTs
     }
 
     public enum SymbolType {
@@ -100,12 +120,18 @@ public class Symbol {
         FIELDSET,
         STRUCT_FIELD,
         FUNCTION,
-        TYPE_UNKNOWN
+        DOCUMENT_SUMMARY,
+        SUMMARY,
+        TYPE_UNKNOWN,
+        SUBFIELD,
+        MAP_KEY,
+        MAP_VALUE,
+        PARAMETER
     }
 
     public String toString() {
         Position pos = getNode().getRange().getStart();
-        String fileName = SchemaDocumentParser.fileNameFromPath(fileURI);
-        return "Symbol('" + getShortIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")";
+        String fileName = FileUtils.fileNameFromPath(fileURI);
+        return "Symbol('" + getLongIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")@" + System.identityHashCode(this);
     }
 }

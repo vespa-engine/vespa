@@ -1,13 +1,13 @@
-package ai.vespa.schemals.context.parser;
+package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
 
-import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyDocumentlessSchema extends Identifier {
@@ -19,18 +19,18 @@ public class IdentifyDocumentlessSchema extends Identifier {
 	@Override
 	public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
-        if (!node.isASTInstance(rootSchema.class))return ret;
+        if (!node.isSchemaASTInstance(rootSchema.class))return ret;
 
-        if (node.size() < 2 || node.get(1).isDirty()) {
+        if (node.size() < 2 || node.get(1).getIsDirty()) {
             // Schema has bad syntax. Missing mandatory document would not be helpful
             return ret;
         }
 
         // Look for document definition inside
         for (SchemaNode child : node) {
-            if (!child.isASTInstance(rootSchemaItem.class)) continue;
+            if (!child.isSchemaASTInstance(rootSchemaItem.class)) continue;
             if (child.size() == 0) continue;
-            if (child.get(0).isASTInstance(documentElm.class)) return ret; // Found document
+            if (child.get(0).isSchemaASTInstance(documentElm.class)) return ret; // Found document
         }
 
         // TODO: quickfix

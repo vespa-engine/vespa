@@ -1,32 +1,22 @@
 package ai.vespa.schemals.definition;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Location;
 
 import ai.vespa.schemals.context.EventPositionContext;
-import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token;
-import ai.vespa.schemals.parser.ast.fieldsElm;
 
 public class SchemaDefinition {
-
-    private static HashMap<Class<? extends Node>, SymbolType> linkContexts = new HashMap<Class<? extends Node>, SymbolType>() {{
-        put(fieldsElm.class, SymbolType.FIELD);
-    }};
-
-    public static ArrayList<Location> getDefinition(
-        EventPositionContext context
-    ) {
+    public static ArrayList<Location> getDefinition(EventPositionContext context) {
 
         ArrayList<Location> ret = new ArrayList<Location>();
 
-        SchemaNode node = context.document.getSymbolAtPosition(context.position);
+        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
         if (node == null || !node.hasSymbol()) {
             return ret;
@@ -34,17 +24,26 @@ public class SchemaDefinition {
 
         Symbol search = node.getSymbol();
 
-        Symbol result = context.schemaIndex.findSymbol(context.document.getFileURI(), search.getType(), search.getLongIdentifier());
+        // Try the faster search first
+        Optional<Symbol> results = context.schemaIndex.getSymbolDefinition(search);
 
-        if (result == null && search.getType() == SymbolType.DOCUMENT) {
-            result = context.schemaIndex.findSymbol(context.document.getFileURI(), SymbolType.SCHEMA, search.getLongIdentifier()); 
+        if (results.isEmpty() && search.getType() == SymbolType.DOCUMENT) {
+            results = context.schemaIndex.findSymbol(search.getScope(), SymbolType.SCHEMA, search.getShortIdentifier()); 
         }
 
-        if (result == null) {
-            return ret;
+        // TODO: refactor
+        // if (result == null) {
+        //     context.schemaIndex.findDefinitionOfReference(search).ifPresent(
+        //         symbol -> ret.add(symbol.getLocation())
+        //     );
+        // } else {
+        //     ret.add(result.getLocation());
+        // }
+
+        if (results.isPresent()) {
+            ret.add(results.get().getLocation());
         }
 
-        ret.add(result.getLocation());
         return ret;
     }
 }

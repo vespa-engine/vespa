@@ -59,7 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		},
         synchronize: {
-            fileEvents: vscode.workspace.createFileSystemWatcher("**/*.sd")
+            fileEvents: vscode.workspace.createFileSystemWatcher("**/*{.sd,.profile}")
         }
 	};
 

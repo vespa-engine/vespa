@@ -7,12 +7,13 @@ import org.eclipse.lsp4j.CompletionItem;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 public class MatchCompletionProvider implements CompletionProvider {
 
 	@Override
 	public boolean match(EventPositionContext context) {
-        return context.document.lexer.matchBackwards(context.position, 1, true, TokenType.MATCH, TokenType.COLON) != null;
+        return ((SchemaDocument)context.document).lexer.matchBackwards(context.position, 1, true, TokenType.MATCH, TokenType.COLON) != null;
 	}
 
 	@Override

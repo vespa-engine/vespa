@@ -1,5 +1,6 @@
-package ai.vespa.schemals.context.parser;
+package ai.vespa.schemals.schemadocument.parser;
 
+import java.util.Optional;
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -8,10 +9,12 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
-import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyType extends Identifier {
@@ -22,11 +25,11 @@ public class IdentifyType extends Identifier {
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
-        if (!node.isASTInstance(dataType.class)) {
+        if (!node.isSchemaASTInstance(dataType.class)) {
             return ret;
         }
 
-        dataType originalNode = (dataType)node.getOriginalNode();
+        dataType originalNode = (dataType)node.getOriginalSchemaNode();
 
         ParsedType parsedType = originalNode.getParsedType();
 
@@ -51,11 +54,33 @@ public class IdentifyType extends Identifier {
             }
         }
 
+        if (parsedType.getVariant() == Variant.MAP) {
+            SchemaNode keyTypeNode = node.get(0).get(2);
+
+            if (keyTypeNode != null && keyTypeNode.isASTInstance(dataType.class)) {
+                ParsedType keyParsedType = ((dataType)keyTypeNode.getOriginalSchemaNode()).getParsedType();
+                if (keyParsedType.getVariant() != Variant.BUILTIN) {
+                    // TODO: quickfix
+                    ret.add(new Diagnostic(
+                        keyTypeNode.getRange(),
+                        "Map key type must be a primitive type",
+                        DiagnosticSeverity.Error,
+                        ""
+                    ));
+                }
+            }
+        }
+
         if (parsedType.getVariant() != Variant.UNKNOWN) {
             return ret;
         }
 
-        node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+        Optional<Symbol> scope = CSTUtils.findScope(node);
+        if (scope.isPresent()) {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope.get());
+        } else {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+        }
 
         this.context.addUnresolvedTypeNode(node);
         return ret;
@@ -63,7 +88,7 @@ public class IdentifyType extends Identifier {
 
     private static boolean isInsideAnnotationBody(SchemaNode node) {
         while (node != null) {
-            if (node.isASTInstance(annotationBody.class)) return true;
+            if (node.isSchemaASTInstance(annotationBody.class)) return true;
             node = node.getParent();
         }
         return false;
