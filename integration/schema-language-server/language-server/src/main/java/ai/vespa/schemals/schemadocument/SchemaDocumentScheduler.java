@@ -104,6 +104,12 @@ public class SchemaDocumentScheduler {
         return (SchemaDocument)genericDocument;
     }
 
+    public RankProfileDocument getRankProfileDocument(String fileURI) {
+        DocumentManager genericDocument = getDocument(fileURI);
+        if (!(genericDocument instanceof RankProfileDocument)) return null;
+        return (RankProfileDocument)genericDocument;
+    }
+
     public DocumentManager getDocument(String fileURI) {
         return workspaceFiles.get(fileURI);
     }

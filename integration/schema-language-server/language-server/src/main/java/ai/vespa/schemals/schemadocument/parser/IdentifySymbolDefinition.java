@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Diagnostic;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
@@ -85,15 +86,9 @@ public class IdentifySymbolDefinition extends Identifier {
                     String workspaceRootURI = context.schemaIndex().getWorkspaceURI();
                     String currentURI = context.fileURI();
 
-                    if (!currentURI.startsWith(workspaceRootURI)) return ret; // some invalid situation
+                    String schemaName = FileUtils.firstPathComponentAfterPrefix(currentURI, workspaceRootURI);
 
-                    String suffix = currentURI.substring(workspaceRootURI.length());
-                    if (suffix.startsWith("/"))suffix = suffix.substring(1);
-
-                    String[] components = suffix.split("/");
-
-                    if (components.length == 0) return ret;
-                    String schemaName = components[0];
+                    if (schemaName == null) return ret;
 
                     Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(schemaName);
 
