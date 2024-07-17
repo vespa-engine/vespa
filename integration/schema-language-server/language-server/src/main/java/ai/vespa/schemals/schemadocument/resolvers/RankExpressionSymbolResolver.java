@@ -10,10 +10,6 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.SymbolTag;
-
-import com.google.protobuf.Option;
-import com.yahoo.schema.processing.ReservedFunctionNames;
 
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -21,18 +17,21 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.Argument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.DistanceFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SymbolArgument;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 public class RankExpressionSymbolResolver {
-    
 
-    public static final Map<String, SymbolType> rankExpressionBultInFunctions = new HashMap<>() {{
-        put("bm25", SymbolType.FIELD);
-        put("attribute", SymbolType.FIELD);
-        put("query", SymbolType.QUERY_INPUT);
-        put("distance", SymbolType.TYPE_UNKNOWN);
+    public static final Map<String, Argument> rankExpressionBultInFunctions = new HashMap<>() {{
+        put("bm25", new SymbolArgument(SymbolType.FIELD));
+        put("attribute", new SymbolArgument(SymbolType.FIELD));
+        put("query", new SymbolArgument(SymbolType.QUERY_INPUT));
+        put("distance", new DistanceFunction());
+        // put("term", new SymbolArgument(SymbolType.TYPE_UNKNOWN));
     }};
 
     /**
@@ -110,84 +109,14 @@ public class RankExpressionSymbolResolver {
 
         String identifier = node.getSymbol().getShortIdentifier();
 
-        SymbolType arguemntType = rankExpressionBultInFunctions.get(identifier);
-        if (arguemntType == null) return;
+        Argument functionHandler = rankExpressionBultInFunctions.get(identifier);
+        if (functionHandler == null) return;
         node.getSymbol().setType(SymbolType.FUNCTION);
         node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
 
         List<SchemaNode> arguments = findRankExpressionArguments(node);
 
-        if (identifier.equals("distance")) {
-            resolveDistanceFunction(context, node, arguments, diagnostics);
-            return;
-        }
-
-        for (SchemaNode arg : arguments) {
-            SchemaNode symbolNode = arg;
-
-            while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
-                symbolNode = symbolNode.get(0);
-            }
-
-            if (symbolNode.hasSymbol()) {
-                Symbol symbol = symbolNode.getSymbol();
-
-                if (symbol.getStatus() == SymbolStatus.REFERENCE) {
-                    symbol.setStatus(SymbolStatus.UNRESOLVED);
-                    context.schemaIndex().deleteSymbolReference(symbol);
-                }
-                
-                if (symbol.getStatus() == SymbolStatus.UNRESOLVED) {
-                    symbol.setType(arguemntType);
-                }
-            }
-        }
-    }
-
-    private static void resolveDistanceFunction(ParseContext context, SchemaNode node, List<SchemaNode> argument, List<Diagnostic> diagnostics) {
-
-        if (argument.size() != 2) {
-            diagnostics.add(new Diagnostic(node.getRange(), "The distance function takes two argument (dimension, name)", DiagnosticSeverity.Error, ""));
-            return;
-        }
-
-        SchemaNode firstArgument = argument.get(0);
-        while (!firstArgument.hasSymbol() && firstArgument.size() > 0) {
-            firstArgument = firstArgument.get(0);
-        }
-
-        if (firstArgument.hasSymbol()) {
-            firstArgument.removeSymbol();
-        }
-
-        boolean isField = firstArgument.getText().equals("field");
-        boolean isLabel = firstArgument.getText().equals("label");
-
-        if (!isField && !isLabel) {
-            diagnostics.add(new Diagnostic(firstArgument.getRange(), "The first argument must be field or label", DiagnosticSeverity.Error, ""));
-            return;
-        }
-
-        SchemaNode secondArgument = argument.get(1);
-        while (!secondArgument.hasSymbol() && secondArgument.size() > 0) {
-            secondArgument = secondArgument.get(0);
-        }
-
-        if (!secondArgument.hasSymbol()) {
-            return;
-        }
-
-        if (secondArgument.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-            secondArgument.getSymbol().setStatus(SymbolStatus.UNRESOLVED);
-            context.schemaIndex().deleteSymbolReference(secondArgument.getSymbol());
-        }
-
-        SymbolType newType = isField ? SymbolType.FIELD : SymbolType.LABEL;
-        secondArgument.setSymbolType(newType);
-
-        if (isLabel) {
-            secondArgument.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
-        }
+        diagnostics.addAll(functionHandler.handleArgumentList(context, node, arguments));
     }
 
     private static final List<SymbolType> possibleTypes = new ArrayList<>() {{

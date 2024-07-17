@@ -39,6 +39,7 @@ public class SchemaSemanticTokens implements Visitor {
     private static final List<String> tokenModifiers = new ArrayList<>() {{
         add(SemanticTokenModifiers.Definition);
         add(SemanticTokenModifiers.Readonly);
+        add(SemanticTokenModifiers.DefaultLibrary);
     }};
 
     // Keyword
@@ -403,7 +404,9 @@ public class SchemaSemanticTokens implements Visitor {
             }
 
             if (tokenType != null && tokenType != -1) {
-                ret.add(new SemanticTokenMarker(tokenType, node));
+                SemanticTokenMarker tokenMarker = new SemanticTokenMarker(tokenType, node);
+                tokenMarker.addModifier(SemanticTokenModifiers.DefaultLibrary);
+                ret.add(tokenMarker);
             }
         }
 
