@@ -25,6 +25,8 @@ import java.util.LinkedList;
 // (this requires adding normalizing and stemming settings to FieldSet).
 public class FieldSetSettings extends Processor {
 
+    private static String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schema-reference.html#fieldset";
+
     public FieldSetSettings(Schema schema,
                             DeployLogger deployLogger,
                             RankProfileRegistry rankProfileRegistry,
@@ -121,8 +123,9 @@ public class FieldSetSettings extends Processor {
         }
         if (!tensorFields.isEmpty() && !nonTensorFields.isEmpty()) {
             throw new IllegalArgumentException("For schema '" + schema.getName() + "', fieldset '" + fieldSet.getName() + "': " +
-                    "Illegal mixing of tensor fields ['" + String.join("','", tensorFields) + "'] " +
-                    "and non-tensor fields ['" + String.join("','", nonTensorFields) + "']");
+                    "Tensor fields ['" + String.join("', '", tensorFields) + "'] " +
+                    "cannot be mixed with non-tensor fields ['" + String.join("', '", nonTensorFields) + "'] " +
+                    "in the same fieldset. See " + fieldSetDocUrl);
         }
     }
 }

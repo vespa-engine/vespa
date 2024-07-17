@@ -35,7 +35,8 @@ public class FieldSetSettingsTestCase {
     @Test
     public void illegalFieldTypeMix() {
         var e = assertThrows(IllegalArgumentException.class, () -> createFromStrings(new BaseDeployLogger(), childSd( "fieldset default { fields: ci, pt }"), parentSd()));
-        assertEquals("For schema 'child', fieldset 'default': Illegal mixing of tensor fields ['pt'] and non-tensor fields ['ci']", e.getMessage());
+        assertEquals("For schema 'child', fieldset 'default': Tensor fields ['pt'] cannot be mixed with non-tensor fields ['ci'] in the same fieldset. " +
+                "See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset", e.getMessage());
     }
 
 
