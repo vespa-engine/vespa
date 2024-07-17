@@ -11,7 +11,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
 
-public class DistanceFunction implements Argument {
+public class DistanceFunction implements FunctionHandler {
 
 
 

@@ -11,11 +11,11 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
 
-public class SymbolArgument implements Argument {
+public class SymbolFunction implements FunctionHandler {
 
     private SymbolType symbolType;
 
-    public SymbolArgument(SymbolType symbolType) {
+    public SymbolFunction(SymbolType symbolType) {
         this.symbolType = symbolType;
     }
 

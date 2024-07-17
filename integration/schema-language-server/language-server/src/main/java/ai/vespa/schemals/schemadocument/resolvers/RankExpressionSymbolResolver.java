@@ -17,21 +17,22 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.Argument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionHandler;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.IntegerFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.DistanceFunction;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SymbolArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SymbolFunction;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 public class RankExpressionSymbolResolver {
 
-    public static final Map<String, Argument> rankExpressionBultInFunctions = new HashMap<>() {{
-        put("bm25", new SymbolArgument(SymbolType.FIELD));
-        put("attribute", new SymbolArgument(SymbolType.FIELD));
-        put("query", new SymbolArgument(SymbolType.QUERY_INPUT));
+    public static final Map<String, FunctionHandler> rankExpressionBultInFunctions = new HashMap<>() {{
+        put("bm25", new SymbolFunction(SymbolType.FIELD));
+        put("attribute", new SymbolFunction(SymbolType.FIELD));
+        put("query", new SymbolFunction(SymbolType.QUERY_INPUT));
         put("distance", new DistanceFunction());
-        // put("term", new SymbolArgument(SymbolType.TYPE_UNKNOWN));
+        put("term", new IntegerFunction());
     }};
 
     /**
@@ -109,7 +110,7 @@ public class RankExpressionSymbolResolver {
 
         String identifier = node.getSymbol().getShortIdentifier();
 
-        Argument functionHandler = rankExpressionBultInFunctions.get(identifier);
+        FunctionHandler functionHandler = rankExpressionBultInFunctions.get(identifier);
         if (functionHandler == null) return;
         node.getSymbol().setType(SymbolType.FUNCTION);
         node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
