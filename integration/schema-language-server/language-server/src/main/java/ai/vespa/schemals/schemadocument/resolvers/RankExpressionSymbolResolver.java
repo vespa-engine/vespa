@@ -18,9 +18,9 @@ import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionHandler;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.IntegerFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.DistanceFunction;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SymbolFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -28,11 +28,11 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 public class RankExpressionSymbolResolver {
 
     public static final Map<String, FunctionHandler> rankExpressionBultInFunctions = new HashMap<>() {{
-        put("bm25", new SymbolFunction(SymbolType.FIELD));
-        put("attribute", new SymbolFunction(SymbolType.FIELD));
-        put("query", new SymbolFunction(SymbolType.QUERY_INPUT));
+        put("bm25", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
+        put("attribute", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
+        put("query", GenericFunction.singleSymbolArugmnet(SymbolType.QUERY_INPUT));
         put("distance", new DistanceFunction());
-        put("term", new IntegerFunction());
+        put("term", new GenericFunction(new IntegerArgument()));
     }};
 
     /**
