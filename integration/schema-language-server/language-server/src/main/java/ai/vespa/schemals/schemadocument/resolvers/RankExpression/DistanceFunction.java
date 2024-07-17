@@ -2,6 +2,7 @@ package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -15,7 +16,7 @@ public class DistanceFunction implements FunctionHandler {
 
 
 
-    public List<Diagnostic> handleArgumentList(ParseContext context, SchemaNode node, List<SchemaNode> arguments) {
+    public List<Diagnostic> handleArgumentList(ParseContext context, SchemaNode node, List<SchemaNode> arguments, Optional<SchemaNode> property) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
         if (arguments.size() != 2) {

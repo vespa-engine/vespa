@@ -16,11 +16,13 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
+import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionHandler;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.DistanceFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -28,11 +30,35 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 public class RankExpressionSymbolResolver {
 
     public static final Map<String, FunctionHandler> rankExpressionBultInFunctions = new HashMap<>() {{
+        put("fieldLength", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
         put("bm25", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
         put("attribute", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
         put("query", GenericFunction.singleSymbolArugmnet(SymbolType.QUERY_INPUT));
         put("distance", new DistanceFunction());
-        put("term", new GenericFunction(new IntegerArgument()));
+        put("term", new GenericFunction(new IntegerArgument(), new HashSet<>() {{
+            add("significance");
+            add("weight");
+            add("connectedness");
+        }}));
+        put("fieldMatch", new GenericFunction(new SymbolArgument(SymbolType.FIELD), new HashSet<>() {{
+            add("");
+            add("proximity");
+            add("completeness");
+            add("queryCompleteness");
+            add("fieldCompleteness");
+            add("orderness");
+            add("relatedness");
+            add("earliness");
+            add("longestSequenceRatio");
+            add("seqmentProximity");
+            add("unweightedProximity");
+            add("absoluteProximity");
+            add("occurrence");
+            add("absoluteOccurrence");
+            add("weightedOccureence");
+            add("weightedAbsoluteOccurence");
+            add("significantOccurence");
+        }}));
     }};
 
     /**
@@ -92,6 +118,20 @@ public class RankExpressionSymbolResolver {
         return ret;
     }
 
+    private static Optional<SchemaNode> findFunctionPropertyNode(SchemaNode node) {
+        SchemaNode parent = node.getParent();
+
+        if (parent == null) return Optional.empty();
+
+        for (SchemaNode child : parent) {
+            if (child.isASTInstance(outs.class)) {
+                return Optional.of(child);
+            }
+        }
+
+        return Optional.empty();
+    }
+
     public static final Set<Class<?>> builInTokenizedFunctions = new HashSet<>() {{
         add(unaryFunctionName.class);
     }};
@@ -103,7 +143,21 @@ public class RankExpressionSymbolResolver {
             Symbol symbol = node.getSymbol();
             symbol.setType(SymbolType.FUNCTION);
             symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
+
         }
+    }
+
+    private static void removeSymbol(ParseContext context, SchemaNode node) {
+        do {
+            if (node.hasSymbol()) {
+                Symbol symbol = node.getSymbol();
+                if (symbol.getStatus() == SymbolStatus.REFERENCE) {
+                    context.schemaIndex().deleteSymbolReference(symbol);
+                }
+                node.removeSymbol();
+            }
+            node = node.get(0);
+        } while (node.size() > 0);
     }
     
     private static void findSymbolTypeOfBuiltInArgument(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
@@ -116,8 +170,13 @@ public class RankExpressionSymbolResolver {
         node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
 
         List<SchemaNode> arguments = findRankExpressionArguments(node);
+        Optional<SchemaNode> functionProperty = findFunctionPropertyNode(node);
 
-        diagnostics.addAll(functionHandler.handleArgumentList(context, node, arguments));
+        if (functionProperty.isPresent()) {
+            removeSymbol(context, functionProperty.get());
+        }
+
+        diagnostics.addAll(functionHandler.handleArgumentList(context, node, arguments, functionProperty));
     }
 
     private static final List<SymbolType> possibleTypes = new ArrayList<>() {{
