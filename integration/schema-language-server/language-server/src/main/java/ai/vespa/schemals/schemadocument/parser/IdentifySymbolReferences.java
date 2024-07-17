@@ -3,34 +3,24 @@ package ai.vespa.schemals.schemadocument.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
-
-import com.google.protobuf.Option;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
-import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
-import ai.vespa.schemals.parser.rankingexpression.ast.args;
-import ai.vespa.schemals.parser.rankingexpression.ast.expression;
-import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -119,6 +109,11 @@ public class IdentifySymbolReferences extends Identifier {
         boolean isIdentifier = identifierNodes.contains(node.getASTClass());
 
         if (!isIdentifier) {
+            return ret;
+        }
+
+        SchemaNode parent = node.getParent();
+        if (parent != null && identifierNodes.contains(parent.getASTClass())) {
             return ret;
         }
 

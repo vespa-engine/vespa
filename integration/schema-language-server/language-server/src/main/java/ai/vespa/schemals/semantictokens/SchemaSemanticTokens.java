@@ -16,6 +16,7 @@ import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -123,32 +124,6 @@ public class SchemaSemanticTokens implements Visitor {
 
     // Functions
     private static final ArrayList<ai.vespa.schemals.parser.rankingexpression.Token.TokenType> rankingExpressioFunctionTokens = new ArrayList<>() {{
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ABS);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ACOS);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ASIN);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ATAN);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CEIL);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COS);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COSH);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ELU);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EXP);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FABS);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FLOOR);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ISNAN);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG10);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.RELU);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ROUND);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGMOID);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGN);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIN);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SINH);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQUARE);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQRT);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TAN);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TANH);
-        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ERF);
-
         // Space in the ccc file as well :)
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ATAN2);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FMOD);
@@ -357,32 +332,8 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(0, node));
             }
 
-        } else if (
-            node.hasSymbol() && 
-            (
-                node.getSymbol().getStatus() == SymbolStatus.REFERENCE ||
-                node.getSymbol().getStatus() == SymbolStatus.DEFINITION
-            ) && 
-            userDefinedSymbolTypes.contains(node.getSymbol().getType())
-        ) {
-            Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
-            
-            if (tokenType != null) {
-                ret.add(new SemanticTokenMarker(tokenType, node));
-            }
-
-        } else if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
-            SymbolType type = node.getSymbol().getType();
-            Integer tokenType = identifierTypeMap.get(type);
-
-            if (type == SymbolType.FUNCTION) {
-                tokenType = tokenTypes.indexOf("macro");
-            }
-
-            if (tokenType != null) {
-                ret.add(new SemanticTokenMarker(tokenType, node));
-            }
-
+        } else if (node.hasSymbol()) {
+            ret.addAll(findSemanticMarkersForSymbol(node));
         } else if (schemaType != null) {
 
             Integer tokenType = schemaTokenTypeMap.get(schemaType);
@@ -390,8 +341,8 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
-        } if (rankExpressionType != null) {
-
+        } else if (rankExpressionType != null) {
+            
             Integer tokenType = rankExpressionTokenTypeMap.get(rankExpressionType);
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
@@ -405,6 +356,37 @@ public class SchemaSemanticTokens implements Visitor {
             }
         }
 
+
+        return ret;
+    }
+
+    private static List<SemanticTokenMarker> findSemanticMarkersForSymbol(SchemaNode node) {
+        List<SemanticTokenMarker> ret = new ArrayList<>();
+
+        if (!node.hasSymbol()) return ret;
+
+        if (userDefinedSymbolTypes.contains(node.getSymbol().getType()) && (
+            node.getSymbol().getStatus() == SymbolStatus.REFERENCE ||
+            node.getSymbol().getStatus() == SymbolStatus.DEFINITION
+        )) {
+            Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
+            
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
+        } else if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
+            SymbolType type = node.getSymbol().getType();
+            Integer tokenType = identifierTypeMap.get(type);
+
+            if (type == SymbolType.FUNCTION && node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+                tokenType = tokenTypes.indexOf("macro");
+            }
+
+            if (tokenType != null && tokenType != -1) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+        }
 
         return ret;
     }
