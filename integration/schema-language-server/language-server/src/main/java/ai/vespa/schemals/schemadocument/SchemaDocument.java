@@ -122,7 +122,7 @@ public class SchemaDocument implements DocumentManager {
         Symbol schemaIdentifier = null;
 
         for (Symbol symbol : schemaSymbols) {
-            if (symbol.getFileURI() == fileURI) {
+            if (symbol.getFileURI().equals(fileURI)) {
                 schemaIdentifier = symbol;
                 break;
             }
@@ -227,7 +227,7 @@ public class SchemaDocument implements DocumentManager {
             Range range = CSTUtils.getNodeRange(node);
             String message = e.getMessage();
 
-            diagnostics.add(new Diagnostic(range, message));
+            diagnostics.add(new Diagnostic(range, message, DiagnosticSeverity.Error, ""));
 
 
         } catch (IllegalArgumentException e) {
@@ -239,7 +239,9 @@ public class SchemaDocument implements DocumentManager {
                         new Position(0, 0),
                         new Position((int)context.content().lines().count() - 1, 0)
                     ),
-                    e.getMessage())
+                    e.getMessage(),
+                    DiagnosticSeverity.Error,
+                    "")
                 );
             return ParseResult.parsingFailed(diagnostics);
         }
@@ -345,7 +347,7 @@ public class SchemaDocument implements DocumentManager {
             range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
             range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
 
-            diagnostics.add(new Diagnostic(range, pe.getMessage()));
+            diagnostics.add(new Diagnostic(range, pe.getMessage(), DiagnosticSeverity.Error, ""));
         } catch(IllegalArgumentException ex) {
             context.logger().println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
         }

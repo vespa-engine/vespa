@@ -226,10 +226,72 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/uri_wset/uri_wset.sd",
             "../../../config-model/src/test/configmodel/types/types.sd",
 
+            "../../../config-model/src/test/examples/arrays.sd",
+            "../../../config-model/src/test/examples/arraysweightedsets.sd",  
+            "../../../config-model/src/test/examples/attributesettings.sd",  
+            "../../../config-model/src/test/examples/attributesexactmatch.sd",  
+            "../../../config-model/src/test/examples/casing.sd",  
+            "../../../config-model/src/test/examples/comment.sd",  
+            "../../../config-model/src/test/examples/documentidinsummary.sd",  
+            "../../../config-model/src/test/examples/implicitsummaries_attribute.sd",  
+            "../../../config-model/src/test/examples/implicitsummaryfields.sd",  
+            "../../../config-model/src/test/examples/incorrectrankingexpressionfileref.sd",  
+            "../../../config-model/src/test/examples/indexing.sd",  
+            "../../../config-model/src/test/examples/indexing_extra.sd",  
+            "../../../config-model/src/test/examples/indexing_input_other_field.sd",  
+            "../../../config-model/src/test/examples/indexing_multiline_output_conflict.sd",  
+            "../../../config-model/src/test/examples/indexing_summary_changed.sd",  
+            "../../../config-model/src/test/examples/indexrewrite.sd",  
+            "../../../config-model/src/test/examples/indexsettings.sd",  
+            "../../../config-model/src/test/examples/integerindex2attribute.sd",  
+            "../../../config-model/src/test/examples/invalidngram1.sd",  
+            "../../../config-model/src/test/examples/invalidngram2.sd",  
+            "../../../config-model/src/test/examples/invalidngram3.sd",  
+            "../../../config-model/src/test/examples/largerankingexpressions/rankexpression.sd",  
+            "../../../config-model/src/test/examples/multiplesummaries.sd",  
+            "../../../config-model/src/test/examples/nextgen/boldedsummaryfields.sd",  
+            "../../../config-model/src/test/examples/nextgen/dynamicsummaryfields.sd",  
+            "../../../config-model/src/test/examples/nextgen/extrafield.sd",  
+            "../../../config-model/src/test/examples/nextgen/implicitstructtypes.sd",  
+            "../../../config-model/src/test/examples/nextgen/simple.sd",  
+            "../../../config-model/src/test/examples/nextgen/summaryfield.sd",  
+            "../../../config-model/src/test/examples/nextgen/toggleon.sd",  
+            "../../../config-model/src/test/examples/nextgen/untransformedsummaryfields.sd",  
+            "../../../config-model/src/test/examples/nextgen/unusedfields.sd",  
+            "../../../config-model/src/test/examples/nextgen/uri_array.sd",  
+            "../../../config-model/src/test/examples/nextgen/uri_simple.sd",  
+            "../../../config-model/src/test/examples/nextgen/uri_wset.sd",  
+            "../../../config-model/src/test/examples/ngram.sd",  
+            "../../../config-model/src/test/examples/outsidedoc.sd",  
+            "../../../config-model/src/test/examples/outsidesummary.sd",  
+            "../../../config-model/src/test/examples/position_array.sd",  
+            "../../../config-model/src/test/examples/position_attribute.sd",  
+            "../../../config-model/src/test/examples/position_base.sd",  
+            "../../../config-model/src/test/examples/position_extra.sd",  
+            "../../../config-model/src/test/examples/position_index.sd",  
+            "../../../config-model/src/test/examples/position_summary.sd",  
+            "../../../config-model/src/test/examples/rankingexpressionfunction/rankingexpressionfunction.sd",  
+            "../../../config-model/src/test/examples/rankingexpressioninfile/rankingexpressioninfile.sd",  
+            "../../../config-model/src/test/examples/rankmodifier/literal.sd",  
+            "../../../config-model/src/test/examples/rankpropvars.sd",  
+            "../../../config-model/src/test/examples/reserved_words_as_field_names.sd",  
+            "../../../config-model/src/test/examples/simple.sd",  
+            "../../../config-model/src/test/examples/stemmingdefault.sd",  
+            "../../../config-model/src/test/examples/stemmingsetting.sd",  
+            "../../../config-model/src/test/examples/strange.sd",  
+            "../../../config-model/src/test/examples/struct.sd",  
+            "../../../config-model/src/test/examples/struct_outside.sd",  
+            "../../../config-model/src/test/examples/structanddocumentwithsamenames.sd",  
+            "../../../config-model/src/test/examples/structoutsideofdocument.sd",  
+            "../../../config-model/src/test/examples/summaryfieldcollision.sd",  
+            "../../../config-model/src/test/examples/weightedset-summaryto.sd",  
+
+
             /*
              * CUSTOM TESTS
              * */
-            "src/test/sdfiles/single/structinfieldset.sd"
+            "src/test/sdfiles/single/structinfieldset.sd",
+            "src/test/sdfiles/single/attributeposition.sd",
         };
 
         return Arrays.stream(filePaths)
@@ -240,7 +302,6 @@ public class SchemaParserTest {
     Stream<DynamicTest> generateGoodDirectoryTests() {
         String[] directories = new String[] {
             "../../../config-model/src/test/cfg/search/data/travel/schemas/",
-            //"../../../config-model/src/test/configmodel/types/",
             "../../../config-model/src/test/derived/deriver/",
             "../../../config-model/src/test/derived/emptychild/",
             "../../../config-model/src/test/derived/imported_fields_inherited_reference/",
@@ -258,9 +319,14 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/schemainheritance/",
             "../../../config-model/src/test/derived/tensor2/",
             "../../../config-model/src/test/derived/twostreamingstructs/",
-            //"../../../config-model/src/test/examples/",
             "../../../config-model/src/test/derived/rankprofilemodularity/",
             "../../../config-model/src/test/derived/reference_fields/",
+
+            /*
+             * CUSTOM TESTS
+             */
+            "src/test/sdfiles/multi/types/",
+            "src/test/sdfiles/multi/bookandmusic/",
         };
 
         return Arrays.stream(directories)
@@ -275,6 +341,20 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1), // TODO: check that the error is correct
             new BadFileTestCase("../../../config-model/src/test/derived/flickr/flickrphotos.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/badparse.sd", 2),
+            new BadFileTestCase("../../../config-model/src/test/examples/badstruct.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/documents.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/indexing_invalid_expression.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid-name.sd", 2),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_construct.sd", 0),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_junk_at_end.sd", 2),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_lexical_error.sd", 1), 
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_missing_document.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_no_closing_bracket.sd", 2), 
+            new BadFileTestCase("../../../config-model/src/test/examples/invalidimplicitsummarysource.sd", 1), 
+            new BadFileTestCase("../../../config-model/src/test/examples/invalidselfreferringsummary.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalidsummarysource.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/stemmingresolver.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
         };
 

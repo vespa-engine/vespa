@@ -161,7 +161,12 @@ public class IdentifySymbolReferences extends Identifier {
         }
 
         // Another edge case: if someone writes summary documentid {}
-        if (parent.isASTInstance(summaryInDocument.class) && identifierNode.getText().equals("documentid")) {
+        if ((parent.isASTInstance(summaryInDocument.class) || parent.isASTInstance(summarySourceList.class))
+            && identifierNode.getText().equals("documentid")) {
+            /*
+             * TODO: this actually doesn't work when you deploy if parent is summarySourceList and 
+             *       you have imported a field for some reason. It would be helpful to show a nice message to the user.
+             */
             Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
             if (scope.isPresent()) {
                 identifierNode.setSymbol(SymbolType.FIELD, context.fileURI(), scope.get());
