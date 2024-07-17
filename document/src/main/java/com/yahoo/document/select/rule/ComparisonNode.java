@@ -14,6 +14,8 @@ import com.yahoo.document.select.Result;
 import com.yahoo.document.select.ResultList;
 import com.yahoo.document.select.Visitor;
 
+import java.util.EnumSet;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
@@ -198,39 +200,40 @@ public class ComparisonNode implements ExpressionNode {
     }
 
     private ResultList evaluateLhsListAndRhsSingle(AttributeNode.VariableValueList lhs, Object rhs) {
-        if (rhs == null && lhs == null) {
-            return new ResultList(Result.TRUE);
-        }
-
-        if (rhs == null || lhs == null) {
-            return new ResultList(Result.FALSE);
-        }
-
-        ResultList retVal = new ResultList();
-        for (ResultList.VariableValue value : lhs) {
-            Result result = evaluateBool(value.getValue(), rhs);
-            retVal.add((FieldPathIteratorHandler.VariableMap)value.getVariables().clone(), result);
-        }
-
-        return retVal;
+        return evaluateOneSideListOnly(lhs, rhs, (val) -> evaluateBool(val, rhs));
     }
 
     private ResultList evaluateLhsSingleAndRhsList(Object lhs, AttributeNode.VariableValueList rhs) {
-        if (rhs == null && lhs == null) {
+        return evaluateOneSideListOnly(rhs, lhs, (val) -> evaluateBool(lhs, val));
+    }
+
+    private static ResultList evaluateOneSideListOnly(AttributeNode.VariableValueList list, Object other,
+                                                      Function<Object,Result> op) {
+        if (list == null && other == null) {
             return new ResultList(Result.TRUE);
         }
-
-        if (rhs == null || lhs == null) {
+        if (list == null || other == null) {
             return new ResultList(Result.FALSE);
         }
 
-        ResultList retVal = new ResultList();
-        for (ResultList.VariableValue value : rhs) {
-            Result result = evaluateBool(lhs, value.getValue());
-            retVal.add((FieldPathIteratorHandler.VariableMap)value.getVariables().clone(), result);
+        var results = new ResultList();
+        var observedNoVarResults = EnumSet.noneOf(Result.class);
+
+        for (ResultList.VariableValue value : list) {
+            Result result = op.apply(value.getValue());
+            if (value.getVariables().isEmpty()) {
+                // Optimization for the common case where there are no variables at all.
+                // Don't duplicate the exact same result value O(n) times; just emit it once.
+                observedNoVarResults.add(result);
+            } else {
+                results.add((FieldPathIteratorHandler.VariableMap) value.getVariables().clone(), result);
+            }
+        }
+        for (var mergedResult : observedNoVarResults) {
+            results.add(new FieldPathIteratorHandler.VariableMap(), mergedResult); // TODO sentinel empty var map
         }
 
-        return retVal;
+        return results;
     }
 
     /**
