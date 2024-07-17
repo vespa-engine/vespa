@@ -11,8 +11,10 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.referenceType;
+import ai.vespa.schemals.parser.rankingexpression.ast.identifierStr;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -78,6 +80,16 @@ public class GenericFunction implements FunctionHandler {
             String message = "Invalid property '" + property.get().getText() + "', available properties are: " + propertyString;
             diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Error, ""));
             return diagnostics;
+        }
+
+        SchemaNode identifierStrNode = property.get();
+        while (!identifierStrNode.isASTInstance(identifierStr.class) && identifierStrNode.size() > 0) {
+            identifierStrNode = identifierStrNode.get(0);
+        }
+
+        if (identifierStrNode.isASTInstance(identifierStr.class)) {
+            identifierStrNode.setSymbol(SymbolType.PROPERTY, context.fileURI());
+            identifierStrNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
 
         return diagnostics;

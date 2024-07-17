@@ -129,7 +129,8 @@ public class Symbol {
         PARAMETER,
         QUERY_INPUT,
         LABEL,
-        LAMBDA_FUNCTION
+        LAMBDA_FUNCTION,
+        PROPERTY
     }
 
     public String toString() {
