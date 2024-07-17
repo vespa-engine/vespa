@@ -10,8 +10,6 @@
 #include <vespa/vdslib/container/searchresult.h>
 #include "hitcollector.h"
 #include <algorithm>
-#include <functional>
-#include <optional>
 
 using search::MatchingElements;
 using search::MatchingElementsFields;
@@ -84,17 +82,17 @@ Matcher::~Matcher() = default;
 void
 Matcher::select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term)
 {
-    std::optional<std::reference_wrapper<const vespalib::string>> field;
+    const vespalib::string* field = nullptr;
     auto &multi_term_index = multi_term.getIndex();
     if (fields.has_struct_field(multi_term_index)) {
-        field = std::cref(fields.get_enclosing_field(multi_term_index));
+        field = &fields.get_enclosing_field(multi_term_index);
     } else if (fields.has_field(multi_term_index)) {
-        field = std::cref(multi_term_index);
+        field = &multi_term_index;
     }
-    if (field.has_value()) {
+    if (field != nullptr) {
         auto &terms = multi_term.get_terms();
         for (auto& term : terms) {
-            _sub_field_terms.emplace_back(field.value().get(), term.get());
+            _sub_field_terms.emplace_back(*field, term.get());
         }
     }
 }
