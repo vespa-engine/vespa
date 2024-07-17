@@ -5,14 +5,17 @@ import java.util.HashMap;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.google.protobuf.Option;
+import com.yahoo.tensor.functions.Diag;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.FIELD;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
@@ -21,6 +24,7 @@ import ai.vespa.schemals.parser.ast.inheritsStruct;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
+import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -74,13 +78,18 @@ public class IdentifySymbolReferences extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
+        if (parent.isASTInstance(fieldsElm.class)) {
+            return handleFields(node);
+        }
+
+        if (parent.isASTInstance(importField.class)) {
+            return handleImportField(node);
+        }
+
         HashMap<Class<?>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType == null) return ret;
 
-        if (parent.isASTInstance(fieldsElm.class)) {
-            return handleFields(node);
-        }
 
         Optional<Symbol> scope = CSTUtils.findScope(node);
         if (scope.isPresent()) {
@@ -179,4 +188,78 @@ public class IdentifySymbolReferences extends Identifier {
 
         return ret;
     }
+
+    private ArrayList<Diagnostic> handleImportField(SchemaNode identifierNode) {
+        ArrayList<Diagnostic> ret = new ArrayList<>();
+
+        if (!identifierNode.getPreviousSibling().isASTInstance(FIELD.class)) return ret;
+
+        SchemaNode parent = identifierNode.getParent();
+
+        String fieldIdentifier = identifierNode.getText();
+
+        if (!fieldIdentifier.contains(".")) {
+            // TODO: parser throws an error here. But we could handle it so it looks better
+            return ret;
+        }
+
+        if (fieldIdentifier.endsWith(".") || fieldIdentifier.startsWith(".")) {
+            ret.add(new Diagnostic(
+                identifierNode.getRange(),
+                "Expected an identifier",
+                DiagnosticSeverity.Error,
+                ""
+            ));
+            return ret;
+        }
+
+        String[] subfields = fieldIdentifier.split("[.]");
+
+        int newStart = identifierNode.getRange().getStart().getCharacter();
+        int newEnd = newStart + subfields[0].length();
+        identifierNode.setNewEndCharacter(newEnd);
+
+        // Set new end for the token inside this node
+        if (identifierNode.size() != 0) {
+            identifierNode.get(0).setNewEndCharacter(newEnd);
+        }
+
+        Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
+
+        if (scope.isPresent()) {
+            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI(), scope.get());
+        } else {
+            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
+        }
+        identifierNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
+
+
+        // Construct a new node which will be a reference to the subfield
+        int myIndex = parent.indexOf(identifierNode);
+
+        newStart += subfields[0].length() + 1; // +1 for the dot
+        newEnd += subfields[1].length() + 1;
+
+        identifierStr newASTNode = new identifierStr();
+        newASTNode.setTokenSource(identifierNode.getTokenSource());
+        newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
+        newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
+
+        SchemaNode newNode = new SchemaNode(newASTNode);
+        newNode.setNewStartCharacter(newStart);
+        newNode.setNewEndCharacter(newEnd);
+
+        parent.insertChildAfter(myIndex, newNode);
+
+        scope = CSTUtils.findScope(newNode);
+
+        if (scope.isPresent()) {
+            newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI(), scope.get());
+        } else {
+            newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI());
+        }
+
+        return ret;
+    }
+
 }

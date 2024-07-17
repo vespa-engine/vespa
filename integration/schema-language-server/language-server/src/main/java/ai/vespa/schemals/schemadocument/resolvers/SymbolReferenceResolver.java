@@ -12,6 +12,7 @@ import com.yahoo.schema.parser.ParsedType.Variant;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.REFERENCE;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.context.ParseContext;
@@ -100,6 +101,7 @@ public class SymbolReferenceResolver {
         if (fieldDefinition.getType() == SymbolType.MAP_VALUE) {
             dataTypeNode = fieldDefinition.getNode();
         } else if (fieldDefinition.getType() == SymbolType.FIELD) {
+            if (fieldDefinition.getNode().getNextSibling() == null || fieldDefinition.getNode().getNextSibling().getNextSibling() == null) return Optional.empty();
             dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
             if (!dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
 
@@ -111,6 +113,25 @@ public class SymbolReferenceResolver {
                 Symbol structReference = dataTypeNode.getSymbol();
                 Symbol structDefinition = context.schemaIndex().getSymbolDefinition(structReference).get();
                 return resolveFieldInStructReference(node, structDefinition, context);
+            } else if (dataTypeNode.get(0).isASTInstance(REFERENCE.class)) {
+                // TODO: the subfield has to be in an import field statement
+                if (dataTypeNode.size() < 3 || !dataTypeNode.get(2).get(0).hasSymbol()) return Optional.empty();
+                Symbol documentReference = dataTypeNode.get(2).get(0).getSymbol();
+
+                Optional<Symbol> documentDefinition = Optional.empty();
+
+                if (documentReference.getStatus() == SymbolStatus.REFERENCE) {
+                    documentDefinition = context.schemaIndex().getSymbolDefinition(documentReference);
+                } else {
+                    documentDefinition = context.schemaIndex().findSymbol(documentReference);
+                }
+
+                if (documentDefinition.isEmpty()) return Optional.empty();
+
+                referencedSymbol = context.schemaIndex().findSymbol(documentDefinition.get(), SymbolType.FIELD, node.getText().toLowerCase());
+
+                referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
+                return referencedSymbol;
             }
         } else {
             return Optional.empty();
