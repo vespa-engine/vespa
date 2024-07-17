@@ -17,6 +17,7 @@ import ai.vespa.schemals.parser.ast.STRUCT_FIELD;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldBodyElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.ast.structFieldBodyElm;
@@ -57,7 +58,10 @@ public class SymbolReferenceResolver {
                     } else if (enclosingBodyNode.isASTInstance(structFieldBodyElm.class)) {
                         // nested struct-field
                         // the referred field definition is the last component in the struct-field identifier
-                        SchemaNode lastStructFieldIdentifier = enclosingBodyNode.getPreviousSibling().getPreviousSibling();
+                        SchemaNode lastStructFieldIdentifier = enclosingBodyNode.getParent().get(1);
+                        while (lastStructFieldIdentifier.getNextSibling() != null && lastStructFieldIdentifier.getNextSibling().isASTInstance(identifierStr.class)) {
+                            lastStructFieldIdentifier = lastStructFieldIdentifier.getNextSibling();
+                        }
                         if (lastStructFieldIdentifier.hasSymbol() && lastStructFieldIdentifier.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
                             parentFieldDefinition = context.schemaIndex().getSymbolDefinition(lastStructFieldIdentifier.getSymbol());
                         }
