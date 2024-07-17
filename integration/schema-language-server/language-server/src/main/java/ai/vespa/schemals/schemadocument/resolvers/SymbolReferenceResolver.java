@@ -14,6 +14,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -42,7 +43,7 @@ public class SymbolReferenceResolver {
                 }
 
                 if (parentFieldDefinition.isPresent()) {
-                    referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context);
+                    referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context, diagnostics);
                 }
             } else {
                 referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
@@ -86,7 +87,7 @@ public class SymbolReferenceResolver {
      *
      * @return the definition of the field inside the struct if found 
      */
-    private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context) {
+    private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context, List<Diagnostic> diagnostics) {
         if (fieldDefinition.getType() != SymbolType.FIELD 
             && fieldDefinition.getType() != SymbolType.MAP_VALUE
             && fieldDefinition.getType() != SymbolType.STRUCT) return Optional.empty();
@@ -130,7 +131,23 @@ public class SymbolReferenceResolver {
 
                 referencedSymbol = context.schemaIndex().findSymbol(documentDefinition.get(), SymbolType.FIELD, node.getText().toLowerCase());
 
-                referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
+                if (referencedSymbol.isPresent()) {
+                    node.setSymbolType(referencedSymbol.get().getType());
+
+                    // We identified the reference and found the definition,
+                    // however this case is actually only valid in an import field statement.
+                    // So we should add an error if thats not the case
+                    if (!node.getParent().isASTInstance(importField.class)) {
+                        // TODO: quickfix
+                        diagnostics.add(new Diagnostic(
+                            node.getRange(),
+                            "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly.",
+                            DiagnosticSeverity.Error,
+                            "Hint: Add an import field statement to access the field."
+                        ));
+                    }
+                }
+
                 return referencedSymbol;
             }
         } else {
