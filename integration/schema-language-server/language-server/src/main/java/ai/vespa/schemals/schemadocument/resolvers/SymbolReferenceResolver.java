@@ -15,8 +15,12 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
 import ai.vespa.schemals.parser.ast.STRUCT_FIELD;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.fieldBodyElm;
+import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
+import ai.vespa.schemals.parser.ast.structFieldBodyElm;
+import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -42,10 +46,23 @@ public class SymbolReferenceResolver {
                 if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
                     parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
                 } else if (parentField.isASTInstance(STRUCT_FIELD.class)) {
-                    SchemaNode fieldIdentifierNode = node.getParent().getParent().getParent().get(1);
-                    if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
-                        parentFieldDefinition = Optional.of(fieldIdentifierNode.getSymbol());
+                    SchemaNode enclosingBodyNode = node.getParent().getParent();
+
+                    if (enclosingBodyNode.isASTInstance(fieldBodyElm.class)) {
+                        // struct-field declared inside field
+                        SchemaNode fieldIdentifierNode = enclosingBodyNode.getParent().get(1);
+                        if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
+                            parentFieldDefinition = Optional.of(fieldIdentifierNode.getSymbol());
+                        }
+                    } else if (enclosingBodyNode.isASTInstance(structFieldBodyElm.class)) {
+                        // nested struct-field
+                        // the referred field definition is the last component in the struct-field identifier
+                        SchemaNode lastStructFieldIdentifier = enclosingBodyNode.getPreviousSibling().getPreviousSibling();
+                        if (lastStructFieldIdentifier.hasSymbol() && lastStructFieldIdentifier.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                            parentFieldDefinition = context.schemaIndex().getSymbolDefinition(lastStructFieldIdentifier.getSymbol());
+                        }
                     }
+
                 }
 
                 if (parentFieldDefinition.isPresent()) {
@@ -71,11 +88,6 @@ public class SymbolReferenceResolver {
         for (SchemaNode child : node) {
             resolveSymbolReferencesImpl(child, context, diagnostics);
         }
-
-        //if (node.hasSymbol()) {
-        //    diagnostics.add(new Diagnostic(node.getRange(), node.getSymbol().getLongIdentifier(), DiagnosticSeverity.Information, node.getSymbol().getType().toString() + " " + node.getSymbol().getStatus().toString()));
-        //}
-
     }
 
         /**
