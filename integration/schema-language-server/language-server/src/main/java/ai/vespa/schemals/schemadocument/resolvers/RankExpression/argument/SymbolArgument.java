@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
@@ -39,6 +40,8 @@ public class SymbolArgument implements Argument {
             if (symbol.getStatus() == SymbolStatus.UNRESOLVED) {
                 symbol.setType(symbolType);
             }
+        } else {
+            diagnostics.add(new Diagnostic(node.getRange(), "The argument must be to a symbol of type: " + symbolType, DiagnosticSeverity.Error, ""));
         }
 
         return diagnostics;
