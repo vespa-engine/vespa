@@ -11,8 +11,13 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
+<<<<<<< HEAD
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
+=======
+import ai.vespa.schemals.parser.ast.rankProfile;
+>>>>>>> interns/languageserver
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -168,7 +173,8 @@ public class CSTUtils {
                 SchemaIndex.IDENTIFIER_TYPE_MAP.containsKey(astClass) ||
                 SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP.containsKey(astClass) ||
                 astClass.equals(lambdaFunction.class)
-            )) {
+            ) && !astClass.equals(documentElm.class) // edge case for not setting document as scope when there is a schema
+            ) {
 
                 // Find the symbol definition
                 // TODO: Refactor in a more general way
@@ -189,6 +195,7 @@ public class CSTUtils {
                     }
                 }
             }
+
             currentNode = currentNode.getParent();
         }
 

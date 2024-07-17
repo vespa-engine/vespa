@@ -50,6 +50,10 @@ public class InheritanceResolver {
             if (inheritanceNode.getSymbol().getType() == SymbolType.RANK_PROFILE) {
                 resolveRankProfileInheritance(inheritanceNode, context, diagnostics);
             }
+
+            if (inheritanceNode.getSymbol().getType() == SymbolType.DOCUMENT_SUMMARY) {
+                resolveDocumentSummaryInheritance(inheritanceNode, context, diagnostics);
+            }
         }
 
         if (context.inheritsSchemaNode() != null) {
@@ -111,28 +115,30 @@ public class InheritanceResolver {
 
 
         // Look for redeclarations
-        SchemaNode structDefinitionElmNode = myStructDefinitionNode.getParent();
 
-        for (SchemaNode child : structDefinitionElmNode) {
-            if (!child.isSchemaASTInstance(structFieldDefinition.class)) continue;
-            if (child.size() < 2) continue;
+        Symbol structDefinitionSymbol = myStructDefinitionNode.getSymbol();
 
-            SchemaNode fieldIdentifierDef = child.get(1);
+        Set<String> inheritedFields = new HashSet<>();
+        List<Symbol> myFields = new ArrayList<>();
 
-            if (!fieldIdentifierDef.hasSymbol() || fieldIdentifierDef.getSymbol().getStatus() != SymbolStatus.INVALID) continue;
-
-            // It is marked as INVALID because it is a duplicate. Check if it belongs to the parent struct to display the appropriate error message
-            String fieldIdentifier = fieldIdentifierDef.getSymbol().getShortIdentifier();
-
-            if (context.schemaIndex().findSymbol(parentSymbol.get(), SymbolType.FIELD, fieldIdentifier).isPresent()) {
-                // TODO: quickfix
-                diagnostics.add(new Diagnostic(
-                    fieldIdentifierDef.getRange(),
-                    "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldIdentifier,
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
+        for (Symbol fieldSymbol : context.schemaIndex().listSymbolsInScope(structDefinitionSymbol, SymbolType.FIELD)) {
+            if (fieldSymbol.getScope().equals(structDefinitionSymbol)) {
+                myFields.add(fieldSymbol);
+            } else {
+                inheritedFields.add(fieldSymbol.getShortIdentifier());
             }
+        }
+
+        for (Symbol fieldSymbol : myFields) {
+            if (!inheritedFields.contains(fieldSymbol.getShortIdentifier())) continue;
+
+            // TODO: quickfix
+            diagnostics.add(new Diagnostic(
+                fieldSymbol.getNode().getRange(),
+                "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
+                DiagnosticSeverity.Error,
+                ""
+            ));
         }
     }
 
@@ -154,7 +160,6 @@ public class InheritanceResolver {
         List<Symbol> parentSymbols = context.schemaIndex().findSymbols(inheritanceNode.getSymbol());
 
         if (parentSymbols.isEmpty()) {
-            context.logger().println("No parent symbols");
             // Handled in resolve symbol ref
             return;
         }
@@ -176,8 +181,10 @@ public class InheritanceResolver {
 
         // Choose last one, if more than one (undefined behaviour if ambiguous).
         Symbol parentSymbol = parentSymbols.get(0);
-
         Symbol definitionSymbol = myRankProfileDefinitionNode.getSymbol();
+
+        if (!checkRankProfileInheritanceCollisions(context, definitionSymbol, parentSymbol, inheritanceNode, diagnostics)) return;
+
         if (!context.schemaIndex().tryRegisterRankProfileInheritance(definitionSymbol, parentSymbol)) {
             diagnostics.add(new Diagnostic(
                 inheritanceNode.getRange(),
@@ -188,35 +195,34 @@ public class InheritanceResolver {
 
             return;
         }
+    }
 
-        // List<Symbol> parentDefinitions = context.schemaIndex().getAllRankProfileParents(definitionSymbol);
+    private static boolean checkRankProfileInheritanceCollisions(ParseContext context, Symbol rankProfileDefinitionSymbol, Symbol inheritanceCandidate, SchemaNode inheritanceNode, List<Diagnostic> diagnostics) {
+        Map<String, Symbol> functionDefinitionsBeforeInheritance = new HashMap<>();
+        for (Symbol symbol : context.schemaIndex().listSymbolsInScope(rankProfileDefinitionSymbol, SymbolType.FUNCTION)) {
+            if (symbol.getScope().equals(rankProfileDefinitionSymbol)) continue;
 
-        // /*
-        //  * Look for colliding function names
-        //  * TODO: other stuff than functions
-        //  */
-        // Map<String, String> seenFunctions = new HashMap<>();
-        // for (Symbol parentDefinition : parentDefinitions) {
-        //     if (parentDefinition.equals(definitionSymbol)) continue;
+            functionDefinitionsBeforeInheritance.put(symbol.getShortIdentifier(), symbol.getScope());
+        }
 
-        //     List<Symbol> functionDefinitionsInParent = context.schemaIndex().getAllRankProfileFunctions(parentDefinition);
+        List<Symbol> parentFunctions = context.schemaIndex().listSymbolsInScope(inheritanceCandidate, SymbolType.FUNCTION);
 
-        //     context.logger().println("PROFILE " + parentDefinition.getLongIdentifier());
-        //     for (Symbol func : functionDefinitionsInParent) {
-        //         context.logger().println("    FUNC: " + func.getLongIdentifier());
-        //         if (seenFunctions.containsKey(func.getShortIdentifier())) {
-        //             // TODO: quickfix
-        //             diagnostics.add(new Diagnostic(
-        //                 inheritanceNode.getRange(),
-        //                 "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + 
-        //                 " defines function " + func.getShortIdentifier() + " which is already defined in " + seenFunctions.get(func.getShortIdentifier()),
-        //                 DiagnosticSeverity.Error,
-        //                 ""
-        //             ));
-        //         }
-        //         seenFunctions.put(func.getShortIdentifier(), parentDefinition.getLongIdentifier());
-        //     }
-        // }
+        boolean success = true;
+        for (Symbol parentFunction : parentFunctions) {
+            if (functionDefinitionsBeforeInheritance.containsKey(parentFunction.getShortIdentifier())) {
+                // TODO: quickfix and show the chain of inheritance
+                diagnostics.add(new Diagnostic(
+                    inheritanceNode.getRange(),
+                    "Cannot inherit from " + inheritanceNode.getText() + " because " + inheritanceNode.getText() + 
+                    " defines function " + parentFunction.getShortIdentifier() + " which is already defined in " + 
+                    functionDefinitionsBeforeInheritance.get(parentFunction.getShortIdentifier()).getShortIdentifier(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+                success = false;
+            }
+        }
+        return success;
     }
 
     private static Optional<String> resolveDocumentInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
@@ -243,5 +249,33 @@ public class InheritanceResolver {
         inheritanceNode.setSymbolStatus(SymbolStatus.REFERENCE);
         context.schemaIndex().insertSymbolReference(symbol.get(), inheritanceNode.getSymbol());
         return Optional.of(symbol.get().getFileURI());
+    }
+
+    private static void resolveDocumentSummaryInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
+        SchemaNode myDocSummaryDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
+
+        if (myDocSummaryDefinitionNode == null) {
+            return;
+        }
+
+        if (!myDocSummaryDefinitionNode.hasSymbol()) {
+            return;
+        }
+
+        Optional<Symbol> parentSymbol = context.schemaIndex().findSymbol(inheritanceNode.getSymbol());
+        if (parentSymbol.isEmpty()) {
+            // Handled elsewhere
+            return;
+        }
+
+        if (!context.schemaIndex().tryRegisterDocumentSummaryInheritance(myDocSummaryDefinitionNode.getSymbol(), parentSymbol.get())) {
+            // TODO: get the chain?
+            diagnostics.add(new Diagnostic(
+                inheritanceNode.getRange(), 
+                "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this document summary.",
+                DiagnosticSeverity.Error, 
+                ""
+            ));
+        }
     }
 }

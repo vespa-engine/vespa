@@ -3,12 +3,14 @@ package ai.vespa.schemals.index;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.documentElm;
@@ -55,12 +57,18 @@ public class SchemaIndex {
     private InheritanceGraph<String> documentInheritanceGraph;
     private InheritanceGraph<Symbol> structInheritanceGraph;
     private InheritanceGraph<Symbol> rankProfileInheritanceGraph;
+    private InheritanceGraph<Symbol> documentSummaryInheritanceGraph;
+
+    // This is an inheritance graph, even though it doesn't model *inheritance* per se.
+    private InheritanceGraph<Symbol> documentReferenceGraph;
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
-        this.documentInheritanceGraph    = new InheritanceGraph<>();
-        this.structInheritanceGraph      = new InheritanceGraph<>();
-        this.rankProfileInheritanceGraph = new InheritanceGraph<>();
+        this.documentInheritanceGraph        = new InheritanceGraph<>();
+        this.structInheritanceGraph          = new InheritanceGraph<>();
+        this.rankProfileInheritanceGraph     = new InheritanceGraph<>();
+        this.documentSummaryInheritanceGraph = new InheritanceGraph<>();
+        this.documentReferenceGraph          = new InheritanceGraph<>();
 
         this.symbolDefinitions     = new HashMap<>();
         this.symbolReferences      = new HashMap<>();
@@ -121,13 +129,19 @@ public class SchemaIndex {
 
                     structInheritanceGraph.clearInheritsList(symbol);
                     rankProfileInheritanceGraph.clearInheritsList(symbol);
+                    documentSummaryInheritanceGraph.clearInheritsList(symbol);
+                    documentReferenceGraph.clearInheritsList(symbol);
 
                     list.remove(i);
                 }
             }
         }
 
-        documentInheritanceGraph.clearInheritsList(fileURI);
+        if (fileURI.endsWith(".sd")) {
+            documentInheritanceGraph.clearInheritsList(fileURI);
+            // Add the node back:)
+            documentInheritanceGraph.createNodeIfNotExists(fileURI);
+        }
     }
 
     /**
@@ -157,34 +171,87 @@ public class SchemaIndex {
      * @return A list of symbols that match the given symbol.
      */
     public List<Symbol> findSymbols(Symbol scope, SymbolType type, String shortIdentifier) {
-        List<Symbol> result = new ArrayList<>();
-
         // First candidates are all symbols with correct type and correct short identifier
-        List<Symbol> candidates = symbolDefinitions.get(type)
-                                                   .stream()
-                                                   .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
-                                                   .toList();
 
         if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
-            return candidates;
+            List<Symbol> schemaDefinitions = 
+                symbolDefinitions.get(SymbolType.SCHEMA)
+                               .stream()
+                               .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                               .toList();
+
+            if (!schemaDefinitions.isEmpty()) return schemaDefinitions;
+            return symbolDefinitions.get(SymbolType.DOCUMENT)
+                               .stream()
+                               .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                               .toList();
         }
 
-        // logger.println("LOOKING FOR " + shortIdentifier + " in scope " + (scope == null ? "null" : scope.getLongIdentifier()));
-        // for (var sym : candidates) {
-        //     logger.println("    Cand: " + sym.getLongIdentifier());
-        // }
-
+        logger.println("Looking for symbol: " + shortIdentifier + " type " + type.toString());
         while (scope != null) {
-            logger.println("    Current scope: " + scope.getLongIdentifier());
-            for (Symbol candidate : candidates) {
-                // Check if candidate is in this scope
-                if (isInScope(candidate, scope))result.add(candidate);
-            }
+            logger.println("  Checking scope: " + scope.getLongIdentifier());
+            List<Symbol> result = findSymbolsInScope(scope, type, shortIdentifier);
 
-            if (!result.isEmpty()) return result;
+            if (!result.isEmpty()) {
+                return result;
+            }
             scope = scope.getScope();
         }
 
+        return new ArrayList<>();
+    }
+
+    /*
+     * Given a scope, type and short identifier, find definitions defined inside the actual scope. 
+     * Will not search inheritance graphs.
+     */
+    private Optional<Symbol> findSymbolInConcreteScope(Symbol scope, SymbolType type, String shortIdentifier) {
+        List<Symbol> match = symbolDefinitions.get(type)
+                       .stream()
+                       .filter(symbolDefinition -> scope.equals(symbolDefinition.getScope()) && symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                       .toList();
+        if (match.isEmpty()) return Optional.empty();
+        return Optional.of(match.get(0));
+    }
+
+
+    /*
+     * Find symbols with given type and short identifier that are valid in scope
+     * Will search in inherited scopes
+     */
+    private List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type, String shortIdentifier) {
+        if (scope.getType() == SymbolType.RANK_PROFILE) {
+            return rankProfileInheritanceGraph.findFirstMatches(scope, rankProfileDefinitionSymbol -> {
+                var definedInScope = findSymbolInConcreteScope(rankProfileDefinitionSymbol, type, shortIdentifier);
+                if (definedInScope.isEmpty()) return null;
+                return definedInScope;
+            }).stream().map(result -> result.result.get()).toList();
+        } else if (scope.getType() == SymbolType.STRUCT) {
+            return structInheritanceGraph.findFirstMatches(scope, rankProfileDefinitionSymbol -> {
+                var definedInScope = findSymbolInConcreteScope(rankProfileDefinitionSymbol, type, shortIdentifier);
+                if (definedInScope.isEmpty()) return null;
+                return definedInScope;
+            }).stream().map(result -> result.result.get()).toList();
+        } else if (scope.getType() == SymbolType.DOCUMENT || scope.getType() == SymbolType.SCHEMA) {
+            return documentInheritanceGraph.findFirstMatches(scope.getFileURI(), ancestorURI -> {
+
+                List<Symbol> match = symbolDefinitions.get(type)
+                    .stream()
+                    .filter(symbolDefinition -> symbolDefinition.getScope() != null
+                            && (symbolDefinition.getScope().getType() == SymbolType.SCHEMA || symbolDefinition.getScope().getType() == SymbolType.DOCUMENT)
+                            && symbolDefinition.getShortIdentifier().equals(shortIdentifier)
+                            && symbolDefinition.getScope().getFileURI().equals(ancestorURI))
+                    .toList();
+
+                if (match.isEmpty()) return null;
+
+                return Optional.of(match.get(0));
+            }).stream().map(result -> result.result.get()).toList();
+        }
+
+        Optional<Symbol> symbol = findSymbolInConcreteScope(scope, type, shortIdentifier);
+        List<Symbol> result = new ArrayList<>();
+        if (symbol.isPresent())result.add(symbol.get());
         return result;
     }
 
@@ -227,6 +294,7 @@ public class SchemaIndex {
      * @return An Optional containing the definition of the symbol, or an empty Optional if the symbol is not found.
      */
     public Optional<Symbol> getSymbolDefinition(Symbol reference) {
+        if (reference.getStatus() == SymbolStatus.DEFINITION) return Optional.of(reference);
         Symbol results = definitionOfReference.get(reference);
 
         if (results == null) return Optional.empty();
@@ -347,13 +415,28 @@ public class SchemaIndex {
     }
 
     /**
+     * Tries to register the inheritance relationship between a child document-summary and a parent document-summary.
+     *
+     * @param childSymbol The symbol representing the child document-summary.
+     * @param parentSymbol The symbol representing the parent document-summary.
+     * @return true if the inheritance relationship was successfully registered, true otherwise.
+     */
+    public boolean tryRegisterDocumentSummaryInheritance(Symbol childSymbol, Symbol parentSymbol) {
+        return documentSummaryInheritanceGraph.addInherits(childSymbol, parentSymbol);
+    }
+
+    public boolean tryRegisterDocumentReference(Symbol childSymbol, Symbol parentSymbol) {
+        return documentReferenceGraph.addInherits(childSymbol, parentSymbol);
+    }
+
+    /**
      * Searches for symbols in the specified scope of the given type.
      *
      * @param scope The symbol representing the scope to search in.
      * @param type The type of symbols to find.
      * @return A list of symbols found in the specified scope and of the given type.
      */
-    public List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type) {
+    public List<Symbol> listSymbolsInScope(Symbol scope, SymbolType type) {
         return symbolDefinitions.get(type)
                                 .stream()
                                 .filter(symbol -> isInScope(symbol, scope))

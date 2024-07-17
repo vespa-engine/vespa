@@ -47,7 +47,7 @@ public class RankProfileDocument implements DocumentManager {
         // schemaIndex.clearRankProfile(fileURI)
         // schemaIndex.addRankProfile(fileURI, this)
 
-        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, scheduler);
+        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, this.scheduler);
         context.useRankProfileIdentifiers();
         var result = parseContent(context);
 

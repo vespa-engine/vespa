@@ -28,6 +28,7 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
+import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
@@ -64,6 +65,7 @@ public class SchemaDocument implements DocumentManager {
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
+        this.scheduler = scheduler;
     }
     
     public ParseContext getParseContext(String content) {
@@ -89,8 +91,6 @@ public class SchemaDocument implements DocumentManager {
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
-        // TODO: ask @Mangern what this function did
-        // schemaIndex.registerSchema(fileURI, this);
 
         logger.println("Parsing: " + fileURI);
         ParseContext context = getParseContext(content);
@@ -276,6 +276,8 @@ public class SchemaDocument implements DocumentManager {
             diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 
             diagnostics.addAll(SymbolReferenceResolver.resolveSymbolReferences(context, tolerantResult.CST().get()));
+
+            diagnostics.addAll(DocumentReferenceResolver.resolveDocumentReferences(context));
         }
 
         diagnostics.addAll(tolerantResult.diagnostics());

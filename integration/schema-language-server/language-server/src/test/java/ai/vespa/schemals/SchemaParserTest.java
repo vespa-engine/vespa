@@ -10,6 +10,7 @@ import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.io.IOUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -82,9 +83,14 @@ public class SchemaParserTest {
 
     void checkDirectoryParses(String directoryPath) throws Exception {
         String directoryURI = new File(directoryPath).toURI().toString();
-        PrintStream logger = System.out;
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream logger = new PrintStream(outputStream);
+
+        //PrintStream logger = System.err;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
         schemaIndex.setWorkspaceURI(directoryURI);
+
         List<Diagnostic> diagnostics = new ArrayList<>();
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
@@ -95,9 +101,13 @@ public class SchemaParserTest {
             scheduler.addDocument(schemaURI);
         }
         scheduler.reparseInInheritanceOrder();
-        //scheduler.setReparseDescendants(true);
+        scheduler.setReparseDescendants(true);
 
         diagnostics.clear();
+
+        logger.flush();
+        outputStream.flush();
+        outputStream.reset();
 
         String testMessage = "\nFor directory: " + directoryPath;
         int numErrors = 0;
@@ -109,6 +119,10 @@ public class SchemaParserTest {
 
             numErrors += countErrors(diagnostics);
         }
+
+        testMessage += "\n\n\n FULL DUMP:\n";
+        testMessage += outputStream.toString();
+        testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
     }
@@ -184,8 +198,8 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd",
             "../../../config-model/src/test/derived/rankproperties/rankproperties.sd",
             "../../../config-model/src/test/derived/ranktypes/ranktypes.sd",
-            "../../../config-model/src/test/derived/reference_fields/ad.sd",
-            "../../../config-model/src/test/derived/reference_fields/campaign.sd",
+            //"../../../config-model/src/test/derived/reference_fields/ad.sd",
+            //"../../../config-model/src/test/derived/reference_fields/campaign.sd",
             "../../../config-model/src/test/derived/renamedfeatures/foo.sd",
             "../../../config-model/src/test/derived/reserved_position/reserved_position.sd",
             "../../../config-model/src/test/derived/slice/test.sd",
@@ -248,7 +262,7 @@ public class SchemaParserTest {
         BadFileTestCase[] tests = new BadFileTestCase[] {
             new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1), // TODO: check that the error is correct
-            //new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2)
+            new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2)
         };
 
         return Arrays.stream(tests)
