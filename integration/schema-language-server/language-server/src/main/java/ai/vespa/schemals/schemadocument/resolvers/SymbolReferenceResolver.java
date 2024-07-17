@@ -13,6 +13,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
+import ai.vespa.schemals.parser.ast.STRUCT_FIELD;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
@@ -40,6 +41,11 @@ public class SymbolReferenceResolver {
 
                 if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
                     parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
+                } else if (parentField.isASTInstance(STRUCT_FIELD.class)) {
+                    SchemaNode fieldIdentifierNode = node.getParent().getParent().getParent().get(1);
+                    if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
+                        parentFieldDefinition = Optional.of(fieldIdentifierNode.getSymbol());
+                    }
                 }
 
                 if (parentFieldDefinition.isPresent()) {

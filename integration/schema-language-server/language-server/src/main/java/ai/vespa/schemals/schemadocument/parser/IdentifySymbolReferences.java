@@ -27,6 +27,7 @@ import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -78,8 +79,8 @@ public class IdentifySymbolReferences extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
-        if (parent.isASTInstance(fieldsElm.class)) {
-            return handleFields(node);
+        if (parent.isASTInstance(fieldsElm.class) || parent.isASTInstance(structFieldElm.class)) {
+            return handleFieldReference(node);
         }
 
         if (parent.isASTInstance(importField.class)) {
@@ -132,7 +133,7 @@ public class IdentifySymbolReferences extends Identifier {
         return ret;
     }
     
-    private ArrayList<Diagnostic> handleFields(SchemaNode identifierNode) {
+    private ArrayList<Diagnostic> handleFieldReference(SchemaNode identifierNode) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         SchemaNode parent = identifierNode.getParent();
@@ -153,10 +154,17 @@ public class IdentifySymbolReferences extends Identifier {
         }
 
         Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
+
+        SymbolType firstType = SymbolType.FIELD;
+
+        if (parent.isASTInstance(structFieldElm.class)) {
+            firstType = SymbolType.SUBFIELD;
+        }
+
         if (scope.isPresent()) {
-            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI(), scope.get());
+            identifierNode.setSymbol(firstType, context.fileURI(), scope.get());
         } else {
-            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
+            identifierNode.setSymbol(firstType, context.fileURI());
         }
         identifierNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
