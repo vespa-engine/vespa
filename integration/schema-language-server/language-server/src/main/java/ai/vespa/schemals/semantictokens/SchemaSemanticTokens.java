@@ -5,9 +5,12 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.SemanticTokenModifiers;
+import org.eclipse.lsp4j.SemanticTokenTypes;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensServerFull;
@@ -28,9 +31,14 @@ import ai.vespa.schemals.parser.ast.valueType;
 public class SchemaSemanticTokens implements Visitor {
 
     private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{
-        add("type");
-        add("comment");
-        add("macro");
+        add(SemanticTokenTypes.Type);
+        add(SemanticTokenTypes.Comment);
+        add(SemanticTokenTypes.Macro);
+    }};
+
+    private static final List<String> tokenModifiers = new ArrayList<>() {{
+        add(SemanticTokenModifiers.Definition);
+        add(SemanticTokenModifiers.Readonly);
     }};
 
     // Keyword
@@ -200,7 +208,7 @@ public class SchemaSemanticTokens implements Visitor {
 
         // Manually added semantic tokens
         tokenTypes.addAll(manuallyRegisteredLSPNames);
-        int keywordIndex = addTokenType("keyword");
+        int keywordIndex = addTokenType(SemanticTokenTypes.Keyword);
 
         // Add symbol semantic tokens
         identifierTypeMap = new HashMap<SymbolType, Integer>();
@@ -234,20 +242,17 @@ public class SchemaSemanticTokens implements Visitor {
             rankExpressionTokenTypeMap.put(type, keywordIndex);
         }
 
-        int operationIndex = addTokenType("operation");
+        int operationIndex = addTokenType(SemanticTokenTypes.Operator);
         for (var type : rankingExpressionOperationTokens) {
             rankExpressionTokenTypeMap.put(type, operationIndex);
         }
 
-        int functionIndex = addTokenType("function");
+        int functionIndex = addTokenType(SemanticTokenTypes.Function);
         for (var type : rankingExpressioFunctionTokens) {
             rankExpressionTokenTypeMap.put(type, functionIndex);
         }
 
     }
-
-
-    private static final ArrayList<String> tokenModifiers = new ArrayList<String>();
 
     public static SemanticTokensWithRegistrationOptions getSemanticTokensRegistrationOptions() {
         return new SemanticTokensWithRegistrationOptions(
@@ -261,6 +266,7 @@ public class SchemaSemanticTokens implements Visitor {
         private static final int COLUMN_INDEX = 1;
 
         private int tokenType;
+        private int modifierValue = 0;
         private Range range;
 
         SemanticTokenMarker(int tokenType, SchemaNode node) {
@@ -274,6 +280,15 @@ public class SchemaSemanticTokens implements Visitor {
 
         Range getRange() { return range; }
 
+        void addModifier(String modifier) {
+            int modifierIndex = tokenModifiers.indexOf(modifier);
+            if (modifierIndex == -1) {
+                throw new IllegalArgumentException("Could not find the semantic token modifier '" + modifier + "'. Remeber to add the modifer to the tokenModifisers list.");
+            }
+            int bitMask = 1 << modifierIndex;
+            modifierValue = modifierValue | bitMask;
+        }
+
         private ArrayList<Integer> compactForm() {
             int length = range.getEnd().getCharacter() - range.getStart().getCharacter();
 
@@ -282,7 +297,7 @@ public class SchemaSemanticTokens implements Visitor {
                 add(range.getStart().getCharacter());
                 add(length);
                 add(tokenType);
-                add(0);
+                add(modifierValue);
             }};
         }
 
@@ -372,7 +387,11 @@ public class SchemaSemanticTokens implements Visitor {
             Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
             
             if (tokenType != null) {
-                ret.add(new SemanticTokenMarker(tokenType, node));
+                SemanticTokenMarker tokenMarker = new SemanticTokenMarker(tokenType, node);
+                if (node.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
+                    tokenMarker.addModifier(SemanticTokenModifiers.Definition);
+                }
+                ret.add(tokenMarker);
             }
 
         } else if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
