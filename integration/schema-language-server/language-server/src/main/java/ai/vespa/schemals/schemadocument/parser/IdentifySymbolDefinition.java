@@ -104,7 +104,7 @@ public class IdentifySymbolDefinition extends Identifier {
 
             node.setSymbol(symbolType, context.fileURI(), scope.get());
 
-            if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
+            if (context.schemaIndex().findSymbolInScope(node.getSymbol()).isEmpty()) {
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
                 context.schemaIndex().insertSymbolDefinition(node.getSymbol());
             } else {

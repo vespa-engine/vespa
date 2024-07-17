@@ -197,8 +197,15 @@ public class SymbolReferenceResolver {
     private static Optional<Symbol> resolveFieldInStructReference(SchemaNode node, Symbol structDefinition, ParseContext context) {
         Optional<Symbol> referencedSymbol = context.schemaIndex().findSymbol(structDefinition, SymbolType.FIELD, node.getText().toLowerCase());
 
-        //referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
-        referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
+        if (referencedSymbol.isPresent()) {
+            // TODO: maybe we could have a findSymbol that doesn't allow going up in scope
+            if (!context.schemaIndex().isInScope(referencedSymbol.get(), structDefinition)) {
+                return Optional.empty();
+            }
+
+            //referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
+            node.setSymbolType(referencedSymbol.get().getType());
+        }
         return referencedSymbol;
     }
 
