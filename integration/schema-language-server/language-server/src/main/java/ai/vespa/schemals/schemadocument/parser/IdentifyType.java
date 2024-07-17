@@ -1,18 +1,26 @@
 package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.Optional;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
+import com.yahoo.search.schema.RankProfile.InputType;
 
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.FLOAT_KEYWORD;
+import ai.vespa.schemals.parser.ast.LONG_KEYWORD;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.inputElm;
+import ai.vespa.schemals.parser.ast.valueType;
+import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -22,8 +30,12 @@ public class IdentifyType extends Identifier {
 		super(context);
 	}
 
-    public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
+    public List<Diagnostic> identify(SchemaNode node) {
+        List<Diagnostic> ret = new ArrayList<Diagnostic>();
+
+        if (node.isASTInstance(inputElm.class)) {
+            return identifyInputType(node);
+        }
 
         if (!node.isSchemaASTInstance(dataType.class)) {
             return ret;
@@ -92,5 +104,42 @@ public class IdentifyType extends Identifier {
             node = node.getParent();
         }
         return false;
+    }
+
+    private List<Diagnostic> identifyInputType(SchemaNode node) {
+        List<Diagnostic> ret = new ArrayList<>();
+
+        if (!node.isASTInstance(inputElm.class) || node.size() == 0) {
+            return ret;
+        }
+
+        SchemaNode valueTypeNode = null;
+        for (SchemaNode child : node) {
+            if (child.isASTInstance(valueType.class)) {
+                valueTypeNode = child;
+                break;
+            }
+        }
+
+        if (valueTypeNode == null) {
+            return ret;
+        }
+
+        SchemaNode typeToken = valueTypeNode.findFirstLeaf();
+        String identifierName = node.get(0).getText();
+        String warningMessage = null;
+        if (typeToken.isASTInstance(LONG_KEYWORD.class)) {
+            warningMessage = "Input " + identifierName + ": 'long' is not possible, treated as 'double'";
+        }
+
+        if (typeToken.isASTInstance(FLOAT_KEYWORD.class)) {
+            warningMessage = "Input " + identifierName + ": 'float' is not possible, treated as 'double'"; 
+        }
+
+        if (warningMessage != null) {
+            ret.add(new Diagnostic(valueTypeNode.getRange(), warningMessage, DiagnosticSeverity.Warning, ""));
+        }
+
+        return ret;
     }
 }

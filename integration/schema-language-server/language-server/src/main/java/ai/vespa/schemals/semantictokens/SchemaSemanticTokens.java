@@ -22,6 +22,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.valueType;
 
 public class SchemaSemanticTokens implements Visitor {
 
@@ -346,6 +347,13 @@ public class SchemaSemanticTokens implements Visitor {
                 // this will leave <> uncolored, as we are only interested in marking the actual token
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
+            }
+
+        } else if (node.isASTInstance(valueType.class)) {
+
+            Integer tokenType = tokenTypes.indexOf("type");
+            if (tokenType != -1) {
+                ret.add(new SemanticTokenMarker(0, node));
             }
 
         } else if (
