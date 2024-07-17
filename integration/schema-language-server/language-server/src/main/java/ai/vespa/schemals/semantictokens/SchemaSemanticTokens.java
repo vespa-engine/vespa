@@ -196,7 +196,6 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.RANK_PROFILE, "variable");
         put(SymbolType.FUNCTION, "function");
         put(SymbolType.DOCUMENT_SUMMARY, "variable");
-        put(SymbolType.SUMMARY, "variable");
         put(SymbolType.PARAMETER, "parameter");
     }};
 

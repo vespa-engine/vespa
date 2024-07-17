@@ -42,7 +42,6 @@ public class SchemaIndex {
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<>() {{
         put(rankProfile.class, SymbolType.RANK_PROFILE);
         put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
-        put(summaryInDocument.class, SymbolType.SUMMARY);
     }};
 
     private PrintStream logger;
@@ -154,7 +153,25 @@ public class SchemaIndex {
 
     public Optional<Symbol> findSymbol(Symbol scope, SymbolType type, String shortIdentifier) {
         List<Symbol> results = findSymbols(scope, type, shortIdentifier);
-        if (results.size() == 0) return Optional.empty();
+        if (results.isEmpty()) return Optional.empty();
+
+        return Optional.of(results.get(0));
+    }
+
+    /**
+     * Uses symbol.getScope as the scope to search in
+     */
+    public Optional<Symbol> findSymbolInScope(Symbol symbol) {
+        return findSymbolInScope(symbol.getScope(), symbol.getType(), symbol.getShortIdentifier());
+    }
+
+    /**
+     * Searches for the specified symbol in the given scope. Checks inherited scopes as well,
+     * but not containing scopes.
+     * */
+    public Optional<Symbol> findSymbolInScope(Symbol scope, SymbolType type, String shortIdentifier) {
+        List<Symbol> results = findSymbolsInScope(scope, type, shortIdentifier);
+        if (results.isEmpty()) return Optional.empty();
 
         return Optional.of(results.get(0));
     }
@@ -217,7 +234,7 @@ public class SchemaIndex {
      * Find symbols with given type and short identifier that are valid in scope
      * Will search in inherited scopes
      */
-    private List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type, String shortIdentifier) {
+    public List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type, String shortIdentifier) {
         if (scope.getType() == SymbolType.RANK_PROFILE) {
             return rankProfileInheritanceGraph.findFirstMatches(scope, rankProfileDefinitionSymbol -> {
                 var definedInScope = findSymbolInConcreteScope(rankProfileDefinitionSymbol, type, shortIdentifier);
@@ -253,7 +270,7 @@ public class SchemaIndex {
         return result;
     }
 
-    private boolean isInScope(Symbol symbol, Symbol scope) {
+    public boolean isInScope(Symbol symbol, Symbol scope) {
         if (scope.getType() == SymbolType.RANK_PROFILE) {
             return !rankProfileInheritanceGraph.findFirstMatches(scope, 
                     rankProfileDefinitionSymbol -> {

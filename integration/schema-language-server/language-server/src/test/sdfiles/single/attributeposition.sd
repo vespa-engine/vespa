@@ -1,0 +1,14 @@
+schema attributeposition {
+  document attributeposition {
+
+    field multipos2d type array<string> {
+      indexing: summary | index | attribute | to_pos
+    }
+
+    field pos2d type string {
+      indexing: summary | index | attribute | to_pos
+    }
+
+  }
+}
+

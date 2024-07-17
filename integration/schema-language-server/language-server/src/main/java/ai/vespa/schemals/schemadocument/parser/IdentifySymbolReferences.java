@@ -2,7 +2,9 @@ package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -28,6 +30,9 @@ import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.parser.ast.summaryInDocument;
+import ai.vespa.schemals.parser.ast.summaryItem;
+import ai.vespa.schemals.parser.ast.summarySourceList;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -51,8 +56,20 @@ public class IdentifySymbolReferences extends Identifier {
         put(inheritsDocumentSummary.class, SymbolType.DOCUMENT_SUMMARY);
     }};
 
-    public ArrayList<Diagnostic> identify(SchemaNode node) {
+    /** 
+     * If the parent of an identifier belongs to one of these classes
+     * it will be handled by the {@link IdentifySymbolReferences#handleFieldReference} method.
+     *
+     * This involves splitting the identifierStr node into several nodes based on the dot-syntax for fields.
+     */
+    private static final Set<Class<? extends Node>> fieldReferenceIdentifierParents = new HashSet<>() {{
+        add(fieldsElm.class);
+        add(structFieldElm.class);
+        add(summaryInDocument.class);
+        add(summarySourceList.class);
+    }};
 
+    public ArrayList<Diagnostic> identify(SchemaNode node) {
         if (node.hasSymbol()) return new ArrayList<Diagnostic>();
 
         if (node.getLanguageType() == LanguageType.SCHEMA || node.getLanguageType() == LanguageType.CUSTOM) {
@@ -79,7 +96,7 @@ public class IdentifySymbolReferences extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
-        if (parent.isASTInstance(fieldsElm.class) || parent.isASTInstance(structFieldElm.class)) {
+        if (fieldReferenceIdentifierParents.contains(parent.getASTClass())) {
             return handleFieldReference(node);
         }
 
@@ -137,6 +154,28 @@ public class IdentifySymbolReferences extends Identifier {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         SchemaNode parent = identifierNode.getParent();
+
+        // Edge case: if we are in a summary element and there is specified a source list, we will not mark it as a reference
+        if (parent.isASTInstance(summaryInDocument.class) && summaryHasSourceList(parent)) {
+            return ret;
+        }
+
+        // Another edge case: if someone writes summary documentid {}
+        if ((parent.isASTInstance(summaryInDocument.class) || parent.isASTInstance(summarySourceList.class))
+            && identifierNode.getText().equals("documentid")) {
+            /*
+             * TODO: this actually doesn't work when you deploy if parent is summarySourceList and 
+             *       you have imported a field for some reason. It would be helpful to show a nice message to the user.
+             */
+            Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
+            if (scope.isPresent()) {
+                identifierNode.setSymbol(SymbolType.FIELD, context.fileURI(), scope.get());
+            } else {
+                identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
+            }
+            identifierNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+            return ret;
+        }
 
         String fieldIdentifier = identifierNode.getText();
 
@@ -268,6 +307,16 @@ public class IdentifySymbolReferences extends Identifier {
         }
 
         return ret;
+    }
+
+    /*
+     * Given a summary node e.g. summaryInDocument, return true if the summary has a source list.
+     */
+    private boolean summaryHasSourceList(SchemaNode summaryNode) {
+        for (SchemaNode child : summaryNode) {
+            if (child.isASTInstance(summaryItem.class) && child.get(0).isASTInstance(summarySourceList.class)) return true;
+        }
+        return false;
     }
 
 }
