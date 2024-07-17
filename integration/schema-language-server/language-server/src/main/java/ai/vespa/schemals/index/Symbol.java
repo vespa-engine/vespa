@@ -111,22 +111,22 @@ public class Symbol {
     }
 
     public enum SymbolType {
-        SCHEMA,
-        DOCUMENT,
-        FIELD,
-        STRUCT,
         ANNOTATION,
-        RANK_PROFILE,
-        FIELDSET,
-        STRUCT_FIELD,
-        FUNCTION,
+        DOCUMENT,
         DOCUMENT_SUMMARY,
-        SUMMARY,
-        TYPE_UNKNOWN,
-        SUBFIELD,
+        FIELD,
+        FIELDSET,
+        FUNCTION,
         MAP_KEY,
         MAP_VALUE,
-        PARAMETER
+        PARAMETER,
+        RANK_PROFILE,
+        SCHEMA,
+        STRUCT,
+        STRUCT_FIELD,
+        SUBFIELD,
+        SUMMARY,
+        TYPE_UNKNOWN,
     }
 
     public String toString() {

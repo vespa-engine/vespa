@@ -293,11 +293,7 @@ public class SchemaIndex {
      */
     public Optional<Symbol> getSymbolDefinition(Symbol reference) {
         if (reference.getStatus() == SymbolStatus.DEFINITION) return Optional.of(reference);
-        Symbol results = definitionOfReference.get(reference);
-
-        if (results == null) return Optional.empty();
-
-        return Optional.of(results);
+        return Optional.ofNullable(definitionOfReference.get(reference));
     }
 
     /**

@@ -95,10 +95,14 @@ public class SchemaParserTest {
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
         List<String> schemaFiles = FileUtils.findSchemaFiles(directoryURI, logger);
+        List<String> rankProfileFiles = FileUtils.findRankProfileFiles(directoryURI, logger);
 
         scheduler.setReparseDescendants(false);
         for (String schemaURI : schemaFiles) {
             scheduler.addDocument(schemaURI);
+        }
+        for (String rankProfileURI : rankProfileFiles) {
+            scheduler.addDocument(rankProfileURI);
         }
         scheduler.reparseInInheritanceOrder();
         scheduler.setReparseDescendants(true);
@@ -111,6 +115,15 @@ public class SchemaParserTest {
 
         String testMessage = "\nFor directory: " + directoryPath;
         int numErrors = 0;
+        for (String rankProfileURI : rankProfileFiles) {
+            diagnostics.clear();
+            var documentHandle = scheduler.getRankProfileDocument(rankProfileURI);
+            documentHandle.reparseContent();
+            testMessage += "\n    File: " + rankProfileURI + constructDiagnosticMessage(diagnostics, 2);
+
+            numErrors += countErrors(diagnostics);
+        }
+
         for (String schemaURI : schemaFiles) {
             diagnostics.clear();
             var documentHandle = scheduler.getSchemaDocument(schemaURI);
@@ -119,6 +132,7 @@ public class SchemaParserTest {
 
             numErrors += countErrors(diagnostics);
         }
+
 
         testMessage += "\n\n\n FULL DUMP:\n";
         testMessage += outputStream.toString();
@@ -194,12 +208,9 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/predicate_attribute/predicate_attribute.sd",
             "../../../config-model/src/test/derived/prefixexactattribute/prefixexactattribute.sd",
             "../../../config-model/src/test/derived/rankingexpression/rankexpression.sd",
-            // "../../../config-model/src/test/derived/rankprofilemodularity/test.sd",
             "../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd",
             "../../../config-model/src/test/derived/rankproperties/rankproperties.sd",
             "../../../config-model/src/test/derived/ranktypes/ranktypes.sd",
-            //"../../../config-model/src/test/derived/reference_fields/ad.sd",
-            //"../../../config-model/src/test/derived/reference_fields/campaign.sd",
             "../../../config-model/src/test/derived/renamedfeatures/foo.sd",
             "../../../config-model/src/test/derived/reserved_position/reserved_position.sd",
             "../../../config-model/src/test/derived/slice/test.sd",
@@ -237,7 +248,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/imported_position_field/",
             "../../../config-model/src/test/derived/imported_position_field_summary/",
             "../../../config-model/src/test/derived/imported_struct_fields/",
-            //"../../../config-model/src/test/derived/importedfields/",
+            "../../../config-model/src/test/derived/importedfields/",
             "../../../config-model/src/test/derived/inheritance/",
             "../../../config-model/src/test/derived/inheritdiamond/",
             "../../../config-model/src/test/derived/inheritfromgrandparent/",
@@ -245,10 +256,12 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/inheritstruct/",
             "../../../config-model/src/test/derived/namecollision/",
             "../../../config-model/src/test/derived/rankprofileinheritance/",
-            //"../../../config-model/src/test/derived/schemainheritance/",
+            "../../../config-model/src/test/derived/schemainheritance/",
             "../../../config-model/src/test/derived/tensor2/",
             "../../../config-model/src/test/derived/twostreamingstructs/",
             //"../../../config-model/src/test/examples/",
+            "../../../config-model/src/test/derived/rankprofilemodularity/",
+            "../../../config-model/src/test/derived/reference_fields/",
         };
 
         return Arrays.stream(directories)
