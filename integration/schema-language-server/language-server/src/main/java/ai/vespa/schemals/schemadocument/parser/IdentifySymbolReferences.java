@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.google.protobuf.Option;
 
@@ -129,24 +130,6 @@ public class IdentifySymbolReferences extends Identifier {
             node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
         }
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
-
-        // SymbolType newSymbolType = SymbolType.TYPE_UNKNOWN;
-        // SymbolStatus newSymbolStatus = SymbolStatus.UNRESOLVED;
-
-        // SymbolType isBuiltInFunction = RankExpressionSymbolResolver.rankExpressionBultInFunctions.get(node.getText().toLowerCase());
-
-        // if (isBuiltInFunction != null) {
-        //     newSymbolType = SymbolType.FUNCTION;
-        //     newSymbolStatus = SymbolStatus.BUILTIN_REFERENCE;
-        // }
-
-        // if (scope.isPresent()) {
-        //     node.setSymbol(newSymbolType, context.fileURI(), scope.get());
-        // } else {
-        //     node.setSymbol(newSymbolType, context.fileURI());
-        // }
-        
-        // node.setSymbolStatus(newSymbolStatus);
 
         return ret;
     }

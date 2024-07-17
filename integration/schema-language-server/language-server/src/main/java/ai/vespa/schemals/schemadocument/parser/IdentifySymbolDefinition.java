@@ -1,41 +1,32 @@
 package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
+import com.yahoo.schema.processing.ReservedFunctionNames;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.ast.annotationElm;
-import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.parser.ast.documentElm;
-import ai.vespa.schemals.parser.ast.documentSummary;
 import ai.vespa.schemals.parser.ast.fieldElm;
-import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.ast.namedDocument;
-import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
-import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
-import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -122,6 +113,11 @@ public class IdentifySymbolDefinition extends Identifier {
             if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
                 context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+
+                if (node.getSymbol().getType() == SymbolType.FUNCTION) {
+                    verifySymbolFunctionName(node, ret);
+                }
+
             } else {
                 node.setSymbolStatus(SymbolStatus.INVALID);
             }
@@ -231,5 +227,14 @@ public class IdentifySymbolDefinition extends Identifier {
         }
 
         return ret;
+    }
+
+    private static final Set<String> reservedFunctionNames = ReservedFunctionNames.getReservedNames();
+    // TODO: Maybe add distance and bm25 to the list?
+    private void verifySymbolFunctionName(SchemaNode node, List<Diagnostic> diagnostics) {
+        String functionName = node.getSymbol().getShortIdentifier();
+        if (reservedFunctionNames.contains(functionName)) {
+            diagnostics.add(new Diagnostic(node.getRange(), "Function '" + node.getText() + "' has a reserved name. This might mean that the function shadows the built-in function with the same name.", DiagnosticSeverity.Warning, ""));
+        }
     }
 }

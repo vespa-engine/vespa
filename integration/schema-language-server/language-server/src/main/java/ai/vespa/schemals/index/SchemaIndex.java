@@ -187,9 +187,9 @@ public class SchemaIndex {
                                .toList();
         }
 
-        logger.println("Looking for symbol: " + shortIdentifier + " type " + type.toString());
+        // logger.println("Looking for symbol: " + shortIdentifier + " type " + type.toString());
         while (scope != null) {
-            logger.println("  Checking scope: " + scope.getLongIdentifier());
+            // logger.println("  Checking scope: " + scope.getLongIdentifier());
             List<Symbol> result = findSymbolsInScope(scope, type, shortIdentifier);
 
             if (!result.isEmpty()) {
@@ -379,6 +379,22 @@ public class SchemaIndex {
 
         definitionOfReference.put(reference, definition);
         list.add(reference);
+    }
+
+
+    /**
+     * Deletes the symbol reference from the schema index.
+     *
+     * @param symbol The symbol reference to be deleted.
+     */
+    public void deleteSymbolReference(Symbol symbol) {
+        Symbol definition = definitionOfReference.remove(symbol);
+        if (definition != null) {
+            List<Symbol> references = symbolReferences.get(definition);
+            if (references != null) {
+                references.remove(symbol);
+            }
+        }
     }
 
     /**

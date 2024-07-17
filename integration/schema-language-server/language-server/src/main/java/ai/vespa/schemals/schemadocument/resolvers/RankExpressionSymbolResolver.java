@@ -10,8 +10,10 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.SymbolTag;
 
 import com.google.protobuf.Option;
+import com.yahoo.schema.processing.ReservedFunctionNames;
 
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -48,6 +50,10 @@ public class RankExpressionSymbolResolver {
         ) {
             if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
                 resolveReference(node.getSymbol(), context, diagnostics);
+            }
+
+            if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+                findBuiltInTokenFunction(node);
             }
 
             if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
@@ -90,15 +96,17 @@ public class RankExpressionSymbolResolver {
         add(unaryFunctionName.class);
     }};
 
-    private static void findSymbolTypeOfBuiltInArgument(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+    private static void findBuiltInTokenFunction(SchemaNode node) {
 
         boolean isBuiltInTokenizedFunction = builInTokenizedFunctions.contains(node.getASTClass());
         if (isBuiltInTokenizedFunction) {
             Symbol symbol = node.getSymbol();
             symbol.setType(SymbolType.FUNCTION);
             symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
-            return;
         }
+    }
+    
+    private static void findSymbolTypeOfBuiltInArgument(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
 
         String identifier = node.getSymbol().getShortIdentifier();
 
@@ -110,7 +118,7 @@ public class RankExpressionSymbolResolver {
         List<SchemaNode> arguments = findRankExpressionArguments(node);
 
         if (identifier.equals("distance")) {
-            resolveDistanceFunction(node, arguments, diagnostics);
+            resolveDistanceFunction(context, node, arguments, diagnostics);
             return;
         }
 
@@ -123,15 +131,20 @@ public class RankExpressionSymbolResolver {
 
             if (symbolNode.hasSymbol()) {
                 Symbol symbol = symbolNode.getSymbol();
-                context.logger().println(symbol);
-                if (symbol.getStatus() == SymbolStatus.UNRESOLVED && symbol.getType() == SymbolType.TYPE_UNKNOWN) {
+
+                if (symbol.getStatus() == SymbolStatus.REFERENCE) {
+                    symbol.setStatus(SymbolStatus.UNRESOLVED);
+                    context.schemaIndex().deleteSymbolReference(symbol);
+                }
+                
+                if (symbol.getStatus() == SymbolStatus.UNRESOLVED) {
                     symbol.setType(arguemntType);
                 }
             }
         }
     }
 
-    private static void resolveDistanceFunction(SchemaNode node, List<SchemaNode> argument, List<Diagnostic> diagnostics) {
+    private static void resolveDistanceFunction(ParseContext context, SchemaNode node, List<SchemaNode> argument, List<Diagnostic> diagnostics) {
 
         if (argument.size() != 2) {
             diagnostics.add(new Diagnostic(node.getRange(), "The distance function takes two argument (dimension, name)", DiagnosticSeverity.Error, ""));
@@ -160,8 +173,13 @@ public class RankExpressionSymbolResolver {
             secondArgument = secondArgument.get(0);
         }
 
-        if (!secondArgument.hasSymbol() && isField) {
+        if (!secondArgument.hasSymbol()) {
             return;
+        }
+
+        if (secondArgument.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+            secondArgument.getSymbol().setStatus(SymbolStatus.UNRESOLVED);
+            context.schemaIndex().deleteSymbolReference(secondArgument.getSymbol());
         }
 
         SymbolType newType = isField ? SymbolType.FIELD : SymbolType.LABEL;
@@ -178,6 +196,11 @@ public class RankExpressionSymbolResolver {
     }};
 
     private static void resolveReference(Symbol reference, ParseContext context, List<Diagnostic> diagnostics) {
+
+        if (reference.getType() != SymbolType.TYPE_UNKNOWN) {
+            return;
+        }
+
         List<Symbol> possibleDefinitions = new ArrayList<>();
 
         for (SymbolType possibleType : possibleTypes) {
