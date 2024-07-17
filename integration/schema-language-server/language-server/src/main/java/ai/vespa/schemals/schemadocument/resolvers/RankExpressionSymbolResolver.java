@@ -18,6 +18,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
+import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -45,12 +46,12 @@ public class RankExpressionSymbolResolver {
             node.getLanguageType() == LanguageType.RANK_EXPRESSION &&
             node.hasSymbol()
         ) {
-            if (node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
-                findSymbolTypeOfBuiltInArgument(node, context, diagnostics);
+            if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+                resolveReference(node.getSymbol(), context, diagnostics);
             }
 
             if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
-                resolveReference(node.getSymbol(), context, diagnostics);
+                findSymbolTypeOfBuiltInArgument(node, context, diagnostics);
             }
 
             // if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
@@ -85,29 +86,40 @@ public class RankExpressionSymbolResolver {
         return ret;
     }
 
+    public static final Set<Class<?>> builInTokenizedFunctions = new HashSet<>() {{
+        add(unaryFunctionName.class);
+    }};
+
     private static void findSymbolTypeOfBuiltInArgument(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+
+        boolean isBuiltInTokenizedFunction = builInTokenizedFunctions.contains(node.getASTClass());
+        if (isBuiltInTokenizedFunction) {
+            Symbol symbol = node.getSymbol();
+            symbol.setType(SymbolType.FUNCTION);
+            symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
+            return;
+        }
+
         String identifier = node.getSymbol().getShortIdentifier();
 
         SymbolType arguemntType = rankExpressionBultInFunctions.get(identifier);
         if (arguemntType == null) return;
+        node.getSymbol().setType(SymbolType.FUNCTION);
+        node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
 
         List<SchemaNode> arguments = findRankExpressionArguments(node);
 
         if (identifier.equals("distance")) {
-            context.logger().println("DISTANCE");
             resolveDistanceFunction(node, arguments, diagnostics);
             return;
         }
 
         for (SchemaNode arg : arguments) {
             SchemaNode symbolNode = arg;
-            context.logger().println("ARGUMENT: " + arg);
 
             while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
                 symbolNode = symbolNode.get(0);
             }
-
-            context.logger().println("SYMBOL: " + symbolNode);
 
             if (symbolNode.hasSymbol()) {
                 Symbol symbol = symbolNode.getSymbol();

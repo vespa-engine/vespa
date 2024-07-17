@@ -29,6 +29,7 @@ public class SchemaSemanticTokens implements Visitor {
     private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{
         add("type");
         add("comment");
+        add("macro");
     }};
 
     // Keyword
@@ -122,31 +123,31 @@ public class SchemaSemanticTokens implements Visitor {
 
     // Functions
     private static final ArrayList<ai.vespa.schemals.parser.rankingexpression.Token.TokenType> rankingExpressioFunctionTokens = new ArrayList<>() {{
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ABS);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ACOS);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ASIN);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ATAN);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CEIL);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COS);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COSH);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ELU);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EXP);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FABS);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FLOOR);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ISNAN);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG10);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.RELU);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ROUND);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGMOID);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGN);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIN);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SINH);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQUARE);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQRT);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TAN);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TANH);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ERF);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ABS);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ACOS);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ASIN);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ATAN);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CEIL);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COS);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COSH);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ELU);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EXP);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FABS);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FLOOR);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ISNAN);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG10);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.RELU);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ROUND);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGMOID);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGN);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIN);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SINH);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQUARE);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQRT);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TAN);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TANH);
+        // add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ERF);
 
         // Space in the ccc file as well :)
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ATAN2);
@@ -371,7 +372,12 @@ public class SchemaSemanticTokens implements Visitor {
             }
 
         } else if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
-            Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
+            SymbolType type = node.getSymbol().getType();
+            Integer tokenType = identifierTypeMap.get(type);
+
+            if (type == SymbolType.FUNCTION) {
+                tokenType = tokenTypes.indexOf("macro");
+            }
 
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));

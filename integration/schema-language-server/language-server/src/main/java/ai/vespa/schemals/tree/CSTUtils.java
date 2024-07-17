@@ -13,11 +13,7 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
-<<<<<<< HEAD
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
-=======
-import ai.vespa.schemals.parser.ast.rankProfile;
->>>>>>> interns/languageserver
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
