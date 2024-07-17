@@ -42,7 +42,6 @@ public class SchemaIndex {
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<>() {{
         put(rankProfile.class, SymbolType.RANK_PROFILE);
         put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
-        put(summaryInDocument.class, SymbolType.SUMMARY);
     }};
 
     private PrintStream logger;

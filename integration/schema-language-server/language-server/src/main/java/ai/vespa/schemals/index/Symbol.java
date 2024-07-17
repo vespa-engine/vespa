@@ -125,7 +125,6 @@ public class Symbol {
         STRUCT,
         STRUCT_FIELD,
         SUBFIELD,
-        SUMMARY,
         TYPE_UNKNOWN,
     }
 

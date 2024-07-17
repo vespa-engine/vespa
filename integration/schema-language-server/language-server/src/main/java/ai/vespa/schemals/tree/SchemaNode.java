@@ -49,7 +49,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     // Special properties for node in the CUSTOM language
     private String contentString;
-    private Class<? extends Node> simulatedSchimaClass;
+    private Class<? extends Node> simulatedSchemaClass;
 
     // Special features for nodes in the Schema language
     private TokenType schemaType;
@@ -281,11 +281,11 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public void setSimulatedASTClass(Class<? extends Node> astClass) {
         if (language != LanguageType.CUSTOM) throw new IllegalArgumentException("Cannot set Simulated AST Class on a Schema node of type other than Custom");
 
-        simulatedSchimaClass = astClass;
+        simulatedSchemaClass = astClass;
     }
 
     public boolean isASTInstance(Class<?> astClass) {
-        if (language == LanguageType.CUSTOM && astClass.isInstance(simulatedSchimaClass)) return true;
+        if (language == LanguageType.CUSTOM && astClass.isInstance(simulatedSchemaClass)) return true;
         if (language == LanguageType.SCHEMA) return astClass.isInstance(originalSchemaNode);
         if (language == LanguageType.RANK_EXPRESSION) return astClass.isInstance(originalRankExpressionNode);
         if (language == LanguageType.INDEXING) return astClass.isInstance(originalIndexingNode);
@@ -293,7 +293,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public boolean isSchemaASTInstance(Class<? extends Node> astClass) {
-        if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchimaClass);
+        if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchemaClass);
         
         return astClass.isInstance(originalSchemaNode);
     }
@@ -303,7 +303,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public Class<?> getASTClass() {
-        if (language == LanguageType.CUSTOM) return simulatedSchimaClass;
+        if (language == LanguageType.CUSTOM) return simulatedSchemaClass;
 
         if (language == LanguageType.SCHEMA && originalSchemaNode != null) {
             return originalSchemaNode.getClass();
