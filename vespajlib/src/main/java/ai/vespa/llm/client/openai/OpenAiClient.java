@@ -133,9 +133,6 @@ public class OpenAiClient implements LanguageModel {
         }
     }
 
-    private void processLines(CompletionContext context, Stream<String> lines) {
-    }
-
     private void waitBeforeRetry() {
         try {
             TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
