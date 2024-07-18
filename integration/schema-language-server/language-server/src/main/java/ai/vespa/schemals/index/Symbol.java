@@ -14,6 +14,16 @@ public class Symbol {
     private SymbolStatus status;
     private String shortIdentifier;
 
+    private void autoSetShortIdentifier() {
+        if (this.shortIdentifier != null) return;
+
+        if (type == SymbolType.DOCUMENT || type == SymbolType.SCHEMA) {
+            this.shortIdentifier = identifierNode.getText();
+        } else {
+            this.shortIdentifier = identifierNode.getText().toLowerCase();
+        }
+    }
+
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
         this.identifierNode = identifierNode;
         this.fileURI = fileURI;
@@ -21,14 +31,18 @@ public class Symbol {
         this.status = SymbolStatus.UNRESOLVED;
         this.scope = scope;
         this.shortIdentifier = shortIdentifier;
+
+        if (this.shortIdentifier == null) {
+            autoSetShortIdentifier();
+        }
     }
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
-        this(identifierNode, type, fileURI, null, identifierNode.getText());
+        this(identifierNode, type, fileURI, null, null);
     }
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
-        this(identifierNode, type, fileURI, scope, identifierNode.getText());
+        this(identifierNode, type, fileURI, scope, null);
     }
 
     public String getFileURI() { return fileURI; }
