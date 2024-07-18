@@ -43,4 +43,16 @@ public class RankingExpressionUtils {
         }
     }
 
+    public static void printTree(PrintStream logger, RankNode node) {
+        printTree(logger, node, 0);
+    }
+
+    public static void printTree(PrintStream logger, RankNode node, int indent) {
+        logger.println(new String(new char[indent]).replace("\0", "\t") + node.toString());
+
+        for (RankNode child : node) {
+            printTree(logger, child, indent + 1);
+        }
+    }
+
 }

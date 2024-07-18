@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.xerces.impl.xs.SchemaGrammar.Schema4Annotations;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
@@ -28,6 +29,8 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Symbol
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
+import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class RankExpressionSymbolResolver {
 
@@ -95,31 +98,55 @@ public class RankExpressionSymbolResolver {
     public static List<Diagnostic> resolveRankExpressionReferences(SchemaNode node, ParseContext context) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        if (
-            node.getLanguageType() == LanguageType.RANK_EXPRESSION &&
-            node.hasSymbol()
-        ) {
-            if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
-                resolveReference(node.getSymbol(), context, diagnostics);
+        if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+
+            diagnostics.addAll(resolveRankExpression(node, context));
+
+        } else {
+            for (SchemaNode child : node) {
+                diagnostics.addAll(resolveRankExpressionReferences(child, context));
             }
-
-            if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
-                findBuiltInTokenFunction(node);
-            }
-
-            if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
-                findSymbolTypeOfBuiltInArgument(node, context, diagnostics);
-            }
-
-            // if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
-            //     node.setSymbolStatus(SymbolStatus.REFERENCE); // TODO: remove later, is placed here to pass tests
-            // }
-
         }
 
-        for (SchemaNode child : node) {
-            diagnostics.addAll(resolveRankExpressionReferences(child, context));
+        return diagnostics;
+    }
+
+    public static List<Diagnostic> resolveRankExpression(SchemaNode node, ParseContext context) {
+        List<Diagnostic> diagnostics = new ArrayList<>();
+
+        Optional<RankNode> rankNode = RankNode.createTree(node, context.logger());
+        if (rankNode.isPresent()) {
+            RankingExpressionUtils.printTree(context.logger(), rankNode.get());
         }
+
+        // if (
+        //     node.getLanguageType() == LanguageType.RANK_EXPRESSION &&
+        //     node.hasSymbol()
+        // ) {
+        //     if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+        //         resolveReference(node.getSymbol(), context, diagnostics);
+        //     }
+
+        //     if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+        //         findBuiltInTokenFunction(node);
+        //     }
+
+        //     if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+        //         findSymbolTypeOfBuiltInArgument(node, context, diagnostics);
+        //     }
+
+        //     // if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+        //     //     node.setSymbolStatus(SymbolStatus.REFERENCE); // TODO: remove later, is placed here to pass tests
+        //     // }
+
+        // } else {
+
+        // }
+
+        // for (SchemaNode child : node) {
+        //     diagnostics.addAll(resolveRankExpressionReferences(child, context));
+        // }
+
 
         return diagnostics;
     }
