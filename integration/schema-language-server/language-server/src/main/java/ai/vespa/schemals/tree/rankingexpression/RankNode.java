@@ -7,17 +7,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
+import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class RankNode implements Iterable<RankNode>  {
 
     public static enum RankNodeType {
         FEATURE,
-        EXPRESSION
+        EXPRESSION,
+        BUILT_IN_FUNCTION
     };
 
     private SchemaNode schemaNode;
@@ -33,9 +38,12 @@ public class RankNode implements Iterable<RankNode>  {
 
         if (this.type == RankNodeType.EXPRESSION) {
             this.children = findChildren(node);
-        } else if (this.type == RankNodeType.FEATURE) {
+        } else if (this.type == RankNodeType.FEATURE || this.type == RankNodeType.BUILT_IN_FUNCTION) {
             this.children = findParameters(node);
-            this.proptery = findProperty(node);
+
+            if (this.type == RankNodeType.FEATURE) {
+                this.proptery = findProperty(node);
+            }
         }
     }
 
@@ -100,6 +108,7 @@ public class RankNode implements Iterable<RankNode>  {
     private static final Map<Class<?>, RankNodeType> rankNodeTypeMap = new HashMap<>() {{
         put(feature.class, RankNodeType.FEATURE);
         put(expression.class, RankNodeType.EXPRESSION);
+        put(scalarOrTensorFunction.class, RankNodeType.BUILT_IN_FUNCTION);
     }};
 
     private static Optional<SchemaNode> findEntrancePoint(SchemaNode node) {
@@ -147,6 +156,38 @@ public class RankNode implements Iterable<RankNode>  {
 
     public RankNodeType getType() {
         return type;
+    }
+
+    public SchemaNode getSymbolNode() {
+        if (type == RankNodeType.EXPRESSION  || schemaNode.size() == 0) {
+            return null;
+        }
+
+        SchemaNode symbolNode = schemaNode.get(0);
+        if (!symbolNode.hasSymbol()) {
+            return null;
+        }
+
+        return symbolNode;
+    }
+
+    // Ths means that the node has a symbol
+    public boolean hasSymbol() {
+        return type != RankNodeType.EXPRESSION;
+    }
+
+    public Symbol getSymbol() {
+        if (!hasSymbol()) return null;
+
+        return getSymbolNode().getSymbol();
+    }
+
+    public SymbolType getSymbolType() {
+        return getSymbolNode().getSymbol().getType();
+    }
+
+    public SymbolStatus getSymbolStatus() {
+        return getSymbolNode().getSymbol().getStatus();
     }
 
     public String toString() {

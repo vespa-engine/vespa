@@ -507,7 +507,9 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     public String toString() {
         Position pos = getRange().getStart();
-        String ret = "Node('" + getText() + "', [" + getASTClass() + "] at " + pos.getLine() + ":" + pos.getCharacter();
+        String astClassStr = getASTClass().toString();
+        astClassStr = astClassStr.substring(astClassStr.lastIndexOf('.') + 1);
+        String ret = "Node('" + getText() + "', [" + astClassStr + "] at " + pos.getLine() + ":" + pos.getCharacter();
         if (hasSymbol()) {
             ret += " [SYMBOL " + getSymbol().getType().toString() + " " + getSymbol().getStatus().toString() + ": " + getSymbol().getLongIdentifier() +  "]";
         }

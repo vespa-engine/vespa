@@ -31,6 +31,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
+import ai.vespa.schemals.tree.rankingexpression.RankNode.RankNodeType;
 
 public class RankExpressionSymbolResolver {
 
@@ -111,13 +112,41 @@ public class RankExpressionSymbolResolver {
         return diagnostics;
     }
 
-    public static List<Diagnostic> resolveRankExpression(SchemaNode node, ParseContext context) {
+    public static List<Diagnostic> resolveRankExpression(SchemaNode schemaNode, ParseContext context) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        Optional<RankNode> rankNode = RankNode.createTree(node, context.logger());
-        if (rankNode.isPresent()) {
-            RankingExpressionUtils.printTree(context.logger(), rankNode.get());
+        Optional<RankNode> rankNode = RankNode.createTree(schemaNode);
+        if (rankNode.isEmpty()) {
+            // TODO: error message
+            return diagnostics;
         }
+
+        RankingExpressionUtils.printTree(context.logger(), rankNode.get());
+
+        return traverseRankExpressionTree(rankNode.get(), context);
+    }
+
+    private static List<Diagnostic> traverseRankExpressionTree(RankNode node, ParseContext context) {
+        List<Diagnostic> diagnostics = new ArrayList<>();
+
+        for (RankNode child : node) {
+            diagnostics.addAll(traverseRankExpressionTree(child, context));
+        }
+
+        // All feature nodes has a symbol before the parse
+        if (node.hasSymbol()) {
+
+            if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {
+                resolveReference(node.getSymbol(), context, diagnostics);
+            }
+
+            if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {
+                findBuiltInTokenFunction(node);
+            }
+
+        }
+
+
 
         // if (
         //     node.getLanguageType() == LanguageType.RANK_EXPRESSION &&
@@ -151,85 +180,83 @@ public class RankExpressionSymbolResolver {
         return diagnostics;
     }
 
-    private static List<SchemaNode> findRankExpressionArguments(SchemaNode node) {
-        List<SchemaNode> ret = new ArrayList<>();
+    // private static List<SchemaNode> findRankExpressionArguments(SchemaNode node) {
+    //     List<SchemaNode> ret = new ArrayList<>();
 
-        SchemaNode parent = node.getParent();
+    //     SchemaNode parent = node.getParent();
 
-        if (parent == null || parent.size() < 3) return ret;
+    //     if (parent == null || parent.size() < 3) return ret;
 
-        SchemaNode argNode = parent.get(2);
-        if (!argNode.isASTInstance(args.class)) return ret;
+    //     SchemaNode argNode = parent.get(2);
+    //     if (!argNode.isASTInstance(args.class)) return ret;
 
-        for (SchemaNode child : argNode) {
-            if (child.isASTInstance(expression.class)) {
-                ret.add(child);
-            }
-        }
+    //     for (SchemaNode child : argNode) {
+    //         if (child.isASTInstance(expression.class)) {
+    //             ret.add(child);
+    //         }
+    //     }
 
-        return ret;
-    }
+    //     return ret;
+    // }
 
-    private static Optional<SchemaNode> findFunctionPropertyNode(SchemaNode node) {
-        SchemaNode parent = node.getParent();
+    // private static Optional<SchemaNode> findFunctionPropertyNode(SchemaNode node) {
+    //     SchemaNode parent = node.getParent();
 
-        if (parent == null) return Optional.empty();
+    //     if (parent == null) return Optional.empty();
 
-        for (SchemaNode child : parent) {
-            if (child.isASTInstance(outs.class)) {
-                return Optional.of(child);
-            }
-        }
+    //     for (SchemaNode child : parent) {
+    //         if (child.isASTInstance(outs.class)) {
+    //             return Optional.of(child);
+    //         }
+    //     }
 
-        return Optional.empty();
-    }
+    //     return Optional.empty();
+    // }
 
     public static final Set<Class<?>> builInTokenizedFunctions = new HashSet<>() {{
         add(unaryFunctionName.class);
     }};
 
-    private static void findBuiltInTokenFunction(SchemaNode node) {
+    private static void findBuiltInTokenFunction(RankNode node) {
 
-        boolean isBuiltInTokenizedFunction = builInTokenizedFunctions.contains(node.getASTClass());
-        if (isBuiltInTokenizedFunction) {
+        if (node.getType() == RankNodeType.BUILT_IN_FUNCTION) {
             Symbol symbol = node.getSymbol();
             symbol.setType(SymbolType.FUNCTION);
             symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
-
         }
     }
 
-    private static void removeSymbol(ParseContext context, SchemaNode node) {
-        do {
-            if (node.hasSymbol()) {
-                Symbol symbol = node.getSymbol();
-                if (symbol.getStatus() == SymbolStatus.REFERENCE) {
-                    context.schemaIndex().deleteSymbolReference(symbol);
-                }
-                node.removeSymbol();
-            }
-            node = node.get(0);
-        } while (node.size() > 0);
-    }
+    // private static void removeSymbol(ParseContext context, SchemaNode node) {
+    //     do {
+    //         if (node.hasSymbol()) {
+    //             Symbol symbol = node.getSymbol();
+    //             if (symbol.getStatus() == SymbolStatus.REFERENCE) {
+    //                 context.schemaIndex().deleteSymbolReference(symbol);
+    //             }
+    //             node.removeSymbol();
+    //         }
+    //         node = node.get(0);
+    //     } while (node.size() > 0);
+    // }
     
-    private static void findSymbolTypeOfBuiltInArgument(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+    // private static void findSymbolTypeOfBuiltInArgument(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
 
-        String identifier = node.getSymbol().getShortIdentifier();
+    //     String identifier = node.getSymbol().getShortIdentifier();
 
-        FunctionHandler functionHandler = rankExpressionBultInFunctions.get(identifier);
-        if (functionHandler == null) return;
-        node.getSymbol().setType(SymbolType.FUNCTION);
-        node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+    //     FunctionHandler functionHandler = rankExpressionBultInFunctions.get(identifier);
+    //     if (functionHandler == null) return;
+    //     node.getSymbol().setType(SymbolType.FUNCTION);
+    //     node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
 
-        List<SchemaNode> arguments = findRankExpressionArguments(node);
-        Optional<SchemaNode> functionProperty = findFunctionPropertyNode(node);
+    //     List<SchemaNode> arguments = findRankExpressionArguments(node);
+    //     Optional<SchemaNode> functionProperty = findFunctionPropertyNode(node);
 
-        if (functionProperty.isPresent()) {
-            removeSymbol(context, functionProperty.get());
-        }
+    //     if (functionProperty.isPresent()) {
+    //         removeSymbol(context, functionProperty.get());
+    //     }
 
-        diagnostics.addAll(functionHandler.handleArgumentList(context, node, arguments, functionProperty));
-    }
+    //     diagnostics.addAll(functionHandler.handleArgumentList(context, node, arguments, functionProperty));
+    // }
 
     private static final List<SymbolType> possibleTypes = new ArrayList<>() {{
         add(SymbolType.FUNCTION);
