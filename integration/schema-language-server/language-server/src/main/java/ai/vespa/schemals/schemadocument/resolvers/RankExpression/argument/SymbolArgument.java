@@ -22,7 +22,7 @@ public class SymbolArgument implements Argument {
 
     @Override
     public int getStrictness() {
-        return 2;
+        return 3;
     }
 
     private SchemaNode findSymbolNode(RankNode node) {

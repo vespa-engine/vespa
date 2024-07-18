@@ -17,6 +17,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
+import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class RankNode implements Iterable<RankNode>  {
@@ -24,7 +25,7 @@ public class RankNode implements Iterable<RankNode>  {
     public static enum RankNodeType {
         FEATURE,
         EXPRESSION,
-        BUILT_IN_TENSOR_FUNCTION
+        BUILT_IN_FUNCTION
     };
 
     public static enum ReturnType {
@@ -34,6 +35,11 @@ public class RankNode implements Iterable<RankNode>  {
         TENSOR,
         UNKNOWN
     }
+
+    private static Map<Class<?>, ReturnType> BuiltInReturnType = new HashMap<>() {{
+        put(tensorReduceComposites.class, ReturnType.TENSOR);
+        put(scalarOrTensorFunction.class, ReturnType.DOUBLE);
+    }};
 
     public static boolean validReturnType(ReturnType expected, ReturnType recieved) {
         if (expected == recieved) return true;
@@ -69,10 +75,10 @@ public class RankNode implements Iterable<RankNode>  {
             this.children = findParameters(node);
             this.proptery = findProperty(node);
 
-        } else if (this.type == RankNodeType.BUILT_IN_TENSOR_FUNCTION) {
+        } else if (this.type == RankNodeType.BUILT_IN_FUNCTION) {
 
             this.children = findParameters(node);
-            this.returnType = ReturnType.TENSOR;
+            this.returnType = BuiltInReturnType.get(node.getASTClass());
         }
     }
 
@@ -137,7 +143,8 @@ public class RankNode implements Iterable<RankNode>  {
     private static final Map<Class<?>, RankNodeType> rankNodeTypeMap = new HashMap<>() {{
         put(feature.class, RankNodeType.FEATURE);
         put(expression.class, RankNodeType.EXPRESSION);
-        put(scalarOrTensorFunction.class, RankNodeType.BUILT_IN_TENSOR_FUNCTION);
+        put(scalarOrTensorFunction.class, RankNodeType.BUILT_IN_FUNCTION);
+        put(tensorReduceComposites.class, RankNodeType.BUILT_IN_FUNCTION);
     }};
 
     private static Optional<SchemaNode> findEntrancePoint(SchemaNode node) {
@@ -200,9 +207,8 @@ public class RankNode implements Iterable<RankNode>  {
         return symbolNode;
     }
 
-    // Ths means that the node has a symbol
     public boolean hasSymbol() {
-        return type != RankNodeType.EXPRESSION;
+        return (getSymbolNode() != null);
     }
 
     public Symbol getSymbol() {

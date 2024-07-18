@@ -20,7 +20,7 @@ public class StringArgument implements Argument {
 
     @Override
     public int getStrictness() {
-        return 1;
+        return 2;
     }
 
     @Override

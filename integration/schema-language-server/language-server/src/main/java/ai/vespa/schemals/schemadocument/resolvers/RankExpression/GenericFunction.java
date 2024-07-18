@@ -20,6 +20,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argume
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
+import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
 
 public class GenericFunction implements FunctionHandler {
     
@@ -81,14 +82,8 @@ public class GenericFunction implements FunctionHandler {
             // This is valid
             return diagnostics;
         }
-
-        if (property.isPresent() && properties.size() == 0) {
-            String message = "The function '" + node.getSchemaNode().getText() + "' doesn't have any properties.";
-            diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Error, ""));
-            return diagnostics;
-        }
         
-        String propertyString = String.join(", ", properties);
+        String propertyString = (signature.get().getProperties().size() == 0) ? "No one" : String.join(", ", signature.get().getProperties());
         if (!property.isPresent()) {
             String message = "The function '" + node.getSchemaNode().getText() + "' must be used with a property. Available properties are: " + propertyString;
             diagnostics.add(new Diagnostic(node.getRange(), message, DiagnosticSeverity.Error, ""));
@@ -96,20 +91,24 @@ public class GenericFunction implements FunctionHandler {
         }
 
         if (!properties.contains(property.get().getText())) {
-            String message = "Invalid property '" + property.get().getText() + "', available properties are: " + propertyString;
+            String message = "Invalid property '" + property.get().getText() + "'. Available properties are: " + propertyString;
             diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Error, ""));
             return diagnostics;
         }
 
+        if (!signature.get().getProperties().contains(property.get().getText())) {
+            String message = "This property is not available with with this signature. Available properties are: " + propertyString;
+            diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Warning, ""));
+        }
+
         SchemaNode symbolNode = property.get();
-        while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
+        while (!symbolNode.isASTInstance(identifierStr.class) && symbolNode.size() > 0) {
             symbolNode = symbolNode.get(0);
         }
 
-        if (symbolNode.hasSymbol()) {
-            Symbol symbol = symbolNode.getSymbol();
-            symbol.setType(SymbolType.PROPERTY);
-            symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
+        if (symbolNode.isASTInstance(identifierStr.class)) {
+            symbolNode.setSymbol(SymbolType.PROPERTY, context.fileURI());
+            symbolNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
 
         return diagnostics;

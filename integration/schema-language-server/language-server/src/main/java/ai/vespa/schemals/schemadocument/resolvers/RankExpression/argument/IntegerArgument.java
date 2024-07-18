@@ -16,7 +16,7 @@ public class IntegerArgument implements Argument {
 
     @Override
     public int getStrictness() {
-        return 4;
+        return 6;
     }
 
     @Override

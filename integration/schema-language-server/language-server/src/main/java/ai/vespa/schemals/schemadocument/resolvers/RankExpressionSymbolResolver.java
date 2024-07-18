@@ -23,6 +23,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionHandler
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionSignature;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.DistanceFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ExpressionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.StringArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
@@ -32,6 +33,7 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.RankNodeType;
+import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
 
 public class RankExpressionSymbolResolver {
 
@@ -87,7 +89,46 @@ public class RankExpressionSymbolResolver {
             add("segments");
             add("matches");
             add("degradedMatches");
+            add("outOfOrder");
+            add("gaps");
+            add("gapLength");
+            add("longestSequence");
+            add("head");
+            add("tail");
+            add("segmentDistance");
         }}));
+        put("textSimilarity", new GenericFunction(new SymbolArgument(SymbolType.FIELD), new HashSet<>() {{
+            add("");
+            add("proximity");
+            add("order");
+            add("queryCoverage");
+            add("fieldCoverage");
+        }}));
+        put("fieldTermMatch", new GenericFunction(new FunctionSignature(new ArrayList<>() {{
+            add(new SymbolArgument(SymbolType.FIELD));
+            add(new IntegerArgument());
+        }}, new HashSet<>() {{
+            add("firstPosition");
+            add("occurences");
+        }})));
+        put("matchCount", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
+        put("matches", new GenericFunction(new ArrayList<>() {{
+            add(new FunctionSignature(new SymbolArgument(SymbolType.FIELD)));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new SymbolArgument(SymbolType.FIELD));
+                add(new IntegerArgument());
+            }}));
+        }}));
+        put("termDistance", new GenericFunction(new FunctionSignature(new ArrayList<>() {{
+            add(new SymbolArgument(SymbolType.FIELD));
+            add(new ExpressionArgument("x"));
+            add(new ExpressionArgument("y"));
+        }}, new HashSet<>() {{
+            add("forward");
+            add("forwardTermPosition");
+            add("reverse");
+            add("reverseTermPosition");
+        }})));
     }};
 
     /**
@@ -159,7 +200,7 @@ public class RankExpressionSymbolResolver {
 
     private static void findBuiltInTensorFunction(RankNode node) {
 
-        if (node.getType() == RankNodeType.BUILT_IN_TENSOR_FUNCTION) {
+        if (node.getType() == RankNodeType.BUILT_IN_FUNCTION) {
             Symbol symbol = node.getSymbol();
             symbol.setType(SymbolType.FUNCTION);
             symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
@@ -172,8 +213,8 @@ public class RankExpressionSymbolResolver {
                 Symbol symbol = node.getSymbol();
                 if (symbol.getStatus() == SymbolStatus.REFERENCE) {
                     context.schemaIndex().deleteSymbolReference(symbol);
-                    symbol.setStatus(SymbolStatus.UNRESOLVED);
                 }
+                node.removeSymbol();
             }
             node = node.get(0);
         } while (node.size() > 0);
@@ -188,7 +229,8 @@ public class RankExpressionSymbolResolver {
 
         FunctionHandler functionHandler = rankExpressionBultInFunctions.get(identifier);
         if (functionHandler == null) return;
-
+        
+        node.setReturnType(ReturnType.DOUBLE);
         node.getSymbol().setType(SymbolType.FUNCTION);
         node.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
 
