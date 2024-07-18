@@ -10,6 +10,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class SymbolArgument implements Argument {
     
@@ -24,8 +25,8 @@ public class SymbolArgument implements Argument {
         return 2;
     }
 
-    private SchemaNode findSymbolNode(SchemaNode node) {
-        SchemaNode symbolNode = node;
+    private SchemaNode findSymbolNode(RankNode node) {
+        SchemaNode symbolNode = node.getSchemaNode();
 
         while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
             symbolNode = symbolNode.get(0);
@@ -35,13 +36,13 @@ public class SymbolArgument implements Argument {
     }
 
     @Override
-    public boolean validateArgument(SchemaNode node) {
+    public boolean validateArgument(RankNode node) {
         SchemaNode symbolNode = findSymbolNode(node);
         return symbolNode.hasSymbol();
     }
 
     @Override
-    public Optional<Diagnostic> parseArgument(ParseContext context, SchemaNode node) {
+    public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
         SchemaNode symbolNode = findSymbolNode(node);
 

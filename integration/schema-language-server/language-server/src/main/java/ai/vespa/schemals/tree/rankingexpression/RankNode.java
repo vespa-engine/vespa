@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.eclipse.lsp4j.Range;
+
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -22,11 +24,32 @@ public class RankNode implements Iterable<RankNode>  {
     public static enum RankNodeType {
         FEATURE,
         EXPRESSION,
-        BUILT_IN_FUNCTION
+        BUILT_IN_TENSOR_FUNCTION
     };
+
+    public static enum ReturnType {
+        INTEGER,
+        DOUBLE,
+        STRING,
+        TENSOR,
+        UNKNOWN
+    }
+
+    public static boolean validReturnType(ReturnType expected, ReturnType recieved) {
+        if (expected == recieved) return true;
+
+        if (recieved == ReturnType.UNKNOWN) return true;
+
+        if (recieved == ReturnType.INTEGER) return validReturnType(expected, ReturnType.DOUBLE);
+
+        if (recieved == ReturnType.DOUBLE) return validReturnType(expected, ReturnType.STRING);
+
+        return false;
+    }
 
     private SchemaNode schemaNode;
     private RankNodeType type;
+    private ReturnType returnType;
 
     private List<RankNode> children; // parameters for features, children for expressions
 
@@ -35,15 +58,21 @@ public class RankNode implements Iterable<RankNode>  {
     private RankNode(SchemaNode node) {
         this.schemaNode = node;
         this.type = rankNodeTypeMap.get(node.getASTClass());
+        this.returnType = ReturnType.UNKNOWN;
 
         if (this.type == RankNodeType.EXPRESSION) {
-            this.children = findChildren(node);
-        } else if (this.type == RankNodeType.FEATURE || this.type == RankNodeType.BUILT_IN_FUNCTION) {
-            this.children = findParameters(node);
 
-            if (this.type == RankNodeType.FEATURE) {
-                this.proptery = findProperty(node);
-            }
+            this.children = findChildren(node);
+
+        } else if (this.type == RankNodeType.FEATURE) {
+
+            this.children = findParameters(node);
+            this.proptery = findProperty(node);
+
+        } else if (this.type == RankNodeType.BUILT_IN_TENSOR_FUNCTION) {
+
+            this.children = findParameters(node);
+            this.returnType = ReturnType.TENSOR;
         }
     }
 
@@ -108,7 +137,7 @@ public class RankNode implements Iterable<RankNode>  {
     private static final Map<Class<?>, RankNodeType> rankNodeTypeMap = new HashMap<>() {{
         put(feature.class, RankNodeType.FEATURE);
         put(expression.class, RankNodeType.EXPRESSION);
-        put(scalarOrTensorFunction.class, RankNodeType.BUILT_IN_FUNCTION);
+        put(scalarOrTensorFunction.class, RankNodeType.BUILT_IN_TENSOR_FUNCTION);
     }};
 
     private static Optional<SchemaNode> findEntrancePoint(SchemaNode node) {
@@ -188,6 +217,18 @@ public class RankNode implements Iterable<RankNode>  {
 
     public SymbolStatus getSymbolStatus() {
         return getSymbolNode().getSymbol().getStatus();
+    }
+
+    public Range getRange() {
+        return schemaNode.getRange();
+    }
+
+    public ReturnType getReturnType() {
+        return returnType;
+    }
+
+    public void setReturnType(ReturnType returnType) {
+        this.returnType = returnType;
     }
 
     public String toString() {

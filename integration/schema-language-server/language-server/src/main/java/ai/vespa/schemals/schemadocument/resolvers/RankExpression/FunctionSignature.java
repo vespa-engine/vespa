@@ -8,13 +8,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class FunctionSignature {
 
@@ -46,7 +46,7 @@ public class FunctionSignature {
         return new FunctionSignature(new SymbolArgument(symbolType));
     }
 
-    int matchScore(List<SchemaNode> arguments) {
+    int matchScore(List<RankNode> arguments) {
         if (arguments.size() != argumentList.size()) {
             return 0;
         }
@@ -70,7 +70,7 @@ public class FunctionSignature {
         return properties;
     }
 
-    List<Diagnostic> handleArgumentList(ParseContext context, List<SchemaNode> arguments) {
+    List<Diagnostic> handleArgumentList(ParseContext context, List<RankNode> arguments) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
         // if (arguments.size() != argumentList.size()) {

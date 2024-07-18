@@ -11,20 +11,23 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class DistanceFunction implements FunctionHandler {
 
 
     @Override
-    public List<Diagnostic> handleArgumentList(ParseContext context, SchemaNode node, List<SchemaNode> arguments, Optional<SchemaNode> property) {
+    public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node) {
         List<Diagnostic> diagnostics = new ArrayList<>();
+
+        List<RankNode> arguments = node.getChildren();
 
         if (arguments.size() != 2) {
             diagnostics.add(new Diagnostic(node.getRange(), "The distance function takes two argument (dimension, name)", DiagnosticSeverity.Error, ""));
             return diagnostics;
         }
 
-        SchemaNode firstArgument = arguments.get(0);
+        SchemaNode firstArgument = arguments.get(0).getSchemaNode();
         while (!firstArgument.hasSymbol() && firstArgument.size() > 0) {
             firstArgument = firstArgument.get(0);
         }
@@ -41,7 +44,7 @@ public class DistanceFunction implements FunctionHandler {
             return diagnostics;
         }
 
-        SchemaNode secondArgument = arguments.get(1);
+        SchemaNode secondArgument = arguments.get(1).getSchemaNode();
         while (!secondArgument.hasSymbol() && secondArgument.size() > 0) {
             secondArgument = secondArgument.get(0);
         }

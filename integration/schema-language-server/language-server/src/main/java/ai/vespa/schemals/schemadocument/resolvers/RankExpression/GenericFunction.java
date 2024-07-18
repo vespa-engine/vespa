@@ -9,14 +9,17 @@ import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.SymbolTag;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.identifierStr;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class GenericFunction implements FunctionHandler {
     
@@ -55,10 +58,10 @@ public class GenericFunction implements FunctionHandler {
     }
 
     @Override
-    public List<Diagnostic> handleArgumentList(ParseContext context, SchemaNode node, List<SchemaNode> arguments, Optional<SchemaNode> property) {
+    public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        Optional<FunctionSignature> signature = findFunctionSignature(arguments);
+        Optional<FunctionSignature> signature = findFunctionSignature(node.getChildren());
 
         if (signature.isEmpty()) {
             List<String> signatureStrings = signatures.stream()
@@ -70,7 +73,9 @@ public class GenericFunction implements FunctionHandler {
             return diagnostics;
         }
 
-        diagnostics.addAll(signature.get().handleArgumentList(context, arguments));
+        diagnostics.addAll(signature.get().handleArgumentList(context, node.getChildren()));
+
+        Optional<SchemaNode> property = node.getProperty();
 
         if (property.isEmpty() && (properties.contains("") || properties.size() == 0)) {
             // This is valid
@@ -78,14 +83,14 @@ public class GenericFunction implements FunctionHandler {
         }
 
         if (property.isPresent() && properties.size() == 0) {
-            String message = "The function '" + node.getText() + "' doesn't have any properties.";
+            String message = "The function '" + node.getSchemaNode().getText() + "' doesn't have any properties.";
             diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Error, ""));
             return diagnostics;
         }
         
         String propertyString = String.join(", ", properties);
         if (!property.isPresent()) {
-            String message = "The function '" + node.getText() + "' must be used with a property. Available properties are: " + propertyString;
+            String message = "The function '" + node.getSchemaNode().getText() + "' must be used with a property. Available properties are: " + propertyString;
             diagnostics.add(new Diagnostic(node.getRange(), message, DiagnosticSeverity.Error, ""));
             return diagnostics;
         }
@@ -96,20 +101,21 @@ public class GenericFunction implements FunctionHandler {
             return diagnostics;
         }
 
-        SchemaNode identifierStrNode = property.get();
-        while (!identifierStrNode.isASTInstance(identifierStr.class) && identifierStrNode.size() > 0) {
-            identifierStrNode = identifierStrNode.get(0);
+        SchemaNode symbolNode = property.get();
+        while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
+            symbolNode = symbolNode.get(0);
         }
 
-        if (identifierStrNode.isASTInstance(identifierStr.class)) {
-            identifierStrNode.setSymbol(SymbolType.PROPERTY, context.fileURI());
-            identifierStrNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+        if (symbolNode.hasSymbol()) {
+            Symbol symbol = symbolNode.getSymbol();
+            symbol.setType(SymbolType.PROPERTY);
+            symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
 
         return diagnostics;
     }
 
-    private Optional<FunctionSignature> findFunctionSignature(List<SchemaNode> arguments) {
+    private Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments) {
         FunctionSignature bestMatch = null;
         int maxScore = 0;
 

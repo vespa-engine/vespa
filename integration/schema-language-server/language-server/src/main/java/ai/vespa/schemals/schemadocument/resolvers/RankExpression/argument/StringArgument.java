@@ -8,6 +8,7 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class StringArgument implements Argument {
 
@@ -23,14 +24,14 @@ public class StringArgument implements Argument {
     }
 
     @Override
-    public boolean validateArgument(SchemaNode node) {
+    public boolean validateArgument(RankNode node) {
         return true;
     }
     
     @Override
-    public Optional<Diagnostic> parseArgument(ParseContext context, SchemaNode node) {
+    public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
-        SchemaNode leaf = node;
+        SchemaNode leaf = node.getSchemaNode();
 
         while (leaf.size() > 0) {
             if (leaf.hasSymbol()) {
