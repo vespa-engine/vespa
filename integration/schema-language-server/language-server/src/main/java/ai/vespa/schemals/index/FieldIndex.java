@@ -108,15 +108,22 @@ public class FieldIndex {
         visited.add(fieldDefinition);
         SchemaNode fieldDefinitionNode = fieldDefinition.getNode();
 
+        if (fieldDefinitionNode.isASTInstance(dataType.class)) {
+            // For map key and value
+            return fieldDefinitionNode;
+        }
+
         if (fieldDefinitionNode.getParent().isASTInstance(importField.class)) {
             SchemaNode importReferenceNode = fieldDefinitionNode.getPreviousSibling().getPreviousSibling();
             if (!importReferenceNode.hasSymbol() || importReferenceNode.getSymbol().getStatus() != SymbolStatus.REFERENCE) return null;
             Optional<Symbol> referencedField = schemaIndex.getSymbolDefinition(importReferenceNode.getSymbol());
             if (referencedField.isEmpty()) return null;
             return resolveFieldDataTypeNode(referencedField.get(), visited);
-        } else if (fieldDefinitionNode.getNextSibling() != null && fieldDefinitionNode.getNextSibling().getNextSibling() != null && fieldDefinitionNode.getNextSibling().getNextSibling().isASTInstance(dataType.class)) {
-            return fieldDefinitionNode.getNextSibling().getNextSibling();
         }
+
+        if (fieldDefinitionNode.getNextSibling() != null && fieldDefinitionNode.getNextSibling().getNextSibling() != null && fieldDefinitionNode.getNextSibling().getNextSibling().isASTInstance(dataType.class)) {
+            return fieldDefinitionNode.getNextSibling().getNextSibling();
+        }         
         return null;
     }
 }
