@@ -1,6 +1,7 @@
 package ai.vespa.schemals.index;
 
 import java.io.PrintStream;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,11 +22,18 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public class FieldIndex {
 
+    public enum IndexingType {
+        ATTRIBUTE,
+        INDEX,
+        SUMMARY
+    }
+
     /*
      * Simulating a struct because record is immutable
      */
     public class FieldIndexEntry {
         public SchemaNode dataTypeNode;
+        public EnumSet<IndexingType> indexingTypes = EnumSet.noneOf(IndexingType.class);
 
         FieldIndexEntry(SchemaNode dataTypeNode) {
             this.dataTypeNode = dataTypeNode;
@@ -55,9 +63,17 @@ public class FieldIndex {
         if (fieldDefinition.getStatus() != SymbolStatus.DEFINITION || fieldDefinition.getType() != SymbolType.FIELD) {
             throw new IllegalArgumentException("Only field definitions should be stored in FieldIndex!");
         }
+        if (database.containsKey(fieldDefinition)) return;
 
         SchemaNode dataTypeNode = resolveFieldDataTypeNode(fieldDefinition);
         database.put(fieldDefinition, new FieldIndexEntry(dataTypeNode));
+    }
+
+    public void addFieldIndexingType(Symbol fieldDefinition, IndexingType indexingType) {
+        insertFieldDefinition(fieldDefinition);
+
+        FieldIndexEntry entry = database.get(fieldDefinition);
+        entry.indexingTypes.add(indexingType);
     }
 
     public Optional<SchemaNode> getFieldDataTypeNode(Symbol fieldDefinition) {
@@ -70,11 +86,22 @@ public class FieldIndex {
         return Optional.ofNullable(entry.dataTypeNode);
     }
 
+    public EnumSet<IndexingType> getFieldIndexingTypes(Symbol fieldDefinition) {
+        FieldIndexEntry entry = database.get(fieldDefinition);
+
+        if (entry == null) return EnumSet.noneOf(IndexingType.class);
+
+        return EnumSet.copyOf(entry.indexingTypes);
+    }
+
     /**
      * Try to find the node that holds the dataType element
      * Also try to not fall into an infinite loop
      */
-    private SchemaNode resolveFieldDataTypeNode(Symbol fieldDefinition) { return resolveFieldDataTypeNode(fieldDefinition, new HashSet<>()); }
+    private SchemaNode resolveFieldDataTypeNode(Symbol fieldDefinition) { 
+        fieldDefinition = schemaIndex.getFirstSymbolDefinition(fieldDefinition).get();
+        return resolveFieldDataTypeNode(fieldDefinition, new HashSet<>()); 
+    }
 
     private SchemaNode resolveFieldDataTypeNode(Symbol fieldDefinition, Set<Symbol> visited) {
         if (visited.contains(fieldDefinition)) return null;

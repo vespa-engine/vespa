@@ -213,6 +213,11 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.symbolAtNode.setStatus(newStatus);
     }
 
+    public void setSymbolScope(Symbol newScope) {
+        if (!this.hasSymbol()) return;
+        this.symbolAtNode.setScope(newScope);
+    }
+
     public boolean hasSymbol() {
         return this.symbolAtNode != null;
     }

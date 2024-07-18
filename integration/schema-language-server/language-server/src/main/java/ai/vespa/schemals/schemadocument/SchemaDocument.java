@@ -31,6 +31,8 @@ import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
+import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
+import ai.vespa.schemals.schemadocument.resolvers.StructFieldDefinitionResolver;
 import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.TypeNodeResolver;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -275,9 +277,12 @@ public class SchemaDocument implements DocumentManager {
 
         
         if (tolerantResult.CST().isPresent()) {
+
             diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 
-            diagnostics.addAll(SymbolReferenceResolver.resolveSymbolReferences(context, tolerantResult.CST().get()));
+            diagnostics.addAll(StructFieldDefinitionResolver.resolve(context, tolerantResult.CST().get()));
+
+            diagnostics.addAll(ResolverTraversal.traverse(context, tolerantResult.CST().get()));
 
             diagnostics.addAll(DocumentReferenceResolver.resolveDocumentReferences(context));
         }

@@ -321,6 +321,14 @@ public class SchemaIndex {
         return Optional.ofNullable(definitionOfReference.get(reference));
     }
 
+    public Optional<Symbol> getFirstSymbolDefinition(Symbol symbol) {
+        while (definitionOfReference.get(symbol) != null) {
+            symbol = definitionOfReference.get(symbol);
+        }
+        if (symbol.getStatus() == SymbolStatus.DEFINITION) return Optional.of(symbol);
+        return Optional.empty();
+    }
+
     /**
      * Returns a list of symbol references for the given symbol definition.
      *

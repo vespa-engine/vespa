@@ -13,6 +13,7 @@ import org.eclipse.lsp4j.MarkupKind;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -59,7 +60,14 @@ public class SchemaHover {
             typeText = dataTypeNode.get().getText().trim();
         }
 
-        return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "field " + fieldDefinitionSymbol.get().getShortIdentifier() + " type " + typeText));
+
+        String hoverText = "field " + fieldDefinitionSymbol.get().getShortIdentifier() + " type " + typeText;
+
+        for (IndexingType it : context.schemaIndex.fieldIndex().getFieldIndexingTypes(fieldDefinitionSymbol.get())) {
+            hoverText += "\n\t" + it.toString();
+        }
+
+        return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, hoverText));
     }
 
     private static Hover getSymbolHover(SchemaNode node, EventPositionContext context) {

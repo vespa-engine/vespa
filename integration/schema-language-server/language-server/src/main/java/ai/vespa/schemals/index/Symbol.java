@@ -58,6 +58,8 @@ public class Symbol {
     public SymbolStatus getStatus() { return status; }
 
     public Symbol getScope() { return scope; }
+    // Be careful when using this
+    public void setScope(Symbol scope) { this.scope = scope; }
 
     // TODO: not quite sure if this kind of equality check is good
     public boolean isInScope(Symbol scope) {
