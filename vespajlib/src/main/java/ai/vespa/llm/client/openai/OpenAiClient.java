@@ -161,7 +161,7 @@ public class OpenAiClient implements LanguageModel {
                 waitBeforeRetry();
                 completeAsyncAttempt(context, attempt + 1);
             } else {
-                context.completionFuture().completeExceptionally(new RuntimeException("OpenAI: max retries reached"));
+                context.completionFuture().completeExceptionally(new RuntimeException("OpenAI: max retries reached", exception));
             }
         } else {
             context.completionFuture().completeExceptionally(exception);
