@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import ai.vespa.schemals.tree.SchemaNode;
-
+import ai.vespa.schemals.index.FieldIndex;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
@@ -124,6 +124,11 @@ public class ParseContext {
 
     public SchemaIndex schemaIndex() {
         return this.schemaIndex;
+    }
+
+    // Convenience
+    public FieldIndex fieldIndex() {
+        return this.schemaIndex.fieldIndex();
     }
 
     public SchemaDocumentScheduler scheduler() {

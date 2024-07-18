@@ -46,6 +46,7 @@ public class SchemaIndex {
 
     private PrintStream logger;
     private String workspaceRootURI;
+    private FieldIndex fieldIndex;
 
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
     private Map<Symbol, List<Symbol>> symbolReferences;
@@ -75,6 +76,7 @@ public class SchemaIndex {
             this.symbolDefinitions.put(type, new ArrayList<Symbol>());
         }
 
+        this.fieldIndex = new FieldIndex(logger, this);
     }
 
     public void setWorkspaceURI(String workspaceRootURI) {
@@ -84,6 +86,10 @@ public class SchemaIndex {
 
     public String getWorkspaceURI() {
         return this.workspaceRootURI;
+    }
+
+    public FieldIndex fieldIndex() {
+        return this.fieldIndex;
     }
 
     /**
@@ -133,6 +139,8 @@ public class SchemaIndex {
                 }
             }
         }
+
+        this.fieldIndex.clearFieldsByURI(fileURI);
 
         if (fileURI.endsWith(".sd")) {
             documentInheritanceGraph.clearInheritsList(fileURI);
@@ -373,6 +381,10 @@ public class SchemaIndex {
         list.add(symbol);
 
         symbolReferences.put(symbol, new ArrayList<>());
+
+        if (symbol.getType() == SymbolType.FIELD) {
+            fieldIndex.insertFieldDefinition(symbol);
+        }
     }
 
     /**
