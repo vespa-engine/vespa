@@ -19,3 +19,9 @@ cosign sign -y --oidc-provider=buildkite-agent "ghcr.io/vespa-engine/vespa-previ
 
 buildkite-agent meta-data set "vespa-container-image-$ARCH" "ghcr.io/vespa-engine/vespa-preview-$ARCH@$IMAGE_SHA256"
 
+# Publish the system test container image
+docker push "docker.io/vespaengine/vespa-systemtest-preview-$ARCH:$VESPA_VERSION"
+IMAGE_SHA256=$(crane digest "docker.io/vespaengine/vespa-systemtest-preview-$ARCH:$VESPA_VERSION")
+
+buildkite-agent meta-data set "vespa-systemtest-container-image-$ARCH" "docker.io/vespaengine/vespa-systemtest-preview-$ARCH@$IMAGE_SHA256"
+

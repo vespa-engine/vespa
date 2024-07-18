@@ -35,9 +35,10 @@ git checkout "$GITREF"
 mkdir -p docker/vespa-systemtests
 git archive HEAD --format tar | tar x -C docker/vespa-systemtests
 cd docker
-cp -a "$LOCAL_MVN_REPO" maven-repo
+rm -rf maven-repo
+cp -a "$HOME/.m2/repository" maven-repo
 docker build --progress=plain \
-             --build-arg VESPA_BASE_IMAGE= "ghcr.io/vespa-engine/vespa-preview-$ARCH:$VESPA_VERSION" \
+             --build-arg VESPA_BASE_IMAGE="ghcr.io/vespa-engine/vespa-preview-$ARCH:$VESPA_VERSION" \
              --target systemtest \
              --tag "docker.io/vespaengine/vespa-systemtest-preview-$ARCH:$VESPA_VERSION" \
              --file Dockerfile .
