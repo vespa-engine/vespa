@@ -19,9 +19,11 @@ import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionHandler;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionSignature;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.DistanceFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.StringArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -30,16 +32,33 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 public class RankExpressionSymbolResolver {
 
     public static final Map<String, FunctionHandler> rankExpressionBultInFunctions = new HashMap<>() {{
-        put("fieldLength", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
-        put("bm25", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
-        put("attribute", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
         put("query", GenericFunction.singleSymbolArugmnet(SymbolType.QUERY_INPUT));
-        put("distance", new DistanceFunction());
         put("term", new GenericFunction(new IntegerArgument(), new HashSet<>() {{
             add("significance");
             add("weight");
             add("connectedness");
         }}));
+        put("queryTermCount", new GenericFunction());
+        put("fieldLength", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
+        put("attribute", new GenericFunction(new ArrayList<>() {{
+            add(new FunctionSignature(new SymbolArgument(SymbolType.FIELD), new HashSet<>() {{
+                add("");
+                add("count");
+            }}));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new SymbolArgument(SymbolType.FIELD));
+                add(new IntegerArgument());
+            }}));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new SymbolArgument(SymbolType.FIELD));
+                add(new StringArgument("key"));
+            }}, new HashSet<>() {{
+                add("weight");
+                add("contains");
+            }}));
+        }}));
+        put("bm25", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
+        put("distance", new DistanceFunction());
         put("fieldMatch", new GenericFunction(new SymbolArgument(SymbolType.FIELD), new HashSet<>() {{
             add("");
             add("proximity");
@@ -58,6 +77,12 @@ public class RankExpressionSymbolResolver {
             add("weightedOccureence");
             add("weightedAbsoluteOccurence");
             add("significantOccurence");
+            add("weight");
+            add("significance");
+            add("importance");
+            add("segments");
+            add("matches");
+            add("degradedMatches");
         }}));
     }};
 

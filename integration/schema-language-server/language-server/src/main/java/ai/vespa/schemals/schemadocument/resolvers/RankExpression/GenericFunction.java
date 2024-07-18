@@ -5,15 +5,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.bouncycastle.pqc.jcajce.provider.lms.LMSSignatureSpi.generic;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.rankingexpression.ast.identifierStr;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
@@ -21,42 +20,57 @@ import ai.vespa.schemals.tree.SchemaNode;
 
 public class GenericFunction implements FunctionHandler {
     
-    List<Argument> argumentList;
+    List<FunctionSignature> signatures;
     Set<String> properties;
 
-    public GenericFunction(List<Argument> arguments, Set<String> properties) {
-        this.argumentList = arguments;
-        this.properties = properties;
+    public GenericFunction(List<FunctionSignature> signatures) {
+        this.signatures = signatures;
+        this.properties = new HashSet<>();
+
+        for (FunctionSignature signature : signatures) {
+            properties.addAll(signature.getProperties());
+        }
     }
 
-    public GenericFunction(List<Argument> arguments) {
-        this(arguments, new HashSet<>());
-    }
-
-    public GenericFunction(Argument argument) {
+    public GenericFunction(FunctionSignature signature) {
         this(new ArrayList<>() {{
-            add(argument);
+            add(signature);
         }});
     }
 
     public GenericFunction(Argument argument, Set<String> properties) {
-        this(new ArrayList<>() {{
-            add(argument);
-        }}, properties);
+        this(new FunctionSignature(argument, properties));
     }
 
+    public GenericFunction(List<Argument> arguments, Set<String> proerties) {
+        this(new FunctionSignature(arguments, proerties));
+    }
+
+    public GenericFunction() {
+        this(new ArrayList<>());
+    }
+
+    public static GenericFunction singleSymbolArugmnet(SymbolType symbolType) {
+        return new GenericFunction(new FunctionSignature(new SymbolArgument(symbolType)));
+    }
+
+    @Override
     public List<Diagnostic> handleArgumentList(ParseContext context, SchemaNode node, List<SchemaNode> arguments, Optional<SchemaNode> property) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        if (arguments.size() != argumentList.size()) {
-            String message = "The function '" + node.getText() + "' takes " + argumentList.size() + " arguments, but " + arguments.size() + " were given.";
+        Optional<FunctionSignature> signature = findFunctionSignature(arguments);
+
+        if (signature.isEmpty()) {
+            List<String> signatureStrings = signatures.stream()
+                                                      .map(func -> func.toString())
+                                                      .collect(Collectors.toList());
+            String availableSignatures = String.join("\n", signatureStrings);
+            String message = "No function matched for that sinature. Available signatures are:\n" + availableSignatures;
             diagnostics.add(new Diagnostic(node.getRange(), message, DiagnosticSeverity.Error, ""));
             return diagnostics;
         }
 
-        for (int i = 0; i < arguments.size(); i++) {
-            diagnostics.addAll(argumentList.get(i).verifyArgument(context, arguments.get(i)));
-        }
+        diagnostics.addAll(signature.get().handleArgumentList(context, arguments));
 
         if (property.isEmpty() && (properties.contains("") || properties.size() == 0)) {
             // This is valid
@@ -95,7 +109,23 @@ public class GenericFunction implements FunctionHandler {
         return diagnostics;
     }
 
-    public static GenericFunction singleSymbolArugmnet(SymbolType symbolType) {
-        return new GenericFunction(new SymbolArgument(symbolType));
+    private Optional<FunctionSignature> findFunctionSignature(List<SchemaNode> arguments) {
+        FunctionSignature bestMatch = null;
+        int maxScore = 0;
+
+        for (FunctionSignature signature : signatures) {
+            int score = signature.matchScore(arguments);
+            if (score == maxScore) {
+                bestMatch = null;
+            } else if (score > maxScore) {
+                maxScore = score;
+                bestMatch = signature;
+            }
+        }
+
+        if (bestMatch == null) {
+            return Optional.empty();
+        }
+        return Optional.of(bestMatch);
     }
 }

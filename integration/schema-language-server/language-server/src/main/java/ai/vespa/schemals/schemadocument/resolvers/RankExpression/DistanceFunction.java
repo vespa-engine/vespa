@@ -15,7 +15,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 public class DistanceFunction implements FunctionHandler {
 
 
-
+    @Override
     public List<Diagnostic> handleArgumentList(ParseContext context, SchemaNode node, List<SchemaNode> arguments, Optional<SchemaNode> property) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 

@@ -3,31 +3,34 @@ package ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
-import ai.vespa.schemals.parser.rankingexpression.ast.INTEGER;
 import ai.vespa.schemals.tree.SchemaNode;
 
-public class IntegerArgument implements Argument {
+public class StringArgument implements Argument {
+
+    private String displayStr = "STRING";
+
+    public StringArgument(String displayStr) {
+        this.displayStr = displayStr;
+    }
 
     @Override
     public int getStrictness() {
-        return 4;
+        return 1;
     }
 
     @Override
     public boolean validateArgument(SchemaNode node) {
-        SchemaNode leaf = node.findFirstLeaf();
-        return leaf.isASTInstance(INTEGER.class);
+        return true;
     }
-
+    
     @Override
-    public Optional<Diagnostic> parseArgument(ParseContext context, SchemaNode argument) {
+    public Optional<Diagnostic> parseArgument(ParseContext context, SchemaNode node) {
 
-        SchemaNode leaf = argument;
+        SchemaNode leaf = node;
 
         while (leaf.size() > 0) {
             if (leaf.hasSymbol()) {
@@ -40,16 +43,10 @@ public class IntegerArgument implements Argument {
             leaf = leaf.get(0);
         }
 
-        if (!leaf.isASTInstance(INTEGER.class)) {
-            return Optional.of(new Diagnostic(leaf.getRange(), "Argument of function must be an INTEGER.", DiagnosticSeverity.Error, ""));
-        }
-
-
         return Optional.empty();
     }
 
-    @Override
     public String displayString() {
-        return "n";
+        return displayStr;
     }
 }

@@ -1,7 +1,6 @@
 package ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -20,14 +19,31 @@ public class SymbolArgument implements Argument {
         this.symbolType = symbolType;
     }
 
-    public List<Diagnostic> verifyArgument(ParseContext context, SchemaNode node) {
-        List<Diagnostic> diagnostics = new ArrayList<>();
+    @Override
+    public int getStrictness() {
+        return 2;
+    }
 
+    private SchemaNode findSymbolNode(SchemaNode node) {
         SchemaNode symbolNode = node;
 
         while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
             symbolNode = symbolNode.get(0);
         }
+
+        return symbolNode;
+    }
+
+    @Override
+    public boolean validateArgument(SchemaNode node) {
+        SchemaNode symbolNode = findSymbolNode(node);
+        return symbolNode.hasSymbol();
+    }
+
+    @Override
+    public Optional<Diagnostic> parseArgument(ParseContext context, SchemaNode node) {
+
+        SchemaNode symbolNode = findSymbolNode(node);
 
         if (symbolNode.hasSymbol()) {
             Symbol symbol = symbolNode.getSymbol();
@@ -41,9 +57,16 @@ public class SymbolArgument implements Argument {
                 symbol.setType(symbolType);
             }
         } else {
-            diagnostics.add(new Diagnostic(node.getRange(), "The argument must be to a symbol of type: " + symbolType, DiagnosticSeverity.Error, ""));
+            return Optional.of(new Diagnostic(node.getRange(), "The argument must be to a symbol of type: " + symbolType, DiagnosticSeverity.Error, ""));
         }
 
-        return diagnostics;
+        return Optional.empty();
+    }
+
+    public String displayString() {
+        if (symbolType == SymbolType.FIELD) {
+            return "name";
+        }
+        return symbolType.toString();
     }
 }
