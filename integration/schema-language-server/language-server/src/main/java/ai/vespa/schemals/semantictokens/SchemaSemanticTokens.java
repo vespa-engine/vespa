@@ -59,6 +59,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(SymbolType.LABEL);
         add(SymbolType.QUERY_INPUT);
         add(SymbolType.PROPERTY);
+        add(SymbolType.LAMBDA_FUNCTION);
     }};
 
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
@@ -100,7 +101,6 @@ public class SchemaSemanticTokens implements Visitor {
     private static final ArrayList<ai.vespa.schemals.parser.rankingexpression.Token.TokenType> rankingExpressionKeywordTokens = new ArrayList<>() {{
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IF);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IN);
-        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.F);
 
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TRUE);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FALSE);
@@ -191,6 +191,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.LABEL, "variable");
         put(SymbolType.QUERY_INPUT, "variable");
         put(SymbolType.PROPERTY, "property");
+        put(SymbolType.LAMBDA_FUNCTION, "keyword");
     }};
 
     private static ArrayList<String> tokenTypes;

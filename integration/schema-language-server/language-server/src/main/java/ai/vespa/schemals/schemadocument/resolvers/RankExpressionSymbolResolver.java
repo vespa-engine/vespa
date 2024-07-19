@@ -38,6 +38,7 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
 public class RankExpressionSymbolResolver {
 
     public static final Map<String, FunctionHandler> rankExpressionBultInFunctions = new HashMap<>() {{
+        // ==== Query features ====
         put("query", GenericFunction.singleSymbolArugmnet(SymbolType.QUERY_INPUT));
         put("term", new GenericFunction(new IntegerArgument(), new HashSet<>() {{
             add("significance");
@@ -45,6 +46,8 @@ public class RankExpressionSymbolResolver {
             add("connectedness");
         }}));
         put("queryTermCount", new GenericFunction());
+        
+        // ==== Document features ====
         put("fieldLength", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
         put("attribute", new GenericFunction(new ArrayList<>() {{
             add(new FunctionSignature(new SymbolArgument(SymbolType.FIELD), new HashSet<>() {{
@@ -63,8 +66,8 @@ public class RankExpressionSymbolResolver {
                 add("contains");
             }}));
         }}));
-        put("bm25", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
-        put("distance", new DistanceFunction());
+
+        // ==== Field match features - normalized ====
         put("fieldMatch", new GenericFunction(new SymbolArgument(SymbolType.FIELD), new HashSet<>() {{
             add("");
             add("proximity");
@@ -83,9 +86,13 @@ public class RankExpressionSymbolResolver {
             add("weightedOccureence");
             add("weightedAbsoluteOccurence");
             add("significantOccurence");
+        
+        // ==== Feild match features - normalized and relative to the whole query ====
             add("weight");
             add("significance");
             add("importance");
+        
+        // ==== Field matche features - not normalized ====
             add("segments");
             add("matches");
             add("degradedMatches");
@@ -97,6 +104,8 @@ public class RankExpressionSymbolResolver {
             add("tail");
             add("segmentDistance");
         }}));
+
+        // ==== Query and field similarity ====
         put("textSimilarity", new GenericFunction(new SymbolArgument(SymbolType.FIELD), new HashSet<>() {{
             add("");
             add("proximity");
@@ -104,6 +113,8 @@ public class RankExpressionSymbolResolver {
             add("queryCoverage");
             add("fieldCoverage");
         }}));
+
+        // ==== Query term and field match features ====
         put("fieldTermMatch", new GenericFunction(new FunctionSignature(new ArrayList<>() {{
             add(new SymbolArgument(SymbolType.FIELD));
             add(new IntegerArgument());
@@ -129,6 +140,29 @@ public class RankExpressionSymbolResolver {
             add("reverse");
             add("reverseTermPosition");
         }})));
+
+
+
+
+        
+        // ==== Rank score ====
+        put("bm25", GenericFunction.singleSymbolArugmnet(SymbolType.FIELD));
+        put("nativeRank", new GenericFunction(new ArrayList<>() {{
+            add(new FunctionSignature());
+            add(FunctionSignature.singleSymbolSignature(SymbolType.FIELD)); // TODO: support unlimited number of fields
+        }}));
+
+
+
+        // ==== Global features ====
+        put("globalSequence", new GenericFunction());
+        put("now", new GenericFunction());
+        put("random", new GenericFunction());
+        put("random.match", new GenericFunction());
+
+
+
+        put("distance", new DistanceFunction());
     }};
 
     /**
@@ -256,9 +290,13 @@ public class RankExpressionSymbolResolver {
         List<Symbol> possibleDefinitions = new ArrayList<>();
 
         for (SymbolType possibleType : possibleTypes) {
+            context.logger().println("SEARCHING for " + reference.getShortIdentifier() + " as " + possibleType);
             Optional<Symbol> symbol = context.schemaIndex().findSymbol(reference.getScope(), possibleType, reference.getShortIdentifier());
             if (symbol.isPresent()) {
+                context.logger().println("MATCH: " + symbol.get());
                 possibleDefinitions.add(symbol.get());
+            } else {
+                context.logger().println("NO MATCH");
             }
         }
 

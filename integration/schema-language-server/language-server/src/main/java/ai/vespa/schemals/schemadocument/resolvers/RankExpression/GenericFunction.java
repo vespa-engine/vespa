@@ -51,7 +51,7 @@ public class GenericFunction implements FunctionHandler {
     }
 
     public GenericFunction() {
-        this(new ArrayList<>());
+        this(new FunctionSignature());
     }
 
     public static GenericFunction singleSymbolArugmnet(SymbolType symbolType) {

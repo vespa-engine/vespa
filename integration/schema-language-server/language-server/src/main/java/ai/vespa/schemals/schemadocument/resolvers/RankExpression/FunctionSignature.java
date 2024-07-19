@@ -13,7 +13,6 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
-import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class FunctionSignature {
@@ -42,6 +41,10 @@ public class FunctionSignature {
         }});
     }
 
+    public FunctionSignature() {
+        this(new ArrayList<>());
+    }
+
     public static FunctionSignature singleSymbolSignature(SymbolType symbolType) {
         return new FunctionSignature(new SymbolArgument(symbolType));
     }
@@ -50,6 +53,8 @@ public class FunctionSignature {
         if (arguments.size() != argumentList.size()) {
             return 0;
         }
+
+        if (argumentList.size() == 0) return 1;
 
         int score = 0;
         for (int i = 0; i < arguments.size(); i++) {

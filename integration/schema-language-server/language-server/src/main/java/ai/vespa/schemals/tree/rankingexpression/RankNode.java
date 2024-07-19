@@ -15,6 +15,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
+import ai.vespa.schemals.parser.rankingexpression.ast.ifExpression;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
@@ -77,20 +78,19 @@ public class RankNode implements Iterable<RankNode>  {
 
         } else if (this.type == RankNodeType.BUILT_IN_FUNCTION) {
 
-            this.children = findParameters(node);
+            this.children = findBuiltInChildren(node);
             this.returnType = BuiltInReturnType.get(node.getASTClass());
         }
     }
 
     private static List<RankNode> findChildren(SchemaNode node) {
-        SchemaNode operationExpressionNode = node.get(0);
-
         List<RankNode> ret = new ArrayList<>();
 
-        for (SchemaNode child : operationExpressionNode) {
-            Optional<RankNode> newNode = createTree(child);
-            if (newNode.isPresent()) {
-                ret.add(newNode.get());
+        for (SchemaNode child : node) {
+            if (rankNodeTypeMap.containsKey(child.getASTClass())) {
+                ret.add(new RankNode(child));
+            } else {
+                ret.addAll(findChildren(child));
             }
         }
 
@@ -114,6 +114,18 @@ public class RankNode implements Iterable<RankNode>  {
         List<RankNode> ret = new ArrayList<>();
 
         for (SchemaNode child : parameterNode) {
+            if (child.isASTInstance(expression.class)) {
+                ret.add(new RankNode(child));
+            }
+        }
+
+        return ret;
+    }
+
+    private static List<RankNode> findBuiltInChildren(SchemaNode node) {
+        List<RankNode> ret = new ArrayList<>();
+
+        for (SchemaNode child : node) {
             if (child.isASTInstance(expression.class)) {
                 ret.add(new RankNode(child));
             }
