@@ -103,4 +103,9 @@ public class RankProfileDocument implements DocumentManager {
 	public SchemaNode getRootNode() {
         return this.CST;
 	}
+
+	@Override
+	public String getCurrentContent() {
+        return this.content;
+	}
 }

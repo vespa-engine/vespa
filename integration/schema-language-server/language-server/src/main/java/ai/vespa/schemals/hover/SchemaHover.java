@@ -13,6 +13,7 @@ import org.eclipse.lsp4j.MarkupKind;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -26,9 +27,7 @@ public class SchemaHover {
         Optional<Symbol> structDefinitionSymbol = context.schemaIndex.getSymbolDefinition(node.getSymbol());
         
         if (structDefinitionSymbol.isEmpty()) {
-            Optional<Symbol> res = context.schemaIndex.getSymbolDefinition(node.getSymbol());
-            if (res.isEmpty()) return null;
-            structDefinitionSymbol = res;
+            return null;
         }
         List<Symbol> fieldDefs = context.schemaIndex.listSymbolsInScope(structDefinitionSymbol.get(), SymbolType.FIELD);
 
@@ -49,10 +48,40 @@ public class SchemaHover {
         return new Hover(new MarkupContent(MarkupKind.MARKDOWN, result));
     }
 
+    private static Hover getFieldHover(SchemaNode node, EventPositionContext context) {
+        Optional<Symbol> fieldDefinitionSymbol = context.schemaIndex.getSymbolDefinition(node.getSymbol());
+
+        if (fieldDefinitionSymbol.isEmpty()) return null;
+
+        Optional<SchemaNode> dataTypeNode = context.schemaIndex.fieldIndex().getFieldDataTypeNode(fieldDefinitionSymbol.get());
+        
+        String typeText = "unknown";
+        if (dataTypeNode.isPresent()) {
+            typeText = dataTypeNode.get().getText().trim();
+        }
+
+
+        String hoverText = "field " + fieldDefinitionSymbol.get().getShortIdentifier() + " type " + typeText;
+
+        if (context.schemaIndex.fieldIndex().getIsInsideDoc(fieldDefinitionSymbol.get())) {
+            hoverText = "document " + hoverText;
+        } else {
+            hoverText = "schema " + hoverText;
+        }
+
+        for (IndexingType it : context.schemaIndex.fieldIndex().getFieldIndexingTypes(fieldDefinitionSymbol.get())) {
+            hoverText += "\n\t" + it.toString();
+        }
+
+        return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, hoverText));
+    }
+
     private static Hover getSymbolHover(SchemaNode node, EventPositionContext context) {
         switch(node.getSymbol().getType()) {
             case STRUCT:
                 return getStructHover(node, context);
+            case FIELD:
+                return getFieldHover(node, context);
             default:
                 break;
         }

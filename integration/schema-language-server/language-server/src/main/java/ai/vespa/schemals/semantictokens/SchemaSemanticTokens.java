@@ -4,8 +4,9 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -69,6 +70,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.FIELD);
         add(TokenType.FIELDSET); 
         add(TokenType.FIRST_PHASE);
+        add(TokenType.SECOND_PHASE);
         add(TokenType.INHERITS);
         add(TokenType.RANK_PROFILE);
         add(TokenType.SCHEMA);
@@ -86,6 +88,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.DOCUMENT_SUMMARY);
         add(TokenType.AS);
         add(TokenType.SUMMARY);
+        add(TokenType.INDEXING);
     }};
 
     // Other
@@ -176,6 +179,60 @@ public class SchemaSemanticTokens implements Visitor {
         put(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.STRING, "string");
         put(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.INTEGER, "number");
         put(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FLOAT, "number");
+    }};
+
+
+    private static final Set<ai.vespa.schemals.parser.indexinglanguage.Token.TokenType> indexingLanguageOperators = new HashSet<>() {{
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.BASE64_DECODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.BASE64_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.ECHO);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.FLATTEN);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_FIELD);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_VAR);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HEX_DECODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HEX_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HOST_NAME);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.INPUT);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.JOIN);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.LOWER_CASE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.NGRAM);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.NORMALIZE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.NOW);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SET_LANGUAGE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SET_VAR);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SUBSTRING);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SPLIT);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TOKENIZE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TRIM);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_INT);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_POS);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_BOOL);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_BYTE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_LONG);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_WSET);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_ARRAY);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_DOUBLE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_FLOAT);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_STRING);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EMBED);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HASH);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_EPOCH_SECOND);
+    }};
+
+    private static final Set<ai.vespa.schemals.parser.indexinglanguage.Token.TokenType> indexingLanguageOutputs = new HashSet<>() {{
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.ATTRIBUTE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.INDEX);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SUMMARY);
+    }};
+
+    private static final Set<ai.vespa.schemals.parser.indexinglanguage.Token.TokenType> indexingLanguageKeywords = new HashSet<>() {{
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.IF);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.FOR_EACH);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SWITCH);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SELECT_INPUT);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.ELSE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.CASE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.CASE_DEFAULT);
     }};
 
     private static Map<SymbolType, Integer> identifierTypeMap;
@@ -336,6 +393,7 @@ public class SchemaSemanticTokens implements Visitor {
 
         TokenType schemaType = node.getSchemaType();
         var rankExpressionType = node.getRankExpressionType();
+        var indexinglanguageType = node.getIndexingLanguageType();
 
         // TODO: this became a bit ugly with the map stuff
         if (node.isASTInstance(dataType.class) && (!node.hasSymbol() || node.getSymbol().getType() == SymbolType.MAP_KEY || node.getSymbol().getType() == SymbolType.MAP_VALUE)) {
@@ -364,12 +422,29 @@ public class SchemaSemanticTokens implements Visitor {
             }
 
         } else if (rankExpressionType != null) {
-            
             Integer tokenType = rankExpressionTokenTypeMap.get(rankExpressionType);
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
+        } else if (indexinglanguageType != null) {
+            if (indexingLanguageOutputs.contains(indexinglanguageType)) {
+                Integer tokenType = tokenTypes.indexOf("type");
+                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                ret.add(new SemanticTokenMarker(tokenType, markerRange));
+            } else if (indexingLanguageKeywords.contains(indexinglanguageType)) {
+                Integer tokenType = tokenTypes.indexOf("keyword");
+                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                ret.add(new SemanticTokenMarker(tokenType, markerRange));
+            } else if (indexingLanguageOperators.contains(indexinglanguageType)) {
+                Integer tokenType = tokenTypes.indexOf("function");
+                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                ret.add(new SemanticTokenMarker(tokenType, markerRange));
+            } else if (indexinglanguageType == ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.STRING) {
+                Integer tokenType = tokenTypes.indexOf("string");
+                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                ret.add(new SemanticTokenMarker(tokenType, markerRange));
+            }
         } else {
             
             for (SchemaNode child : node) {

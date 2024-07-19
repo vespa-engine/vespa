@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 	client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions)
 	client.start();
 
-}
+}	
 
 
 export function deactivate() { 

@@ -50,6 +50,7 @@ public class SchemaIndex {
 
     private PrintStream logger;
     private String workspaceRootURI;
+    private FieldIndex fieldIndex;
 
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
     private Map<Symbol, List<Symbol>> symbolReferences;
@@ -79,6 +80,7 @@ public class SchemaIndex {
             this.symbolDefinitions.put(type, new ArrayList<Symbol>());
         }
 
+        this.fieldIndex = new FieldIndex(logger, this);
     }
 
     public void setWorkspaceURI(String workspaceRootURI) {
@@ -88,6 +90,10 @@ public class SchemaIndex {
 
     public String getWorkspaceURI() {
         return this.workspaceRootURI;
+    }
+
+    public FieldIndex fieldIndex() {
+        return this.fieldIndex;
     }
 
     /**
@@ -137,6 +143,8 @@ public class SchemaIndex {
                 }
             }
         }
+
+        this.fieldIndex.clearFieldsByURI(fileURI);
 
         if (fileURI.endsWith(".sd")) {
             documentInheritanceGraph.clearInheritsList(fileURI);
@@ -321,6 +329,14 @@ public class SchemaIndex {
         return Optional.ofNullable(definitionOfReference.get(reference));
     }
 
+    public Optional<Symbol> getFirstSymbolDefinition(Symbol symbol) {
+        while (definitionOfReference.get(symbol) != null) {
+            symbol = definitionOfReference.get(symbol);
+        }
+        if (symbol.getStatus() == SymbolStatus.DEFINITION) return Optional.of(symbol);
+        return Optional.empty();
+    }
+
     /**
      * Returns a list of symbol references for the given symbol definition.
      *
@@ -381,6 +397,10 @@ public class SchemaIndex {
         list.add(symbol);
 
         symbolReferences.put(symbol, new ArrayList<>());
+
+        if (symbol.getType() == SymbolType.FIELD) {
+            fieldIndex.insertFieldDefinition(symbol);
+        }
     }
 
     /**
@@ -515,5 +535,8 @@ public class SchemaIndex {
 
         logger.println(" === RANK PROFILE INHERITANCE === ");
         rankProfileInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === FIELD INDEX === ");
+        fieldIndex.dumpIndex();
     }
 }

@@ -70,9 +70,13 @@ public class SchemaParserTest {
     }
 
     void checkFileParses(String fileName) throws Exception {
-        var parseResult = parseFile(fileName);
-        String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
-        assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
+        try {
+            var parseResult = parseFile(fileName);
+            String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
+            assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
+        } catch(Exception e) {
+            throw new Exception(fileName + "\n" + e.getMessage());
+        }
     }
 
     void checkFileFails(String fileName, int expectedErrors) throws Exception {
@@ -134,9 +138,9 @@ public class SchemaParserTest {
         }
 
 
-        testMessage += "\n\n\n FULL DUMP:\n";
-        testMessage += outputStream.toString();
-        testMessage += "\n\n\n\n";
+        //testMessage += "\n\n\n FULL DUMP:\n";
+        //testMessage += outputStream.toString();
+        //testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
     }

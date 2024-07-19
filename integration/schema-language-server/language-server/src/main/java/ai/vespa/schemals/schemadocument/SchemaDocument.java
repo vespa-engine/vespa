@@ -31,6 +31,8 @@ import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
+import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
+import ai.vespa.schemals.schemadocument.resolvers.StructFieldDefinitionResolver;
 import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.TypeNodeResolver;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -180,27 +182,33 @@ public class SchemaDocument implements DocumentManager {
     }
 
     public Position getPreviousStartOfWord(Position pos) {
-        int offset = positionToOffset(pos);
+        try {
+            int offset = positionToOffset(pos);
 
-        // Skip whitespace
-        // But not newline because newline is a token
-        while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
+            // Skip whitespace
+            // But not newline because newline is a token
+            while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
 
-        for (int i = offset; i >= 0; i--) {
-            if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+            for (int i = offset; i >= 0; i--) {
+                if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+            }
+        } catch (Exception e) {
         }
 
         return null;
     }
 
     public boolean isInsideComment(Position pos) {
-        int offset = positionToOffset(pos);
+        try {
+            int offset = positionToOffset(pos);
 
-        if (content.charAt(offset) == '\n')offset--;
+            if (content.charAt(offset) == '\n')offset--;
 
-        for (int i = offset; i >= 0; i--) {
-            if (content.charAt(i) == '\n')break;
-            if (content.charAt(i) == '#')return true;
+            for (int i = offset; i >= 0; i--) {
+                if (content.charAt(i) == '\n')break;
+                if (content.charAt(i) == '#')return true;
+            }
+        } catch(Exception e) {
         }
         return false;
     }
@@ -275,9 +283,12 @@ public class SchemaDocument implements DocumentManager {
 
         
         if (tolerantResult.CST().isPresent()) {
+
             diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 
-            diagnostics.addAll(SymbolReferenceResolver.resolveSymbolReferences(context, tolerantResult.CST().get()));
+            diagnostics.addAll(StructFieldDefinitionResolver.resolve(context, tolerantResult.CST().get()));
+
+            diagnostics.addAll(ResolverTraversal.traverse(context, tolerantResult.CST().get()));
 
             diagnostics.addAll(DocumentReferenceResolver.resolveDocumentReferences(context));
         }
@@ -338,9 +349,17 @@ public class SchemaDocument implements DocumentManager {
         Position scriptStart = PositionAddOffset(context.content(), indexingStart, script.leadingStripped());
 
         try {
-            parser.root();
-            // TODO: Verify expression
-            return new SchemaNode(parser.rootNode(), indexingStart);
+            var expression = parser.root();
+            /*
+            // TODO: Verify expression?
+            try {
+                var dataType = expression.verify();
+                context.logger().println("ILSCRIPT GOOD: " + dataType.toString());
+            } catch(Exception e) {
+                context.logger().println("ILSCRIPT FAIL: " + e.getMessage());
+            }
+            */
+            return new SchemaNode(parser.rootNode(), scriptStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
             context.logger().println("Encountered parsing error in parsing feature list");
             Range range = ILUtils.getNodeRange(pe.getToken());
@@ -409,4 +428,9 @@ public class SchemaDocument implements DocumentManager {
         String openString = getIsOpen() ? " [OPEN]" : "";
         return getFileURI() + openString;
     }
+
+	@Override
+	public String getCurrentContent() {
+        return this.content;
+	}
 }

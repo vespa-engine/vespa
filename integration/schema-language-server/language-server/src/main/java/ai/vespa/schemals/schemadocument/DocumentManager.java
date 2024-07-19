@@ -20,4 +20,6 @@ public interface DocumentManager {
     public SchemaNode getRootNode();
 
     public String getFileURI();
+
+    public String getCurrentContent();
 }
