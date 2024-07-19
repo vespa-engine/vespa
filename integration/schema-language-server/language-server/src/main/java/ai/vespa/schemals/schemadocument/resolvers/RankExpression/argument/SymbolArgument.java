@@ -15,9 +15,11 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 public class SymbolArgument implements Argument {
     
     private SymbolType symbolType;
+    private String displayStr;
 
-    public SymbolArgument(SymbolType symbolType) {
+    public SymbolArgument(SymbolType symbolType, String displayStr) {
         this.symbolType = symbolType;
+        this.displayStr = displayStr;
     }
 
     @Override
@@ -25,7 +27,7 @@ public class SymbolArgument implements Argument {
         return 3;
     }
 
-    private SchemaNode findSymbolNode(RankNode node) {
+    protected SchemaNode findSymbolNode(RankNode node) {
         SchemaNode symbolNode = node.getSchemaNode();
 
         while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
@@ -65,9 +67,6 @@ public class SymbolArgument implements Argument {
     }
 
     public String displayString() {
-        if (symbolType == SymbolType.FIELD) {
-            return "name";
-        }
-        return symbolType.toString();
+        return displayStr;
     }
 }

@@ -9,18 +9,14 @@ import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.SymbolTag;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.identifierStr;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
-import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
 
 public class GenericFunction implements FunctionHandler {
     
@@ -52,10 +48,6 @@ public class GenericFunction implements FunctionHandler {
 
     public GenericFunction() {
         this(new FunctionSignature());
-    }
-
-    public static GenericFunction singleSymbolArugmnet(SymbolType symbolType) {
-        return new GenericFunction(new FunctionSignature(new SymbolArgument(symbolType)));
     }
 
     @Override

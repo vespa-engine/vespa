@@ -35,6 +35,12 @@ public class FunctionSignature {
         }}, properties);
     }
 
+    public FunctionSignature(Argument argument, String property) {
+        this(argument, new HashSet<>() {{
+            add(property);
+        }});
+    }
+
     public FunctionSignature(Argument argument) {
         this(new ArrayList<>() {{
             add(argument);
@@ -43,10 +49,6 @@ public class FunctionSignature {
 
     public FunctionSignature() {
         this(new ArrayList<>());
-    }
-
-    public static FunctionSignature singleSymbolSignature(SymbolType symbolType) {
-        return new FunctionSignature(new SymbolArgument(symbolType));
     }
 
     int matchScore(List<RankNode> arguments) {
