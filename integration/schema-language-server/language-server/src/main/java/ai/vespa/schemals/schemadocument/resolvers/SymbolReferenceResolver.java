@@ -17,6 +17,7 @@ import ai.vespa.schemals.parser.ast.REFERENCE;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
+import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SymbolReferenceResolver {
@@ -26,6 +27,7 @@ public class SymbolReferenceResolver {
         SymbolType referencedType = node.getSymbol().getType();
         if (referencedType == SymbolType.SUBFIELD) {
             SchemaNode parentField = node.getPreviousSibling();
+            if (parentField.isASTInstance(DOT.class))parentField = parentField.getPreviousSibling();
             Optional<Symbol> parentFieldDefinition = Optional.empty();
 
             // Two cases for where the parent field is defined. Either inside a struct or "global". 

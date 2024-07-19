@@ -37,11 +37,8 @@ public class ResolverTraversal {
             IndexingLanguageResolver.resolveIndexingLanguage(context, currentNode, diagnostics);
         }
 
-        // Language resolvers should be responsible for traversing their own language
-        if (currentNode.getLanguageType() == LanguageType.SCHEMA) {
-            for (SchemaNode child : currentNode) {
-                traverse(context, child, diagnostics);
-            }
+        for (SchemaNode child : currentNode) {
+            traverse(context, child, diagnostics);
         }
 
         // Some things need run after the children has run.
@@ -49,29 +46,6 @@ public class ResolverTraversal {
         // TODO: solution for field in struct
         if (currentNode.isASTInstance(fieldElm.class)) {
             ValidateFieldSettings.validateFieldSettings(context, currentNode, diagnostics);
-            SchemaNode fieldIdentifierNode = currentNode.get(1);
-            if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getType() == SymbolType.FIELD && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
-                if (fieldIdentifierNode.getNextSibling() != null 
-                        && fieldIdentifierNode.getNextSibling().getNextSibling() != null  
-                        && fieldIdentifierNode.getNextSibling().getNextSibling().isASTInstance(dataType.class)) {
-                    // check if it is a document reference
-                    dataType dataTypeNode = (dataType)fieldIdentifierNode.getNextSibling().getNextSibling().getOriginalSchemaNode();
-
-                    if (dataTypeNode.getParsedType().getVariant() == Variant.DOCUMENT) {
-                        var indexingTypes = context.fieldIndex().getFieldIndexingTypes(fieldIdentifierNode.getSymbol());
-
-                        if (!indexingTypes.contains(IndexingType.ATTRIBUTE)) {
-                            // TODO: quickfix
-                            diagnostics.add(new Diagnostic(
-                                fieldIdentifierNode.getRange(),
-                                "Invalid document reference. The field must be an attribute.",
-                                DiagnosticSeverity.Error,
-                                ""
-                            ));
-                        }
-                    }
-                }
-            }
         }
     }
 }

@@ -16,6 +16,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
+import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
 import ai.vespa.schemals.parser.indexinglanguage.ast.attributeExp;
@@ -24,6 +25,7 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.indexExp;
 import ai.vespa.schemals.parser.indexinglanguage.ast.script;
 import ai.vespa.schemals.parser.indexinglanguage.ast.statement;
 import ai.vespa.schemals.parser.indexinglanguage.ast.summaryExp;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -95,10 +97,6 @@ public class IndexingLanguageResolver {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.SUMMARY);
         }
 
-        if (node.isASTInstance(fieldName.class)) {
-            diagnostics.add(new Diagnostic(node.getRange(), "FIELD NAME", DiagnosticSeverity.Information, ""));
-        }
-
         if (node.isASTInstance(statement.class) 
                 && (node.getParent().isASTInstance(indexingElm.class) || node.getParent().isASTInstance(script.class))) {
             // Top level statement of field outside document should have some input
@@ -111,6 +109,22 @@ public class IndexingLanguageResolver {
             if (expression != null && expression.requiredInputType() != null && !context.fieldIndex().getIsInsideDoc(containingFieldDefinition)) {
                 diagnostics.add(new Diagnostic(node.getRange(), "Expected " + expression.requiredInputType().getName() + " input, but no input is specified. Fields defined outside the document must start with indexing statements explicitly collecting input.", DiagnosticSeverity.Error, ""));
             }
+        }
+
+        if (node.getParent().isASTInstance(fieldName.class) && node.isASTInstance(ai.vespa.schemals.parser.indexinglanguage.ast.identifierStr.class)) {
+            Optional<Symbol> scope = CSTUtils.findScope(node);
+            SymbolType type = SymbolType.FIELD;
+
+            if (node.getPreviousSibling() != null && node.getPreviousSibling().isASTInstance(DOT.class)) {
+                type = SymbolType.SUBFIELD;
+            }
+
+            if (scope.isPresent()) {
+                node.setSymbol(type, context.fileURI(), scope.get());
+            } else {
+                node.setSymbol(type, context.fileURI());
+            }
+            node.setSymbolStatus(SymbolStatus.UNRESOLVED);
         }
 
         for (SchemaNode child : node) {
