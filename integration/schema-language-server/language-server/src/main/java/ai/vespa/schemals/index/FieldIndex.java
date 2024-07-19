@@ -43,6 +43,11 @@ public class FieldIndex {
             this.dataTypeNode = dataTypeNode;
             this.isInsideDoc = isInsideDoc;
         }
+
+        @Override
+        public String toString() {
+            return (dataTypeNode == null ? " unknown type" : dataTypeNode.toString()) + " " + indexingTypes.toString() + " " + (isInsideDoc ? " in document" : " in schema");
+        }
     }
 
     // Key is a field definition symbol.
@@ -147,5 +152,11 @@ public class FieldIndex {
         if (fieldDefinitionNode.getParent().isASTInstance(importField.class)) return false;
         if (fieldDefinitionNode.getParent().getParent().isASTInstance(fieldOutsideDoc.class)) return false;
         return true;
+    }
+
+    public void dumpIndex() {
+        for (var entry : database.entrySet()) {
+            logger.println(entry.getKey().toString() + " -> " + entry.getValue().toString());
+        }
     }
 }
