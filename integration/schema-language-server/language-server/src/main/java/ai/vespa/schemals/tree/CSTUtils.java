@@ -209,6 +209,7 @@ public class CSTUtils {
     }
 
     public static void printTree(PrintStream logger, Node node, Integer indent) {
+        if (node == null) return;
         Range range = getNodeRange(node);
         logger.println(new String(new char[indent]).replace("\0", SPACER) + node.getClass().getName()
             + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
@@ -224,6 +225,7 @@ public class CSTUtils {
     }
 
     public static void printTree(PrintStream logger, SchemaNode node, Integer indent) {
+        if (node == null) return;
 
         logger.println(new String(new char[indent]).replace("\0", SPACER) + schemaNodeString(node));
 

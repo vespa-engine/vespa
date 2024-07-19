@@ -60,6 +60,28 @@ public class SchemaHover {
         if (node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
             return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "builtin"));
         }
+
+        if (node.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+            Optional<Symbol> definition = context.schemaIndex.getSymbolDefinition(node.getSymbol());
+
+            if (definition.isPresent()) {
+                SchemaNode defNode = definition.get().getNode();
+
+                if (defNode.getParent() != null) {
+                    String text = defNode.getParent().getText();
+                    String[] lines = text.split(System.lineSeparator());
+                    String hoverContent = lines[0].trim();
+                    while (hoverContent.length() > 0 && hoverContent.endsWith("{")) {
+                        hoverContent = hoverContent.substring(0, hoverContent.length() - 1);
+                    }
+                    hoverContent = hoverContent.trim();
+                    if (hoverContent.length() > 0) {
+                        return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, hoverContent));
+                    }
+                }
+            }
+        }
+
         return null;
     }
 

@@ -12,16 +12,19 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.schema.parser.ParsedType.Variant;
 import com.yahoo.schema.processing.ReservedFunctionNames;
 
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.AS;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
+import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -58,6 +61,11 @@ public class IdentifySymbolDefinition extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
+        if (parent.isASTInstance(importField.class) && node.getPreviousSibling() != null && node.getPreviousSibling().isASTInstance(AS.class)) {
+            createSymbol(node, SymbolType.FIELD);
+            return ret;
+        }
+
         // Prevent inheritance from beeing marked as a definition
         if (parent.indexOf(node) >= 3) {
             // Unnless it is a paramenter to a function
@@ -86,15 +94,9 @@ public class IdentifySymbolDefinition extends Identifier {
                     String workspaceRootURI = context.schemaIndex().getWorkspaceURI();
                     String currentURI = context.fileURI();
 
-                    if (!currentURI.startsWith(workspaceRootURI)) return ret; // some invalid situation
+                    String schemaName = FileUtils.firstPathComponentAfterPrefix(currentURI, workspaceRootURI);
 
-                    String suffix = currentURI.substring(workspaceRootURI.length());
-                    if (suffix.startsWith("/"))suffix = suffix.substring(1);
-
-                    String[] components = suffix.split("/");
-
-                    if (components.length == 0) return ret;
-                    String schemaName = components[0];
+                    if (schemaName == null) return ret;
 
                     Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(schemaName);
 
@@ -110,7 +112,7 @@ public class IdentifySymbolDefinition extends Identifier {
 
             node.setSymbol(symbolType, context.fileURI(), scope.get());
 
-            if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
+            if (context.schemaIndex().findSymbolInScope(node.getSymbol()).isEmpty()) {
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
                 context.schemaIndex().insertSymbolDefinition(node.getSymbol());
 

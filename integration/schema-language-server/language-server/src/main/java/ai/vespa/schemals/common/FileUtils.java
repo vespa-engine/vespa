@@ -50,6 +50,27 @@ public class FileUtils {
         return walkFileTree(Paths.get(URI.create(workspaceFolderUri)),  "glob:**/*/*.profile", logger);
     }
 
+    public static String firstPathComponentAfterPrefix(String pathURIStr, String prefixURIStr) {
+        URI pathURI = URI.create(pathURIStr);
+        URI prefixURI = URI.create(prefixURIStr);
+        URI relativeURI = prefixURI.relativize(pathURI);
+
+        if (relativeURI.isAbsolute()) {
+            return null;
+        }
+
+        String relativePath = relativeURI.getPath();
+
+        if (relativePath == null) return null;
+
+        // TODO: is this an issue on Windows?
+        String[] components = relativePath.split("/");
+
+        if (components.length == 0) return null;
+
+        return components[0];
+    }
+
     private static List<String> walkFileTree(Path rootDir, String pathMatcherStr, PrintStream logger) {
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(pathMatcherStr);
 

@@ -12,8 +12,16 @@ import com.yahoo.schema.parser.ParsedType.Variant;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.REFERENCE;
+import ai.vespa.schemals.parser.ast.STRUCT_FIELD;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.fieldBodyElm;
+import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
+import ai.vespa.schemals.parser.ast.structFieldBodyElm;
+import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -38,10 +46,31 @@ public class SymbolReferenceResolver {
 
                 if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
                     parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
+                } else if (parentField.isASTInstance(STRUCT_FIELD.class)) {
+                    SchemaNode enclosingBodyNode = node.getParent().getParent();
+
+                    if (enclosingBodyNode.isASTInstance(fieldBodyElm.class)) {
+                        // struct-field declared inside field
+                        SchemaNode fieldIdentifierNode = enclosingBodyNode.getParent().get(1);
+                        if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
+                            parentFieldDefinition = Optional.of(fieldIdentifierNode.getSymbol());
+                        }
+                    } else if (enclosingBodyNode.isASTInstance(structFieldBodyElm.class)) {
+                        // nested struct-field
+                        // the referred field definition is the last component in the struct-field identifier
+                        SchemaNode lastStructFieldIdentifier = enclosingBodyNode.getParent().get(1);
+                        while (lastStructFieldIdentifier.getNextSibling() != null && lastStructFieldIdentifier.getNextSibling().isASTInstance(identifierStr.class)) {
+                            lastStructFieldIdentifier = lastStructFieldIdentifier.getNextSibling();
+                        }
+                        if (lastStructFieldIdentifier.hasSymbol() && lastStructFieldIdentifier.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                            parentFieldDefinition = context.schemaIndex().getSymbolDefinition(lastStructFieldIdentifier.getSymbol());
+                        }
+                    }
+
                 }
 
                 if (parentFieldDefinition.isPresent()) {
-                    referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context);
+                    referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context, diagnostics);
                 }
             } else {
                 referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
@@ -63,11 +92,6 @@ public class SymbolReferenceResolver {
         for (SchemaNode child : node) {
             resolveSymbolReferencesImpl(child, context, diagnostics);
         }
-
-        //if (node.hasSymbol()) {
-        //    diagnostics.add(new Diagnostic(node.getRange(), node.getSymbol().getLongIdentifier(), DiagnosticSeverity.Information, node.getSymbol().getType().toString() + " " + node.getSymbol().getStatus().toString()));
-        //}
-
     }
 
         /**
@@ -85,7 +109,7 @@ public class SymbolReferenceResolver {
      *
      * @return the definition of the field inside the struct if found 
      */
-    private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context) {
+    private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context, List<Diagnostic> diagnostics) {
         if (fieldDefinition.getType() != SymbolType.FIELD 
             && fieldDefinition.getType() != SymbolType.MAP_VALUE
             && fieldDefinition.getType() != SymbolType.STRUCT) return Optional.empty();
@@ -100,6 +124,7 @@ public class SymbolReferenceResolver {
         if (fieldDefinition.getType() == SymbolType.MAP_VALUE) {
             dataTypeNode = fieldDefinition.getNode();
         } else if (fieldDefinition.getType() == SymbolType.FIELD) {
+            if (fieldDefinition.getNode().getNextSibling() == null || fieldDefinition.getNode().getNextSibling().getNextSibling() == null) return Optional.empty();
             dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
             if (!dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
 
@@ -111,6 +136,41 @@ public class SymbolReferenceResolver {
                 Symbol structReference = dataTypeNode.getSymbol();
                 Symbol structDefinition = context.schemaIndex().getSymbolDefinition(structReference).get();
                 return resolveFieldInStructReference(node, structDefinition, context);
+            } else if (dataTypeNode.get(0).isASTInstance(REFERENCE.class)) {
+                // TODO: the subfield has to be in an import field statement
+                if (dataTypeNode.size() < 3 || !dataTypeNode.get(2).get(0).hasSymbol()) return Optional.empty();
+                Symbol documentReference = dataTypeNode.get(2).get(0).getSymbol();
+
+                Optional<Symbol> documentDefinition = Optional.empty();
+
+                if (documentReference.getStatus() == SymbolStatus.REFERENCE) {
+                    documentDefinition = context.schemaIndex().getSymbolDefinition(documentReference);
+                } else {
+                    documentDefinition = context.schemaIndex().findSymbol(documentReference);
+                }
+
+                if (documentDefinition.isEmpty()) return Optional.empty();
+
+                referencedSymbol = context.schemaIndex().findSymbol(documentDefinition.get(), SymbolType.FIELD, node.getText().toLowerCase());
+
+                if (referencedSymbol.isPresent()) {
+                    node.setSymbolType(referencedSymbol.get().getType());
+
+                    // We identified the reference and found the definition,
+                    // however this case is actually only valid in an import field statement.
+                    // So we should add an error if thats not the case
+                    if (!node.getParent().isASTInstance(importField.class)) {
+                        // TODO: quickfix
+                        diagnostics.add(new Diagnostic(
+                            node.getRange(),
+                            "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly.",
+                            DiagnosticSeverity.Error,
+                            "Hint: Add an import field statement to access the field."
+                        ));
+                    }
+                }
+
+                return referencedSymbol;
             }
         } else {
             return Optional.empty();
@@ -137,8 +197,15 @@ public class SymbolReferenceResolver {
     private static Optional<Symbol> resolveFieldInStructReference(SchemaNode node, Symbol structDefinition, ParseContext context) {
         Optional<Symbol> referencedSymbol = context.schemaIndex().findSymbol(structDefinition, SymbolType.FIELD, node.getText().toLowerCase());
 
-        //referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
-        referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
+        if (referencedSymbol.isPresent()) {
+            // TODO: maybe we could have a findSymbol that doesn't allow going up in scope
+            if (!context.schemaIndex().isInScope(referencedSymbol.get(), structDefinition)) {
+                return Optional.empty();
+            }
+
+            //referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
+            node.setSymbolType(referencedSymbol.get().getType());
+        }
         return referencedSymbol;
     }
 

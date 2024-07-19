@@ -44,7 +44,6 @@ public class SchemaIndex {
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<>() {{
         put(rankProfile.class, SymbolType.RANK_PROFILE);
         put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
-        put(summaryInDocument.class, SymbolType.SUMMARY);
     }};
 
     private PrintStream logger;
@@ -156,7 +155,25 @@ public class SchemaIndex {
 
     public Optional<Symbol> findSymbol(Symbol scope, SymbolType type, String shortIdentifier) {
         List<Symbol> results = findSymbols(scope, type, shortIdentifier);
-        if (results.size() == 0) return Optional.empty();
+        if (results.isEmpty()) return Optional.empty();
+
+        return Optional.of(results.get(0));
+    }
+
+    /**
+     * Uses symbol.getScope as the scope to search in
+     */
+    public Optional<Symbol> findSymbolInScope(Symbol symbol) {
+        return findSymbolInScope(symbol.getScope(), symbol.getType(), symbol.getShortIdentifier());
+    }
+
+    /**
+     * Searches for the specified symbol in the given scope. Checks inherited scopes as well,
+     * but not containing scopes.
+     * */
+    public Optional<Symbol> findSymbolInScope(Symbol scope, SymbolType type, String shortIdentifier) {
+        List<Symbol> results = findSymbolsInScope(scope, type, shortIdentifier);
+        if (results.isEmpty()) return Optional.empty();
 
         return Optional.of(results.get(0));
     }
@@ -259,7 +276,7 @@ public class SchemaIndex {
         return findSymbolsInScope(reference.getScope(), reference.getType(), reference.getFileURI());
     }
 
-    private boolean isInScope(Symbol symbol, Symbol scope) {
+    public boolean isInScope(Symbol symbol, Symbol scope) {
         if (scope.getType() == SymbolType.RANK_PROFILE) {
             return !rankProfileInheritanceGraph.findFirstMatches(scope, 
                     rankProfileDefinitionSymbol -> {
@@ -299,11 +316,7 @@ public class SchemaIndex {
      */
     public Optional<Symbol> getSymbolDefinition(Symbol reference) {
         if (reference.getStatus() == SymbolStatus.DEFINITION) return Optional.of(reference);
-        Symbol results = definitionOfReference.get(reference);
-
-        if (results == null) return Optional.empty();
-
-        return Optional.of(results);
+        return Optional.ofNullable(definitionOfReference.get(reference));
     }
 
     /**
