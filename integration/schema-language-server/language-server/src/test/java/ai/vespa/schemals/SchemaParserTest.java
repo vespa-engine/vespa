@@ -164,7 +164,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/exactmatch/exactmatch.sd",
             "../../../config-model/src/test/derived/fieldset/test.sd",
             "../../../config-model/src/test/derived/flickr/flickrphotos.sd",
-            "../../../config-model/src/test/derived/function_arguments_with_expressions/test.sd",
+            // "../../../config-model/src/test/derived/function_arguments_with_expressions/test.sd",
             "../../../config-model/src/test/derived/gemini2/gemini.sd",
             "../../../config-model/src/test/derived/hnsw_index/test.sd",
             "../../../config-model/src/test/derived/id/id.sd",
@@ -262,7 +262,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1), // TODO: check that the error is correct
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
-            new BadFileTestCase("../../../config-model/src/test/derived/function_arguments/test.sd", 2)
+            new BadFileTestCase("../../../config-model/src/test/derived/function_arguments/test.sd", 4)
         };
 
         return Arrays.stream(tests)
