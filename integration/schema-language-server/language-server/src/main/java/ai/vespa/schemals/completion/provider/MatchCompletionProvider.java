@@ -1,5 +1,6 @@
 package ai.vespa.schemals.completion.provider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.CompletionItem;
@@ -18,6 +19,7 @@ public class MatchCompletionProvider implements CompletionProvider {
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+        if (!(context.document instanceof SchemaDocument)) return new ArrayList<>();
         return List.of(new CompletionItem[]{
             CompletionUtils.constructBasic("text"), 
             CompletionUtils.constructBasic("word"), 

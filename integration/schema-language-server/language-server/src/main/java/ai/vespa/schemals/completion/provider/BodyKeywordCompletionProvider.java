@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.completion.utils.CompletionUtils;

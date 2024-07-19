@@ -182,27 +182,33 @@ public class SchemaDocument implements DocumentManager {
     }
 
     public Position getPreviousStartOfWord(Position pos) {
-        int offset = positionToOffset(pos);
+        try {
+            int offset = positionToOffset(pos);
 
-        // Skip whitespace
-        // But not newline because newline is a token
-        while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
+            // Skip whitespace
+            // But not newline because newline is a token
+            while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
 
-        for (int i = offset; i >= 0; i--) {
-            if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+            for (int i = offset; i >= 0; i--) {
+                if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+            }
+        } catch (Exception e) {
         }
 
         return null;
     }
 
     public boolean isInsideComment(Position pos) {
-        int offset = positionToOffset(pos);
+        try {
+            int offset = positionToOffset(pos);
 
-        if (content.charAt(offset) == '\n')offset--;
+            if (content.charAt(offset) == '\n')offset--;
 
-        for (int i = offset; i >= 0; i--) {
-            if (content.charAt(i) == '\n')break;
-            if (content.charAt(i) == '#')return true;
+            for (int i = offset; i >= 0; i--) {
+                if (content.charAt(i) == '\n')break;
+                if (content.charAt(i) == '#')return true;
+            }
+        } catch(Exception e) {
         }
         return false;
     }
@@ -422,4 +428,9 @@ public class SchemaDocument implements DocumentManager {
         String openString = getIsOpen() ? " [OPEN]" : "";
         return getFileURI() + openString;
     }
+
+	@Override
+	public String getCurrentContent() {
+        return this.content;
+	}
 }

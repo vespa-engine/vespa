@@ -9,9 +9,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.eclipse.lsp4j.SymbolTag;
+
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -34,9 +37,11 @@ public class FieldIndex {
     public class FieldIndexEntry {
         public SchemaNode dataTypeNode;
         public EnumSet<IndexingType> indexingTypes = EnumSet.noneOf(IndexingType.class);
+        public boolean isInsideDoc = true;
 
-        FieldIndexEntry(SchemaNode dataTypeNode) {
+        FieldIndexEntry(SchemaNode dataTypeNode, boolean isInsideDoc) {
             this.dataTypeNode = dataTypeNode;
+            this.isInsideDoc = isInsideDoc;
         }
     }
 
@@ -66,7 +71,7 @@ public class FieldIndex {
         if (database.containsKey(fieldDefinition)) return;
 
         SchemaNode dataTypeNode = resolveFieldDataTypeNode(fieldDefinition);
-        database.put(fieldDefinition, new FieldIndexEntry(dataTypeNode));
+        database.put(fieldDefinition, new FieldIndexEntry(dataTypeNode, resolveIsInsideDoc(fieldDefinition)));
     }
 
     public void addFieldIndexingType(Symbol fieldDefinition, IndexingType indexingType) {
@@ -92,6 +97,12 @@ public class FieldIndex {
         if (entry == null) return EnumSet.noneOf(IndexingType.class);
 
         return EnumSet.copyOf(entry.indexingTypes);
+    }
+
+    public boolean getIsInsideDoc(Symbol fieldDefinition) {
+        FieldIndexEntry entry = database.get(fieldDefinition);
+        if (entry == null) return false;
+        return entry.isInsideDoc;
     }
 
     /**
@@ -125,5 +136,16 @@ public class FieldIndex {
             return fieldDefinitionNode.getNextSibling().getNextSibling();
         }         
         return null;
+    }
+
+    private boolean resolveIsInsideDoc(Symbol fieldDefinition) {
+        // todo: struct field definition
+        if (fieldDefinition.getScope() != null && fieldDefinition.getScope().getType() == SymbolType.FIELD && fieldDefinition.getScope().getStatus() == SymbolStatus.DEFINITION) {
+            return resolveIsInsideDoc(fieldDefinition.getScope());
+        }
+        SchemaNode fieldDefinitionNode = fieldDefinition.getNode();
+        if (fieldDefinitionNode.getParent().isASTInstance(importField.class)) return false;
+        if (fieldDefinitionNode.getParent().getParent().isASTInstance(fieldOutsideDoc.class)) return false;
+        return true;
     }
 }

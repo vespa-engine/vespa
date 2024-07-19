@@ -63,6 +63,12 @@ public class SchemaHover {
 
         String hoverText = "field " + fieldDefinitionSymbol.get().getShortIdentifier() + " type " + typeText;
 
+        if (context.schemaIndex.fieldIndex().getIsInsideDoc(fieldDefinitionSymbol.get())) {
+            hoverText = "document " + hoverText;
+        } else {
+            hoverText = "schema " + hoverText;
+        }
+
         for (IndexingType it : context.schemaIndex.fieldIndex().getFieldIndexingTypes(fieldDefinitionSymbol.get())) {
             hoverText += "\n\t" + it.toString();
         }
