@@ -105,7 +105,7 @@ INJECT SchemaParser:
         int leadingStripped = 0;
 
         if (multiline) {
-            leadingStripped = lastConsumedToken.getBeginOffset() ;
+            leadingStripped = startSplit - lastConsumedToken.getBeginOffset() ;
         } else {
             leadingStripped = startSplit - lastConsumedToken.getPrevious().getBeginOffset();
         }

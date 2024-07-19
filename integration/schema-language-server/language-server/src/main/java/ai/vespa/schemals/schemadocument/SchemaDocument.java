@@ -112,7 +112,7 @@ public class SchemaDocument implements DocumentManager {
  
         CSTUtils.printTree(logger, CST);
 
-        schemaIndex.dumpIndex();
+        //schemaIndex.dumpIndex();
 
     }
 
@@ -343,9 +343,17 @@ public class SchemaDocument implements DocumentManager {
         Position scriptStart = PositionAddOffset(context.content(), indexingStart, script.leadingStripped());
 
         try {
-            parser.root();
-            // TODO: Verify expression
-            return new SchemaNode(parser.rootNode(), indexingStart);
+            var expression = parser.root();
+            /*
+            // TODO: Verify expression?
+            try {
+                var dataType = expression.verify();
+                context.logger().println("ILSCRIPT GOOD: " + dataType.toString());
+            } catch(Exception e) {
+                context.logger().println("ILSCRIPT FAIL: " + e.getMessage());
+            }
+            */
+            return new SchemaNode(parser.rootNode(), scriptStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
             context.logger().println("Encountered parsing error in parsing feature list");
             Range range = ILUtils.getNodeRange(pe.getToken());
