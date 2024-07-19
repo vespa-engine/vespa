@@ -20,7 +20,22 @@ type ApplicationPackage struct {
 	TestPath string
 }
 
-func (ap *ApplicationPackage) HasCertificate() bool { return ap.hasFile("security", "clients.pem") }
+func (ap *ApplicationPackage) HasCertificate(certPaths []string) bool {
+	if len(certPaths) == 0 {
+		if ap.hasFile("security", "clients.pem") {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		for _, certPath := range certPaths {
+			if ap.hasFile(certPath) {
+				return true
+			}
+		}
+		return false
+	}
+}
 
 func (ap *ApplicationPackage) HasMatchingCertificate(certificatePEM []byte) (bool, error) {
 	clientsPEM, err := os.ReadFile(filepath.Join(ap.Path, "security", "clients.pem"))
