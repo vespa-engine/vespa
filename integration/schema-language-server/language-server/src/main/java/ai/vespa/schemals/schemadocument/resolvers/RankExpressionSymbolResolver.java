@@ -135,10 +135,11 @@ public class RankExpressionSymbolResolver {
         diagnostics.addAll(functionHandler.handleArgumentList(context, node));
     }
 
-    // private static final List<SymbolType> possibleTypes = new ArrayList<>() {{
-    //     add(SymbolType.FUNCTION);
-    //     add(SymbolType.PARAMETER);
-    // }};
+    private static final List<SymbolType> possibleTypes = new ArrayList<>() {{
+        // add(SymbolType.PARAMETER); // This is a speciel case
+        add(SymbolType.FUNCTION);
+        add(SymbolType.RANK_CONSTANT);
+    }};
 
     private static void resolveReference(RankNode referenceNode, ParseContext context, List<Diagnostic> diagnostics) {
 
@@ -158,13 +159,17 @@ public class RankExpressionSymbolResolver {
         if (!referenceNode.getArgumentListExists()) {
             // This can be a parameter
             definition = context.schemaIndex().findSymbol(reference.getScope(), SymbolType.PARAMETER, reference.getShortIdentifier());
-        } else {
-            reference.setType(SymbolType.FUNCTION);
         }
 
         // If the symbol isn't a parameter, maybe it is a function
         if (definition.isEmpty()) {
-            definition = context.schemaIndex().findSymbol(reference.getScope(), SymbolType.FUNCTION, reference.getShortIdentifier());
+            for (SymbolType possibleType : possibleTypes) {
+                definition = context.schemaIndex().findSymbol(reference.getScope(), possibleType, reference.getShortIdentifier());
+
+                if (definition.isPresent()) {
+                    break;
+                }
+            }
         }
 
         if (definition.isEmpty()) {

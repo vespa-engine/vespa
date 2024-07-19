@@ -121,6 +121,7 @@ public class Symbol {
         MAP_VALUE,
         PARAMETER,
         QUERY_INPUT,
+        RANK_CONSTANT,
         LABEL,
         LAMBDA_FUNCTION,
         PROPERTY,

@@ -13,6 +13,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
+import ai.vespa.schemals.parser.ast.constantName;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.documentSummary;
 import ai.vespa.schemals.parser.ast.fieldElm;
@@ -39,6 +40,7 @@ public class SchemaIndex {
         put(structFieldDefinition.class, SymbolType.FIELD);
         put(functionElm.class, SymbolType.FUNCTION);
         put(inputName.class, SymbolType.QUERY_INPUT);
+        put(constantName.class, SymbolType.RANK_CONSTANT);
     }};
 
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<>() {{

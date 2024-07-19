@@ -58,6 +58,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(SymbolType.PARAMETER);
         add(SymbolType.LABEL);
         add(SymbolType.QUERY_INPUT);
+        add(SymbolType.RANK_CONSTANT);
         add(SymbolType.PROPERTY);
         add(SymbolType.LAMBDA_FUNCTION);
     }};
@@ -81,6 +82,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.SUMMARYFEATURES_SL);
         add(TokenType.IMPORT);
         add(TokenType.INPUTS);
+        add(TokenType.CONSTANTS);
         add(TokenType.DOCUMENT_SUMMARY);
         add(TokenType.AS);
         add(TokenType.SUMMARY);
@@ -190,6 +192,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.PARAMETER, "parameter");
         put(SymbolType.LABEL, "variable");
         put(SymbolType.QUERY_INPUT, "variable");
+        put(SymbolType.RANK_CONSTANT, "variable");
         put(SymbolType.PROPERTY, "property");
         put(SymbolType.LAMBDA_FUNCTION, "keyword");
     }};

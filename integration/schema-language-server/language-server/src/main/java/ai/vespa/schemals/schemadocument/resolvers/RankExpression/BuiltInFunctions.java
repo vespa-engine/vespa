@@ -146,5 +146,7 @@ public class BuiltInFunctions {
 
 
         put("distance", new DistanceFunction());
+
+        put("file", new GenericFunction());
     }};
 }
