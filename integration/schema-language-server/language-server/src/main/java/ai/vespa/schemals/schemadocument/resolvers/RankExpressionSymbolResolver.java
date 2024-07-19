@@ -49,15 +49,15 @@ public class RankExpressionSymbolResolver {
     public static List<Diagnostic> resolveRankExpression(SchemaNode schemaNode, ParseContext context) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        Optional<RankNode> rankNode = RankNode.createTree(schemaNode);
-        if (rankNode.isEmpty()) {
-            // TODO: error message
-            return diagnostics;
+        List<RankNode> rankNodes = RankNode.createTree(schemaNode);
+
+        for (RankNode node : rankNodes) {
+            RankingExpressionUtils.printTree(context.logger(), node);
+
+            diagnostics.addAll(traverseRankExpressionTree(node, context));
         }
 
-        RankingExpressionUtils.printTree(context.logger(), rankNode.get());
-
-        return traverseRankExpressionTree(rankNode.get(), context);
+        return diagnostics;
     }
 
     private static List<Diagnostic> traverseRankExpressionTree(RankNode node, ParseContext context) {
@@ -158,6 +158,8 @@ public class RankExpressionSymbolResolver {
         if (!referenceNode.getArgumentListExists()) {
             // This can be a parameter
             definition = context.schemaIndex().findSymbol(reference.getScope(), SymbolType.PARAMETER, reference.getShortIdentifier());
+        } else {
+            reference.setType(SymbolType.FUNCTION);
         }
 
         // If the symbol isn't a parameter, maybe it is a function

@@ -78,6 +78,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.FUNCTION);
         add(TokenType.RANK_PROPERTIES);
         add(TokenType.MATCHFEATURES_SL);
+        add(TokenType.SUMMARYFEATURES_SL);
         add(TokenType.IMPORT);
         add(TokenType.INPUTS);
         add(TokenType.DOCUMENT_SUMMARY);

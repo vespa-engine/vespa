@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Range;
 
@@ -175,35 +176,8 @@ public class RankNode implements Iterable<RankNode>  {
         put(lambdaFunction.class, RankNodeType.BUILT_IN_FUNCTION);
     }};
 
-    private static Optional<SchemaNode> findEntrancePoint(SchemaNode node) {
-        SchemaNode searchNode = node;
-
-        if (rankNodeTypeMap.containsKey(node.getASTClass())) {
-            return Optional.of(searchNode);
-        }
-
-        while (searchNode.size() > 0) {
-            searchNode = searchNode.get(0);
-            if (rankNodeTypeMap.containsKey(searchNode.getASTClass())) {
-                return Optional.of(searchNode);
-            }
-        }
-
-        SchemaNode nextSibling = node.getNextSibling();
-        if (nextSibling != null) {
-            return findEntrancePoint(nextSibling);
-        }
-
-        return Optional.empty();
-    }
-
-    public static Optional<RankNode> createTree(SchemaNode node) {
-        Optional<SchemaNode> entranceNode = findEntrancePoint(node);
-        if (entranceNode.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new RankNode(entranceNode.get()));
+    public static List<RankNode> createTree(SchemaNode node) {
+        return findChildren(node);
     }
 
     public SchemaNode getSchemaNode() {
