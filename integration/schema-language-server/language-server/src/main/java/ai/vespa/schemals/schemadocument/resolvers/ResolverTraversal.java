@@ -38,40 +38,15 @@ public class ResolverTraversal {
             IndexingLanguageResolver.resolveIndexingLanguage(context, currentNode, diagnostics);
         }
 
-        // Language resolvers should be responsible for traversing their own language
-        if (currentNode.getLanguageType() != LanguageType.INDEXING) {
-            for (SchemaNode child : currentNode) {
-                traverse(context, child, diagnostics);
-            }
+        for (SchemaNode child : currentNode) {
+            traverse(context, child, diagnostics);
         }
 
         // Some things need run after the children has run.
         // If it becomes a lot, put into its own file
         // TODO: solution for field in struct
         if (currentNode.isASTInstance(fieldElm.class)) {
-            SchemaNode fieldIdentifierNode = currentNode.get(1);
-            if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getType() == SymbolType.FIELD && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
-                if (fieldIdentifierNode.getNextSibling() != null 
-                        && fieldIdentifierNode.getNextSibling().getNextSibling() != null  
-                        && fieldIdentifierNode.getNextSibling().getNextSibling().isASTInstance(dataType.class)) {
-                    // check if it is a document reference
-                    dataType dataTypeNode = (dataType)fieldIdentifierNode.getNextSibling().getNextSibling().getOriginalSchemaNode();
-
-                    if (dataTypeNode.getParsedType().getVariant() == Variant.DOCUMENT) {
-                        var indexingTypes = context.fieldIndex().getFieldIndexingTypes(fieldIdentifierNode.getSymbol());
-
-                        if (!indexingTypes.contains(IndexingType.ATTRIBUTE)) {
-                            // TODO: quickfix
-                            diagnostics.add(new Diagnostic(
-                                fieldIdentifierNode.getRange(),
-                                "Invalid document reference. The field must be an attribute.",
-                                DiagnosticSeverity.Error,
-                                ""
-                            ));
-                        }
-                    }
-                }
-            }
+            ValidateFieldSettings.validateFieldSettings(context, currentNode, diagnostics);
         }
     }
 }

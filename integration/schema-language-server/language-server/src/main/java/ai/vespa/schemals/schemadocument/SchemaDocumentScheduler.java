@@ -5,12 +5,16 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.TextDocumentItem;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.index.Symbol;
 
 public class SchemaDocumentScheduler {
 
@@ -43,9 +47,25 @@ public class SchemaDocumentScheduler {
         workspaceFiles.get(fileURI).updateFileContent(content, version);
 
         if (isSchemaFile && reparseDescendants) {
+            Set<String> parsedURIs = new HashSet<>();
             for (String descendantURI : schemaIndex.getDocumentInheritanceGraph().getAllDescendants(fileURI)) {
                 if (workspaceFiles.containsKey(descendantURI)) {
                     workspaceFiles.get(descendantURI).reparseContent();
+                    parsedURIs.add(descendantURI);
+                }
+            }
+
+            // Reparse documents that holds references to this document
+            String schemaIdentifier = ((SchemaDocument)workspaceFiles.get(fileURI)).getSchemaIdentifier();
+            Optional<Symbol> schemaDefinition = schemaIndex.getSchemaDefinition(schemaIdentifier);
+
+            if (schemaDefinition.isPresent()) {
+                for (Symbol referencesThisDocument : schemaIndex.getDocumentReferenceGraph().getAllDescendants(schemaDefinition.get())) {
+                    String descendantURI = referencesThisDocument.getFileURI();
+                    if (!parsedURIs.contains(descendantURI) && workspaceFiles.containsKey(descendantURI)) {
+                        workspaceFiles.get(referencesThisDocument.getFileURI()).reparseContent();
+                        parsedURIs.add(descendantURI);
+                    }
                 }
             }
         }

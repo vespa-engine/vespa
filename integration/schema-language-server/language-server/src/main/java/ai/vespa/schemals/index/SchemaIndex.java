@@ -104,6 +104,13 @@ public class SchemaIndex {
     public InheritanceGraph<String> getDocumentInheritanceGraph() { return documentInheritanceGraph; }
 
     /**
+     * Returns the graph over document references
+     *
+     * @return the document reference graph
+     */
+    public InheritanceGraph<Symbol> getDocumentReferenceGraph() { return documentReferenceGraph; }
+
+    /**
      * Clears the index for symbols in the specified file
      *
      * @param fileURI the URI of the document to be cleared
