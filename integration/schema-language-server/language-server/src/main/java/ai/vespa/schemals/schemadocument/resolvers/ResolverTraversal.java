@@ -46,6 +46,7 @@ public class ResolverTraversal {
 
         // Some things need run after the children has run.
         // If it becomes a lot, put into its own file
+        // TODO: solution for field in struct
         if (currentNode.isASTInstance(fieldElm.class)) {
             SchemaNode fieldIdentifierNode = currentNode.get(1);
             if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getType() == SymbolType.FIELD && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {

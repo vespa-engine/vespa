@@ -84,6 +84,14 @@ public class FieldIndex {
 
         FieldIndexEntry entry = database.get(fieldDefinition);
         entry.indexingTypes.add(indexingType);
+
+        // Attribute propagates from struct-field
+        if (indexingType == IndexingType.ATTRIBUTE 
+                && fieldDefinition.getScope() != null 
+                && fieldDefinition.getScope().getType() == SymbolType.FIELD
+                && fieldDefinition.getScope().getStatus() == SymbolStatus.DEFINITION) {
+            addFieldIndexingType(fieldDefinition.getScope(), indexingType);
+        }
     }
 
     public Optional<SchemaNode> getFieldDataTypeNode(Symbol fieldDefinition) {

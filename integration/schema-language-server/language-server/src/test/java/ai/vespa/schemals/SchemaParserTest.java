@@ -138,9 +138,9 @@ public class SchemaParserTest {
         }
 
 
-        testMessage += "\n\n\n FULL DUMP:\n";
-        testMessage += outputStream.toString();
-        testMessage += "\n\n\n\n";
+        //testMessage += "\n\n\n FULL DUMP:\n";
+        //testMessage += outputStream.toString();
+        //testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
     }

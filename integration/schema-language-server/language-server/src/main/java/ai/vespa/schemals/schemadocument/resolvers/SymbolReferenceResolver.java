@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
@@ -142,6 +143,34 @@ public class SymbolReferenceResolver {
                             DiagnosticSeverity.Error,
                             ""
                         ));
+                    }
+
+                    var referencedSymbolIndexingTypes = context.fieldIndex().getFieldIndexingTypes(referencedSymbol.get());
+
+                    if (!referencedSymbolIndexingTypes.contains(IndexingType.ATTRIBUTE)) {
+                        // TODO: quickfix
+                        diagnostics.add(new Diagnostic(
+                            node.getRange(),
+                            "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is not an attribute field. Only attribute fields can be imported.",
+                            DiagnosticSeverity.Error,
+                            ""
+                        ));
+                    } else if (referencedSymbolIndexingTypes.contains(IndexingType.INDEX)) {
+                        // TODO: quickfix
+                        diagnostics.add(new Diagnostic(
+                            node.getRange(),
+                            "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is an index field. Importing index fields is not supported.",
+                            DiagnosticSeverity.Error,
+                            ""
+                        ));
+                    }
+
+                    // "inherit" index type from imported field
+                    Symbol importFieldDefinitionSymbol = node.getNextSibling().getNextSibling().getSymbol();
+                    if (importFieldDefinitionSymbol != null && importFieldDefinitionSymbol.getStatus() == SymbolStatus.DEFINITION) {
+                        for (IndexingType indexingType : referencedSymbolIndexingTypes) {
+                            context.fieldIndex().addFieldIndexingType(importFieldDefinitionSymbol, indexingType);
+                        }
                     }
                 }
 
