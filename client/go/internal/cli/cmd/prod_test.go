@@ -61,6 +61,11 @@ func TestProdInit(t *testing.T) {
 	containerFragment := `<container id="qrs" version="1.0">
     <document-api></document-api>
     <search></search>
+    <clients>
+      <client id="test" permissions="read">
+        <certificate file="security/clients.pem"></certificate>
+      </client>
+    </clients>
     <nodes count="4"></nodes>
   </container>`
 	assert.Contains(t, servicesXML, containerFragment)
@@ -111,6 +116,11 @@ func createApplication(t *testing.T, pkgDir string, java bool, skipTests bool) {
   <container id="qrs" version="1.0">
     <document-api/>
     <search/>
+    <clients>
+      <client id="test" permissions="read">
+        <certificate file="security/clients.pem"/>
+      </client>
+    </clients>
     <nodes count="2">
       <resources vcpu="4" memory="8Gb" disk="100Gb"/>
     </nodes>
