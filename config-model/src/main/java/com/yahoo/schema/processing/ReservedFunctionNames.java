@@ -46,7 +46,7 @@ public class ReservedFunctionNames extends Processor {
         }
     }
 
-    private static Set<String> getReservedNames() {
+    public static Set<String> getReservedNames() {
         Set<String> temp = new HashSet<>();
         Arrays.stream(RankingExpressionParserConstants.tokenImage)
                 .map(token -> token.substring(1, token.length()-1)).forEach(name -> temp.add(name));

@@ -29,6 +29,7 @@ public class ResolverTraversal {
     }
 
     private static void traverse(ParseContext context, SchemaNode currentNode, List<Diagnostic> diagnostics) {
+
         if (currentNode.hasSymbol() && currentNode.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
             SymbolReferenceResolver.resolveSymbolReference(currentNode, context, diagnostics);
         }

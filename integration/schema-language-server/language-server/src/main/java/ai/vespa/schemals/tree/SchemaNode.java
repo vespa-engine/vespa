@@ -214,6 +214,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.symbolAtNode = new Symbol(this, type, fileURI, scope, shortIdentifier);
     }
 
+    public void removeSymbol() {
+        this.symbolAtNode = null;
+    }
+
     public void setSymbolType(SymbolType newType) {
         if (!this.hasSymbol()) return;
         this.symbolAtNode.setType(newType);
@@ -519,7 +523,14 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     public String toString() {
         Position pos = getRange().getStart();
-        return getText() + "[" + getSchemaType() + "] at " + pos.getLine() + ":" + pos.getCharacter();
+        String astClassStr = getASTClass().toString();
+        astClassStr = astClassStr.substring(astClassStr.lastIndexOf('.') + 1);
+        String ret = "Node('" + getText() + "', [" + astClassStr + "] at " + pos.getLine() + ":" + pos.getCharacter();
+        if (hasSymbol()) {
+            ret += " [SYMBOL " + getSymbol().getType().toString() + " " + getSymbol().getStatus().toString() + ": " + getSymbol().getLongIdentifier() +  "]";
+        }
+        ret += ")";
+        return ret;
     }
 
 	@Override

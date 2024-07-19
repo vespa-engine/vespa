@@ -242,6 +242,19 @@ INJECT dataType:
     }
 }
 
+INJECT valueType:
+    import com.yahoo.search.schema.RankProfile.InputType;
+{
+    private InputType inputType = null;
+
+    public void setInputType(InputType inputType) {
+        this.inputType = inputType;
+    }
+
+    public InputType getInputType() {
+        return inputType;
+    }
+}
 
 INJECT Token :
 {
@@ -2372,7 +2385,12 @@ InputType valueType(Reference reference) :
       |
       ( <STRING_KEYWORD> { result = new InputType(TensorType.empty, true); } )
     )
-    { return result; }
+    {
+        if (result != null) {
+            thisProduction.setInputType(result);
+        }
+        return result;
+    }
 ;
 
 void featureListElm(ParsedRankProfile profile) :

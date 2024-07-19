@@ -13,11 +13,13 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
+import ai.vespa.schemals.parser.ast.constantName;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.documentSummary;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.inputName;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -37,6 +39,8 @@ public class SchemaIndex {
         put(structDefinitionElm.class, SymbolType.STRUCT);
         put(structFieldDefinition.class, SymbolType.FIELD);
         put(functionElm.class, SymbolType.FUNCTION);
+        put(inputName.class, SymbolType.QUERY_INPUT);
+        put(constantName.class, SymbolType.RANK_CONSTANT);
     }};
 
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<>() {{
@@ -217,9 +221,9 @@ public class SchemaIndex {
                                .toList();
         }
 
-        logger.println("Looking for symbol: " + shortIdentifier + " type " + type.toString());
+        // logger.println("Looking for symbol: " + shortIdentifier + " type " + type.toString());
         while (scope != null) {
-            logger.println("  Checking scope: " + scope.getLongIdentifier());
+            // logger.println("  Checking scope: " + scope.getLongIdentifier());
             List<Symbol> result = findSymbolsInScope(scope, type, shortIdentifier);
 
             if (!result.isEmpty()) {
@@ -283,6 +287,10 @@ public class SchemaIndex {
         List<Symbol> result = new ArrayList<>();
         if (symbol.isPresent())result.add(symbol.get());
         return result;
+    }
+
+    public List<Symbol> findSymbolsInScope(Symbol reference) {
+        return findSymbolsInScope(reference.getScope(), reference.getType(), reference.getFileURI());
     }
 
     public boolean isInScope(Symbol symbol, Symbol scope) {
@@ -417,6 +425,22 @@ public class SchemaIndex {
 
         definitionOfReference.put(reference, definition);
         list.add(reference);
+    }
+
+
+    /**
+     * Deletes the symbol reference from the schema index.
+     *
+     * @param symbol The symbol reference to be deleted.
+     */
+    public void deleteSymbolReference(Symbol symbol) {
+        Symbol definition = definitionOfReference.remove(symbol);
+        if (definition != null) {
+            List<Symbol> references = symbolReferences.get(definition);
+            if (references != null) {
+                references.remove(symbol);
+            }
+        }
     }
 
     /**

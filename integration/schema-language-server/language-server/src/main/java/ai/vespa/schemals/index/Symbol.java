@@ -136,6 +136,11 @@ public class Symbol {
         MAP_KEY,
         MAP_VALUE,
         PARAMETER,
+        QUERY_INPUT,
+        RANK_CONSTANT,
+        LABEL,
+        LAMBDA_FUNCTION,
+        PROPERTY,
         RANK_PROFILE,
         SCHEMA,
         STRUCT,
@@ -147,6 +152,6 @@ public class Symbol {
     public String toString() {
         Position pos = getNode().getRange().getStart();
         String fileName = FileUtils.fileNameFromPath(fileURI);
-        return "Symbol('" + getLongIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")@" + System.identityHashCode(this);
+        return "Symbol('" + getLongIdentifier() + "', " + getType() + ", " + getStatus() + ", at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")@" + System.identityHashCode(this);
     }
 }

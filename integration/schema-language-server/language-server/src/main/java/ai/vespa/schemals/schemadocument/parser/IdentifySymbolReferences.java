@@ -9,9 +9,6 @@ import java.util.Set;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
-import com.google.protobuf.Option;
-import com.yahoo.tensor.functions.Diag;
-
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -23,12 +20,12 @@ import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
-import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryItem;
@@ -124,16 +121,24 @@ public class IdentifySymbolReferences extends Identifier {
         return ret;
     }
 
+    private static final Set<Class<?>> identifierNodes = new HashSet<>() {{
+        add(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class);
+        addAll(RankExpressionSymbolResolver.builInTokenizedFunctions);
+    }};
+
     private ArrayList<Diagnostic> identifyRankExpressionLanguage(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         if (node.size() == 0) return ret;
 
-        SchemaNode child = node.get(0);
-        var type = child.getRankExpressionType();
-        boolean isIdentifier = node.isRankExpressionASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class);
+        boolean isIdentifier = identifierNodes.contains(node.getASTClass());
 
-        if (!isIdentifier || type != ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IDENTIFIER) {
+        if (!isIdentifier) {
+            return ret;
+        }
+
+        SchemaNode parent = node.getParent();
+        if (parent != null && identifierNodes.contains(parent.getASTClass())) {
             return ret;
         }
 
@@ -144,7 +149,6 @@ public class IdentifySymbolReferences extends Identifier {
         } else {
             node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
         }
-        
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         return ret;

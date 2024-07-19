@@ -1,6 +1,7 @@
 package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
 
@@ -15,5 +16,5 @@ public abstract class Identifier {
         this.context = context;
     }
 
-    public abstract ArrayList<Diagnostic> identify(SchemaNode node);
+    public abstract List<Diagnostic> identify(SchemaNode node);
 }

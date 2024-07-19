@@ -11,6 +11,7 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.parser.IdentifyType;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
 import ai.vespa.schemals.schemadocument.parser.IdentifySymbolDefinition;
 import ai.vespa.schemals.schemadocument.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.schemadocument.parser.IdentifyAnnotationReference;
@@ -33,6 +34,7 @@ public class ParseContext {
     private List<SchemaNode> unresolvedTypeNodes;
     private List<SchemaNode> unresolvedAnnotationReferenceNodes;
     private List<SchemaNode> unresolvedDocumentReferenceNodes;
+    private List<UnresolvedFieldArgument> unresolvedFieldArgumentNodes;
     private SchemaIndex schemaIndex;
     private SchemaNode inheritsSchemaNode;
     private SchemaDocumentScheduler scheduler;
@@ -46,6 +48,7 @@ public class ParseContext {
         this.unresolvedTypeNodes = new ArrayList<>();
         this.unresolvedAnnotationReferenceNodes = new ArrayList<>();
         this.unresolvedDocumentReferenceNodes = new ArrayList<>();
+        this.unresolvedFieldArgumentNodes = new ArrayList<>();
         this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>();
         this.scheduler = scheduler;
@@ -122,6 +125,10 @@ public class ParseContext {
         return this.unresolvedDocumentReferenceNodes;
     }
 
+    public List<UnresolvedFieldArgument> unresolvedFieldArguments() {
+        return this.unresolvedFieldArgumentNodes;
+    }
+
     public SchemaIndex schemaIndex() {
         return this.schemaIndex;
     }
@@ -155,6 +162,10 @@ public class ParseContext {
         this.unresolvedDocumentReferenceNodes.add(node);
     }
 
+    public void addUnresolvedFieldArgument(UnresolvedFieldArgument node) {
+        this.unresolvedFieldArgumentNodes.add(node);
+    }
+
     public void clearUnresolvedTypeNodes() {
         this.unresolvedTypeNodes.clear();
     }
@@ -169,6 +180,10 @@ public class ParseContext {
 
     public void clearUnresolvedDocumentReferenceNodes() {
         this.unresolvedDocumentReferenceNodes.clear();
+    }
+
+    public void clearUnresolvedFieldArguments() {
+        this.unresolvedFieldArgumentNodes.clear();
     }
 
     public SchemaNode inheritsSchemaNode() {

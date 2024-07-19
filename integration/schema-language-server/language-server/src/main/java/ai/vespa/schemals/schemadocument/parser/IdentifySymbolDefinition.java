@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
+import com.yahoo.schema.processing.ReservedFunctionNames;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
@@ -26,9 +29,10 @@ import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 public class IdentifySymbolDefinition extends Identifier {
 
@@ -43,6 +47,10 @@ public class IdentifySymbolDefinition extends Identifier {
         if (node.isASTInstance(dataType.class)) {
             handleDataTypeDefinition(node, ret);
             return ret;
+        }
+
+        if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+            return identifyDefinitionInRankExpression(node);
         }
         
         boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
@@ -107,6 +115,11 @@ public class IdentifySymbolDefinition extends Identifier {
             if (context.schemaIndex().findSymbolInScope(node.getSymbol()).isEmpty()) {
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
                 context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+
+                if (node.getSymbol().getType() == SymbolType.FUNCTION) {
+                    verifySymbolFunctionName(node, ret);
+                }
+
             } else {
                 node.setSymbolStatus(SymbolStatus.INVALID);
             }
@@ -176,5 +189,54 @@ public class IdentifySymbolDefinition extends Identifier {
 
         node.setSymbolStatus(SymbolStatus.DEFINITION);
         context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+    }
+
+    private ArrayList<Diagnostic> identifyDefinitionInRankExpression(SchemaNode node) {
+        ArrayList<Diagnostic> ret = new ArrayList<>();
+
+        if (!node.isASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class)) {
+            return ret;
+        }
+
+        SchemaNode grandParent = node.getParent(2);
+        if (grandParent == null || !grandParent.isASTInstance(lambdaFunction.class) || grandParent.size() < 1) {
+            return ret;
+        }
+
+        SchemaNode parent = grandParent.get(0);
+
+        if (!parent.hasSymbol()) {
+
+            Optional<Symbol> parentScope = CSTUtils.findScope(parent);
+    
+            if (parentScope.isEmpty()) {
+                return ret;
+            }
+    
+            parent.setSymbol(SymbolType.LAMBDA_FUNCTION, context.fileURI(), parentScope.get(), "lambda_" + node.hashCode());
+            parent.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(parent.getSymbol());
+        }
+
+        
+        node.setSymbol(SymbolType.PARAMETER, context.fileURI(), parent.getSymbol());
+
+        if (context.schemaIndex().findSymbolsInScope(node.getSymbol()).size() == 0) {
+            node.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+        } else {
+            node.setSymbolStatus(SymbolStatus.INVALID);
+        }
+
+        return ret;
+    }
+
+    private static final Set<String> reservedFunctionNames = ReservedFunctionNames.getReservedNames();
+    // TODO: Maybe add distance and bm25 to the list?
+    private void verifySymbolFunctionName(SchemaNode node, List<Diagnostic> diagnostics) {
+        String functionName = node.getSymbol().getShortIdentifier();
+        if (reservedFunctionNames.contains(functionName)) {
+            diagnostics.add(new Diagnostic(node.getRange(), "Function '" + node.getText() + "' has a reserved name. This might mean that the function shadows the built-in function with the same name.", DiagnosticSeverity.Warning, ""));
+        }
     }
 }
