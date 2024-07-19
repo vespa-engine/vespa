@@ -219,7 +219,7 @@ public class IdentifySymbolDefinition extends Identifier {
         
         node.setSymbol(SymbolType.PARAMETER, context.fileURI(), parent.getSymbol());
 
-        if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
+        if (context.schemaIndex().findSymbolsInScope(node.getSymbol()).size() == 0) {
             node.setSymbolStatus(SymbolStatus.DEFINITION);
             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
         } else {

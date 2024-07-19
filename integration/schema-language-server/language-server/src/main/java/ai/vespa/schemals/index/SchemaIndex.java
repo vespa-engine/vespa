@@ -219,7 +219,7 @@ public class SchemaIndex {
      * Find symbols with given type and short identifier that are valid in scope
      * Will search in inherited scopes
      */
-    private List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type, String shortIdentifier) {
+    public List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type, String shortIdentifier) {
         if (scope.getType() == SymbolType.RANK_PROFILE) {
             return rankProfileInheritanceGraph.findFirstMatches(scope, rankProfileDefinitionSymbol -> {
                 var definedInScope = findSymbolInConcreteScope(rankProfileDefinitionSymbol, type, shortIdentifier);
@@ -253,6 +253,10 @@ public class SchemaIndex {
         List<Symbol> result = new ArrayList<>();
         if (symbol.isPresent())result.add(symbol.get());
         return result;
+    }
+
+    public List<Symbol> findSymbolsInScope(Symbol reference) {
+        return findSymbolsInScope(reference.getScope(), reference.getType(), reference.getFileURI());
     }
 
     private boolean isInScope(Symbol symbol, Symbol scope) {

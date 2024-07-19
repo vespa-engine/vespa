@@ -9,6 +9,8 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.Range;
 
+import com.google.protobuf.Option;
+
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -16,6 +18,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
 import ai.vespa.schemals.parser.rankingexpression.ast.ifExpression;
+import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
@@ -57,6 +60,8 @@ public class RankNode implements Iterable<RankNode>  {
     private SchemaNode schemaNode;
     private RankNodeType type;
     private ReturnType returnType;
+    private boolean insideLambdaFunction = false;
+    private boolean arugmentListExists = false;
 
     private List<RankNode> children; // parameters for features, children for expressions
 
@@ -73,13 +78,23 @@ public class RankNode implements Iterable<RankNode>  {
 
         } else if (this.type == RankNodeType.FEATURE) {
 
-            this.children = findParameters(node);
+            Optional<List<RankNode>> children = findParameters(node);
+            if (children.isPresent()) {
+                this.children = children.get();
+                arugmentListExists = true;
+            } else {
+                this.children = new ArrayList<>();
+            }
             this.proptery = findProperty(node);
 
         } else if (this.type == RankNodeType.BUILT_IN_FUNCTION) {
 
             this.children = findBuiltInChildren(node);
             this.returnType = BuiltInReturnType.get(node.getASTClass());
+        }
+
+        if (node.isASTInstance(lambdaFunction.class)) {
+            setInsideLambdaFunction();
         }
     }
 
@@ -97,7 +112,7 @@ public class RankNode implements Iterable<RankNode>  {
         return ret;
     }
 
-    private static List<RankNode> findParameters(SchemaNode node) {
+    private static Optional<List<RankNode>> findParameters(SchemaNode node) {
         SchemaNode parameterNode = null;
 
         for (int i = 0; i < node.size(); i++) {
@@ -108,7 +123,7 @@ public class RankNode implements Iterable<RankNode>  {
         }
 
         if (parameterNode == null) {
-            return new ArrayList<>();
+            return Optional.empty();
         }
 
         List<RankNode> ret = new ArrayList<>();
@@ -119,7 +134,7 @@ public class RankNode implements Iterable<RankNode>  {
             }
         }
 
-        return ret;
+        return Optional.of(ret);
     }
 
     private static List<RankNode> findBuiltInChildren(SchemaNode node) {
@@ -157,6 +172,7 @@ public class RankNode implements Iterable<RankNode>  {
         put(expression.class, RankNodeType.EXPRESSION);
         put(scalarOrTensorFunction.class, RankNodeType.BUILT_IN_FUNCTION);
         put(tensorReduceComposites.class, RankNodeType.BUILT_IN_FUNCTION);
+        put(lambdaFunction.class, RankNodeType.BUILT_IN_FUNCTION);
     }};
 
     private static Optional<SchemaNode> findEntrancePoint(SchemaNode node) {
@@ -247,6 +263,23 @@ public class RankNode implements Iterable<RankNode>  {
 
     public void setReturnType(ReturnType returnType) {
         this.returnType = returnType;
+    }
+
+    private void setInsideLambdaFunction() {
+        if (insideLambdaFunction) return;
+
+        insideLambdaFunction = true;
+        for (RankNode child : children) {
+            child.setInsideLambdaFunction();
+        }
+    }
+
+    public boolean getInsideLambdaFunction() {
+        return insideLambdaFunction;
+    }
+
+    public boolean getArgumentListExists() {
+        return arugmentListExists;
     }
 
     public String toString() {

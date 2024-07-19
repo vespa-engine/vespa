@@ -212,7 +212,7 @@ public class RankExpressionSymbolResolver {
         if (node.hasSymbol()) {
 
             if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {
-                resolveReference(node.getSymbol(), context, diagnostics);
+                resolveReference(node, context, diagnostics);
             }
 
             if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {
@@ -276,45 +276,62 @@ public class RankExpressionSymbolResolver {
         diagnostics.addAll(functionHandler.handleArgumentList(context, node));
     }
 
-    private static final List<SymbolType> possibleTypes = new ArrayList<>() {{
-        add(SymbolType.FUNCTION);
-        add(SymbolType.PARAMETER);
-    }};
+    // private static final List<SymbolType> possibleTypes = new ArrayList<>() {{
+    //     add(SymbolType.FUNCTION);
+    //     add(SymbolType.PARAMETER);
+    // }};
 
-    private static void resolveReference(Symbol reference, ParseContext context, List<Diagnostic> diagnostics) {
+    private static void resolveReference(RankNode referenceNode, ParseContext context, List<Diagnostic> diagnostics) {
 
-        if (reference.getType() != SymbolType.TYPE_UNKNOWN) {
+        if (referenceNode.getSymbolType() != SymbolType.TYPE_UNKNOWN) {
             return;
         }
 
-        List<Symbol> possibleDefinitions = new ArrayList<>();
-
-        for (SymbolType possibleType : possibleTypes) {
-            context.logger().println("SEARCHING for " + reference.getShortIdentifier() + " as " + possibleType);
-            Optional<Symbol> symbol = context.schemaIndex().findSymbol(reference.getScope(), possibleType, reference.getShortIdentifier());
-            if (symbol.isPresent()) {
-                context.logger().println("MATCH: " + symbol.get());
-                possibleDefinitions.add(symbol.get());
-            } else {
-                context.logger().println("NO MATCH");
-            }
-        }
-
-        if (possibleDefinitions.size() == 0) {
+        if (referenceNode.getInsideLambdaFunction()) {
+            resolveReferenceInsideLambda(referenceNode, context, diagnostics);
             return;
         }
 
-        // TODO: filter for away the definitions with large scope
+        Symbol reference = referenceNode.getSymbol();
 
-        if (possibleDefinitions.size() > 1) {
-            diagnostics.add(new Diagnostic(reference.getLocation().getRange(), "The reference is ambiguous.", DiagnosticSeverity.Error, ""));
+        Optional<Symbol> definition = Optional.empty();
+
+        if (!referenceNode.getArgumentListExists()) {
+            // This can be a parameter
+            definition = context.schemaIndex().findSymbol(reference.getScope(), SymbolType.PARAMETER, reference.getShortIdentifier());
+        }
+
+        // If the symbol isn't a parameter, maybe it is a function
+        if (definition.isEmpty()) {
+            definition = context.schemaIndex().findSymbol(reference.getScope(), SymbolType.FUNCTION, reference.getShortIdentifier());
+        }
+
+        if (definition.isEmpty()) {
             return;
         }
 
-        Symbol definition = possibleDefinitions.get(0);
-
-        reference.setType(definition.getType());
+        reference.setType(definition.get().getType());
         reference.setStatus(SymbolStatus.REFERENCE);
-        context.schemaIndex().insertSymbolReference(definition, reference);
+        context.schemaIndex().insertSymbolReference(definition.get(), reference);
+    }
+
+    private static void resolveReferenceInsideLambda(RankNode node, ParseContext context, List<Diagnostic> diagnostics) {
+        
+        Symbol symbol = node.getSymbol();
+
+        List<Symbol> possibleDefinition = context.schemaIndex().findSymbolsInScope(symbol.getScope(), SymbolType.PARAMETER, symbol.getShortIdentifier());
+
+        if (possibleDefinition.size() == 0) {
+            // Symbol not found
+            return;
+        }
+
+        if (possibleDefinition.size() > 1) {
+            return;
+        }
+
+        symbol.setType(SymbolType.PARAMETER);
+        symbol.setStatus(SymbolStatus.REFERENCE);
+        context.schemaIndex().insertSymbolReference(possibleDefinition.get(0), symbol);
     }
 }
