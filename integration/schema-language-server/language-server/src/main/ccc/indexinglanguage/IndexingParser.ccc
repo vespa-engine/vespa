@@ -109,6 +109,18 @@ INJECT IndexingParser:
     }
 }
 
+INJECT root:
+    import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+{
+    public Expression expression;
+}
+
+INJECT statement:
+    import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+{
+    public StatementExpression expression;
+}
+
 SKIP :
     " " | "\t" | "\r" | "\f"
 ;
@@ -231,6 +243,9 @@ Expression root() :
     ( exp = statement() [ <SCOLON> ] )
     {
       while (exp instanceof ExpressionList && ((ExpressionList)exp).size() == 1) exp = ((ExpressionList)exp).get(0);
+
+      thisProduction.expression = exp;
+
       return exp;
     }
 ;
@@ -253,7 +268,10 @@ StatementExpression statement() :
 }
  
     ( exp = expression() { lst.add(exp); } ( <PIPE> consumeNL() exp = expression() { lst.add(exp); } )* )
-    { return new StatementExpression(lst); }
+    { 
+        thisProduction.expression = new StatementExpression(lst);
+        return thisProduction.expression; 
+    }
 ;
 
 Expression expression() :

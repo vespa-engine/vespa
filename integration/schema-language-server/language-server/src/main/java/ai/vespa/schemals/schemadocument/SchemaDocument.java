@@ -21,6 +21,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.SubLanguageData;
+import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
@@ -304,8 +305,7 @@ public class SchemaDocument implements DocumentManager {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
-            Range nodeRange = node.getRange();
-            SchemaNode indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
+            SchemaNode indexingNode = parseIndexingScript(node, context, ret);
             if (indexingNode != null) {
                 node.addChild(indexingNode);
             }
@@ -339,9 +339,11 @@ public class SchemaDocument implements DocumentManager {
         return new ParseResult(errors, Optional.of(CST));
     }
 
-    private static SchemaNode parseIndexingScript(ParseContext context, SubLanguageData script, Position indexingStart, ArrayList<Diagnostic> diagnostics) {
+    private static SchemaNode parseIndexingScript(SchemaNode indexingElmNode, ParseContext context, ArrayList<Diagnostic> diagnostics) {
+        SubLanguageData script = indexingElmNode.getILScript();
         if (script == null) return null;
 
+        Position indexingStart = indexingElmNode.getRange().getStart();
         CharSequence sequence = script.content();
         IndexingParser parser = new IndexingParser(context.logger(), context.fileURI(), sequence);
         parser.setParserTolerant(false);
@@ -359,6 +361,12 @@ public class SchemaDocument implements DocumentManager {
                 context.logger().println("ILSCRIPT FAIL: " + e.getMessage());
             }
             */
+            //context.logger().println("ILSCRIPT: " + script.content());
+            //context.logger().println("ILSCRIPT INPUT TYPE: " + (expression.requiredInputType() == null ? "null" : expression.requiredInputType().toString()));
+            //context.logger().println("ILSCRIPT OUTPUT TYPE: " + (expression.createdOutputType() == null ? "null" : expression.createdOutputType().toString()));
+
+            //indexingElm rootNode = (indexingElm)parser.rootNode();
+            ((indexingElm)indexingElmNode.getOriginalSchemaNode()).expression = expression;
             return new SchemaNode(parser.rootNode(), scriptStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
             context.logger().println("Encountered parsing error in parsing feature list");

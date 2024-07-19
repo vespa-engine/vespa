@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.resolvers;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,22 +8,15 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
-import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
-import ai.vespa.schemals.parser.ast.STRUCT_FIELD;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.parser.ast.fieldBodyElm;
-import ai.vespa.schemals.parser.ast.fieldElm;
-import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
-import ai.vespa.schemals.parser.ast.structFieldBodyElm;
-import ai.vespa.schemals.parser.ast.structFieldElm;
-import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SymbolReferenceResolver {

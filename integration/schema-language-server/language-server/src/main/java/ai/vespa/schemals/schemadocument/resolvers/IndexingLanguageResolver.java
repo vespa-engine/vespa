@@ -1,27 +1,29 @@
 package ai.vespa.schemals.schemadocument.resolvers;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.DiagnosticTag;
 
-import com.yahoo.schema.parser.ParsedType.Variant;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
+import ai.vespa.schemals.parser.indexinglanguage.ast.attributeExp;
+import ai.vespa.schemals.parser.indexinglanguage.ast.indexExp;
+import ai.vespa.schemals.parser.indexinglanguage.ast.script;
+import ai.vespa.schemals.parser.indexinglanguage.ast.statement;
+import ai.vespa.schemals.parser.indexinglanguage.ast.summaryExp;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 /**
  * IndexingLanguageResolver
@@ -56,6 +58,21 @@ public class IndexingLanguageResolver {
             return;
         }
 
+        if (indexingLanguageNode.isASTInstance(indexingElm.class)) {
+            var expression = ((indexingElm)indexingLanguageNode.getOriginalSchemaNode()).expression;
+            //String inputType = expression.requiredInputType() == null ? "null" : expression.requiredInputType().toString();
+            //String outputType = expression.createdOutputType() == null ? "null" : expression.createdOutputType().toString();
+            //diagnostics.add(new Diagnostic(indexingLanguageNode.get(0).getRange(), "Input: " + inputType + ", Output: " + outputType, DiagnosticSeverity.Information, ""));
+
+            if (expression != null && expression.requiredInputType() != null && !context.fieldIndex().getIsInsideDoc(fieldDefinitionSymbol)) {
+                diagnostics.add(new Diagnostic(
+                    indexingLanguageNode.get(0).getRange(), 
+                    "Expected " + expression.requiredInputType().getName() + " input, but no input is specified. Fields defined outside the document must start with indexing statements explicitly collecting input.", 
+                    DiagnosticSeverity.Error, 
+                ""));
+            }
+        }
+
         IndexingLanguageResolver instance = new IndexingLanguageResolver(context, fieldDefinitionSymbol);
         instance.traverse(indexingLanguageNode, diagnostics);
     }
@@ -67,14 +84,28 @@ public class IndexingLanguageResolver {
 
     private void traverse(SchemaNode node, List<Diagnostic> diagnostics) {
 
-        if (node.isASTInstance(ATTRIBUTE.class)) {
+        if (node.isASTInstance(ATTRIBUTE.class) && !node.getParent().isASTInstance(attributeExp.class)) {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.ATTRIBUTE);
         }
-        if (node.isASTInstance(INDEX.class)) {
+        if (node.isASTInstance(INDEX.class) && !node.getParent().isASTInstance(indexExp.class)) {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.INDEX);
         }
-        if (node.isASTInstance(SUMMARY.class)) {
+        if (node.isASTInstance(SUMMARY.class) && !node.getParent().isASTInstance(summaryExp.class)) {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.SUMMARY);
+        }
+
+        if (node.isASTInstance(statement.class) 
+                && (node.getParent().isASTInstance(indexingElm.class) || node.getParent().isASTInstance(script.class))) {
+            // Top level statement of field outside document should have some input
+            statement originalNode = (statement)node.getOriginalIndexingNode();
+            StatementExpression expression = originalNode.expression;
+            //String inputType = expression.requiredInputType() == null ? "null" : expression.requiredInputType().toString();
+            //String outputType = expression.createdOutputType() == null ? "null" : expression.createdOutputType().toString();
+            //diagnostics.add(new Diagnostic(node.getRange(), "Input: " + inputType + ", Output: " + outputType, DiagnosticSeverity.Information, ""));
+
+            if (expression != null && expression.requiredInputType() != null && !context.fieldIndex().getIsInsideDoc(containingFieldDefinition)) {
+                diagnostics.add(new Diagnostic(node.getRange(), "Expected " + expression.requiredInputType().getName() + " input, but no input is specified. Fields defined outside the document must start with indexing statements explicitly collecting input.", DiagnosticSeverity.Error, ""));
+            }
         }
 
         for (SchemaNode child : node) {

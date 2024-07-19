@@ -69,8 +69,11 @@ public class SchemaHover {
             hoverText = "schema " + hoverText;
         }
 
-        for (IndexingType it : context.schemaIndex.fieldIndex().getFieldIndexingTypes(fieldDefinitionSymbol.get())) {
-            hoverText += "\n\t" + it.toString();
+        var indexingTypes = context.schemaIndex.fieldIndex().getFieldIndexingTypes(fieldDefinitionSymbol.get()).toArray();
+        for (int i = 0; i < indexingTypes.length; ++i) {
+            if (i == 0) hoverText += "\n\t";
+            else hoverText += ", ";
+            hoverText += indexingTypes[i].toString().toLowerCase();
         }
 
         return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, hoverText));
