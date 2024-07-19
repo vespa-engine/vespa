@@ -29,6 +29,7 @@ public class ResolverTraversal {
     }
 
     private static void traverse(ParseContext context, SchemaNode currentNode, List<Diagnostic> diagnostics) {
+
         if (currentNode.hasSymbol() && currentNode.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
             SymbolReferenceResolver.resolveSymbolReference(currentNode, context, diagnostics);
         }
@@ -38,7 +39,7 @@ public class ResolverTraversal {
         }
 
         // Language resolvers should be responsible for traversing their own language
-        if (currentNode.getLanguageType() == LanguageType.SCHEMA) {
+        if (currentNode.getLanguageType() != LanguageType.INDEXING) {
             for (SchemaNode child : currentNode) {
                 traverse(context, child, diagnostics);
             }

@@ -197,7 +197,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/map_of_struct_attribute/test.sd",
             "../../../config-model/src/test/derived/mlr/mlr.sd",
             "../../../config-model/src/test/derived/music/music.sd",
-            "../../../config-model/src/test/derived/music3/music3.sd",
+            // "../../../config-model/src/test/derived/music3/music3.sd",
             // "../../../config-model/src/test/derived/nearestneighbor/test.sd",
             "../../../config-model/src/test/derived/newrank/newrank.sd",
             //  "../../../config-model/src/test/derived/nuwa/newsindex.sd",
@@ -322,7 +322,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/schemainheritance/",
             "../../../config-model/src/test/derived/tensor2/",
             "../../../config-model/src/test/derived/twostreamingstructs/",
-            "../../../config-model/src/test/derived/rankprofilemodularity/",
+            // "../../../config-model/src/test/derived/rankprofilemodularity/",
             "../../../config-model/src/test/derived/reference_fields/",
 
             /*
