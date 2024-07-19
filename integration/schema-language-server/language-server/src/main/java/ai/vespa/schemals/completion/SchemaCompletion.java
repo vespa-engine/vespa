@@ -11,6 +11,7 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 public class SchemaCompletion {
 
     private static CompletionProvider[] providers = {
+        new EmptyFileProvider(),
         new BodyKeywordCompletionProvider(),
         new TypeCompletionProvider(),
         new FieldsCompletionProvider(),
@@ -20,16 +21,19 @@ public class SchemaCompletion {
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
-        if (!(context.document instanceof SchemaDocument)) return ret; // TODO: completion in rank profile files
-
-        if (((SchemaDocument)context.document).isInsideComment(context.position)) {
+        // TODO: comments in rank profile files
+        if ((context.document instanceof SchemaDocument) && ((SchemaDocument)context.document).isInsideComment(context.position)) {
             return ret;
         }
 
         for (CompletionProvider provider : providers) {
-            if (provider.match(context)) {
-                context.logger.println("Match with: " + provider.getClass().toString());
-                ret.addAll(provider.getCompletionItems(context));
+            try {
+                if (provider.match(context)) {
+                    context.logger.println("Match with: " + provider.getClass().toString());
+                        ret.addAll(provider.getCompletionItems(context));
+                }
+            } catch(Exception e) {
+                // ignore
             }
         }
 

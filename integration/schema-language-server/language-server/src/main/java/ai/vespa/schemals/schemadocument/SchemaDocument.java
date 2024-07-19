@@ -21,6 +21,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.SubLanguageData;
+import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
@@ -31,6 +32,8 @@ import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
+import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
+import ai.vespa.schemals.schemadocument.resolvers.StructFieldDefinitionResolver;
 import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.TypeNodeResolver;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -180,27 +183,33 @@ public class SchemaDocument implements DocumentManager {
     }
 
     public Position getPreviousStartOfWord(Position pos) {
-        int offset = positionToOffset(pos);
+        try {
+            int offset = positionToOffset(pos);
 
-        // Skip whitespace
-        // But not newline because newline is a token
-        while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
+            // Skip whitespace
+            // But not newline because newline is a token
+            while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
 
-        for (int i = offset; i >= 0; i--) {
-            if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+            for (int i = offset; i >= 0; i--) {
+                if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+            }
+        } catch (Exception e) {
         }
 
         return null;
     }
 
     public boolean isInsideComment(Position pos) {
-        int offset = positionToOffset(pos);
+        try {
+            int offset = positionToOffset(pos);
 
-        if (content.charAt(offset) == '\n')offset--;
+            if (content.charAt(offset) == '\n')offset--;
 
-        for (int i = offset; i >= 0; i--) {
-            if (content.charAt(i) == '\n')break;
-            if (content.charAt(i) == '#')return true;
+            for (int i = offset; i >= 0; i--) {
+                if (content.charAt(i) == '\n')break;
+                if (content.charAt(i) == '#')return true;
+            }
+        } catch(Exception e) {
         }
         return false;
     }
@@ -275,9 +284,12 @@ public class SchemaDocument implements DocumentManager {
 
         
         if (tolerantResult.CST().isPresent()) {
+
             diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 
-            diagnostics.addAll(SymbolReferenceResolver.resolveSymbolReferences(context, tolerantResult.CST().get()));
+            diagnostics.addAll(StructFieldDefinitionResolver.resolve(context, tolerantResult.CST().get()));
+
+            diagnostics.addAll(ResolverTraversal.traverse(context, tolerantResult.CST().get()));
 
             diagnostics.addAll(DocumentReferenceResolver.resolveDocumentReferences(context));
         }
@@ -293,8 +305,7 @@ public class SchemaDocument implements DocumentManager {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
-            Range nodeRange = node.getRange();
-            SchemaNode indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
+            SchemaNode indexingNode = parseIndexingScript(node, context, ret);
             if (indexingNode != null) {
                 node.addChild(indexingNode);
             }
@@ -328,9 +339,11 @@ public class SchemaDocument implements DocumentManager {
         return new ParseResult(errors, Optional.of(CST));
     }
 
-    private static SchemaNode parseIndexingScript(ParseContext context, SubLanguageData script, Position indexingStart, ArrayList<Diagnostic> diagnostics) {
+    private static SchemaNode parseIndexingScript(SchemaNode indexingElmNode, ParseContext context, ArrayList<Diagnostic> diagnostics) {
+        SubLanguageData script = indexingElmNode.getILScript();
         if (script == null) return null;
 
+        Position indexingStart = indexingElmNode.getRange().getStart();
         CharSequence sequence = script.content();
         IndexingParser parser = new IndexingParser(context.logger(), context.fileURI(), sequence);
         parser.setParserTolerant(false);
@@ -338,9 +351,23 @@ public class SchemaDocument implements DocumentManager {
         Position scriptStart = PositionAddOffset(context.content(), indexingStart, script.leadingStripped());
 
         try {
-            parser.root();
-            // TODO: Verify expression
-            return new SchemaNode(parser.rootNode(), indexingStart);
+            var expression = parser.root();
+            /*
+            // TODO: Verify expression?
+            try {
+                var dataType = expression.verify();
+                context.logger().println("ILSCRIPT GOOD: " + dataType.toString());
+            } catch(Exception e) {
+                context.logger().println("ILSCRIPT FAIL: " + e.getMessage());
+            }
+            */
+            //context.logger().println("ILSCRIPT: " + script.content());
+            //context.logger().println("ILSCRIPT INPUT TYPE: " + (expression.requiredInputType() == null ? "null" : expression.requiredInputType().toString()));
+            //context.logger().println("ILSCRIPT OUTPUT TYPE: " + (expression.createdOutputType() == null ? "null" : expression.createdOutputType().toString()));
+
+            //indexingElm rootNode = (indexingElm)parser.rootNode();
+            ((indexingElm)indexingElmNode.getOriginalSchemaNode()).expression = expression;
+            return new SchemaNode(parser.rootNode(), scriptStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
             context.logger().println("Encountered parsing error in parsing feature list");
             Range range = ILUtils.getNodeRange(pe.getToken());
@@ -409,4 +436,9 @@ public class SchemaDocument implements DocumentManager {
         String openString = getIsOpen() ? " [OPEN]" : "";
         return getFileURI() + openString;
     }
+
+	@Override
+	public String getCurrentContent() {
+        return this.content;
+	}
 }

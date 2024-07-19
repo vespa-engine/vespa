@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.resolvers;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,92 +8,54 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
+import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
-import ai.vespa.schemals.parser.ast.STRUCT_FIELD;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.parser.ast.fieldBodyElm;
-import ai.vespa.schemals.parser.ast.fieldElm;
-import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
-import ai.vespa.schemals.parser.ast.structFieldBodyElm;
-import ai.vespa.schemals.parser.ast.structFieldElm;
-import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SymbolReferenceResolver {
+    public static void resolveSymbolReference(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+        Optional<Symbol> referencedSymbol = Optional.empty();
+        // dataType is handled separately
+        SymbolType referencedType = node.getSymbol().getType();
+        if (referencedType == SymbolType.SUBFIELD) {
+            SchemaNode parentField = node.getPreviousSibling();
+            if (parentField.isASTInstance(DOT.class))parentField = parentField.getPreviousSibling();
+            Optional<Symbol> parentFieldDefinition = Optional.empty();
 
-    public static List<Diagnostic> resolveSymbolReferences(ParseContext context, SchemaNode CST) {
-        List<Diagnostic> diagnostics = new ArrayList<>();
-        resolveSymbolReferencesImpl(CST, context, diagnostics);
-        return diagnostics;
-    }
+            // Two cases for where the parent field is defined. Either inside a struct or "global". 
 
-    private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
-        if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
-            Optional<Symbol> referencedSymbol = Optional.empty();
-            // dataType is handled separately
-            SymbolType referencedType = node.getSymbol().getType();
-            if (referencedType == SymbolType.SUBFIELD) {
-                SchemaNode parentField = node.getPreviousSibling();
-                Optional<Symbol> parentFieldDefinition = Optional.empty();
-
-                // Two cases for where the parent field is defined. Either inside a struct or "global". 
-
-                if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                    parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
-                } else if (parentField.isASTInstance(STRUCT_FIELD.class)) {
-                    SchemaNode enclosingBodyNode = node.getParent().getParent();
-
-                    if (enclosingBodyNode.isASTInstance(fieldBodyElm.class)) {
-                        // struct-field declared inside field
-                        SchemaNode fieldIdentifierNode = enclosingBodyNode.getParent().get(1);
-                        if (fieldIdentifierNode.hasSymbol() && fieldIdentifierNode.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
-                            parentFieldDefinition = Optional.of(fieldIdentifierNode.getSymbol());
-                        }
-                    } else if (enclosingBodyNode.isASTInstance(structFieldBodyElm.class)) {
-                        // nested struct-field
-                        // the referred field definition is the last component in the struct-field identifier
-                        SchemaNode lastStructFieldIdentifier = enclosingBodyNode.getParent().get(1);
-                        while (lastStructFieldIdentifier.getNextSibling() != null && lastStructFieldIdentifier.getNextSibling().isASTInstance(identifierStr.class)) {
-                            lastStructFieldIdentifier = lastStructFieldIdentifier.getNextSibling();
-                        }
-                        if (lastStructFieldIdentifier.hasSymbol() && lastStructFieldIdentifier.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                            parentFieldDefinition = context.schemaIndex().getSymbolDefinition(lastStructFieldIdentifier.getSymbol());
-                        }
-                    }
-
-                }
-
-                if (parentFieldDefinition.isPresent()) {
-                    referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context, diagnostics);
-                }
-            } else {
-                referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
+            if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
             }
-
-            if (referencedSymbol.isPresent()) {
-                node.setSymbolStatus(SymbolStatus.REFERENCE);
-                context.schemaIndex().insertSymbolReference(referencedSymbol.get(), node.getSymbol());
-            } else {
-                diagnostics.add(new Diagnostic(
-                    node.getRange(),
-                    "Undefined symbol " + node.getText(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
+            if (parentFieldDefinition.isPresent()) {
+                referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context, diagnostics);
             }
+        } else {
+            referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
         }
 
-        for (SchemaNode child : node) {
-            resolveSymbolReferencesImpl(child, context, diagnostics);
+        if (referencedSymbol.isPresent()) {
+            node.setSymbolStatus(SymbolStatus.REFERENCE);
+            context.schemaIndex().insertSymbolReference(referencedSymbol.get(), node.getSymbol());
+        } else {
+            diagnostics.add(new Diagnostic(
+                node.getRange(),
+                "Undefined symbol " + node.getText(),
+                DiagnosticSeverity.Error,
+                ""
+            ));
         }
     }
 
-        /**
+    /**
      * This finds the definition of a field inside a struct, where the struct is used as a type for some parent field
      * It solves the case where we have 
      * struct foo { field bar }
@@ -109,7 +70,7 @@ public class SymbolReferenceResolver {
      *
      * @return the definition of the field inside the struct if found 
      */
-    private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context, List<Diagnostic> diagnostics) {
+    public static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context, List<Diagnostic> diagnostics) {
         if (fieldDefinition.getType() != SymbolType.FIELD 
             && fieldDefinition.getType() != SymbolType.MAP_VALUE
             && fieldDefinition.getType() != SymbolType.STRUCT) return Optional.empty();
@@ -117,6 +78,15 @@ public class SymbolReferenceResolver {
 
         if (fieldDefinition.getType() == SymbolType.STRUCT) {
             return resolveFieldInStructReference(node, fieldDefinition, context);
+        }
+
+        // First check for struct-field definitions
+        if (fieldDefinition.getType() == SymbolType.FIELD) {
+            Optional<Symbol> structFieldDefinition = context.schemaIndex().findSymbolInScope(fieldDefinition, SymbolType.FIELD, node.getText().toLowerCase());
+            if (structFieldDefinition.isPresent()) {
+                node.setSymbolType(SymbolType.FIELD);
+                return structFieldDefinition;
+            }
         }
 
         SchemaNode dataTypeNode = null;
@@ -163,10 +133,38 @@ public class SymbolReferenceResolver {
                         // TODO: quickfix
                         diagnostics.add(new Diagnostic(
                             node.getRange(),
-                            "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly.",
+                            "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly. Hint: Add an import field statement to access the field.",
                             DiagnosticSeverity.Error,
-                            "Hint: Add an import field statement to access the field."
+                            ""
                         ));
+                    }
+
+                    var referencedSymbolIndexingTypes = context.fieldIndex().getFieldIndexingTypes(referencedSymbol.get());
+
+                    if (!referencedSymbolIndexingTypes.contains(IndexingType.ATTRIBUTE)) {
+                        // TODO: quickfix
+                        diagnostics.add(new Diagnostic(
+                            node.getRange(),
+                            "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is not an attribute field. Only attribute fields can be imported.",
+                            DiagnosticSeverity.Error,
+                            ""
+                        ));
+                    } else if (referencedSymbolIndexingTypes.contains(IndexingType.INDEX)) {
+                        // TODO: quickfix
+                        diagnostics.add(new Diagnostic(
+                            node.getRange(),
+                            "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is an index field. Importing index fields is not supported.",
+                            DiagnosticSeverity.Error,
+                            ""
+                        ));
+                    }
+
+                    // "inherit" index type from imported field
+                    Symbol importFieldDefinitionSymbol = node.getNextSibling().getNextSibling().getSymbol();
+                    if (importFieldDefinitionSymbol != null && importFieldDefinitionSymbol.getStatus() == SymbolStatus.DEFINITION) {
+                        for (IndexingType indexingType : referencedSymbolIndexingTypes) {
+                            context.fieldIndex().addFieldIndexingType(importFieldDefinitionSymbol, indexingType);
+                        }
                     }
                 }
 

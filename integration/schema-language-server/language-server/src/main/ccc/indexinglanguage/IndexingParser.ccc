@@ -1,6 +1,7 @@
 PARSER_CLASS=IndexingParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser.indexinglanguage;
 FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false; // Will create a tree node for every rule
 /* Legacy JavaCC options
 options {
     CACHE_TOKENS = false;
@@ -107,6 +108,18 @@ INJECT IndexingParser:
             return new LongFieldValue(new BigInteger(str).longValue());
         }
     }
+}
+
+INJECT root:
+    import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+{
+    public Expression expression;
+}
+
+INJECT statement:
+    import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+{
+    public StatementExpression expression;
 }
 
 SKIP :
@@ -231,6 +244,9 @@ Expression root() :
     ( exp = statement() [ <SCOLON> ] )
     {
       while (exp instanceof ExpressionList && ((ExpressionList)exp).size() == 1) exp = ((ExpressionList)exp).get(0);
+
+      thisProduction.expression = exp;
+
       return exp;
     }
 ;
@@ -253,7 +269,10 @@ StatementExpression statement() :
 }
  
     ( exp = expression() { lst.add(exp); } ( <PIPE> consumeNL() exp = expression() { lst.add(exp); } )* )
-    { return new StatementExpression(lst); }
+    { 
+        thisProduction.expression = new StatementExpression(lst);
+        return thisProduction.expression; 
+    }
 ;
 
 Expression expression() :

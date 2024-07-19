@@ -8,13 +8,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
 public class TypeNodeResolver {
-    
-
-
     public static boolean resolveType(ParseContext context, Symbol symbol) {
-
-        // TODO: Handle document reference
-
         // Probably a struct
         Optional<Symbol> definition = context.schemaIndex().findSymbol(symbol.getScope(), SymbolType.STRUCT, symbol.getShortIdentifier());
         if (definition.isPresent()) {

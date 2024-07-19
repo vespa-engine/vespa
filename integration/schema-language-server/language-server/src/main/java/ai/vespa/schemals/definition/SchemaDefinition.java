@@ -28,7 +28,7 @@ public class SchemaDefinition {
         Optional<Symbol> results = context.schemaIndex.getSymbolDefinition(search);
 
         if (results.isEmpty() && search.getType() == SymbolType.DOCUMENT) {
-            results = context.schemaIndex.findSymbol(search.getScope(), SymbolType.SCHEMA, search.getShortIdentifier()); 
+            results = context.schemaIndex.findSymbol(search); 
         }
 
         // TODO: refactor

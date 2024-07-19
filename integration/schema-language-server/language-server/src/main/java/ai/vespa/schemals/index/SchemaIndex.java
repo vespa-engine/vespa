@@ -46,6 +46,7 @@ public class SchemaIndex {
 
     private PrintStream logger;
     private String workspaceRootURI;
+    private FieldIndex fieldIndex;
 
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
     private Map<Symbol, List<Symbol>> symbolReferences;
@@ -75,6 +76,7 @@ public class SchemaIndex {
             this.symbolDefinitions.put(type, new ArrayList<Symbol>());
         }
 
+        this.fieldIndex = new FieldIndex(logger, this);
     }
 
     public void setWorkspaceURI(String workspaceRootURI) {
@@ -86,12 +88,23 @@ public class SchemaIndex {
         return this.workspaceRootURI;
     }
 
+    public FieldIndex fieldIndex() {
+        return this.fieldIndex;
+    }
+
     /**
      * Returns the inheritance graph for documents in the index.
      *
      * @return the inheritance graph for documents
      */
     public InheritanceGraph<String> getDocumentInheritanceGraph() { return documentInheritanceGraph; }
+
+    /**
+     * Returns the graph over document references
+     *
+     * @return the document reference graph
+     */
+    public InheritanceGraph<Symbol> getDocumentReferenceGraph() { return documentReferenceGraph; }
 
     /**
      * Clears the index for symbols in the specified file
@@ -133,6 +146,8 @@ public class SchemaIndex {
                 }
             }
         }
+
+        this.fieldIndex.clearFieldsByURI(fileURI);
 
         if (fileURI.endsWith(".sd")) {
             documentInheritanceGraph.clearInheritsList(fileURI);
@@ -313,6 +328,14 @@ public class SchemaIndex {
         return Optional.ofNullable(definitionOfReference.get(reference));
     }
 
+    public Optional<Symbol> getFirstSymbolDefinition(Symbol symbol) {
+        while (definitionOfReference.get(symbol) != null) {
+            symbol = definitionOfReference.get(symbol);
+        }
+        if (symbol.getStatus() == SymbolStatus.DEFINITION) return Optional.of(symbol);
+        return Optional.empty();
+    }
+
     /**
      * Returns a list of symbol references for the given symbol definition.
      *
@@ -373,6 +396,10 @@ public class SchemaIndex {
         list.add(symbol);
 
         symbolReferences.put(symbol, new ArrayList<>());
+
+        if (symbol.getType() == SymbolType.FIELD) {
+            fieldIndex.insertFieldDefinition(symbol);
+        }
     }
 
     /**
@@ -491,5 +518,8 @@ public class SchemaIndex {
 
         logger.println(" === RANK PROFILE INHERITANCE === ");
         rankProfileInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === FIELD INDEX === ");
+        fieldIndex.dumpIndex();
     }
 }

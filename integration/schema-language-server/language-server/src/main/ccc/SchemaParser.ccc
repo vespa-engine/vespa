@@ -105,7 +105,7 @@ INJECT SchemaParser:
         int leadingStripped = 0;
 
         if (multiline) {
-            leadingStripped = lastConsumedToken.getBeginOffset() ;
+            leadingStripped = startSplit - lastConsumedToken.getBeginOffset() ;
         } else {
             leadingStripped = startSplit - lastConsumedToken.getPrevious().getBeginOffset();
         }
@@ -175,8 +175,11 @@ INJECT SchemaParser:
  * for parsing later.
  */
 INJECT indexingElm:
+    import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 {
     private SubLanguageData ILScript = null;
+
+    public Expression expression;
 
     public boolean hasILScript() { return ILScript != null; }
     public SubLanguageData getILScript() { return ILScript; }

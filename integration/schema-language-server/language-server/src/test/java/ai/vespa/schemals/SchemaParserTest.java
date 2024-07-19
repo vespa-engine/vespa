@@ -70,9 +70,13 @@ public class SchemaParserTest {
     }
 
     void checkFileParses(String fileName) throws Exception {
-        var parseResult = parseFile(fileName);
-        String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
-        assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
+        try {
+            var parseResult = parseFile(fileName);
+            String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
+            assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
+        } catch(Exception e) {
+            throw new Exception(fileName + "\n" + e.getMessage());
+        }
     }
 
     void checkFileFails(String fileName, int expectedErrors) throws Exception {
@@ -134,9 +138,9 @@ public class SchemaParserTest {
         }
 
 
-        testMessage += "\n\n\n FULL DUMP:\n";
-        testMessage += outputStream.toString();
-        testMessage += "\n\n\n\n";
+        //testMessage += "\n\n\n FULL DUMP:\n";
+        //testMessage += outputStream.toString();
+        //testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
     }
@@ -346,10 +350,10 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/documents.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/indexing_invalid_expression.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/invalid-name.sd", 2),
-            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_construct.sd", 0),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_construct.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_junk_at_end.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_lexical_error.sd", 1), 
-            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_missing_document.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_missing_document.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_no_closing_bracket.sd", 2), 
             new BadFileTestCase("../../../config-model/src/test/examples/invalidimplicitsummarysource.sd", 1), 
             new BadFileTestCase("../../../config-model/src/test/examples/invalidselfreferringsummary.sd", 1),
