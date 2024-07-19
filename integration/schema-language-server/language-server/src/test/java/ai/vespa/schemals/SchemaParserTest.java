@@ -353,7 +353,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_construct.sd", 0),
             new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_junk_at_end.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_lexical_error.sd", 1), 
-            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_missing_document.sd", 3),
+            new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_missing_document.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/invalid_sd_no_closing_bracket.sd", 2), 
             new BadFileTestCase("../../../config-model/src/test/examples/invalidimplicitsummarysource.sd", 1), 
             new BadFileTestCase("../../../config-model/src/test/examples/invalidselfreferringsummary.sd", 1),

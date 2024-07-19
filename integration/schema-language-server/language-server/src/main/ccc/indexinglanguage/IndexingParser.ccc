@@ -1,6 +1,7 @@
 PARSER_CLASS=IndexingParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser.indexinglanguage;
 FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false; // Will create a tree node for every rule
 /* Legacy JavaCC options
 options {
     CACHE_TOKENS = false;

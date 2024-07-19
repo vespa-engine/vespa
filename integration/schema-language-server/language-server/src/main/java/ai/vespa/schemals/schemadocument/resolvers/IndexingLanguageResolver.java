@@ -19,6 +19,7 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
 import ai.vespa.schemals.parser.indexinglanguage.ast.attributeExp;
+import ai.vespa.schemals.parser.indexinglanguage.ast.fieldName;
 import ai.vespa.schemals.parser.indexinglanguage.ast.indexExp;
 import ai.vespa.schemals.parser.indexinglanguage.ast.script;
 import ai.vespa.schemals.parser.indexinglanguage.ast.statement;
@@ -84,14 +85,18 @@ public class IndexingLanguageResolver {
 
     private void traverse(SchemaNode node, List<Diagnostic> diagnostics) {
 
-        if (node.isASTInstance(ATTRIBUTE.class) && !node.getParent().isASTInstance(attributeExp.class)) {
+        if (node.isASTInstance(ATTRIBUTE.class)) {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.ATTRIBUTE);
         }
-        if (node.isASTInstance(INDEX.class) && !node.getParent().isASTInstance(indexExp.class)) {
+        if (node.isASTInstance(INDEX.class)) {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.INDEX);
         }
-        if (node.isASTInstance(SUMMARY.class) && !node.getParent().isASTInstance(summaryExp.class)) {
+        if (node.isASTInstance(SUMMARY.class)) {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.SUMMARY);
+        }
+
+        if (node.isASTInstance(fieldName.class)) {
+            diagnostics.add(new Diagnostic(node.getRange(), "FIELD NAME", DiagnosticSeverity.Information, ""));
         }
 
         if (node.isASTInstance(statement.class) 
