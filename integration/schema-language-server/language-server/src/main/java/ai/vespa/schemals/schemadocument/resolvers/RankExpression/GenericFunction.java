@@ -1,5 +1,6 @@
 package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -28,7 +29,13 @@ public class GenericFunction implements FunctionHandler {
         this.properties = new HashSet<>();
 
         for (FunctionSignature signature : signatures) {
-            properties.addAll(signature.getProperties());
+            Set<String> addProps = signature.getProperties();
+            if (addProps.size() == 0 && properties.size() > 0) {
+                 properties.add("");
+            } else {
+                properties.addAll(addProps);
+            }
+            
         }
     }
 
@@ -54,7 +61,13 @@ public class GenericFunction implements FunctionHandler {
     public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        Optional<FunctionSignature> signature = findFunctionSignature(node.getChildren());
+        Optional<SchemaNode> property = node.getProperty();
+        Optional<String> propertyString = Optional.empty();
+        if (property.isPresent()) {
+            propertyString = Optional.of(property.get().getText());
+        }
+
+        Optional<FunctionSignature> signature = findFunctionSignature(node.getChildren(), propertyString, context.logger());
 
         if (signature.isEmpty()) {
             List<String> signatureStrings = signatures.stream()
@@ -68,28 +81,28 @@ public class GenericFunction implements FunctionHandler {
 
         diagnostics.addAll(signature.get().handleArgumentList(context, node.getChildren()));
 
-        Optional<SchemaNode> property = node.getProperty();
+        Set<String> signatureProps = signature.get().getProperties();
 
-        if (property.isEmpty() && (properties.contains("") || properties.size() == 0)) {
+        if (property.isEmpty() && (signatureProps.contains("") || signatureProps.size() == 0)) {
             // This is valid
             return diagnostics;
         }
         
-        String propertyString = (signature.get().getProperties().size() == 0) ? "No one" : String.join(", ", signature.get().getProperties());
+        String availableProps = (signatureProps.size() == 0) ? "No one" : String.join(", ", signatureProps);
         if (!property.isPresent()) {
-            String message = "The function '" + node.getSchemaNode().getText() + "' must be used with a property. Available properties are: " + propertyString;
+            String message = "The function '" + node.getSchemaNode().getText() + "' must be used with a property. Available properties are: " + availableProps;
             diagnostics.add(new Diagnostic(node.getRange(), message, DiagnosticSeverity.Error, ""));
             return diagnostics;
         }
 
         if (!properties.contains(property.get().getText())) {
-            String message = "Invalid property '" + property.get().getText() + "'. Available properties are: " + propertyString;
+            String message = "Invalid property '" + property.get().getText() + "'. Available properties are: " + availableProps;
             diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Error, ""));
             return diagnostics;
         }
 
         if (!signature.get().getProperties().contains(property.get().getText())) {
-            String message = "This property is not available with with this signature. Available properties are: " + propertyString;
+            String message = "This property is not available with with this signature. Available properties are: " + availableProps;
             diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Warning, ""));
         }
 
@@ -106,23 +119,51 @@ public class GenericFunction implements FunctionHandler {
         return diagnostics;
     }
 
-    private Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments) {
-        FunctionSignature bestMatch = null;
+    private static boolean propertyInSet(Optional<String> string, Set<String> propertiySet) {
+        if (string.isEmpty() && (
+            propertiySet.size() == 0 ||
+            propertiySet.contains("")
+        )) {
+            return true;
+        }
+
+        if (string.isEmpty()) return false;
+
+        return propertiySet.contains(string.get());
+    }
+
+    private Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments, Optional<String> property, PrintStream logger) {
+
+        List<FunctionSignature> bestMatches = new ArrayList<>();
         int maxScore = 0;
 
         for (FunctionSignature signature : signatures) {
             int score = signature.matchScore(arguments);
             if (score == maxScore) {
-                bestMatch = null;
+                bestMatches.add(signature);
             } else if (score > maxScore) {
                 maxScore = score;
-                bestMatch = signature;
+                bestMatches = new ArrayList<>() {{
+                    add(signature);
+                }};
             }
         }
 
-        if (bestMatch == null) {
-            return Optional.empty();
+        if (bestMatches.size() == 1) {
+            return Optional.of(bestMatches.get(0));
         }
-        return Optional.of(bestMatch);
+
+        // Filter by the property first
+        List<FunctionSignature> possibleSignatures = new ArrayList<>(bestMatches);
+
+        for (int i = possibleSignatures.size() - 1; i >= 0; i--) {
+            if (!propertyInSet(property, possibleSignatures.get(i).getProperties())) {
+                possibleSignatures.remove(i);
+            }
+        }
+
+        if (possibleSignatures.size() == 1) return Optional.of(possibleSignatures.get(0));
+
+        return Optional.empty();
     }
 }

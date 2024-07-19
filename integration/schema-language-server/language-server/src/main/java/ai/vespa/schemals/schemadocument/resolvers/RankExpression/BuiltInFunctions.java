@@ -142,7 +142,7 @@ public class BuiltInFunctions {
         put("globalSequence", new GenericFunction());
         put("now", new GenericFunction());
         put("random", new GenericFunction());
-        put("random.match", new GenericFunction());
+        put("random.match", new GenericFunction()); // This is buggy
 
 
 
