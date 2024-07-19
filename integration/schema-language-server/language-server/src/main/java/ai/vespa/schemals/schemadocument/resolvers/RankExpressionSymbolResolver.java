@@ -163,9 +163,12 @@ public class RankExpressionSymbolResolver {
 
         // If the symbol isn't a parameter, maybe it is a function
         if (definition.isEmpty()) {
+            // NOTE: Seems like a name colission between a parameter and a constants leads to undefined behaviour
             for (SymbolType possibleType : possibleTypes) {
                 definition = context.schemaIndex().findSymbol(reference.getScope(), possibleType, reference.getShortIdentifier());
 
+                // If this is a ambiguous reference to a function or a constant, the app doesn't deploy. Therefore a break will not be a problem.
+                // TODO: Implement error message for the error above.
                 if (definition.isPresent()) {
                     break;
                 }
