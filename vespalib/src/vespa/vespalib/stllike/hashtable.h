@@ -95,8 +95,6 @@ protected:
             (void) to;
         }
     };
-private:
-    static size_t getModulo(size_t newSize, const unsigned long * list, size_t sz) noexcept;
 };
 
 template<typename V>
