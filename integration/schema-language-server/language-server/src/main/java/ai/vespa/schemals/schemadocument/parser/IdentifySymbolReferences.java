@@ -51,11 +51,9 @@ public class IdentifySymbolReferences extends Identifier {
 
     private static final HashMap<Class<?>, SymbolType> identifierTypeMap = new HashMap<Class<?>, SymbolType>() {{
         put(inheritsDocument.class, SymbolType.DOCUMENT);
-        put(fieldsElm.class, SymbolType.FIELD);
         put(rootSchema.class, SymbolType.SCHEMA);
         put(inheritsStruct.class, SymbolType.STRUCT);
         put(referenceType.class, SymbolType.DOCUMENT);
-        put(fieldRankFilter.class, SymbolType.FIELD);
     }};
 
     private static final HashMap<Class<?>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<?>, SymbolType>() {{
@@ -74,6 +72,7 @@ public class IdentifySymbolReferences extends Identifier {
         add(structFieldElm.class);
         add(summaryInDocument.class);
         add(summarySourceList.class);
+        add(fieldRankFilter.class);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {

@@ -209,7 +209,6 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/position_summary/position_summary.sd",
             "../../../config-model/src/test/derived/predicate_attribute/predicate_attribute.sd",
             "../../../config-model/src/test/derived/prefixexactattribute/prefixexactattribute.sd",
-            "../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd",
             "../../../config-model/src/test/derived/rankproperties/rankproperties.sd",
             "../../../config-model/src/test/derived/ranktypes/ranktypes.sd",
             "../../../config-model/src/test/derived/reserved_position/reserved_position.sd",
@@ -358,6 +357,8 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/stemmingresolver.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 7),
             new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 1),
+
+            new BadFileTestCase("../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd", 1), // only throws a warning during vespa deploy, but it is an unresolved reference case.
 
             new BadFileTestCase("../../../config-model/src/test/derived/slice/test.sd", 2), // TODO: slicing?
 
