@@ -111,7 +111,7 @@ public class SchemaDocument implements DocumentManager {
 
         logger.println("======== CST for file: " + fileURI + " ========");
  
-        //CSTUtils.printTree(logger, CST);
+        CSTUtils.printTree(logger, CST);
 
         //schemaIndex.dumpIndex();
 
@@ -285,7 +285,7 @@ public class SchemaDocument implements DocumentManager {
         
         if (tolerantResult.CST().isPresent()) {
 
-            diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
+            //diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 
             diagnostics.addAll(StructFieldDefinitionResolver.resolve(context, tolerantResult.CST().get()));
 

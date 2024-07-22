@@ -9,6 +9,11 @@ import java.util.Set;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -30,6 +35,9 @@ import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryItem;
 import ai.vespa.schemals.parser.ast.summarySourceList;
+import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
+import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
+import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -128,29 +136,48 @@ public class IdentifySymbolReferences extends Identifier {
 
     private ArrayList<Diagnostic> identifyRankExpressionLanguage(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        if (node.size() == 0) return ret;
-
-        boolean isIdentifier = identifierNodes.contains(node.getASTClass());
-
-        if (!isIdentifier) {
-            return ret;
-        }
+        if (!identifierNodes.contains(node.getOriginalRankExpressionNode().getClass())) return ret;
 
         SchemaNode parent = node.getParent();
-        if (parent != null && identifierNodes.contains(parent.getASTClass())) {
-            return ret;
+
+
+        if (!(parent.getOriginalRankExpressionNode() instanceof BaseNode)) return ret;
+
+        ExpressionNode expressionNode = ((BaseNode)parent.getOriginalRankExpressionNode()).expressionNode;
+
+        if (expressionNode instanceof ReferenceNode) {
+
+            SymbolType type = SymbolType.TYPE_UNKNOWN;
+
+            Reference reference = ((ReferenceNode)expressionNode).reference();
+            String referenceTo = reference.name();
+
+            if (!reference.isIdentifier())type = SymbolType.FUNCTION;
+
+
+            Optional<Symbol> scope = CSTUtils.findScope(node);
+
+            if (referenceTo.equals("file")) {
+                // TODO: handle expression files;
+                return ret;
+            }
+
+            if (scope.isPresent()) {
+                node.setSymbol(type, context.fileURI(), scope.get(), referenceTo);
+            } else {
+                node.setSymbol(type, context.fileURI(), null, referenceTo);
+            }
+            node.setSymbolStatus(SymbolStatus.UNRESOLVED);
+        }  else if (parent.getOriginalRankExpressionNode() instanceof BaseNode && ((BaseNode)parent.getOriginalRankExpressionNode()).expressionNode instanceof FunctionNode) {
+            // This might be a function reference
+            Optional<Symbol> scope = CSTUtils.findScope(node);
+            if (scope.isPresent()) {
+                node.setSymbol(SymbolType.FUNCTION, context.fileURI(), scope.get(), node.getText());
+            } else {
+                node.setSymbol(SymbolType.FUNCTION, context.fileURI(), null, node.getText());
+            }
+            node.setSymbolStatus(SymbolStatus.UNRESOLVED);
         }
-
-        Optional<Symbol> scope = CSTUtils.findScope(node);
-
-        if (scope.isPresent()) {
-            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope.get());
-        } else {
-            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
-        }
-        node.setSymbolStatus(SymbolStatus.UNRESOLVED);
-
         return ret;
     }
     

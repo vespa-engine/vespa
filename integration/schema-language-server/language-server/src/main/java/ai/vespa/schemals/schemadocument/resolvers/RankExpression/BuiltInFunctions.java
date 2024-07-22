@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -15,7 +16,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Symbol
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.FieldType;
 
 public class BuiltInFunctions {
-    public static final Map<String, FunctionHandler> rankExpressionBultInFunctions = new HashMap<>() {{
+    public static final Map<String, FunctionHandler> rankExpressionBuiltInFunctions = new HashMap<>() {{
         // ==== Query features ====
         put("query", new GenericFunction(new FunctionSignature(new SymbolArgument(SymbolType.QUERY_INPUT, "value"))));
         put("term", new GenericFunction(new IntegerArgument(), new HashSet<>() {{
@@ -149,5 +150,63 @@ public class BuiltInFunctions {
         put("distance", new DistanceFunction());
 
         put("file", new GenericFunction());
+    }};
+
+    public static final Set<String> simpleBuiltInFunctionsSet = new HashSet<>() {{
+        add("age");
+        add("attribute");
+        add("attributeMatch");
+        add("bm25");
+        add("closeness");
+        add("closest");
+        add("closestdistanceage");
+        add("constant");
+        add("customTokenInputIds");
+        add("distance");
+        add("distanceToPath");
+        add("dotProduct");
+        add("elementCompleteness");
+        add("elementSimilarity");
+        add("fieldLength");
+        add("fieldMatch");
+        add("fieldTermMatch");
+        add("firstPhase");
+        add("firstPhaseRank");
+        add("foreach");
+        add("freshness");
+        add("globalSequence");
+        add("itemRawScore");
+        add("match");
+        add("matchCount");
+        add("matches");
+        add("nativeAttributeMatch");
+        add("nativeDotProduct");
+        add("nativeFieldMatch");
+        add("nativeProximity");
+        add("nativeRank");
+        add("now");
+        add("query");
+        add("queryTermCount");
+        add("random");
+        add("randomNormal");
+        add("randomNormalStable");
+        add("rankingExpression"); // TODO: deprecated (?)
+        add("rawScore");
+        add("secondPhase");
+        add("tensorFromLabels");
+        add("tensorFromWeightedSet");
+        add("term");
+        add("termDistance");
+        add("textSimilarity");
+        add("tokenAttentionMask");
+        add("tokenInputIds");
+        add("tokenTypeIds");
+        
+
+        // TODO: these are only allowed in global-phase
+        add("normalize_linear");
+        add("reciprocal_rank");
+        add("reciprocal_rank");
+        add("reciprocal_rank_fusion");
     }};
 }

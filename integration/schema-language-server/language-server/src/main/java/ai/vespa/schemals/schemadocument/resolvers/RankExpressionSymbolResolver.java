@@ -120,7 +120,7 @@ public class RankExpressionSymbolResolver {
 
         String identifier = node.getSymbol().getShortIdentifier();
 
-        FunctionHandler functionHandler = BuiltInFunctions.rankExpressionBultInFunctions.get(identifier);
+        FunctionHandler functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
         if (functionHandler == null) return;
         
         node.setReturnType(ReturnType.DOUBLE);
@@ -136,7 +136,7 @@ public class RankExpressionSymbolResolver {
     }
 
     private static final List<SymbolType> possibleTypes = new ArrayList<>() {{
-        // add(SymbolType.PARAMETER); // This is a speciel case
+        // add(SymbolType.PARAMETER); // This is a special case
         add(SymbolType.FUNCTION);
         add(SymbolType.RANK_CONSTANT);
     }};
@@ -163,7 +163,7 @@ public class RankExpressionSymbolResolver {
 
         // If the symbol isn't a parameter, maybe it is a function
         if (definition.isEmpty()) {
-            // NOTE: Seems like a name colission between a parameter and a constants leads to undefined behaviour
+            // NOTE: Seems like a name collision between a parameter and a constants leads to undefined behaviour
             for (SymbolType possibleType : possibleTypes) {
                 definition = context.schemaIndex().findSymbol(reference.getScope(), possibleType, reference.getShortIdentifier());
 

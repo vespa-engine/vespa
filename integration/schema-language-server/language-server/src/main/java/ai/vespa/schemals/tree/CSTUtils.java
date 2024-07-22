@@ -6,6 +6,10 @@ import java.io.PrintStream;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+import com.fasterxml.jackson.databind.JsonSerializable.Base;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -17,6 +21,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
+import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 
 public class CSTUtils {
 
@@ -202,7 +207,7 @@ public class CSTUtils {
      * Logger utils
      * */
 
-    private static final String SPACER = "    ";
+    private static final String SPACER = " ";
 
     public static void printTree(PrintStream logger, Node node) {
         printTree(logger, node, 0);
@@ -299,6 +304,29 @@ public class CSTUtils {
                 ret += " (FEATURE LIST)";
             }
             ret += "]";
+        }
+
+        if (node.getLanguageType() == LanguageType.RANK_EXPRESSION && (node.getOriginalRankExpressionNode() instanceof BaseNode)) {
+            BaseNode originalNode = (BaseNode)node.getOriginalRankExpressionNode();
+
+            if (originalNode != null && originalNode.expressionNode != null) {
+
+                ExpressionNode expressionNode = originalNode.expressionNode;
+                String[] classList = expressionNode.getClass().toString().split("[.]");
+                String className = classList[classList.length - 1];
+                //String msg = expressionNode.toString() + " (" + className + ")";
+                ret += " (" + className + ")";
+
+                if (expressionNode instanceof ReferenceNode) {
+                    var ref = ((ReferenceNode)expressionNode).reference();
+
+                    ret += " [REF: " + ref.name() + "]";
+
+                    if (ref.isIdentifier()) {
+                        ret += " [IDENTIFIER]";
+                    } 
+                }
+            }
         }
 
         if (node.hasSymbol()) {

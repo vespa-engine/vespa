@@ -7,6 +7,9 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
@@ -18,6 +21,9 @@ import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
+import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
+import ai.vespa.schemals.parser.rankingexpression.ast.args;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SymbolReferenceResolver {
@@ -37,6 +43,50 @@ public class SymbolReferenceResolver {
             }
             if (parentFieldDefinition.isPresent()) {
                 referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context, diagnostics);
+            }
+        } else if (referencedType == SymbolType.FUNCTION) {
+            referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol().getScope(), SymbolType.FUNCTION, node.getSymbol().getShortIdentifier().toLowerCase());
+
+            if (referencedSymbol.isEmpty()) {
+                // could be built in
+                SchemaNode parent = node.getParent();
+
+                if ((parent.getOriginalRankExpressionNode() instanceof BaseNode) && ((BaseNode)parent.getOriginalRankExpressionNode()).expressionNode instanceof FunctionNode) {
+                    node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+                    return;
+                }
+
+                if (BuiltInFunctions.simpleBuiltInFunctionsSet.contains(node.getSymbol().getShortIdentifier())) {
+                    node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+                    return;
+                }
+                //if (BuiltInFunctions.rankExpressionBultInFunctions.get(identifier) != null) {
+                //    node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+                //}
+            }
+        } else if (referencedType == SymbolType.TYPE_UNKNOWN) {
+
+            if (didExpectLabel(node, diagnostics)) {
+                node.setSymbolType(SymbolType.LABEL);
+                node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+                return;
+            }
+
+            // These roughly go from narrow to broad scope.
+            SymbolType[] possibleTypes = new SymbolType[] { SymbolType.PARAMETER, SymbolType.FUNCTION, SymbolType.RANK_CONSTANT, SymbolType.FIELD };
+
+            for (SymbolType type : possibleTypes) {
+                referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol().getScope(), type, node.getSymbol().getShortIdentifier().toLowerCase());
+                if (referencedSymbol.isPresent()) {
+                    node.setSymbolType(type);
+                    break;
+                }
+            }
+
+            if (referencedSymbol.isEmpty() && BuiltInFunctions.simpleBuiltInFunctionsSet.contains(node.getSymbol().getShortIdentifier())) {
+                node.setSymbolType(SymbolType.FUNCTION);
+                node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+                return;
             }
         } else {
             referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
@@ -251,5 +301,66 @@ public class SymbolReferenceResolver {
             default:
                 return Optional.empty();
         }
+    }
+
+    /*
+     * Some built in functions expect "labels", which are more like string literals than symbols we can work with
+     * This function returns true if that is the case (and we should unset the symbol at the given node)
+     * TODO: refactor. Not everything here should be label
+     */
+    private static boolean didExpectLabel(SchemaNode node, List<Diagnostic> diagnostics) {
+        SchemaNode argsNode = node.getParent();
+        SchemaNode argsChild = node;
+
+        while (argsNode != null && !argsNode.isASTInstance(args.class)) {
+            argsChild = argsNode;
+            argsNode = argsNode.getParent();
+        }
+
+        if (argsNode == null) return false;
+
+        SchemaNode identifierNode = argsNode.getParent().get(0);
+        SchemaNode containingFeature = argsNode.getParent();
+
+        // we can be certain that this is a ReferenceNode
+        ReferenceNode functionExpressionNode = (ReferenceNode)((BaseNode)containingFeature.getOriginalRankExpressionNode()).expressionNode;
+        ExpressionNode myArg = ((BaseNode)argsChild.getOriginalRankExpressionNode()).expressionNode;
+        int myArgIndex = functionExpressionNode.children().indexOf(myArg);
+
+        if (!identifierNode.hasSymbol() || identifierNode.getSymbol().getStatus() != SymbolStatus.BUILTIN_REFERENCE) return false;
+
+        String functionIdentifier = identifierNode.getSymbol().getShortIdentifier();
+
+        if (functionIdentifier.equals("itemRawScore")) {
+            return true;
+        }
+
+        if (functionIdentifier.equals("closest")) {
+            return myArgIndex == 1;
+        }
+
+        if (functionIdentifier.equals("distance") || functionIdentifier.equals("closeness")) {
+            switch(myArgIndex) {
+                case 0:
+                    // TODO: not really label
+                    return node.getSymbol().getShortIdentifier().equals("label") || node.getSymbol().getShortIdentifier().equals("field");
+                case 1:
+                    ExpressionNode firstArg = functionExpressionNode.children().get(0);
+                    return ((firstArg instanceof ReferenceNode) && ((ReferenceNode)firstArg).getName().equals("label"));
+                default:
+                    return false;
+            }
+        }
+
+        if (functionIdentifier.equals("tensorFromWeightedSet") || functionIdentifier.equals("tensorFromLabels")) {
+            return myArgIndex == 1;
+        }
+
+        if (functionIdentifier.equals("query")) {
+            // TODO: query gotodefinition could be nice to refer to inputs {} where possible
+            return myArgIndex == 0;
+        }
+
+        return false;
     }
 }

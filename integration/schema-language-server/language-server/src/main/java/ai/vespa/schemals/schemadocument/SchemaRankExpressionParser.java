@@ -154,10 +154,10 @@ public class SchemaRankExpressionParser {
             }
 
 
-            for (var enode : nodes) {
-                context.logger().println("FOUND NODE:");
-                printExpressionTree(context.logger(), enode, 1);
-            }
+            //for (var enode : nodes) {
+            //    context.logger().println("FOUND NODE:");
+            //    printExpressionTree(context.logger(), enode, 1);
+            //}
 
             return new SchemaNode(parser.rootNode(), expressionStart);
         } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {

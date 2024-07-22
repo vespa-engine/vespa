@@ -71,6 +71,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.FIELDSET); 
         add(TokenType.FIRST_PHASE);
         add(TokenType.SECOND_PHASE);
+        add(TokenType.GLOBAL_PHASE);
         add(TokenType.INHERITS);
         add(TokenType.RANK_PROFILE);
         add(TokenType.SCHEMA);
@@ -79,6 +80,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.STRUCT_FIELD);
         add(TokenType.TYPE);
         add(TokenType.FUNCTION);
+        add(TokenType.MACRO);
         add(TokenType.RANK_PROPERTIES);
         add(TokenType.MATCHFEATURES_SL);
         add(TokenType.SUMMARYFEATURES_SL);

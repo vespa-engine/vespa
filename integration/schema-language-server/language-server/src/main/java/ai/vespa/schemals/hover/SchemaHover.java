@@ -89,6 +89,10 @@ public class SchemaHover {
                 break;
         }
 
+        if (node.getSymbol().getType() == SymbolType.LABEL) {
+            return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "label"));
+        }
+
         if (node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
             return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "builtin"));
         }
