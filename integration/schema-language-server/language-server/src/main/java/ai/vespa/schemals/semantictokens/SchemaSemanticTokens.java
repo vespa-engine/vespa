@@ -26,7 +26,15 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.FILTER;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.fieldRankFilter;
+import ai.vespa.schemals.parser.ast.integerElm;
+import ai.vespa.schemals.parser.ast.matchItem;
+import ai.vespa.schemals.parser.ast.matchSettingsElm;
+import ai.vespa.schemals.parser.ast.matchType;
+import ai.vespa.schemals.parser.ast.quotedString;
+import ai.vespa.schemals.parser.ast.rankSettingElm;
 import ai.vespa.schemals.parser.ast.valueType;
 
 public class SchemaSemanticTokens implements Visitor {
@@ -35,6 +43,9 @@ public class SchemaSemanticTokens implements Visitor {
         add(SemanticTokenTypes.Type);
         add(SemanticTokenTypes.Comment);
         add(SemanticTokenTypes.Macro);
+        add(SemanticTokenTypes.Enum);
+        add(SemanticTokenTypes.EnumMember);
+        add(SemanticTokenTypes.Property);
     }};
 
     private static final List<String> tokenModifiers = new ArrayList<>() {{
@@ -91,6 +102,8 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.AS);
         add(TokenType.SUMMARY);
         add(TokenType.INDEXING);
+        add(TokenType.MATCH);
+        add(TokenType.RANK);
     }};
 
     // Other
@@ -349,7 +362,7 @@ public class SchemaSemanticTokens implements Visitor {
         void addModifier(String modifier) {
             int modifierIndex = tokenModifiers.indexOf(modifier);
             if (modifierIndex == -1) {
-                throw new IllegalArgumentException("Could not find the semantic token modifier '" + modifier + "'. Remeber to add the modifer to the tokenModifisers list.");
+                throw new IllegalArgumentException("Could not find the semantic token modifier '" + modifier + "'. Remeber to add the modifer to the tokenModifiers list.");
             }
             int bitMask = 1 << modifierIndex;
             modifierValue = modifierValue | bitMask;
@@ -417,10 +430,20 @@ public class SchemaSemanticTokens implements Visitor {
         } else if (node.hasSymbol()) {
             ret.addAll(findSemanticMarkersForSymbol(node));
         } else if (schemaType != null) {
+            Integer tokenType = null;
+            String modifier = null;
+            if (isEnumLike(node)) {
+                tokenType = tokenTypes.indexOf(SemanticTokenTypes.Property); 
+                modifier = SemanticTokenModifiers.Readonly;
+            }
+            if (tokenType == null) {
+                tokenType = schemaTokenTypeMap.get(schemaType);
+            }
 
-            Integer tokenType = schemaTokenTypeMap.get(schemaType);
             if (tokenType != null) {
-                ret.add(new SemanticTokenMarker(tokenType, node));
+                var marker =new SemanticTokenMarker(tokenType, node);
+                if (modifier != null)marker.addModifier(modifier);
+                ret.add(marker);
             }
 
         } else if (rankExpressionType != null) {
@@ -447,7 +470,7 @@ public class SchemaSemanticTokens implements Visitor {
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
-        } else {
+        }  else {
             
             for (SchemaNode child : node) {
                 ArrayList<SemanticTokenMarker> markers = traverseCST(child, logger);
@@ -457,6 +480,32 @@ public class SchemaSemanticTokens implements Visitor {
 
 
         return ret;
+    }
+
+    private static final Set<Class<?>> enumLikeItems = new HashSet<>() {{
+        add(matchType.class);
+        add(matchItem.class);
+        add(rankSettingElm.class);
+    }};
+
+    private static boolean isEnumLike(SchemaNode node) {
+        if (node.getLanguageType() != LanguageType.SCHEMA) return false;
+        if (node.getParent() == null) return false;
+        if (node.getParent().isASTInstance(integerElm.class) || node.getParent().isASTInstance(quotedString.class)) return false;
+        if (!node.isLeaf()) return false;
+
+        // ugly special case
+        if (node.isASTInstance(FILTER.class)) return true;
+
+        SchemaNode it = node.getParent();
+        while (it != null) {
+            if (enumLikeItems.contains(it.getASTClass())) break;
+            it = it.getParent();
+        }
+        if (it == null) return false;
+
+        if (node.getParent().indexOf(node) != 0) return false;
+        return true;
     }
 
     private static List<SemanticTokenMarker> findSemanticMarkersForSymbol(SchemaNode node) {

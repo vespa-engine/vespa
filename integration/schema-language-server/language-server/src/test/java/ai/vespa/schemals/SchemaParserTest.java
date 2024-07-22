@@ -359,7 +359,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 7),
             new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 1),
 
-            new BadFileTestCase("../../../config-model/src/test/derived/slice/test.sd", 2), // TODO: sliceing?
+            new BadFileTestCase("../../../config-model/src/test/derived/slice/test.sd", 2), // TODO: slicing?
 
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 3), // TODO: unused rank-profile functions should throw errors?
 
