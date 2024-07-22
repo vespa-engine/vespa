@@ -362,7 +362,7 @@ public class SchemaParserTest {
 
             new BadFileTestCase("../../../config-model/src/test/derived/slice/test.sd", 2), // TODO: slicing?
 
-            new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 3), // TODO: unused rank-profile functions should throw errors?
+            new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
         };

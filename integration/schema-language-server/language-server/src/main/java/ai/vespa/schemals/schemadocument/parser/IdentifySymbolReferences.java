@@ -3,12 +3,14 @@ package ai.vespa.schemals.schemadocument.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import com.yahoo.document.datatypes.Array;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
@@ -19,13 +21,16 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.COLON;
 import ai.vespa.schemals.parser.ast.FIELD;
 import ai.vespa.schemals.parser.ast.fieldRankFilter;
+import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
+import ai.vespa.schemals.parser.ast.rankTypeElm;
 import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.importField;
@@ -73,6 +78,8 @@ public class IdentifySymbolReferences extends Identifier {
         add(summaryInDocument.class);
         add(summarySourceList.class);
         add(fieldRankFilter.class);
+        add(fieldRankType.class);
+        add(rankTypeElm.class);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
@@ -206,6 +213,30 @@ public class IdentifySymbolReferences extends Identifier {
                 identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
             }
             identifierNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+            return ret;
+        }
+
+        // Another edge case: rank-type ...
+        if ((parent.isASTInstance(fieldRankType.class) || parent.isASTInstance(rankTypeElm.class)) 
+                && identifierNode.getPreviousSibling() != null  
+                && identifierNode.getPreviousSibling().isASTInstance(COLON.class)) {
+            List<String> validRankTypes = new ArrayList<>() {{
+                add("identity");
+                add("about");
+                add("tags");
+                add("empty");
+                add("default"); // sneaky valid rank-type
+            }};
+
+            if (!validRankTypes.contains(identifierNode.getText())) {
+                String msg = "Invalid rank type. Supported rank types are ";
+                for (int i = 0; i < validRankTypes.size(); ++i) {
+                    msg += "'" + validRankTypes.get(i) + "'";
+                    if (i < validRankTypes.size() - 1) msg += ", ";
+                }
+                msg += ".";
+                ret.add(new Diagnostic(identifierNode.getRange(), msg, DiagnosticSeverity.Error, ""));
+            }
             return ret;
         }
 

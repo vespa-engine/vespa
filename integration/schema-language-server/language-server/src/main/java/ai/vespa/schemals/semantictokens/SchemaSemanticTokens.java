@@ -27,14 +27,17 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.FILTER;
+import ai.vespa.schemals.parser.ast.RANK_TYPE;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldRankFilter;
+import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.integerElm;
 import ai.vespa.schemals.parser.ast.matchItem;
 import ai.vespa.schemals.parser.ast.matchSettingsElm;
 import ai.vespa.schemals.parser.ast.matchType;
 import ai.vespa.schemals.parser.ast.quotedString;
 import ai.vespa.schemals.parser.ast.rankSettingElm;
+import ai.vespa.schemals.parser.ast.rankTypeElm;
 import ai.vespa.schemals.parser.ast.valueType;
 
 public class SchemaSemanticTokens implements Visitor {
@@ -104,6 +107,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.INDEXING);
         add(TokenType.MATCH);
         add(TokenType.RANK);
+        add(TokenType.RANK_TYPE);
     }};
 
     // Other
@@ -486,6 +490,8 @@ public class SchemaSemanticTokens implements Visitor {
         add(matchType.class);
         add(matchItem.class);
         add(rankSettingElm.class);
+        add(fieldRankType.class);
+        add(rankTypeElm.class);
     }};
 
     private static boolean isEnumLike(SchemaNode node) {
@@ -496,6 +502,8 @@ public class SchemaSemanticTokens implements Visitor {
 
         // ugly special case
         if (node.isASTInstance(FILTER.class)) return true;
+
+        if (node.isASTInstance(RANK_TYPE.class)) return false;
 
         SchemaNode it = node.getParent();
         while (it != null) {

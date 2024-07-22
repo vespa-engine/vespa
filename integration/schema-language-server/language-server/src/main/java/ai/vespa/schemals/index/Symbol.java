@@ -142,6 +142,7 @@ public class Symbol {
         QUERY_INPUT,
         RANK_CONSTANT,
         RANK_PROFILE,
+        RANK_TYPE,
         SCHEMA,
         STRUCT,
         STRUCT_FIELD,
