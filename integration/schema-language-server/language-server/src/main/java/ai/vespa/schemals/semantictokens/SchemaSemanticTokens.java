@@ -28,6 +28,7 @@ import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.FILTER;
 import ai.vespa.schemals.parser.ast.RANK_TYPE;
+import ai.vespa.schemals.parser.ast.bool;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldRankFilter;
 import ai.vespa.schemals.parser.ast.fieldRankType;
@@ -38,6 +39,7 @@ import ai.vespa.schemals.parser.ast.matchType;
 import ai.vespa.schemals.parser.ast.quotedString;
 import ai.vespa.schemals.parser.ast.rankSettingElm;
 import ai.vespa.schemals.parser.ast.rankTypeElm;
+import ai.vespa.schemals.parser.ast.summaryItem;
 import ai.vespa.schemals.parser.ast.valueType;
 
 public class SchemaSemanticTokens implements Visitor {
@@ -108,6 +110,10 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.MATCH);
         add(TokenType.RANK);
         add(TokenType.RANK_TYPE);
+        add(TokenType.WEIGHT);
+        add(TokenType.BOLDING);
+        add(TokenType.ID);
+        add(TokenType.QUERY_COMMAND);
     }};
 
     // Other
@@ -118,6 +124,13 @@ public class SchemaSemanticTokens implements Visitor {
         put(TokenType.DOUBLEQUOTEDSTRING, "string");
         put(TokenType.SINGLEQUOTEDSTRING, "string");
         put(TokenType.QUERY, "function");
+
+        // TODO: figure out boolean color
+        put(TokenType.ON, SemanticTokenTypes.Type);
+        put(TokenType.OFF, SemanticTokenTypes.Type);
+        put(TokenType.TRUE, SemanticTokenTypes.Type);
+        put(TokenType.FALSE, SemanticTokenTypes.Type);
+
     }};
 
 
@@ -492,12 +505,13 @@ public class SchemaSemanticTokens implements Visitor {
         add(rankSettingElm.class);
         add(fieldRankType.class);
         add(rankTypeElm.class);
+        add(summaryItem.class);
     }};
 
     private static boolean isEnumLike(SchemaNode node) {
         if (node.getLanguageType() != LanguageType.SCHEMA) return false;
         if (node.getParent() == null) return false;
-        if (node.getParent().isASTInstance(integerElm.class) || node.getParent().isASTInstance(quotedString.class)) return false;
+        if (node.getParent().isASTInstance(integerElm.class) || node.getParent().isASTInstance(quotedString.class) || node.getParent().isASTInstance(bool.class)) return false;
         if (!node.isLeaf()) return false;
 
         // ugly special case
