@@ -56,6 +56,10 @@
       <groupId>org.apache.opennlp</groupId>
       <artifactId>opennlp-tools</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.huaban</groupId>
+      <artifactId>jieba-analysis</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
