@@ -11,6 +11,8 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
 import com.yahoo.search.schema.RankProfile.InputType;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TensorTypeParser;
 
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;

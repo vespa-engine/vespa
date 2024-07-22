@@ -11,6 +11,9 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 import com.yahoo.schema.processing.ReservedFunctionNames;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TensorTypeParser;
+import com.yahoo.tensor.TensorType.MappedDimension;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
@@ -29,6 +32,7 @@ import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
+import ai.vespa.schemals.parser.ast.tensorTypeElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -135,26 +139,52 @@ public class IdentifySymbolDefinition extends Identifier {
      * Currently only map, which defines MAP_KEY and MAP_VALUE symbols at the dataType nodes inside the map
      */
     private void handleDataTypeDefinition(SchemaNode node, List<Diagnostic> diagnostics) {
-        if (node.getParent() == null || !node.getParent().isASTInstance(mapDataType.class)) return;
+        if (node.getParent() == null)return;
 
-        Optional<Symbol> scope = findMapScope(node.getParent());
+        if (node.getParent().isASTInstance(mapDataType.class)) {
 
-        if (!scope.isPresent()) return;
+            Optional<Symbol> scope = findMapScope(node.getParent());
 
-        if (node.getParent().indexOf(node) == 2) {
-            // Map key type
-            node.setSymbol(SymbolType.MAP_KEY, context.fileURI(), scope.get(), "key");
-            node.setSymbolStatus(SymbolStatus.DEFINITION);
-            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-        } else if (node.getParent().indexOf(node) == 4) {
-            // Map value type
-            // Should only define a new type if this guy is not a reference to something else
-            dataType dataTypeNode = (dataType)node.getOriginalSchemaNode();
-            if (dataTypeNode.getParsedType().getVariant() == Variant.UNKNOWN) return;
+            if (!scope.isPresent()) return;
 
-            node.setSymbol(SymbolType.MAP_VALUE, context.fileURI(), scope.get(), "value");
-            node.setSymbolStatus(SymbolStatus.DEFINITION);
-            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+            if (node.getParent().indexOf(node) == 2) {
+                // Map key type
+                node.setSymbol(SymbolType.MAP_KEY, context.fileURI(), scope.get(), "key");
+                node.setSymbolStatus(SymbolStatus.DEFINITION);
+                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+            } else if (node.getParent().indexOf(node) == 4) {
+                // Map value type
+                // Should only define a new type if this guy is not a reference to something else
+                dataType dataTypeNode = (dataType)node.getOriginalSchemaNode();
+                if (dataTypeNode.getParsedType().getVariant() == Variant.UNKNOWN) return;
+
+                node.setSymbol(SymbolType.MAP_VALUE, context.fileURI(), scope.get(), "value");
+                node.setSymbolStatus(SymbolStatus.DEFINITION);
+                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+            }
+        }
+
+        if (node.isASTInstance(tensorTypeElm.class)) {
+            Optional<Symbol> scope = CSTUtils.findScope(node);
+
+            if (!scope.isPresent()) return;
+
+            try {
+                TensorType tensorType = TensorTypeParser.fromSpec(node.getText());
+
+                node.setSymbol(SymbolType.TENSOR, context.fileURI(), scope.get());
+                node.setSymbolStatus(SymbolStatus.DEFINITION);
+                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+
+                for (var dimension : tensorType.dimensions()) {
+                    SymbolType type = (dimension instanceof MappedDimension) ? SymbolType.TENSOR_DIMENSION_MAPPED : SymbolType.TENSOR_DIMENSION_INDEXED;
+                    Symbol dimensionSymbol = new Symbol(node, type, context.fileURI(), node.getSymbol(), dimension.name());
+                    dimensionSymbol.setStatus(SymbolStatus.DEFINITION);
+                    context.schemaIndex().insertSymbolDefinition(dimensionSymbol);
+                }
+            } catch(Exception e) {
+                // ignore
+            }
         }
     }
 

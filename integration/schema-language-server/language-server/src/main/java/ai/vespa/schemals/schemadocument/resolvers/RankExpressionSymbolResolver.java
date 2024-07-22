@@ -52,7 +52,7 @@ public class RankExpressionSymbolResolver {
         List<RankNode> rankNodes = RankNode.createTree(schemaNode);
 
         for (RankNode node : rankNodes) {
-            RankingExpressionUtils.printTree(context.logger(), node);
+            //RankingExpressionUtils.printTree(context.logger(), node);
 
             diagnostics.addAll(traverseRankExpressionTree(node, context));
         }
@@ -87,7 +87,7 @@ public class RankExpressionSymbolResolver {
         return diagnostics;
     }
 
-    public static final Set<Class<?>> builInTokenizedFunctions = new HashSet<>() {{
+    public static final Set<Class<?>> builtInTokenizedFunctions = new HashSet<>() {{
         add(unaryFunctionName.class);
     }};
 

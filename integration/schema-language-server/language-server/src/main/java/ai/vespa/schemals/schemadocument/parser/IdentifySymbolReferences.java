@@ -123,7 +123,7 @@ public class IdentifySymbolReferences extends Identifier {
 
     private static final Set<Class<?>> identifierNodes = new HashSet<>() {{
         add(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class);
-        addAll(RankExpressionSymbolResolver.builInTokenizedFunctions);
+        addAll(RankExpressionSymbolResolver.builtInTokenizedFunctions);
     }};
 
     private ArrayList<Diagnostic> identifyRankExpressionLanguage(SchemaNode node) {

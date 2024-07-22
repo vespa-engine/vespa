@@ -2954,7 +2954,9 @@ TensorType tensorTypeElm(String errorMessage) :
         try {
             tensorType = TensorType.fromSpec(tensorTypeString);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+            //throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+            lastConsumedToken.addIllegalArugmentException(e);
+            return TensorType.empty;
         }
         return tensorType;
     }

@@ -48,6 +48,12 @@ INJECT RankingExpressionParser :
     }
 }
 
+INJECT BaseNode :
+    import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+{
+    public ExpressionNode expressionNode;
+}
+
 SKIP :
  
     <[" ","\n","\r","\t"]>
@@ -197,7 +203,10 @@ ExpressionNode rankingExpression() :
 }
  
     ( ret = expression() <EOF> )
-    { return ret; }
+    { 
+        thisProduction.expressionNode = ret;
+        return ret; 
+    }
 ;
 
 ExpressionNode expression() :
@@ -211,7 +220,10 @@ ExpressionNode expression() :
           ( <IN>           rightList = expressionList() { left =  new SetMembershipNode(left, rightList); }           )
       ) ?
     )
-    { return left; }
+    { 
+        thisProduction.expressionNode = left;
+        return left; 
+    }
 ;
 
 ExpressionNode operationExpression() :
@@ -223,7 +235,10 @@ ExpressionNode operationExpression() :
     ( left = value()
       ( operator = binaryOperator() right = value() { left = OperationNode.resolve(left, operator, right); } ) *
     )
-    { return left; }
+    { 
+        thisProduction.expressionNode = left;
+        return left; 
+    }
 ;
 
 Operator binaryOperator() : { }
@@ -273,6 +288,8 @@ ExpressionNode value() :
     [ SCAN 2 valueAddress = valueAddress() { value = new TensorFunctionNode(new Slice(TensorFunctionNode.wrap(value), valueAddress)); } ]
     {
         value = not ? new NotNode(value) : value;
+
+        thisProduction.expressionNode = value;
         return value;
     }
 ;
@@ -286,7 +303,8 @@ IfNode ifExpression() :
     ( <IF> <LBRACE> ( condition =  expression() )
       <COMMA> ifTrue = expression() <COMMA> ifFalse = expression() ( <COMMA> trueProbability = doubleNumber() )? <RBRACE> )
     {
-        return new IfNode(condition, ifTrue, ifFalse, trueProbability);
+        thisProduction.expressionNode = new IfNode(condition, ifTrue, ifFalse, trueProbability);
+        return (IfNode)thisProduction.expressionNode;
     }
 ;
 
@@ -298,10 +316,13 @@ ReferenceNode feature() :
  
     ( name = identifierStr() [ <LBRACE> args = args() <RBRACE> ] [ <DOT> out = outs() ] )
     {
-         if (args == null && out == null) // know the difference between "foo" and "foo()"
-             return new ReferenceNode(name);
-         else
-             return new ReferenceNode(name, args, out);
+         if (args == null && out == null) { // know the difference between "foo" and "foo()"
+             thisProduction.expressionNode = new ReferenceNode(name);
+         } else {
+             thisProduction.expressionNode = new ReferenceNode(name, args, out);
+         }
+
+        return (ReferenceNode)thisProduction.expressionNode;
     }
 ;
 
@@ -313,7 +334,8 @@ ReferenceNode legacyQueryFeature() :
  
     ( <DOLLAR> name = identifierStr() )
     {
-        return new ReferenceNode(Reference.simple("query", name));
+        thisProduction.expressionNode = new ReferenceNode(Reference.simple("query", name));
+        return (ReferenceNode)thisProduction.expressionNode;
     }
 ;
 
@@ -357,7 +379,10 @@ ExpressionNode function() :
 }
  
     ( SCAN 2 function = scalarOrTensorFunction() | function = tensorFunction() | function = tensorMacro() )
-    { return function; }
+    { 
+        thisProduction.expressionNode = function;
+        return function; 
+    }
 ;
 
 FunctionNode scalarOrTensorFunction() :
@@ -368,11 +393,17 @@ FunctionNode scalarOrTensorFunction() :
  
     (
       ( function = unaryFunctionName() <LBRACE> arg1 = expression() <RBRACE> )
-      { return new FunctionNode(function, arg1); }
+      { 
+          thisProduction.expressionNode = new FunctionNode(function, arg1); 
+          return (FunctionNode)thisProduction.expressionNode;
+      }
     ) |
     (
       ( function = binaryFunctionName() <LBRACE> arg1 = expression() <COMMA> arg2 = expression() <RBRACE> )
-      { return new FunctionNode(function, arg1, arg2); }
+      { 
+          thisProduction.expressionNode = new FunctionNode(function, arg1, arg2); 
+          return (FunctionNode)thisProduction.expressionNode;
+      }
     )
 ;
 
@@ -406,7 +437,10 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorCellCast() |
         tensorExpression = tensorExpand()
     )
-    { return tensorExpression; }
+    { 
+        thisProduction.expressionNode = tensorExpression;
+        return tensorExpression; 
+    }
 ;
 
 TensorFunctionNode tensorMap() :
@@ -416,8 +450,11 @@ TensorFunctionNode tensorMap() :
 }
  
     <MAP> <LBRACE> tensor = expression() <COMMA> doubleMapper = lambdaFunction() <RBRACE>
-    { return new TensorFunctionNode(new com.yahoo.tensor.functions.Map(TensorFunctionNode.wrap(tensor),
-                                            doubleMapper.asDoubleUnaryOperator())); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new com.yahoo.tensor.functions.Map(TensorFunctionNode.wrap(tensor),
+                                                                                                doubleMapper.asDoubleUnaryOperator())); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorMapSubspaces() :
@@ -428,12 +465,14 @@ TensorFunctionNode tensorMapSubspaces() :
  
     <MAP_SUBSPACES> <LBRACE> tensor = expression() <COMMA> denseMapper = lambdaFunction() <RBRACE>
     {
-        return new TensorFunctionNode(
+        thisProduction.expressionNode =
+            new TensorFunctionNode(
                new MapSubspaces(
                       TensorFunctionNode.wrap(tensor),
                       denseMapper.singleArgumentName(),
                       TensorFunctionNode.wrap(denseMapper.children().get(0))));
-     }
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorReduce() :
@@ -444,7 +483,10 @@ TensorFunctionNode tensorReduce() :
 }
  
     <REDUCE> <LBRACE> tensor = expression() <COMMA> aggregator = tensorReduceAggregator() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorFunctionNode(new Reduce(TensorFunctionNode.wrap(tensor), aggregator, dimensions)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Reduce(TensorFunctionNode.wrap(tensor), aggregator, dimensions)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorReduceComposites() :
@@ -456,7 +498,10 @@ TensorFunctionNode tensorReduceComposites() :
  
     aggregator = tensorReduceAggregator()
     <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorFunctionNode(new Reduce(TensorFunctionNode.wrap(tensor), aggregator, dimensions)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Reduce(TensorFunctionNode.wrap(tensor), aggregator, dimensions)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorJoin() :
@@ -466,9 +511,12 @@ TensorFunctionNode tensorJoin() :
 }
  
     <JOIN> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> doubleJoiner = lambdaFunction() <RBRACE>
-    { return new TensorFunctionNode(new Join(TensorFunctionNode.wrap(tensor1),
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Join(TensorFunctionNode.wrap(tensor1),
                                  TensorFunctionNode.wrap(tensor2),
-                                 doubleJoiner.asDoubleBinaryOperator())); }
+                                 doubleJoiner.asDoubleBinaryOperator())); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorMerge() :
@@ -478,9 +526,12 @@ TensorFunctionNode tensorMerge() :
 }
  
     <MERGE> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> doubleMerger = lambdaFunction() <RBRACE>
-    { return new TensorFunctionNode(new Merge(TensorFunctionNode.wrap(tensor1),
-                                    TensorFunctionNode.wrap(tensor2),
-                                     doubleMerger.asDoubleBinaryOperator())); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Merge(TensorFunctionNode.wrap(tensor1),
+                                     TensorFunctionNode.wrap(tensor2),
+                                     doubleMerger.asDoubleBinaryOperator())); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorRename() :
@@ -493,7 +544,10 @@ TensorFunctionNode tensorRename() :
                       fromDimensions = bracedIdentifierList() <COMMA>
                       toDimensions = bracedIdentifierList()
              <RBRACE>
-    { return new TensorFunctionNode(new Rename(TensorFunctionNode.wrap(tensor), fromDimensions, toDimensions)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Rename(TensorFunctionNode.wrap(tensor), fromDimensions, toDimensions)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorConcat() :
@@ -503,9 +557,12 @@ TensorFunctionNode tensorConcat() :
 }
  
     <CONCAT> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> dimension = tag() <RBRACE>
-    { return new TensorFunctionNode(new Concat(TensorFunctionNode.wrap(tensor1),
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Concat(TensorFunctionNode.wrap(tensor1),
                                                TensorFunctionNode.wrap(tensor2),
-                                               dimension)); }
+                                               dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorGenerate() :
@@ -520,7 +577,10 @@ TensorFunctionNode tensorGenerate() :
         expression = tensorGenerateBody(type) |
         expression = tensorValueBody(type, dimensionOrder)
     )
-    { return expression; }
+    { 
+        thisProduction.expressionNode = expression;
+        return expression; 
+    }
 ;
 
 TensorFunctionNode tensorGenerateBody(TensorType type) :
@@ -529,7 +589,10 @@ TensorFunctionNode tensorGenerateBody(TensorType type) :
 }
  
     <LBRACE> generator = expression() <RBRACE>
-    { return new TensorFunctionNode(Generate.bound(type, TensorFunctionNode.wrapScalar(generator))); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(Generate.bound(type, TensorFunctionNode.wrapScalar(generator))); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorRange() :
@@ -538,7 +601,10 @@ TensorFunctionNode tensorRange() :
 }
  
     <RANGE> type = tensorType(null)
-    { return new TensorFunctionNode(new Range(type)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Range(type)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorDiag() :
@@ -547,7 +613,10 @@ TensorFunctionNode tensorDiag() :
 }
  
     <DIAG> type = tensorType(null)
-    { return new TensorFunctionNode(new Diag(type)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Diag(type)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorRandom() :
@@ -556,7 +625,10 @@ TensorFunctionNode tensorRandom() :
 }
  
     <RANDOM> type = tensorType(null)
-    { return new TensorFunctionNode(new Random(type)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Random(type)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorL1Normalize() :
@@ -566,7 +638,10 @@ TensorFunctionNode tensorL1Normalize() :
 }
  
     <L1_NORMALIZE> <LBRACE> tensor = expression() <COMMA> dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new L1Normalize(TensorFunctionNode.wrap(tensor), dimension)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new L1Normalize(TensorFunctionNode.wrap(tensor), dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorL2Normalize() :
@@ -576,7 +651,10 @@ TensorFunctionNode tensorL2Normalize() :
 }
  
     <L2_NORMALIZE> <LBRACE> tensor = expression() <COMMA> dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new L2Normalize(TensorFunctionNode.wrap(tensor), dimension)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new L2Normalize(TensorFunctionNode.wrap(tensor), dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorEuclideanDistance() :
@@ -586,9 +664,12 @@ TensorFunctionNode tensorEuclideanDistance() :
 }
  
     <EUCLIDEAN_DISTANCE> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new EuclideanDistance(TensorFunctionNode.wrap(tensor1),
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new EuclideanDistance(TensorFunctionNode.wrap(tensor1),
                                                           TensorFunctionNode.wrap(tensor2),
-                                                          dimension)); }
+                                                          dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorCosineSimilarity() :
@@ -598,9 +679,12 @@ TensorFunctionNode tensorCosineSimilarity() :
 }
  
     <COSINE_SIMILARITY> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new CosineSimilarity(TensorFunctionNode.wrap(tensor1),
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new CosineSimilarity(TensorFunctionNode.wrap(tensor1),
                                                           TensorFunctionNode.wrap(tensor2),
-                                                          dimension)); }
+                                                          dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorMatmul() :
@@ -610,9 +694,12 @@ TensorFunctionNode tensorMatmul() :
 }
  
     <MATMUL> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new Matmul(TensorFunctionNode.wrap(tensor1),
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Matmul(TensorFunctionNode.wrap(tensor1),
                                    TensorFunctionNode.wrap(tensor2),
-                                   dimension)); }
+                                   dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorSoftmax() :
@@ -622,7 +709,10 @@ TensorFunctionNode tensorSoftmax() :
 }
  
     <SOFTMAX> <LBRACE> tensor = expression() <COMMA> dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new Softmax(TensorFunctionNode.wrap(tensor), dimension)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Softmax(TensorFunctionNode.wrap(tensor), dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorXwPlusB() :
@@ -635,10 +725,13 @@ TensorFunctionNode tensorXwPlusB() :
                          tensor2 = expression() <COMMA>
                          tensor3 = expression() <COMMA>
                          dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new XwPlusB(TensorFunctionNode.wrap(tensor1),
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new XwPlusB(TensorFunctionNode.wrap(tensor1),
                                                 TensorFunctionNode.wrap(tensor2),
                                                 TensorFunctionNode.wrap(tensor3),
-                                                dimension)); }
+                                                dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorExpand() :
@@ -648,7 +741,10 @@ TensorFunctionNode tensorExpand() :
 }
  
     <EXPAND> <LBRACE> argument = expression() <COMMA> dimension = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new Expand(TensorFunctionNode.wrap(argument), dimension)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Expand(TensorFunctionNode.wrap(argument), dimension)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorArgmax() :
@@ -658,7 +754,10 @@ TensorFunctionNode tensorArgmax() :
 }
  
     <ARGMAX> <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorFunctionNode(new Argmax(TensorFunctionNode.wrap(tensor), dimensions)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Argmax(TensorFunctionNode.wrap(tensor), dimensions)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorArgmin() :
@@ -668,7 +767,10 @@ TensorFunctionNode tensorArgmin() :
 }
  
     <ARGMIN> <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorFunctionNode(new Argmin(TensorFunctionNode.wrap(tensor), dimensions)); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new Argmin(TensorFunctionNode.wrap(tensor), dimensions)); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 TensorFunctionNode tensorCellCast() :
@@ -678,7 +780,10 @@ TensorFunctionNode tensorCellCast() :
 }
  
     <CELL_CAST> <LBRACE> tensor = expression() <COMMA> valueType = identifierStr() <RBRACE>
-    { return new TensorFunctionNode(new CellCast(TensorFunctionNode.wrap(tensor), TensorType.Value.fromId(valueType)));}
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(new CellCast(TensorFunctionNode.wrap(tensor), TensorType.Value.fromId(valueType)));
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 ExpressionNode tensorMacro() :
@@ -689,7 +794,10 @@ ExpressionNode tensorMacro() :
     (
         tensorExpression = tensorUnpackBits()
     )
-    { return tensorExpression; }
+    { 
+        thisProduction.expressionNode = tensorExpression;
+        return tensorExpression; 
+    }
 ;
 
 ExpressionNode tensorUnpackBits() :
@@ -703,7 +811,8 @@ ExpressionNode tensorUnpackBits() :
       <COMMA> targetCellType = identifierStr() (
         <COMMA> endianNess = identifierStr() )? )? <RBRACE>
     {
-        return new UnpackBitsNode(tensor, TensorType.Value.fromId(targetCellType), endianNess);
+        thisProduction.expressionNode = new UnpackBitsNode(tensor, TensorType.Value.fromId(targetCellType), endianNess);
+        return thisProduction.expressionNode;
     }
 ;
 
@@ -714,7 +823,10 @@ LambdaFunctionNode lambdaFunction() :
 }
  
      ( <F> <LBRACE> variables = identifierList() <RBRACE> <LBRACE> functionExpression = expression() <RBRACE> )
-     { return new LambdaFunctionNode(variables, functionExpression); }
+     { 
+         thisProduction.expressionNode = new LambdaFunctionNode(variables, functionExpression); 
+         return (LambdaFunctionNode)thisProduction.expressionNode;
+     }
 ;
 
 Reduce.Aggregator tensorReduceAggregator() :
@@ -722,7 +834,9 @@ Reduce.Aggregator tensorReduceAggregator() :
 }
  
     ( <AVG> | <COUNT> | <MAX> | <MEDIAN> | <MIN> | <PROD> | <SUM>  )
-    { return Reduce.Aggregator.valueOf(lastConsumedToken.toString()); }
+    { 
+        return Reduce.Aggregator.valueOf(lastConsumedToken.toString()); 
+    }
 ;
 
 TensorType tensorType(List dimensionOrder) :
@@ -737,7 +851,9 @@ TensorType tensorType(List dimensionOrder) :
     ( tensorTypeDimension(builder, dimensionOrder) ) ?
     ( <COMMA> tensorTypeDimension(builder, dimensionOrder) ) *
     <RBRACE>
-    { return builder.build(); }
+    { 
+        return builder.build(); 
+    }
 ;
 
 TensorType.Value optionalTensorValueTypeParameter() :
@@ -945,7 +1061,10 @@ ExpressionNode constantPrimitive(boolean negate) :
         if (negate) node = new NegativeNode(node);
       }
     )
-    { return node; }
+    { 
+        thisProduction.expressionNode = node;
+        return node; 
+    }
 ;
 
 TensorFunctionNode tensorValueBody(TensorType type, List dimensionOrder) :
@@ -959,7 +1078,10 @@ TensorFunctionNode tensorValueBody(TensorType type, List dimensionOrder) :
         dynamicTensor = mappedTensorValueBody(type) |
         dynamicTensor = indexedTensorValueBody(type, dimensionOrder)
     )
-    { return new TensorFunctionNode(dynamicTensor); }
+    { 
+        thisProduction.expressionNode = new TensorFunctionNode(dynamicTensor); 
+        return (TensorFunctionNode)thisProduction.expressionNode;
+    }
 ;
 
 DynamicTensor mappedTensorValueBody(TensorType type) :
