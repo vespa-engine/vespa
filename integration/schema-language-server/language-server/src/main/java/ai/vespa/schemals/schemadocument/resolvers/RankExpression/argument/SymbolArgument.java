@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -60,7 +61,11 @@ public class SymbolArgument implements Argument {
                 symbol.setType(symbolType);
             }
         } else {
-            return Optional.of(new Diagnostic(node.getRange(), "The argument must be to a symbol of type: " + symbolType, DiagnosticSeverity.Error, ""));
+            return Optional.of(new SchemaDiagnostic.Builder()
+                .setRange(node.getRange())
+                .setMessage("The argument must be to a symbol of type: " + symbolType)
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
         }
 
         return Optional.empty();

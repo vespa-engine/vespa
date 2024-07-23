@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -23,7 +24,11 @@ public class DistanceFunction implements FunctionHandler {
         List<RankNode> arguments = node.getChildren();
 
         if (arguments.size() != 2) {
-            diagnostics.add(new Diagnostic(node.getRange(), "The distance function takes two argument (dimension, name)", DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(node.getRange())
+                .setMessage("The distance function takes two argument (dimension, name)")
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
             return diagnostics;
         }
 
@@ -40,7 +45,11 @@ public class DistanceFunction implements FunctionHandler {
         boolean isLabel = firstArgument.getText().equals("label");
 
         if (!isField && !isLabel) {
-            diagnostics.add(new Diagnostic(firstArgument.getRange(), "The first argument must be field or label", DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(firstArgument.getRange())
+                .setMessage("The first argument must be field or label")
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
             return diagnostics;
         }
 

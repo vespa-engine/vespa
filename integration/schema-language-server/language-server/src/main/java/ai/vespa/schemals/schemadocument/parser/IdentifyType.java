@@ -23,6 +23,7 @@ import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.inputElm;
 import ai.vespa.schemals.parser.ast.valueType;
 import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -49,22 +50,20 @@ public class IdentifyType extends Identifier {
 
         if (originalNode.isArrayOldStyle) {
             String nodeText = node.get(0).getText();
-            ret.add(new Diagnostic(
-                node.getRange(), 
-                "Data type syntax '" + nodeText + "[]' is deprecated, use 'array<" + nodeText + ">' instead.", 
-                DiagnosticSeverity.Warning,""
-            ));
-
+            ret.add(new SchemaDiagnostic.Builder()
+                    .setRange(node.getRange())
+                    .setMessage("Data type syntax '" + nodeText + "[]' is deprecated, use 'array<" + nodeText + ">' instead.")
+                    .setSeverity(DiagnosticSeverity.Warning)
+                    .build());
         }
 
         if (parsedType.getVariant() == Variant.ANN_REFERENCE) {
             if (!isInsideAnnotationBody(node)) {
-                ret.add(new Diagnostic(
-                    node.getRange(),
-                    "annotationreference should only be used inside an annotation",
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
+                ret.add(new SchemaDiagnostic.Builder()
+                        .setRange( node.getRange())
+                        .setMessage( "annotationreference should only be used inside an annotation")
+                        .setSeverity( DiagnosticSeverity.Error)
+                        .build() );
             }
         }
 
@@ -75,12 +74,11 @@ public class IdentifyType extends Identifier {
                 ParsedType keyParsedType = ((dataType)keyTypeNode.getOriginalSchemaNode()).getParsedType();
                 if (keyParsedType.getVariant() != Variant.BUILTIN) {
                     // TODO: quickfix
-                    ret.add(new Diagnostic(
-                        keyTypeNode.getRange(),
-                        "Map key type must be a primitive type",
-                        DiagnosticSeverity.Error,
-                        ""
-                    ));
+                    ret.add(new SchemaDiagnostic.Builder()
+                            .setRange( keyTypeNode.getRange())
+                            .setMessage( "Map key type must be a primitive type")
+                            .setSeverity( DiagnosticSeverity.Error)
+                            .build() );
                 }
             }
         }
@@ -139,7 +137,11 @@ public class IdentifyType extends Identifier {
         }
 
         if (warningMessage != null) {
-            ret.add(new Diagnostic(valueTypeNode.getRange(), warningMessage, DiagnosticSeverity.Warning, ""));
+            ret.add(new SchemaDiagnostic.Builder()
+                .setRange(valueTypeNode.getRange())
+                .setMessage(warningMessage)
+                .setSeverity(DiagnosticSeverity.Warning)
+                .build());
         }
 
         return ret;

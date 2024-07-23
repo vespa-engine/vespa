@@ -25,6 +25,7 @@ public class SchemaRename {
     private static ArrayList<SchemaTextDocumentEdit> createTextDocumentEditsFromSymbols(EventContext context, List<Symbol> symbols, String newName) {
         HashMap<String, SchemaTextDocumentEdit> documentEdits = new HashMap<>();
 
+        int count = 0;
         for (Symbol symbol : symbols) {
 
             if (!documentEdits.containsKey(symbol.getFileURI())) {
@@ -36,6 +37,7 @@ public class SchemaRename {
 
             SchemaTextDocumentEdit documentEdit = documentEdits.get(symbol.getFileURI());
             documentEdit.add(new TextEdit(symbol.getNode().getRange(), newName));
+            count += 1;
         }
 
         return new ArrayList<SchemaTextDocumentEdit>(documentEdits.values());
@@ -45,6 +47,7 @@ public class SchemaRename {
 
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (node == null || !node.hasSymbol()) {
+            context.logger.println("Could not find symbol");
             return null;
         }
 
@@ -71,11 +74,9 @@ public class SchemaRename {
             context.logger.println("Symbol has a fileURI to a file not in index!");
             return null;
         }
-
-        context.schemaIndex.dumpIndex();
-
         
-        List<Symbol> symbolOccurances = context.schemaIndex.getSymbolReferences(symbol.get());
+        List<Symbol> symbolOccurances = new ArrayList<>();
+        symbolOccurances.addAll(context.schemaIndex.getSymbolReferences(symbol.get()));
         symbolOccurances.add(symbol.get());
         
         if (type == SymbolType.SCHEMA) {
@@ -96,7 +97,7 @@ public class SchemaRename {
 
         Optional<Symbol> documentSymbol = context.schemaIndex.findSymbol(symbol, SymbolType.DOCUMENT, oldName);
 
-        if (documentSymbol.isPresent()) {
+        if (documentSymbol.isPresent() && !documentSymbol.get().equals(symbol)) {
             symbolOccurances.add(documentSymbol.get());
             List<Symbol> documentReferences = context.schemaIndex.getSymbolReferences(documentSymbol.get());
             symbolOccurances.addAll(documentReferences);
@@ -111,7 +112,7 @@ public class SchemaRename {
         String newFileURI = document.getFilePath() + newName + ".sd";
 
         // Check for name collision
-        if (context.scheduler.fileURIExists(newFileURI)) {
+        if (context.scheduler.fileURIExists(newFileURI) && !newFileURI.equals(document.getFileURI())) {
             context.messageHandler.sendMessage(MessageType.Error, "Cannot rename schema to '" + newName + "' since the name is already taken.");
 
             return null;
@@ -129,7 +130,9 @@ public class SchemaRename {
             }
         }
 
-        workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
+        if (!document.getFileURI().equals(newFileURI)) {
+            workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
+        }
 
         workspaceEdits.addTextDocumentEdits(documentEdits);
 

@@ -208,14 +208,15 @@ public class SchemaIndex {
         // First candidates are all symbols with correct type and correct short identifier
 
         if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
+            SymbolType firstCheck = (type == SymbolType.SCHEMA ? SymbolType.SCHEMA : SymbolType.DOCUMENT);
             List<Symbol> schemaDefinitions = 
-                symbolDefinitions.get(SymbolType.SCHEMA)
+                symbolDefinitions.get(firstCheck)
                                .stream()
                                .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
                                .toList();
 
             if (!schemaDefinitions.isEmpty()) return schemaDefinitions;
-            return symbolDefinitions.get(SymbolType.DOCUMENT)
+            return symbolDefinitions.get(firstCheck == SymbolType.SCHEMA ? SymbolType.DOCUMENT : SymbolType.SCHEMA)
                                .stream()
                                .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
                                .toList();
@@ -355,7 +356,7 @@ public class SchemaIndex {
 
         if (results == null) return new ArrayList<>();
 
-        return results;
+        return List.copyOf(results);
     }
 
     /**

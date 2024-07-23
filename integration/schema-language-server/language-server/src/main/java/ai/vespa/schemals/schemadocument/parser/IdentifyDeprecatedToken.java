@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -30,7 +31,11 @@ public class IdentifyDeprecatedToken extends Identifier {
         String message = deprecatedTokens.get(node.getSchemaType());
         if (message != null) {
             ret.add(
-                new Diagnostic(node.getRange(), node.getText() + " is deprecated. " + message, DiagnosticSeverity.Warning, "")
+                new SchemaDiagnostic.Builder()
+                    .setRange(node.getRange())
+                    .setMessage(node.getText() + " is deprecated. " + message)
+                    .setSeverity(DiagnosticSeverity.Warning)
+                    .build()
             );
         }
 

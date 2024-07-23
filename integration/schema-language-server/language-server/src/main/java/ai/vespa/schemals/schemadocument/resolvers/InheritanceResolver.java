@@ -14,6 +14,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.google.protobuf.Option;
 
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -67,12 +68,11 @@ public class InheritanceResolver {
                 if (parent != null) {
                     if (!documentInheritanceURIs.contains(parent.getFileURI())) {
                         // TODO: quickfix
-                        diagnostics.add(new Diagnostic(
-                            context.inheritsSchemaNode().getRange(),
-                            "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
-                            DiagnosticSeverity.Error,
-                            ""
-                        ));
+                        diagnostics.add(new SchemaDiagnostic.Builder()
+                                .setRange( context.inheritsSchemaNode().getRange())
+                                .setMessage( "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.")
+                                .setSeverity( DiagnosticSeverity.Error)
+                                .build() );
                         context.schemaIndex().getDocumentInheritanceGraph().addInherits(context.fileURI(), parent.getFileURI());
                     }
 
@@ -105,12 +105,11 @@ public class InheritanceResolver {
 
         if (!context.schemaIndex().tryRegisterStructInheritance(myStructDefinitionNode.getSymbol(), parentSymbol.get())) {
             // TODO: get the chain?
-            diagnostics.add(new Diagnostic(
-                inheritanceNode.getRange(), 
-                "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this struct.",
-                DiagnosticSeverity.Error, 
-                ""
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( inheritanceNode.getRange())
+                    .setMessage( "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this struct.")
+                    .setSeverity( DiagnosticSeverity.Error)
+                    .build() );
         }
 
 
@@ -133,12 +132,11 @@ public class InheritanceResolver {
             if (!inheritedFields.contains(fieldSymbol.getShortIdentifier())) continue;
 
             // TODO: quickfix
-            diagnostics.add(new Diagnostic(
-                fieldSymbol.getNode().getRange(),
-                "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
-                DiagnosticSeverity.Error,
-                ""
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( fieldSymbol.getNode().getRange())
+                    .setMessage( "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier())
+                    .setSeverity( DiagnosticSeverity.Error)
+                    .build() );
         }
     }
 
@@ -171,12 +169,11 @@ public class InheritanceResolver {
                 note += "\nDefined in " + FileUtils.fileNameFromPath(symbol.getFileURI());
             }
 
-            diagnostics.add(new Diagnostic(
-                inheritanceNode.getRange(),
-                inheritedIdentifier + " is ambiguous in this context.",
-                DiagnosticSeverity.Warning,
-                note
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( inheritanceNode.getRange())
+                    .setMessage( inheritedIdentifier + " is ambiguous in this context. " + note)
+                    .setSeverity( DiagnosticSeverity.Warning)
+                    .build());
         }
 
         // Choose last one, if more than one (undefined behaviour if ambiguous).
@@ -186,12 +183,11 @@ public class InheritanceResolver {
         if (!checkRankProfileInheritanceCollisions(context, definitionSymbol, parentSymbol, inheritanceNode, diagnostics)) return;
 
         if (!context.schemaIndex().tryRegisterRankProfileInheritance(definitionSymbol, parentSymbol)) {
-            diagnostics.add(new Diagnostic(
-                inheritanceNode.getRange(),
-                "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this rank profile.", 
-                DiagnosticSeverity.Error,
-                ""
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( inheritanceNode.getRange())
+                    .setMessage( "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this rank profile. ")
+                    .setSeverity( DiagnosticSeverity.Error)
+                    .build());
 
             return;
         }
@@ -211,14 +207,16 @@ public class InheritanceResolver {
         for (Symbol parentFunction : parentFunctions) {
             if (functionDefinitionsBeforeInheritance.containsKey(parentFunction.getShortIdentifier())) {
                 // TODO: quickfix and show the chain of inheritance
-                diagnostics.add(new Diagnostic(
-                    inheritanceNode.getRange(),
-                    "Cannot inherit from " + inheritanceNode.getText() + " because " + inheritanceNode.getText() + 
-                    " defines function " + parentFunction.getShortIdentifier() + " which is already defined in " + 
-                    functionDefinitionsBeforeInheritance.get(parentFunction.getShortIdentifier()).getShortIdentifier(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
+                diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(inheritanceNode.getRange())
+                    .setMessage(
+                        "Cannot inherit from " + inheritanceNode.getText() + " because " + inheritanceNode.getText() + 
+                        " defines function " + parentFunction.getShortIdentifier() + " which is already defined in " + 
+                        functionDefinitionsBeforeInheritance.get(parentFunction.getShortIdentifier()).getShortIdentifier()
+                    )
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build()
+                );
                 success = false;
             }
         }
@@ -237,12 +235,11 @@ public class InheritanceResolver {
         if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), symbol.get().getFileURI())) {
             // Inheritance cycle
             // TODO: quickfix, get the chain?
-            diagnostics.add(new Diagnostic(
-                inheritanceNode.getRange(),
-                "Cannot inherit from " + schemaDocumentName + " because " + schemaDocumentName + " inherits from this document.",
-                DiagnosticSeverity.Error,
-                ""
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( inheritanceNode.getRange())
+                    .setMessage( "Cannot inherit from " + schemaDocumentName + " because " + schemaDocumentName + " inherits from this document.")
+                    .setSeverity( DiagnosticSeverity.Error)
+                    .build() );
             return Optional.empty();
         }
 
@@ -270,12 +267,11 @@ public class InheritanceResolver {
 
         if (!context.schemaIndex().tryRegisterDocumentSummaryInheritance(myDocSummaryDefinitionNode.getSymbol(), parentSymbol.get())) {
             // TODO: get the chain?
-            diagnostics.add(new Diagnostic(
-                inheritanceNode.getRange(), 
-                "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this document summary.",
-                DiagnosticSeverity.Error, 
-                ""
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( inheritanceNode.getRange())
+                    .setMessage( "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this document summary.")
+                    .setSeverity( DiagnosticSeverity.Error)
+                    .build() );
         }
     }
 }

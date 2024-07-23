@@ -53,10 +53,47 @@ export function activate(context: vscode.ExtensionContext) {
 				return r;
 			},
 			provideDocumentSemanticTokens: async (document, token, next) => {
-				const r = await next(document, token)
-				console.log(r?.data)
+				const r = await next(document, token);
 				return r
-			}
+			},
+
+			
+			provideCodeActions: async (document, range, context, token, next) => {
+				console.log("PROVIDE: ", document.fileName, range, context.diagnostics)
+				if (context.diagnostics.length > 0) {
+					console.log(context.diagnostics[0].code)
+				}
+				const r = await next(document, range, context, token);
+
+				console.log(r);
+
+				/*if (false) {
+					for (const el of r) {
+						if (el instanceof vscode.CodeAction) {
+							if (el.edit != null) {
+								let entries = el.edit.entries();
+
+								for (const [key, editlist] of entries) {
+									console.log(key.toString())
+									for (const edit of editlist) {
+										console.log("    ", edit.newText);
+									}
+								}
+							}
+						}
+					}
+				}	*/
+
+				return r;
+			},
+			/*
+			resolveCodeAction: async (item, token, next) => {
+				console.log("RESOLVE: ", item, token);
+				const r = await next(item, token);
+				console.log(r);
+				return r;
+			},
+			*/
 		},
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher("**/*{.sd,.profile}")

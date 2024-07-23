@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -42,12 +43,11 @@ public class DocumentReferenceResolver {
             if (!context.schemaIndex().tryRegisterDocumentReference(myDocumentDefinition.get(), referencedDocument.get())) {
                 String message = " because cyclic references are not allowed";
                 if (myDocumentDefinition.get().equals(referencedDocument.get())) message = " because self-references are not allowed";
-                diagnostics.add(new Diagnostic(
-                    documentReferenceNode.getRange(),
-                    "Cannot reference document " + documentReferenceNode.getText() + message,
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
+                diagnostics.add(new SchemaDiagnostic.Builder()
+                        .setRange( documentReferenceNode.getRange())
+                        .setMessage( "Cannot reference document " + documentReferenceNode.getText() + message)
+                        .setSeverity( DiagnosticSeverity.Error)
+                        .build() );
             }
         }
 

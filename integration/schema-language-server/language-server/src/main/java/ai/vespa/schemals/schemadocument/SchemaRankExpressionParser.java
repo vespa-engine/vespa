@@ -16,6 +16,7 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
@@ -166,11 +167,19 @@ public class SchemaRankExpressionParser {
             
             range = CSTUtils.addPositionToRange(expressionStart, range);
 
-            diagnostics.add(new Diagnostic(range, pe.getMessage()));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(range)
+                    .setMessage(pe.getMessage())
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build());
 
         } catch(IllegalArgumentException ex) {
             // TODO: test this
-            diagnostics.add(new Diagnostic(node.getRange(), ex.getMessage(), DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(node.getRange())
+                    .setMessage(ex.getMessage())
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build());
         }
 
         RankingExpressionParser tolerantParser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);

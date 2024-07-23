@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -34,7 +37,12 @@ public class IdentifyNamedDocument extends Identifier {
         Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(documentName);
         if (schemaSymbol.isEmpty() || !schemaSymbol.get().getFileURI().equals(context.fileURI())) {
             // TODO: Quickfix
-            ret.add(new Diagnostic(identifierRange, "Invalid document name \"" + documentName + "\". The document name must match the containing schema's name."));
+            ret.add(new SchemaDiagnostic.Builder()
+                .setRange(identifierRange)
+                .setMessage("Invalid document name \"" + documentName + "\". The document name must match the containing schema's name.")
+                .setSeverity(DiagnosticSeverity.Error)
+                .setCode(DiagnosticCode.DOCUMENT_NAME_SAME_AS_SCHEMA)
+                .build());
         }
 
         return ret;

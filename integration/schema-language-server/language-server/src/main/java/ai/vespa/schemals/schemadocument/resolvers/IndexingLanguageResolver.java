@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
@@ -52,27 +53,25 @@ public class IndexingLanguageResolver {
         }
 
         if (fieldDefinitionSymbol.getStatus() != SymbolStatus.DEFINITION || fieldDefinitionSymbol.getType() != SymbolType.FIELD) {
-            diagnostics.add(new Diagnostic(
-                fieldDefinitionNode.getRange(),
-                "Could not find field definition. Indexing language will not be resolved",
-                DiagnosticSeverity.Warning,
-                ""
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( fieldDefinitionNode.getRange())
+                    .setMessage( "Could not find field definition. Indexing language will not be resolved")
+                    .setSeverity( DiagnosticSeverity.Warning)
+                    .build() );
             return;
         }
 
         if (indexingLanguageNode.isASTInstance(indexingElm.class)) {
             var expression = ((indexingElm)indexingLanguageNode.getOriginalSchemaNode()).expression;
-            //String inputType = expression.requiredInputType() == null ? "null" : expression.requiredInputType().toString();
-            //String outputType = expression.createdOutputType() == null ? "null" : expression.createdOutputType().toString();
-            //diagnostics.add(new Diagnostic(indexingLanguageNode.get(0).getRange(), "Input: " + inputType + ", Output: " + outputType, DiagnosticSeverity.Information, ""));
 
             if (expression != null && expression.requiredInputType() != null && !context.fieldIndex().getIsInsideDoc(fieldDefinitionSymbol)) {
-                diagnostics.add(new Diagnostic(
-                    indexingLanguageNode.get(0).getRange(), 
-                    "Expected " + expression.requiredInputType().getName() + " input, but no input is specified. Fields defined outside the document must start with indexing statements explicitly collecting input.", 
-                    DiagnosticSeverity.Error, 
-                ""));
+                diagnostics.add(new SchemaDiagnostic.Builder()
+                        .setRange(indexingLanguageNode.get(0).getRange())
+                        .setMessage(
+                            "Expected " + expression.requiredInputType().getName() + " input, but no input is specified. " +
+                            "Fields defined outside the document must start with indexing statements explicitly collecting input.")
+                        .setSeverity(DiagnosticSeverity.Error)
+                        .build());
             }
         }
 
@@ -102,12 +101,13 @@ public class IndexingLanguageResolver {
             // Top level statement of field outside document should have some input
             statement originalNode = (statement)node.getOriginalIndexingNode();
             StatementExpression expression = originalNode.expression;
-            //String inputType = expression.requiredInputType() == null ? "null" : expression.requiredInputType().toString();
-            //String outputType = expression.createdOutputType() == null ? "null" : expression.createdOutputType().toString();
-            //diagnostics.add(new Diagnostic(node.getRange(), "Input: " + inputType + ", Output: " + outputType, DiagnosticSeverity.Information, ""));
 
             if (expression != null && expression.requiredInputType() != null && !context.fieldIndex().getIsInsideDoc(containingFieldDefinition)) {
-                diagnostics.add(new Diagnostic(node.getRange(), "Expected " + expression.requiredInputType().getName() + " input, but no input is specified. Fields defined outside the document must start with indexing statements explicitly collecting input.", DiagnosticSeverity.Error, ""));
+                diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(node.getRange())
+                    .setMessage("Expected " + expression.requiredInputType().getName() + " input, but no input is specified. Fields defined outside the document must start with indexing statements explicitly collecting input.")
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build());
             }
         }
 
