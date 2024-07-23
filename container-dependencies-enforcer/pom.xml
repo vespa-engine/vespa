@@ -150,7 +150,6 @@
                                         <!-- 3rd party test dependencies -->
                                         <include>com.google.code.findbugs:jsr305:${findbugs.vespa.version}:test</include>
                                         <include>com.google.protobuf:protobuf-java:${protobuf.vespa.version}:test</include>
-                                        <include>com.huaban:jieba:${jieba.vespa.version}:test</include>
                                         <include>com.ibm.icu:icu4j:${icu4j.vespa.version}:test</include>
                                         <include>com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
