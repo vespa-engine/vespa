@@ -71,6 +71,10 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private String spaceIndent(int indent) {
+        return new String(new char[indent]).replace("\0", " ");
+    }
+
     private CodeAction fixAccessUnimportedField(EventCodeActionContext context, Diagnostic diagnostic) {
         SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (offendingNode == null) return null;
@@ -105,10 +109,25 @@ public class QuickFixProvider implements CodeActionProvider {
             new TextEdit(new Range(insertPosition, insertPosition), 
                 "import field " + referenceFieldNode.getSymbol().getShortIdentifier() + "." + 
                                        offendingNode.getSymbol().getShortIdentifier() + " as " +
-                                       newFieldName + " {} \n\n" + new String(new char[indent]).replace("\0", " ")),
+                                       newFieldName + " {} \n\n" + spaceIndent(indent)),
             new TextEdit(CSTUtils.unionRanges(offendingNode.getRange(), referenceFieldNode.getRange()), newFieldName)
         )));
 
+        return action;
+    }
+
+    public CodeAction fixDocumentlessSchema(EventCodeActionContext context, Diagnostic diagnostic) {
+        if (!(context.document instanceof SchemaDocument)) return null; // basically unreachable
+        SchemaDocument document = (SchemaDocument)context.document;
+        if (document.getSchemaIdentifier() == null) return null; // quickfix impossible
+        String schemaName = document.getSchemaIdentifier();
+        CodeAction action = basicQuickFix("Insert document definition '" + schemaName + "'", diagnostic);
+
+        Position insertPosition = CSTUtils.addPositions(diagnostic.getRange().getStart(), new Position(1, 0)); // one line below
+        int indent = diagnostic.getRange().getStart().getCharacter() + 4;
+        insertPosition.setCharacter(indent); // addPositions doesn't add character if line is different
+
+        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), "document " + schemaName + " {\n" + spaceIndent(indent + 4) + "\n" + spaceIndent(indent) + "}\n"));
         return action;
     }
 
@@ -136,6 +155,8 @@ public class QuickFixProvider implements CodeActionProvider {
                 case ACCESS_UNIMPORTED_FIELD:
                     result.add(Either.forRight(fixAccessUnimportedField(context, diagnostic)));
                     break;
+                case DOCUMENTLESS_SCHEMA:
+                    result.add(Either.forRight(fixDocumentlessSchema(context, diagnostic)));
                 default:
                     break;
             }

@@ -9,6 +9,7 @@ import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -35,11 +36,11 @@ public class IdentifyDocumentlessSchema extends Identifier {
             if (child.get(0).isSchemaASTInstance(documentElm.class)) return ret; // Found document
         }
 
-        // TODO: quickfix
         ret.add(new SchemaDiagnostic.Builder()
             .setRange(node.get(0).getRange())
             .setMessage("Missing mandatory document definition in schema body.")
             .setSeverity(DiagnosticSeverity.Error)
+            .setCode(DiagnosticCode.DOCUMENTLESS_SCHEMA)
             .build());
         return ret;
 	}

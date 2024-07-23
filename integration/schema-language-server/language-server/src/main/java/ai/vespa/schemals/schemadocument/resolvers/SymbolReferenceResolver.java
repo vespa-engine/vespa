@@ -181,7 +181,6 @@ public class SymbolReferenceResolver {
                     // however this case is actually only valid in an import field statement.
                     // So we should add an error if thats not the case
                     if (!node.getParent().isASTInstance(importField.class)) {
-                        // TODO: quickfix
                         diagnostics.add(new SchemaDiagnostic.Builder()
                                 .setRange( node.getRange())
                                 .setMessage( "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly. Hint: Add an import field statement to access the field.")
