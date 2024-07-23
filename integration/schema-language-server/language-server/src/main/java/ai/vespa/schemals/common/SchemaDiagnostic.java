@@ -4,6 +4,8 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.index.Symbol;
+
 /**
  * SchemaDiagnostic
  */
@@ -11,7 +13,8 @@ public class SchemaDiagnostic {
     public static enum DiagnosticCode {
         GENERIC,
         SCHEMA_NAME_SAME_AS_FILE,
-        DOCUMENT_NAME_SAME_AS_SCHEMA
+        DOCUMENT_NAME_SAME_AS_SCHEMA,
+        ACCESS_UNIMPORTED_FIELD
     };
 
     /**

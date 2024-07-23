@@ -77,6 +77,12 @@ public class CSTUtils {
         return new Position(line, column);
     }
 
+    public static Range unionRanges(Range a, Range b) {
+        Position newStart = positionLT(a.getStart(), b.getStart()) ? a.getStart() : b.getStart(); // the smaller of the two
+        Position newEnd   = positionLT(a.getEnd(), b.getEnd()) ? b.getEnd() : a.getEnd(); // the larger of the two
+        return new Range(newStart, newEnd);
+    }
+
     public static Range addPositionToRange(Position lhs, Range rhs) {
         return new Range(
             addPositions(lhs, rhs.getStart()),
