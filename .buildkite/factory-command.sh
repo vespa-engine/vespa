@@ -81,7 +81,7 @@ case $COMMAND in
         \"status\": \"$STATUS\",
         \"description\": \"$DESCRIPTION\"
     }" \
-    "$FACTORY_API/builds/$SD_BUILD_ID/status"
+    "$FACTORY_API/builds/$FACTORY_BUILD_NUMBER/status"
     ;;
   update-released-time)
     VERSION=$1
