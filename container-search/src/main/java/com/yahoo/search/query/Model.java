@@ -127,7 +127,8 @@ public class Model implements Cloneable {
         language = Language.fromEncoding(encoding);
         if (language != Language.UNKNOWN) return language;
 
-        if (queryTree != null)
+        // If we have no user-supplied text to detect from, use the language detected from any query item
+        if (languageDetectionText.isEmpty() && queryTree != null)
             language = languageBelow(queryTree);
         if (language != Language.UNKNOWN) return language;
 
@@ -231,7 +232,6 @@ public class Model implements Cloneable {
 
     /**
      * Returns the query string which caused the original query tree of this model to come about.
-     * Note that changes to the query tree are <b>not</b> reflected in this query string.
      * Note that changes to the query tree are <b>not</b> reflected in this query string.
      *
      * @return the original (or reassigned) query string - never null

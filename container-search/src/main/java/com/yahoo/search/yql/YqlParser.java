@@ -345,6 +345,7 @@ public class YqlParser implements Parser {
 
     private Item convertExpression(OperatorNode<ExpressionOperator> ast) {
         try {
+
             annotationStack.addFirst(ast);
             return switch (ast.getOperator()) {
                 case AND -> buildAnd(ast);
@@ -837,7 +838,6 @@ public class YqlParser implements Parser {
 
         Optional<Language> explicitLanguage = currentlyParsing.getExplicitLanguage();
         if (explicitLanguage.isPresent()) return explicitLanguage.get();
-
         language = detector.detect(wordData, null).getLanguage();
         if (language != Language.UNKNOWN) return language;
 
@@ -874,8 +874,13 @@ public class YqlParser implements Parser {
         if ( ! allowNullItem && (item == null || item instanceof NullItem))
             throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
 
-        if (language != Language.ENGLISH) // mark the language used, unless it's the default
+        // mark the language used, unless it's the default
+        if (language != Language.ENGLISH)
             item.setLanguage(language);
+
+        // userInput should determine the overall language if not set explicitly
+        if (userQuery != null && userQuery.getModel().getLanguage() == null)
+            userQuery.getModel().setLanguage(language);
         return item;
     }
 
