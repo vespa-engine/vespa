@@ -59,7 +59,6 @@ public class SchemaSemanticTokens implements Visitor {
         add(SemanticTokenModifiers.DefaultLibrary);
     }};
 
-    // Keyword
     private static final List<SymbolType> userDefinedSymbolTypes = new ArrayList<SymbolType>() {{
         add(SymbolType.SCHEMA);
         add(SymbolType.DOCUMENT);
@@ -80,40 +79,65 @@ public class SchemaSemanticTokens implements Visitor {
         add(SymbolType.LAMBDA_FUNCTION);
     }};
 
+    // Keyword
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
+        add(TokenType.ALIAS);
         add(TokenType.ANNOTATION);
+        add(TokenType.APPROXIMATE_THRESHOLD);
+        add(TokenType.AS);
+        add(TokenType.ATTRIBUTE);
+        add(TokenType.BOLDING);
+        add(TokenType.CONSTANT);
+        add(TokenType.CONSTANTS);
+        add(TokenType.DIVERSITY);
         add(TokenType.DOCUMENT);
+        add(TokenType.DOCUMENT_SUMMARY);
         add(TokenType.FIELD);
+        add(TokenType.FIELDS);
         add(TokenType.FIELDSET); 
         add(TokenType.FIRST_PHASE);
-        add(TokenType.SECOND_PHASE);
+        add(TokenType.FUNCTION);
         add(TokenType.GLOBAL_PHASE);
+        add(TokenType.ID);
+        add(TokenType.IGNORE_DEFAULT_RANK_FEATURES);
+        add(TokenType.IMPORT);
+        add(TokenType.INDEX);
+        add(TokenType.INDEXING);
         add(TokenType.INHERITS);
+        add(TokenType.INPUTS);
+        add(TokenType.MACRO);
+        add(TokenType.MATCH);
+        add(TokenType.MATCHFEATURES_SL);
+        add(TokenType.MATCH_PHASE);
+        add(TokenType.MUTATE);
+        add(TokenType.NORMALIZING);
+        add(TokenType.NUM_SEARCH_PARTITIONS);
+        add(TokenType.NUM_THREADS_PER_SEARCH);
+        add(TokenType.ONNX_MODEL);
+        add(TokenType.POST_FILTER_THRESHOLD);
+        add(TokenType.QUERY_COMMAND);
+        add(TokenType.RANK);
+        add(TokenType.RANKFEATURES_SL);
         add(TokenType.RANK_PROFILE);
+        add(TokenType.RANK_PROPERTIES);
+        add(TokenType.RANK_TYPE);
+        add(TokenType.RAW_AS_BASE64_IN_SUMMARY);
         add(TokenType.SCHEMA);
         add(TokenType.SEARCH);
+        add(TokenType.SECOND_PHASE);
+        add(TokenType.SORTING);
+        add(TokenType.STEMMING);
+        add(TokenType.STRICT);
         add(TokenType.STRUCT);
         add(TokenType.STRUCT_FIELD);
-        add(TokenType.TYPE);
-        add(TokenType.FUNCTION);
-        add(TokenType.MACRO);
-        add(TokenType.RANK_PROPERTIES);
-        add(TokenType.MATCHFEATURES_SL);
-        add(TokenType.SUMMARYFEATURES_SL);
-        add(TokenType.IMPORT);
-        add(TokenType.INPUTS);
-        add(TokenType.CONSTANTS);
-        add(TokenType.DOCUMENT_SUMMARY);
-        add(TokenType.AS);
         add(TokenType.SUMMARY);
-        add(TokenType.INDEXING);
-        add(TokenType.MATCH);
-        add(TokenType.RANK);
-        add(TokenType.RANK_TYPE);
+        add(TokenType.SUMMARYFEATURES_SL);
+        add(TokenType.SUMMARY_TO);
+        add(TokenType.TARGET_HITS_MAX_ADJUSTMENT_FACTOR);
+        add(TokenType.TERMWISE_LIMIT);
+        add(TokenType.TYPE);
         add(TokenType.WEIGHT);
-        add(TokenType.BOLDING);
-        add(TokenType.ID);
-        add(TokenType.QUERY_COMMAND);
+        add(TokenType.WEIGHTEDSET);
     }};
 
     // Other
