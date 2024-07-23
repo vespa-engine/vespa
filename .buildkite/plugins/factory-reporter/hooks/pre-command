@@ -14,7 +14,7 @@ if [[ -z $PIPELINE ]]; then
     exit 0
 fi
 
-if [[ -z $FIRST_STEP ]] || [[ $FIRST_STEP != true ]]; then
+if [[ -z $FIRST_STEP ]] || [[ $FIRST_STEP != "true" ]]; then
     echo "Not first step, skipping build creation"
     exit 0
 fi
