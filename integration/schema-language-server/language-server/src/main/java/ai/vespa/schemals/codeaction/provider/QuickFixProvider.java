@@ -125,9 +125,11 @@ public class QuickFixProvider implements CodeActionProvider {
 
         Position insertPosition = CSTUtils.addPositions(diagnostic.getRange().getStart(), new Position(1, 0)); // one line below
         int indent = diagnostic.getRange().getStart().getCharacter() + 4;
-        insertPosition.setCharacter(indent); // addPositions doesn't add character if line is different
-
-        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), "document " + schemaName + " {\n" + spaceIndent(indent + 4) + "\n" + spaceIndent(indent) + "}\n"));
+        insertPosition.setCharacter(0);
+        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), spaceIndent(indent) + 
+                    "document " + schemaName + " {\n" + 
+                        spaceIndent(indent + 4) + "\n" + 
+                    spaceIndent(indent) + "}\n"));
         return action;
     }
 
