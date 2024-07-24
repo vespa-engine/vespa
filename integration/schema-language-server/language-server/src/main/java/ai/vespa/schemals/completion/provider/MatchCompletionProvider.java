@@ -12,14 +12,14 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 public class MatchCompletionProvider implements CompletionProvider {
 
-	@Override
-	public boolean match(EventPositionContext context) {
-        return ((SchemaDocument)context.document).lexer.matchBackwards(context.position, 1, true, TokenType.MATCH, TokenType.COLON) != null;
+	private boolean match(EventPositionContext context) {
+        return context.document.lexer().matchBackwards(context.position, 1, true, TokenType.MATCH, TokenType.COLON) != null;
 	}
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
-        if (!(context.document instanceof SchemaDocument)) return new ArrayList<>();
+        if (!(context.document instanceof SchemaDocument)) return List.of();
+        if (!match(context)) return List.of();
         return List.of(new CompletionItem[]{
             CompletionUtils.constructBasic("text"), 
             CompletionUtils.constructBasic("word"), 

@@ -16,8 +16,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public class EmptyFileProvider implements CompletionProvider {
 
-	@Override
-	public boolean match(EventPositionContext context) {
+	private boolean match(EventPositionContext context) {
         DocumentManager document = context.document;
 
         if (document.getCurrentContent() == null || document.getCurrentContent().isBlank()) return true;
@@ -32,6 +31,7 @@ public class EmptyFileProvider implements CompletionProvider {
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+        if (!match(context)) return List.of();
 
         String fileName = FileUtils.schemaNameFromPath(context.document.getFileURI()); // without extension
         if (fileName == null) return new ArrayList<>();

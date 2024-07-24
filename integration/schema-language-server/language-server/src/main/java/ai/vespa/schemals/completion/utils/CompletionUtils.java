@@ -31,4 +31,11 @@ public class CompletionUtils {
         item.setLabel(label);
         return item;
     }
+
+    public static CompletionItem constructBasic(String label, String detail) {
+        CompletionItem item = new CompletionItem();
+        item.setLabel(label);
+        item.setDetail(detail);
+        return item;
+    }
 }

@@ -21,6 +21,8 @@ public interface DocumentManager {
 
     public SchemaNode getRootNode();
 
+    public SchemaDocumentLexer lexer();
+
     public String getFileURI();
 
     public String getCurrentContent();

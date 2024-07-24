@@ -21,6 +21,7 @@ public class RankProfileDocument implements DocumentManager {
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
     private SchemaDocumentScheduler scheduler;
+    private SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
     private String fileURI;
     private String content = null;
@@ -56,6 +57,7 @@ public class RankProfileDocument implements DocumentManager {
         logger.println("CST FOR RANK PROFILE " + this.fileURI);
         if (result.CST().isPresent()) {
             this.CST = result.CST().get();
+            lexer.setCST(CST);
             CSTUtils.printTree(logger, result.CST().get());
         }
     }
@@ -115,4 +117,9 @@ public class RankProfileDocument implements DocumentManager {
     public VersionedTextDocumentIdentifier getVersionedTextDocumentIdentifier() {
         return new VersionedTextDocumentIdentifier(fileURI, null);
     }
+
+	@Override
+	public SchemaDocumentLexer lexer() {
+        return this.lexer;
+	}
 }

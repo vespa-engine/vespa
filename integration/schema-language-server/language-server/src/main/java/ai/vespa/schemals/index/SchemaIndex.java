@@ -295,6 +295,7 @@ public class SchemaIndex {
     }
 
     public boolean isInScope(Symbol symbol, Symbol scope) {
+        if (scope == null) return true; // lets say every symbol is in the empty scope
         if (scope.getType() == SymbolType.RANK_PROFILE) {
             return !rankProfileInheritanceGraph.findFirstMatches(scope, 
                     rankProfileDefinitionSymbol -> {

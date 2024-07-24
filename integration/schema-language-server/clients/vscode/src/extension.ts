@@ -38,12 +38,12 @@ export function activate(context: vscode.ExtensionContext) {
 			scheme: 'file',
 			language: 'vespaSchema',
 		}],
-		middleware: {
+		middleware: { 
 			provideCompletionItem: async (document, position, context, token, next) => {
 				// console.log(document)
 				// console.log(position)
 				// console.log(context)
-				// console.log(token)
+				// console.log(token)ra
 				const r = await next(document, position, context, token)
 
 				return r

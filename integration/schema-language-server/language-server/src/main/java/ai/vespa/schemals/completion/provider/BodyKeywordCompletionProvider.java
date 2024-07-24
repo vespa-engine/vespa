@@ -165,14 +165,9 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
     }
 
     @Override
-    public boolean match(EventPositionContext context) {
-        return getEnclosingBodyKey(context) != null;
-    }
-
-    @Override
     public List<CompletionItem> getCompletionItems(EventPositionContext context) {
         String key = getEnclosingBodyKey(context);
-        if (key == null)return new ArrayList<>();
+        if (key == null)return List.of();
         return List.of(bodyKeywordSnippets.get(key));
     }
 }

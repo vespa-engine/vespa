@@ -62,7 +62,7 @@ public class SchemaDocument implements DocumentManager {
     
     private SchemaNode CST;
 
-    public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
+    private SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
     public SchemaDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler, String fileURI) {
         this.logger = logger;
@@ -114,7 +114,7 @@ public class SchemaDocument implements DocumentManager {
  
         CSTUtils.printTree(logger, CST);
 
-        schemaIndex.dumpIndex();
+        //schemaIndex.dumpIndex();
 
     }
 
@@ -261,8 +261,6 @@ public class SchemaDocument implements DocumentManager {
             return ParseResult.parsingFailed(diagnostics);
         }
 
-        context.logger().println("Trying fault tolerant");
-
         SchemaParser parserFaultTolerant = new SchemaParser(context.fileURI(), sequence);
         try {
             parserFaultTolerant.Root();
@@ -272,7 +270,6 @@ public class SchemaDocument implements DocumentManager {
             // Ignore
         }
 
-        context.logger().println("Proceeding to resolving");
         Node node = parserFaultTolerant.rootNode();
 
         var tolerantResult = parseCST(node, context);
@@ -293,8 +290,6 @@ public class SchemaDocument implements DocumentManager {
 
         
         if (tolerantResult.CST().isPresent()) {
-            context.logger().println("Traversal");
-
             //diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 
             diagnostics.addAll(StructFieldDefinitionResolver.resolve(context, tolerantResult.CST().get()));
@@ -454,5 +449,10 @@ public class SchemaDocument implements DocumentManager {
 	@Override
 	public String getCurrentContent() {
         return this.content;
+	}
+
+	@Override
+	public SchemaDocumentLexer lexer() {
+        return this.lexer;
 	}
 }

@@ -12,7 +12,6 @@ import ai.vespa.schemals.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
-import ai.vespa.schemals.schemadocument.SchemaDocumentLexer.LexicalToken;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.index.Symbol;
@@ -26,25 +25,24 @@ public class TypeCompletionProvider implements CompletionProvider {
         TokenType.WEIGHTEDSET
     };
 
-    @Override
-    public boolean match(EventPositionContext context) {
-        SchemaDocumentLexer lexer = ((SchemaDocument)context.document).lexer;
-        LexicalToken match = lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE);
-        if (match != null && match.range().getStart().getLine() == context.position.getLine()) {
+    private boolean match(EventPositionContext context) {
+        SchemaDocumentLexer lexer = context.document.lexer();
+        SchemaNode match = lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE);
+        if (match != null && match.getRange().getStart().getLine() == context.position.getLine()) {
             return true;
         }
         match = lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE, TokenType.IDENTIFIER);
-        if (match != null && match.range().getStart().getLine() == context.position.getLine()) {
+        if (match != null && match.getRange().getStart().getLine() == context.position.getLine()) {
             return true;
         }
 
         for (TokenType tokenType : compoundTypes) {
             match = lexer.matchBackwards(context.position, 3, true, tokenType, TokenType.LESSTHAN);
-            if (match != null && match.range().getStart().getLine() == context.position.getLine())return true;
+            if (match != null && match.getRange().getStart().getLine() == context.position.getLine())return true;
 
             // Dirty gt symbols are inserted when incomplete type is written
             match = lexer.tokenAtOrBeforePosition(context.position, false);
-            if (match != null && match.type() == TokenType.GREATERTHAN && match.isDirty())return true;
+            if (match != null && match.getDirtyType() == TokenType.GREATERTHAN && match.getIsDirty())return true;
         }
 
 
@@ -53,7 +51,8 @@ public class TypeCompletionProvider implements CompletionProvider {
 
     @Override
     public List<CompletionItem> getCompletionItems(EventPositionContext context) {
-        if (!(context.document instanceof SchemaDocument)) return new ArrayList<>();
+        if (!(context.document instanceof SchemaDocument)) return List.of();
+        if (!match(context)) return List.of();
         List<CompletionItem> items = new ArrayList<>() {{
             add(CompletionUtils.constructSnippet("annotationreference", "annotationreference<$1>"));
             add(CompletionUtils.constructSnippet("array", "array<$1>"));

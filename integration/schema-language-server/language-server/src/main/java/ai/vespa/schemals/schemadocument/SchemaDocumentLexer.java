@@ -2,6 +2,7 @@ package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -19,9 +20,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  * */
 public class SchemaDocumentLexer {
     private SchemaNode CST;
-    private ArrayList<LexicalToken> tokens = new ArrayList<>();
-
-    public record LexicalToken(Token.TokenType type, Range range, boolean isDirty) { }
+    private List<SchemaNode> tokens = new ArrayList<>();
 
     public void setCST(SchemaNode CST) {
         this.CST = CST;
@@ -31,18 +30,18 @@ public class SchemaDocumentLexer {
     }
 
     public void dumpTokens(PrintStream logger) {
-        for (var token : tokens) {
-            Position start = token.range().getStart();
-            Position end = token.range().getEnd();
+        for (var node : tokens) {
+            Position start = node.getRange().getStart();
+            Position end = node.getRange().getEnd();
             logger.println(
-                token.type().toString() + 
-                (token.isDirty() ? " [DIRTY]" : "") +
+                node.getDirtyType().toString() + 
+                (node.getIsDirty() ? " [DIRTY]" : "") +
                 ", (" + start.getLine() + ", " + start.getCharacter() + ") - (" + end.getLine() + ", " + end.getCharacter() + ")");
         }
     }
 
 
-    public LexicalToken tokenAtOrBeforePosition(Position pos, boolean skipNL) {
+    public SchemaNode tokenAtOrBeforePosition(Position pos, boolean skipNL) {
         int index = indexOfPosition(pos, skipNL);
         if (index == -1)return null;
 
@@ -61,7 +60,7 @@ public class SchemaDocumentLexer {
      *
      * TODO: The ideal pattern whould be some kind of regular expression
      * */
-    public LexicalToken matchBackwards(Position pos, int allowSkip, boolean allowDirty, Token.TokenType... pattern) {
+    public SchemaNode matchBackwards(Position pos, int allowSkip, boolean allowDirty, Token.TokenType... pattern) {
         int index = indexOfPosition(pos, false);
         if (index == -1)return null;
         int skipped = 0;
@@ -69,11 +68,11 @@ public class SchemaDocumentLexer {
         for (int patternStart = index - pattern.length + 1; patternStart >= 0 && skipped <= allowSkip; patternStart--, skipped++) {
             boolean matched = true;
             for (int i = 0; i < pattern.length; i++) {
-                if (pattern[i] != tokens.get(patternStart + i).type()) {
+                if (pattern[i] != tokens.get(patternStart + i).getDirtyType()) {
                     matched = false;
                 }
 
-                if (tokens.get(patternStart + i).isDirty() && !allowDirty) {
+                if (tokens.get(patternStart + i).getIsDirty() && !allowDirty) {
                     matched = false;
                 }
             }
@@ -91,8 +90,8 @@ public class SchemaDocumentLexer {
     private int indexOfPosition(Position pos, boolean skipNL) {
         int lastIndex = -1;
         for (int i = 0; i < tokens.size(); i++) {
-            if (skipNL && tokens.get(i).type() == Token.TokenType.NL) continue;
-            if (CSTUtils.positionLT(pos, tokens.get(i).range().getStart())) break;
+            if (skipNL && tokens.get(i).getDirtyType() == Token.TokenType.NL) continue;
+            if (CSTUtils.positionLT(pos, tokens.get(i).getRange().getStart())) break;
             lastIndex = i;
         }
         return lastIndex;
@@ -101,7 +100,7 @@ public class SchemaDocumentLexer {
     private void collectAllTokens(SchemaNode node) {
         if (node == null)return;
         if (node.getDirtyType() != null) {
-            tokens.add(new LexicalToken(node.getDirtyType(), node.getRange(), node.getIsDirty()));
+            tokens.add(node);
         }
         for (SchemaNode child : node) {
             collectAllTokens(child);
