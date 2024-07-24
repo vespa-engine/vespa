@@ -50,11 +50,13 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
+import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.codeaction.SchemaCodeAction;
 import ai.vespa.schemals.lsp.completion.SchemaCompletion;
 import ai.vespa.schemals.lsp.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.documentsymbols.SchemaDocumentSymbols;
 import ai.vespa.schemals.lsp.hover.SchemaHover;
 import ai.vespa.schemals.lsp.references.SchemaReferences;
 import ai.vespa.schemals.lsp.rename.SchemaPrepareRename;
@@ -125,8 +127,15 @@ public class SchemaTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
             DocumentSymbolParams params) {
-        // TODO Auto-generated method stub
-        return TextDocumentService.super.documentSymbol(params);
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            try {
+                EventContext context = eventContextCreator.createContext(params);
+                return SchemaDocumentSymbols.documentSymbols(context);
+            } catch(Exception e) {
+                logger.println("Error during document symbol handling: " + e.getMessage());
+            }
+            return List.of();
+        });
     }
 
     @Override

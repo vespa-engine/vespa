@@ -508,7 +508,7 @@ public class SchemaIndex {
     /**
      * Searches for symbols in the specified scope of one of the given types.
      *
-     * @param scope The symbol representing the scope to search in.
+     * @param scope The symbol representing the scope to search in. If null it will return all symbols with the given type.
      * @param types The types of symbols to find.
      * @return A list of symbols found in the specified scope and of one of the given types.
      */

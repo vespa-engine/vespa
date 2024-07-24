@@ -33,11 +33,6 @@ public class FieldsCompletionProvider implements CompletionProvider {
         return false;
     }
 
-    private String longIdentifierWithoutSchemaOrDocument(Symbol symbol) {
-        if (symbol.getScope() == null || symbol.getScope().getType() == SymbolType.DOCUMENT || symbol.getScope().getType() == SymbolType.SCHEMA)return symbol.getShortIdentifier();
-        return longIdentifierWithoutSchemaOrDocument(symbol.getScope()) + "." + symbol.getShortIdentifier();
-    }
-
     private int previousBeforeDot(String documentContent, Position position) {
         int originalOffset = StringUtils.positionToOffset(documentContent, position);
         for (int offset = originalOffset - 1; offset >= 0; --offset) {
@@ -88,7 +83,7 @@ public class FieldsCompletionProvider implements CompletionProvider {
             List<Symbol> fieldSymbols = context.schemaIndex.listSymbolsInScope(scope.get(), SymbolType.FIELD);
 
             return fieldSymbols.stream()
-                               .map(symbol -> CompletionUtils.constructBasic(longIdentifierWithoutSchemaOrDocument(symbol)))
+                               .map(symbol -> CompletionUtils.constructBasic(symbol.getPrettyIdentifier()))
                                .collect(Collectors.toList());
         }
 	}

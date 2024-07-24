@@ -82,7 +82,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         String workspaceRootURI = initializeParams.getWorkspaceFolders().get(0).getUri();
         this.schemaIndex.setWorkspaceURI(workspaceRootURI);
 
-        // Set the capabilities of the LS to inform the client.
+        // Set the LSP capabilities of the server to inform the client.
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         var completionOptions = new CompletionOptions();
         completionOptions.setTriggerCharacters(List.of("."));
@@ -92,9 +92,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setReferencesProvider(true);
         initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
+        initializeResult.getCapabilities().setDocumentSymbolProvider(true);
 
         var options = new CodeActionOptions(new ArrayList<>() {{ add(CodeActionKind.QuickFix);}});
-        //options.setResolveProvider(true); TODO: lazy resolve
         initializeResult.getCapabilities().setCodeActionProvider(options);
 
         this.schemaDocumentScheduler.setReparseDescendants(false);

@@ -83,6 +83,18 @@ public class Symbol {
         return scope.getLongIdentifier() + "." + getShortIdentifier();
     }
 
+    /*
+     * Same as long identifier, but without SCHEMA and DOCUMENT
+     * Mainly for rendering purposes in LSP
+     */
+    public String getPrettyIdentifier() {
+        if (type == SymbolType.DOCUMENT || type == SymbolType.SCHEMA) return getShortIdentifier();
+        if (scope == null 
+                || scope.getType() == SymbolType.DOCUMENT 
+                || scope.getType() == SymbolType.SCHEMA) return getShortIdentifier();
+        return scope.getPrettyIdentifier() + "." + getShortIdentifier();
+    }
+
     public Location getLocation() {
         return new Location(fileURI, identifierNode.getRange());
     }
