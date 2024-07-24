@@ -20,6 +20,7 @@ import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
@@ -248,6 +249,29 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private CodeAction fixAnnotationReferenceOutsideAnnotation(EventCodeActionContext context, Diagnostic diagnostic) {
+        SchemaNode offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
+        if (offendingNode == null) return null;
+
+        SchemaNode fieldElmNode = offendingNode;
+
+        while (fieldElmNode != null && !fieldElmNode.isASTInstance(fieldElm.class)) fieldElmNode = fieldElmNode.getParent();
+
+        if (fieldElmNode == null) return null;
+
+        CodeAction action = basicQuickFix("Enclose field in annotation", diagnostic);
+
+        String fieldBody = fieldElmNode.getText().replace("\n", "\n    ");
+        Position insertPosition = fieldElmNode.getRange().getStart();
+        int indent = insertPosition.getCharacter();
+
+        action.setEdit(simpleEdit(context, fieldElmNode.getRange(), 
+            "annotation myannotation {\n" + spaceIndent(indent + 4) + fieldBody + "\n" + spaceIndent(indent) + "}"
+        ));
+
+        return action;
+    }
+
 	@Override
 	public List<Either<Command, CodeAction>> getActions(EventCodeActionContext context) {
         List<Either<Command, CodeAction>> result = new ArrayList<>();
@@ -274,14 +298,22 @@ public class QuickFixProvider implements CodeActionProvider {
                     break;
                 case DOCUMENTLESS_SCHEMA:
                     result.add(Either.forRight(fixDocumentlessSchema(context, diagnostic)));
+                    break;
                 case DOCUMENT_REFERENCE_ATTRIBUTE:
                     result.add(Either.forRight(fixDocumentReferenceAttribute(context, diagnostic)));
+                    break;
                 case IMPORT_FIELD_ATTRIBUTE:
                     result.add(Either.forRight(fixImportFieldAttribute(context, diagnostic)));
+                    break;
                 case EXPLICITLY_INHERIT_DOCUMENT:
                     result.add(Either.forRight(fixExplicitlyInheritDocument(context, diagnostic)));
+                    break;
                 case INHERITS_STRUCT_FIELD_REDECLARED:
                     result.add(Either.forRight(fixInheritsStructFieldRedeclared(context, diagnostic)));
+                    break;
+                case ANNOTATION_REFERENCE_OUTSIDE_ANNOTATION:
+                    result.add(Either.forRight(fixAnnotationReferenceOutsideAnnotation(context, diagnostic)));
+                    break;
                 default:
                     break;
             }

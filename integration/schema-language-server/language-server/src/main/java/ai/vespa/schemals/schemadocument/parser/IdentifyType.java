@@ -24,6 +24,7 @@ import ai.vespa.schemals.parser.ast.inputElm;
 import ai.vespa.schemals.parser.ast.valueType;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -63,6 +64,7 @@ public class IdentifyType extends Identifier {
                         .setRange( node.getRange())
                         .setMessage( "annotationreference should only be used inside an annotation")
                         .setSeverity( DiagnosticSeverity.Error)
+                        .setCode(DiagnosticCode.ANNOTATION_REFERENCE_OUTSIDE_ANNOTATION)
                         .build() );
             }
         }
