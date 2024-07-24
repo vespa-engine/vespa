@@ -20,6 +20,7 @@ import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.openLbrace;
@@ -272,6 +273,18 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private CodeAction fixDeprecatedArraySyntax(EventCodeActionContext context, Diagnostic diagnostic) {
+        SchemaNode tokenNode = CSTUtils.getLeafNodeAtPosition(context.document.getRootNode(), context.position);
+        if (tokenNode == null) return null;
+        if (!tokenNode.getParent().getParent().isASTInstance(dataType.class))return null;
+
+        String typeText = tokenNode.getText();
+        CodeAction action = basicQuickFix("Change to array<" + typeText + ">", diagnostic);
+
+        action.setEdit(simpleEdit(context, tokenNode.getParent().getParent().getRange(), "array<" + typeText + ">"));
+        return action;
+    }
+
 	@Override
 	public List<Either<Command, CodeAction>> getActions(EventCodeActionContext context) {
         List<Either<Command, CodeAction>> result = new ArrayList<>();
@@ -313,6 +326,9 @@ public class QuickFixProvider implements CodeActionProvider {
                     break;
                 case ANNOTATION_REFERENCE_OUTSIDE_ANNOTATION:
                     result.add(Either.forRight(fixAnnotationReferenceOutsideAnnotation(context, diagnostic)));
+                    break;
+                case DEPRECATED_ARRAY_SYNTAX:
+                    result.add(Either.forRight(fixDeprecatedArraySyntax(context, diagnostic)));
                     break;
                 default:
                     break;

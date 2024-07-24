@@ -55,6 +55,7 @@ public class IdentifyType extends Identifier {
                     .setRange(node.getRange())
                     .setMessage("Data type syntax '" + nodeText + "[]' is deprecated, use 'array<" + nodeText + ">' instead.")
                     .setSeverity(DiagnosticSeverity.Warning)
+                    .setCode(DiagnosticCode.DEPRECATED_ARRAY_SYNTAX)
                     .build());
         }
 
