@@ -29,11 +29,7 @@ public class IdentifySchemaInheritance extends Identifier {
         if (node.getPreviousSibling().getSchemaType() != TokenType.INHERITS) return ret;
 
         if (!node.hasSymbol()) {
-            ret.add(new SchemaDiagnostic.Builder()
-                .setRange(node.getRange())
-                .setMessage("Should be symbol reference")
-                .setSeverity(DiagnosticSeverity.Warning)
-                .build());
+            return ret;
         }
 
         context.setInheritsSchemaNode(node);

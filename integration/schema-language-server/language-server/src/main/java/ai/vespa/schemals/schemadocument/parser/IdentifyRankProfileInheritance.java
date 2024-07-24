@@ -25,11 +25,7 @@ public class IdentifyRankProfileInheritance extends Identifier {
         if (node.getParent() == null || !node.getParent().isASTInstance(inheritsRankProfile.class)) return ret;
 
         if (!node.hasSymbol()) {
-            ret.add(new SchemaDiagnostic.Builder()
-                .setRange(node.getRange())
-                .setMessage("Should be reference")
-                .setSeverity(DiagnosticSeverity.Warning)
-                .build());
+            return ret;
         }
 
         context.addUnresolvedInheritanceNode(node);

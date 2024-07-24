@@ -25,13 +25,10 @@ public class DocumentReferenceResolver {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
         SchemaDocument document = context.scheduler().getSchemaDocument(context.fileURI());
-        // TODO: better way to find document definition
         if (document == null) return diagnostics;
         Optional<Symbol> myDocumentDefinition = context.schemaIndex().findSymbol(null, SymbolType.DOCUMENT, document.getSchemaIdentifier());
 
         if (myDocumentDefinition.isEmpty()) return diagnostics;
-
-        // TODO: check for fields which are attributes (need at least one)
 
         for (SchemaNode documentReferenceNode : context.unresolvedDocumentReferenceNodes()) {
             // If it has not been resolved as a reference, we don't bother
