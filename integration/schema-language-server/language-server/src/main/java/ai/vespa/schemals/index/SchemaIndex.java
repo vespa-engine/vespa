@@ -544,6 +544,9 @@ public class SchemaIndex {
         logger.println(" === RANK PROFILE INHERITANCE === ");
         rankProfileInheritanceGraph.dumpAllEdges(logger);
 
+        logger.println(" === DOCUMENT REFERENCES === ");
+        documentReferenceGraph.dumpAllEdges(logger);
+
         logger.println(" === FIELD INDEX === ");
         fieldIndex.dumpIndex();
     }

@@ -11,6 +11,7 @@ import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -26,7 +27,7 @@ public class DocumentReferenceResolver {
         SchemaDocument document = context.scheduler().getSchemaDocument(context.fileURI());
         // TODO: better way to find document definition
         if (document == null) return diagnostics;
-        Optional<Symbol> myDocumentDefinition = context.schemaIndex().getSchemaDefinition(document.getSchemaIdentifier());
+        Optional<Symbol> myDocumentDefinition = context.schemaIndex().findSymbol(null, SymbolType.DOCUMENT, document.getSchemaIdentifier());
 
         if (myDocumentDefinition.isEmpty()) return diagnostics;
 

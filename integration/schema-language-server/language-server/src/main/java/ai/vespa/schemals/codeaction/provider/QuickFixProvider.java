@@ -26,6 +26,7 @@ import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.rename.SchemaRename;
+import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -36,17 +37,25 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public class QuickFixProvider implements CodeActionProvider {
 
-    private WorkspaceEdit simpleEditList(EventCodeActionContext context, List<TextEdit> edits) {
+    private WorkspaceEdit simpleEditList(EventCodeActionContext context, List<TextEdit> edits, DocumentManager document) {
         WorkspaceEdit workspaceEdit = new WorkspaceEdit();
         TextDocumentEdit textDocumentEdit = new TextDocumentEdit();
-        textDocumentEdit.setTextDocument(context.document.getVersionedTextDocumentIdentifier());
+        textDocumentEdit.setTextDocument(document.getVersionedTextDocumentIdentifier());
         textDocumentEdit.setEdits(edits.stream().filter(edit -> edit != null).toList());
         workspaceEdit.setDocumentChanges(List.of(Either.forLeft(textDocumentEdit)));
         return workspaceEdit;
     }
 
+    private WorkspaceEdit simpleEditList(EventCodeActionContext context, List<TextEdit> edits) {
+        return simpleEditList(context, edits, context.document);
+    }
+
     private WorkspaceEdit simpleEdit(EventCodeActionContext context, Range range, String newText) {
         return simpleEditList(context, List.of(new TextEdit(range, newText)));
+    }
+
+    private WorkspaceEdit simpleEdit(EventCodeActionContext context, Range range, String newText, DocumentManager document) {
+        return simpleEditList(context, List.of(new TextEdit(range, newText)), document);
     }
 
     private CodeAction basicQuickFix(String title, Diagnostic fixFor) {
@@ -156,7 +165,7 @@ public class QuickFixProvider implements CodeActionProvider {
         if (fieldIdentifierNode == null) return null;
 
         // TODO: maybe append to existing indexing script if possible
-        //       also works poorly for fields outside document, since their indexing scripts require input.
+        //       Also works poorly for fields outside document, since their indexing scripts require input.
         Position insertPosition = firstPositionInBlock(fieldIdentifierNode.getParent());
         if (insertPosition == null)return null;
 
@@ -166,6 +175,34 @@ public class QuickFixProvider implements CodeActionProvider {
 
         action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), 
             "\n" + spaceIndent(indent) + "indexing: attribute\n" + spaceIndent(indent - 4)
+        ));
+
+        return action;
+    }
+
+    private CodeAction fixImportFieldAttribute(EventCodeActionContext context, Diagnostic diagnostic) {
+
+        SchemaNode importReferenceNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        if (importReferenceNode == null) return null;
+
+        Symbol referenceSymbol = importReferenceNode.getSymbol();
+
+        Optional<Symbol> definitionSymbol = context.schemaIndex.getSymbolDefinition(referenceSymbol);
+
+        if (definitionSymbol.isEmpty()) return null;
+
+        SchemaNode definitionFieldElm = definitionSymbol.get().getNode().getParent();
+
+        DocumentManager definitionDocument = context.scheduler.getDocument(definitionSymbol.get().getFileURI());
+
+        Position insertPosition = firstPositionInBlock(definitionFieldElm);
+        CodeAction action = basicQuickFix("Set indexing to 'attribute' for field " + definitionSymbol.get().getLongIdentifier(), diagnostic);
+
+        int indent = definitionFieldElm.getRange().getStart().getCharacter() + 4;
+
+        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), 
+            "\n" + spaceIndent(indent) + "indexing: attribute\n" + spaceIndent(indent - 4),
+            definitionDocument
         ));
 
         return action;
@@ -199,6 +236,8 @@ public class QuickFixProvider implements CodeActionProvider {
                     result.add(Either.forRight(fixDocumentlessSchema(context, diagnostic)));
                 case DOCUMENT_REFERENCE_ATTRIBUTE:
                     result.add(Either.forRight(fixDocumentReferenceAttribute(context, diagnostic)));
+                case IMPORT_FIELD_ATTRIBUTE:
+                    result.add(Either.forRight(fixImportFieldAttribute(context, diagnostic)));
                 default:
                     break;
             }

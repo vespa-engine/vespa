@@ -15,6 +15,7 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 
 public class SchemaDocumentScheduler {
 
@@ -57,10 +58,10 @@ public class SchemaDocumentScheduler {
 
             // Reparse documents that holds references to this document
             String schemaIdentifier = ((SchemaDocument)workspaceFiles.get(fileURI)).getSchemaIdentifier();
-            Optional<Symbol> schemaDefinition = schemaIndex.getSchemaDefinition(schemaIdentifier);
+            Optional<Symbol> documentDefinition = schemaIndex.findSymbol(null, SymbolType.DOCUMENT, schemaIdentifier);
 
-            if (schemaDefinition.isPresent()) {
-                for (Symbol referencesThisDocument : schemaIndex.getDocumentReferenceGraph().getAllDescendants(schemaDefinition.get())) {
+            if (documentDefinition.isPresent()) {
+                for (Symbol referencesThisDocument : schemaIndex.getDocumentReferenceGraph().getAllDescendants(documentDefinition.get())) {
                     String descendantURI = referencesThisDocument.getFileURI();
                     if (!parsedURIs.contains(descendantURI) && workspaceFiles.containsKey(descendantURI)) {
                         workspaceFiles.get(referencesThisDocument.getFileURI()).reparseContent();

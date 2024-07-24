@@ -195,6 +195,7 @@ public class SymbolReferenceResolver {
                                 .setRange( node.getRange())
                                 .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is not an attribute field. Only attribute fields can be imported.")
                                 .setSeverity( DiagnosticSeverity.Error)
+                                .setCode(DiagnosticCode.IMPORT_FIELD_ATTRIBUTE)
                                 .build() );
                     } else if (referencedSymbolIndexingTypes.contains(IndexingType.INDEX)) {
                         // TODO: quickfix
