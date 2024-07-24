@@ -271,10 +271,6 @@
           <groupId>com.google.protobuf</groupId>
           <artifactId>protobuf-java</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>com.huaban</groupId>
-          <artifactId>jieba-analysis</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
