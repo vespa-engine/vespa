@@ -59,6 +59,11 @@ public class IdentifyType extends Identifier {
                     .build());
         }
 
+        if (parsedType == null) {
+            // some parsing error has occured
+            return ret;
+        }
+
         if (parsedType.getVariant() == Variant.ANN_REFERENCE) {
             if (!isInsideAnnotationBody(node)) {
                 ret.add(new SchemaDiagnostic.Builder()

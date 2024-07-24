@@ -136,7 +136,6 @@ public class SchemaDocument implements DocumentManager {
             schemaDocumentIdentifier = schemaIdentifier.getShortIdentifier();
 
             if (!getFileName().equals(schemaDocumentIdentifier + ".sd")) {
-                // TODO: quickfix
                 ret.add(new SchemaDiagnostic.Builder()
                     .setRange(schemaIdentifier.getNode().getRange())
                     .setMessage("Schema " + schemaDocumentIdentifier + " should be defined in a file with the name: " + schemaDocumentIdentifier + ".sd. File name is: " + getFileName())
@@ -262,6 +261,8 @@ public class SchemaDocument implements DocumentManager {
             return ParseResult.parsingFailed(diagnostics);
         }
 
+        context.logger().println("Trying fault tolerant");
+
         SchemaParser parserFaultTolerant = new SchemaParser(context.fileURI(), sequence);
         try {
             parserFaultTolerant.Root();
@@ -271,6 +272,7 @@ public class SchemaDocument implements DocumentManager {
             // Ignore
         }
 
+        context.logger().println("Proceeding to resolving");
         Node node = parserFaultTolerant.rootNode();
 
         var tolerantResult = parseCST(node, context);
@@ -291,6 +293,7 @@ public class SchemaDocument implements DocumentManager {
 
         
         if (tolerantResult.CST().isPresent()) {
+            context.logger().println("Traversal");
 
             //diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 

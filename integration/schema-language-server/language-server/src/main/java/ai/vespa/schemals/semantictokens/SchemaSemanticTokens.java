@@ -460,12 +460,16 @@ public class SchemaSemanticTokens implements Visitor {
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
+            for (SchemaNode child : node) {
+                ArrayList<SemanticTokenMarker> markers = traverseCST(child, logger);
+                ret.addAll(markers);
+            }
 
         } else if (node.isASTInstance(valueType.class)) {
 
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != -1) {
-                ret.add(new SemanticTokenMarker(0, node));
+                ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
         } else if (node.hasSymbol()) {

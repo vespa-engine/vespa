@@ -35,7 +35,7 @@ public class ValidateFieldSettings {
             // check if it is a document reference
             dataType dataTypeNode = (dataType)fieldIdentifierNode.getNextSibling().getNextSibling().getOriginalSchemaNode();
 
-            if (dataTypeNode.getParsedType().getVariant() == Variant.DOCUMENT) {
+            if (dataTypeNode.getParsedType() != null && dataTypeNode.getParsedType().getVariant() == Variant.DOCUMENT) {
                 var indexingTypes = context.fieldIndex().getFieldIndexingTypes(fieldIdentifierNode.getSymbol());
 
                 if (!indexingTypes.contains(IndexingType.ATTRIBUTE)) {
