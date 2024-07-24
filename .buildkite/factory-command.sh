@@ -65,11 +65,11 @@ case $COMMAND in
     ;;
   update-build-status)
     FACTORY_PIPELINE_ID=$1
-    FACTORY_BUILD_NUMBER=$2
-    STATUS=$3
-    DESCRIPTION=$4
-    if [[ -z $FACTORY_PIPELINE_ID ]] || [[ $FACTORY_BUILD_NUMBER ]] || [[ -z $STATUS ]] || [[ -z $DESCRIPTION ]]; then
-      echo "Usage: $0 $COMMAND <pipeline id> <build id> <status> <description>"
+    STATUS=$2
+    DESCRIPTION=$3
+    FACTORY_BUILD_NUMBER=$(( FACTORY_PIPELINE_ID << 32 | BUILDKITE_BUILD_NUMBER & 0xFFFFFF ))
+    if [[ -z $FACTORY_PIPELINE_ID ]] || [[ -z $STATUS ]] || [[ -z $DESCRIPTION ]]; then
+      echo "Usage: $0 $COMMAND <pipeline id> <status> <description>"
       exit 1
     fi
     $CURL -d "{
