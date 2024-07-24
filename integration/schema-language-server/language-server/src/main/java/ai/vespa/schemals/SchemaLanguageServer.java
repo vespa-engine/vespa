@@ -3,7 +3,7 @@ package ai.vespa.schemals;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
 
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;

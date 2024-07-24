@@ -1,18 +1,5 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.codeaction.SchemaCodeAction;
-import ai.vespa.schemals.completion.SchemaCompletion;
-import ai.vespa.schemals.context.EventCodeActionContext;
-import ai.vespa.schemals.context.EventContextCreator;
-import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.references.SchemaReferences;
-import ai.vespa.schemals.rename.SchemaPrepareRename;
-import ai.vespa.schemals.rename.SchemaRename;
-import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-import ai.vespa.schemals.definition.SchemaDefinition;
-import ai.vespa.schemals.hover.SchemaHover;
-import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +7,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.CodeAction;
-import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CodeLensParams;
@@ -38,6 +24,8 @@ import org.eclipse.lsp4j.DocumentHighlight;
 import org.eclipse.lsp4j.DocumentHighlightParams;
 import org.eclipse.lsp4j.DocumentOnTypeFormattingParams;
 import org.eclipse.lsp4j.DocumentRangeFormattingParams;
+import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
@@ -52,7 +40,7 @@ import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensDelta;
 import org.eclipse.lsp4j.SemanticTokensDeltaParams;
 import org.eclipse.lsp4j.SemanticTokensParams;
-import org.eclipse.lsp4j.TextDocumentEdit;
+import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.TextEdit;
@@ -61,6 +49,18 @@ import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 import org.eclipse.lsp4j.services.TextDocumentService;
+
+import ai.vespa.schemals.context.EventContextCreator;
+import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.lsp.codeaction.SchemaCodeAction;
+import ai.vespa.schemals.lsp.completion.SchemaCompletion;
+import ai.vespa.schemals.lsp.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.hover.SchemaHover;
+import ai.vespa.schemals.lsp.references.SchemaReferences;
+import ai.vespa.schemals.lsp.rename.SchemaPrepareRename;
+import ai.vespa.schemals.lsp.rename.SchemaRename;
+import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class SchemaTextDocumentService implements TextDocumentService {
 
@@ -92,6 +92,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
+    public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem completionItem) {
+        return null;
+    }
+
+
+    @Override
     public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
@@ -110,15 +116,17 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem completionItem) {
-        return null;
-    }
-
-    @Override
     public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             return SchemaReferences.getReferences(eventContextCreator.createContext(params));
         });
+    }
+
+    @Override
+    public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
+            DocumentSymbolParams params) {
+        // TODO Auto-generated method stub
+        return TextDocumentService.super.documentSymbol(params);
     }
 
     @Override

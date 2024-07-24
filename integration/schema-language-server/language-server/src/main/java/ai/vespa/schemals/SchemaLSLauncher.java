@@ -1,4 +1,3 @@
-
 package ai.vespa.schemals;
 
 import java.io.FileOutputStream;
