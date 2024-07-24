@@ -68,7 +68,6 @@ public class InheritanceResolver {
 
                 if (parent != null) {
                     if (!documentInheritanceURIs.contains(parent.getFileURI())) {
-                        // TODO: quickfix
                         diagnostics.add(new SchemaDiagnostic.Builder()
                                 .setRange( context.inheritsSchemaNode().getRange())
                                 .setMessage( "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.")
@@ -132,12 +131,11 @@ public class InheritanceResolver {
 
         for (Symbol fieldSymbol : myFields) {
             if (!inheritedFields.contains(fieldSymbol.getShortIdentifier())) continue;
-
-            // TODO: quickfix
             diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange( fieldSymbol.getNode().getRange())
                     .setMessage( "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier())
                     .setSeverity( DiagnosticSeverity.Error)
+                    .setCode(DiagnosticCode.INHERITS_STRUCT_FIELD_REDECLARED)
                     .build() );
         }
     }

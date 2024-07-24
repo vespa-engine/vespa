@@ -12,9 +12,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
-import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import org.eclipse.lsp4j.util.Positions;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
@@ -22,8 +20,6 @@ import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.ast.fieldBodyElm;
-import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
@@ -238,6 +234,20 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private CodeAction fixInheritsStructFieldRedeclared(EventCodeActionContext context, Diagnostic diagnostic) {
+        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        if (offendingNode == null) return null;
+
+        // TODO: action to change type of ancestor field?
+
+        CodeAction action = basicQuickFix("Remove field declaration '" + offendingNode.getText() + "'", diagnostic);
+        Range fieldRange = offendingNode.getParent().getRange();
+
+        action.setEdit(simpleEdit(context, fieldRange, ""));
+
+        return action;
+    }
+
 	@Override
 	public List<Either<Command, CodeAction>> getActions(EventCodeActionContext context) {
         List<Either<Command, CodeAction>> result = new ArrayList<>();
@@ -270,6 +280,8 @@ public class QuickFixProvider implements CodeActionProvider {
                     result.add(Either.forRight(fixImportFieldAttribute(context, diagnostic)));
                 case EXPLICITLY_INHERIT_DOCUMENT:
                     result.add(Either.forRight(fixExplicitlyInheritDocument(context, diagnostic)));
+                case INHERITS_STRUCT_FIELD_REDECLARED:
+                    result.add(Either.forRight(fixInheritsStructFieldRedeclared(context, diagnostic)));
                 default:
                     break;
             }

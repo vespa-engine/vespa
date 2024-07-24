@@ -39,7 +39,6 @@ public class ValidateFieldSettings {
                 var indexingTypes = context.fieldIndex().getFieldIndexingTypes(fieldIdentifierNode.getSymbol());
 
                 if (!indexingTypes.contains(IndexingType.ATTRIBUTE)) {
-                    // TODO: quickfix
                     diagnostics.add(new SchemaDiagnostic.Builder()
                             .setRange( fieldIdentifierNode.getRange())
                             .setMessage( "Invalid document reference. The field must be an attribute.")
