@@ -2,6 +2,7 @@
 package com.yahoo.search.searchers.test;
 
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.Field;
 import com.yahoo.search.schema.Schema;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -68,14 +70,9 @@ public class QueryValidatorPrefixTest {
     }
 
     private void assertFails(String expectedError, String query, Execution execution) {
-        try {
-            new QueryValidator().search(new Query(query), execution);
-            fail("Expected validation error from " + query);
-        }
-        catch (IllegalArgumentException e) {
-            // success
-            assertEquals(expectedError, e.getMessage());
-        }
+        Result result = new QueryValidator().search(new Query(query), execution);
+        assertNotNull(result.hits().getError());
+        assertEquals(expectedError, result.hits().getError().getDetailedMessage());
     }
 
 }
