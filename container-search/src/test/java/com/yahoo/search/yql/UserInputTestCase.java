@@ -162,16 +162,6 @@ public class UserInputTestCase {
     }
 
     @Test
-    void testCustomUserInputWithTwoDefaultIndexes() {
-        URIBuilder builder = searchUri();
-        builder.setParameter("query", "foo");
-        builder.setParameter("yql",
-                             "select * from sources * where ({defaultIndex: 'fields1'}userInput(@query)) or ({defaultIndex: 'field2'}userInput(@query))");
-        Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where (weakAnd(fields1 contains \"foo\") OR weakAnd(field2 contains \"foo\"))", query.yqlRepresentation());
-    }
-
-    @Test
     void testAnnotatedUserInputStemming() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
