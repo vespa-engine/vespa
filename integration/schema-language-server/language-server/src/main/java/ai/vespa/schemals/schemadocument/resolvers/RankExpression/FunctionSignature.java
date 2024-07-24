@@ -82,7 +82,6 @@ public class FunctionSignature {
 
         // if (arguments.size() != argumentList.size()) {
         //     String message = "The function '" + node.getText() + "' takes " + argumentList.size() + " arguments, but " + arguments.size() + " were given.";
-        //     diagnostics.add(new Diagnostic(node.getRange(), message, DiagnosticSeverity.Error, ""));
         //     return diagnostics;
         // }
 

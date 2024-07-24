@@ -53,10 +53,9 @@ export function activate(context: vscode.ExtensionContext) {
 				return r;
 			},
 			provideDocumentSemanticTokens: async (document, token, next) => {
-				const r = await next(document, token)
-				console.log(r?.data)
+				const r = await next(document, token);
 				return r
-			}
+			},
 		},
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher("**/*{.sd,.profile}")

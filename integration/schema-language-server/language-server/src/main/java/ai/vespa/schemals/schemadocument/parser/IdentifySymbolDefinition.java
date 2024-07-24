@@ -16,6 +16,7 @@ import com.yahoo.tensor.TensorTypeParser;
 import com.yahoo.tensor.TensorType.MappedDimension;
 
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
@@ -266,7 +267,11 @@ public class IdentifySymbolDefinition extends Identifier {
     private void verifySymbolFunctionName(SchemaNode node, List<Diagnostic> diagnostics) {
         String functionName = node.getSymbol().getShortIdentifier();
         if (reservedFunctionNames.contains(functionName)) {
-            diagnostics.add(new Diagnostic(node.getRange(), "Function '" + node.getText() + "' has a reserved name. This might mean that the function shadows the built-in function with the same name.", DiagnosticSeverity.Warning, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(node.getRange())
+                .setMessage("Function '" + node.getText() + "' has a reserved name. This might mean that the function shadows the built-in function with the same name.")
+                .setSeverity(DiagnosticSeverity.Warning)
+                .build());
         }
     }
 }

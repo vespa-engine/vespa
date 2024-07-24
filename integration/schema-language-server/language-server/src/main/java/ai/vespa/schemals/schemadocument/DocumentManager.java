@@ -1,5 +1,7 @@
 package ai.vespa.schemals.schemadocument;
 
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
+
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -22,4 +24,6 @@ public interface DocumentManager {
     public String getFileURI();
 
     public String getCurrentContent();
+
+    public VersionedTextDocumentIdentifier getVersionedTextDocumentIdentifier();
 }

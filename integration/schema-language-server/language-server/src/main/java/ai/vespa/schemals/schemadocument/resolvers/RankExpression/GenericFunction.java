@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -75,7 +76,11 @@ public class GenericFunction implements FunctionHandler {
                                                       .collect(Collectors.toList());
             String availableSignatures = String.join("\n", signatureStrings);
             String message = "No function matched for that sinature. Available signatures are:\n" + availableSignatures;
-            diagnostics.add(new Diagnostic(node.getRange(), message, DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(node.getRange())
+                .setMessage(message)
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
             return diagnostics;
         }
 
@@ -91,19 +96,31 @@ public class GenericFunction implements FunctionHandler {
         String availableProps = (signatureProps.size() == 0) ? "No one" : String.join(", ", signatureProps);
         if (!property.isPresent()) {
             String message = "The function '" + node.getSchemaNode().getText() + "' must be used with a property. Available properties are: " + availableProps;
-            diagnostics.add(new Diagnostic(node.getRange(), message, DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(node.getRange())
+                .setMessage(message)
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
             return diagnostics;
         }
 
         if (!properties.contains(property.get().getText())) {
             String message = "Invalid property '" + property.get().getText() + "'. Available properties are: " + availableProps;
-            diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(property.get().getRange())
+                .setMessage(message)
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
             return diagnostics;
         }
 
         if (!signature.get().getProperties().contains(property.get().getText())) {
             String message = "This property is not available with with this signature. Available properties are: " + availableProps;
-            diagnostics.add(new Diagnostic(property.get().getRange(), message, DiagnosticSeverity.Warning, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(property.get().getRange())
+                .setMessage(message)
+                .setSeverity(DiagnosticSeverity.Warning)
+                .build());
         }
 
         SchemaNode symbolNode = property.get();

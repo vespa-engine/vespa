@@ -2,6 +2,8 @@ package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
 
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
+
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.index.SchemaIndex;
@@ -108,4 +110,9 @@ public class RankProfileDocument implements DocumentManager {
 	public String getCurrentContent() {
         return this.content;
 	}
+
+    @Override
+    public VersionedTextDocumentIdentifier getVersionedTextDocumentIdentifier() {
+        return new VersionedTextDocumentIdentifier(fileURI, null);
+    }
 }

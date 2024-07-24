@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -24,7 +25,11 @@ public class IdentifyDocumentInheritance extends Identifier {
         if (node.getParent() == null || !node.getParent().isSchemaASTInstance(inheritsDocument.class)) return ret;
 
         if (!node.hasSymbol()) {
-            ret.add(new Diagnostic(node.getRange(), "Should be symbol", DiagnosticSeverity.Warning, ""));
+            ret.add(new SchemaDiagnostic.Builder()
+                        .setRange(node.getRange())
+                        .setMessage("Should be symbol")
+                        .setSeverity(DiagnosticSeverity.Warning)
+                        .build());
         }
 
         this.context.addUnresolvedInheritanceNode(node);

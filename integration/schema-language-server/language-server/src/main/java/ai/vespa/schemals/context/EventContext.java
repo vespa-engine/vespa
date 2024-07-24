@@ -2,6 +2,8 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 
+import org.eclipse.lsp4j.TextDocumentIdentifier;
+
 import ai.vespa.schemals.schemadocument.DocumentManager;
 
 import ai.vespa.schemals.SchemaMessageHandler;
@@ -15,19 +17,21 @@ public class EventContext {
     public final SchemaIndex schemaIndex;
     public final DocumentManager document;
     public final SchemaMessageHandler messageHandler;
+    public final TextDocumentIdentifier documentIdentifier;
 
     public EventContext(
         PrintStream logger,
         SchemaDocumentScheduler scheduler,
         SchemaIndex schemaIndex,
         SchemaMessageHandler messageHandler,
-        String fileURI
+        TextDocumentIdentifier documentIdentifier
     ) {
         this.logger = logger;
         this.scheduler = scheduler;
         this.schemaIndex = schemaIndex;
         this.messageHandler = messageHandler;
-        this.document = scheduler.getDocument(fileURI);
+        this.documentIdentifier = documentIdentifier;
+        this.document = scheduler.getDocument(documentIdentifier.getUri());
     }
 
 }

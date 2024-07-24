@@ -7,6 +7,8 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -37,13 +39,12 @@ public class ValidateFieldSettings {
                 var indexingTypes = context.fieldIndex().getFieldIndexingTypes(fieldIdentifierNode.getSymbol());
 
                 if (!indexingTypes.contains(IndexingType.ATTRIBUTE)) {
-                    // TODO: quickfix
-                    diagnostics.add(new Diagnostic(
-                        fieldIdentifierNode.getRange(),
-                        "Invalid document reference. The field must be an attribute.",
-                        DiagnosticSeverity.Error,
-                        ""
-                    ));
+                    diagnostics.add(new SchemaDiagnostic.Builder()
+                            .setRange( fieldIdentifierNode.getRange())
+                            .setMessage( "Invalid document reference. The field must be an attribute.")
+                            .setSeverity( DiagnosticSeverity.Error)
+                            .setCode(DiagnosticCode.DOCUMENT_REFERENCE_ATTRIBUTE)
+                            .build() );
                 }
             }
         }

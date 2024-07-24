@@ -16,6 +16,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -235,7 +236,11 @@ public class IdentifySymbolReferences extends Identifier {
                     if (i < validRankTypes.size() - 1) msg += ", ";
                 }
                 msg += ".";
-                ret.add(new Diagnostic(identifierNode.getRange(), msg, DiagnosticSeverity.Error, ""));
+                ret.add(new SchemaDiagnostic.Builder()
+                    .setRange(identifierNode.getRange())
+                    .setMessage(msg)
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build());
             }
             return ret;
         }
@@ -314,12 +319,11 @@ public class IdentifySymbolReferences extends Identifier {
         }
 
         if (fieldIdentifier.endsWith(".") || fieldIdentifier.startsWith(".")) {
-            ret.add(new Diagnostic(
-                identifierNode.getRange(),
-                "Expected an identifier",
-                DiagnosticSeverity.Error,
-                ""
-            ));
+            ret.add(new SchemaDiagnostic.Builder()
+                    .setRange( identifierNode.getRange())
+                    .setMessage( "Expected an identifier")
+                    .setSeverity( DiagnosticSeverity.Error)
+                    .build() );
             return ret;
         }
 

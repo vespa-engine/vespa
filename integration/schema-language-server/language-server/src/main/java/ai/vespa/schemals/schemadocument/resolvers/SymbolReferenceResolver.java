@@ -11,6 +11,8 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol;
@@ -96,12 +98,11 @@ public class SymbolReferenceResolver {
             node.setSymbolStatus(SymbolStatus.REFERENCE);
             context.schemaIndex().insertSymbolReference(referencedSymbol.get(), node.getSymbol());
         } else {
-            diagnostics.add(new Diagnostic(
-                node.getRange(),
-                "Undefined symbol " + node.getText(),
-                DiagnosticSeverity.Error,
-                ""
-            ));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange( node.getRange())
+                    .setMessage( "Undefined symbol " + node.getText())
+                    .setSeverity( DiagnosticSeverity.Error)
+                    .build() );
         }
     }
 
@@ -157,7 +158,6 @@ public class SymbolReferenceResolver {
                 Symbol structDefinition = context.schemaIndex().getSymbolDefinition(structReference).get();
                 return resolveFieldInStructReference(node, structDefinition, context);
             } else if (dataTypeNode.get(0).isASTInstance(REFERENCE.class)) {
-                // TODO: the subfield has to be in an import field statement
                 if (dataTypeNode.size() < 3 || !dataTypeNode.get(2).get(0).hasSymbol()) return Optional.empty();
                 Symbol documentReference = dataTypeNode.get(2).get(0).getSymbol();
 
@@ -175,41 +175,36 @@ public class SymbolReferenceResolver {
 
                 if (referencedSymbol.isPresent()) {
                     node.setSymbolType(referencedSymbol.get().getType());
+                    var referencedSymbolIndexingTypes = context.fieldIndex().getFieldIndexingTypes(referencedSymbol.get());
 
                     // We identified the reference and found the definition,
                     // however this case is actually only valid in an import field statement.
                     // So we should add an error if thats not the case
                     if (!node.getParent().isASTInstance(importField.class)) {
-                        // TODO: quickfix
-                        diagnostics.add(new Diagnostic(
-                            node.getRange(),
-                            "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly. Hint: Add an import field statement to access the field.",
-                            DiagnosticSeverity.Error,
-                            ""
-                        ));
+                        diagnostics.add(new SchemaDiagnostic.Builder()
+                                .setRange( node.getRange())
+                                .setMessage( "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly. Hint: Add an import field statement to access the field.")
+                                .setSeverity( DiagnosticSeverity.Error)
+                                .setCode(DiagnosticCode.ACCESS_UNIMPORTED_FIELD)
+                                .build());
+                        return referencedSymbol;
                     }
-
-                    var referencedSymbolIndexingTypes = context.fieldIndex().getFieldIndexingTypes(referencedSymbol.get());
-
                     if (!referencedSymbolIndexingTypes.contains(IndexingType.ATTRIBUTE)) {
-                        // TODO: quickfix
-                        diagnostics.add(new Diagnostic(
-                            node.getRange(),
-                            "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is not an attribute field. Only attribute fields can be imported.",
-                            DiagnosticSeverity.Error,
-                            ""
-                        ));
+                        diagnostics.add(new SchemaDiagnostic.Builder()
+                                .setRange( node.getRange())
+                                .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is not an attribute field. Only attribute fields can be imported.")
+                                .setSeverity( DiagnosticSeverity.Error)
+                                .setCode(DiagnosticCode.IMPORT_FIELD_ATTRIBUTE)
+                                .build() );
                     } else if (referencedSymbolIndexingTypes.contains(IndexingType.INDEX)) {
                         // TODO: quickfix
-                        diagnostics.add(new Diagnostic(
-                            node.getRange(),
-                            "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is an index field. Importing index fields is not supported.",
-                            DiagnosticSeverity.Error,
-                            ""
-                        ));
+                        diagnostics.add(new SchemaDiagnostic.Builder()
+                                .setRange( node.getRange())
+                                .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is an index field. Importing index fields is not supported.")
+                                .setSeverity( DiagnosticSeverity.Error)
+                                .build() );
                     }
 
-                    // "inherit" index type from imported field
                     Symbol importFieldDefinitionSymbol = node.getNextSibling().getNextSibling().getSymbol();
                     if (importFieldDefinitionSymbol != null && importFieldDefinitionSymbol.getStatus() == SymbolStatus.DEFINITION) {
                         for (IndexingType indexingType : referencedSymbolIndexingTypes) {

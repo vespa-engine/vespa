@@ -15,7 +15,8 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.common.FileUtils;
-
+import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -113,7 +114,7 @@ public class SchemaDocument implements DocumentManager {
  
         CSTUtils.printTree(logger, CST);
 
-        //schemaIndex.dumpIndex();
+        schemaIndex.dumpIndex();
 
     }
 
@@ -136,12 +137,13 @@ public class SchemaDocument implements DocumentManager {
 
             if (!getFileName().equals(schemaDocumentIdentifier + ".sd")) {
                 // TODO: quickfix
-                ret.add(new Diagnostic(
-                    schemaIdentifier.getNode().getRange(),
-                    "Schema " + schemaDocumentIdentifier + " should be defined in a file with the name: " + schemaDocumentIdentifier + ".sd. File name is: " + getFileName(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
+                ret.add(new SchemaDiagnostic.Builder()
+                    .setRange(schemaIdentifier.getNode().getRange())
+                    .setMessage("Schema " + schemaDocumentIdentifier + " should be defined in a file with the name: " + schemaDocumentIdentifier + ".sd. File name is: " + getFileName())
+                    .setCode(DiagnosticCode.SCHEMA_NAME_SAME_AS_FILE)
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build()
+                );
             }
         }
 
@@ -236,22 +238,27 @@ public class SchemaDocument implements DocumentManager {
             Range range = CSTUtils.getNodeRange(node);
             String message = e.getMessage();
 
-            diagnostics.add(new Diagnostic(range, message, DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(range)
+                .setMessage(message)
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
 
 
         } catch (IllegalArgumentException e) {
             // Complex error, invalidate the whole document
 
-            diagnostics.add(
-                new Diagnostic(
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(
                     new Range(
                         new Position(0, 0),
                         new Position((int)context.content().lines().count() - 1, 0)
-                    ),
-                    e.getMessage(),
-                    DiagnosticSeverity.Error,
-                    "")
-                );
+                    )
+                )
+                .setMessage(e.getMessage())
+                .setSeverity(DiagnosticSeverity.Error)
+                .build()
+            );
             return ParseResult.parsingFailed(diagnostics);
         }
 
@@ -374,7 +381,11 @@ public class SchemaDocument implements DocumentManager {
             range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
             range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
 
-            diagnostics.add(new Diagnostic(range, pe.getMessage(), DiagnosticSeverity.Error, ""));
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(range)
+                .setMessage(pe.getMessage())
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
         } catch(IllegalArgumentException ex) {
             context.logger().println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
         }

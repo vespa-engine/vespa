@@ -7,10 +7,6 @@ import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.services.LanguageClient;
 
 public class SchemaMessageHandler {
-
-    // TODO: implement logging
-
-
     private PrintStream logger;
     private LanguageClient client;
 

@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -42,7 +43,11 @@ public class IntegerArgument implements Argument {
         }
 
         if (!leaf.isASTInstance(INTEGER.class)) {
-            return Optional.of(new Diagnostic(leaf.getRange(), "Argument of function must be an INTEGER.", DiagnosticSeverity.Error, ""));
+            return Optional.of(new SchemaDiagnostic.Builder()
+                .setRange(leaf.getRange())
+                .setMessage("Argument of function must be an INTEGER.")
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
         }
 
 

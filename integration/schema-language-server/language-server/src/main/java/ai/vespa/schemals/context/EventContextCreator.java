@@ -2,8 +2,10 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 
+import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
@@ -33,13 +35,31 @@ public class EventContextCreator {
             scheduler,
             schemaIndex,
             messageHandler,
-            params.getTextDocument().getUri(),
+            params.getTextDocument(),
             params.getPosition()
         );
     }
 
     public EventContext createContext(SemanticTokensParams params) {
-        return new EventContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument().getUri());
+        return new EventContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument());
+    }
+
+    public EventCodeActionContext createContext(CodeActionParams params) {
+        if (params.getContext() == null) return null;
+        if (params.getRange() == null) return null;
+        if (params.getContext().getDiagnostics() == null) return null;
+        if (params.getTextDocument().getUri() == null) return null;
+
+        return new EventCodeActionContext(
+            logger, 
+            scheduler, 
+            schemaIndex, 
+            messageHandler, 
+            params.getTextDocument(), 
+            params.getRange(), 
+            params.getContext().getDiagnostics(),
+            params.getContext().getOnly()
+        );
     }
 
 }

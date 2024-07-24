@@ -1,6 +1,8 @@
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.codeaction.SchemaCodeAction;
 import ai.vespa.schemals.completion.SchemaCompletion;
+import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.references.SchemaReferences;
@@ -17,8 +19,12 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionContext;
+import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CodeLensParams;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
@@ -46,6 +52,7 @@ import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensDelta;
 import org.eclipse.lsp4j.SemanticTokensDeltaParams;
 import org.eclipse.lsp4j.SemanticTokensParams;
+import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.TextEdit;
@@ -68,7 +75,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
         // Provide completion item.
-        return CompletableFutures.computeAsync((canelChecker) -> {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
 
                 return Either.forLeft(SchemaCompletion.getCompletionItems(eventContextCreator.createContext(completionParams)));
@@ -82,6 +89,24 @@ public class SchemaTextDocumentService implements TextDocumentService {
             // Return the list of completion items.
             return Either.forLeft(new ArrayList<>());
         });
+    }
+
+    @Override
+    public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            try {
+                return SchemaCodeAction.provideActions(eventContextCreator.createContext(params));
+            } catch(Exception e) {
+                logger.println("Error during code action handling: " + e.getMessage());
+            }
+
+            return new ArrayList<>();
+        });
+    }
+
+    @Override
+    public CompletableFuture<CodeAction> resolveCodeAction(CodeAction unresolved) {
+        return null;
     }
 
     @Override
