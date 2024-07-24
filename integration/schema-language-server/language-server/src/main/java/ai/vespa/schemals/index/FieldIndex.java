@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.SymbolTag;
 
+import com.yahoo.schema.parser.ParsedType.Variant;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
@@ -118,9 +119,42 @@ public class FieldIndex {
         return entry.isInsideDoc;
     }
 
+    /*
+     * Some fields have struct, array<struct>, map<int, struct> etc. as their data type.
+     * Fields inside the struct (or key/value for the case of map) are accessible from the field
+     * with '.'-syntax.
+     * This function tries to find the definition of said struct (or map) if it exists.
+     */
+    public Optional<Symbol> findFieldStructDefinition(Symbol fieldDefinition) {
+        Optional<SchemaNode> dataTypeNode = getFieldDataTypeNode(fieldDefinition);
+        if (dataTypeNode.isEmpty()) return Optional.empty();
+
+        if (dataTypeNode.get().hasSymbol()) {
+            // TODO: handle non struct?
+            if (dataTypeNode.get().getSymbol().getType() != SymbolType.STRUCT) return Optional.empty();
+
+            return schemaIndex.getSymbolDefinition(dataTypeNode.get().getSymbol());
+        }
+        dataType originalNode = (dataType)dataTypeNode.get().getOriginalSchemaNode();
+        if (originalNode.getParsedType().getVariant() == Variant.MAP) {
+            return Optional.of(fieldDefinition);
+        } else if (originalNode.getParsedType().getVariant() == Variant.ARRAY) {
+            if (dataTypeNode.get().size() < 3 || !dataTypeNode.get().get(2).isASTInstance(dataType.class)) return Optional.empty();
+
+            SchemaNode innerType = dataTypeNode.get().get(2);
+
+            if (!innerType.hasSymbol() || innerType.getSymbol().getType() != SymbolType.STRUCT) return Optional.empty();
+
+            Symbol structReference = innerType.getSymbol();
+            return schemaIndex.getSymbolDefinition(structReference);
+        }
+
+        return Optional.empty();
+    }
+
     /**
      * Try to find the node that holds the dataType element
-     * Also try to not fall into an infinite loop
+     * Also try to not fall into an infinite loop. It could possibly happen if there are cyclic field references somehow
      */
     private SchemaNode resolveFieldDataTypeNode(Symbol fieldDefinition) { 
         fieldDefinition = schemaIndex.getFirstSymbolDefinition(fieldDefinition).get();

@@ -17,6 +17,7 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -114,7 +115,7 @@ public class SchemaDocument implements DocumentManager {
  
         CSTUtils.printTree(logger, CST);
 
-        //schemaIndex.dumpIndex();
+        schemaIndex.dumpIndex();
 
     }
 
@@ -185,14 +186,14 @@ public class SchemaDocument implements DocumentManager {
 
     public Position getPreviousStartOfWord(Position pos) {
         try {
-            int offset = positionToOffset(pos);
+            int offset = StringUtils.positionToOffset(this.content, pos);
 
             // Skip whitespace
             // But not newline because newline is a token
             while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
 
             for (int i = offset; i >= 0; i--) {
-                if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+                if (Character.isWhitespace(content.charAt(i)))return StringUtils.offsetToPosition(this.content, i + 1);
             }
         } catch (Exception e) {
         }
@@ -202,7 +203,7 @@ public class SchemaDocument implements DocumentManager {
 
     public boolean isInsideComment(Position pos) {
         try {
-            int offset = positionToOffset(pos);
+            int offset = StringUtils.positionToOffset(this.content, pos);
 
             if (content.charAt(offset) == '\n')offset--;
 
@@ -353,7 +354,7 @@ public class SchemaDocument implements DocumentManager {
         IndexingParser parser = new IndexingParser(context.logger(), context.fileURI(), sequence);
         parser.setParserTolerant(false);
 
-        Position scriptStart = PositionAddOffset(context.content(), indexingStart, script.leadingStripped());
+        Position scriptStart = StringUtils.positionAddOffset(context.content(), indexingStart, script.leadingStripped());
 
         try {
             var expression = parser.root();
@@ -375,15 +376,19 @@ public class SchemaDocument implements DocumentManager {
             return new SchemaNode(parser.rootNode(), scriptStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
             context.logger().println("Encountered parsing error in parsing feature list");
-            Range range = ILUtils.getNodeRange(pe.getToken());
-            range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
-            range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
+            try {
+                Range range = ILUtils.getNodeRange(pe.getToken());
+                range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
+                range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
 
-            diagnostics.add(new SchemaDiagnostic.Builder()
-                .setRange(range)
-                .setMessage(pe.getMessage())
-                .setSeverity(DiagnosticSeverity.Error)
-                .build());
+                diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(range)
+                    .setMessage(pe.getMessage())
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build());
+            } catch(Exception e) {
+                // ignore
+            }
         } catch(IllegalArgumentException ex) {
             context.logger().println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
         }
@@ -391,55 +396,6 @@ public class SchemaDocument implements DocumentManager {
         return null;
     }
 
-    /*
-     * If necessary, the following methods can be sped up by
-     * selecting an appropriate data structure.
-     * */
-    private static int positionToOffset(String content, Position pos) {
-        List<String> lines = content.lines().toList();
-        if (pos.getLine() >= lines.size())throw new IllegalArgumentException("Line " + pos.getLine() + " out of range.");
-
-        int lineCounter = 0;
-        int offset = 0;
-        for (String line : lines) {
-            if (lineCounter == pos.getLine())break;
-            offset += line.length() + 1; // +1 for line terminator
-            lineCounter += 1;
-        }
-
-        if (pos.getCharacter() > lines.get(pos.getLine()).length())throw new IllegalArgumentException("Character " + pos.getCharacter() + " out of range for line " + pos.getLine());
-
-        offset += pos.getCharacter();
-
-        return offset;
-    }
-
-    private int positionToOffset(Position pos) {
-        return positionToOffset(content, pos);
-    }
-
-    private static Position offsetToPosition(String content, int offset) {
-        List<String> lines = content.lines().toList();
-        int lineCounter = 0;
-        for (String line : lines) {
-            int lengthIncludingTerminator = line.length() + 1;
-            if (offset < lengthIncludingTerminator) {
-                return new Position(lineCounter, offset);
-            }
-            offset -= lengthIncludingTerminator;
-            lineCounter += 1;
-        }
-        return null;
-    }
-
-    private Position offsetToPosition(int offset) {
-        return offsetToPosition(content, offset);
-    }
-
-    static Position PositionAddOffset(String content, Position pos, int offset) {
-        int totalOffset = positionToOffset(content, pos) + offset;
-        return offsetToPosition(content, totalOffset);
-    }
 
     public String toString() {
         String openString = getIsOpen() ? " [OPEN]" : "";

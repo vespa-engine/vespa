@@ -83,6 +83,29 @@ public class SchemaDocumentLexer {
         return null;
     }
 
+    public SchemaNode matchBackwardsOnLine(Position pos, boolean allowDirty, Token.TokenType... pattern) {
+        int index = indexOfPosition(pos, false);
+        if (index == -1)return null;
+
+        for (int patternStart = index - pattern.length + 1; patternStart >= 0; patternStart--) {
+            boolean matched = true;
+            if (tokens.get(patternStart).getRange().getStart().getLine() != pos.getLine()) break;
+            for (int i = 0; i < pattern.length; i++) {
+                if (pattern[i] != tokens.get(patternStart + i).getDirtyType()) {
+                    matched = false;
+                }
+
+                if (tokens.get(patternStart + i).getIsDirty() && !allowDirty) {
+                    matched = false;
+                }
+            }
+
+            if (matched) return tokens.get(patternStart);
+        }
+
+        return null;
+    }
+
     /*
      * Returns the index of the last token at or before the supplied position
      * -1 if no such token exists

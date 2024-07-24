@@ -2,6 +2,7 @@ package ai.vespa.schemals.index;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -501,10 +502,26 @@ public class SchemaIndex {
      * @return A list of symbols found in the specified scope and of the given type.
      */
     public List<Symbol> listSymbolsInScope(Symbol scope, SymbolType type) {
-        return symbolDefinitions.get(type)
-                                .stream()
-                                .filter(symbol -> isInScope(symbol, scope))
-                                .toList();
+        return listSymbolsInScope(scope, EnumSet.of(type));
+    }
+
+    /**
+     * Searches for symbols in the specified scope of one of the given types.
+     *
+     * @param scope The symbol representing the scope to search in.
+     * @param types The types of symbols to find.
+     * @return A list of symbols found in the specified scope and of one of the given types.
+     */
+    public List<Symbol> listSymbolsInScope(Symbol scope, EnumSet<SymbolType> types) {
+        List<Symbol> ret = new ArrayList<>();
+        for (SymbolType type : types) {
+            ret.addAll(symbolDefinitions.get(type)
+                                    .stream()
+                                    .filter(symbol -> isInScope(symbol, scope))
+                                    .toList()
+            );
+        }
+        return ret;
     }
 
     /**

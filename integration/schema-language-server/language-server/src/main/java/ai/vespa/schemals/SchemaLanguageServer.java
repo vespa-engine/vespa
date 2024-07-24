@@ -84,7 +84,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         // Set the capabilities of the LS to inform the client.
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
-        initializeResult.getCapabilities().setCompletionProvider(new CompletionOptions());
+        var completionOptions = new CompletionOptions();
+        completionOptions.setTriggerCharacters(List.of("."));
+        initializeResult.getCapabilities().setCompletionProvider(completionOptions);
         initializeResult.getCapabilities().setHoverProvider(true);
         initializeResult.getCapabilities().setDefinitionProvider(true);
         initializeResult.getCapabilities().setReferencesProvider(true);

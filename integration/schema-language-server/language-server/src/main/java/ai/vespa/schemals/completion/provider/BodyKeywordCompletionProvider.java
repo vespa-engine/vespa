@@ -21,7 +21,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"), // TODO: figure out client tab format
             CompletionUtils.constructSnippet("index", "index ${1:index-name}: ${2:property}", "index:"),
             CompletionUtils.constructSnippet("index", "index ${1:index-name} {\n\t$0\n}", "index {}"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
             CompletionUtils.constructSnippet("fieldset", "fieldset ${1:default} {\n\tfields: $0\n}"),
             CompletionUtils.constructSnippet("rank-profile", "rank-profile ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("constant", "constant ${1:name} {\n\t$0\n}"),
@@ -35,7 +35,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
 
         put("documentElm", new CompletionItem[]{
             CompletionUtils.constructSnippet("struct", "struct ${1:name} {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
 
         });
 
@@ -69,7 +69,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
         });
 
         put("structDefinitionElm", new CompletionItem[]{
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
         });
 
         put("rankProfile", new CompletionItem[]{
