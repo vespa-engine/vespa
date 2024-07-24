@@ -21,6 +21,7 @@ import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.rename.SchemaRename;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
@@ -37,7 +38,7 @@ public class QuickFixProvider implements CodeActionProvider {
         WorkspaceEdit workspaceEdit = new WorkspaceEdit();
         TextDocumentEdit textDocumentEdit = new TextDocumentEdit();
         textDocumentEdit.setTextDocument(context.document.getVersionedTextDocumentIdentifier());
-        textDocumentEdit.setEdits(List.copyOf(edits));
+        textDocumentEdit.setEdits(edits.stream().filter(edit -> edit != null).toList());
         workspaceEdit.setDocumentChanges(List.of(Either.forLeft(textDocumentEdit)));
         return workspaceEdit;
     }
@@ -123,13 +124,24 @@ public class QuickFixProvider implements CodeActionProvider {
         String schemaName = document.getSchemaIdentifier();
         CodeAction action = basicQuickFix("Insert document definition '" + schemaName + "'", diagnostic);
 
+
         Position insertPosition = CSTUtils.addPositions(diagnostic.getRange().getStart(), new Position(1, 0)); // one line below
-        int indent = diagnostic.getRange().getStart().getCharacter() + 4;
         insertPosition.setCharacter(0);
-        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), spaceIndent(indent) + 
-                    "document " + schemaName + " {\n" + 
+        SchemaNode rootSchemaNode = document.getRootNode().get(0);
+        for (SchemaNode child : rootSchemaNode) {
+            if (child.isASTInstance(openLbrace.class)) {
+                insertPosition = child.get(0).getRange().getEnd();
+                break;
+            }
+        }
+
+        int indent = diagnostic.getRange().getStart().getCharacter() + 4;
+        action.setEdit(simpleEditList(context, List.of(
+                new TextEdit(new Range(insertPosition, insertPosition),  
+                    "\n" + spaceIndent(indent) + "document " + schemaName + " {\n" + 
                         spaceIndent(indent + 4) + "\n" + 
-                    spaceIndent(indent) + "}\n"));
+                    spaceIndent(indent) + "}\n")
+        )));
         return action;
     }
 
