@@ -21,8 +21,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"), // TODO: figure out client tab format
             CompletionUtils.constructSnippet("index", "index ${1:index-name}: ${2:property}", "index:"),
             CompletionUtils.constructSnippet("index", "index ${1:index-name} {\n\t$0\n}", "index {}"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $0", "field"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}"),
             CompletionUtils.constructSnippet("fieldset", "fieldset ${1:default} {\n\tfields: $0\n}"),
             CompletionUtils.constructSnippet("rank-profile", "rank-profile ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("constant", "constant ${1:name} {\n\t$0\n}"),
@@ -36,8 +35,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
 
         put("documentElm", new CompletionItem[]{
             CompletionUtils.constructSnippet("struct", "struct ${1:name} {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $0", "field"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {\n\t$0\n}", "field {}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}"),
 
         });
 
@@ -55,9 +53,9 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("match", "match {\n\t$0\n}", "match {}"),
             CompletionUtils.constructSnippet("normalizing", "normalizing: "),
             CompletionUtils.constructSnippet("query-command", "query-command: "),
-            CompletionUtils.constructSnippet("rank", "rank: $0", "rank:"),
-            CompletionUtils.constructSnippet("rank", "rank {\n\t$0\n}", "rank {}"),
-            CompletionUtils.constructSnippet("rank-type", "rank-type: "),
+            CompletionUtils.constructSnippet("rank", "rank: ${1|filter,normal|}", "rank:"),
+            CompletionUtils.constructSnippet("rank", "rank {\n\t${1|filter,normal|}\n}", "rank {}"),
+            CompletionUtils.constructSnippet("rank-type", "rank-type: ${1|identity,about,tags,empty|}"),
             CompletionUtils.constructSnippet("sorting", "sorting: ", "sorting:"),
             CompletionUtils.constructSnippet("sorting", "sorting {\n\t$0\n}", "sorting {}"),
             CompletionUtils.constructSnippet("stemming", "stemming: "),
@@ -71,8 +69,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
         });
 
         put("structDefinitionElm", new CompletionItem[]{
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $0", "field"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {\n\t$0\n}", "field {}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}"),
         });
 
         put("rankProfile", new CompletionItem[]{
@@ -101,9 +98,8 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructBasic("post-filter-threshold"),
             CompletionUtils.constructBasic("approximate-threshold"),
             CompletionUtils.constructBasic("target-hits-max-adjustment-factor"),
-            CompletionUtils.constructSnippet("rank", "rank ${1:field-name}: $0", "rank:"),
-            CompletionUtils.constructSnippet("rank", "rank {\n\t$0\n}", "rank {}"),
-            CompletionUtils.constructSnippet("rank-type", "rank-type ${1:field-name}: $0"),
+            CompletionUtils.constructSnippet("rank", "rank ${1:field-name}: ${2|filter,normal|}", "rank:"),
+            CompletionUtils.constructSnippet("rank-type", "rank-type ${1:field-name}: ${2|identity,about,tags,empty|}"),
         });
 
         put("firstPhase", new CompletionItem[]{

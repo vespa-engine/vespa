@@ -2,9 +2,10 @@ package ai.vespa.schemals.completion.provider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.CompletionItem;
-
+import org.eclipse.lsp4j.SymbolTag;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
@@ -12,6 +13,10 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer.LexicalToken;
+import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 
 public class TypeCompletionProvider implements CompletionProvider {
 
@@ -49,25 +54,35 @@ public class TypeCompletionProvider implements CompletionProvider {
     @Override
     public List<CompletionItem> getCompletionItems(EventPositionContext context) {
         if (!(context.document instanceof SchemaDocument)) return new ArrayList<>();
-        return List.of(new CompletionItem[] {
-            CompletionUtils.constructSnippet("annotationreference", "annotationreference<$1>"),
-            CompletionUtils.constructSnippet("array", "array<$1>"),
-            CompletionUtils.constructType("bool"),
-            CompletionUtils.constructType("byte"),
-            CompletionUtils.constructType("double"),
-            CompletionUtils.constructType("float"),
-            CompletionUtils.constructType("int"),
-            CompletionUtils.constructType("long"),
-            CompletionUtils.constructSnippet("map", "map<${1:Kt}, ${2:Vt}>"),
-            CompletionUtils.constructType("position"),
-            CompletionUtils.constructType("predicate"),
-            CompletionUtils.constructType("raw"),
-            CompletionUtils.constructSnippet("reference", "reference<$1>"),
-            //CompletionUtils.constructType("struct"), TODO: find defined structs
-            CompletionUtils.constructType("string"),
-            CompletionUtils.constructSnippet("tensor", "tensor<$1>($0)"),
-            CompletionUtils.constructType("uri"),
-            CompletionUtils.constructSnippet("weightedset", "weightedset<$1>")
-        });
+        List<CompletionItem> items = new ArrayList<>() {{
+            add(CompletionUtils.constructSnippet("annotationreference", "annotationreference<$1>"));
+            add(CompletionUtils.constructSnippet("array", "array<$1>"));
+            add(CompletionUtils.constructType("bool"));
+            add(CompletionUtils.constructType("byte"));
+            add(CompletionUtils.constructType("double"));
+            add(CompletionUtils.constructType("float"));
+            add(CompletionUtils.constructType("int"));
+            add(CompletionUtils.constructType("long"));
+            add(CompletionUtils.constructSnippet("map", "map<${1:Kt}, ${2:Vt}>"));
+            add(CompletionUtils.constructType("position"));
+            add(CompletionUtils.constructType("predicate"));
+            add(CompletionUtils.constructType("raw"));
+            add(CompletionUtils.constructSnippet("reference", "reference<$1>"));
+            add(CompletionUtils.constructType("string"));
+            add(CompletionUtils.constructSnippet("tensor", "tensor<$1>($0)"));
+            add(CompletionUtils.constructType("uri"));
+            add(CompletionUtils.constructSnippet("weightedset", "weightedset<$1>"));
+        }};
+
+        Optional<Symbol> documentScope = context.schemaIndex.findSymbol(null, SymbolType.DOCUMENT, ((SchemaDocument)context.document).getSchemaIdentifier());
+
+        if (documentScope.isPresent()) {
+            List<Symbol> structSymbols = context.schemaIndex.listSymbolsInScope(documentScope.get(), SymbolType.STRUCT);
+            for (var symbol : structSymbols) {
+                items.add(CompletionUtils.constructType(symbol.getShortIdentifier()));
+            }
+        }
+
+        return items;
     }
 }
