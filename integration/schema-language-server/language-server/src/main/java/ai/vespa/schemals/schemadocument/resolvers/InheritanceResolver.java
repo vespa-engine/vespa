@@ -15,6 +15,7 @@ import com.google.protobuf.Option;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -72,6 +73,7 @@ public class InheritanceResolver {
                                 .setRange( context.inheritsSchemaNode().getRange())
                                 .setMessage( "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.")
                                 .setSeverity( DiagnosticSeverity.Error)
+                                .setCode(DiagnosticCode.EXPLICITLY_INHERIT_DOCUMENT)
                                 .build() );
                         context.schemaIndex().getDocumentInheritanceGraph().addInherits(context.fileURI(), parent.getFileURI());
                     }

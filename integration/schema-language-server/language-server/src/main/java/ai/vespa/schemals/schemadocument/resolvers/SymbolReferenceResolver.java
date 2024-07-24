@@ -190,7 +190,6 @@ public class SymbolReferenceResolver {
                         return referencedSymbol;
                     }
                     if (!referencedSymbolIndexingTypes.contains(IndexingType.ATTRIBUTE)) {
-                        // TODO: quickfix
                         diagnostics.add(new SchemaDiagnostic.Builder()
                                 .setRange( node.getRange())
                                 .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is not an attribute field. Only attribute fields can be imported.")

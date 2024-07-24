@@ -21,8 +21,10 @@ import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.fieldBodyElm;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.rename.SchemaRename;
@@ -208,6 +210,34 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private CodeAction fixExplicitlyInheritDocument(EventCodeActionContext context, Diagnostic diagnostic) {
+        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        if (offendingNode == null) return null;
+
+        Symbol schemaReferenceSymbol = offendingNode.getSymbol();
+
+        String mySchemaIdentifier = offendingNode.getParent().get(1).getText();
+
+        Optional<Symbol> myDocumentDefinition = context.schemaIndex.findSymbol(null, SymbolType.DOCUMENT, mySchemaIdentifier);
+
+        // findSymbol on DOCUMENT may return SCHEMA. In that case we are not interested
+        if (myDocumentDefinition.isEmpty() || myDocumentDefinition.get().getType() != SymbolType.DOCUMENT) return null;
+
+        SchemaNode documentIdentifierNode = myDocumentDefinition.get().getNode();
+
+        CodeAction action = basicQuickFix("Inherit document '" + schemaReferenceSymbol.getShortIdentifier() + "'", diagnostic);
+
+        if (documentIdentifierNode.getNextSibling() != null && documentIdentifierNode.getNextSibling().isASTInstance(inheritsDocument.class)) {
+            Position insertPosition = documentIdentifierNode.getNextSibling().getRange().getEnd();
+            action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), ", " + schemaReferenceSymbol.getShortIdentifier()));
+        } else {
+            Position insertPosition = documentIdentifierNode.getRange().getEnd();
+            action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), " inherits " + schemaReferenceSymbol.getShortIdentifier()));
+        }
+
+        return action;
+    }
+
 	@Override
 	public List<Either<Command, CodeAction>> getActions(EventCodeActionContext context) {
         List<Either<Command, CodeAction>> result = new ArrayList<>();
@@ -238,6 +268,8 @@ public class QuickFixProvider implements CodeActionProvider {
                     result.add(Either.forRight(fixDocumentReferenceAttribute(context, diagnostic)));
                 case IMPORT_FIELD_ATTRIBUTE:
                     result.add(Either.forRight(fixImportFieldAttribute(context, diagnostic)));
+                case EXPLICITLY_INHERIT_DOCUMENT:
+                    result.add(Either.forRight(fixExplicitlyInheritDocument(context, diagnostic)));
                 default:
                     break;
             }
