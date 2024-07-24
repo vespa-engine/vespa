@@ -282,6 +282,14 @@ public class QuickFixProvider implements CodeActionProvider {
         CodeAction action = basicQuickFix("Change to array<" + typeText + ">", diagnostic);
 
         action.setEdit(simpleEdit(context, tokenNode.getParent().getParent().getRange(), "array<" + typeText + ">"));
+        action.setIsPreferred(true);
+        return action;
+    }
+
+    private CodeAction fixDeprecatedTokenSearch(EventCodeActionContext context, Diagnostic diagnostic) {
+        CodeAction action = basicQuickFix("Change to schema", diagnostic);
+        action.setEdit(simpleEdit(context, diagnostic.getRange(), "schema"));
+        action.setIsPreferred(true);
         return action;
     }
 
@@ -329,6 +337,9 @@ public class QuickFixProvider implements CodeActionProvider {
                     break;
                 case DEPRECATED_ARRAY_SYNTAX:
                     result.add(Either.forRight(fixDeprecatedArraySyntax(context, diagnostic)));
+                    break;
+                case DEPRECATED_TOKEN_SEARCH:
+                    result.add(Either.forRight(fixDeprecatedTokenSearch(context, diagnostic)));
                     break;
                 default:
                     break;

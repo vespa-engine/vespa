@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -16,25 +17,28 @@ public class IdentifyDeprecatedToken extends Identifier {
 		super(context);
 	}
 
-	private static final HashMap<TokenType, String> deprecatedTokens = new HashMap<TokenType, String>() {{
-        put(TokenType.ATTRIBUTE, "");
-        put(TokenType.ENABLE_BIT_VECTORS, "");
-        put(TokenType.INDEX, "");
-        put(TokenType.SUMMARY_TO, "");
-        put(TokenType.SEARCH, "Use schema instead.");
+    private record DeprecatedToken(String message, DiagnosticCode code) {}
+
+	private static final HashMap<TokenType, DeprecatedToken> deprecatedTokens = new HashMap<>() {{
+        put(TokenType.ATTRIBUTE,          new DeprecatedToken("",                    DiagnosticCode.DEPRECATED_TOKEN_ATTRIBUTE));
+        put(TokenType.ENABLE_BIT_VECTORS, new DeprecatedToken("",                    DiagnosticCode.DEPRECATED_TOKEN_ENABLE_BIT_VECTORS));
+        put(TokenType.INDEX,              new DeprecatedToken("",                    DiagnosticCode.DEPRECATED_TOKEN_INDEX));
+        put(TokenType.SUMMARY_TO,         new DeprecatedToken("",                    DiagnosticCode.DEPRECATED_TOKEN_SUMMARY_TO));
+        put(TokenType.SEARCH,             new DeprecatedToken("Use schema instead.", DiagnosticCode.DEPRECATED_TOKEN_SEARCH));
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         // TODO: semantic context
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        String message = deprecatedTokens.get(node.getSchemaType());
-        if (message != null) {
+        DeprecatedToken entry = deprecatedTokens.get(node.getSchemaType());
+        if (entry != null) {
             ret.add(
                 new SchemaDiagnostic.Builder()
                     .setRange(node.getRange())
-                    .setMessage(node.getText() + " is deprecated. " + message)
+                    .setMessage(node.getText() + " is deprecated. " + entry.message)
                     .setSeverity(DiagnosticSeverity.Warning)
+                    .setCode(entry.code)
                     .build()
             );
         }
