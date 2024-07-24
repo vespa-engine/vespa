@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				const r = await next(document, range, context, token);
 
-				console.log(r);
+				console.log
 
 				/*if (false) {
 					for (const el of r) {

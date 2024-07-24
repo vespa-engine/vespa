@@ -21,6 +21,8 @@ import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.parser.ast.fieldBodyElm;
+import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.rename.SchemaRename;
@@ -72,6 +74,15 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private Position firstPositionInBlock(SchemaNode blockNode) {
+        for (SchemaNode child : blockNode) {
+            if (child.isASTInstance(openLbrace.class)) {
+                return child.get(0).getRange().getEnd();
+            }
+        }
+        return null;
+    }
+
     private String spaceIndent(int indent) {
         return new String(new char[indent]).replace("\0", " ");
     }
@@ -117,24 +128,20 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
-    public CodeAction fixDocumentlessSchema(EventCodeActionContext context, Diagnostic diagnostic) {
+    private CodeAction fixDocumentlessSchema(EventCodeActionContext context, Diagnostic diagnostic) {
         if (!(context.document instanceof SchemaDocument)) return null; // basically unreachable
         SchemaDocument document = (SchemaDocument)context.document;
         if (document.getSchemaIdentifier() == null) return null; // quickfix impossible
         String schemaName = document.getSchemaIdentifier();
         CodeAction action = basicQuickFix("Insert document definition '" + schemaName + "'", diagnostic);
 
-
-        Position insertPosition = CSTUtils.addPositions(diagnostic.getRange().getStart(), new Position(1, 0)); // one line below
-        insertPosition.setCharacter(0);
         SchemaNode rootSchemaNode = document.getRootNode().get(0);
-        for (SchemaNode child : rootSchemaNode) {
-            if (child.isASTInstance(openLbrace.class)) {
-                insertPosition = child.get(0).getRange().getEnd();
-                break;
-            }
-        }
+        Position insertPosition = firstPositionInBlock(rootSchemaNode);
 
+        if (insertPosition == null) {
+            insertPosition = CSTUtils.addPositions(diagnostic.getRange().getStart(), new Position(1, 0)); // one line below
+            insertPosition.setCharacter(0);
+        }
         int indent = diagnostic.getRange().getStart().getCharacter() + 4;
         action.setEdit(simpleEditList(context, List.of(
                 new TextEdit(new Range(insertPosition, insertPosition),  
@@ -142,6 +149,25 @@ public class QuickFixProvider implements CodeActionProvider {
                         spaceIndent(indent + 4) + "\n" + 
                     spaceIndent(indent) + "}\n")
         )));
+        return action;
+    }
+    private CodeAction fixDocumentReferenceAttribute(EventCodeActionContext context, Diagnostic diagnostic) {
+        SchemaNode fieldIdentifierNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        if (fieldIdentifierNode == null) return null;
+
+        // TODO: maybe append to existing indexing script if possible
+        //       also works poorly for fields outside document, since their indexing scripts require input.
+        Position insertPosition = firstPositionInBlock(fieldIdentifierNode.getParent());
+        if (insertPosition == null)return null;
+
+        CodeAction action = basicQuickFix("Set indexing to 'attribute' for field " + fieldIdentifierNode.getSymbol().getShortIdentifier(), diagnostic);
+
+        int indent = fieldIdentifierNode.getParent().getRange().getStart().getCharacter() + 4;
+
+        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), 
+            "\n" + spaceIndent(indent) + "indexing: attribute\n" + spaceIndent(indent - 4)
+        ));
+
         return action;
     }
 
@@ -171,6 +197,8 @@ public class QuickFixProvider implements CodeActionProvider {
                     break;
                 case DOCUMENTLESS_SCHEMA:
                     result.add(Either.forRight(fixDocumentlessSchema(context, diagnostic)));
+                case DOCUMENT_REFERENCE_ATTRIBUTE:
+                    result.add(Either.forRight(fixDocumentReferenceAttribute(context, diagnostic)));
                 default:
                     break;
             }

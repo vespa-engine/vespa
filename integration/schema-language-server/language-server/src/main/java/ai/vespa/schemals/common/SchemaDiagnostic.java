@@ -15,7 +15,8 @@ public class SchemaDiagnostic {
         SCHEMA_NAME_SAME_AS_FILE,
         DOCUMENT_NAME_SAME_AS_SCHEMA,
         ACCESS_UNIMPORTED_FIELD,
-        DOCUMENTLESS_SCHEMA
+        DOCUMENTLESS_SCHEMA,
+        DOCUMENT_REFERENCE_ATTRIBUTE
     };
 
     /**

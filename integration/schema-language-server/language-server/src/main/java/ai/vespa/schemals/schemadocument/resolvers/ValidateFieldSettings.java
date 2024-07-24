@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -43,6 +44,7 @@ public class ValidateFieldSettings {
                             .setRange( fieldIdentifierNode.getRange())
                             .setMessage( "Invalid document reference. The field must be an attribute.")
                             .setSeverity( DiagnosticSeverity.Error)
+                            .setCode(DiagnosticCode.DOCUMENT_REFERENCE_ATTRIBUTE)
                             .build() );
                 }
             }
