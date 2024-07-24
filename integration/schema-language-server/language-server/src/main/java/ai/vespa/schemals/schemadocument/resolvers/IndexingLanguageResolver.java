@@ -10,8 +10,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.identifierStr;
@@ -20,12 +20,9 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
-import ai.vespa.schemals.parser.indexinglanguage.ast.attributeExp;
 import ai.vespa.schemals.parser.indexinglanguage.ast.fieldName;
-import ai.vespa.schemals.parser.indexinglanguage.ast.indexExp;
 import ai.vespa.schemals.parser.indexinglanguage.ast.script;
 import ai.vespa.schemals.parser.indexinglanguage.ast.statement;
-import ai.vespa.schemals.parser.indexinglanguage.ast.summaryExp;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -53,11 +50,6 @@ public class IndexingLanguageResolver {
         }
 
         if (fieldDefinitionSymbol.getStatus() != SymbolStatus.DEFINITION || fieldDefinitionSymbol.getType() != SymbolType.FIELD) {
-            diagnostics.add(new SchemaDiagnostic.Builder()
-                    .setRange( fieldDefinitionNode.getRange())
-                    .setMessage( "Could not find field definition. Indexing language will not be resolved")
-                    .setSeverity( DiagnosticSeverity.Warning)
-                    .build() );
             return;
         }
 
