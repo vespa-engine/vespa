@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/hwy_impl.h>
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
 
