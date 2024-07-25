@@ -10,10 +10,14 @@ import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.Field;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PARSING;
 
@@ -30,8 +34,13 @@ public class QueryValidator extends Searcher {
     public Result search(Query query, Execution execution) {
         var session = execution.context().schemaInfo().newSession(query);
         ToolBox.visit(new TermSearchValidator(session), query.getModel().getQueryTree().getRoot());
-        ToolBox.visit(new PrefixSearchValidator(session), query.getModel().getQueryTree().getRoot());
-        return execution.search(query);
+
+        // Allow the query but add errors. TODO Vespa 9: Consider throwing instead
+        var prefixValidator = new PrefixSearchValidator(session);
+        ToolBox.visit(prefixValidator, query.getModel().getQueryTree().getRoot());
+        Result result = execution.search(query);
+        prefixValidator.errors.forEach(error -> result.hits().addError(error));
+        return result;
     }
 
     private abstract static class TermValidator extends ToolBox.QueryVisitor {
@@ -66,6 +75,8 @@ public class QueryValidator extends Searcher {
 
     private static class PrefixSearchValidator extends TermValidator {
 
+        final List<ErrorMessage> errors = new ArrayList<>();
+
         public PrefixSearchValidator(SchemaInfo.Session schema) {
             super(schema);
         }
@@ -77,9 +88,11 @@ public class QueryValidator extends Searcher {
                 var field = schema.fieldInfo(prefixItem.getIndexName());
                 if (field.isEmpty()) return true;
                 if ( ! field.get().isAttribute())
-                    throw new IllegalArgumentException("'" + prefixItem.getIndexName() + "' is not an attribute field: Prefix matching is not supported");
+                    errors.add(ErrorMessage.createIllegalQuery("'" + prefixItem.getIndexName() +
+                                                               "' is not an attribute field: Prefix matching is not supported"));
                 if (field.get().isIndex()) // index overrides attribute
-                    throw new IllegalArgumentException("'" + prefixItem.getIndexName() + "' is an index field: Prefix matching is not supported even when it is also an attribute");
+                    errors.add(ErrorMessage.createIllegalQuery("'" + prefixItem.getIndexName() +
+                                                               "' is an index field: Prefix matching is not supported even when it is also an attribute"));
             }
             return true;
         }
