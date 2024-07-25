@@ -50,4 +50,26 @@ public class StringUtils {
         int totalOffset = positionToOffset(content, pos) + offset;
         return offsetToPosition(content, totalOffset);
     }
+
+    public static String spaceIndent(int indent) {
+        return new String(new char[indent]).replace("\0", " ");
+    }
+
+    /**
+     * Indents all lines of a string except the first one by indentDelta spaces. If indentDelta is negative it will unindent.
+     * Similar to selecting a block of text and hitting tab/shift-tab (or &lt;, &gt; in vim), but not quite equal. If you try to unindent by more spaces 
+     * than the current indent of a line, nothing will happen.
+     *
+     * @param text the text to modify
+     * @param indentDelta number of spaces to add or subtract indentation.
+     * @return the modified text
+     */
+    public static String addIndents(String text, int indentDelta) {
+        if (indentDelta == 0) return text;
+        if (indentDelta > 0) {
+            return text.replace("\n", "\n" + spaceIndent(indentDelta));
+        } else {
+            return text.replace("\n" + spaceIndent(-indentDelta), "\n");
+        }
+    }
 }

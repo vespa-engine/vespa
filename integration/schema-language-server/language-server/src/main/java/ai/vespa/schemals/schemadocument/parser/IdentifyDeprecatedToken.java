@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.common.SchemaDiagnostic;
@@ -49,7 +50,18 @@ public class IdentifyDeprecatedToken extends Identifier {
             return ret;
         }
 
-        if (node.getSchemaType() == TokenType.ATTRIBUTE && node.getNextSibling() != null && node.getNextSibling().isASTInstance(identifierStr.class)) {
+        if ((node.getSchemaType() == TokenType.ATTRIBUTE || node.getSchemaType() == TokenType.INDEX) && node.getNextSibling() != null && node.getNextSibling().isASTInstance(identifierStr.class)) {
+            String offendingKind;
+            DiagnosticCode code;
+
+            if (node.getSchemaType() == TokenType.ATTRIBUTE) {
+                offendingKind = "attribute";
+                code = DiagnosticCode.DEPRECATED_TOKEN_ATTRIBUTE;
+            } else {
+                offendingKind = "index";
+                code = DiagnosticCode.DEPRECATED_TOKEN_INDEX;
+            }
+
             String attributeName = node.getNextSibling().getText();
             SchemaNode fieldNode = node;
 
@@ -57,41 +69,29 @@ public class IdentifyDeprecatedToken extends Identifier {
                 fieldNode = fieldNode.getParent();
             }
 
-            if (fieldNode != null) {
+            if (fieldNode != null && !fieldNode.get(1).getText().equals(attributeName)) {
                 String fieldIdentifier = fieldNode.get(1).getText();
-                ret.add(
-                    new SchemaDiagnostic.Builder()
-                        .setRange(node.getNextSibling().getRange())
-                        .setMessage("Creating an attribute for field '" + fieldIdentifier + "' with a different name '" + attributeName + 
-                            "' than the field name is deprecated, and support will be removed in Vespa 9. "
-                          + " Create a field with the wanted name outside the document instead.")
-                        .setSeverity(DiagnosticSeverity.Warning)
-                        .setCode(DiagnosticCode.DEPRECATED_TOKEN_ATTRIBUTE)
-                        .build()
-                );
-            }
-        }
 
-        if (node.getSchemaType() == TokenType.INDEX && node.getNextSibling() != null && node.getNextSibling().isASTInstance(identifierStr.class)) {
-            String attributeName = node.getNextSibling().getText();
-            SchemaNode fieldNode = node;
-
-            while (fieldNode != null && !fieldNode.isASTInstance(structFieldElm.class) && !fieldNode.isASTInstance(fieldElm.class)) {
-                fieldNode = fieldNode.getParent();
-            }
-
-            if (fieldNode != null) {
-                String fieldIdentifier = fieldNode.get(1).getText();
-                ret.add(
-                    new SchemaDiagnostic.Builder()
-                        .setRange(node.getNextSibling().getRange())
-                        .setMessage("Creating an index for field '" + fieldIdentifier + "' with a different name '" + attributeName + 
-                            "' than the field name is deprecated, and support will be removed in Vespa 9. "
-                          + " Create a field with the wanted name outside the document instead.")
-                        .setSeverity(DiagnosticSeverity.Warning)
-                        .setCode(DiagnosticCode.DEPRECATED_TOKEN_INDEX)
-                        .build()
-                );
+                if (fieldNode.getParent().isASTInstance(fieldOutsideDoc.class)) {
+                    ret.add(
+                        new SchemaDiagnostic.Builder()
+                            .setRange(node.getNextSibling().getRange())
+                            .setMessage("Cannot create " + offendingKind + " '" + attributeName + "' in field '" + fieldIdentifier + "' outside document.")
+                            .setSeverity(DiagnosticSeverity.Error)
+                            .build()
+                    );
+                } else {
+                    ret.add(
+                        new SchemaDiagnostic.Builder()
+                            .setRange(node.getNextSibling().getRange())
+                            .setMessage("Creating an " + offendingKind + " for field '" + fieldIdentifier + "' with a different name '" + attributeName + 
+                                "' than the field name is deprecated, and support will be removed in Vespa 9. "
+                              + " Create a field with the wanted name outside the document instead.")
+                            .setSeverity(DiagnosticSeverity.Warning)
+                            .setCode(code)
+                            .build()
+                    );
+                }
             }
         }
 

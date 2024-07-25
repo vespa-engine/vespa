@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentEdit;
@@ -16,14 +17,19 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.lsp.rename.SchemaRename;
 import ai.vespa.schemals.schemadocument.DocumentManager;
@@ -70,6 +76,8 @@ public class QuickFixProvider implements CodeActionProvider {
         String requiredName = FileUtils.schemaNameFromPath(context.document.getFileURI());
         CodeAction action = basicQuickFix("Rename schema to " + requiredName,  diagnostic);
         action.setEdit(SchemaRename.rename(context, requiredName));
+        action.setIsPreferred(true);
+
         return action;
     }
 
@@ -80,6 +88,8 @@ public class QuickFixProvider implements CodeActionProvider {
 
         CodeAction action = basicQuickFix("Rename document to " + document.getSchemaIdentifier(), diagnostic);
         action.setEdit(simpleEdit(context, diagnostic.getRange(), document.getSchemaIdentifier()));
+        action.setIsPreferred(true);
+
         return action;
     }
 
@@ -92,8 +102,14 @@ public class QuickFixProvider implements CodeActionProvider {
         return null;
     }
 
-    private String spaceIndent(int indent) {
-        return new String(new char[indent]).replace("\0", " ");
+    private SchemaNode findRootSchemaItemNode(SchemaNode start) {
+        SchemaNode rootSchemaItemNode = start;
+
+        while (rootSchemaItemNode != null) {
+            if (rootSchemaItemNode.isASTInstance(rootSchemaItem.class)) break;
+            rootSchemaItemNode = rootSchemaItemNode.getParent();
+        }
+        return rootSchemaItemNode;
     }
 
     private CodeAction fixAccessUnimportedField(EventCodeActionContext context, Diagnostic diagnostic) {
@@ -108,12 +124,7 @@ public class QuickFixProvider implements CodeActionProvider {
 
         String newFieldName = referenceFieldNode.getSymbol().getShortIdentifier() + "_" + offendingNode.getSymbol().getShortIdentifier();
 
-        SchemaNode rootSchemaItemNode = offendingNode;
-
-        while (rootSchemaItemNode != null) {
-            if (rootSchemaItemNode.isASTInstance(rootSchemaItem.class)) break;
-            rootSchemaItemNode = rootSchemaItemNode.getParent();
-        }
+        SchemaNode rootSchemaItemNode = findRootSchemaItemNode(offendingNode);
         if (rootSchemaItemNode == null) return null; // likely inside a rootDocument, where import field is impossible
 
         Position insertPosition = rootSchemaItemNode.getRange().getEnd();
@@ -130,7 +141,7 @@ public class QuickFixProvider implements CodeActionProvider {
             new TextEdit(new Range(insertPosition, insertPosition), 
                 "import field " + referenceFieldNode.getSymbol().getShortIdentifier() + "." + 
                                        offendingNode.getSymbol().getShortIdentifier() + " as " +
-                                       newFieldName + " {} \n\n" + spaceIndent(indent)),
+                                       newFieldName + " {} \n\n" + StringUtils.spaceIndent(indent)),
             new TextEdit(CSTUtils.unionRanges(offendingNode.getRange(), referenceFieldNode.getRange()), newFieldName)
         )));
 
@@ -154,10 +165,13 @@ public class QuickFixProvider implements CodeActionProvider {
         int indent = diagnostic.getRange().getStart().getCharacter() + 4;
         action.setEdit(simpleEditList(context, List.of(
                 new TextEdit(new Range(insertPosition, insertPosition),  
-                    "\n" + spaceIndent(indent) + "document " + schemaName + " {\n" + 
-                        spaceIndent(indent + 4) + "\n" + 
-                    spaceIndent(indent) + "}\n")
+                    "\n" + StringUtils.spaceIndent(indent) + "document " + schemaName + " {\n" + 
+                        StringUtils.spaceIndent(indent + 4) + "\n" + 
+                    StringUtils.spaceIndent(indent) + "}\n")
         )));
+
+        action.setIsPreferred(true);
+
         return action;
     }
     private CodeAction fixDocumentReferenceAttribute(EventCodeActionContext context, Diagnostic diagnostic) {
@@ -174,7 +188,7 @@ public class QuickFixProvider implements CodeActionProvider {
         int indent = fieldIdentifierNode.getParent().getRange().getStart().getCharacter() + 4;
 
         action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), 
-            "\n" + spaceIndent(indent) + "indexing: attribute\n" + spaceIndent(indent - 4)
+            "\n" + StringUtils.spaceIndent(indent) + "indexing: attribute\n" + StringUtils.spaceIndent(indent - 4)
         ));
 
         return action;
@@ -201,7 +215,7 @@ public class QuickFixProvider implements CodeActionProvider {
         int indent = definitionFieldElm.getRange().getStart().getCharacter() + 4;
 
         action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), 
-            "\n" + spaceIndent(indent) + "indexing: attribute\n" + spaceIndent(indent - 4),
+            "\n" + StringUtils.spaceIndent(indent) + "indexing: attribute\n" + StringUtils.spaceIndent(indent - 4),
             definitionDocument
         ));
 
@@ -267,7 +281,7 @@ public class QuickFixProvider implements CodeActionProvider {
         int indent = insertPosition.getCharacter();
 
         action.setEdit(simpleEdit(context, fieldElmNode.getRange(), 
-            "annotation myannotation {\n" + spaceIndent(indent + 4) + fieldBody + "\n" + spaceIndent(indent) + "}"
+            "annotation myannotation {\n" + StringUtils.spaceIndent(indent + 4) + fieldBody + "\n" + StringUtils.spaceIndent(indent) + "}"
         ));
 
         return action;
@@ -290,6 +304,69 @@ public class QuickFixProvider implements CodeActionProvider {
         CodeAction action = basicQuickFix("Change to schema", diagnostic);
         action.setEdit(simpleEdit(context, diagnostic.getRange(), "schema"));
         action.setIsPreferred(true);
+        return action;
+    }
+
+    private CodeAction fixDeprecatedTokenAttributeOrIndex(EventCodeActionContext context, Diagnostic diagnostic, DiagnosticCode code) {
+        // TODO: actually create an enclosing schema if it doesn't exist?
+        if (!context.document.getRootNode().get(0).isASTInstance(rootSchema.class)) return null;
+
+        Class<? extends Node> offendingBodyClass;
+        String replacementKind;
+
+        if (code == DiagnosticCode.DEPRECATED_TOKEN_ATTRIBUTE) {
+            offendingBodyClass = attributeElm.class;
+            replacementKind = "attribute";
+        } else {
+            offendingBodyClass = indexInsideField.class;
+            replacementKind = "index";
+        }
+
+        SchemaNode offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
+
+        // Find the field definition containing the error as well as its data type
+        Optional<Symbol> fieldDefinition = CSTUtils.findScope(offendingNode);
+        if (fieldDefinition.isEmpty()) return null;
+
+        Optional<SchemaNode> dataTypeNode = context.schemaIndex.fieldIndex().getFieldDataTypeNode(fieldDefinition.get());
+
+        // use some arbitrary default, the generated field will most likely require manual editing anyways
+        String dataTypeString = dataTypeNode.isPresent() ? dataTypeNode.get().getText() : "string"; 
+
+        // Find the node containing the entire index or attribute statement
+        SchemaNode offendingBodyElmNode = offendingNode;
+        while (offendingBodyElmNode != null && !offendingBodyElmNode.isASTInstance(offendingBodyClass)) {
+            offendingBodyElmNode = offendingBodyElmNode.getParent();
+        }
+        if (offendingBodyElmNode == null) return null;
+
+        // Find the rootSchemaItemNode containing the document so we can insert after
+        SchemaNode rootSchemaItemNode = findRootSchemaItemNode(offendingNode);
+        if (rootSchemaItemNode == null) return null;
+
+
+        // Calculate required indent and insert position
+        int indent = rootSchemaItemNode.getRange().getStart().getCharacter();
+        Range insertPosition = new Range(rootSchemaItemNode.getRange().getEnd(), rootSchemaItemNode.getRange().getEnd());
+
+
+        // subtract indent from the index/attribute block to match the new indent outside document
+        int bodyIndentDelta = indent + 4 - offendingBodyElmNode.getRange().getStart().getCharacter();
+        String offendingBodyText = StringUtils.addIndents(offendingBodyElmNode.getText(), bodyIndentDelta);
+
+        CodeAction action = basicQuickFix("Create field '" + offendingNode.getText() + "' outside document", diagnostic);
+        action.setEdit(simpleEditList(context, List.of(
+            new TextEdit(offendingBodyElmNode.getRange(), ""),
+            new TextEdit(insertPosition, "\n" + StringUtils.spaceIndent(indent) +
+                "field " + offendingNode.getText() + " type " + dataTypeString + " {\n" +
+                StringUtils.spaceIndent(indent + 4) + "# TODO: Auto-generated indexing statement\n" +
+                // Fields outside document needs an indexing statement to be useful
+                StringUtils.spaceIndent(indent + 4) + "indexing: input " + fieldDefinition.get().getShortIdentifier() + " | " + replacementKind + "\n" +
+                StringUtils.spaceIndent(indent + 4) + offendingBodyText + "\n" + StringUtils.spaceIndent(indent) + "}")
+        )));
+
+        action.setIsPreferred(true);
+
         return action;
     }
 
@@ -341,10 +418,13 @@ public class QuickFixProvider implements CodeActionProvider {
                 case DEPRECATED_TOKEN_SEARCH:
                     result.add(Either.forRight(fixDeprecatedTokenSearch(context, diagnostic)));
                     break;
+                case DEPRECATED_TOKEN_ATTRIBUTE:
+                case DEPRECATED_TOKEN_INDEX:
+                    result.add(Either.forRight(fixDeprecatedTokenAttributeOrIndex(context, diagnostic, code)));
+                    break;
                 default:
                     break;
             }
-
         }
 
         return result;
