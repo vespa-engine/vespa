@@ -473,7 +473,7 @@ public class SchemaIndex {
      *
      * @param childSymbol The symbol representing the child rank profile.
      * @param parentSymbol The symbol representing the parent rank profile.
-     * @return true if the inheritance relationship was successfully registered, true otherwise.
+     * @return true if the inheritance relationship was successfully registered, false otherwise.
      */
     public boolean tryRegisterRankProfileInheritance(Symbol childSymbol, Symbol parentSymbol) {
         return rankProfileInheritanceGraph.addInherits(childSymbol, parentSymbol);
@@ -484,7 +484,7 @@ public class SchemaIndex {
      *
      * @param childSymbol The symbol representing the child document-summary.
      * @param parentSymbol The symbol representing the parent document-summary.
-     * @return true if the inheritance relationship was successfully registered, true otherwise.
+     * @return true if the inheritance relationship was successfully registered, false otherwise.
      */
     public boolean tryRegisterDocumentSummaryInheritance(Symbol childSymbol, Symbol parentSymbol) {
         return documentSummaryInheritanceGraph.addInherits(childSymbol, parentSymbol);
