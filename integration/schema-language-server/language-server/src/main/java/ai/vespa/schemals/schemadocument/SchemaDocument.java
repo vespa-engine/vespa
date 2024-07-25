@@ -390,7 +390,11 @@ public class SchemaDocument implements DocumentManager {
                 // ignore
             }
         } catch(IllegalArgumentException ex) {
-            context.logger().println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                .setRange(indexingElmNode.getRange())
+                .setMessage(ex.getMessage())
+                .setSeverity(DiagnosticSeverity.Error)
+                .build());
         }
 
         return null;

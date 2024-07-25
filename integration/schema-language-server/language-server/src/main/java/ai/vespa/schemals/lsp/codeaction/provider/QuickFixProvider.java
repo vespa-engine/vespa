@@ -247,6 +247,8 @@ public class QuickFixProvider implements CodeActionProvider {
             action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), " inherits " + schemaReferenceSymbol.getShortIdentifier()));
         }
 
+        action.setIsPreferred(true);
+
         return action;
     }
 
