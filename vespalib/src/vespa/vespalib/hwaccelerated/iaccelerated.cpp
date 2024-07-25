@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "iaccelerated.h"
+#include "highway.h"
 #ifdef __x86_64__
 #    define VESPA_HWACCEL_ARCH_NAME "x86-64"
 #    include "x64_generic.h"
@@ -140,26 +141,29 @@ namespace target {
 // This is mostly just to be able to experiment in a controlled manner with levels
 // _higher_ than what's enabled by default.
 
+// TODO make it possible to select specific targets within Highway
+constexpr uint32_t HIGHWAY           = 4;
 #ifdef __x86_64__
-constexpr static uint32_t AVX3_DL           = 3;
-constexpr static uint32_t AVX3              = 2;
-constexpr static uint32_t AVX2              = 1;
-constexpr static uint32_t X64_GENERIC       = 0;
+constexpr uint32_t AVX3_DL           = 3;
+constexpr uint32_t AVX3              = 2;
+constexpr uint32_t AVX2              = 1;
+constexpr uint32_t X64_GENERIC       = 0;
 #else
-constexpr static uint32_t SVE2              = 3;
-constexpr static uint32_t SVE               = 2;
-constexpr static uint32_t NEON_FP16_DOTPROD = 1;
-constexpr static uint32_t NEON              = 0;
+constexpr uint32_t SVE2              = 3;
+constexpr uint32_t SVE               = 2;
+constexpr uint32_t NEON_FP16_DOTPROD = 1;
+constexpr uint32_t NEON              = 0;
 #endif
 
 #ifdef __x86_64__
-constexpr static uint32_t DEFAULT_LEVEL = AVX3;
+constexpr uint32_t DEFAULT_LEVEL = AVX3;
 #else
-constexpr static uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
+constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 #endif
 
 [[nodiscard]] const char* level_u32_to_str(uint32_t level) noexcept {
     switch (level) {
+    case HIGHWAY:           return "HIGHWAY";
 #ifdef __x86_64__
     case AVX3_DL:           return "AVX3_DL";
     case AVX3:              return "AVX3";
@@ -176,6 +180,9 @@ constexpr static uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 }
 
 [[nodiscard]] uint32_t level_str_to_u32(const std::string& str) noexcept {
+    if (str == "HIGHWAY") {
+        return HIGHWAY;
+    }
 #ifdef __x86_64__
     if (str == "AVX3_DL") {
         return AVX3_DL;
@@ -248,6 +255,10 @@ EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
     const uint32_t wanted_level = (maybe_var != nullptr)
             ? target::level_str_to_u32(std::string(maybe_var))
             : target::DEFAULT_LEVEL;
+    // Highway is always a supported level, so short-circuit if it's wanted
+    if (wanted_level == target::HIGHWAY) {
+        return EnabledTargetLevel(target::HIGHWAY);
+    }
     const uint32_t supported_level = target::max_supported_level();
     if (wanted_level > supported_level && (maybe_var != nullptr)) {
         LOG(info, "Requested vectorization target level is %s, but platform only supports %s.",
@@ -260,6 +271,12 @@ EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
 
 IAccelerated::UP create_accelerator() {
     static auto target_level = EnabledTargetLevel::create_from_env_var();
+    if (target_level.is_enabled(target::HIGHWAY)) {
+        auto hwy_target = Highway::create_best_target();
+        // TODO drop down to debug level once the dust has settled
+        LOG(info, "Using Highway vectorization engine with target %s", hwy_target->target_name());
+        return hwy_target;
+    }
 #ifdef __x86_64__
     if (target_level.is_enabled(target::AVX3_DL)) {
         return std::make_unique<Avx3DlAccelerator>();
@@ -347,7 +364,8 @@ verifyPopulationCount(const IAccelerated & accel)
     constexpr size_t expected = 32 + 0 + 1 + 48 + 32 + 1 + 64;
     size_t hwComputedPopulationCount = accel.populationCount(words, VESPA_NELEMS(words));
     if (hwComputedPopulationCount != expected) {
-        fprintf(stderr, "Accelerator is not computing populationCount correctly.Expected %zu, computed %zu\n", expected, hwComputedPopulationCount);
+        fprintf(stderr, "Accelerator is not computing populationCount correctly.Expected %zu, computed %zu\n",
+                expected, hwComputedPopulationCount);
         LOG_ABORT("should not be reached");
     }
 }
@@ -472,7 +490,7 @@ private:
     static void verify(const IAccelerated & accelerated) {
         verifyDotproduct<float>(accelerated);
         verifyDotproduct<double>(accelerated);
-        verifyDotproduct<int8_t>(accelerated);
+        verifyDotproduct<int8_t>(accelerated); // FIXME this can't be right, uses intermediate sum type of i8...?
         verifyDotproduct<int32_t>(accelerated);
         verifyDotproduct<int64_t>(accelerated);
         verifyEuclideanDistance<int8_t>(accelerated);
