@@ -26,6 +26,6 @@ export VESPA_FACTORY_BUILD_ID
 
 echo "Created factory build $VESPA_FACTORY_BUILD_ID for pipeline $PIPELINE"
 
-$BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status running "Building"
+$BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE running "Building"
 
 echo "Set factory build $VESPA_FACTORY_BUILD_ID status to running"
