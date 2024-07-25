@@ -1011,6 +1011,11 @@
                 <version>${opennlp.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.huaban</groupId>
+                <artifactId>jieba-analysis</artifactId>
+                <version>${jieba.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.vespa.version}</version>
