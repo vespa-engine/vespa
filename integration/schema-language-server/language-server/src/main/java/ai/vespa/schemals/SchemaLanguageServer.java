@@ -97,7 +97,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         var options = new CodeActionOptions(List.of( 
             CodeActionKind.QuickFix,
             CodeActionKind.Refactor,
-            CodeActionKind.RefactorExtract
+            CodeActionKind.RefactorRewrite
         ));
         initializeResult.getCapabilities().setCodeActionProvider(options);
 

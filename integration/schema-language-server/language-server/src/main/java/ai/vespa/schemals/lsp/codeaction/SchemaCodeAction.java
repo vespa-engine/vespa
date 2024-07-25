@@ -12,7 +12,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import ai.vespa.schemals.lsp.codeaction.provider.CodeActionProvider;
 import ai.vespa.schemals.lsp.codeaction.provider.QuickFixProvider;
-import ai.vespa.schemals.lsp.codeaction.provider.RefactorExtractProvider;
+import ai.vespa.schemals.lsp.codeaction.provider.RefactorRewriteProvider;
 import ai.vespa.schemals.context.EventCodeActionContext;
 
 /**
@@ -22,7 +22,7 @@ public class SchemaCodeAction {
 
     private static Map<String, CodeActionProvider> providers = new HashMap<>() {{
         put(CodeActionKind.QuickFix, new QuickFixProvider());
-        put(CodeActionKind.RefactorExtract, new RefactorExtractProvider());
+        put(CodeActionKind.RefactorRewrite, new RefactorRewriteProvider());
     }};
 
     public static List<Either<Command, CodeAction>> provideActions(EventCodeActionContext context) {

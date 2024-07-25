@@ -7,6 +7,16 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-lan
 
 let client: LanguageClient
 
+class A {
+	num: number = 0;
+}
+
+class B extends A {
+	foo(): number {
+		return this.num;
+	}
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Vespa Language Support is active.')
 

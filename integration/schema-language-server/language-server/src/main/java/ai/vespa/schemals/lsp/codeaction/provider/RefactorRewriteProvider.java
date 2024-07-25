@@ -18,7 +18,6 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import ai.vespa.schemals.common.StringUtils;
-import ai.vespa.schemals.common.editbuilder.TextDocumentEditBuilder;
 import ai.vespa.schemals.common.editbuilder.WorkspaceEditBuilder;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.parser.ast.rankProfile;
@@ -27,11 +26,11 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
- * RefactorExtractProvider
+ * RefactorRewriteProvider
  */
-public class RefactorExtractProvider implements CodeActionProvider {
+public class RefactorRewriteProvider implements CodeActionProvider {
 
-    private Optional<CodeAction> getExtractRankProfile(SchemaNode node, EventCodeActionContext context) {
+    private Optional<CodeAction> getMoveRankProfile(SchemaNode node, EventCodeActionContext context) {
         if (!(context.document instanceof SchemaDocument)) return Optional.empty();
         SchemaNode rankProfileNode = CSTUtils.findASTClassAncestor(node, rankProfile.class);
         if (rankProfileNode == null) return Optional.empty();
@@ -39,17 +38,10 @@ public class RefactorExtractProvider implements CodeActionProvider {
         String schemaName = ((SchemaDocument)context.document).getSchemaIdentifier();
         String rankProfileName = rankProfileNode.get(1).getText();
 
-        CodeAction action = new CodeAction();
-        action.setTitle("Extract '" + rankProfileName + "' to separate file");
-        action.setKind(CodeActionKind.RefactorExtract);
-
         URI schemaURI = URI.create(context.document.getFileURI());
+        Path rankProfilePath = Path.of(schemaURI).resolveSibling(Path.of(schemaName, rankProfileName + ".profile"));
 
-        Path path = Path.of(schemaURI);
-
-        Path newPath = path.resolveSibling(Path.of(schemaName, rankProfileName + ".profile"));
-
-        String rankProfileURI = newPath.toUri().toString();
+        String rankProfileURI = rankProfilePath.toUri().toString();
         Range rankProfileInsertPosition = new Range(new Position(0, 0), new Position(0, 0));
         String rankProfileText = StringUtils.addIndents(rankProfileNode.getText(), -rankProfileNode.getRange().getStart().getCharacter());
 
@@ -59,6 +51,9 @@ public class RefactorExtractProvider implements CodeActionProvider {
             .addTextEdit(context.document.getVersionedTextDocumentIdentifier(), new TextEdit(rankProfileNode.getRange(), ""))
             .build();
 
+        CodeAction action = new CodeAction();
+        action.setTitle("Move '" + rankProfileName + "' to separate file");
+        action.setKind(CodeActionKind.RefactorRewrite);
         action.setEdit(edit);
         return Optional.of(action);
     }
@@ -68,7 +63,7 @@ public class RefactorExtractProvider implements CodeActionProvider {
         SchemaNode atPosition = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
         List<Either<Command, CodeAction>> result = new ArrayList<>();
 
-        getExtractRankProfile(atPosition, context).ifPresent(action -> result.add(Either.forRight(action)));
+        getMoveRankProfile(atPosition, context).ifPresent(action -> result.add(Either.forRight(action)));
 
         return result;
 	}
