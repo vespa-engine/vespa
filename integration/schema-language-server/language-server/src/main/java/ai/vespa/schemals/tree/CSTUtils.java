@@ -147,6 +147,17 @@ public class CSTUtils {
         return node;
     }
 
+    /*
+     * Helper method for walking up the tree to find some AST class
+     */
+    public static SchemaNode findASTClassAncestor(SchemaNode node, Class<?> astClass) {
+        while (node != null) {
+            if (node.isASTInstance(astClass)) return node;
+            node = node.getParent();
+        }
+        return null;
+    }
+
     private static SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
         if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
             return node;

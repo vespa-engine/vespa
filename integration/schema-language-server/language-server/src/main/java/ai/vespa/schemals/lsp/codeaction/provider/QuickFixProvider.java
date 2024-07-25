@@ -7,12 +7,9 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
-import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
-import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import ai.vespa.schemals.common.FileUtils;
@@ -31,6 +28,7 @@ import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
+import ai.vespa.schemals.lsp.codeaction.utils.CodeActionUtils;
 import ai.vespa.schemals.lsp.rename.SchemaRename;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
@@ -42,27 +40,6 @@ import ai.vespa.schemals.tree.SchemaNode;
  * Responsible for giving quickfixes for the given code action request
  */
 public class QuickFixProvider implements CodeActionProvider {
-
-    private WorkspaceEdit simpleEditList(EventCodeActionContext context, List<TextEdit> edits, DocumentManager document) {
-        WorkspaceEdit workspaceEdit = new WorkspaceEdit();
-        TextDocumentEdit textDocumentEdit = new TextDocumentEdit();
-        textDocumentEdit.setTextDocument(document.getVersionedTextDocumentIdentifier());
-        textDocumentEdit.setEdits(edits.stream().filter(edit -> edit != null).toList());
-        workspaceEdit.setDocumentChanges(List.of(Either.forLeft(textDocumentEdit)));
-        return workspaceEdit;
-    }
-
-    private WorkspaceEdit simpleEditList(EventCodeActionContext context, List<TextEdit> edits) {
-        return simpleEditList(context, edits, context.document);
-    }
-
-    private WorkspaceEdit simpleEdit(EventCodeActionContext context, Range range, String newText) {
-        return simpleEditList(context, List.of(new TextEdit(range, newText)));
-    }
-
-    private WorkspaceEdit simpleEdit(EventCodeActionContext context, Range range, String newText, DocumentManager document) {
-        return simpleEditList(context, List.of(new TextEdit(range, newText)), document);
-    }
 
     private CodeAction basicQuickFix(String title, Diagnostic fixFor) {
         CodeAction action = new CodeAction();
@@ -87,7 +64,7 @@ public class QuickFixProvider implements CodeActionProvider {
         if (document.getSchemaIdentifier() == null) return null; // quickfix impossible
 
         CodeAction action = basicQuickFix("Rename document to " + document.getSchemaIdentifier(), diagnostic);
-        action.setEdit(simpleEdit(context, diagnostic.getRange(), document.getSchemaIdentifier()));
+        action.setEdit(CodeActionUtils.simpleEdit(context, diagnostic.getRange(), document.getSchemaIdentifier()));
         action.setIsPreferred(true);
 
         return action;
@@ -137,7 +114,7 @@ public class QuickFixProvider implements CodeActionProvider {
 
         insertPosition.setCharacter(indent);
 
-        action.setEdit(simpleEditList(context, List.of(
+        action.setEdit(CodeActionUtils.simpleEditList(context, List.of(
             new TextEdit(new Range(insertPosition, insertPosition), 
                 "import field " + referenceFieldNode.getSymbol().getShortIdentifier() + "." + 
                                        offendingNode.getSymbol().getShortIdentifier() + " as " +
@@ -163,7 +140,7 @@ public class QuickFixProvider implements CodeActionProvider {
             insertPosition.setCharacter(0);
         }
         int indent = diagnostic.getRange().getStart().getCharacter() + 4;
-        action.setEdit(simpleEditList(context, List.of(
+        action.setEdit(CodeActionUtils.simpleEditList(context, List.of(
                 new TextEdit(new Range(insertPosition, insertPosition),  
                     "\n" + StringUtils.spaceIndent(indent) + "document " + schemaName + " {\n" + 
                         StringUtils.spaceIndent(indent + 4) + "\n" + 
@@ -187,7 +164,7 @@ public class QuickFixProvider implements CodeActionProvider {
 
         int indent = fieldIdentifierNode.getParent().getRange().getStart().getCharacter() + 4;
 
-        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), 
+        action.setEdit(CodeActionUtils.simpleEdit(context, new Range(insertPosition, insertPosition), 
             "\n" + StringUtils.spaceIndent(indent) + "indexing: attribute\n" + StringUtils.spaceIndent(indent - 4)
         ));
 
@@ -214,7 +191,7 @@ public class QuickFixProvider implements CodeActionProvider {
 
         int indent = definitionFieldElm.getRange().getStart().getCharacter() + 4;
 
-        action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), 
+        action.setEdit(CodeActionUtils.simpleEdit(context, new Range(insertPosition, insertPosition), 
             "\n" + StringUtils.spaceIndent(indent) + "indexing: attribute\n" + StringUtils.spaceIndent(indent - 4),
             definitionDocument
         ));
@@ -241,10 +218,10 @@ public class QuickFixProvider implements CodeActionProvider {
 
         if (documentIdentifierNode.getNextSibling() != null && documentIdentifierNode.getNextSibling().isASTInstance(inheritsDocument.class)) {
             Position insertPosition = documentIdentifierNode.getNextSibling().getRange().getEnd();
-            action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), ", " + schemaReferenceSymbol.getShortIdentifier()));
+            action.setEdit(CodeActionUtils.simpleEdit(context, new Range(insertPosition, insertPosition), ", " + schemaReferenceSymbol.getShortIdentifier()));
         } else {
             Position insertPosition = documentIdentifierNode.getRange().getEnd();
-            action.setEdit(simpleEdit(context, new Range(insertPosition, insertPosition), " inherits " + schemaReferenceSymbol.getShortIdentifier()));
+            action.setEdit(CodeActionUtils.simpleEdit(context, new Range(insertPosition, insertPosition), " inherits " + schemaReferenceSymbol.getShortIdentifier()));
         }
 
         action.setIsPreferred(true);
@@ -261,7 +238,7 @@ public class QuickFixProvider implements CodeActionProvider {
         CodeAction action = basicQuickFix("Remove field declaration '" + offendingNode.getText() + "'", diagnostic);
         Range fieldRange = offendingNode.getParent().getRange();
 
-        action.setEdit(simpleEdit(context, fieldRange, ""));
+        action.setEdit(CodeActionUtils.simpleEdit(context, fieldRange, ""));
 
         return action;
     }
@@ -282,7 +259,7 @@ public class QuickFixProvider implements CodeActionProvider {
         Position insertPosition = fieldElmNode.getRange().getStart();
         int indent = insertPosition.getCharacter();
 
-        action.setEdit(simpleEdit(context, fieldElmNode.getRange(), 
+        action.setEdit(CodeActionUtils.simpleEdit(context, fieldElmNode.getRange(), 
             "annotation myannotation {\n" + StringUtils.spaceIndent(indent + 4) + fieldBody + "\n" + StringUtils.spaceIndent(indent) + "}"
         ));
 
@@ -297,14 +274,14 @@ public class QuickFixProvider implements CodeActionProvider {
         String typeText = tokenNode.getText();
         CodeAction action = basicQuickFix("Change to array<" + typeText + ">", diagnostic);
 
-        action.setEdit(simpleEdit(context, tokenNode.getParent().getParent().getRange(), "array<" + typeText + ">"));
+        action.setEdit(CodeActionUtils.simpleEdit(context, tokenNode.getParent().getParent().getRange(), "array<" + typeText + ">"));
         action.setIsPreferred(true);
         return action;
     }
 
     private CodeAction fixDeprecatedTokenSearch(EventCodeActionContext context, Diagnostic diagnostic) {
         CodeAction action = basicQuickFix("Change to schema", diagnostic);
-        action.setEdit(simpleEdit(context, diagnostic.getRange(), "schema"));
+        action.setEdit(CodeActionUtils.simpleEdit(context, diagnostic.getRange(), "schema"));
         action.setIsPreferred(true);
         return action;
     }
@@ -357,7 +334,7 @@ public class QuickFixProvider implements CodeActionProvider {
         String offendingBodyText = StringUtils.addIndents(offendingBodyElmNode.getText(), bodyIndentDelta);
 
         CodeAction action = basicQuickFix("Create field '" + offendingNode.getText() + "' outside document", diagnostic);
-        action.setEdit(simpleEditList(context, List.of(
+        action.setEdit(CodeActionUtils.simpleEditList(context, List.of(
             new TextEdit(offendingBodyElmNode.getRange(), ""),
             new TextEdit(insertPosition, "\n" + StringUtils.spaceIndent(indent) +
                 "field " + offendingNode.getText() + " type " + dataTypeString + " {\n" +

@@ -27,6 +27,7 @@ import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
+import ai.vespa.schemals.parser.indexinglanguage.ast.getFieldExp;
 
 public class SchemaIndex {
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_TYPE_MAP = new HashMap<>() {{
@@ -330,12 +331,22 @@ public class SchemaIndex {
 
     /**
      * Retrieves the definition of a symbol from a map
+     * We have three versions of this, because definitions can reference other definitions. 
+     * For example, struct-field is both a definition and a reference.
+     *  {@link getSymbolDefinition} returns identity if you supply a definition
+     *  {@link getNextSymbolDefinition} always tries to interpret the argument as a reference
+     *  {@link getFirstSymbolDefinition} can be thought of as successive applications of getNextSymbolDefinition until not possible
+     *
      *
      * @param reference The reference to retrieve the definition for.
      * @return An Optional containing the definition of the symbol, or an empty Optional if the symbol is not found.
      */
     public Optional<Symbol> getSymbolDefinition(Symbol reference) {
         if (reference.getStatus() == SymbolStatus.DEFINITION) return Optional.of(reference);
+        return Optional.ofNullable(definitionOfReference.get(reference));
+    }
+
+    public Optional<Symbol> getNextSymbolDefinition(Symbol reference) {
         return Optional.ofNullable(definitionOfReference.get(reference));
     }
 

@@ -94,7 +94,11 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
         initializeResult.getCapabilities().setDocumentSymbolProvider(true);
 
-        var options = new CodeActionOptions(new ArrayList<>() {{ add(CodeActionKind.QuickFix);}});
+        var options = new CodeActionOptions(List.of( 
+            CodeActionKind.QuickFix,
+            CodeActionKind.Refactor,
+            CodeActionKind.RefactorExtract
+        ));
         initializeResult.getCapabilities().setCodeActionProvider(options);
 
         this.schemaDocumentScheduler.setReparseDescendants(false);

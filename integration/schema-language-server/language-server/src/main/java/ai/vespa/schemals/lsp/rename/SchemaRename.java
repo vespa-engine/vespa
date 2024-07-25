@@ -7,40 +7,34 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.RenameFile;
+import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 
+import ai.vespa.schemals.common.editbuilder.TextDocumentEditBuilder;
+import ai.vespa.schemals.common.editbuilder.WorkspaceEditBuilder;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.lsp.workspaceEdit.SchemaTextDocumentEdit;
-import ai.vespa.schemals.lsp.workspaceEdit.SchemaWorkspaceEdit;
 
 public class SchemaRename {
 
-    private static ArrayList<SchemaTextDocumentEdit> createTextDocumentEditsFromSymbols(EventContext context, List<Symbol> symbols, String newName) {
-        HashMap<String, SchemaTextDocumentEdit> documentEdits = new HashMap<>();
-
-        int count = 0;
+    private static WorkspaceEditBuilder addTextEditsFromSymbols(WorkspaceEditBuilder builder, EventContext context, List<Symbol> symbols, String newName) {
         for (Symbol symbol : symbols) {
+            DocumentManager manager = context.scheduler.getDocument(symbol.getFileURI());
 
-            if (!documentEdits.containsKey(symbol.getFileURI())) {
-                SchemaDocument document = context.scheduler.getSchemaDocument(symbol.getFileURI());
-                if (document == null) return new ArrayList<>();
-                SchemaTextDocumentEdit documentEdit = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
-                documentEdits.put(documentEdit.getFileURI(), documentEdit);
+            if (manager == null) {
+                builder.addTextEdit(symbol.getFileURI(), new TextEdit(symbol.getNode().getRange(), newName));
+            } else {
+                builder.addTextEdit(manager.getVersionedTextDocumentIdentifier(), new TextEdit(symbol.getNode().getRange(), newName));
             }
-
-            SchemaTextDocumentEdit documentEdit = documentEdits.get(symbol.getFileURI());
-            documentEdit.add(new TextEdit(symbol.getNode().getRange(), newName));
-            count += 1;
         }
-
-        return new ArrayList<SchemaTextDocumentEdit>(documentEdits.values());
+        return builder;
     }
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
@@ -51,7 +45,7 @@ public class SchemaRename {
             return null;
         }
 
-        // CASES: rename schema / document, field, struct, funciton
+        // CASES: rename schema / document, field, struct, function
         Optional<Symbol> symbol = Optional.empty();
 
         SymbolType type = node.getSymbol().getType();
@@ -83,17 +77,12 @@ public class SchemaRename {
             return renameSchema(context, document, symbol.get(), symbolOccurances, node.getText(), newName);
         }
 
-        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
-
-        ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, symbolOccurances, newName);
-
-        workspaceEdits.addTextDocumentEdits(documentEdits);
-        
-        return workspaceEdits.exportEdits();
+        WorkspaceEditBuilder builder = new WorkspaceEditBuilder();
+        builder = addTextEditsFromSymbols(builder, context, symbolOccurances, newName);
+        return builder.build();
     }
 
     private static WorkspaceEdit renameSchema(EventContext context, SchemaDocument document, Symbol symbol, List<Symbol> symbolOccurances, String oldName, String newName) {
-        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
 
         Optional<Symbol> documentSymbol = context.schemaIndex.findSymbol(symbol, SymbolType.DOCUMENT, oldName);
 
@@ -118,25 +107,16 @@ public class SchemaRename {
             return null;
         }
 
-        ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, symbolOccurances, newName);
+        WorkspaceEditBuilder builder = new WorkspaceEditBuilder();
 
-        for (int i = 0; i < documentEdits.size(); i++) {
-            if (documentEdits.get(i).getFileURI().equals(document.getFileURI())) {
-                workspaceEdits.addTextDocumentEdit(documentEdits.get(i));
-
-                documentEdits.remove(i);
-
-                break;
-            }
-        }
+        // register this document so edits here happens before rename
+        builder.registerVersionedDocumentIdentifier(document.getVersionedTextDocumentIdentifier());
 
         if (!document.getFileURI().equals(newFileURI)) {
-            workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
+            builder.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
         }
 
-        workspaceEdits.addTextDocumentEdits(documentEdits);
-
-        return workspaceEdits.exportEdits();
+        builder = addTextEditsFromSymbols(builder, context, symbolOccurances, newName);
+        return builder.build();
     }
-
 }

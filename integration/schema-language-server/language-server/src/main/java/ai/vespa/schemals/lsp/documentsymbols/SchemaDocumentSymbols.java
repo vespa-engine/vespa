@@ -50,6 +50,11 @@ public class SchemaDocumentSymbols {
         List<Either<SymbolInformation, DocumentSymbol>> ret = new ArrayList<>();
         for (Symbol symbol : allSymbols) {
             if (!symbol.getFileURI().equals(context.document.getFileURI())) continue;
+
+            // this case can happen if the schema is not correct, so some identifiers become empty
+            // It will not cause a server side error, but the client crashes (at least vscode)
+            if (symbol.getShortIdentifier() == null || symbol.getShortIdentifier().isBlank()) continue;
+
             ret.add(Either.forRight(new DocumentSymbol(
                 symbol.getShortIdentifier(), 
                 schemaSymbolTypeToLSPSymbolKind(symbol.getType()), 

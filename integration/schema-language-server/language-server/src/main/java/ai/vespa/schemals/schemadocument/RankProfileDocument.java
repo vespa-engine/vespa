@@ -70,7 +70,11 @@ public class RankProfileDocument implements DocumentManager {
         try {
             parserFaultTolerant.rankProfile(null);
         } catch(ParseException pe) {
-            context.logger().println("PARSE EXCEPTION IN RANK PROFILE: " + pe.getMessage());
+            try {
+                // ParseException getMessage is glitchy
+                context.logger().println("PARSE EXCEPTION IN RANK PROFILE: " + pe.getMessage());
+            } catch(Exception e) {
+            }
         } catch(IllegalArgumentException e) {
             context.logger().println("ILLEGAL ARGUMENT EXCEPTION IN RANK PROFILE: " + e.getMessage());
         }
