@@ -10,6 +10,7 @@ vespa_add_library(vespa_hwaccelerated
     SOURCES
     iaccelerated.cpp
     generic.cpp
+    hwy_impl.cpp
     ${ACCEL_FILES}
     DEPENDS
     INSTALL lib64
@@ -18,3 +19,4 @@ set_source_files_properties(avx2.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=haswel
 set_source_files_properties(avx512.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=skylake-avx512 -mprefer-vector-width=512")
 set(BLA_VENDOR OpenBLAS)
 vespa_add_target_package_dependency(vespa_hwaccelerated BLAS)
+vespa_add_target_external_dependency(vespa_hwaccelerated hwy)

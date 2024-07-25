@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/hwaccelerated/generic.h>
+#include <vespa/vespalib/hwaccelerated/hwy_impl.h>
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
 
@@ -29,7 +30,7 @@ void verifyEuclideanDistance(const hwaccelerated::IAccelerated & accel, size_t t
             sum += d * d;
         }
         P hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
-        EXPECT_APPROX(sum, hwComputedSum, sum*approxFactor);
+        ASSERT_APPROX(sum, hwComputedSum, sum*approxFactor);
     }
 }
 
@@ -40,11 +41,17 @@ verifyEuclideanDistance(const hwaccelerated::IAccelerated & accelerator, size_t 
     verifyEuclideanDistance<double, double>(accelerator, testLength, 0.0);
 }
 
-TEST("test euclidean distance") {
-    hwaccelerated::GenericAccelerator genericAccelerator;
+TEST("test generic euclidean distance") {
+    hwaccelerated::GenericAccelerator genericAccelrator;
     constexpr size_t TEST_LENGTH = 140000; // must be longer than 64k
     TEST_DO(verifyEuclideanDistance(hwaccelerated::GenericAccelerator(), TEST_LENGTH));
     TEST_DO(verifyEuclideanDistance(hwaccelerated::IAccelerated::getAccelerator(), TEST_LENGTH));
+}
+
+TEST("test Highway euclidean distance") {
+    hwaccelerated::HwyAccelerator accelerator;
+    constexpr size_t TEST_LENGTH = 140000; // must be longer than 64k
+    TEST_DO(verifyEuclideanDistance(accelerator, TEST_LENGTH));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
