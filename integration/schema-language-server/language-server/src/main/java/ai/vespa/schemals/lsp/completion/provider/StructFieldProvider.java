@@ -1,0 +1,68 @@
+package ai.vespa.schemals.lsp.completion.provider;
+
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+
+import org.eclipse.lsp4j.CompletionItem;
+
+import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
+import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.SchemaNode;
+
+/**
+ * StructFieldProvider
+ */
+public class StructFieldProvider implements CompletionProvider {
+
+	@Override
+	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+        if (!(context.document instanceof SchemaDocument)) return List.of();
+
+        SchemaNode lastCleanNode = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.startOfWord());
+        if (lastCleanNode == null) return List.of();
+
+        if (!lastCleanNode.isASTInstance(NL.class)) return List.of();
+
+        SchemaNode parent = lastCleanNode.getParent();
+        if (parent == null)return List.of();
+
+        if (parent.isASTInstance(openLbrace.class)) parent = parent.getParent();
+
+        if (!parent.isASTInstance(fieldElm.class) && !parent.isASTInstance(structFieldElm.class)) return List.of();
+
+        SchemaNode fieldDefinitionNode = parent.get(1);
+
+        if (!fieldDefinitionNode.hasSymbol()) return List.of();
+
+        Optional<Symbol> definition = context.schemaIndex.getFirstSymbolDefinition(fieldDefinitionNode.getSymbol());
+
+        if (definition.isEmpty()) return List.of();
+
+        Optional<Symbol> structDefinition = context.schemaIndex.fieldIndex().findFieldStructDefinition(definition.get());
+        if (structDefinition.isEmpty()) return List.of();
+
+        List<Symbol> fieldsInStruct = context.schemaIndex.listSymbolsInScope(structDefinition.get(), EnumSet.of(SymbolType.FIELD, SymbolType.MAP_KEY, SymbolType.MAP_VALUE));
+
+        if (fieldsInStruct.isEmpty()) return List.of(CompletionUtils.constructBasic("struct-field")); // just simple keyword completion if we cannot suggest fields
+
+        String choiceString = String.join(",", fieldsInStruct.stream().map(symbol -> symbol.getShortIdentifier()).toList());
+
+        // Ugly edge case: MAP_VALUE is not defined if value is a struct
+        if (fieldsInStruct.size() == 1 && fieldsInStruct.get(0).getType() == SymbolType.MAP_KEY) {
+            choiceString += ",value";
+        }
+
+        choiceString = "${1|" + choiceString + "|}";
+
+        return List.of(CompletionUtils.constructSnippet("struct-field", "struct-field " + choiceString + " {\n\t$0\n}"));
+	}
+}

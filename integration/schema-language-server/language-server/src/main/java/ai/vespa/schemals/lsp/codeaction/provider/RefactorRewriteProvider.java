@@ -20,7 +20,9 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.common.editbuilder.WorkspaceEditBuilder;
 import ai.vespa.schemals.context.EventCodeActionContext;
+import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -67,4 +69,4 @@ public class RefactorRewriteProvider implements CodeActionProvider {
 
         return result;
 	}
-}
+} 

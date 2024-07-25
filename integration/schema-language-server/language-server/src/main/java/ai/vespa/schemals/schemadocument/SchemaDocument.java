@@ -186,11 +186,11 @@ public class SchemaDocument implements DocumentManager {
 
     public Position getPreviousStartOfWord(Position pos) {
         try {
-            int offset = StringUtils.positionToOffset(this.content, pos);
+            int offset = StringUtils.positionToOffset(this.content, pos) - 1;
 
             // Skip whitespace
             // But not newline because newline is a token
-            while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
+            while (offset >= 0 && Character.isWhitespace(content.charAt(offset)) && content.charAt(offset) != '\n')offset--;
 
             for (int i = offset; i >= 0; i--) {
                 if (Character.isWhitespace(content.charAt(i)))return StringUtils.offsetToPosition(this.content, i + 1);

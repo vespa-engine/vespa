@@ -67,8 +67,6 @@ public class InheritanceCompletionProvider implements CompletionProvider {
 
         List<CompletionItem> ret = new ArrayList<>();
 
-        context.logger.println(identifierSymbol.getLongIdentifier());
-
         boolean defaultSeen = false;
         Symbol scope = (identifierSymbol.getType() == SymbolType.DOCUMENT 
                      || identifierSymbol.getType() == SymbolType.SCHEMA 

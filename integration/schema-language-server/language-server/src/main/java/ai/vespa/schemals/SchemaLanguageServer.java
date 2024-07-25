@@ -12,6 +12,8 @@ import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.CodeActionOptions;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.DidChangeWatchedFilesRegistrationOptions;
+import org.eclipse.lsp4j.ExecuteCommandOptions;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileSystemWatcher;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -99,6 +101,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
             CodeActionKind.Refactor,
             CodeActionKind.RefactorRewrite
         ));
+        //options.setResolveProvider(true);
         initializeResult.getCapabilities().setCodeActionProvider(options);
 
         this.schemaDocumentScheduler.setReparseDescendants(false);

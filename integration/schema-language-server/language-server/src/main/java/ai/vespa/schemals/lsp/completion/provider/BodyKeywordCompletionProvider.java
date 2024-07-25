@@ -3,12 +3,23 @@ package ai.vespa.schemals.lsp.completion.provider;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.structDefinitionElm;
+import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.firstPhase;
+import ai.vespa.schemals.parser.ast.fieldSetElm;
+import ai.vespa.schemals.parser.ast.rankElm;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -16,8 +27,8 @@ import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 
 public class BodyKeywordCompletionProvider implements CompletionProvider {
     // Currently key is the classLeafIdentifierString of a node with a body
-    private static HashMap<String, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
-        put("rootSchema", new CompletionItem[]{
+    private static Map<Class<?>, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
+        put(rootSchema.class, new CompletionItem[]{
             CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"), // TODO: figure out client tab format
             CompletionUtils.constructSnippet("index", "index ${1:index-name}: ${2:property}", "index:"),
             CompletionUtils.constructSnippet("index", "index ${1:index-name} {\n\t$0\n}", "index {}"),
@@ -33,13 +44,13 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("raw-as-base64-in-summary", "raw-as-base64-in-summary")
         });
 
-        put("documentElm", new CompletionItem[]{
+        put(documentElm.class, new CompletionItem[]{
             CompletionUtils.constructSnippet("struct", "struct ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
 
         });
 
-        put("fieldElm", new CompletionItem[]{
+        put(fieldElm.class, new CompletionItem[]{
             CompletionUtils.constructSnippet("alias", "alias: $1"),
             // attribute is deprecated
             CompletionUtils.constructSnippet("bolding", "bolding: on"),
@@ -59,7 +70,6 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("sorting", "sorting: ", "sorting:"),
             CompletionUtils.constructSnippet("sorting", "sorting {\n\t$0\n}", "sorting {}"),
             CompletionUtils.constructSnippet("stemming", "stemming: "),
-            CompletionUtils.constructSnippet("struct-field", "struct-field ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("summary", "summary: ", "summary:"),
             CompletionUtils.constructSnippet("summary", "summary {\n\t$0\n}", "summary {}"),
             // summary-to is deprecated
@@ -68,11 +78,11 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("weightedset", "weightedset {\n\t$0\n}", "weightedset {}"),
         });
 
-        put("structDefinitionElm", new CompletionItem[]{
+        put(structDefinitionElm.class, new CompletionItem[]{
             CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
         });
 
-        put("rankProfile", new CompletionItem[]{
+        put(rankProfile.class, new CompletionItem[]{
             CompletionUtils.constructSnippet("diversity", "diversity {\n\tattribute: $1\n\tmin-groups: $0\n}"),
             CompletionUtils.constructSnippet("match-phase", "match-phase {\n\tattribute: $1\n\torder: $2\n\tmax-hits: $3\n}"),
             CompletionUtils.constructSnippet("first-phase", "first-phase {\n\t$0\n}"),
@@ -102,20 +112,20 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("rank-type", "rank-type ${1:field-name}: ${2|identity,about,tags,empty|}"),
         });
 
-        put("firstPhase", new CompletionItem[]{
+        put(firstPhase.class, new CompletionItem[]{
             CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
             CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
             CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
             CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0"),
         });
 
-        put("fieldSetElm", new CompletionItem[]{
+        put(fieldSetElm.class, new CompletionItem[]{
             CompletionUtils.constructSnippet("match", "match: ", "match:"),
             CompletionUtils.constructSnippet("match", "match {\n\t$0\n}", "match {}"),
             CompletionUtils.constructSnippet("query-command", "query-command: ")
         });
 
-        put("rankElm", new CompletionItem[]{
+        put(rankElm.class, new CompletionItem[]{
             CompletionUtils.constructBasic("filter"),
             CompletionUtils.constructBasic("literal"),
             CompletionUtils.constructBasic("normal"),
@@ -123,7 +133,8 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
 
     }};
 
-    private String getEnclosingBodyKey(EventPositionContext context) {
+    @Override
+    public List<CompletionItem> getCompletionItems(EventPositionContext context) {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
 
@@ -133,41 +144,16 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             return null;
         }
 
-        SchemaNode searchNode = last;
+        if (!last.isASTInstance(NL.class)) return null;
 
-        if (searchNode.getSchemaType() == TokenType.RBRACE) {
-            if (searchNode.getParent() == null || searchNode.getParent().getParent() == null)return null;
-            searchNode = searchNode.getParent().getParent();
-        }
+        SchemaNode searchNode = last.getParent();
 
-        if (searchNode.getSchemaType() == TokenType.NL) {
-            if (searchNode.getParent() == null)return null;
-            searchNode = searchNode.getParent();
-        }
+        if (searchNode == null) return null;
 
-        if (searchNode.getSchemaType() == TokenType.LBRACE) {
-            if (searchNode.getParent() == null || searchNode.getParent().getParent() == null)return null;
-            searchNode = searchNode.getParent().getParent();
-        }
+        if (searchNode.isASTInstance(openLbrace.class))searchNode = searchNode.getParent();
 
-        if (searchNode.getClassLeafIdentifierString().equals("openLbrace")) {
-            if (searchNode.getParent() == null)return null;
-            searchNode = searchNode.getParent();
-        }
-
-        String identifier = searchNode.getClassLeafIdentifierString();
-
-        if (bodyKeywordSnippets.containsKey(identifier)) {
-            return identifier;
-        }
-
-        return null;
-    }
-
-    @Override
-    public List<CompletionItem> getCompletionItems(EventPositionContext context) {
-        String key = getEnclosingBodyKey(context);
-        if (key == null)return List.of();
-        return List.of(bodyKeywordSnippets.get(key));
+        CompletionItem[] result = bodyKeywordSnippets.get(searchNode.getASTClass());
+        if (result == null) return List.of();
+        return List.of(result);
     }
 }

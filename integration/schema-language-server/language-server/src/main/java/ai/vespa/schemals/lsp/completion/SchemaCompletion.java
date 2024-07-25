@@ -20,7 +20,8 @@ public class SchemaCompletion {
         new FieldsCompletionProvider(),
         new MatchCompletionProvider(),
         new InheritsCompletionProvider(),
-        new InheritanceCompletionProvider()
+        new InheritanceCompletionProvider(),
+        new StructFieldProvider()
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
@@ -32,10 +33,7 @@ public class SchemaCompletion {
         }
 
         SchemaNode node = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
-
-        if (node != null) {
-            context.logger.println("Current node: " + node.toString());
-        }
+        SchemaNode lastClean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
         for (CompletionProvider provider : providers) {
             try {

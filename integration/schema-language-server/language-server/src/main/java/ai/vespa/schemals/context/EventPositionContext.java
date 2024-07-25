@@ -12,6 +12,7 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventPositionContext extends EventContext {
     public final Position position;
+    public final Position startOfWord;
 
     public EventPositionContext(
         PrintStream logger,
@@ -23,10 +24,10 @@ public class EventPositionContext extends EventContext {
     ) {
         super(logger, scheduler, schemaIndex, messageHandler, documentIdentifier);
         this.position = position;
+        this.startOfWord = (document instanceof SchemaDocument) ? ((SchemaDocument)document).getPreviousStartOfWord(position) : position;
     }
 
     public Position startOfWord() {
-        if (!(document instanceof SchemaDocument)) return this.position;
-        return ((SchemaDocument)document).getPreviousStartOfWord(position);
+        return this.startOfWord;
     }
 }
