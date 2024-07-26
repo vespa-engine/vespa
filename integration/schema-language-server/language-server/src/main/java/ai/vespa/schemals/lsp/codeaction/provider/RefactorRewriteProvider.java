@@ -20,6 +20,8 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.common.editbuilder.WorkspaceEditBuilder;
 import ai.vespa.schemals.context.EventCodeActionContext;
+import ai.vespa.schemals.lsp.command.CommandRegistry;
+import ai.vespa.schemals.lsp.command.CommandRegistry.CommandType;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
@@ -57,6 +59,7 @@ public class RefactorRewriteProvider implements CodeActionProvider {
         action.setTitle("Move '" + rankProfileName + "' to separate file");
         action.setKind(CodeActionKind.RefactorRewrite);
         action.setEdit(edit);
+        action.setCommand(CommandRegistry.createLSPCommand(CommandType.DOCUMENT_OPEN, List.of(rankProfileURI)));
         return Optional.of(action);
     }
 

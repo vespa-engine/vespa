@@ -4,6 +4,7 @@ import java.io.PrintStream;
 
 import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.DocumentSymbolParams;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
@@ -41,12 +42,12 @@ public class EventContextCreator {
         );
     }
 
-    public EventContext createContext(SemanticTokensParams params) {
-        return new EventContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument());
+    public EventDocumentContext createContext(SemanticTokensParams params) {
+        return new EventDocumentContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument());
     }
 
-    public EventContext createContext(DocumentSymbolParams params) {
-        return new EventContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument());
+    public EventDocumentContext createContext(DocumentSymbolParams params) {
+        return new EventDocumentContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument());
     }
 
     public EventCodeActionContext createContext(CodeActionParams params) {
@@ -65,6 +66,10 @@ public class EventContextCreator {
             params.getContext().getDiagnostics(),
             params.getContext().getOnly()
         );
+    }
+
+    public EventExecuteCommandContext createContext(ExecuteCommandParams params) {
+        return new EventExecuteCommandContext(logger, scheduler, schemaIndex, messageHandler, params);
     }
 
 }

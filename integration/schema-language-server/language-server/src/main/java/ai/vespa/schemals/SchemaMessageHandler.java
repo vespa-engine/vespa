@@ -7,6 +7,8 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.MessageActionItem;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.MessageType;
+import org.eclipse.lsp4j.ShowDocumentParams;
+import org.eclipse.lsp4j.ShowDocumentResult;
 import org.eclipse.lsp4j.ShowMessageRequestParams;
 import org.eclipse.lsp4j.services.LanguageClient;
 
@@ -32,5 +34,9 @@ public class SchemaMessageHandler {
         params.setMessage(message);
         params.setType(MessageType.Info);
         return client.showMessageRequest(params);
+    }
+
+    public CompletableFuture<ShowDocumentResult> showDocument(String fileURI) {
+        return client.showDocument(new ShowDocumentParams(fileURI));
     }
 }

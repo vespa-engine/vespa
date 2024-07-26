@@ -33,10 +33,8 @@ import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
 import ai.vespa.schemals.schemadocument.resolvers.StructFieldDefinitionResolver;
-import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.TypeNodeResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -108,12 +106,13 @@ public class SchemaDocument implements DocumentManager {
         if (parsingResult.CST().isPresent()) {
             this.CST = parsingResult.CST().get();
             lexer.setCST(CST);
+
+            logger.println("======== CST for file: " + fileURI + " ========");
+     
+            CSTUtils.printTree(logger, CST);
         }
 
 
-        logger.println("======== CST for file: " + fileURI + " ========");
- 
-        //CSTUtils.printTree(logger, CST);
 
         //schemaIndex.dumpIndex();
 

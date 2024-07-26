@@ -21,7 +21,7 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
-import ai.vespa.schemals.context.EventContext;
+import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
@@ -667,7 +667,7 @@ public class SchemaSemanticTokens implements Visitor {
         return ret;
     }
 
-    public static SemanticTokens getSemanticTokens(EventContext context) {
+    public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
 
         if (context.document == null) {
             return new SemanticTokens(new ArrayList<>());

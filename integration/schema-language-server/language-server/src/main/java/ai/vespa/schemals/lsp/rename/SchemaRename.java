@@ -1,17 +1,14 @@
 package ai.vespa.schemals.lsp.rename;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.RenameFile;
-import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 
-import ai.vespa.schemals.common.editbuilder.TextDocumentEditBuilder;
 import ai.vespa.schemals.common.editbuilder.WorkspaceEditBuilder;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventPositionContext;

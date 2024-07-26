@@ -9,7 +9,7 @@ import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
-import ai.vespa.schemals.context.EventContext;
+import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
@@ -43,7 +43,7 @@ public class SchemaDocumentSymbols {
         }
     }
 
-    public static List<Either<SymbolInformation, DocumentSymbol>> documentSymbols(EventContext context) {
+    public static List<Either<SymbolInformation, DocumentSymbol>> documentSymbols(EventDocumentContext context) {
         // providing scope = null yields all symbols
         List<Symbol> allSymbols = context.schemaIndex.listSymbolsInScope(null, EnumSet.allOf(SymbolType.class));
 

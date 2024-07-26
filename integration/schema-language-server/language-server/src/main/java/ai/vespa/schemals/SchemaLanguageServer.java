@@ -3,6 +3,7 @@ package ai.vespa.schemals;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
+import ai.vespa.schemals.lsp.command.CommandRegistry;
 import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
 
 import org.eclipse.lsp4j.services.LanguageServer;
@@ -72,7 +73,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex);
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
-        this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler);
+        this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
 
     }    
 
@@ -95,6 +96,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
         initializeResult.getCapabilities().setDocumentSymbolProvider(true);
+        initializeResult.getCapabilities().setExecuteCommandProvider(new ExecuteCommandOptions(CommandRegistry.getSupportedCommandList()));
 
         var options = new CodeActionOptions(List.of( 
             CodeActionKind.QuickFix,

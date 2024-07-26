@@ -10,7 +10,7 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
-public class EventPositionContext extends EventContext {
+public class EventPositionContext extends EventDocumentContext {
     public final Position position;
     public final Position startOfWord;
 

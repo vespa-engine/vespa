@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.Range;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 import com.yahoo.schema.processing.ReservedFunctionNames;
@@ -25,6 +26,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.AS;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
@@ -117,7 +119,9 @@ public class IdentifySymbolDefinition extends Identifier {
 
             node.setSymbol(symbolType, context.fileURI(), scope.get());
 
-            if (context.schemaIndex().findSymbolInScope(node.getSymbol()).isEmpty()) {
+            Optional<Symbol> existingSymbol = context.schemaIndex().findSymbolInScope(node.getSymbol());
+
+            if (existingSymbol.isEmpty()) {
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
                 context.schemaIndex().insertSymbolDefinition(node.getSymbol());
 
@@ -127,6 +131,24 @@ public class IdentifySymbolDefinition extends Identifier {
 
             } else {
                 node.setSymbolStatus(SymbolStatus.INVALID);
+
+
+                if (symbolType == SymbolType.FIELD) {
+                    Range range = null;
+
+                    if (parent.getParent().isASTInstance(fieldOutsideDoc.class)) {
+                        range = node.getRange();
+                    } else if (!context.fieldIndex().getIsInsideDoc(existingSymbol.get())) {
+                        range = existingSymbol.get().getNode().getRange();
+                    }
+
+                    if (range != null)
+                        ret.add(new SchemaDiagnostic.Builder()
+                            .setRange(range)
+                            .setMessage("Field '" + node.getText() + "' shadows a document field with the same name.")
+                            .setSeverity(DiagnosticSeverity.Warning)
+                            .build());
+                }
             }
 
             return ret;
