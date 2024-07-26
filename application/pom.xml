@@ -99,6 +99,10 @@
       <artifactId>opennlp-tools</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.huaban</groupId>
+      <artifactId>jieba-analysis</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
     </dependency>
@@ -237,4 +241,12 @@
       </plugin>
     </plugins>
   </build>
+  <repositories>
+    <!-- jieba-analysis 1.0.3 isn't available in standard repositories -->
+    <repository>
+      <id>project.local</id>
+      <name>project</name>
+      <url>file:${project.basedir}/../opennlp-linguistics/repo</url>
+    </repository>
+  </repositories>
 </project>
