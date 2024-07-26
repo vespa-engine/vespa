@@ -88,13 +88,5 @@
       </plugin>
     </plugins>
   </build>
-  <repositories>
-    <!-- jieba-analysis 1.0.3 isn't available in standard repositories -->
-    <repository>
-      <id>project.local</id>
-      <name>project</name>
-      <url>file:${project.basedir}/repo</url>
-    </repository>
-  </repositories>
 
 </project>

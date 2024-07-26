@@ -98,9 +98,19 @@
       <groupId>org.apache.opennlp</groupId>
       <artifactId>opennlp-tools</artifactId>
     </dependency>
-    <dependency>
+    <dependency> <!-- opennlp-linguistics dependency -->
       <groupId>com.huaban</groupId>
       <artifactId>jieba-analysis</artifactId>
+      <exclusions>
+        <exclusion> <!-- wrong version -->
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency> <!-- jieba-analysis dependency - pull in our version instead -->
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
     </dependency>
     <dependency>
       <groupId>org.hdrhistogram</groupId>
@@ -241,12 +251,4 @@
       </plugin>
     </plugins>
   </build>
-  <repositories>
-    <!-- jieba-analysis 1.0.3 isn't available in standard repositories -->
-    <repository>
-      <id>project.local</id>
-      <name>project</name>
-      <url>file:${project.basedir}/../opennlp-linguistics/repo</url>
-    </repository>
-  </repositories>
-</project>
+ </project>

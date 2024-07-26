@@ -111,7 +111,7 @@
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
         <jetty.vespa.version>11.0.22</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
-        <jieba.vespa.version>1.0.3</jieba.vespa.version>
+        <jieba.vespa.version>1.0.2</jieba.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.14.0</jna.vespa.version>
         <joda-time.vespa.version>2.12.7</joda-time.vespa.version>
