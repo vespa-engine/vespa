@@ -576,8 +576,8 @@ public class RankProfile implements Cloneable {
      */
     public void setInheritedSummaryFeatures(String parentProfile) {
         if ( ! inheritedNames().contains(parentProfile))
-            throw new IllegalArgumentException("This can only inherit the summary features of a directly inherited profile, '" +
-                                               ", but attempting to inherit '" + parentProfile);
+            throw new IllegalArgumentException("This can only inherit the summary features of a directly inherited profile, " +
+                                               "but is attempting to inherit '" + parentProfile);
         this.inheritedSummaryFeaturesProfileName = parentProfile;
     }
 
@@ -592,8 +592,8 @@ public class RankProfile implements Cloneable {
      */
     public void setInheritedMatchFeatures(String parentProfile) {
         if ( ! inheritedNames().contains(parentProfile))
-            throw new IllegalArgumentException("This can only inherit the match features of a directly inherited profile, '" +
-                                               ", but attempting to inherit '" + parentProfile);
+            throw new IllegalArgumentException("This can only inherit the match features of a directly inherited profile," +
+                                               "but is attempting to inherit '" + parentProfile);
         this.inheritedMatchFeaturesProfileName = parentProfile;
     }
 
