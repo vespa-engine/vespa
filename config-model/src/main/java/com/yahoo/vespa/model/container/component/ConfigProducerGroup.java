@@ -5,12 +5,10 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 
 /**
  * A group of config producers that have a component id.
@@ -51,14 +49,11 @@ public class ConfigProducerGroup<CHILD extends AnyConfigProducer> extends TreeCo
     }
 
     public <T extends CHILD> Collection<T> getComponents(Class<T> componentClass) {
-        Collection<T> result = new ArrayList<>();
-
-        for (CHILD child: getChildren().values()) {
-            if (componentClass.isInstance(child)) {
-                result.add(componentClass.cast(child));
-            }
-        }
-        return Collections.unmodifiableCollection(result);
+        return getChildren().values().stream()
+                .filter(componentClass::isInstance)
+                .map(componentClass::cast)
+                .sorted() // We need consistent ordering
+                .toList();
     }
 
     /** Returns a map of all components in this group, with (local) component ID as key. */
