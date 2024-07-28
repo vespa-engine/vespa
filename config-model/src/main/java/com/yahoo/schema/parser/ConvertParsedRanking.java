@@ -35,20 +35,12 @@ public class ConvertParsedRanking {
 
     void convertRankProfile(Schema schema, ParsedRankProfile parsed) {
         RankProfile profile = makeRankProfile(schema, parsed.name());
-        for (String name : parsed.getInherited())
-            profile.inherit(name);
-
+        parsed.getInherited().forEach(profile::inherit);
         parsed.isStrict().ifPresent(profile::setStrict);
         parsed.isUseSignificanceModel().ifPresent(profile::setUseSignificanceModel);
-
-        for (var constant : parsed.getConstants().values())
-            profile.add(constant);
-
-        for (var onnxModel : parsed.getOnnxModels())
-            profile.add(onnxModel);
-
-        for (var input : parsed.getInputs().entrySet())
-            profile.addInput(input.getKey(), input.getValue());
+        parsed.getConstants().values().forEach(profile::add); ;
+        parsed.getOnnxModels().forEach(profile::add);
+        parsed.getInputs().forEach(profile::addInput);
 
         for (var func : parsed.getFunctions()) {
             String name = func.name();
@@ -79,25 +71,15 @@ public class ConvertParsedRanking {
         parsed.getGlobalPhaseExpression().ifPresent(profile::setGlobalPhaseRanking);
         parsed.getGlobalPhaseRerankCount().ifPresent(profile::setGlobalPhaseRerankCount);
 
-        for (var value : parsed.getMatchFeatures()) {
-            profile.addMatchFeatures(value);
-        }
-        for (var value : parsed.getRankFeatures()) {
-            profile.addRankFeatures(value);
-        }
-        for (var value : parsed.getSummaryFeatures()) {
-            profile.addSummaryFeatures(value);
-        }
-
+        parsed.getMatchFeatures().forEach(profile::addMatchFeatures);
+        parsed.getRankFeatures().forEach(profile::addRankFeatures);
+        parsed.getSummaryFeatures().forEach(profile::addSummaryFeatures);
         parsed.getInheritedMatchFeatures().ifPresent(profile::setInheritedMatchFeatures);
         parsed.getInheritedSummaryFeatures().ifPresent(profile::setInheritedSummaryFeatures);
-        if (parsed.getIgnoreDefaultRankFeatures()) {
+        if (parsed.getIgnoreDefaultRankFeatures())
             profile.setIgnoreDefaultRankFeatures(true);
-        }
 
-        for (var mutateOp : parsed.getMutateOperations()) {
-            profile.addMutateOperation(mutateOp);
-        }
+        parsed.getMutateOperations().forEach(profile::addMutateOperation);
         parsed.getFieldsWithRankFilter().forEach
             ((fieldName, isFilter) -> profile.addRankSetting(fieldName, RankProfile.RankSetting.Type.PREFERBITVECTOR, isFilter));
 
