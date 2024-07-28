@@ -51,15 +51,11 @@ public class ConfigProducerGroup<CHILD extends AnyConfigProducer> extends TreeCo
     }
 
     public <T extends CHILD> Collection<T> getComponents(Class<T> componentClass) {
-        List<T> result = new ArrayList<>();
-
-        for (CHILD child: getChildren().values()) {
-            if (componentClass.isInstance(child)) {
-                result.add(componentClass.cast(child));
-            }
-        }
-        // We need consistent ordering
-        return result.stream().sorted().toList();
+        return getChildren().values().stream()
+                .filter(componentClass::isInstance)
+                .map(componentClass::cast)
+                .sorted() // We need consistent ordering
+                .toList();
     }
 
     /** Returns a map of all components in this group, with (local) component ID as key. */
