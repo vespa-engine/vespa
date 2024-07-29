@@ -322,7 +322,7 @@ public class ConvertParsedSchemas {
             schema.add(onnxModel);
         rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry));
         rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry));
-        var rankConverter = new ConvertParsedRanking(rankProfileRegistry);
+        var rankConverter = new ParsedRankingConverter(rankProfileRegistry);
         for (var rankProfile : parsed.getRankProfiles()) {
             rankConverter.convertRankProfile(schema, rankProfile);
         }

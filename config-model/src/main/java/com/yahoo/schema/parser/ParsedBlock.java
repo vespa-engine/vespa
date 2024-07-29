@@ -3,9 +3,11 @@ package com.yahoo.schema.parser;
 
 /**
  * Common methods for various Parsed* classes.
+ *
  * @author arnej27959
- **/
+ */
 public class ParsedBlock {
+
     private final String name;
     private final String blockType;
 
@@ -29,8 +31,10 @@ public class ParsedBlock {
         throw new IllegalArgumentException(buf.toString());
     }
 
+    @Override
     public String toString() {
         return blockType + " '" + name + "'";
     }
+
 }
 
