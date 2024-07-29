@@ -14,6 +14,12 @@ readonly VERBOSE=${VERBOSE:-}
 function report()
 {
   echo "Reporting...."
+  if [[ $BUILDKITE == true ]]; then
+      if [[ -f $LOG_DIR/error-$STEP.log ]]; then
+          LASTLINES=$(tail -100 "$LOG_DIR/error-$STEP.log" | head -80)
+          buildkite-agent annotate "$LASTLINES" --style 'error' --context 'ctx-error'
+      fi
+  fi
 }
 trap report EXIT
 
