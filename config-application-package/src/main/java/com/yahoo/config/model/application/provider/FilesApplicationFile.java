@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.yolean.Exceptions;
 
@@ -16,10 +17,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author Ulf Lilleengen
@@ -114,17 +118,21 @@ public class FilesApplicationFile extends ApplicationFile {
 
     @Override
     public ApplicationFile writeFile(Reader input) {
-        if (file.getParentFile() != null) {
+        return uncheck(() -> writeFile(Utf8.toBytes(IOUtils.readAll(input))));
+    }
+
+    @Override
+    public ApplicationFile writeFile(InputStream input) {
+        return uncheck(() -> writeFile(input.readAllBytes()));
+    }
+
+    private ApplicationFile writeFile(byte[] data) {
+        if (file.getParentFile() != null)
             file.getParentFile().mkdirs();
-        }
-        try {
-            String status = file.exists() ? ApplicationFile.ContentStatusChanged : ApplicationFile.ContentStatusNew;
-            String data = com.yahoo.io.IOUtils.readAll(input);
-            IOUtils.writeFile(file, data, false);
-            writeMetaFile(data, status);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+        String status = file.exists() ? ApplicationFile.ContentStatusChanged : ApplicationFile.ContentStatusNew;
+        uncheck(() -> Files.write(file.toPath(), data));
+        uncheck(() -> writeMetaFile(data, status));
         return this;
     }
 
@@ -160,6 +168,10 @@ public class FilesApplicationFile extends ApplicationFile {
     }
 
     private void writeMetaFile(String data, String status) throws IOException {
+        writeMetaFile(Utf8.toBytes(data), status);
+    }
+
+    private void writeMetaFile(byte[] data, String status) throws IOException {
         File metaDir = createMetaDir();
         log.log(Level.FINE, () -> "meta dir=" + metaDir);
         File metaFile = new File(metaDir + "/" + getPath().getName());

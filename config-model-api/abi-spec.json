@@ -46,6 +46,7 @@
       "public abstract java.io.InputStream createInputStream()",
       "public abstract com.yahoo.config.application.api.ApplicationFile createDirectory()",
       "public abstract com.yahoo.config.application.api.ApplicationFile writeFile(java.io.Reader)",
+      "public abstract com.yahoo.config.application.api.ApplicationFile writeFile(java.io.InputStream)",
       "public abstract com.yahoo.config.application.api.ApplicationFile appendFile(java.lang.String)",
       "public java.util.List listFiles()",
       "public abstract java.util.List listFiles(com.yahoo.config.application.api.ApplicationFile$PathFilter)",

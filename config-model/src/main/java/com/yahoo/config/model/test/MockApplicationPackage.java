@@ -17,6 +17,7 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 
 import java.io.BufferedInputStream;
@@ -38,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * For testing purposes only
@@ -445,14 +448,18 @@ public class MockApplicationPackage implements ApplicationPackage {
 
         @Override
         public ApplicationFile writeFile(Reader input) {
-            try {
-                if (content != null) throw new UnsupportedOperationException("Not implemented for mock file content");
-                IOUtils.writeFile(file, IOUtils.readAll(input), false);
-                return this;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            return uncheck(() -> writeFile(Utf8.toBytes(IOUtils.readAll(input))));
+        }
+
+        @Override
+        public ApplicationFile writeFile(InputStream input) {
+            return uncheck(() -> writeFile(input.readAllBytes()));
+        }
+
+        private ApplicationFile writeFile(byte[] input) {
+            if (content != null) throw new UnsupportedOperationException("Not implemented for mock file content");
+            uncheck(() -> Files.write(file.toPath(), input));
+            return this;
         }
 
         @Override
