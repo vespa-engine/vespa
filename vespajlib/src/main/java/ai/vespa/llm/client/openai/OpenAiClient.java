@@ -143,7 +143,7 @@ public class OpenAiClient implements LanguageModel {
 
     private boolean shouldRetry(Throwable exception) {
         Throwable cause = exception.getCause();
-        if (cause instanceof SocketException && cause.getMessage().contains("Connection reset")) {
+        if (cause instanceof IOException && cause.getMessage().contains("Connection reset")) {
             return true;
         }
         if (cause instanceof HttpConnectTimeoutException) {
