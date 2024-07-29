@@ -45,14 +45,16 @@ case $COMMAND in
     ;;
   create-build)
     FACTORY_PIPELINE_ID=$1
-    if [[ -z $FACTORY_PIPELINE_ID ]]; then echo "Usage: $0 $COMMAND <pipeline id>"; exit 1; fi
+    FACTORY_PLATFORM=$2
+    if [[ -z $FACTORY_PIPELINE_ID ]]; then echo "Usage: $0 $COMMAND <pipeline id> [factory platform]"; exit 1; fi
+    if [[ -z $FACTORY_PLATFORM ]]; then FACTORY_PLATFORM="opensource_centos7"; fi
     $CURL -d "{
         \"startSeconds\": $(date +%s),
         \"sdApiUrl\": \"https://api.buildkite.com/\",
         \"pipelineId\": $FACTORY_PIPELINE_ID,
         \"jobId\": 0,
         \"buildId\": $BUILDKITE_BUILD_NUMBER,
-        \"platform\": \"opensource_centos7\"
+        \"platform\": \"$FACTORY_PLATFORM\"
     }" \
     "$FACTORY_API/builds"
     ;;
