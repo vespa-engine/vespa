@@ -7,13 +7,14 @@ import ai.vespa.http.HttpURL.Path;
 
 import java.io.InputStream;
 
+import static com.yahoo.vespa.config.server.http.ContentRequest.ReturnType.CONTENT;
+import static com.yahoo.vespa.config.server.http.ContentRequest.ReturnType.STATUS;
 import static com.yahoo.vespa.config.server.session.Session.Mode;
 
 /**
  * Represents a {@link ContentRequest}, and contains common functionality for content requests for all content handlers.
  *
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public abstract class ContentRequest {
     private static final String RETURN_QUERY_PROPERTY = "return";
@@ -33,29 +34,23 @@ public abstract class ContentRequest {
     }
 
     public static Mode getApplicationFileMode(com.yahoo.jdisc.http.HttpRequest.Method method) {
-        switch (method) {
-            case GET:
-            case OPTIONS:
-                return Mode.READ;
-            default:
-                return Mode.WRITE;
-        }
+        return switch (method) {
+            case GET, OPTIONS -> Mode.READ;
+            default -> Mode.WRITE;
+        };
     }
 
     ReturnType getReturnType() {
         if (request.hasProperty(RETURN_QUERY_PROPERTY)) {
             String type = request.getProperty(RETURN_QUERY_PROPERTY);
-            switch (type) {
-                case "content":
-                return ReturnType.CONTENT;
-                case "status":
-                return ReturnType.STATUS;
-                default:
-                throw new BadRequestException("return=" + type + " is an illegal argument. Only " +
-                    ReturnType.CONTENT.name() + " and " + ReturnType.STATUS.name() + " are allowed");
-            }
+            return switch (type) {
+                case "content" -> CONTENT;
+                case "status" -> STATUS;
+                default -> throw new BadRequestException("return=" + type + " is an illegal argument. Only " +
+                                                                 CONTENT.name() + " and " + STATUS.name() + " are allowed");
+            };
         } else {
-            return ReturnType.CONTENT;
+            return CONTENT;
         }
     }
 

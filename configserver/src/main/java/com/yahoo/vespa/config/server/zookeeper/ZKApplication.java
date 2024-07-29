@@ -118,7 +118,10 @@ public class ZKApplication {
     }
 
     void putData(Path path, String data) {
-        byte[] bytes = Utf8.toBytes(data);
+        putData(path, Utf8.toBytes(data));
+    }
+
+    void putData(Path path, byte[] bytes) {
         ensureDataIsNotTooLarge(bytes, path);
         try {
             curator.set(getFullPath(path), bytes);

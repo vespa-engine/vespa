@@ -57,6 +57,10 @@ public class ConfigUtils {
         return getMd5(input.wrap());
     }
 
+    public static String getMd5(byte[] input) {
+        return getMd5(ByteBuffer.wrap(input));
+    }
+
     private static String getMd5(ByteBuffer input) {
         MessageDigest md5 = getMd5Instance();
         md5.update(input);

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.ByteArrayInputStream;
@@ -21,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author Ulf Lilleengen
@@ -63,7 +65,7 @@ class ZKApplicationFile extends ApplicationFile {
             throw new RuntimeException("Can't delete, directory not empty: " + this);
         }
         zkApp.deleteRecurse(getZKPath(path));
-        writeMetaFile(null, ContentStatusDeleted);
+        writeMetaFile(ContentStatusDeleted);
         return this;
     }
 
@@ -91,24 +93,28 @@ class ZKApplicationFile extends ApplicationFile {
             throw new IllegalArgumentException("Unable to create directory, file exists: " + path);
         }
         zkApp.create(zkPath);
-        writeMetaFile(null, ContentStatusNew);
+        writeMetaFile(ContentStatusNew);
         return this;
     }
 
     @Override
     public ApplicationFile writeFile(Reader input) {
+        return uncheck(() -> writeFile(Utf8.toBytes(IOUtils.readAll(input))));
+    }
+
+    @Override
+    public ApplicationFile writeFile(InputStream input) {
+        return uncheck(() -> writeFile(input.readAllBytes()));
+    }
+
+    private ApplicationFile writeFile(byte[] data) {
         Path zkPath = getZKPath(path);
-        try {
-            String data = IOUtils.readAll(input);
-            String status = ContentStatusNew;
-            if (zkApp.exists(zkPath)) {
-                status = ContentStatusChanged;
-            }
-            zkApp.putData(zkPath, data);
-            writeMetaFile(data, status);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        String status = ContentStatusNew;
+        if (zkApp.exists(zkPath)) {
+            status = ContentStatusChanged;
         }
+        zkApp.putData(zkPath, data);
+        writeMetaFile(data, status);
         return this;
     }
 
@@ -122,7 +128,7 @@ class ZKApplicationFile extends ApplicationFile {
         String existingData = zkApp.getData(zkPath);
         if (existingData == null)
             existingData = "";
-        zkApp.putData(zkPath, existingData + value);
+        zkApp.putData(zkPath, Utf8.toBytes(existingData + value));
         writeMetaFile(value, status);
         return this;
     }
@@ -148,7 +154,15 @@ class ZKApplicationFile extends ApplicationFile {
         return Path.fromString(USERAPP_ZK_SUBPATH).append(path);
     }
 
+    private void writeMetaFile(String status) {
+        writeMetaFile((byte[]) null, status);
+    }
+
     private void writeMetaFile(String input, String status) {
+        writeMetaFile(Utf8.toBytes(input), status);
+    }
+
+    private void writeMetaFile(byte[] input, String status) {
         Path metaPath = getZKPath(getMetaPath());
         StringWriter writer = new StringWriter();
         try {
