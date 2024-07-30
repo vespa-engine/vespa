@@ -230,9 +230,14 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
         return CompletableFutures.computeAsync((cancelChecker) -> {
 
+            logger.println("Received semantic token request!");
+            logger.println("For file: " + params.getTextDocument().getUri());
+
             try {
 
-                return SchemaSemanticTokens.getSemanticTokens(eventContextCreator.createContext(params));
+                var result = SchemaSemanticTokens.getSemanticTokens(eventContextCreator.createContext(params));
+                logger.println("Generated: " + result.getData().size() + " tokens");
+                return result;
                  
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception

@@ -25,11 +25,9 @@
   <!-- Extension points defined by the plugin.
        Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
   <extensions defaultExtensionNs="com.intellij">
-    <fileType name="Schema" extensions="sd,profile" implementationClass="ai.vespa.schemals.intellij.SchemaFileType" language="Schema" fieldName="INSTANCE"/>
-    <platform.lsp.serverSupportProvider implementation="ai.vespa.schemals.intellij.SchemaLspServerSupportProvider"/>
+    <fileType name="Schema" extensions="sd;profile" implementationClass="ai.vespa.schemals.intellij.SchemaFileType" language="Schema" fieldName="INSTANCE"/>
 
-    <lang.refactoringSupport language="Schema"
-                             implementationClass="ai.vespa.schemals.intellij.SchemaRefactoringSupport"/>
-    <refactoring.helper implementation="ai.vespa.schemals.intellij.SchemaRefactoringHelper"/>
+    <platform.lsp.serverSupportProvider implementation="ai.vespa.schemals.intellij.SchemaLspServerSupportProvider"/>
+    <lang.syntaxHighlighterFactory language="Schema" implementationClass="ai.vespa.schemals.intellij.SchemaSyntaxHighlighterFactory" />
   </extensions>
 </idea-plugin>

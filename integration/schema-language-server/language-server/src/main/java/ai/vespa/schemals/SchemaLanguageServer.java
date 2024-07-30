@@ -127,7 +127,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         // Here we can register additional things that 
         // requires initialization to be finished
 
-        startWatchingFiles();
+        //startWatchingFiles();
     }
 
     @Override

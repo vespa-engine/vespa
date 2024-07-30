@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.utils.COMPILE
+
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm") version "1.9.24"
@@ -10,18 +12,39 @@ version = "1.0-SNAPSHOT"
 repositories {
   mavenCentral()
 
+  mavenLocal()
+  maven {
+    url = uri("file://${System.getProperty("user.home")}/.m2/repository")
+    metadataSources {
+      mavenPom()
+      artifact()
+    }
+  }
+
   intellijPlatform {
     defaultRepositories()
   }
 }
 
 dependencies {
+  implementation("com.yahoo.vespa:schema-ls:8-SNAPSHOT")
+  implementation("com.yahoo.vespa:config-model:8-SNAPSHOT")
+  implementation("com.yahoo.vespa:searchlib:8-SNAPSHOT")
+  implementation("com.yahoo.vespa:container-search:8-SNAPSHOT")
+  implementation("com.yahoo.vespa:config-model-api:8-SNAPSHOT")
+  implementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+  implementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+
   intellijPlatform {
     local("/Applications/IntelliJ IDEA.app")
     instrumentationTools()
   }
 }
 
+java.sourceSets["main"].java {
+  srcDir("../../language-server/src")
+  srcDir("../../language-server/target/generated-sources/ccc/")
+}
 
 tasks {
   // Set the JVM compatibility versions
