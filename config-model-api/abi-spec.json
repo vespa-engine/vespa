@@ -1788,6 +1788,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.util.Optional)",
       "public java.lang.String getName()",
       "public java.lang.String getAwsId()",

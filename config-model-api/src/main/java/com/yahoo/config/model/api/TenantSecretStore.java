@@ -5,6 +5,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
+ * TODO: this class can probably be moved to a non-PublicApi package
+ * TODO Vespa 9: remove
+ *
  * @author olaa
  */
 public class TenantSecretStore {
@@ -16,6 +19,10 @@ public class TenantSecretStore {
 
     public TenantSecretStore(String name, String awsId, String role) {
         this(name, awsId, role, Optional.empty());
+    }
+
+    public TenantSecretStore(String name, String awsId, String role, String externalId) {
+        this(name, awsId, role, Optional.of(externalId));
     }
 
     public TenantSecretStore(String name, String awsId, String role, Optional<String> externalId) {
