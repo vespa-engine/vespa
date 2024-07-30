@@ -19,7 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log(`Using java from JAVA_HOME: ${JAVA_HOME}`)
 	const excecutable = path.join(JAVA_HOME, 'bin', 'java')
 
-	const jarPath = path.join(__dirname, '..', '..', '..', 'language-server', 'target', 'schema-language-server-jar-with-dependencies.jar')
+    console.log(__dirname)
+	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar')
 
 	const config = vscode.workspace.getConfiguration();
 	const logFile = config.get('vespaSchemaLS.logFile');
@@ -64,8 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions)
 	client.start();
-
-}	
+}
 
 
 export function deactivate() { 

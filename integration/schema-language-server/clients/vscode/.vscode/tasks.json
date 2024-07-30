@@ -4,6 +4,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+            "label": "default",
 			"type": "npm",
 			"script": "watch",
 			"problemMatcher": "$tsc-watch",
@@ -15,6 +16,17 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+            "label": "langserver-install",
+			"type": "npm",
+			"script": "langserver-install",
+            "group": {
+                "kind": "build"
+            },
+            "dependsOn": [
+                "default"
+            ]
 		}
 	]
 }
