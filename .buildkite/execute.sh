@@ -16,8 +16,8 @@ function report()
   echo "Reporting...."
   if [[ $BUILDKITE == true ]]; then
       if [[ -f $LOG_DIR/error-$STEP.log ]]; then
-          LASTLINES=$(tail -100 "$LOG_DIR/error-$STEP.log" | head -80)
-          buildkite-agent annotate "$LASTLINES" --style 'error' --context 'ctx-error'
+          tail -100 "$LOG_DIR/error-$STEP.log" | head -80 \
+          | buildkite-agent annotate --style 'error' --context 'ctx-error'
       fi
   fi
 }
