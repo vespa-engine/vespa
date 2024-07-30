@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eo pipefail
 
 PIPELINE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_PIPELINE_ID"
 
