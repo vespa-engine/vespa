@@ -9,6 +9,7 @@ import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.process.SegmenterImpl;
 import com.yahoo.language.process.Stemmer;
 import com.yahoo.language.process.StemmerImpl;
+import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import static com.yahoo.language.opennlp.OpenNlpTokenizer.Mode.*;
 
@@ -36,20 +37,22 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
     }
 
     @Override
-    public Stemmer getStemmer() { return new StemmerImpl(getTokenizer().withMode(query)); }
+    public Stemmer getStemmer() { return new StemmerImpl(createTokenizer().withMode(query)); }
 
     @Override
-    public OpenNlpTokenizer getTokenizer() {
-        return new OpenNlpTokenizer(OpenNlpTokenizer.Mode.index, getNormalizer(), getTransformer(), cjk, createCjkGrams);
-    }
+    public Tokenizer getTokenizer() { return createTokenizer(); }
 
     @Override
-    public Segmenter getSegmenter() { return new SegmenterImpl(getTokenizer().withMode(query)); }
+    public Segmenter getSegmenter() { return new SegmenterImpl(createTokenizer().withMode(query)); }
 
     @Override
     public Detector getDetector() { return detector; }
 
     @Override
     public boolean equals(Linguistics other) { return (other instanceof OpenNlpLinguistics); }
+
+    private OpenNlpTokenizer createTokenizer() {
+        return new OpenNlpTokenizer(OpenNlpTokenizer.Mode.index, getNormalizer(), getTransformer(), cjk, createCjkGrams);
+    }
 
 }
