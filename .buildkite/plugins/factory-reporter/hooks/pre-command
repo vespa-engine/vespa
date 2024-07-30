@@ -21,6 +21,8 @@ fi
 
 JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
 
+echo "Output from creating build : $JSON"
+
 VESPA_FACTORY_BUILD_ID=$(jq -re '.buildId' <<< "$JSON")
 export VESPA_FACTORY_BUILD_ID
 
