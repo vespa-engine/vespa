@@ -25,7 +25,6 @@ repositories {
 }
 
 dependencies {
-  //implementation("com.yahoo.vespa:schema-language-server:8-SNAPSHOT")
   implementation("com.yahoo.vespa:config-model:8-SNAPSHOT")
   implementation("com.yahoo.vespa:searchlib:8-SNAPSHOT")
   implementation("com.yahoo.vespa:container-search:8-SNAPSHOT")
@@ -40,9 +39,19 @@ dependencies {
   }
 }
 
+intellijPlatform {
+  pluginConfiguration {
+    name = "Vespa Schema Language Support"
+  }
+}
+
 java.sourceSets["main"].java {
   srcDir("../../language-server/src")
   srcDir("../../language-server/target/generated-sources/ccc/")
+}
+
+interface InjectFileSystem {
+  @get:Inject val fs: FileSystemOperations
 }
 
 tasks {
@@ -56,11 +65,13 @@ tasks {
   }
 
   prepareSandbox {
+    val fromPath = "../../language-server/target/schema-language-server-jar-with-dependencies.jar"
+    val toPath = pluginDirectory.get()
+
+    // see: https://docs.gradle.org/8.7/userguide/configuration_cache.html#config_cache:requirements:disallowed_types
+    val injected = project.objects.newInstance<InjectFileSystem>()
     doLast {
-      copy {
-        val fromPath = "${project.rootDir}/../../language-server/target/schema-language-server-jar-with-dependencies.jar"
-        val toPath = pluginDirectory.get()
-        println("Copying $fromPath to $toPath")
+      injected.fs.copy {
         from(fromPath)
         into(toPath)
       }

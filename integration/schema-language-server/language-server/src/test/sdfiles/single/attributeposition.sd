@@ -8,7 +8,9 @@ schema attributeposition {
     field pos2d type string {
       indexing: summary | index | attribute | to_pos
     }
-
+    
+    field something type string {
+    }
   }
 }
 

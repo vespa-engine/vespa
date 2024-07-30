@@ -42,7 +42,7 @@ public class SchemaIntellijLexer extends LexerBase {
         if (getTokenStart() == endOffset) return null;
         Token.TokenType type = currentToken.getType();
 
-        // some type keywords does not get recognized as a token type in lexer
+        // some type keywords do not get recognized as a token type in lexer
         if (currentToken.toString().equals("int")
         ||  currentToken.toString().equals("bool")
         || currentToken.toString().equals("byte")
@@ -77,7 +77,6 @@ public class SchemaIntellijLexer extends LexerBase {
             case INPUTS:
             case MACRO:
             case MATCH:
-            case MATCHFEATURES_SL:
             case MATCH_PHASE:
             case MUTATE:
             case NORMALIZING:
@@ -87,7 +86,6 @@ public class SchemaIntellijLexer extends LexerBase {
             case POST_FILTER_THRESHOLD:
             case QUERY_COMMAND:
             case RANK:
-            case RANKFEATURES_SL:
             case RANK_PROFILE:
             case RANK_PROPERTIES:
             case RANK_TYPE:
@@ -101,7 +99,6 @@ public class SchemaIntellijLexer extends LexerBase {
             case STRUCT:
             case STRUCT_FIELD:
             case SUMMARY:
-            case SUMMARYFEATURES_SL:
             case SUMMARY_TO:
             case TARGET_HITS_MAX_ADJUSTMENT_FACTOR:
             case TERMWISE_LIMIT:
