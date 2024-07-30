@@ -1794,6 +1794,7 @@
       "public java.lang.String getRole()",
       "public java.util.Optional getExternalId()",
       "public com.yahoo.config.model.api.TenantSecretStore withExternalId(java.lang.String)",
+      "public boolean isValid()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"

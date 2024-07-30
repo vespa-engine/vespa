@@ -45,6 +45,12 @@ public class TenantSecretStore {
         return new TenantSecretStore(name, awsId, role, Optional.of(externalId));
     }
 
+    public boolean isValid() {
+        return !name.isBlank() &&
+                !awsId.isBlank() &&
+                !role.isBlank();
+    }
+
     @Override
     public String toString() {
         return "TenantSecretStore{" +
