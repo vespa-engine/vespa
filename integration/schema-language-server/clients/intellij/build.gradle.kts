@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.utils.COMPILE
-
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm") version "1.9.24"
@@ -27,7 +25,7 @@ repositories {
 }
 
 dependencies {
-  implementation("com.yahoo.vespa:schema-ls:8-SNAPSHOT")
+  //implementation("com.yahoo.vespa:schema-language-server:8-SNAPSHOT")
   implementation("com.yahoo.vespa:config-model:8-SNAPSHOT")
   implementation("com.yahoo.vespa:searchlib:8-SNAPSHOT")
   implementation("com.yahoo.vespa:container-search:8-SNAPSHOT")
@@ -36,7 +34,8 @@ dependencies {
   implementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
 
   intellijPlatform {
-    local("/Applications/IntelliJ IDEA.app")
+    intellijIdeaUltimate("2024.1")
+    //local("/Applications/IntelliJ IDEA.app")
     instrumentationTools()
   }
 }
@@ -54,6 +53,18 @@ tasks {
   }
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = "17"
+  }
+
+  prepareSandbox {
+    doLast {
+      copy {
+        val fromPath = "${project.rootDir}/../../language-server/target/schema-language-server-jar-with-dependencies.jar"
+        val toPath = pluginDirectory.get()
+        println("Copying $fromPath to $toPath")
+        from(fromPath)
+        into(toPath)
+      }
+    }
   }
 
   patchPluginXml {

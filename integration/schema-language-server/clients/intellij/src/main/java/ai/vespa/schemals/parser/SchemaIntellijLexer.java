@@ -34,9 +34,7 @@ public class SchemaIntellijLexer extends LexerBase {
 
     @Override
     public int getState() {
-        var state = schemaLexer.lexicalState.ordinal();
-        System.out.println("Current state: " + state);
-        return state;
+        return schemaLexer.lexicalState.ordinal();
     }
 
     @Override

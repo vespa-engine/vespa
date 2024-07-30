@@ -9,6 +9,10 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Entry point for providing syntax highlighting.
+ * Used in plugin.xml
+ */
 public class SchemaSyntaxHighlighter extends SyntaxHighlighterBase {
 
     private final TextAttributesKey[] KEYWORD = new TextAttributesKey[] {

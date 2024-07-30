@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 public class SchemaTypes {
-
     private static class SchemaElementType extends IElementType {
         public SchemaElementType(@NonNls @NotNull String debugName) {
             super(debugName, SchemaLanguage.INSTANCE);
