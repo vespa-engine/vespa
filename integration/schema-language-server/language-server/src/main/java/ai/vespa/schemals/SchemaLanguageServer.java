@@ -24,6 +24,7 @@ import org.eclipse.lsp4j.RegistrationParams;
 import org.eclipse.lsp4j.RenameOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
+import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
@@ -41,11 +42,12 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     private SchemaTextDocumentService textDocumentService;
     private SchemaDocumentScheduler schemaDocumentScheduler;
     private SchemaIndex schemaIndex;
-    //private LanguageClient client;
     private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
     private SchemaMessageHandler schemaMessageHandler;
 
     private PrintStream logger;
+
+    // Error code starts at 1 and turns into 0 if we receive shutdown request.
     private int errorCode = 1;
 
     private LanguageClient client;
@@ -133,7 +135,10 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     @Override
     public CompletableFuture<Object> shutdown() {
         errorCode = 0;
-        return null;
+        return CompletableFutures.computeAsync(tmp -> {
+            logger.println("Shutdown request received.");
+            return null;
+        });
     }
 
     @Override

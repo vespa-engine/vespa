@@ -18,7 +18,7 @@
 			}
 		},
 		{
-            "label": "langserver-install",
+            "label": "langserver",
 			"type": "npm",
 			"script": "langserver-install",
             "group": {
