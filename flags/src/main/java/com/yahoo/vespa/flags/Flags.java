@@ -539,6 +539,12 @@ public class Flags {
             "Whether to sync companies to HubSpot",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
+            "sdm-enabled-provisioning", true,
+            List.of("olaa"), "2024-07-31", "2024-10-01",
+            "Whether to provision with SDM enabled",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
