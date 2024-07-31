@@ -35,7 +35,7 @@ public class IdentifyNamedDocument extends Identifier {
         Range identifierRange = node.get(1).getRange();
         String documentName = node.get(1).getText();
         Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(documentName);
-        if (schemaSymbol.isEmpty() || !schemaSymbol.get().getFileURI().equals(context.fileURI())) {
+        if (schemaSymbol.isEmpty() || !schemaSymbol.get().getShortIdentifier().equals(documentName)) {
             // TODO: Quickfix
             ret.add(new SchemaDiagnostic.Builder()
                 .setRange(identifierRange)
