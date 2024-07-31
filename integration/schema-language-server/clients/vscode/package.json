@@ -6,7 +6,7 @@
   "publisher": "Vespa",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.72.0"
   },
   "categories": [
     "Programming Languages",
@@ -17,6 +17,10 @@
     "Vespa",
     "Schema"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vespa-engine/vespa"
+  },
   "icon": "icons/icon.png",
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -38,23 +42,26 @@
       "title": "Vespa Schema Language Support",
       "properties": {
         "vespaSchemaLS.logFile": {
-          "type": [ "string", "null" ],
+          "type": [
+            "string",
+            "null"
+          ],
           "default": null,
           "description": "A file to log to from the language server."
         },
         "vespaSchemaLS.javaHome": {
-            "type": "string",
-            "default": "",
-            "description": "Specifies JDK for executing the Schema Language Server",
-            "scope": "machine-overridable"
+          "type": "string",
+          "default": "",
+          "description": "Path to Java home. This is useful if Java is not installed system-wide or you want to use a specific Java executable for running the language server.",
+          "scope": "machine-overridable"
         }
       }
     },
     "commands": [
-        {
-            "command": "vespaSchemaLS.restart",
-            "title": "Vespa: Restart Language Server"
-        }
+      {
+        "command": "vespaSchemaLS.restart",
+        "title": "Vespa: Restart Language Server"
+      }
     ]
   },
   "scripts": {
@@ -67,9 +74,10 @@
     "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/"
   },
   "devDependencies": {
+    "@types/hasbin": "^1.2.2",
     "@types/mocha": "^10.0.6",
     "@types/node": "20.x",
-    "@types/vscode": "^1.90.0",
+    "@types/vscode": "^1.72.0",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
     "@vscode/test-cli": "^0.0.9",
@@ -78,6 +86,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "hasbin": "^1.2.3",
     "vscode-languageclient": "^9.0.1"
   }
 }

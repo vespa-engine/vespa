@@ -1,12 +1,11 @@
-
-
 import * as path from 'path';
 import * as vscode from 'vscode';
 import fs from 'fs';
+import hasbin from 'hasbin';
 
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 
-let client: LanguageClient;
+let client: LanguageClient | null = null;
 
 const JAVA_HOME_SETTING = 'vespaSchemaLS.javaHome';
 // update if something changes
@@ -21,57 +20,48 @@ function javaExecutableExists(javaHome: maybeString) {
     return fs.existsSync(path.join(javaHome, 'bin', 'java'));
 }
 
-function findJavaPath(): maybeString {
+function findJavaHomeExecutable(): maybeString {
 	// Try workspace setting first
     const config = vscode.workspace.getConfiguration();
     const javaHome = config.get(JAVA_HOME_SETTING) as maybeString;
     if (javaExecutableExists(javaHome)) {
-        return javaHome;
+        return path.join(javaHome as string, 'bin', 'java');
     }
 
     if (javaExecutableExists(process.env.JDK_HOME)) {
-        return process.env.JDK_HOME;
+        return path.join(process.env.JDK_HOME as string, 'bin', 'java');
     }
 
     if (javaExecutableExists(process.env.JAVA_HOME)) {
-        return process.env.JAVA_HOME;
+        return path.join(process.env.JAVA_HOME as string, 'bin', 'java');
     }
 
+    return null;
 }
 
-export function activate(context: vscode.ExtensionContext) {
-	console.log('Vespa Language Support is active.');
-
-    const javaPath = findJavaPath();
-
-    if (javaPath === null || javaPath === undefined) {
-        const openSettingsButton = {
-            title: "Settings"
-        };
-        const openOracleDownloadsButton = {
-            title: "Go to Java download"
-        };
-        vscode.window.showWarningMessage(
-            "Java Home could not be found on your system. " +
-            "Vespa Language Support requires Java 17 or later to be installed. "+
-            "Make sure Java is installed, and set the path to Java Home in settings.",
-            openSettingsButton,
-            openOracleDownloadsButton
-        ).then(result => {
-            if (result === openSettingsButton) {
-                vscode.commands.executeCommand('workbench.action.openSettings', JAVA_HOME_SETTING);
-            } else if (result === openOracleDownloadsButton) {
-                vscode.env.openExternal(vscode.Uri.parse(JAVA_DOWNLOAD_URL));
-            }
-        });
-        return;
+function findJavaExecutable(): string|null {
+    const javaPath = findJavaHomeExecutable();
+    if (javaPath !== null && javaPath !== undefined) {
+        return javaPath as string;
     }
 
-	console.log(`Using java from JAVA_HOME: ${javaPath}`);
-	const excecutable = path.join(javaPath, 'bin', 'java');
+    if (hasbin.sync('java')) {
+        return 'java';
+    }
 
-    console.log(__dirname);
-	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
+    return null;
+}
+
+function createAndStartClient(serverPath: string): LanguageClient | null {
+
+    const javaExecutable = findJavaExecutable();
+
+    if (javaExecutable === null) {
+        showJavaErrorMessage();
+        return null;
+    }
+
+    console.log("Using java executable: " + javaExecutable);
 
 	const config = vscode.workspace.getConfiguration();
 	const logFile = config.get('vespaSchemaLS.logFile');
@@ -79,8 +69,8 @@ export function activate(context: vscode.ExtensionContext) {
 	const logArgs = typeof(logFile) === "string" ? ['-t', logFile] : [];
 
 	const serverOptions: ServerOptions = {
-		command: excecutable,
-		args: ['-jar', jarPath, ...logArgs],
+		command: javaExecutable,
+		args: ['-jar', serverPath, ...logArgs],
 		options: {}
 	};
 
@@ -109,20 +99,48 @@ export function activate(context: vscode.ExtensionContext) {
         }
 	};
 
-	client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
-	client.start();
+    const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
+    client.start();
+    return client;
+}
 
-    const command = "vespaSchemaLS.restart";
+function showJavaErrorMessage() {
+    const openSettingsButton = {
+        title: "Settings"
+    };
+    const openOracleDownloadsButton = {
+        title: "Go to Java download"
+    };
+    vscode.window.showErrorMessage(
+        "A Java executable could not be found on the system. Java is required to run the Schema Language Server."
+        + " If you have Java installed, you can specify the path to Java Home in settings, or set the environment variable JAVA_HOME.",
+        openSettingsButton,
+        openOracleDownloadsButton
+    ).then(result => {
+        if (result === openSettingsButton) {
+            vscode.commands.executeCommand('workbench.action.openSettings', JAVA_HOME_SETTING);
+        } else if (result === openOracleDownloadsButton) {
+            vscode.env.openExternal(vscode.Uri.parse(JAVA_DOWNLOAD_URL));
+        }
+    });
+}
 
-    const commandHandler = () => {
-        if (client.isRunning()) {
+export function activate(context: vscode.ExtensionContext) {
+	console.log('Vespa Language Support is active.');
+
+	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
+
+    client = createAndStartClient(jarPath);
+
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.restart", (() => {
+        if (client === null) {
+            client = createAndStartClient(jarPath);
+        } else if (client.isRunning()) {
             client.restart();
         } else {
-	        client.start();
+            client.start();
         }
-    };
-
-    context.subscriptions.push(vscode.commands.registerCommand(command, commandHandler));
+    })));
 }
 
 
