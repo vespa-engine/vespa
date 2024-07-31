@@ -88,7 +88,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("first-phase", "first-phase {\n\t$0\n}"),
             CompletionUtils.constructSnippet("second-phase", "second-phase {\n\t$0\n}"),
             CompletionUtils.constructSnippet("global-phase", "global-phase {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("function", "function $1(){\n\t\n}"),
+            CompletionUtils.constructSnippet("function", "function $1() {\n\texpression: \n}"),
             CompletionUtils.constructSnippet("inputs", "inputs {\n\t$0\n}"),
             CompletionUtils.constructSnippet("constants", "constants {\n\t$0\n}"),
             CompletionUtils.constructSnippet("onnx-model", "onnx-model $1 {\n\t$0\n}"),

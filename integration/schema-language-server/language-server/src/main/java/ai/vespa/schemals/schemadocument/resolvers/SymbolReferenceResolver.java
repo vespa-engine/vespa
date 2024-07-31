@@ -15,6 +15,8 @@ import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
+import ai.vespa.schemals.index.InheritanceGraph.SearchResult;
+import ai.vespa.schemals.index.InheritanceGraph;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -33,6 +35,8 @@ public class SymbolReferenceResolver {
         Optional<Symbol> referencedSymbol = Optional.empty();
         // dataType is handled separately
         SymbolType referencedType = node.getSymbol().getType();
+
+        // Some symbol types require special handling
         if (referencedType == SymbolType.SUBFIELD) {
             SchemaNode parentField = node.getPreviousSibling();
             if (parentField.isASTInstance(DOT.class))parentField = parentField.getPreviousSibling();
@@ -89,6 +93,49 @@ public class SymbolReferenceResolver {
                 node.setSymbolType(SymbolType.FUNCTION);
                 node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
                 return;
+            }
+
+        } else if (referencedType == SymbolType.RANK_PROFILE && node.getSymbol().getScope() != null && node.getSymbol().getScope().getType() == SymbolType.RANK_PROFILE) {
+            // This happens if you write i.e. summary-features inherits some_profile
+            // See RankProfile.java in config-model com.yahoo.schema
+            var rankProfileGraph = context.schemaIndex().getRankProfileInheritanceGraph();
+
+            String myIdentifier = node.getSymbol().getShortIdentifier();
+            Symbol myRankProfileDefinitionSymbol = node.getSymbol().getScope();
+
+            var result = rankProfileGraph.getAllParents(myRankProfileDefinitionSymbol)
+                .stream()
+                .filter(symbol -> symbol.getShortIdentifier().equals(myIdentifier))
+                .toList();
+
+            if (!result.isEmpty()) {
+                if (result.size() > 1) {
+                    // This can most likely never happen, but if it does it should be warned
+                    diagnostics.add(new SchemaDiagnostic.Builder()
+                        .setRange(node.getRange())
+                        .setMessage(myIdentifier + " is ambiguous in this context")
+                        .setSeverity(DiagnosticSeverity.Warning)
+                        .build());
+                }
+                referencedSymbol = Optional.of(result.get(0));
+            } else {
+                // We can try to find a rank-profile in case the user forgot to inherit the rank profile as well
+                Optional<Symbol> possibleRankProfile = context.schemaIndex().findSymbol(node.getSymbol());
+
+                if (possibleRankProfile.isPresent()) {
+                    node.getSymbol().setStatus(SymbolStatus.INVALID);
+                    String constructType = node.getPreviousSibling().getPreviousSibling().getText(); // i.e. "summary-features"
+                    diagnostics.add(new SchemaDiagnostic.Builder()
+                        .setRange(node.getRange())
+                        .setMessage("This can only inherit the " + constructType + " of a directly inherited profile.")
+                        .setSeverity(DiagnosticSeverity.Error)
+                        .setCode(DiagnosticCode.FEATURES_INHERITS_NON_PARENT)
+                        .build()
+                    );
+                    // Return early to avoid duplicate diagnostics
+                    return;
+                }
+
             }
         } else {
             referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());

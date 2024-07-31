@@ -24,6 +24,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.COLON;
 import ai.vespa.schemals.parser.ast.FIELD;
+import ai.vespa.schemals.parser.ast.featureListElm;
 import ai.vespa.schemals.parser.ast.fieldRankFilter;
 import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
@@ -304,6 +305,9 @@ public class IdentifySymbolReferences extends Identifier {
         return ret;
     }
 
+    /*
+     * This needs to split the AST node containing a dot into two nodes
+     */
     private ArrayList<Diagnostic> handleImportField(SchemaNode identifierNode) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 

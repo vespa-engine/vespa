@@ -19,6 +19,9 @@ import org.eclipse.lsp4j.FileSystemWatcher;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
+import org.eclipse.lsp4j.LogTraceParams;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Registration;
 import org.eclipse.lsp4j.RegistrationParams;
 import org.eclipse.lsp4j.RenameOptions;
@@ -161,6 +164,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.client = languageClient;
         this.schemaDiagnosticsHandler.connectClient(languageClient);
         this.schemaMessageHandler.connectClient(languageClient);
+        this.client.logMessage(new MessageParams(MessageType.Log, "Language Server successfully connected to client."));
 
     }
 

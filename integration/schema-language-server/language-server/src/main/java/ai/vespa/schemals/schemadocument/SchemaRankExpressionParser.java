@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -19,6 +20,9 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
@@ -71,7 +75,7 @@ public class SchemaRankExpressionParser {
     }};
 
     private static record ExpressionMetaData(
-        boolean mulitline,
+        boolean multiline,
         boolean inherits,
         Position expressionOffset,
         String preText
@@ -229,10 +233,6 @@ public class SchemaRankExpressionParser {
     }};
 
     private static SchemaNode parseIdentifierWithDash(ParseContext context, SchemaNode node, String text, int startSearch, int endSearch) {
-        context.logger().println(text);
-        context.logger().println(text.length());
-        context.logger().println(startSearch);
-        context.logger().println(endSearch);
         String subString = text.substring(startSearch, endSearch);
         int leadingSplitPos = 0;
         while (
@@ -244,12 +244,13 @@ public class SchemaRankExpressionParser {
 
         int trailingSplitPos = subString.length() - 1;
         while (
-            skipCharacters.contains(subString.charAt(trailingSplitPos)) &&
+            skipCharacters.contains(subString.charAt(trailingSplitPos - 1)) &&
             trailingSplitPos > 0
         ) {
             trailingSplitPos--;
         }
 
+        subString = subString.substring(leadingSplitPos, trailingSplitPos);
         Position subStringBeginPos = StringUtils.positionAddOffset(context.content(), node.getRange().getStart(), startSearch);
 
         Range range = new Range(
@@ -281,8 +282,8 @@ public class SchemaRankExpressionParser {
         if (simplifiedType == null) return null;
 
         // Find the last token
-        char searchChar   = metaData.mulitline() ? '{' : ':';
-        TokenType charTokenType = metaData.mulitline() ? TokenType.LBRACE : TokenType.COLON;
+        char searchChar   = metaData.multiline() ? '{' : ':';
+        TokenType charTokenType = metaData.multiline() ? TokenType.LBRACE : TokenType.COLON;
         int charPosition = metaData.preText().indexOf(searchChar, firstTokenString.length());
 
         if (!metaData.inherits()) {
@@ -308,7 +309,16 @@ public class SchemaRankExpressionParser {
             ));
 
             // We know at between the inherits and the charPosition it will be an IdentifierWithDashStr
-            children.add(parseIdentifierWithDash(context, node, metaData.preText(), firstTokenString.length(), charPosition));
+            SchemaNode inheritsIdentifierNode = parseIdentifierWithDash(context, node, metaData.preText(), firstTokenString.length(), charPosition);
+            Optional<Symbol> scope = CSTUtils.findScope(node);
+            if (scope.isPresent()) {
+                inheritsIdentifierNode.setSymbol(SymbolType.RANK_PROFILE, context.fileURI(), scope.get());
+            } else {
+                inheritsIdentifierNode.setSymbol(SymbolType.RANK_PROFILE, context.fileURI());
+            }
+            inheritsIdentifierNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
+            children.add(inheritsIdentifierNode);
+            context.logger().println("Child text: '" + inheritsIdentifierNode.getText() + "'");
         }
 
         children.add(tokenFromRawText(context, node, charTokenType, "" + searchChar, charPosition, charPosition + 1));
@@ -331,7 +341,7 @@ public class SchemaRankExpressionParser {
             newChildren.add(rankExpressionNode);
         }
 
-        if (metaData.mulitline()) {
+        if (metaData.multiline()) {
             newChildren.add(tokenFromRawText(context, node, TokenType.RBRACE, "}", node.getText().length() - 1, node.getText().length()));
         }
 

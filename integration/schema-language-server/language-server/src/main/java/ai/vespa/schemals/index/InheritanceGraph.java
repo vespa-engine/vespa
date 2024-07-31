@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
-/*
+/**
  * This class is responsible for managing inheritance relationships among generic constructs.
  * Each node is identified by a NodeType which should implement a good hashCode and .equals.
  *
@@ -56,7 +56,7 @@ public class InheritanceGraph<NodeType> {
         }
     }
 
-    /*
+    /**
      * Try to register a new inheritance relationship such that
      * childNode inherits from parentNode
      *
@@ -94,7 +94,7 @@ public class InheritanceGraph<NodeType> {
         return parentsOfNode.get(node);
     }
 
-    /*
+    /**
      * Gets a list of all direct or indirect inheritance ancestors.
      * The returned list is in a topological order, i.e. the older ancestors
      * come earler in the list.
@@ -109,7 +109,7 @@ public class InheritanceGraph<NodeType> {
         return result;
     }
 
-    /*
+    /**
      * Gets a list of all direct or indirect inheritance ancestors.
      * The returned list is in a topological order, i.e. the older descendants
      * come earler in the list.
@@ -124,8 +124,8 @@ public class InheritanceGraph<NodeType> {
         return result;
     }
 
-    /*
-     * Returns a list of all registered documents in topological order
+    /**
+     * @return a list of all registered documents in topological order
      */
     public List<NodeType> getTopoOrdering() {
         Set<NodeType> visited = new HashSet<>();
@@ -140,7 +140,7 @@ public class InheritanceGraph<NodeType> {
         return result;
     }
 
-    /*
+    /**
      * Searches upwards for nodes where predicate(node) returns non null.
      * If a match is found, parents of that node are not checked (unless they are reachable by some other path without matches).
      * Return values store both the node and the result of running predicate on them
@@ -172,7 +172,7 @@ public class InheritanceGraph<NodeType> {
         }
     }
     
-    /*
+    /**
      * Recursive search upwards through the inheritance graph to
      * retreive all ancestors of the given node.
      */
@@ -188,7 +188,7 @@ public class InheritanceGraph<NodeType> {
         result.add(node);
     }
 
-    /*
+    /**
      * Recursive search downwards through the inheritance graph to 
      * retrieve all who directly or indirectly inherits the given node
      */

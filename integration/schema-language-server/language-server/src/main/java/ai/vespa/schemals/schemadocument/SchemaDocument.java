@@ -109,7 +109,7 @@ public class SchemaDocument implements DocumentManager {
 
             logger.println("======== CST for file: " + fileURI + " ========");
      
-            //CSTUtils.printTree(logger, CST);
+            CSTUtils.printTree(logger, CST);
         }
 
 

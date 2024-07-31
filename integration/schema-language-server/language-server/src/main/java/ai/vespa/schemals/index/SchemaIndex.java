@@ -106,6 +106,13 @@ public class SchemaIndex {
     public InheritanceGraph<String> getDocumentInheritanceGraph() { return documentInheritanceGraph; }
 
     /**
+     * Returns the inheritance graph for rank-profiles in the index.
+     *
+     * @return a reference to the inheritance graph for rank-profiles
+     */
+    public InheritanceGraph<Symbol> getRankProfileInheritanceGraph() { return rankProfileInheritanceGraph; }
+
+    /**
      * Returns the graph over document references
      *
      * @return the document reference graph

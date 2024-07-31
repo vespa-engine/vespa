@@ -121,8 +121,8 @@ function showJavaErrorMessage() {
             vscode.commands.executeCommand('workbench.action.openSettings', JAVA_HOME_SETTING);
         } else if (result === openOracleDownloadsButton) {
             vscode.env.openExternal(vscode.Uri.parse(JAVA_DOWNLOAD_URL));
-        }
-    });
+        } 
+    });   
 }
 
 export function activate(context: vscode.ExtensionContext) {
