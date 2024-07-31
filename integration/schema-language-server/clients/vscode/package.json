@@ -2,6 +2,8 @@
   "name": "vespa-language-support",
   "displayName": "Vespa Language Support",
   "description": "Support for Vespa schema files.",
+  "author": "Vespa",
+  "publisher": "Vespa",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.90.0"
@@ -15,6 +17,7 @@
     "Vespa",
     "Schema"
   ],
+  "icon": "icons/icon.png",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -55,7 +58,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run langserver-install && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
