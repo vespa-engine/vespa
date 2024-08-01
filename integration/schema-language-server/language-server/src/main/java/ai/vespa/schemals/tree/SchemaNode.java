@@ -363,6 +363,9 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public String getClassLeafIdentifierString() {
+        if (language == LanguageType.CUSTOM && getASTClass() != null) {
+            return getASTClass().getSimpleName();
+        }
         int lastIndex = identifierString.lastIndexOf('.');
         return identifierString.substring(lastIndex + 1);
     }
@@ -523,7 +526,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     public String toString() {
         Position pos = getRange().getStart();
-        String astClassStr = getASTClass().toString();
+        String astClassStr = getASTClass() == null ? "AST_NULL" : getASTClass().toString();
         astClassStr = astClassStr.substring(astClassStr.lastIndexOf('.') + 1);
         String ret = "Node('" + getText() + "', [" + astClassStr + "] at " + pos.getLine() + ":" + pos.getCharacter();
         if (hasSymbol()) {

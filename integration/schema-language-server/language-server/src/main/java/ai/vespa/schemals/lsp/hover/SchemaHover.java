@@ -30,7 +30,7 @@ public class SchemaHover {
         }
         List<Symbol> fieldDefs = context.schemaIndex.listSymbolsInScope(structDefinitionSymbol.get(), SymbolType.FIELD);
 
-        String result = "### struct " + structDefinitionSymbol.get().getLongIdentifier() + "\n";
+        String result = "### struct " + structDefinitionSymbol.get().getShortIdentifier() + "\n";
         for (Symbol fieldDef : fieldDefs) {
             result += "    field " + fieldDef.getShortIdentifier() + " type " +  
                 fieldDef.getNode().getNextSibling().getNextSibling().getText();
@@ -130,6 +130,7 @@ public class SchemaHover {
         if (node == null) return null;
 
 
+        context.logger.println("Hover: " + node.getClassLeafIdentifierString());
 
         String fileName = markdownPathRoot + node.getClassLeafIdentifierString() + ".md";
 

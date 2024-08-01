@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -23,8 +24,13 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.EXPRESSION_SL;
 import ai.vespa.schemals.parser.ast.IDENTIFIER_WITH_DASH;
+import ai.vespa.schemals.parser.ast.MATCHFEATURES_SL;
+import ai.vespa.schemals.parser.ast.RANKFEATURES_SL;
+import ai.vespa.schemals.parser.ast.SUMMARYFEATURES_SL;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -73,6 +79,13 @@ public class SchemaRankExpressionParser {
         put(TokenType.MATCHFEATURES_ML_INHERITS, TokenType.MATCHFEATURES_SL);
         put(TokenType.RANKFEATURES_SL, TokenType.RANKFEATURES_SL);
         put(TokenType.RANKFEATURES_ML, TokenType.RANKFEATURES_SL);
+    }};
+
+    private static final Map<TokenType, Class<? extends Node>> tokenTypeToASTClass = new HashMap<>() {{
+        put(TokenType.EXPRESSION_SL, EXPRESSION_SL.class);
+        put(TokenType.SUMMARYFEATURES_SL, SUMMARYFEATURES_SL.class);
+        put(TokenType.MATCHFEATURES_SL, MATCHFEATURES_SL.class);
+        put(TokenType.RANKFEATURES_SL, RANKFEATURES_SL.class);
     }};
 
     private static record ExpressionMetaData(
@@ -222,6 +235,10 @@ public class SchemaRankExpressionParser {
         );
 
         ret.setSchemaType(type);
+
+        if (tokenTypeToASTClass.containsKey(type)) {
+            ret.setSimulatedASTClass(tokenTypeToASTClass.get(type));
+        }
 
         return ret;
     }
