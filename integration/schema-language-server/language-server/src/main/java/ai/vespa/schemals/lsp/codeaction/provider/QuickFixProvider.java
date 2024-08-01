@@ -20,11 +20,13 @@ import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.IDENTIFIER_WITH_DASH;
 import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
@@ -216,13 +218,7 @@ public class QuickFixProvider implements CodeActionProvider {
 
         CodeAction action = basicQuickFix("Inherit document '" + schemaReferenceSymbol.getShortIdentifier() + "'", diagnostic);
 
-        if (documentIdentifierNode.getNextSibling() != null && documentIdentifierNode.getNextSibling().isASTInstance(inheritsDocument.class)) {
-            Position insertPosition = documentIdentifierNode.getNextSibling().getRange().getEnd();
-            action.setEdit(CodeActionUtils.simpleEdit(context, new Range(insertPosition, insertPosition), ", " + schemaReferenceSymbol.getShortIdentifier()));
-        } else {
-            Position insertPosition = documentIdentifierNode.getRange().getEnd();
-            action.setEdit(CodeActionUtils.simpleEdit(context, new Range(insertPosition, insertPosition), " inherits " + schemaReferenceSymbol.getShortIdentifier()));
-        }
+        action.setEdit(CodeActionUtils.createInheritsEdit(context, documentIdentifierNode, inheritsDocument.class, schemaReferenceSymbol.getShortIdentifier()));
 
         action.setIsPreferred(true);
 
@@ -349,6 +345,16 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private CodeAction fixFeaturesInheritsNonParent(EventCodeActionContext context, Diagnostic diagnostic) {
+        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        if (offendingNode == null || offendingNode.getSymbol().getScope() == null) return null;
+
+        Symbol rankProfileSymbol = offendingNode.getSymbol().getScope();
+        CodeAction action = basicQuickFix("Inherit rank-profile " + offendingNode.getText() + " from " + rankProfileSymbol.getShortIdentifier(), diagnostic);
+        action.setEdit(CodeActionUtils.createInheritsEdit(context, rankProfileSymbol.getNode(), inheritsRankProfile.class, offendingNode.getText()));
+        return action;
+    }
+
 	@Override
 	public List<Either<Command, CodeAction>> getActions(EventCodeActionContext context) {
         List<Either<Command, CodeAction>> result = new ArrayList<>();
@@ -400,6 +406,9 @@ public class QuickFixProvider implements CodeActionProvider {
                 case DEPRECATED_TOKEN_ATTRIBUTE:
                 case DEPRECATED_TOKEN_INDEX:
                     result.add(Either.forRight(fixDeprecatedTokenAttributeOrIndex(context, diagnostic, code)));
+                    break;
+                case FEATURES_INHERITS_NON_PARENT:
+                    result.add(Either.forRight(fixFeaturesInheritsNonParent(context, diagnostic)));
                     break;
                 default:
                     break;

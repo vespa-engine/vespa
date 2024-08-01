@@ -22,6 +22,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.featureListElm;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
@@ -95,7 +96,11 @@ public class SymbolReferenceResolver {
                 return;
             }
 
-        } else if (referencedType == SymbolType.RANK_PROFILE && node.getSymbol().getScope() != null && node.getSymbol().getScope().getType() == SymbolType.RANK_PROFILE) {
+        } else if (
+            referencedType == SymbolType.RANK_PROFILE 
+         && node.getParent().isASTInstance(featureListElm.class)
+         && node.getSymbol().getScope() != null 
+         && node.getSymbol().getScope().getType() == SymbolType.RANK_PROFILE) {
             // This happens if you write i.e. summary-features inherits some_profile
             // See RankProfile.java in config-model com.yahoo.schema
             var rankProfileGraph = context.schemaIndex().getRankProfileInheritanceGraph();
@@ -120,9 +125,10 @@ public class SymbolReferenceResolver {
                 referencedSymbol = Optional.of(result.get(0));
             } else {
                 // We can try to find a rank-profile in case the user forgot to inherit the rank profile as well
-                Optional<Symbol> possibleRankProfile = context.schemaIndex().findSymbol(node.getSymbol());
+                // We will in that case assign it to referencedSymbol so go-to-definition and stuff still works
+                referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
 
-                if (possibleRankProfile.isPresent()) {
+                if (referencedSymbol.isPresent()) {
                     node.getSymbol().setStatus(SymbolStatus.INVALID);
                     String constructType = node.getPreviousSibling().getPreviousSibling().getText(); // i.e. "summary-features"
                     diagnostics.add(new SchemaDiagnostic.Builder()
@@ -132,8 +138,6 @@ public class SymbolReferenceResolver {
                         .setCode(DiagnosticCode.FEATURES_INHERITS_NON_PARENT)
                         .build()
                     );
-                    // Return early to avoid duplicate diagnostics
-                    return;
                 }
 
             }

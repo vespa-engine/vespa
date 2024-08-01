@@ -24,6 +24,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.IDENTIFIER_WITH_DASH;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -263,8 +264,11 @@ public class SchemaRankExpressionParser {
         SchemaNode child = new SchemaNode(range, subString, identifierString);
         SchemaNode parent = new SchemaNode(range, subString, "identifierWithDashStr [CUSTOM LANGUAGE]");
 
-        parent.addChild(child);
+        
+        child.setSimulatedASTClass(IDENTIFIER_WITH_DASH.class);
         parent.setSimulatedASTClass(identifierWithDashStr.class);
+
+        parent.addChild(child);
         return parent;
     }
 
@@ -318,7 +322,6 @@ public class SchemaRankExpressionParser {
             }
             inheritsIdentifierNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
             children.add(inheritsIdentifierNode);
-            context.logger().println("Child text: '" + inheritsIdentifierNode.getText() + "'");
         }
 
         children.add(tokenFromRawText(context, node, charTokenType, "" + searchChar, charPosition, charPosition + 1));

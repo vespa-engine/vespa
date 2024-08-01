@@ -196,15 +196,16 @@ public class InheritanceResolver {
     private static boolean checkRankProfileInheritanceCollisions(ParseContext context, Symbol rankProfileDefinitionSymbol, Symbol inheritanceCandidate, SchemaNode inheritanceNode, List<Diagnostic> diagnostics) {
         Map<String, Symbol> functionDefinitionsBeforeInheritance = new HashMap<>();
         for (Symbol symbol : context.schemaIndex().listSymbolsInScope(rankProfileDefinitionSymbol, SymbolType.FUNCTION)) {
+            // Skip shadowing inside the current rank-profile
             if (symbol.getScope().equals(rankProfileDefinitionSymbol)) continue;
 
             functionDefinitionsBeforeInheritance.put(symbol.getShortIdentifier(), symbol.getScope());
         }
 
-        List<Symbol> parentFunctions = context.schemaIndex().listSymbolsInScope(inheritanceCandidate, SymbolType.FUNCTION);
+        List<Symbol> newInheritedFunctions = context.schemaIndex().listSymbolsInScope(inheritanceCandidate, SymbolType.FUNCTION);
 
         boolean success = true;
-        for (Symbol parentFunction : parentFunctions) {
+        for (Symbol parentFunction : newInheritedFunctions) {
             if (functionDefinitionsBeforeInheritance.containsKey(parentFunction.getShortIdentifier())) {
                 // TODO: quickfix and show the chain of inheritance
                 diagnostics.add(new SchemaDiagnostic.Builder()
