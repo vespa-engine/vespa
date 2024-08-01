@@ -31,6 +31,9 @@ public class TypeNodeResolver {
             return true;
         }
 
+        // Set type to struct so it doesn't try to get handled later
+        symbol.setType(SymbolType.STRUCT);
+
         return false;
     }
 }

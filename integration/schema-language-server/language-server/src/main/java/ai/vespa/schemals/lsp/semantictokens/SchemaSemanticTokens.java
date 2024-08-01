@@ -136,6 +136,28 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.TYPE);
         add(TokenType.WEIGHT);
         add(TokenType.WEIGHTEDSET);
+        add(TokenType.HNSW);
+        add(TokenType.MAX_LINKS_PER_NODE);
+        add(TokenType.NEIGHBORS_TO_EXPLORE_AT_INSERT);
+        add(TokenType.UPPER_BOUND);
+        add(TokenType.LOWER_BOUND);
+        add(TokenType.ARITY);
+        add(TokenType.ENABLE_BM25);
+        add(TokenType.DENSE_POSTING_LIST_THRESHOLD);
+
+        // maybe some of these should be something other than keyword
+        add(TokenType.DISTANCE_METRIC);
+        add(TokenType.FAST_ACCESS);
+        add(TokenType.FAST_SEARCH);
+        add(TokenType.FAST_RANK);
+        add(TokenType.PAGED);
+        add(TokenType.MUTABLE);
+        add(TokenType.LOCALE);
+        add(TokenType.STRENGTH);
+        add(TokenType.ASCENDING);
+        add(TokenType.DESCENDING);
+        add(TokenType.DICTIONARY); // TODO: color dictionary items
+
     }};
 
     // Other

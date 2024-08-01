@@ -18,6 +18,7 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
@@ -121,19 +122,31 @@ public class SchemaHover {
             typeText = dataTypeNode.get().getText().trim();
         }
 
+        // Create a nice long identifier for nested fields (e.g. field of type struct)
+        String fieldIdentifier = fieldDefinitionSymbol.get().getShortIdentifier();
+        Symbol scopeIterator = fieldDefinitionSymbol.get().getScope();
+        while (scopeIterator != null && scopeIterator.getType() == SymbolType.FIELD) {
+            fieldIdentifier = scopeIterator.getShortIdentifier() + "." + fieldIdentifier;
+            scopeIterator = scopeIterator.getScope();
+        }
 
-        String hoverText = "field " + fieldDefinitionSymbol.get().getShortIdentifier() + " type " + typeText;
+        String hoverText = "field " + fieldIdentifier + " type " + typeText;
 
         if (context.schemaIndex.fieldIndex().getIsInsideDoc(fieldDefinitionSymbol.get())) {
-            hoverText = hoverText + " (in document)";
+            if (fieldDefinitionSymbol.get().getScope() != null && fieldDefinitionSymbol.get().getScope().getType() == SymbolType.STRUCT) {
+                hoverText += " (in struct " + fieldDefinitionSymbol.get().getScope().getShortIdentifier() + ")";
+            } else {
+                hoverText += " (in document)";
+            }
         } else {
-            hoverText = hoverText + " (outside document)";
+            hoverText += " (outside document)";
         }
 
         var indexingTypes = context.schemaIndex.fieldIndex().getFieldIndexingTypes(fieldDefinitionSymbol.get()).toArray();
+        // We simulate some kind of indexing statement
         for (int i = 0; i < indexingTypes.length; ++i) {
             if (i == 0) hoverText += "\n\t";
-            else hoverText += ", ";
+            else hoverText += " | ";
             hoverText += indexingTypes[i].toString().toLowerCase();
         }
 

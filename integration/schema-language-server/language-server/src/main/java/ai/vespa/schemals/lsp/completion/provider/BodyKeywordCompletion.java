@@ -27,6 +27,7 @@ import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryInField;
+import ai.vespa.schemals.parser.ast.summaryInFieldLong;
 import ai.vespa.schemals.parser.ast.weightedsetElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -149,7 +150,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
         put(FixedKeywordBodies.RANK.parentASTClass(), FixedKeywordBodies.RANK.completionItems());
 
         put(summaryInDocument.class, FixedKeywordBodies.SUMMARY.completionItems());
-        put(summaryInField.class, FixedKeywordBodies.SUMMARY.completionItems());
+        put(summaryInFieldLong.class, FixedKeywordBodies.SUMMARY.completionItems());
 
         put(weightedsetElm.class, FixedKeywordBodies.WEIGHTEDSET.completionItems());
 

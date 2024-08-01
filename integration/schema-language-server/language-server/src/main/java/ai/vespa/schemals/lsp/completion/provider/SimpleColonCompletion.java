@@ -3,6 +3,7 @@ package ai.vespa.schemals.lsp.completion.provider;
 import java.util.List;
 
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionItemKind;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.lsp.completion.provider.FixedKeywordBodies.FixedKeywordBody;
@@ -41,7 +42,12 @@ public class SimpleColonCompletion implements CompletionProvider {
         if (!(context.document instanceof SchemaDocument)) return List.of();
 
         for (FixedKeywordBody fixedKeywordBody : colonSupporters) {
-            if (match(context, fixedKeywordBody.tokenType())) return fixedKeywordBody.completionItems();
+            if (match(context, fixedKeywordBody.tokenType())) {
+                // Snippets usually not wanted in colon constructs
+                return fixedKeywordBody.completionItems().stream()
+                                                         .filter(item -> item.getKind() != CompletionItemKind.Snippet)
+                                                         .toList();
+            }
         }
 
         return List.of();
