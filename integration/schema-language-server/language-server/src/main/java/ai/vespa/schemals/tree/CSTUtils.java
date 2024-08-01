@@ -1,12 +1,11 @@
 package ai.vespa.schemals.tree;
 
-import java.util.Optional;
 import java.io.PrintStream;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-import com.fasterxml.jackson.databind.JsonSerializable.Base;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
@@ -17,11 +16,11 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
-import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 
 public class CSTUtils {
 

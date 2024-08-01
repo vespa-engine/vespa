@@ -31,41 +31,33 @@ public class StructFieldCompletion implements CompletionProvider {
         if (!(context.document instanceof SchemaDocument)) return List.of();
 
         SchemaNode lastCleanNode = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.startOfWord());
-        if (lastCleanNode == null) return List.of();
-
-        if (!lastCleanNode.isASTInstance(NL.class)) return List.of();
-
+        if (lastCleanNode == null || !lastCleanNode.isASTInstance(NL.class) || lastCleanNode.getParent() == null) return List.of();
         SchemaNode parent = lastCleanNode.getParent();
-        if (parent == null)return List.of();
 
         if (parent.isASTInstance(openLbrace.class)) parent = parent.getParent();
-
         if (!parent.isASTInstance(fieldElm.class) && !parent.isASTInstance(structFieldElm.class)) return List.of();
 
         SchemaNode fieldDefinitionNode = parent.get(1);
-
         if (!fieldDefinitionNode.hasSymbol()) return List.of();
 
         Optional<Symbol> definition = context.schemaIndex.getFirstSymbolDefinition(fieldDefinitionNode.getSymbol());
-
         if (definition.isEmpty()) return List.of();
 
         Optional<Symbol> structDefinition = context.schemaIndex.fieldIndex().findFieldStructDefinition(definition.get());
         if (structDefinition.isEmpty()) return List.of();
 
         List<Symbol> fieldsInStruct = context.schemaIndex.listSymbolsInScope(structDefinition.get(), EnumSet.of(SymbolType.FIELD, SymbolType.MAP_KEY, SymbolType.MAP_VALUE));
-
         if (fieldsInStruct.isEmpty()) return List.of(CompletionUtils.constructBasic("struct-field")); // just simple keyword completion if we cannot suggest fields
 
         String choiceString = String.join(",", fieldsInStruct.stream().map(symbol -> symbol.getShortIdentifier()).toList());
 
         // Ugly edge case: MAP_VALUE is not defined if value is a struct
+        // the result in that case is a list with 1 element which is a MAP_KEY
         if (fieldsInStruct.size() == 1 && fieldsInStruct.get(0).getType() == SymbolType.MAP_KEY) {
             choiceString += ",value";
         }
 
         choiceString = "${1|" + choiceString + "|}";
-
         return List.of(CompletionUtils.constructSnippet("struct-field", "struct-field " + choiceString + " {\n\t$0\n}"));
 	}
 }

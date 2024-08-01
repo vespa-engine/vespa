@@ -1,25 +1,21 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.common.FileUtils;
-import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-import ai.vespa.schemals.lsp.command.CommandRegistry;
-import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-import org.eclipse.lsp4j.services.LanguageServer;
-import org.eclipse.lsp4j.services.TextDocumentService;
-import org.eclipse.lsp4j.services.WorkspaceService;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.CodeActionOptions;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.DidChangeWatchedFilesRegistrationOptions;
 import org.eclipse.lsp4j.ExecuteCommandOptions;
-import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileSystemWatcher;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
-import org.eclipse.lsp4j.LogTraceParams;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Registration;
@@ -31,13 +27,15 @@ import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
+import org.eclipse.lsp4j.services.LanguageServer;
+import org.eclipse.lsp4j.services.TextDocumentService;
+import org.eclipse.lsp4j.services.WorkspaceService;
 
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.lsp.command.CommandRegistry;
+import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class SchemaLanguageServer implements LanguageServer, LanguageClientAware {
 

@@ -2,10 +2,6 @@ package ai.vespa.schemals.lsp.command;
 
 import java.util.Optional;
 
-import org.eclipse.lsp4j.ShowDocumentResult;
-
-import com.google.gson.JsonPrimitive;
-
 import ai.vespa.schemals.context.EventExecuteCommandContext;
 import ai.vespa.schemals.lsp.command.commandtypes.SchemaCommand;
 

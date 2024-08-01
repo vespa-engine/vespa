@@ -11,11 +11,8 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileDelete;
 import org.eclipse.lsp4j.FileRename;
 import org.eclipse.lsp4j.RenameFilesParams;
-import org.eclipse.lsp4j.ShowDocumentResult;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.services.WorkspaceService;
-
-import com.google.gson.JsonPrimitive;
 
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.index.SchemaIndex;
@@ -46,7 +43,6 @@ public class SchemaWorkspaceService implements WorkspaceService {
 
     @Override
     public void didDeleteFiles(DeleteFilesParams params) {
-        logger.println("Client deleted a lot of files.");
         List<FileDelete> deletedFiles = params.getFiles();
         
         for (FileDelete file : deletedFiles) {
@@ -57,7 +53,6 @@ public class SchemaWorkspaceService implements WorkspaceService {
 
     @Override
     public void didRenameFiles(RenameFilesParams params) {
-        logger.println("Renamed files!");
         List<FileRename> renamedFiles = params.getFiles();
 
         for (FileRename file : renamedFiles) {

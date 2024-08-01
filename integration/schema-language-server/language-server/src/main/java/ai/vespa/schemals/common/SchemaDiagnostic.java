@@ -4,8 +4,6 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.index.Symbol;
-
 /**
  * SchemaDiagnostic
  */

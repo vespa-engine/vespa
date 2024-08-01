@@ -3,7 +3,6 @@ package ai.vespa.schemals.context;
 import java.io.PrintStream;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
-import org.eclipse.lsp4j.TextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;

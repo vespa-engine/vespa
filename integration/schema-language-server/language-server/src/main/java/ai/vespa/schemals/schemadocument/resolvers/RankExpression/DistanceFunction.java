@@ -2,7 +2,6 @@ package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;

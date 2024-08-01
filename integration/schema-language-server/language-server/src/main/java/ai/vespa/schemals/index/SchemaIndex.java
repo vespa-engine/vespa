@@ -4,11 +4,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -26,8 +24,6 @@ import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
-import ai.vespa.schemals.parser.ast.summaryInDocument;
-import ai.vespa.schemals.parser.indexinglanguage.ast.getFieldExp;
 
 public class SchemaIndex {
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_TYPE_MAP = new HashMap<>() {{

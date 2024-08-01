@@ -5,10 +5,10 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationRefDataType;
-import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 

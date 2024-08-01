@@ -9,7 +9,6 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.ast.COLON;
 import ai.vespa.schemals.parser.ast.INDEXING;
-import ai.vespa.schemals.schemadocument.SchemaDocumentLexer;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 

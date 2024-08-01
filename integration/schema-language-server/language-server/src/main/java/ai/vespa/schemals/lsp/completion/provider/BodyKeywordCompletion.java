@@ -1,43 +1,35 @@
 package ai.vespa.schemals.lsp.completion.provider;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventPositionContext;
-import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.ast.openLbrace;
-import ai.vespa.schemals.parser.ast.rootSchema;
-import ai.vespa.schemals.parser.ast.sortingElm;
+import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
-import ai.vespa.schemals.parser.ast.structDefinitionElm;
-import ai.vespa.schemals.parser.ast.structFieldElm;
-import ai.vespa.schemals.parser.ast.summaryInDocument;
-import ai.vespa.schemals.parser.ast.summaryInField;
-import ai.vespa.schemals.parser.ast.weightElm;
-import ai.vespa.schemals.parser.ast.weightedsetElm;
-import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.firstPhase;
 import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.indexOutsideDoc;
-import ai.vespa.schemals.parser.ast.matchSettingsElm;
-import ai.vespa.schemals.parser.ast.fieldSetElm;
-import ai.vespa.schemals.parser.ast.rankElm;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.sortingElm;
+import ai.vespa.schemals.parser.ast.structDefinitionElm;
+import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.parser.ast.summaryInDocument;
+import ai.vespa.schemals.parser.ast.summaryInField;
+import ai.vespa.schemals.parser.ast.weightedsetElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.lsp.completion.provider.FixedKeywordBodies.FixedKeywordBody;
-import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 
 public class BodyKeywordCompletion implements CompletionProvider {
     // Currently key is the classLeafIdentifierString of a node with a body

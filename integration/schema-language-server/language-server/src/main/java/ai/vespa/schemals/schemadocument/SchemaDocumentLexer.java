@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.CSTUtils;

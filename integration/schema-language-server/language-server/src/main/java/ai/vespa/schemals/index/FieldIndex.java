@@ -9,9 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.eclipse.lsp4j.SymbolTag;
-
 import com.yahoo.schema.parser.ParsedType.Variant;
+
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;

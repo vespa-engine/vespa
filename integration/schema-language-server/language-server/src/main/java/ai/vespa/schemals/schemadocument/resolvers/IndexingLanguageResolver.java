@@ -9,7 +9,6 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 
 import ai.vespa.schemals.common.SchemaDiagnostic;
-import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol;
@@ -20,7 +19,6 @@ import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
-import ai.vespa.schemals.parser.indexinglanguage.ast.INPUT;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
 import ai.vespa.schemals.parser.indexinglanguage.ast.fieldName;
 import ai.vespa.schemals.parser.indexinglanguage.ast.inputExp;

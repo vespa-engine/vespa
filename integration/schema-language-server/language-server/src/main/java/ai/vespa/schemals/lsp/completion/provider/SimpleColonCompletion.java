@@ -1,15 +1,11 @@
 package ai.vespa.schemals.lsp.completion.provider;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.lsp4j.CompletionItem;
 
-import ai.vespa.schemals.lsp.completion.provider.FixedKeywordBodies.FixedKeywordBody;
-import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.lsp.completion.provider.FixedKeywordBodies.FixedKeywordBody;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 

@@ -10,9 +10,7 @@ import java.util.stream.Collectors;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class FunctionSignature {

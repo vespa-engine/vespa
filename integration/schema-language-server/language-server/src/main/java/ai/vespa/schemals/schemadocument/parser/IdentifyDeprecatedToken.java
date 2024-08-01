@@ -2,21 +2,18 @@ package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.structFieldElm;
-import ai.vespa.schemals.common.SchemaDiagnostic;
-import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
-import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
-import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyDeprecatedToken extends Identifier {

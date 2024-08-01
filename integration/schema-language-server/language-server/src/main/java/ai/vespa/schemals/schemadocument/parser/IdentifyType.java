@@ -1,19 +1,18 @@
 package ai.vespa.schemals.schemadocument.parser;
 
-import java.util.Optional;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
-import com.yahoo.search.schema.RankProfile.InputType;
-import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.TensorTypeParser;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.FLOAT_KEYWORD;
@@ -22,10 +21,6 @@ import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.inputElm;
 import ai.vespa.schemals.parser.ast.valueType;
-import ai.vespa.schemals.parser.ast.identifierStr;
-import ai.vespa.schemals.common.SchemaDiagnostic;
-import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
-import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
