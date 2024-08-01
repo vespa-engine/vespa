@@ -15,8 +15,12 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
+import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
+import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
@@ -96,7 +100,7 @@ public class SchemaHover {
             return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "builtin"));
         }
 
-        if (node.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+        if (node.getSymbol().getStatus() == SymbolStatus.REFERENCE || node.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
             Optional<Symbol> definition = context.schemaIndex.getSymbolDefinition(node.getSymbol());
 
             if (definition.isPresent()) {
@@ -120,6 +124,34 @@ public class SchemaHover {
         return null;
     }
 
+    private static Hover getIndexingHover(SchemaNode hoverNode, EventPositionContext context) {
+        // Note: these classes belong to the indexinglanguage parser
+        if (hoverNode.isASTInstance(ATTRIBUTE.class)) {
+            return new Hover(new MarkupContent(MarkupKind.MARKDOWN, 
+                "## Attribute\n"
+            +   "Attribute is used to make a field available for sorting, grouping, ranking and searching using match mode `word`.\n"
+            ));
+        } else if (hoverNode.isASTInstance(INDEX.class)) {
+            return new Hover(new MarkupContent(MarkupKind.MARKDOWN, 
+                "## Index\n"
+            +   "Creates a searchable index for the values of this field using match mode `text`. "
+            +   "All strings are lower-cased before stored in the index. "
+            +   "By default, the index name will be the same as the name of the schema field. "
+            +   "Use a fieldset to combine fields in the same set for searching.\n"
+            ));
+        } else if (hoverNode.isASTInstance(SUMMARY.class)) {
+            return new Hover(new MarkupContent(MarkupKind.MARKDOWN, 
+                "## Summary\n"
+            +   "Includes the value of this field in a summary field. "
+            +   "Summary fields of type string are limited to 64 kB. "
+            +   "If a larger string is stored, the indexer will issue a warning and truncate the value to 64 kB. "
+            +   "Modify summary output by using `summary:` in the field body (e.g. to generate dynamic teasers).\n"
+            ));
+        }
+
+        return null;
+    }
+
     public static Hover getHover(EventPositionContext context) {
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (node != null) {
@@ -128,6 +160,10 @@ public class SchemaHover {
 
         node = CSTUtils.getLeafNodeAtPosition(context.document.getRootNode(), context.position);
         if (node == null) return null;
+
+        if (node.getLanguageType() == LanguageType.INDEXING) {
+            return getIndexingHover(node, context);
+        }
 
 
         context.logger.println("Hover: " + node.getClassLeafIdentifierString());
