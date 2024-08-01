@@ -15,7 +15,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
-public class TypeCompletionProvider implements CompletionProvider {
+public class TypeCompletion implements CompletionProvider {
 
     private TokenType[] compoundTypes = {
         TokenType.MAP,

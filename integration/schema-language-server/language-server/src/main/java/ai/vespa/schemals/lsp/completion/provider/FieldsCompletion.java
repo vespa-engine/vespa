@@ -24,7 +24,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 /**
  * FieldsCompletionProvider
  */
-public class FieldsCompletionProvider implements CompletionProvider {
+public class FieldsCompletion implements CompletionProvider {
 
 	private boolean match(EventPositionContext context) {
         SchemaNode match = context.document.lexer().matchBackwardsOnLine(context.position, false, TokenType.FIELDS, TokenType.COLON);

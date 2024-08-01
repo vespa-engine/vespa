@@ -1,7 +1,10 @@
 package ai.vespa.schemals.lsp.completion.utils;
 
+import java.util.List;
+
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
+import org.eclipse.lsp4j.CompletionItemTag;
 import org.eclipse.lsp4j.InsertTextFormat;
 
 public class CompletionUtils {
@@ -36,6 +39,18 @@ public class CompletionUtils {
         CompletionItem item = new CompletionItem();
         item.setLabel(label);
         item.setDetail(detail);
+        return item;
+    }
+
+    public static CompletionItem constructBasicDeprecated(String label) {
+        CompletionItem item = constructBasic(label);
+        // This is deprecated (lol): item.setDeprecated(deprecated);
+        item.setTags(List.of(CompletionItemTag.Deprecated));
+        return item;
+    }
+
+    public static CompletionItem withSortingPrefix(String prefix, CompletionItem item) {
+        item.setSortText(prefix + item.getLabel());
         return item;
     }
 }

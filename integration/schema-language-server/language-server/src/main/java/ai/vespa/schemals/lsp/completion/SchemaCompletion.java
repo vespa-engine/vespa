@@ -14,14 +14,15 @@ import ai.vespa.schemals.tree.CSTUtils;
 public class SchemaCompletion {
 
     private static CompletionProvider[] providers = {
-        new EmptyFileProvider(),
-        new BodyKeywordCompletionProvider(),
-        new TypeCompletionProvider(),
-        new FieldsCompletionProvider(),
-        new MatchCompletionProvider(),
-        new InheritsCompletionProvider(),
-        new InheritanceCompletionProvider(),
-        new StructFieldProvider()
+        new EmptyFileCompletion(),
+        new BodyKeywordCompletion(),
+        new TypeCompletion(),
+        new FieldsCompletion(),
+        new MatchCompletion(),
+        new InheritsCompletion(),
+        new InheritanceCompletion(),
+        new StructFieldCompletion(),
+        new IndexingLangaugeCompletion()
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
@@ -31,9 +32,6 @@ public class SchemaCompletion {
         if ((context.document instanceof SchemaDocument) && ((SchemaDocument)context.document).isInsideComment(context.position)) {
             return ret;
         }
-
-        SchemaNode node = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
-        SchemaNode lastClean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
         for (CompletionProvider provider : providers) {
             try {

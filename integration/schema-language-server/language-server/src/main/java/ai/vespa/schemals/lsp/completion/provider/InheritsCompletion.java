@@ -21,7 +21,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
  * InheritsCompletionProvider 
  * Completion of the text " inherits " with choice on what to inherit
  */
-public class InheritsCompletionProvider implements CompletionProvider {
+public class InheritsCompletion implements CompletionProvider {
 	private Optional<SchemaNode> match(EventPositionContext context) {
         SchemaDocumentLexer lexer = context.document.lexer();
         SchemaNode match = lexer.matchBackwards(context.position, 1, false, TokenType.INHERITS);

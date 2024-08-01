@@ -21,7 +21,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 /**
  * StructFieldProvider
  */
-public class StructFieldProvider implements CompletionProvider {
+public class StructFieldCompletion implements CompletionProvider {
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventPositionContext context) {

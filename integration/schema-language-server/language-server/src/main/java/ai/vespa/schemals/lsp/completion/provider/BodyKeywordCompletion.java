@@ -25,7 +25,7 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 
-public class BodyKeywordCompletionProvider implements CompletionProvider {
+public class BodyKeywordCompletion implements CompletionProvider {
     // Currently key is the classLeafIdentifierString of a node with a body
     private static Map<Class<?>, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
         put(rootSchema.class, new CompletionItem[]{

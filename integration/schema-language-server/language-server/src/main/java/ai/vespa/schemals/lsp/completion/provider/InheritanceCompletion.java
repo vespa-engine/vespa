@@ -22,7 +22,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 /**
  * InheritanceCompletionProvider
  */
-public class InheritanceCompletionProvider implements CompletionProvider {
+public class InheritanceCompletion implements CompletionProvider {
     private Optional<SchemaNode> match(EventPositionContext context) {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;

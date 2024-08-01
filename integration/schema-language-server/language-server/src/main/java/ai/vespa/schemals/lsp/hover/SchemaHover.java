@@ -3,8 +3,10 @@ package ai.vespa.schemals.lsp.hover;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,8 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
  */
 public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
+
+    private static Map<String, Hover> markdownContentCache = new HashMap<>();
 
     /**
      * Helper to check if a comment exists and extract it from a line
@@ -238,21 +242,24 @@ public class SchemaHover {
             return getIndexingHover(node, context);
         }
 
+        String markdownKey = node.getClassLeafIdentifierString();
 
-        context.logger.println("Hover: " + node.getClassLeafIdentifierString());
+        // avoid doing unnecessary IO operations
+        if (markdownContentCache.containsKey(markdownKey)) {
+            return markdownContentCache.get(markdownKey);
+        }
 
-        String fileName = markdownPathRoot + node.getClassLeafIdentifierString() + ".md";
-
+        String fileName = markdownPathRoot + markdownKey + ".md";
         InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
 
         if (inputStream == null) {
             return null;
         }
-
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        
         String markdown = reader.lines().collect(Collectors.joining(System.lineSeparator()));
 
-        return new Hover(new MarkupContent(MarkupKind.MARKDOWN, markdown), node.getRange());
+        Hover hover = new Hover(new MarkupContent(MarkupKind.MARKDOWN, markdown), node.getRange());
+		markdownContentCache.put(markdownKey, hover);
+        return hover;
     }
 }
