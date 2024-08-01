@@ -64,6 +64,7 @@ public class TenantSecretStore {
                 "name='" + name + '\'' +
                 ", awsId='" + awsId + '\'' +
                 ", role='" + role + '\'' +
+                ", externalId='" + (externalId.orElse("<EMPTY>") + '\'') +
                 '}';
     }
 
@@ -72,13 +73,12 @@ public class TenantSecretStore {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TenantSecretStore that = (TenantSecretStore) o;
-        return name.equals(that.name) &&
-                awsId.equals(that.awsId) &&
-                role.equals(that.role);
+        return Objects.equals(name, that.name) && Objects.equals(awsId, that.awsId) && Objects.equals(role, that.role) && Objects.equals(externalId, that.externalId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, awsId, role);
+        return Objects.hash(name, awsId, role, externalId);
     }
+
 }
