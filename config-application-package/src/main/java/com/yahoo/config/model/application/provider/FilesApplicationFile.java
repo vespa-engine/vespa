@@ -49,6 +49,7 @@ public class FilesApplicationFile extends ApplicationFile {
     @Override
     public ApplicationFile delete() {
         if (file.isDirectory()) {
+            // TODO: Use file.listFiles() when if we stop writing meta file when deleting directories.
             if (!listFiles().isEmpty())
                 throw new RuntimeException("Can't delete, directory not empty: " + this + "(" + listFiles() + ")." + listFiles().size());
 
@@ -61,12 +62,13 @@ public class FilesApplicationFile extends ApplicationFile {
         }
         if (!file.delete())
             throw new IllegalStateException("Unable to delete: " + this);
+        // TODO: No need to write this if the file is deleted?
         uncheck(() -> writeMetaFile("", ContentStatusDeleted));
         return this;
     }
 
     public static boolean deleteFile(File path) {
-        if (path.exists() && path.isDirectory()) {
+        if (path.isDirectory()) {
             File[] files = path.listFiles();
             for (File value : files) {
                 if (value.isDirectory())
