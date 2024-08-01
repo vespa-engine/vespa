@@ -256,6 +256,17 @@ INJECT valueType:
     }
 }
 
+/**
+ * By allowing tokens to store exceptions we create a more fault tolerant parser,
+ * preventing premature exit from parsing even though the user has errors in the document.
+ *
+ * ParseExceptions are syntactical errors, so storing them is mainly to provide a better indication on
+ * where the error occurred (rather than "there is some error in this document").
+ * 
+ * IllegalArgumentExceptions come from the Parsed* classes in config-model, these are more semantic errors
+ * coming from invalid constructs that can be caught early during parsing. They do however not cover all errors that 
+ * can occur in schemas when deploying an application.
+ */
 INJECT Token :
 {
 

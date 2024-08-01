@@ -337,12 +337,13 @@ public class SchemaIndex {
     }
 
     /**
-     * Retrieves the definition of a symbol from a map
+     * Retrieves the definition of a symbol from a map.
      * We have three versions of this, because definitions can reference other definitions. 
-     * For example, struct-field is both a definition and a reference.
-     *  {@link getSymbolDefinition} returns identity if you supply a definition
-     *  {@link getNextSymbolDefinition} always tries to interpret the argument as a reference
-     *  {@link getFirstSymbolDefinition} can be thought of as successive applications of getNextSymbolDefinition until not possible
+     * For example, struct-field is both a definition (you want to jump there if you go-to-definition on field.structfield somewhere else), 
+     * and a reference (to the field inside the struct).
+     *  {@link getSymbolDefinition} returns identity if you supply a definition.
+     *  {@link getNextSymbolDefinition} always tries to interpret the argument as a reference (jumping one step even if argument is a definition).
+     *  {@link getFirstSymbolDefinition} can be thought of as successive applications of getNextSymbolDefinition and returns the last valid definition.
      *
      *
      * @param reference The reference to retrieve the definition for.

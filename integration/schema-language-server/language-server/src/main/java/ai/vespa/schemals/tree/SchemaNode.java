@@ -362,6 +362,22 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.range = CSTUtils.getNodeRange(originalSchemaNode);
     }
 
+    public int getOriginalBeginOffset() {
+        switch (language) {
+            case SCHEMA:
+                if (originalSchemaNode == null) return -1;
+                return originalSchemaNode.getBeginOffset();
+            case INDEXING:
+                if (originalIndexingNode == null) return -1;
+                return originalIndexingNode.getBeginOffset();
+            case RANK_EXPRESSION:
+                if (originalRankExpressionNode == null) return -1;
+                return originalRankExpressionNode.getBeginOffset();
+            default:
+                return -1;
+        }
+    }
+
     public String getClassLeafIdentifierString() {
         if (language == LanguageType.CUSTOM && getASTClass() != null) {
             return getASTClass().getSimpleName();
