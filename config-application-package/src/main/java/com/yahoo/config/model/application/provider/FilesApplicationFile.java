@@ -41,49 +41,38 @@ public class FilesApplicationFile extends ApplicationFile {
     }
 
     @Override
-    public boolean isDirectory() {
-        return file.isDirectory();
-    }
+    public boolean isDirectory() { return file.isDirectory(); }
 
     @Override
-    public boolean exists() {
-        return file.exists();
-    }
+    public boolean exists() { return file.exists(); }
 
     @Override
     public ApplicationFile delete() {
-        log.log(Level.FINE, () -> "Delete " + file);
-        if (file.isDirectory() && !listFiles().isEmpty()) {
-            throw new RuntimeException("files. Can't delete, directory not empty: " + this  + "(" + listFiles() + ")." + listFiles().size());
-        }
-        if (file.isDirectory() && file.listFiles() != null && file.listFiles().length > 0) {
-            for (File f : file.listFiles()) {
-                deleteFile(f);
+        if (file.isDirectory()) {
+            if (!listFiles().isEmpty())
+                throw new RuntimeException("Can't delete, directory not empty: " + this + "(" + listFiles() + ")." + listFiles().size());
+
+            var files = file.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    deleteFile(f);
+                }
             }
         }
-        if (!file.delete()) {
-            throw new IllegalStateException("Unable to delete: "+this);
-        }
-        try {
-            writeMetaFile("", ApplicationFile.ContentStatusDeleted);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        if (!file.delete())
+            throw new IllegalStateException("Unable to delete: " + this);
+        uncheck(() -> writeMetaFile("", ContentStatusDeleted));
         return this;
     }
 
-
     public static boolean deleteFile(File path) {
-        if( path.exists() ) {
-            if (path.isDirectory()) {
-                File[] files = path.listFiles();
-                for(int i=0; i<files.length; i++) {
-                    if(files[i].isDirectory()) {
-                        deleteFile(files[i]);
-                    } else {
-                        files[i].delete();
-                    }
-                }
+        if (path.exists() && path.isDirectory()) {
+            File[] files = path.listFiles();
+            for (File value : files) {
+                if (value.isDirectory())
+                    deleteFile(value);
+                else
+                    value.delete();
             }
         }
         return(path.delete());
@@ -109,7 +98,7 @@ public class FilesApplicationFile extends ApplicationFile {
             throw new IllegalArgumentException("Unable to create directory: "+file);
         }
         try {
-            writeMetaFile("", ApplicationFile.ContentStatusNew);
+            writeMetaFile("", ContentStatusNew);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -142,7 +131,7 @@ public class FilesApplicationFile extends ApplicationFile {
             file.getParentFile().mkdirs();
         }
         try {
-            String status = file.exists() ? ApplicationFile.ContentStatusChanged : ApplicationFile.ContentStatusNew;
+            String status = file.exists() ? ContentStatusChanged : ContentStatusNew;
             IOUtils.writeFile(file, value, true);
             writeMetaFile(value, status);
         } catch (IOException e) {
@@ -154,11 +143,13 @@ public class FilesApplicationFile extends ApplicationFile {
     @Override
     public List<ApplicationFile> listFiles(final PathFilter filter) {
         List<ApplicationFile> files = new ArrayList<>();
-        if (!file.isDirectory()) {
-            return files;
-        }
+        if (!file.isDirectory()) return files;
+
         FileFilter fileFilter = pathname -> filter.accept(path.append(pathname.getName()));
-        for (File child : file.listFiles(fileFilter)) {
+        File[] list = file.listFiles(fileFilter);
+        if (list == null) return files;
+
+        for (File child : list) {
             // Ignore dot-files.
             if (!child.getName().startsWith(".")) {
                 files.add(new FilesApplicationFile(path.append(child.getName()), child));
@@ -175,18 +166,12 @@ public class FilesApplicationFile extends ApplicationFile {
         File metaDir = createMetaDir();
         log.log(Level.FINE, () -> "meta dir=" + metaDir);
         File metaFile = new File(metaDir + "/" + getPath().getName());
-        if (status == null) {
-            status = ApplicationFile.ContentStatusNew;
-            if (metaFile.exists()) {
-                status = ApplicationFile.ContentStatusChanged;
-            }
-        }
-        String hash;
-        if (file.isDirectory() || status.equals(ApplicationFile.ContentStatusDeleted)) {
-            hash = "";
-        } else {
-            hash = ConfigUtils.getMd5(data);
-        }
+        if (status == null)
+            status = metaFile.exists() ? ContentStatusChanged : ContentStatusNew;
+
+        String hash = (file.isDirectory() || status.equals(ContentStatusDeleted))
+                ? ""
+                : ConfigUtils.getMd5(data);
         mapper.writeValue(metaFile, new MetaData(status, hash));
     }
 
@@ -218,9 +203,9 @@ public class FilesApplicationFile extends ApplicationFile {
         }
         try {
             if (file.isDirectory()) {
-                return new MetaData(ApplicationFile.ContentStatusNew, "");
+                return new MetaData(ContentStatusNew, "");
             } else {
-                return new MetaData(ApplicationFile.ContentStatusNew, ConfigUtils.getMd5(IOUtils.readAll(createReader())));
+                return new MetaData(ContentStatusNew, ConfigUtils.getMd5(IOUtils.readAll(createReader())));
             }
         } catch (IOException | IllegalArgumentException e) {
             return null;
