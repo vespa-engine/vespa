@@ -4,12 +4,18 @@ import java.util.ArrayList;
 
 import org.eclipse.lsp4j.CompletionItem;
 
-import ai.vespa.schemals.lsp.completion.provider.*;
 import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.lsp.completion.provider.BodyKeywordCompletion;
+import ai.vespa.schemals.lsp.completion.provider.CompletionProvider;
+import ai.vespa.schemals.lsp.completion.provider.EmptyFileCompletion;
+import ai.vespa.schemals.lsp.completion.provider.FieldsCompletion;
+import ai.vespa.schemals.lsp.completion.provider.IndexingLangaugeCompletion;
+import ai.vespa.schemals.lsp.completion.provider.InheritanceCompletion;
+import ai.vespa.schemals.lsp.completion.provider.InheritsCompletion;
+import ai.vespa.schemals.lsp.completion.provider.SimpleColonCompletion;
+import ai.vespa.schemals.lsp.completion.provider.StructFieldCompletion;
+import ai.vespa.schemals.lsp.completion.provider.TypeCompletion;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
-
-import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.CSTUtils;
 
 public class SchemaCompletion {
 
@@ -18,7 +24,7 @@ public class SchemaCompletion {
         new BodyKeywordCompletion(),
         new TypeCompletion(),
         new FieldsCompletion(),
-        new MatchCompletion(),
+        new SimpleColonCompletion(),
         new InheritsCompletion(),
         new InheritanceCompletion(),
         new StructFieldCompletion(),

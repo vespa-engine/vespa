@@ -9,86 +9,114 @@ import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.sortingElm;
 import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.attributeElm;
+import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
+import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.parser.ast.summaryInDocument;
+import ai.vespa.schemals.parser.ast.summaryInField;
+import ai.vespa.schemals.parser.ast.weightElm;
+import ai.vespa.schemals.parser.ast.weightedsetElm;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.firstPhase;
+import ai.vespa.schemals.parser.ast.hnswIndex;
+import ai.vespa.schemals.parser.ast.indexInsideField;
+import ai.vespa.schemals.parser.ast.indexOutsideDoc;
+import ai.vespa.schemals.parser.ast.matchSettingsElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.rankElm;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.lsp.completion.provider.FixedKeywordBodies.FixedKeywordBody;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 
 public class BodyKeywordCompletion implements CompletionProvider {
     // Currently key is the classLeafIdentifierString of a node with a body
-    private static Map<Class<?>, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
-        put(rootSchema.class, new CompletionItem[]{
-            CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"), // TODO: figure out client tab format
-            CompletionUtils.constructSnippet("index", "index ${1:index-name}: ${2:property}", "index:"),
-            CompletionUtils.constructSnippet("index", "index ${1:index-name} {\n\t$0\n}", "index {}"),
+    private static Map<Class<?>, List<CompletionItem>> bodyKeywordSnippets = new HashMap<>() {{
+        put(rootSchema.class, List.of(
+            CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"),
+            FixedKeywordBodies.INDEX.getColonSnippet(true),
+            FixedKeywordBodies.INDEX.getBodySnippet(true),
             CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
             CompletionUtils.constructSnippet("fieldset", "fieldset ${1:default} {\n\tfields: $0\n}"),
             CompletionUtils.constructSnippet("rank-profile", "rank-profile ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("constant", "constant ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("onnx-model", "onnx-model ${1:name} {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("stemming", "stemming: $1"),
+            FixedKeywordBodies.STEMMING.getColonSnippet(),
             CompletionUtils.constructSnippet("document-summary", "document-summary ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("annotation", "annotation ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("import field", "import field ${1:name} as $2 {}"),
             CompletionUtils.constructSnippet("raw-as-base64-in-summary", "raw-as-base64-in-summary")
-        });
+        ));
 
-        put(documentElm.class, new CompletionItem[]{
+        put(documentElm.class, List.of(
             CompletionUtils.constructSnippet("struct", "struct ${1:name} {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}")
 
-        });
+        ));
 
-        put(fieldElm.class, new CompletionItem[]{
+        put(fieldElm.class, List.of(
             CompletionUtils.constructSnippet("alias", "alias: $1"),
-            // attribute is deprecated
+            FixedKeywordBodies.ATTRIBUTE.getColonSnippet(),
+            FixedKeywordBodies.ATTRIBUTE.getBodySnippet(),
             CompletionUtils.constructSnippet("bolding", "bolding: on"),
-            CompletionUtils.constructSnippet("dictionary", "dictionary {\n\t$0\n}"),
+            FixedKeywordBodies.DICTIONARY.getBodySnippet(),
             CompletionUtils.constructSnippet("id", "id: "),
-            CompletionUtils.constructSnippet("index", "index ${1:index-name}: ${2:property}", "index:"),
-            CompletionUtils.constructSnippet("index", "index ${1:index-name} {\n\t$0\n}", "index {}"),
+            FixedKeywordBodies.INDEX.getColonSnippet(),
+            FixedKeywordBodies.INDEX.getBodySnippet(),
             CompletionUtils.constructSnippet("indexing", "indexing: ", "indexing:"),
             CompletionUtils.constructSnippet("indexing", "indexing {\n\t$0\n}", "indexing {}"),
-            CompletionUtils.constructSnippet("match", "match: ", "match:"),
-            CompletionUtils.constructSnippet("match", "match {\n\t$0\n}", "match {}"),
+            FixedKeywordBodies.MATCH.getColonSnippet(),
+            FixedKeywordBodies.MATCH.getBodySnippet(),
             CompletionUtils.constructSnippet("normalizing", "normalizing: "),
             CompletionUtils.constructSnippet("query-command", "query-command: "),
-            CompletionUtils.constructSnippet("rank", "rank: ${1|filter,normal|}", "rank:"),
-            CompletionUtils.constructSnippet("rank", "rank {\n\t${1|filter,normal|}\n}", "rank {}"),
-            CompletionUtils.constructSnippet("rank-type", "rank-type: ${1|identity,about,tags,empty|}"),
-            CompletionUtils.constructSnippet("sorting", "sorting: ", "sorting:"),
-            CompletionUtils.constructSnippet("sorting", "sorting {\n\t$0\n}", "sorting {}"),
-            CompletionUtils.constructSnippet("stemming", "stemming: "),
-            CompletionUtils.constructSnippet("summary", "summary: ", "summary:"),
-            CompletionUtils.constructSnippet("summary", "summary {\n\t$0\n}", "summary {}"),
-            // summary-to is deprecated
+            FixedKeywordBodies.RANK.getColonSnippet(),
+            FixedKeywordBodies.RANK.getBodySnippet(),
+            FixedKeywordBodies.RANK_TYPE.getColonSnippet(),
+            FixedKeywordBodies.SORTING.getColonSnippet(),
+            FixedKeywordBodies.SORTING.getBodySnippet(),
+            FixedKeywordBodies.STEMMING.getColonSnippet(),
+            FixedKeywordBodies.SUMMARY.getColonSnippet(),
+            FixedKeywordBodies.SUMMARY.getBodySnippet(),
+            CompletionUtils.constructBasicDeprecated("summary-to: "), // summary-to is deprecated
             CompletionUtils.constructSnippet("weight", "weight: "),
-            CompletionUtils.constructSnippet("weightedset", "weightedset: ", "weightedset:"),
-            CompletionUtils.constructSnippet("weightedset", "weightedset {\n\t$0\n}", "weightedset {}"),
-        });
+            FixedKeywordBodies.WEIGHTEDSET.getColonSnippet(),
+            FixedKeywordBodies.WEIGHTEDSET.getBodySnippet()
+        ));
 
-        put(structDefinitionElm.class, new CompletionItem[]{
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
-        });
+        // There is one more possible in struct-field: struct-field itself.
+        // However it is provided by StructFieldCompletion, because it is context-dependent.
+        put(structFieldElm.class, List.of(
+            CompletionUtils.constructSnippet("indexing", "indexing: ", "indexing:"),
+            CompletionUtils.constructSnippet("indexing", "indexing {\n\t$0\n}", "indexing {}"),
+            FixedKeywordBodies.ATTRIBUTE.getColonSnippet(),
+            FixedKeywordBodies.ATTRIBUTE.getBodySnippet(),
+            FixedKeywordBodies.RANK.getColonSnippet(),
+            FixedKeywordBodies.RANK.getBodySnippet(),
+            FixedKeywordBodies.MATCH.getColonSnippet(),
+            FixedKeywordBodies.MATCH.getBodySnippet()
+        ));
 
-        put(rankProfile.class, new CompletionItem[]{
+        put(structDefinitionElm.class, List.of(
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}")
+        ));
+
+        put(rankProfile.class, List.of(
             CompletionUtils.constructSnippet("diversity", "diversity {\n\tattribute: $1\n\tmin-groups: $0\n}"),
             CompletionUtils.constructSnippet("match-phase", "match-phase {\n\tattribute: $1\n\torder: $2\n\tmax-hits: $3\n}"),
             CompletionUtils.constructSnippet("first-phase", "first-phase {\n\t$0\n}"),
             CompletionUtils.constructSnippet("second-phase", "second-phase {\n\t$0\n}"),
             CompletionUtils.constructSnippet("global-phase", "global-phase {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("function", "function $1() {\n\texpression: \n}"),
+            CompletionUtils.constructSnippet("function", "function $1() {\n\texpression: $0\n}"),
             CompletionUtils.constructSnippet("inputs", "inputs {\n\t$0\n}"),
             CompletionUtils.constructSnippet("constants", "constants {\n\t$0\n}"),
             CompletionUtils.constructSnippet("onnx-model", "onnx-model $1 {\n\t$0\n}"),
@@ -108,28 +136,42 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructBasic("post-filter-threshold"),
             CompletionUtils.constructBasic("approximate-threshold"),
             CompletionUtils.constructBasic("target-hits-max-adjustment-factor"),
-            CompletionUtils.constructSnippet("rank", "rank ${1:field-name}: ${2|filter,normal|}", "rank:"),
-            CompletionUtils.constructSnippet("rank-type", "rank-type ${1:field-name}: ${2|identity,about,tags,empty|}"),
-        });
+            FixedKeywordBodies.RANK.getColonSnippet(true),
+            FixedKeywordBodies.RANK_TYPE.getColonSnippet(true)
+        ));
 
-        put(firstPhase.class, new CompletionItem[]{
+        put(firstPhase.class, List.of(
             CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
             CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
             CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
-            CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0"),
-        });
+            CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0")
+        ));
 
-        put(fieldSetElm.class, new CompletionItem[]{
-            CompletionUtils.constructSnippet("match", "match: ", "match:"),
-            CompletionUtils.constructSnippet("match", "match {\n\t$0\n}", "match {}"),
+        put(fieldSetElm.class, List.of(
+            FixedKeywordBodies.MATCH.getColonSnippet(),
+            FixedKeywordBodies.MATCH.getBodySnippet(),
             CompletionUtils.constructSnippet("query-command", "query-command: ")
-        });
+        ));
 
-        put(rankElm.class, new CompletionItem[]{
-            CompletionUtils.constructBasic("filter"),
-            CompletionUtils.constructBasic("literal"),
-            CompletionUtils.constructBasic("normal"),
-        });
+        put(FixedKeywordBodies.MATCH.parentASTClass(), FixedKeywordBodies.MATCH.completionItems());
+        put(FixedKeywordBodies.RANK.parentASTClass(), FixedKeywordBodies.RANK.completionItems());
+
+        put(summaryInDocument.class, FixedKeywordBodies.SUMMARY.completionItems());
+        put(summaryInField.class, FixedKeywordBodies.SUMMARY.completionItems());
+
+        put(weightedsetElm.class, FixedKeywordBodies.WEIGHTEDSET.completionItems());
+
+        put(hnswIndex.class, FixedKeywordBodies.HNSW.completionItems());
+
+        put(dictionaryElm.class, FixedKeywordBodies.DICTIONARY.completionItems());
+
+        put(sortingElm.class, FixedKeywordBodies.SORTING.completionItems());
+
+        put(attributeElm.class, FixedKeywordBodies.ATTRIBUTE.completionItems());
+
+        put(indexInsideField.class, FixedKeywordBodies.INDEX.completionItems());
+        put(indexOutsideDoc.class, FixedKeywordBodies.INDEX.completionItems());
+
 
     }};
 
@@ -152,8 +194,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         if (searchNode.isASTInstance(openLbrace.class))searchNode = searchNode.getParent();
 
-        CompletionItem[] result = bodyKeywordSnippets.get(searchNode.getASTClass());
+        List<CompletionItem> result = bodyKeywordSnippets.get(searchNode.getASTClass());
         if (result == null) return List.of();
-        return List.of(result);
+        return result;
     }
 }

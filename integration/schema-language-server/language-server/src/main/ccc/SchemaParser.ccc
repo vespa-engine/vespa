@@ -1373,9 +1373,9 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
     (<TYPE>   type = dataType())?
     openLbrace() {
         psf = new ParsedSummaryField(name, type);
-	if (type != null) {
-	    psf.setHasExplicitType();
-	}
+        if (type != null) {
+            psf.setHasExplicitType();
+        }
     }
     (summaryItem(psf) | <NL>)* <RBRACE>
     {
