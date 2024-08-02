@@ -24,6 +24,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.AS;
+import ai.vespa.schemals.parser.ast.RootRankProfile;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
@@ -96,7 +97,7 @@ public class IdentifySymbolDefinition extends Identifier {
 
             Optional<Symbol> scope = CSTUtils.findScope(node);
             if (scope.isEmpty()) {
-                if (symbolType == SymbolType.RANK_PROFILE && parent.getParent() == null) {
+                if (symbolType == SymbolType.RANK_PROFILE && parent.getParent() != null && parent.getParent().isASTInstance(RootRankProfile.class)) {
                     // we are in a rank-profile file (.profile)
                     String workspaceRootURI = context.schemaIndex().getWorkspaceURI();
                     String currentURI = context.fileURI();

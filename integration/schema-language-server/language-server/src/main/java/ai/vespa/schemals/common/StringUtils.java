@@ -72,4 +72,38 @@ public class StringUtils {
             return text.replace("\n" + spaceIndent(-indentDelta), "\n");
         }
     }
+
+    public static Position getPreviousStartOfWord(String content, Position pos) {
+        try {
+            int offset = positionToOffset(content, pos) - 1;
+
+            // Skip whitespace
+            // But not newline because newline is a token
+            while (offset >= 0 && Character.isWhitespace(content.charAt(offset)) && content.charAt(offset) != '\n')offset--;
+
+            for (int i = offset; i >= 0; i--) {
+                if (Character.isWhitespace(content.charAt(i)))return StringUtils.offsetToPosition(content, i + 1);
+            }
+        } catch (Exception e) {
+        }
+
+        return null;
+    }
+
+    public static boolean isInsideComment(String content, Position pos) {
+        try {
+            int offset = positionToOffset(content, pos);
+
+            if (content.charAt(offset) == '\n')offset--;
+
+            for (int i = offset; i >= 0; i--) {
+                if (content.charAt(i) == '\n')break;
+                if (content.charAt(i) == '#')return true;
+            }
+        } catch(Exception e) {
+
+        }
+        return false;
+    }
+
 }

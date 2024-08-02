@@ -10,6 +10,8 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.SchemaParser;
+import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
+import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -68,19 +70,22 @@ public class RankProfileDocument implements DocumentManager {
         parserFaultTolerant.setParserTolerant(true);
 
         try {
-            parserFaultTolerant.rankProfile(null);
+            parserFaultTolerant.RootRankProfile();
         } catch(ParseException pe) {
-            try {
-                // ParseException getMessage is glitchy
-                context.logger().println("PARSE EXCEPTION IN RANK PROFILE: " + pe.getMessage());
-            } catch(Exception e) {
-            }
+            // ignore
         } catch(IllegalArgumentException e) {
-            context.logger().println("ILLEGAL ARGUMENT EXCEPTION IN RANK PROFILE: " + e.getMessage());
+            // ignore
         }
 
         Node node = parserFaultTolerant.rootNode();
         var tolerantResult = SchemaDocument.parseCST(node, context);
+
+        tolerantResult.diagnostics().addAll(InheritanceResolver.resolveInheritances(context));
+
+        if (tolerantResult.CST().isPresent()) {
+            tolerantResult.diagnostics().addAll(ResolverTraversal.traverse(context, tolerantResult.CST().get()));
+        }
+
         return tolerantResult;
     }
 

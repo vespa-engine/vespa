@@ -573,6 +573,12 @@ ParsedSchema Root :
     { return schema; }
 ;
 
+/**
+ * This rule should only be used for parsing *.profile files.
+ */
+void RootRankProfile : { }
+    (<NL>)* rankProfile(null) (<NL>)* <EOF>
+;
 
 
 /**

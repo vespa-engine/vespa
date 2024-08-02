@@ -3,6 +3,7 @@ package ai.vespa.schemals.lsp.completion.provider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.CompletionItem;
 
@@ -96,7 +97,7 @@ public class InheritsCompletion implements CompletionProvider {
                 .stream()
                 .map(symbol -> symbol.getShortIdentifier())
                 .filter(str -> !str.equals(myIdentifierString))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new)); // to make it modifiable
         } else if (nodeType == TokenType.STRUCT || nodeType == TokenType.ANNOTATION) {
             Optional<Symbol> scope = context.schemaIndex.findSymbol(null, SymbolType.DOCUMENT, ((SchemaDocument)context.document).getSchemaIdentifier());
 
@@ -105,7 +106,7 @@ public class InheritsCompletion implements CompletionProvider {
                     .stream()
                     .map(symbol -> symbol.getShortIdentifier())
                     .filter(str -> !str.equals(myIdentifierString))
-                    .toList();
+                    .collect(Collectors.toCollection(ArrayList::new)); // to make it modifiable
             }
         }
 

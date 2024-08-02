@@ -183,38 +183,6 @@ public class SchemaDocument implements DocumentManager {
         return FileUtils.fileNameFromPath(fileURI);
     }
 
-    public Position getPreviousStartOfWord(Position pos) {
-        try {
-            int offset = StringUtils.positionToOffset(this.content, pos) - 1;
-
-            // Skip whitespace
-            // But not newline because newline is a token
-            while (offset >= 0 && Character.isWhitespace(content.charAt(offset)) && content.charAt(offset) != '\n')offset--;
-
-            for (int i = offset; i >= 0; i--) {
-                if (Character.isWhitespace(content.charAt(i)))return StringUtils.offsetToPosition(this.content, i + 1);
-            }
-        } catch (Exception e) {
-        }
-
-        return null;
-    }
-
-    public boolean isInsideComment(Position pos) {
-        try {
-            int offset = StringUtils.positionToOffset(this.content, pos);
-
-            if (content.charAt(offset) == '\n')offset--;
-
-            for (int i = offset; i >= 0; i--) {
-                if (content.charAt(i) == '\n')break;
-                if (content.charAt(i) == '#')return true;
-            }
-        } catch(Exception e) {
-        }
-        return false;
-    }
-
     public SchemaNode getRootNode() {
         return CST;
     }
@@ -357,24 +325,12 @@ public class SchemaDocument implements DocumentManager {
 
         try {
             var expression = parser.root();
-            /*
-            // TODO: Verify expression?
-            try {
-                var dataType = expression.verify();
-                context.logger().println("ILSCRIPT GOOD: " + dataType.toString());
-            } catch(Exception e) {
-                context.logger().println("ILSCRIPT FAIL: " + e.getMessage());
-            }
-            */
-            //context.logger().println("ILSCRIPT: " + script.content());
-            //context.logger().println("ILSCRIPT INPUT TYPE: " + (expression.requiredInputType() == null ? "null" : expression.requiredInputType().toString()));
-            //context.logger().println("ILSCRIPT OUTPUT TYPE: " + (expression.createdOutputType() == null ? "null" : expression.createdOutputType().toString()));
 
-            //indexingElm rootNode = (indexingElm)parser.rootNode();
+            // store the expression to be checked later
             ((indexingElm)indexingElmNode.getOriginalSchemaNode()).expression = expression;
+
             return new SchemaNode(parser.rootNode(), scriptStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
-            context.logger().println("Encountered parsing error in parsing feature list");
             try {
                 Range range = ILUtils.getNodeRange(pe.getToken());
                 range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));

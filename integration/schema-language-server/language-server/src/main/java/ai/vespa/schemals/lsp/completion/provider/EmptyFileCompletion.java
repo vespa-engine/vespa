@@ -34,7 +34,7 @@ public class EmptyFileCompletion implements CompletionProvider {
         if (!match(context)) return List.of();
 
         String fileName = FileUtils.schemaNameFromPath(context.document.getFileURI()); // without extension
-        if (fileName == null) return new ArrayList<>();
+        if (fileName == null) return List.of();
 
         if (context.document.getFileURI().endsWith(".profile")) {
             return new ArrayList<>() {{

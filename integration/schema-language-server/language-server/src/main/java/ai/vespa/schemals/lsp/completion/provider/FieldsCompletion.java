@@ -84,7 +84,7 @@ public class FieldsCompletion implements CompletionProvider {
 
             return fieldSymbols.stream()
                                .map(symbol -> CompletionUtils.constructBasic(symbol.getPrettyIdentifier()))
-                               .collect(Collectors.toList());
+                               .toList();
         }
 	}
 }

@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.Position;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.RootRankProfile;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.dictionaryElm;
@@ -138,6 +139,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
             FixedKeywordBodies.RANK_TYPE.getColonSnippet(true)
         ));
 
+        put(RootRankProfile.class, get(rankProfile.class));
+
         put(firstPhase.class, List.of(
             CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
             CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
@@ -181,14 +184,14 @@ public class BodyKeywordCompletion implements CompletionProvider {
         SchemaNode last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
 
         if (last == null) {
-            return null;
+            return List.of();
         }
 
-        if (!last.isASTInstance(NL.class)) return null;
+        if (!last.isASTInstance(NL.class)) return List.of();
 
         SchemaNode searchNode = last.getParent();
 
-        if (searchNode == null) return null;
+        if (searchNode == null) return List.of();
 
         if (searchNode.isASTInstance(openLbrace.class))searchNode = searchNode.getParent();
 

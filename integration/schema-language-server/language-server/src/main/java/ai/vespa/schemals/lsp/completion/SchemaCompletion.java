@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.eclipse.lsp4j.CompletionItem;
 
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.lsp.completion.provider.BodyKeywordCompletion;
 import ai.vespa.schemals.lsp.completion.provider.CompletionProvider;
@@ -34,8 +35,7 @@ public class SchemaCompletion {
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
-        // TODO: comments in rank profile files
-        if ((context.document instanceof SchemaDocument) && ((SchemaDocument)context.document).isInsideComment(context.position)) {
+        if (StringUtils.isInsideComment(context.document.getCurrentContent(), context.position)) {
             return ret;
         }
 
@@ -43,7 +43,8 @@ public class SchemaCompletion {
             try {
                 ret.addAll(provider.getCompletionItems(context));
             } catch(Exception e) {
-                // ignore
+                e.printStackTrace(context.logger);
+                //context.logger.println(e.getMessage());
             }
         }
 

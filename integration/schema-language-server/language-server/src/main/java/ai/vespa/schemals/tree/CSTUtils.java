@@ -112,18 +112,6 @@ public class CSTUtils {
         return null;
     }
 
-    /**
-     * @param node query node
-     * @return Closest symbol belonging to a parent node
-     */
-    public static Optional<Symbol> findNodeScope(SchemaNode node) {
-        while (node != null) {
-            if (node.hasSymbol()) return Optional.of(node.getSymbol());
-            node = node.getParent();
-        }
-        return Optional.empty();
-    }
-
     public static SchemaNode getNodeAtOrBeforePosition(SchemaNode CST, Position pos) {
         return getNodeAtPosition(CST, pos, false, true);
     }

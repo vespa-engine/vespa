@@ -6,8 +6,8 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaMessageHandler;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventPositionContext extends EventDocumentContext {
@@ -24,7 +24,9 @@ public class EventPositionContext extends EventDocumentContext {
     ) {
         super(logger, scheduler, schemaIndex, messageHandler, documentIdentifier);
         this.position = position;
-        this.startOfWord = (document instanceof SchemaDocument) ? ((SchemaDocument)document).getPreviousStartOfWord(position) : position;
+
+        Position result = StringUtils.getPreviousStartOfWord(document.getCurrentContent(), position);
+        this.startOfWord = (result != null ? result : position);
     }
 
     public Position startOfWord() {

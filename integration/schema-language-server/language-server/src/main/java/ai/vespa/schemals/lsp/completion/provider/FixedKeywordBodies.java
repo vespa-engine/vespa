@@ -25,11 +25,14 @@ import ai.vespa.schemals.parser.ast.summaryInField;
 import ai.vespa.schemals.parser.ast.weightedsetElm;
 
 /**
- * FixedKeywordBody
+ * FixedKeywordBodies
+ * A lot of constructs in the schema language consist of some keyword, optionally followed by an identifier and then either : or {}, where the options 
+ * inside are limited and static. For-example if you write match: ..., there is a fixed set of possible words to write after the colon.
+ * This class contains the common elements among such constructs, making it possible to generate many completion items with the same code.
  */
 public class FixedKeywordBodies {
     public static record FixedKeywordBody(String name, TokenType tokenType, Class<? extends Node> parentASTClass, List<CompletionItem> completionItems) {
-        public String getChoiceTemplate(boolean excludeSnippets) {
+        public String getChoiceTemplate(final boolean excludeSnippets) {
             return String.join(",", completionItems.stream()
                 .filter(item -> !excludeSnippets || item.getKind() != CompletionItemKind.Snippet)
                 .map(item -> item.getLabel())
@@ -44,7 +47,7 @@ public class FixedKeywordBodies {
             return getChoiceTemplate(false);
         }
 
-        public CompletionItem getColonSnippet(boolean hasAdditionalSpec) {
+        public CompletionItem getColonSnippet(final boolean hasAdditionalSpec) {
             String snippetContent = name + (hasAdditionalSpec ? " $1: " : ": ");
             if (!hasSnippets()) {
                 snippetContent += "${" + (hasAdditionalSpec ? "2|" : "1|") + getChoiceTemplate() + "|}";
@@ -54,7 +57,7 @@ public class FixedKeywordBodies {
 
         public CompletionItem getColonSnippet() { return getColonSnippet(false); }
 
-        public CompletionItem getBodySnippet(boolean hasAdditionalSpec) {
+        public CompletionItem getBodySnippet(final boolean hasAdditionalSpec) {
             String snippetContent = name + (hasAdditionalSpec ? " $1 {\n\t" : " {\n\t");
             if (!hasSnippets()) {
                 snippetContent += "${" + (hasAdditionalSpec ? "2|" : "1|") + getChoiceTemplate() + "|}";

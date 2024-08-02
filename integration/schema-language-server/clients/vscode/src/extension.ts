@@ -122,7 +122,7 @@ function showJavaErrorMessage() {
         } else if (result === openOracleDownloadsButton) {
             vscode.env.openExternal(vscode.Uri.parse(JAVA_DOWNLOAD_URL));
         } 
-    });   
+    });
 }
 
 export function activate(context: vscode.ExtensionContext) {
