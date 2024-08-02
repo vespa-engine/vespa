@@ -6,11 +6,13 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.CompletionItem;
 
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -47,10 +49,35 @@ public class TypeCompletion implements CompletionProvider {
         return false;
     }
 
+    private boolean isInsideTensor(EventPositionContext context) {
+        SchemaNode lastClean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
+
+        if (!lastClean.getText().startsWith("tensor")) return false;
+
+        String content = context.document.getCurrentContent();
+        int offset = StringUtils.positionToOffset(content, context.position) - 1;
+        context.logger.println("Char: " + content.charAt(offset));
+        for (int i = offset; i >= offset - 20; --i) {
+            if (content.charAt(i) == '>') return false;
+            if (content.charAt(i) == '<') return true;
+        }
+        return false;
+    }
+
     @Override
     public List<CompletionItem> getCompletionItems(EventPositionContext context) {
         if (!(context.document instanceof SchemaDocument)) return List.of();
         if (!match(context)) return List.of();
+
+        if (isInsideTensor(context)) {
+            return List.of(
+                CompletionUtils.constructType("float"),
+                CompletionUtils.constructType("double"),
+                CompletionUtils.constructType("int8"),
+                CompletionUtils.constructType("bfloat16")
+            );
+        }
+
         List<CompletionItem> items = new ArrayList<>() {{
             add(CompletionUtils.constructSnippet("annotationreference", "annotationreference<$1>"));
             add(CompletionUtils.constructSnippet("array", "array<$1>"));

@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.Position;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ast.documentElm;
@@ -100,6 +101,10 @@ public class BodyKeywordCompletion implements CompletionProvider {
         ));
 
         put(structDefinitionElm.class, List.of(
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}")
+        ));
+
+        put(annotationBody.class, List.of(
             CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {}")
         ));
 
