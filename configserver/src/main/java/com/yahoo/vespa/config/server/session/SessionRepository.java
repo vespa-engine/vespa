@@ -111,7 +111,6 @@ public class SessionRepository {
     private final Map<Long, LocalSession> localSessionCache = Collections.synchronizedMap(new HashMap<>());
     private final Map<Long, RemoteSession> remoteSessionCache = Collections.synchronizedMap(new HashMap<>());
     private final Map<Long, SessionStateWatcher> sessionStateWatchers = Collections.synchronizedMap(new HashMap<>());
-    private final Duration sessionLifetime;
     private final Clock clock;
     private final Curator curator;
     private final Executor zkWatcherExecutor;
@@ -167,7 +166,6 @@ public class SessionRepository {
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
         this.curator = curator;
-        this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
@@ -379,7 +377,6 @@ public class SessionRepository {
     }
 
     public int deleteExpiredRemoteSessions(Predicate<Session> sessionIsActiveForApplication) {
-        Duration expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
         List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
         log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
 
@@ -391,7 +388,7 @@ public class SessionRepository {
             if (session == null)
                 session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
             if (session.getStatus() == Session.Status.ACTIVATE && sessionIsActiveForApplication.test(session)) continue;
-            if (sessionHasExpired(session.getCreateTime(), expiryTime)) {
+            if (sessionHasExpired(session.getCreateTime())) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 deleteRemoteSessionFromZooKeeper(session);
                 deleted++;
@@ -416,7 +413,8 @@ public class SessionRepository {
         transaction.close();
     }
 
-    private boolean sessionHasExpired(Instant created, Duration expiryTime) {
+    private boolean sessionHasExpired(Instant created) {
+        var expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
         return created.plus(expiryTime).isBefore(clock.instant());
     }
 
@@ -644,7 +642,7 @@ public class SessionRepository {
                 Instant createTime = sessionZooKeeperClient.readCreateTime();
                 Session.Status status = sessionZooKeeperClient.readStatus();
 
-                var expired = hasExpired(createTime);
+                var expired = sessionLifeTimeElapsed(createTime);
                 log.log(Level.FINE, () -> "Candidate local session for deletion: " + sessionId +
                         ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status) +
                         ", hasExpired: " + expired);
@@ -679,7 +677,8 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Done purging old sessions");
     }
 
-    private boolean hasExpired(Instant created) {
+    private boolean sessionLifeTimeElapsed(Instant created) {
+        var sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         return created.plus(sessionLifetime).isBefore(clock.instant());
     }
 
