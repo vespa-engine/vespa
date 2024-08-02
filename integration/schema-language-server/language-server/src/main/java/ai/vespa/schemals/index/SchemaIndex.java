@@ -157,6 +157,8 @@ public class SchemaIndex {
                     documentReferenceGraph.clearInheritsList(symbol);
 
                     list.remove(i);
+                } else {
+                    logger.println(symbol.getFileURI() + " NOT EQUALS " + fileURI);
                 }
             }
         }

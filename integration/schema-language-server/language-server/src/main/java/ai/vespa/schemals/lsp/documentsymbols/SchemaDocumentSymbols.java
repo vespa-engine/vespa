@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -51,6 +52,18 @@ public class SchemaDocumentSymbols {
         }
     }
 
+    /**
+     * The range of a symbol should enclose the entirety of its definition including a body. 
+     * This allows UI to display the hierarchy at the cursor position.
+     */
+    private static Range getSymbolRange(Symbol symbol) {
+        if (symbol.getNode().getParent() == null) return symbol.getNode().getRange();
+
+        if (symbol.getType() == SymbolType.PARAMETER) return symbol.getNode().getRange();
+
+        return symbol.getNode().getParent().getRange();
+    }
+
     public static List<Either<SymbolInformation, DocumentSymbol>> documentSymbols(EventDocumentContext context) {
         // providing scope = null yields all symbols
         List<Symbol> allSymbols = context.schemaIndex.listSymbolsInScope(null, EnumSet.allOf(SymbolType.class));
@@ -69,8 +82,7 @@ public class SchemaDocumentSymbols {
             symbols.put(symbol, new DocumentSymbol(
                 symbol.getShortIdentifier(), 
                 schemaSymbolTypeToLSPSymbolKind(symbol.getType()), 
-                // range should enclose the entirety of the definition. This allows UI to display the hierarchy at the cursor position.
-                symbol.getNode().getParent() == null ? symbol.getNode().getRange() : symbol.getNode().getParent().getRange(), 
+                getSymbolRange(symbol),
                 // selection range is the small range at the identifier
                 symbol.getNode().getRange(), 
                 symbol.getPrettyIdentifier(), 

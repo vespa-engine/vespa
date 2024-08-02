@@ -7,15 +7,13 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.CompletionItem;
 
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
-import ai.vespa.schemals.parser.ast.globalPhase;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -27,7 +25,8 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
  */
 public class RankingExpressionCompletion implements CompletionProvider {
 
-    private boolean matchFunctionCompletion(EventPositionContext context, SchemaNode clean) {
+    private boolean matchFunctionCompletion(EventCompletionContext context, SchemaNode clean) {
+        if (context.triggerCharacter.equals('.')) return false;
         return (clean.getLanguageType() == LanguageType.RANK_EXPRESSION || (
             clean.getParent() != null && (
                 clean.getParent().isASTInstance(expression.class) 
@@ -50,7 +49,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
     }
 
 	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         SchemaNode clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
         if (matchFunctionCompletion(context,clean)) {

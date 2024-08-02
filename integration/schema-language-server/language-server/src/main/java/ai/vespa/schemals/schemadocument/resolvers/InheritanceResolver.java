@@ -159,7 +159,7 @@ public class InheritanceResolver {
             return;
         }
 
-        if (parentSymbols.size() > 1 && !parentSymbols.get(0).getFileURI().equals(context.fileURI())) {
+        if (parentSymbols.size() > 1 && !parentSymbols.get(0).fileURIEquals(context.fileURI())) {
             String note = "\nNote:";
 
             for (Symbol symbol : parentSymbols) {
@@ -181,9 +181,9 @@ public class InheritanceResolver {
 
         if (!context.schemaIndex().tryRegisterRankProfileInheritance(definitionSymbol, parentSymbol)) {
             diagnostics.add(new SchemaDiagnostic.Builder()
-                    .setRange( inheritanceNode.getRange())
-                    .setMessage( "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this rank profile. ")
-                    .setSeverity( DiagnosticSeverity.Error)
+                    .setRange(inheritanceNode.getRange())
+                    .setMessage("Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this rank profile. ")
+                    .setSeverity(DiagnosticSeverity.Error)
                     .build());
 
             return;

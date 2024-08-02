@@ -3,6 +3,7 @@ package ai.vespa.schemals.context;
 import java.io.PrintStream;
 
 import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.SemanticTokensParams;
@@ -39,6 +40,17 @@ public class EventContextCreator {
             params.getTextDocument(),
             params.getPosition()
         );
+    }
+
+    public EventCompletionContext createContext(CompletionParams params) {
+        return new EventCompletionContext(
+            logger, 
+            scheduler, 
+            schemaIndex, 
+            messageHandler, 
+            params.getTextDocument(), 
+            params.getPosition(), 
+            params.getContext().getTriggerCharacter());
     }
 
     public EventDocumentContext createContext(SemanticTokensParams params) {

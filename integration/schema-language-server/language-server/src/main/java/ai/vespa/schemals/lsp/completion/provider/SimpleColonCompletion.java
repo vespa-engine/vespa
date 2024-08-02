@@ -5,7 +5,7 @@ import java.util.List;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.completion.provider.FixedKeywordBodies.FixedKeywordBody;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
@@ -32,14 +32,14 @@ public class SimpleColonCompletion implements CompletionProvider {
         FixedKeywordBodies.WEIGHTEDSET
     );
 
-	private boolean match(EventPositionContext context, TokenType keywordToken) {
+	private boolean match(EventCompletionContext context, TokenType keywordToken) {
         return context.document.lexer().matchBackwards(context.position, 1, true, keywordToken, TokenType.COLON) != null
             || context.document.lexer().matchBackwards(context.position, 1, true, keywordToken, TokenType.IDENTIFIER, TokenType.COLON) != null
             || context.document.lexer().matchBackwards(context.position, 1, true, keywordToken, TokenType.IDENTIFIER_WITH_DASH, TokenType.COLON) != null;
 	}
 
 	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         if (!(context.document instanceof SchemaDocument)) return List.of();
 
         for (FixedKeywordBody fixedKeywordBody : colonSupporters) {

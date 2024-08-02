@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.CompletionItem;
 
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
@@ -27,7 +27,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 public class StructFieldCompletion implements CompletionProvider {
 
 	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         if (!(context.document instanceof SchemaDocument)) return List.of();
 
         SchemaNode lastCleanNode = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.startOfWord());

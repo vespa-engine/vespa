@@ -7,7 +7,7 @@ import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -16,7 +16,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public class EmptyFileCompletion implements CompletionProvider {
 
-	private boolean match(EventPositionContext context) {
+	private boolean match(EventCompletionContext context) {
         DocumentManager document = context.document;
 
         if (document.getCurrentContent() == null || document.getCurrentContent().isBlank()) return true;
@@ -30,7 +30,7 @@ public class EmptyFileCompletion implements CompletionProvider {
 	}
 
 	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         if (!match(context)) return List.of();
 
         String fileName = FileUtils.schemaNameFromPath(context.document.getFileURI()); // without extension

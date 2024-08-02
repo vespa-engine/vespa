@@ -7,7 +7,7 @@ import java.util.Map;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RootRankProfile;
@@ -178,7 +178,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
     }};
 
     @Override
-    public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+    public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
 

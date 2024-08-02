@@ -11,7 +11,7 @@ import ai.vespa.schemals.lsp.completion.utils.*;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -23,7 +23,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
  * Completion of the text " inherits " with choice on what to inherit
  */
 public class InheritsCompletion implements CompletionProvider {
-	private Optional<SchemaNode> match(EventPositionContext context) {
+	private Optional<SchemaNode> match(EventCompletionContext context) {
         SchemaDocumentLexer lexer = context.document.lexer();
         SchemaNode match = lexer.matchBackwards(context.position, 1, false, TokenType.INHERITS);
         if (match != null)return Optional.empty();
@@ -57,7 +57,7 @@ public class InheritsCompletion implements CompletionProvider {
 	}
 
 	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         Optional<SchemaNode> matched = match(context);
         if (matched.isEmpty()) return List.of();
 

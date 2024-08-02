@@ -8,7 +8,7 @@ import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
@@ -23,7 +23,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  * InheritanceCompletionProvider
  */
 public class InheritanceCompletion implements CompletionProvider {
-    private Optional<SchemaNode> match(EventPositionContext context) {
+    private Optional<SchemaNode> match(EventCompletionContext context) {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
         SchemaNode last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
@@ -59,7 +59,7 @@ public class InheritanceCompletion implements CompletionProvider {
     }
 
 	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         Optional<SchemaNode> matched = match(context);
         if (matched.isEmpty()) return List.of();
 

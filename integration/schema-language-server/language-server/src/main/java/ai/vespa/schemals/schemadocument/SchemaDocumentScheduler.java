@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,13 +17,14 @@ import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaDocumentScheduler {
 
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
-    private HashMap<String, DocumentManager> workspaceFiles = new HashMap<>();
+    private Map<String, DocumentManager> workspaceFiles = new HashMap<>();
     private boolean reparseDescendants = true;
 
     public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex) {
@@ -45,6 +47,7 @@ public class SchemaDocumentScheduler {
             }
         }
 
+        // TODO: a lot of parsing going on. It mostly should be reference resolving, not necessarily reparsing of entire contents.
         workspaceFiles.get(fileURI).updateFileContent(content, version);
 
         if (isSchemaFile && reparseDescendants) {
@@ -69,7 +72,19 @@ public class SchemaDocumentScheduler {
                     }
                 }
             }
+
+            // reparse rank profile files belonging to this document
+            for (var entry : workspaceFiles.entrySet()) {
+                if ((entry.getValue() instanceof RankProfileDocument)) {
+                    RankProfileDocument document  = (RankProfileDocument)entry.getValue();
+                    if (document.schemaSymbol().isPresent() && document.schemaSymbol().get().fileURIEquals(fileURI)) {
+                        entry.getValue().reparseContent();
+                    }
+                }
+            }
         }
+
+        workspaceFiles.get(fileURI).reparseContent();
     }
 
     public void openDocument(TextDocumentItem document) {

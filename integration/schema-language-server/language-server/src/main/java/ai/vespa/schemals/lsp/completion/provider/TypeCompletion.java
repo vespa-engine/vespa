@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.common.StringUtils;
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer;
@@ -25,7 +25,7 @@ public class TypeCompletion implements CompletionProvider {
         TokenType.WEIGHTEDSET
     };
 
-    private boolean match(EventPositionContext context) {
+    private boolean match(EventCompletionContext context) {
         SchemaDocumentLexer lexer = context.document.lexer();
         SchemaNode match = lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE);
         if (match != null && match.getRange().getStart().getLine() == context.position.getLine()) {
@@ -49,7 +49,7 @@ public class TypeCompletion implements CompletionProvider {
         return false;
     }
 
-    private boolean isInsideTensor(EventPositionContext context) {
+    private boolean isInsideTensor(EventCompletionContext context) {
         SchemaNode lastClean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
         if (!lastClean.getText().startsWith("tensor")) return false;
@@ -65,7 +65,7 @@ public class TypeCompletion implements CompletionProvider {
     }
 
     @Override
-    public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+    public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         if (!(context.document instanceof SchemaDocument)) return List.of();
         if (!match(context)) return List.of();
 

@@ -13,7 +13,7 @@ import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
@@ -26,7 +26,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public class FieldsCompletion implements CompletionProvider {
 
-	private boolean match(EventPositionContext context) {
+	private boolean match(EventCompletionContext context) {
         SchemaNode match = context.document.lexer().matchBackwardsOnLine(context.position, false, TokenType.FIELDS, TokenType.COLON);
 
         if (match != null && match.getRange().getStart().getLine() == context.position.getLine())return true;
@@ -43,7 +43,7 @@ public class FieldsCompletion implements CompletionProvider {
     }
 
     @Override
-    public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+    public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         if (!(context.document instanceof SchemaDocument)) return List.of();
         if (!match(context)) return List.of();
 

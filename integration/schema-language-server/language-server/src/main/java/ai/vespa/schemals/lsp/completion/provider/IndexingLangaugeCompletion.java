@@ -5,7 +5,7 @@ import java.util.List;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.ast.COLON;
 import ai.vespa.schemals.parser.ast.INDEXING;
@@ -17,7 +17,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public class IndexingLangaugeCompletion implements CompletionProvider {
 
-    private boolean matchCommon(EventPositionContext context) {
+    private boolean matchCommon(EventCompletionContext context) {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
         SchemaNode last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
@@ -29,7 +29,7 @@ public class IndexingLangaugeCompletion implements CompletionProvider {
     }
 
 	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         if (matchCommon(context)) {
             return List.of(
                 CompletionUtils.withSortingPrefix("a", CompletionUtils.constructBasic("attribute")),

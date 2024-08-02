@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.common.StringUtils;
-import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.completion.provider.BodyKeywordCompletion;
 import ai.vespa.schemals.lsp.completion.provider.CompletionProvider;
 import ai.vespa.schemals.lsp.completion.provider.EmptyFileCompletion;
@@ -33,7 +33,7 @@ public class SchemaCompletion {
         new RankingExpressionCompletion()
     };
 
-    public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
+    public static ArrayList<CompletionItem> getCompletionItems(EventCompletionContext context) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
         if (StringUtils.isInsideComment(context.document.getCurrentContent(), context.position)) {

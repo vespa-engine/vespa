@@ -1,12 +1,14 @@
 package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.SchemaParser;
@@ -87,6 +89,18 @@ public class RankProfileDocument implements DocumentManager {
         }
 
         return tolerantResult;
+    }
+
+    /*
+     * Returns the definition of the schema this rank-profile belongs to.
+     */
+    public Optional<Symbol> schemaSymbol() {
+        if (CST == null || CST.size() == 0) return Optional.empty();
+        try {
+            Symbol rankProfileDefinition = CST.get(0).get(1).getSymbol();
+            return schemaIndex.getFirstSymbolDefinition(rankProfileDefinition.getScope());
+        } catch(Exception e) {}
+        return Optional.empty(); 
     }
 
     @Override

@@ -40,10 +40,11 @@ public class InheritanceGraph<NodeType> {
 
         // Remove myself from my parents children
         for (NodeType parent : parentsOfNode.get(node)) {
-            childrenOfNode.get(parent).remove(node);
+            if (childrenOfNode.containsKey(parent)) childrenOfNode.get(parent).remove(node);
         }
 
         parentsOfNode.remove(node);
+        childrenOfNode.remove(node);
     }
 
     public void createNodeIfNotExists(NodeType node) {
