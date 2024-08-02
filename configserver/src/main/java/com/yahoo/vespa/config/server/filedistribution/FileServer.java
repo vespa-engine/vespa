@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -44,6 +45,7 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 public class FileServer {
 
@@ -52,6 +54,8 @@ public class FileServer {
     // Set this low, to make sure we don't wait for a long time trying to download file
     private static final Duration timeout = Duration.ofSeconds(10);
     private static final List<CompressionType> compressionTypesToServe = compressionTypesAsList(List.of("zstd", "lz4", "gzip")); // In preferred order
+    private static final String tempFilereferencedataPrefix = "filereferencedata";
+    private static final Path tempFilereferencedataDir = Paths.get(System.getProperty("java.io.tmpdir"));
 
     private final FileDirectory fileDirectory;
     private final ExecutorService executor;
@@ -94,6 +98,12 @@ public class FileServer {
     @Inject
     public FileServer(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
         this(createFileDownloader(getOtherConfigServersInCluster(configserverConfig)), compressionTypesToServe, fileDirectory);
+        // Clean up temporary files from previous runs (e.g. if JVM was killed)
+        try (var files = uncheck(() -> Files.list(tempFilereferencedataDir))) {
+            files.filter(path -> path.toFile().isFile())
+                  .filter(path -> path.toFile().getName().startsWith(tempFilereferencedataPrefix))
+                  .forEach(path -> uncheck(() -> Files.delete(path)));
+        }
     }
 
     FileServer(FileDownloader fileDownloader, List<CompressionType> compressionTypes, FileDirectory fileDirectory) {
@@ -137,8 +147,7 @@ public class FileServer {
                                                 Set<CompressionType> acceptedCompressionTypes,
                                                 File file) throws IOException {
         if (file.isDirectory()) {
-            Path tempFile = Files.createTempFile("filereferencedata", reference.value());
-            tempFile.toFile().deleteOnExit();
+            Path tempFile = Files.createTempFile(tempFilereferencedataDir, tempFilereferencedataPrefix, reference.value());
             CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
             log.log(Level.FINE, () -> "accepted compression types=" + acceptedCompressionTypes + ", compression type to use=" + compressionType);
             File compressedFile = new FileReferenceCompressor(compressed, compressionType).compress(file.getParentFile(), tempFile.toFile());
