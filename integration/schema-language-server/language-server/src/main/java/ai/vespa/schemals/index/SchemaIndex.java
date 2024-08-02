@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationElm;
@@ -129,7 +130,7 @@ public class SchemaIndex {
 
             List<Symbol> replacedReferences = new ArrayList<>();
             for (Symbol symbol : references) {
-                if (symbol.getFileURI().equals(fileURI)) {
+                if (FileUtils.fileURIEquals(symbol.getFileURI(), fileURI)) {
                     definitionOfReference.remove(symbol);
                 } else {
                     replacedReferences.add(symbol);
@@ -143,7 +144,7 @@ public class SchemaIndex {
         for (var list : symbolDefinitions.values()) {
             for (int i = list.size() - 1; i >= 0; i--) {
                 Symbol symbol = list.get(i);
-                if (symbol.getFileURI().equals(fileURI)) {
+                if (FileUtils.fileURIEquals(symbol.getFileURI(), fileURI)) {
                     symbolReferences.remove(symbol);
 
                     structInheritanceGraph.clearInheritsList(symbol);

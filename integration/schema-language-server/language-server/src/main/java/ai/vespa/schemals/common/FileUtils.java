@@ -71,6 +71,13 @@ public class FileUtils {
         return components[0];
     }
 
+    /**
+     * Small wrapper around URI.equals method because equal URIs could have different string representations.
+     */
+    public static boolean fileURIEquals(String uri1, String uri2) {
+        return URI.create(uri1).equals(URI.create(uri2));
+    }
+
     private static List<String> walkFileTree(Path rootDir, String pathMatcherStr, PrintStream logger) {
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(pathMatcherStr);
 

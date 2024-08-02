@@ -16,7 +16,6 @@ import ai.vespa.schemals.lsp.completion.provider.InheritsCompletion;
 import ai.vespa.schemals.lsp.completion.provider.SimpleColonCompletion;
 import ai.vespa.schemals.lsp.completion.provider.StructFieldCompletion;
 import ai.vespa.schemals.lsp.completion.provider.TypeCompletion;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 public class SchemaCompletion {
 
@@ -43,8 +42,7 @@ public class SchemaCompletion {
             try {
                 ret.addAll(provider.getCompletionItems(context));
             } catch(Exception e) {
-                e.printStackTrace(context.logger);
-                //context.logger.println(e.getMessage());
+                //e.printStackTrace(context.logger);
             }
         }
 

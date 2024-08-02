@@ -3,6 +3,8 @@ package ai.vespa.schemals.index;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+import java.net.URI;
+
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 
@@ -109,7 +111,7 @@ public class Symbol {
         }
         Symbol other = (Symbol) obj;
         return (
-            this.fileURI.equals(other.fileURI) &&
+            FileUtils.fileURIEquals(this.fileURI, other.fileURI) &&
             this.type == other.type &&
             this.status == other.status &&
             this.getNode() != null &&
@@ -124,7 +126,7 @@ public class Symbol {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((this.fileURI == null) ? 0 : this.fileURI.hashCode());
+        result = prime * result + ((this.fileURI == null) ? 0 : URI.create(this.fileURI).hashCode()); // use URI hashCode, not String hashCode because URI might be "same but different"
         result = prime * result + ((this.type == null) ? 0 : this.type.hashCode());
         result = prime * result + ((this.getNode() == null || this.getNode().getRange() == null) ? 0 : this.getNode().getRange().hashCode());
         return result;

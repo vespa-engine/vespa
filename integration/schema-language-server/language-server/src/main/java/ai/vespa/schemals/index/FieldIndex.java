@@ -11,6 +11,7 @@ import java.util.Set;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
@@ -63,7 +64,7 @@ public class FieldIndex {
     public void clearFieldsByURI(String fileURI) {
         for (Iterator<Map.Entry<Symbol, FieldIndexEntry>> it = database.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<Symbol, FieldIndexEntry> entry = it.next();
-            if (entry.getKey().getFileURI().equals(fileURI)) {
+            if (FileUtils.fileURIEquals(entry.getKey().getFileURI(), fileURI)) {
                 it.remove();
             }
         }
