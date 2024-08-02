@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 @Beta
 public class OpenAiClient implements LanguageModel {
 
-    private static final String DEFAULT_MODEL = "gpt-3.5-turbo";
+    private static final String DEFAULT_MODEL = "gpt-4o-mini";
     private static final String DATA_FIELD = "data: ";
 
     private static final int MAX_RETRIES = 3;
