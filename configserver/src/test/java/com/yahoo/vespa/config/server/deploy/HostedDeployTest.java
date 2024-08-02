@@ -124,7 +124,7 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeployWithTenantSecretStores() {
-        List<TenantSecretStore> tenantSecretStores = List.of(new TenantSecretStore("foo", "123", "role"));
+        List<TenantSecretStore> tenantSecretStores = List.of(new TenantSecretStore("foo", "123", "role", "extId"));
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .hostedConfigserverConfig(Zone.defaultZone())
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
