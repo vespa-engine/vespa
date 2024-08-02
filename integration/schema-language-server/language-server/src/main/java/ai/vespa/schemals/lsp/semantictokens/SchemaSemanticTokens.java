@@ -30,6 +30,7 @@ import ai.vespa.schemals.parser.ast.FILTER;
 import ai.vespa.schemals.parser.ast.RANK_TYPE;
 import ai.vespa.schemals.parser.ast.bool;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.integerElm;
 import ai.vespa.schemals.parser.ast.matchItem;
@@ -90,6 +91,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.DIVERSITY);
         add(TokenType.DOCUMENT);
         add(TokenType.DOCUMENT_SUMMARY);
+        add(TokenType.EXPRESSION_SL);
         add(TokenType.FIELD);
         add(TokenType.FIELDS);
         add(TokenType.FIELDSET); 
@@ -491,7 +493,6 @@ public class SchemaSemanticTokens implements Visitor {
             if (tokenType != -1) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
-
         } else if (node.hasSymbol()) {
             ret.addAll(findSemanticMarkersForSymbol(node));
         } else if (schemaType != null) {

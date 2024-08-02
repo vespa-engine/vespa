@@ -110,6 +110,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
         ));
 
         put(rankProfile.class, List.of(
+            FixedKeywordBodies.STRICT.getColonSnippet(false),
             CompletionUtils.constructSnippet("diversity", "diversity {\n\tattribute: $1\n\tmin-groups: $0\n}"),
             CompletionUtils.constructSnippet("match-phase", "match-phase {\n\tattribute: $1\n\torder: $2\n\tmax-hits: $3\n}"),
             CompletionUtils.constructSnippet("first-phase", "first-phase {\n\t$0\n}"),

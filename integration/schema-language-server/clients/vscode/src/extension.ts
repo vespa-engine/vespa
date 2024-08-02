@@ -98,7 +98,6 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
             fileEvents: vscode.workspace.createFileSystemWatcher("**/*{.sd,.profile}")
         }
 	};
-
     const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
     client.start();
     return client;

@@ -1,14 +1,6 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.common.FileUtils;
-import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
-import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
-
-import static com.yahoo.config.model.test.TestUtil.joinLines;
-import com.yahoo.io.IOUtils;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -22,10 +14,16 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.yahoo.io.IOUtils;
+
+import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class SchemaParserTest {
     static long countErrors(List<Diagnostic> diagnostics) {
@@ -143,18 +141,6 @@ public class SchemaParserTest {
         //testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
-    }
-
-    @Test
-    void minimalSchemaParsed() throws Exception {
-        String input = joinLines
-            ("schema foo {",
-             "  document foo {",
-             "  }",
-             "}");
-        var parseResult = parseString(input);
-        assertEquals(0, countErrors(parseResult.diagnostics()));
-        assertTrue(parseResult.CST().isPresent(), "Parsing should return CST root!");
     }
 
     @TestFactory

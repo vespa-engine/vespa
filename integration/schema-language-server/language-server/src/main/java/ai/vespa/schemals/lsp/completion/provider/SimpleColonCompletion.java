@@ -11,7 +11,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 /**
- * For matching KEYWORD_TOKEN COLON *fixed set of keywords go here*
+ * For matching KEYWORD_TOKEN IDENTIFIER? COLON *fixed set of keywords go here*
  */
 public class SimpleColonCompletion implements CompletionProvider {
 
@@ -27,6 +27,7 @@ public class SimpleColonCompletion implements CompletionProvider {
         FixedKeywordBodies.SORT_STRENGTH,
         FixedKeywordBodies.SORTING,
         FixedKeywordBodies.STEMMING,
+        FixedKeywordBodies.STRICT,
         FixedKeywordBodies.SUMMARY,
         FixedKeywordBodies.WEIGHTEDSET
     );

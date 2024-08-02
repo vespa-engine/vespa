@@ -21,6 +21,7 @@ import ai.vespa.schemals.parser.ast.rankElm;
 import ai.vespa.schemals.parser.ast.rankTypeElm;
 import ai.vespa.schemals.parser.ast.sortingElm;
 import ai.vespa.schemals.parser.ast.sortingSetting;
+import ai.vespa.schemals.parser.ast.strictElm;
 import ai.vespa.schemals.parser.ast.summaryInField;
 import ai.vespa.schemals.parser.ast.weightedsetElm;
 
@@ -47,6 +48,9 @@ public class FixedKeywordBodies {
             return getChoiceTemplate(false);
         }
 
+        /**
+         * @param hasAdditionalSpec specifies if there should be an identifier after the keyword, i.e. match field_name: ...
+         */
         public CompletionItem getColonSnippet(final boolean hasAdditionalSpec) {
             String snippetContent = name + (hasAdditionalSpec ? " $1: " : ": ");
             if (!hasSnippets()) {
@@ -88,6 +92,11 @@ public class FixedKeywordBodies {
         CompletionUtils.constructBasic("filter"),
         CompletionUtils.constructBasic("literal"),
         CompletionUtils.constructBasic("normal")
+    ));
+
+    public static FixedKeywordBody STRICT = new FixedKeywordBody("strict", TokenType.STRICT, strictElm.class, List.of(
+        CompletionUtils.constructBasic("true"),
+        CompletionUtils.constructBasic("false")
     ));
 
     public static FixedKeywordBody RANK_TYPE = new FixedKeywordBody("rank-type", TokenType.RANK_TYPE, rankTypeElm.class, List.of(

@@ -60,7 +60,7 @@ public class SchemaDocumentSymbols {
         //               last, only add the roots of this forest to the result
         Map<Symbol, DocumentSymbol> symbols = new HashMap<>();
         for (Symbol symbol : allSymbols) {
-            if (!FileUtils.fileURIEquals(symbol.getFileURI(), context.document.getFileURI())) continue;
+            if (!symbol.fileURIEquals(context.document.getFileURI())) continue;
 
             // this case can happen if the schema is not correct, so some identifiers become empty
             // It will not cause a server side error, but the client crashes (at least vscode)

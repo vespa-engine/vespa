@@ -13,6 +13,7 @@ import ai.vespa.schemals.lsp.completion.provider.FieldsCompletion;
 import ai.vespa.schemals.lsp.completion.provider.IndexingLangaugeCompletion;
 import ai.vespa.schemals.lsp.completion.provider.InheritanceCompletion;
 import ai.vespa.schemals.lsp.completion.provider.InheritsCompletion;
+import ai.vespa.schemals.lsp.completion.provider.RankingExpressionCompletion;
 import ai.vespa.schemals.lsp.completion.provider.SimpleColonCompletion;
 import ai.vespa.schemals.lsp.completion.provider.StructFieldCompletion;
 import ai.vespa.schemals.lsp.completion.provider.TypeCompletion;
@@ -28,7 +29,8 @@ public class SchemaCompletion {
         new InheritsCompletion(),
         new InheritanceCompletion(),
         new StructFieldCompletion(),
-        new IndexingLangaugeCompletion()
+        new IndexingLangaugeCompletion(),
+        new RankingExpressionCompletion()
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {

@@ -1,6 +1,7 @@
 package ai.vespa.schemals.index;
 
 import java.io.PrintStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -8,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationElm;
@@ -55,6 +55,7 @@ public class SchemaIndex {
     private Map<Symbol, List<Symbol>> symbolReferences;
     private Map<Symbol, Symbol> definitionOfReference;
 
+    // TODO: bad to use string as node type here.
     private InheritanceGraph<String> documentInheritanceGraph;
     private InheritanceGraph<Symbol> structInheritanceGraph;
     private InheritanceGraph<Symbol> rankProfileInheritanceGraph;
@@ -123,6 +124,9 @@ public class SchemaIndex {
      */
     public void clearDocument(String fileURI) {
 
+        // create once instead of repeatedly for each symbol. Slow operation.
+        URI fileURIURI = URI.create(fileURI);
+
         // First: remove symbols listed as a reference for a definition
         // At the same time, remove the reference from the reference -> definition lookup table
         for (Map.Entry<Symbol, List<Symbol>> entry : symbolReferences.entrySet()) {
@@ -130,7 +134,7 @@ public class SchemaIndex {
 
             List<Symbol> replacedReferences = new ArrayList<>();
             for (Symbol symbol : references) {
-                if (FileUtils.fileURIEquals(symbol.getFileURI(), fileURI)) {
+                if (symbol.fileURIEquals(fileURIURI)) {
                     definitionOfReference.remove(symbol);
                 } else {
                     replacedReferences.add(symbol);
@@ -144,7 +148,7 @@ public class SchemaIndex {
         for (var list : symbolDefinitions.values()) {
             for (int i = list.size() - 1; i >= 0; i--) {
                 Symbol symbol = list.get(i);
-                if (FileUtils.fileURIEquals(symbol.getFileURI(), fileURI)) {
+                if (symbol.fileURIEquals(fileURIURI)) {
                     symbolReferences.remove(symbol);
 
                     structInheritanceGraph.clearInheritsList(symbol);
@@ -157,7 +161,7 @@ public class SchemaIndex {
             }
         }
 
-        this.fieldIndex.clearFieldsByURI(fileURI);
+        this.fieldIndex.clearFieldsByURI(fileURIURI);
 
         if (fileURI.endsWith(".sd")) {
             documentInheritanceGraph.clearInheritsList(fileURI);

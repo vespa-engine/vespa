@@ -12,6 +12,7 @@ public class Symbol {
     private SchemaNode identifierNode;
     private Symbol scope = null;
     private String fileURI;
+    private URI fileURIimpl; // for comparing with other symbols file URIs
     private SymbolType type;
     private SymbolStatus status;
     private String shortIdentifier;
@@ -28,7 +29,7 @@ public class Symbol {
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
         this.identifierNode = identifierNode;
-        this.fileURI = fileURI;
+        this.setFileURI(fileURI);
         this.type = type;
         this.status = SymbolStatus.UNRESOLVED;
         this.scope = scope;
@@ -51,7 +52,20 @@ public class Symbol {
     
     public String setFileURI(String fileURI) {
         this.fileURI = fileURI;
+        this.fileURIimpl = URI.create(fileURI);
         return fileURI;
+    }
+
+    public boolean fileURIEquals(Symbol other) {
+        return fileURIimpl.equals(other.fileURIimpl);
+    }
+
+    public boolean fileURIEquals(String otherURI) {
+        return fileURIimpl.equals(URI.create(otherURI));
+    }
+
+    public boolean fileURIEquals(URI otherURI) {
+        return fileURIimpl.equals(otherURI);
     }
     
     public void setType(SymbolType type) { this.type = type; }
@@ -111,7 +125,7 @@ public class Symbol {
         }
         Symbol other = (Symbol) obj;
         return (
-            FileUtils.fileURIEquals(this.fileURI, other.fileURI) &&
+            this.fileURIEquals(other) &&
             this.type == other.type &&
             this.status == other.status &&
             this.getNode() != null &&
@@ -126,7 +140,7 @@ public class Symbol {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((this.fileURI == null) ? 0 : URI.create(this.fileURI).hashCode()); // use URI hashCode, not String hashCode because URI might be "same but different"
+        result = prime * result + ((this.fileURI == null) ? 0 : fileURIimpl.hashCode()); // use URI hashCode, not String hashCode because URI might be "same but different"
         result = prime * result + ((this.type == null) ? 0 : this.type.hashCode());
         result = prime * result + ((this.getNode() == null || this.getNode().getRange() == null) ? 0 : this.getNode().getRange().hashCode());
         return result;

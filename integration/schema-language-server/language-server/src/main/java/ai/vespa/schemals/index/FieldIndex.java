@@ -1,6 +1,7 @@
 package ai.vespa.schemals.index;
 
 import java.io.PrintStream;
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,10 +62,10 @@ public class FieldIndex {
         this.schemaIndex = schemaIndex;
     }
 
-    public void clearFieldsByURI(String fileURI) {
+    public void clearFieldsByURI(URI fileURI) {
         for (Iterator<Map.Entry<Symbol, FieldIndexEntry>> it = database.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<Symbol, FieldIndexEntry> entry = it.next();
-            if (FileUtils.fileURIEquals(entry.getKey().getFileURI(), fileURI)) {
+            if (entry.getKey().fileURIEquals(fileURI)) {
                 it.remove();
             }
         }
