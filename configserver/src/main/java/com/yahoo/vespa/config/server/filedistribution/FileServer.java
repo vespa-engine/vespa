@@ -102,7 +102,7 @@ public class FileServer {
         try (var files = uncheck(() -> Files.list(tempFilereferencedataDir))) {
             files.filter(path -> path.toFile().isFile())
                   .filter(path -> path.toFile().getName().startsWith(tempFilereferencedataPrefix))
-                  .forEach(path -> uncheck(() -> Files.deleteIfExists(path)));
+                  .forEach(path -> uncheck(() -> Files.delete(path)));
         }
     }
 
@@ -148,7 +148,6 @@ public class FileServer {
                                                 File file) throws IOException {
         if (file.isDirectory()) {
             Path tempFile = Files.createTempFile(tempFilereferencedataDir, tempFilereferencedataPrefix, reference.value());
-            tempFile.toFile().deleteOnExit();
             CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
             log.log(Level.FINE, () -> "accepted compression types=" + acceptedCompressionTypes + ", compression type to use=" + compressionType);
             File compressedFile = new FileReferenceCompressor(compressed, compressionType).compress(file.getParentFile(), tempFile.toFile());
