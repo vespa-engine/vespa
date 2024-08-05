@@ -170,7 +170,7 @@ func getEpoch(timeStamp string) (int64, error) {
 
 func checkArguments(vArgs visitArgs) (res OperationResult) {
 	if vArgs.slices > 0 || vArgs.sliceId > -1 {
-		if !(vArgs.slices > 0 && vArgs.sliceId > -1) {
+		if vArgs.slices <= 0 || vArgs.sliceId <= -1 {
 			return Failure("Both 'slices' and 'slice-id' must be set")
 		}
 		if vArgs.sliceId >= vArgs.slices {
@@ -308,7 +308,7 @@ func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 
 func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
-	var totalDocuments int = 0
+	var totalDocuments = 0
 	var continuationToken string
 	for {
 		var vvo *VespaVisitOutput
