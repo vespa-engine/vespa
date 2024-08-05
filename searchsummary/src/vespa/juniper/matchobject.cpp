@@ -74,7 +74,7 @@ public:
         // Start expanding...
         std::vector<QueryTerm*> newterms;
         while (nt != nullptr) {
-            QueryTerm* nqt = new QueryTerm(vespalib::stringref(nt, length), -1, 100);
+            QueryTerm* nqt = new QueryTerm(std::string_view(nt, length), -1, 100);
             // Copy options but do not apply juniper stem match for expanded terms
             nqt->_options = orig->_options | X_EXACT;
             if (!reduction)

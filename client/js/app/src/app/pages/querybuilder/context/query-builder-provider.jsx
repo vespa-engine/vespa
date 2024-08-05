@@ -31,7 +31,7 @@ function inputsToQuery(method, inputs) {
         inputs.map(({ value, type: { name, type, children } }) => [
           name,
           children ? inputsToJson(value) : parseInput(value, type),
-        ])
+        ]),
       );
     return JSON.stringify(inputsToJson(inputs), null, 4);
   }
@@ -41,7 +41,7 @@ function inputsToQuery(method, inputs) {
       const key = parent ? `${parent}.${name}` : name;
       return Object.assign(
         acc,
-        children ? inputsToSearchParams(value, key) : { [key]: value }
+        children ? inputsToSearchParams(value, key) : { [key]: value },
       );
     }, {});
   return new URLSearchParams(inputsToSearchParams(inputs)).toString();
@@ -52,7 +52,7 @@ function queryToInputs(method, query) {
 
   const json = [...new URLSearchParams(query).entries()].reduce(
     (acc, [key, value]) => set(acc, key, value),
-    {}
+    {},
   );
   return jsonToInputs(json);
 }
@@ -80,8 +80,8 @@ function jsonToInputs(json, parent = root) {
       if (node.type.children)
         throw new Error(
           `Property '${key}' cannot have a value, supported children: ${Object.keys(
-            node.type.children
-          ).sort()}`
+            node.type.children,
+          ).sort()}`,
         );
       node.value = value?.toString();
     }
@@ -109,7 +109,7 @@ function inputAdd(params, { id: parentId, type: typeName }) {
 
   parent.value.push({
     id,
-    value: type.children ? [] : type.default?.toString() ?? '',
+    value: type.children ? [] : (type.default?.toString() ?? ''),
     type,
   });
 
@@ -125,8 +125,8 @@ function inputUpdate(params, { id, type, value }) {
       typeof parent.type.children === 'string'
         ? { name: type, type: parent.type.children }
         : parent.type.children[type];
-    if (node.type.type !== newType.type.type)
-      node.value = newType.children ? [] : newType.default?.toString() ?? '';
+    if (node.type.type !== newType.type)
+      node.value = newType.children ? [] : (newType.default?.toString() ?? '');
     node.type = newType;
   }
   if (value != null) node.value = value;

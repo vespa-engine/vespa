@@ -394,7 +394,7 @@ DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
         return {};
     }
     const CharBuffer& buf = _flattenWriter.getResult();
-    auto value = document::StringFieldValue::make(vespalib::stringref(buf.getBuffer(), buf.getPos()));
+    auto value = document::StringFieldValue::make(std::string_view(buf.getBuffer(), buf.getPos()));
     _flattenWriter.clear();
     return DocsumStoreFieldValue(std::move(value));
 }

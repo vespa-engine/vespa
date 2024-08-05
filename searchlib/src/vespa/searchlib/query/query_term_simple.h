@@ -15,7 +15,7 @@ class QueryTermSimple {
 public:
     using UP = std::unique_ptr<QueryTermSimple>;
     using string = vespalib::string;
-    using stringref = vespalib::stringref;
+    using string_view = std::string_view;
     using Type = TermType;
 
     template <typename N>
@@ -43,7 +43,7 @@ public:
     size_t                     getMaxPerGroup() const noexcept { return _maxPerGroup; }
     size_t           getDiversityCutoffGroups() const noexcept { return _diversityCutoffGroups; }
     bool             getDiversityCutoffStrict() const noexcept { return _diversityCutoffStrict; }
-    vespalib::stringref getDiversityAttribute() const noexcept { return _diversityAttribute; }
+    string_view         getDiversityAttribute() const noexcept { return _diversityAttribute; }
     [[nodiscard]] size_t fuzzy_max_edit_distance() const noexcept { return _fuzzy_max_edit_distance; }
     [[nodiscard]] size_t fuzzy_prefix_lock_length() const noexcept { return _fuzzy_prefix_lock_length; }
     [[nodiscard]] bool   fuzzy_prefix_match() const noexcept { return _fuzzy_prefix_match; }
@@ -62,7 +62,7 @@ public:
     bool is_nearest_neighbor() const noexcept { return (_type == Type::NEAREST_NEIGHBOR); }
     bool empty()           const noexcept { return _term.empty(); }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    vespalib::string getClassName() const;
+    string getClassName() const;
     bool isValid() const noexcept { return _valid; }
     const string & getTermString() const noexcept { return _term; }
 
@@ -82,7 +82,7 @@ protected:
     bool        _fuzzy_prefix_match; // set in QueryTerm
 private:
     string      _term;
-    stringref   _diversityAttribute;
+    string_view   _diversityAttribute;
     template <typename T, typename D>
     bool    getAsNumericTerm(T & lower, T & upper, D d) const noexcept;
 

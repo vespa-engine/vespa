@@ -141,11 +141,11 @@ NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv)
 }
 
 DistanceMetric
-NearestNeighborFieldSearcher::distance_metric_from_string(vespalib::stringref value)
+NearestNeighborFieldSearcher::distance_metric_from_string(std::string_view value)
 {
     // Valid string values must match the definition of DistanceMetric in
     // config-model/src/main/java/com/yahoo/schema/document/Attribute.java
-    vespalib::string v = value;
+    vespalib::string v(value);
     std::transform(v.begin(), v.end(), v.begin(),
                    [](unsigned char c) { return std::tolower(c); });
     try {

@@ -99,7 +99,8 @@ public class IdentifySymbolDefinition extends Identifier {
             if (scope.isEmpty()) {
                 if (symbolType == SymbolType.RANK_PROFILE && parent.getParent() != null && parent.getParent().isASTInstance(RootRankProfile.class)) {
                     // we are in a rank-profile file (.profile)
-                    String workspaceRootURI = context.schemaIndex().getWorkspaceURI();
+                    String workspaceRootURI = context.scheduler().getWorkspaceURI();
+                    if (workspaceRootURI == null) return ret;
                     String currentURI = context.fileURI();
 
                     String schemaName = FileUtils.firstPathComponentAfterPrefix(currentURI, workspaceRootURI);

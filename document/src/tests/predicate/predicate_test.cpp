@@ -195,8 +195,8 @@ TEST("require that feature range can be open") {
     EXPECT_EQUAL(feature_name, set.getKey());
     EXPECT_FALSE(set.hasMin());
     EXPECT_FALSE(set.hasMax());
-    EXPECT_EQUAL(LLONG_MIN, set.getMin());
-    EXPECT_EQUAL(LLONG_MAX, set.getMax());
+    EXPECT_EQUAL(LONG_MIN, set.getMin());
+    EXPECT_EQUAL(LONG_MAX, set.getMax());
 }
 
 PredicateNode::UP getPredicateNode() {

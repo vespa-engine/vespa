@@ -177,7 +177,7 @@ void set_certificate_expires_from_now(::X509& cert, std::chrono::seconds valid_f
 }
 
 void
-set_name_entry_if_non_empty(::X509_NAME& name, const char* field, vespalib::stringref entry) {
+set_name_entry_if_non_empty(::X509_NAME& name, const char* field, std::string_view entry) {
     if (entry.empty()) {
         return;
     }
@@ -232,7 +232,7 @@ add_any_subject_alternate_names(::X509& subject, ::X509& issuer,
     vespalib::string san_csv;
     for (auto& san : sans) {
         if (!san_csv.empty()) {
-            san_csv.append(',');
+            san_csv += ',';
         }
         san_csv.append(san);
     }

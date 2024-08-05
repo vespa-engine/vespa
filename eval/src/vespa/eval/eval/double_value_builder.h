@@ -17,7 +17,7 @@ public:
     DoubleValueBuilder() : _value(0.0) {}
     ~DoubleValueBuilder() override;
     ArrayRef<double>
-    add_subspace(ConstArrayRef<vespalib::stringref>) override {
+    add_subspace(ConstArrayRef<std::string_view>) override {
         return ArrayRef<double>(&_value, 1);
     }
     std::unique_ptr<Value>

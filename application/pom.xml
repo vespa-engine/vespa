@@ -98,6 +98,20 @@
       <groupId>org.apache.opennlp</groupId>
       <artifactId>opennlp-tools</artifactId>
     </dependency>
+    <dependency> <!-- opennlp-linguistics dependency -->
+      <groupId>com.huaban</groupId>
+      <artifactId>jieba-analysis</artifactId>
+      <exclusions>
+        <exclusion> <!-- wrong version -->
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency> <!-- jieba-analysis dependency - pull in our version instead -->
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
@@ -237,4 +251,4 @@
       </plugin>
     </plugins>
   </build>
-</project>
+ </project>

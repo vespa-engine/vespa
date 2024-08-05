@@ -16,13 +16,14 @@ using document::BucketSpace;
 namespace storage {
 
 uint16_t
-BucketOwnershipNotifier::getOwnerDistributorForBucket(const document::Bucket &bucket) const
+BucketOwnershipNotifier::getOwnerDistributorForBucket(const document::Bucket& bucket) const
 {
     try {
-        // TODO use state updater bundle for everything?
-        auto distribution(_component.getBucketSpaceRepo().get(bucket.getBucketSpace()).getDistribution());
-        const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-        const auto &clusterState = *clusterStateBundle->getDerivedClusterState(bucket.getBucketSpace());
+        const auto state_bundle = _component.getStateUpdater().getClusterStateBundle();
+        assert(state_bundle && state_bundle->has_distribution_config());
+        const auto* distribution = state_bundle->distribution_config_bundle()->bucket_space_distribution_or_nullptr_raw(bucket.getBucketSpace());
+        assert(distribution);
+        const auto& clusterState = *state_bundle->getDerivedClusterState(bucket.getBucketSpace());
         return (distribution->getIdealDistributorNode(clusterState, bucket.getBucketId()));
         // If we get exceptions there aren't any distributors, so they'll have
         // to explicitly fetch all bucket info eventually anyway.
@@ -39,7 +40,7 @@ BucketOwnershipNotifier::getOwnerDistributorForBucket(const document::Bucket &bu
 }
 
 bool
-BucketOwnershipNotifier::distributorOwns(uint16_t distributor, const document::Bucket &bucket) const
+BucketOwnershipNotifier::distributorOwns(uint16_t distributor, const document::Bucket& bucket) const
 {
     return (distributor == getOwnerDistributorForBucket(bucket));
 }
@@ -47,7 +48,7 @@ BucketOwnershipNotifier::distributorOwns(uint16_t distributor, const document::B
 void
 BucketOwnershipNotifier::sendNotifyBucketToDistributor(
         uint16_t distributorIndex,
-        const document::Bucket &bucket,
+        const document::Bucket& bucket,
         const api::BucketInfo& infoToSend)
 {
     if (!infoToSend.valid()) {
@@ -71,7 +72,7 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
 }
 
 void
-BucketOwnershipNotifier::logNotification(const document::Bucket &bucket,
+BucketOwnershipNotifier::logNotification(const document::Bucket& bucket,
                                          uint16_t sourceIndex,
                                          uint16_t currentOwnerIndex,
                                          const api::BucketInfo& newInfo)
@@ -88,7 +89,7 @@ BucketOwnershipNotifier::logNotification(const document::Bucket &bucket,
 
 void
 BucketOwnershipNotifier::notifyIfOwnershipChanged(
-        const document::Bucket &bucket,
+        const document::Bucket& bucket,
         uint16_t sourceIndex,
         const api::BucketInfo& infoToSend)
 {
@@ -111,7 +112,7 @@ BucketOwnershipNotifier::notifyIfOwnershipChanged(
 
 void
 BucketOwnershipNotifier::sendNotifyBucketToCurrentOwner(
-        const document::Bucket &bucket,
+        const document::Bucket& bucket,
         const api::BucketInfo& infoToSend)
 {
     uint16_t distributor(getOwnerDistributorForBucket(bucket));
@@ -134,7 +135,7 @@ NotificationGuard::~NotificationGuard()
 }
 
 void
-NotificationGuard::notifyIfOwnershipChanged(const document::Bucket &bucket,
+NotificationGuard::notifyIfOwnershipChanged(const document::Bucket& bucket,
                                             uint16_t sourceIndex,
                                             const api::BucketInfo& infoToSend)
 {
@@ -142,7 +143,7 @@ NotificationGuard::notifyIfOwnershipChanged(const document::Bucket &bucket,
 }
 
 void
-NotificationGuard::notifyAlways(const document::Bucket &bucket,
+NotificationGuard::notifyAlways(const document::Bucket& bucket,
                                 const api::BucketInfo& infoToSend)
 {
     BucketToCheck bc(bucket, 0xffff, infoToSend);

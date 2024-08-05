@@ -4,8 +4,9 @@
 #include <vespa/searchlib/grouping/sketch.h>
 #include <vespa/vespalib/objects/nboserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sketch_test");

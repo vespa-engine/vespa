@@ -46,7 +46,7 @@ public:
     class Key {
     public:
         Key() noexcept;
-        Key(IndexList indexes, vespalib::stringref word) noexcept;
+        Key(IndexList indexes, std::string_view word) noexcept;
         Key(const Key &);
         Key & operator = (const Key &);
         Key(Key &&) noexcept = default;
@@ -112,9 +112,9 @@ public:
      * @param word the word to lookup.
      * @return the lookup result or nullptr if the word is not found.
      */
-    LookupResult::UP lookup(uint32_t indexId, vespalib::stringref word);
+    LookupResult::UP lookup(uint32_t indexId, std::string_view word);
 
-    LookupResultVector lookup(const std::vector<uint32_t> & indexes, vespalib::stringref word);
+    LookupResultVector lookup(const std::vector<uint32_t> & indexes, std::string_view word);
 
     /**
      * Read the posting list corresponding to the given lookup result.

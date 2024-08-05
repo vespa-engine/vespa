@@ -7,8 +7,8 @@
 namespace search {
 
 struct NotImplementedAttribute : AttributeVector {
-    NotImplementedAttribute(const vespalib::string & name);
-    NotImplementedAttribute(const vespalib::string & name, const Config & config);
+    NotImplementedAttribute(std::string_view name);
+    NotImplementedAttribute(std::string_view name, const Config & config);
     [[noreturn]] void notImplemented() const;
 
     uint32_t getValueCount(DocId) const override;

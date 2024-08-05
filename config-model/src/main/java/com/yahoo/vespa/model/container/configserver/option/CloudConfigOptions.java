@@ -38,5 +38,6 @@ public interface CloudConfigOptions {
     Optional<String> athenzDnsSuffix();
     Optional<String> ztsUrl();
     String zooKeeperSnapshotMethod();
+    Integer zookeeperJuteMaxBuffer(); // in bytes
 
 }

@@ -46,10 +46,12 @@ public enum ControllerMetrics implements VespaMetrics {
     CERTIFICATE_POOL_AVAILABLE("certificate_pool_available", Unit.FRACTION, "Available certificates in the pool, fraction of configured size"),
     CERTIFICATE_COUNT("certificate.activeCount", Unit.ITEM, "The total number of active certificates in the system"),
     CERTIFICATE_NAME_COUNT("certificate.activeNameCount", Unit.ITEM, "The total number of names (CN + SAN fields) across all active certificate in the system"),
+    BILLING_CREDITS("billing.credits.remaining", Unit.DOLLAR, "Controller: Billing credits remaining"),
     BILLING_EXCEPTIONS("billing.exceptions", Unit.FAILURE, "Controller: Billing related exceptions"),
     BILLING_WEBHOOK_FAILURES("billing.webhook.failures", Unit.FAILURE, "Controller: webhook failures"),
     BILLING_WEBHOOK_REQUESTS("billing.webhook.requests", Unit.REQUEST, "Controller: webhook requests"),
     HUBSPOT_EXCEPTIONS("hubspot.exceptions", Unit.FAILURE, "Controller: Hubspot exceptions"),
+    HUBSPOT_LAST_SUCCESS("hubspot.last_success", Unit.SECONDS_SINCE_EPOCH, "Controller: Last successful Hubspot synchronization"),
 
     // Metrics per API, metrics names generated in ControllerMaintainer/MetricsReporter
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),

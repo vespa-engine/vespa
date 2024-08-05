@@ -21,14 +21,14 @@ class DynamicTeaserDFW : public DocsumFieldWriter
 public:
     DynamicTeaserDFW(const DynamicTeaserDFW &) = delete;
     DynamicTeaserDFW & operator = (const DynamicTeaserDFW &) = delete;
-    explicit DynamicTeaserDFW(const juniper::Juniper * juniper, const char *fieldName, vespalib::stringref inputField,
+    explicit DynamicTeaserDFW(const juniper::Juniper * juniper, const char *fieldName, std::string_view inputField,
                               const IQueryTermFilterFactory& query_term_filter_factory) ;
     ~DynamicTeaserDFW() override;
 
     bool isGenerated() const override { return false; }
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
                      vespalib::slime::Inserter &target) const override;
-    void insert_juniper_field(uint32_t docid, vespalib::stringref input, GetDocsumsState& state,
+    void insert_juniper_field(uint32_t docid, std::string_view input, GetDocsumsState& state,
                               vespalib::slime::Inserter& inserter) const;
 private:
     const juniper::Juniper                 *_juniper;

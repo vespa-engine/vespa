@@ -249,7 +249,7 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
 
 void
 FileStorManager::replyDroppedOperation(api::StorageMessage& msg, const document::Bucket& bucket,
-                                       api::ReturnCode::Result returnCode, vespalib::stringref reason)
+                                       api::ReturnCode::Result returnCode, std::string_view reason)
 {
     std::ostringstream error;
     error << "Dropping " << msg.getType() << " to bucket "
@@ -520,10 +520,10 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
                 << ", but storage bucket database contains "
                 << entry->getBucketInfo().toString();
 
-            LOG(debug, "Rejecting bucket delete: %s", ost.str().data());
+            LOG(debug, "Rejecting bucket delete: %s", ost.c_str());
             std::shared_ptr<api::StorageReply> reply = cmd->makeReply();
             static_cast<api::DeleteBucketReply&>(*reply).setBucketInfo(entry->getBucketInfo());
-            reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, ost.str()));
+            reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, ost.view()));
             entry.unlock();
             sendUp(reply);
             return true;
@@ -887,9 +887,9 @@ bool
 FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept
 {
     for (const auto& elem :  _component.getBucketSpaceRepo()) {
-        const ContentBucketSpace& bucket_space = *elem.second;
-        auto derived_cluster_state = bucket_space.getClusterState();
-        if (!derived_cluster_state->getNodeState(node).getState().oneOf("m")) {
+        const auto space_state_and_distr = elem.second->state_and_distribution();
+        const auto& derived_cluster_state = space_state_and_distr->cluster_state();
+        if (!derived_cluster_state.getNodeState(node).getState().oneOf("m")) {
             return false;
         }
     }
@@ -915,8 +915,7 @@ FileStorManager::maybe_log_received_cluster_state()
 {
     if (LOG_WOULD_LOG(debug)) {
         auto cluster_state_bundle = _component.getStateUpdater().getClusterStateBundle();
-        auto baseline_state = cluster_state_bundle->getBaselineClusterState();
-        LOG(debug, "FileStorManager received baseline cluster state '%s'", baseline_state->toString().c_str());
+        LOG(debug, "FileStorManager received baseline cluster state '%s'", cluster_state_bundle->toString().c_str());
     }
 }
 
@@ -942,8 +941,8 @@ FileStorManager::updateState()
         }
         contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(node_up_in_space);
         contentBucketSpace.setNodeMaintenanceInLastNodeStateSeenByProvider(in_maintenance);
-        spi::ClusterState spiState(state_and_distr->cluster_state(), _component.getIndex(),
-                                   state_and_distr->distribution(), in_maintenance);
+        spi::ClusterState spiState(state_and_distr->cluster_state_sp(), state_and_distr->distribution_sp(),
+                                   _component.getIndex(), in_maintenance);
         _provider->setClusterState(bucketSpace, spiState);
     }
 }
@@ -951,16 +950,17 @@ FileStorManager::updateState()
 void
 FileStorManager::storageDistributionChanged()
 {
-    updateState();
 }
 
 void
 FileStorManager::propagateClusterStates()
 {
     auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    for (const auto &elem : _component.getBucketSpaceRepo()) {
-        // TODO also distribution! bundle and repo must be 1-1
-        elem.second->setClusterState(clusterStateBundle->getDerivedClusterState(elem.first));
+    assert(clusterStateBundle->has_distribution_config());
+    for (const auto& elem : _component.getBucketSpaceRepo()) {
+        elem.second->set_state_and_distribution(std::make_shared<ClusterStateAndDistribution>(
+                clusterStateBundle->getDerivedClusterState(elem.first),
+                clusterStateBundle->bucket_space_distribution_or_nullptr(elem.first)));
     }
 }
 

@@ -40,7 +40,7 @@ using vespalib::MemoryUsage;
 
 namespace {
 
-GlobalId toGid(vespalib::stringref docId) {
+GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
@@ -56,14 +56,14 @@ struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMap
         _map.insert({toGid(doc2), 17});
     }
 
-    void add(vespalib::stringref docId, uint32_t lid) {
+    void add(std::string_view docId, uint32_t lid) {
         auto insres = _map.insert({ toGid(docId), lid });
         if (!insres.second) {
             insres.first->second = lid;
         }
     }
 
-    void remove(vespalib::stringref docId) {
+    void remove(std::string_view docId) {
         _map.erase(toGid(docId));
     }
 };
@@ -139,7 +139,7 @@ struct ReferenceAttributeTest : public ::testing::Test {
         EXPECT_TRUE(get(doc) == nullptr);
     }
 
-    void assertRef(vespalib::stringref str, uint32_t doc) {
+    void assertRef(std::string_view str, uint32_t doc) {
         const GlobalId *gid = get(doc);
         ASSERT_TRUE(gid != nullptr);
         EXPECT_EQ(toGid(str), *gid);

@@ -15,7 +15,7 @@
 
 using vespalib::nbostream;
 using vespalib::ConstBufferRef;
-using vespalib::stringref;
+using std::string_view;
 
 namespace document {
 
@@ -97,7 +97,7 @@ StringFieldValue::doClearSpanTrees() {
 }
 
 const SpanTree *
-StringFieldValue::findTree(const SpanTrees & trees, stringref name)
+StringFieldValue::findTree(const SpanTrees & trees, string_view name)
 {
     for(const auto & tree : trees) {
         if (tree->getName() == name) {
@@ -108,7 +108,7 @@ StringFieldValue::findTree(const SpanTrees & trees, stringref name)
 }
 
 StringFieldValue &
-StringFieldValue::operator=(stringref value)
+StringFieldValue::operator=(string_view value)
 {
     setValue(value);
     _annotationData.reset();
@@ -121,7 +121,7 @@ StringFieldValue::assign(const FieldValue & rhs)
     if (rhs.isA(Type::STRING)) {
         *this = static_cast<const StringFieldValue &>(rhs);
     } else {
-        *this = rhs.getAsString().operator stringref();
+        *this = rhs.getAsString().operator string_view();
     }
     return *this;
 }

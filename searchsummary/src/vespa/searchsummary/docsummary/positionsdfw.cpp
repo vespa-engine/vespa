@@ -146,7 +146,7 @@ insertPos(int64_t docxy, vespalib::slime::Inserter &target)
     } else {
         latlong << "E" << degrees_ew;
     }
-    obj.setString("latlong", vespalib::Memory(latlong.str()));
+    obj.setString("latlong", vespalib::Memory(latlong.view()));
 }
 
 void
@@ -195,7 +195,7 @@ void insertPosV8(int64_t docxy, vespalib::slime::Inserter &target) {
     } else {
         latlong << "E" << degrees_ew;
     }
-    obj.setString("latlong", vespalib::Memory(latlong.str()));
+    obj.setString("latlong", vespalib::Memory(latlong.view()));
 }
 
 

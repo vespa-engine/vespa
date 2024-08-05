@@ -255,7 +255,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             // These should have been moved instead.
             owned_objects.feature_overrides = std::make_unique<Properties>(*feature_overrides);
             feature_overrides = owned_objects.feature_overrides.get();
-            vespalib::stringref queryStack = request.getStackRef();
+            std::string_view queryStack = request.getStackRef();
             owned_objects.stackDump.assign(queryStack.begin(), queryStack.end());
         }
 

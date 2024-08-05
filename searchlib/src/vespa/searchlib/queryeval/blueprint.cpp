@@ -875,7 +875,7 @@ SimpleLeafBlueprint::sort(InFlow in_flow)
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint *obj)
 {
     if (obj != nullptr) {
@@ -887,7 +887,7 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
     }
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint &obj)
 {
     visit(self, name, &obj);

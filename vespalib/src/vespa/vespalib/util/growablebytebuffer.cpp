@@ -69,14 +69,14 @@ GrowableByteBuffer::putDouble(double v)
 }
 
 void
-GrowableByteBuffer::putString(vespalib::stringref v)
+GrowableByteBuffer::putString(std::string_view v)
 {
     putInt(v.size());
     putBytes(v.data(), v.size());
 }
 
 void
-GrowableByteBuffer::put_c_string(vespalib::stringref v)
+GrowableByteBuffer::put_c_string(std::string_view v)
 {
     putInt(v.size() + 1);
     putBytes(v.data(), v.size());

@@ -28,7 +28,7 @@ namespace proton {
 
 namespace {
 
-GlobalId toGid(vespalib::stringref docId) {
+GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 

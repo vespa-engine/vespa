@@ -46,7 +46,7 @@ private:
     std::unique_ptr<SearchSessionCache> _search_map;
 
 public:
-    SessionManager(uint32_t maxSizeGrouping);
+    explicit SessionManager(uint32_t maxSizeGrouping);
     ~SessionManager();
 
     void insert(search::grouping::GroupingSession::UP session);

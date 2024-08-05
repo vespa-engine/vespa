@@ -48,12 +48,12 @@ public:
     virtual vespalib::string toString() const;
     virtual const Document* getDocument() const { return nullptr; }
     virtual const DocumentId* getDocumentId() const { return nullptr; }
-    virtual vespalib::stringref getDocumentType() const { return vespalib::stringref(); }
+    virtual std::string_view getDocumentType() const { return std::string_view(); }
     virtual GlobalId getGid() const { return GlobalId(); }
     virtual DocumentUP releaseDocument();
     static UP create(Timestamp t, DocumentMetaEnum metaEnum);
     static UP create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId);
-    static UP create(Timestamp t, DocumentMetaEnum metaEnum, vespalib::stringref docType, GlobalId gid);
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum, std::string_view docType, GlobalId gid);
     static UP create(Timestamp t, DocumentUP doc);
     static UP create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize);
 protected:

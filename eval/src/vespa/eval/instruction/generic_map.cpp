@@ -30,14 +30,14 @@ void my_generic_map_op(State &state, uint64_t param_in) {
     const Value &a = state.peek(0);
     auto input_cells = a.cells().typify<ICT>();
     auto output_cells = state.stash.create_uninitialized_array<OCT>(input_cells.size());
-    auto pos = output_cells.begin();
+    auto pos = output_cells.data();
     if constexpr (std::is_same<ICT,OCT>::value) {
-        apply_op1_vec(pos, input_cells.begin(), output_cells.size(), function);
+        apply_op1_vec(pos, input_cells.data(), output_cells.size(), function);
     } else {
         for (ICT value : input_cells) {
             *pos++ = (OCT) function(value);
         }
-        assert(pos == output_cells.end());
+        assert(pos == output_cells.data() + output_cells.size());
     }
     Value &result_ref = state.stash.create<ValueView>(param.res_type, a.index(), TypedCells(output_cells));
     state.pop_push(result_ref);

@@ -324,7 +324,7 @@
                     -->
                     <groupId>org.openrewrite.maven</groupId>
                     <artifactId>rewrite-maven-plugin</artifactId>
-                    <version>5.34.1</version>
+                    <version>5.36.0</version>
                     <configuration>
                         <activeRecipes>
                             <recipe>org.openrewrite.java.testing.junit5.JUnit5BestPractices</recipe>
@@ -334,7 +334,7 @@
                         <dependency>
                             <groupId>org.openrewrite.recipe</groupId>
                             <artifactId>rewrite-testing-frameworks</artifactId>
-                            <version>2.12.2</version>
+                            <version>2.14.1</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -1011,6 +1011,11 @@
                 <version>${opennlp.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.huaban</groupId>
+                <artifactId>jieba-analysis</artifactId>
+                <version>${jieba.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.vespa.version}</version>
@@ -1246,7 +1251,7 @@
                      See pluginManagement of rewrite-maven-plugin for more details -->
                 <groupId>org.openrewrite.recipe</groupId>
                 <artifactId>rewrite-recipe-bom</artifactId>
-                <version>2.13.2</version>
+                <version>2.15.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

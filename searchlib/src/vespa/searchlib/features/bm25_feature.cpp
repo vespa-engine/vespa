@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
@@ -18,6 +19,7 @@ namespace search::features {
 
 using fef::AnyWrapper;
 using fef::Blueprint;
+using fef::DocumentFrequency;
 using fef::FeatureExecutor;
 using fef::FeatureNameBuilder;
 using fef::FieldInfo;
@@ -36,8 +38,11 @@ get_inverse_document_frequency(const ITermFieldData& term_field,
                                const ITermData& term)
 
 {
-    double fallback = Bm25Executor::calculate_inverse_document_frequency(term_field.get_matching_doc_count(),
-                                                                         term_field.get_total_doc_count());
+    auto doc_freq = util::lookup_document_frequency(env, term);
+    if (doc_freq.has_value()) {
+        return Bm25Executor::calculate_inverse_document_frequency(doc_freq.value());
+    }
+    double fallback = Bm25Executor::calculate_inverse_document_frequency(term_field.get_doc_freq());
     return util::lookupSignificance(env, term, fallback);
 }
 
@@ -68,10 +73,13 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
 }
 
 double
-Bm25Executor::calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count) noexcept
+Bm25Executor::calculate_inverse_document_frequency(DocumentFrequency doc_freq) noexcept
 {
-    return std::log(1 + (static_cast<double>(total_doc_count - matching_doc_count + 0.5) /
-                         static_cast<double>(matching_doc_count + 0.5)));
+    double frequency = doc_freq.frequency;
+    double count = doc_freq.count;
+    count = std::max(1.0, count);
+    frequency = std::min(std::max(1.0, frequency), count);
+    return std::log(1 + ((count - frequency + 0.5) / (frequency + 0.5)));
 }
 
 void

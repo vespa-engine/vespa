@@ -41,7 +41,7 @@ struct Bar : public Base
     float            _float;
     double           _double;
     vespalib::string _string;
-    Bar() : _bool(true), _int8(-1), _uint8(1), _int16(-2), _uint16(2),
+    Bar() noexcept : _bool(true), _int8(-1), _uint8(1), _int16(-2), _uint16(2),
             _int32(-4), _uint32(4), _int64(-8), _uint64(8),
             _float(2.5), _double(2.75), _string("bla bla") {}
 
@@ -76,20 +76,20 @@ struct Foo : public Base
     std::vector<IdentifiablePtr<Base> > _list2;
 
     Foo();
-    ~Foo();
+    ~Foo() override;
     Foo *clone() const override { return new Foo(*this); }
     void visitMembers(ObjectVisitor &v) const override;
 };
 
-Foo::~Foo() { }
+Foo::~Foo() = default;
 Foo::Foo()
         : _objMember(), _objMember2(), _objPtr(0), _list(), _list2()
 {
-    _list.push_back(Bar());
-    _list.push_back(Bar());
-    _list.push_back(Bar());
-    _list2.push_back(Bar());
-    _list2.push_back(Baz());
+    _list.emplace_back();
+    _list.emplace_back();
+    _list.emplace_back();
+    _list2.emplace_back(Bar());
+    _list2.emplace_back(Baz());
 }
 
 void

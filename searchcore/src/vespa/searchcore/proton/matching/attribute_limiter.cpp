@@ -63,7 +63,7 @@ vespalib::string LOOSE_STR("loose");
 }
 
 AttributeLimiter::DiversityCutoffStrategy
-AttributeLimiter::toDiversityCutoffStrategy(vespalib::stringref strategy)
+AttributeLimiter::toDiversityCutoffStrategy(std::string_view strategy)
 {
     return (strategy == STRICT_STR)
         ? DiversityCutoffStrategy::STRICT

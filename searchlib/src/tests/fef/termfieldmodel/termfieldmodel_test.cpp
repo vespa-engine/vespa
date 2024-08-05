@@ -261,14 +261,14 @@ TEST("Access subqueries") {
     testSetup(state);
     state.f3->reset(10);
     state.f3->setSubqueries(10, 42);
-    EXPECT_EQUAL(42ULL, state.f3->getSubqueries());
+    EXPECT_EQUAL(42UL, state.f3->getSubqueries());
     state.f3->enableRawScore();
-    EXPECT_EQUAL(0ULL, state.f3->getSubqueries());
+    EXPECT_EQUAL(0UL, state.f3->getSubqueries());
 
     state.f3->reset(11);
     state.f3->appendPosition(TermFieldMatchDataPosition());
     state.f3->setSubqueries(11, 42);
-    EXPECT_EQUAL(0ULL, state.f3->getSubqueries());
+    EXPECT_EQUAL(0UL, state.f3->getSubqueries());
 }
 
 TEST("require that TermFieldMatchData can be tagged as needed or not") {

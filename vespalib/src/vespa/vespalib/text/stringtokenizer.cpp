@@ -7,7 +7,7 @@ namespace {
 class AsciiSet
 {
 public:
-    explicit AsciiSet(vespalib::stringref s) {
+    explicit AsciiSet(std::string_view s) {
         memset(_set, 0, sizeof(_set));
         for (char c : s) {
             add(c);
@@ -32,7 +32,7 @@ using TokenList = vespalib::StringTokenizer::TokenList;
  * of characters contained in the strip set.
  **/
 Token
-stripString(vespalib::stringref source, const AsciiSet & strip)
+stripString(std::string_view source, const AsciiSet & strip)
 {
     Token::size_type start = 0;
     while (start < source.size() && strip.contains(source[start])) {
@@ -46,7 +46,7 @@ stripString(vespalib::stringref source, const AsciiSet & strip)
 }
 
 size_t
-countSeparators(vespalib::stringref source, const AsciiSet & sep) {
+countSeparators(std::string_view source, const AsciiSet & sep) {
     size_t count(0);
     for (char c : source) {
         if (sep.contains(c)) {
@@ -57,7 +57,7 @@ countSeparators(vespalib::stringref source, const AsciiSet & sep) {
 }
 
 void
-parse(TokenList& output, vespalib::stringref source, const AsciiSet & separators, const AsciiSet & strip)
+parse(TokenList& output, std::string_view source, const AsciiSet & separators, const AsciiSet & strip)
 {
     Token::size_type start = 0;
     for (Token::size_type i = 0; i < source.size(); ++i) {
@@ -75,9 +75,9 @@ parse(TokenList& output, vespalib::stringref source, const AsciiSet & separators
 
 namespace vespalib {
 
-StringTokenizer::StringTokenizer(vespalib::stringref source,
-                                 vespalib::stringref separators,
-                                 vespalib::stringref strip)
+StringTokenizer::StringTokenizer(std::string_view source,
+                                 std::string_view separators,
+                                 std::string_view strip)
     : _tokens()
 {
     AsciiSet sep(separators);

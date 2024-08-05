@@ -5,7 +5,6 @@
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
@@ -25,15 +24,15 @@ ExternSlobrokPolicy::ExternSlobrokPolicy(const std::map<string, string>& param)
 {
     if (param.find("config") != param.end()) {
        vespalib::StringTokenizer configServers(param.find("config")->second, ",");
-        for (uint32_t j = 0; j < configServers.size(); j++) {
-            _configSources.push_back(configServers[j]);
+        for (auto configServer : configServers) {
+            _configSources.emplace_back(configServer);
         }
     }
 
     if (param.find("slobroks") != param.end()) {
         vespalib::StringTokenizer slobrokList(param.find("slobroks")->second, ",");
-        for (uint32_t j = 0; j < slobrokList.size(); j++) {
-            _slobroks.push_back(slobrokList[j]);
+        for (auto slobrok : slobrokList) {
+            _slobroks.emplace_back(slobrok);
         }
     }
 
@@ -41,7 +40,7 @@ ExternSlobrokPolicy::ExternSlobrokPolicy(const std::map<string, string>& param)
         _slobrokConfigId = param.find("slobrokconfigid")->second;
     }
 
-    if (_slobroks.size() || _configSources.size()) {
+    if (!_slobroks.empty() || !_configSources.empty()) {
         needAsynchronousInit();
     }
 }
@@ -56,10 +55,10 @@ ExternSlobrokPolicy::~ExternSlobrokPolicy() = default;
 string
 ExternSlobrokPolicy::init() {
     std::lock_guard guard(_lock);
-    if (_slobroks.size() != 0) {
+    if (!_slobroks.empty()) {
         ConfiguratorFactory config(_slobroks);
         _mirrorWithAll = std::make_unique<MirrorAndStuff>(config);
-    } else if (_configSources.size() != 0) {
+    } else if (!_configSources.empty()) {
         ConfiguratorFactory config(
                 config::ConfigUri(_slobrokConfigId,
                                   std::make_shared<config::ConfigContext>(config::ServerSpec(_configSources))));

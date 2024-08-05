@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <typeinfo>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".termasstring");
@@ -42,37 +41,37 @@ using search::query::WandTerm;
 using search::query::WeakAnd;
 using search::query::WeightedSetTerm;
 using vespalib::string;
-using vespalib::stringref;
+using std::string_view;
 
 namespace search::queryeval {
 
 namespace {
 
-stringref
+string_view
 termAsString(const search::query::Range &term, string & scratchPad) {
     vespalib::asciistream os;
-    scratchPad = (os << term).str();
+    scratchPad = (os << term).view();
     return scratchPad;
 }
 
-stringref
+string_view
 termAsString(const search::query::Location &term, string & scratchPad) {
     vespalib::asciistream os;
-    scratchPad = (os << term).str();
+    scratchPad = (os << term).view();
     return scratchPad;
 }
 
-stringref
+string_view
 termAsString(const string &term, string &) {
     return term;
 }
 
 struct TermAsStringVisitor : public QueryVisitor {
     string  & _scratchPad;
-    stringref term;
+    string_view term;
     bool      isSet;
 
-    TermAsStringVisitor(string & scratchPad) : _scratchPad(scratchPad), term(), isSet(false) {}
+    explicit TermAsStringVisitor(string & scratchPad) : _scratchPad(scratchPad), term(), isSet(false) {}
 
     template <class TermNode>
     void visitTerm(TermNode &n) {
@@ -81,7 +80,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     }
 
     void illegalVisit() {
-        term = stringref();
+        term = string_view();
         isSet = false;
     }
 
@@ -129,10 +128,10 @@ throwFailure(const search::query::Node &term_node) {
 string
 termAsString(const Node &term_node) {
     string scratchPad;
-    return termAsString(term_node, scratchPad);
+    return string(termAsString(term_node, scratchPad));
 }
 
-stringref
+string_view
 termAsString(const search::query::Node &term_node, string & scratchPad) {
     TermAsStringVisitor visitor(scratchPad);
     const_cast<Node &>(term_node).accept(visitor);

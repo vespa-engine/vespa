@@ -2,23 +2,29 @@
 
 #include "simpleparser.h"
 #include "compare.h"
+#include <cctype>
 #include <cerrno>
 
 namespace document::select::simple {
 
-size_t eatWhite(const char * s, size_t len)
-{
-    size_t pos(0);
-    for (;(pos < len) && isspace(s[pos]); pos++);
-    return pos;
+namespace {
+    size_t eatWhite(const char *s, size_t len) {
+        size_t pos(0);
+        for (; (pos < len) && std::isspace(static_cast<unsigned char>(s[pos])); pos++);
+        return pos;
+    }
+
+    bool icmp(unsigned char c, unsigned char l) {
+        return std::tolower(c) == l;
+    }
 }
 
-bool icmp(char c, char l)
-{
-    return tolower(c) == l;
+void
+Parser::setRemaining(std::string_view s, size_t fromPos) {
+    _remaining = s.substr(std::min(fromPos, s.size()));
 }
 
-bool IdSpecParser::parse(vespalib::stringref s)
+bool IdSpecParser::parse(std::string_view s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -32,7 +38,7 @@ bool IdSpecParser::parse(vespalib::stringref s)
                         int widthBits(-1);
                         int divisionBits(-1);
                         size_t startPos(++pos);
-                        for (;(pos < s.size()) && (tolower(s[pos]) >= 'a') && (tolower(s[pos]) <= 'z'); pos++);
+                        for (;(pos < s.size()) && (std::tolower(static_cast<unsigned char>(s[pos])) >= 'a') && (std::tolower(static_cast<unsigned char>(s[pos])) <= 'z'); pos++);
                         size_t len(pos - startPos);
                         if (((len == 4) && (strncasecmp(&s[startPos], "user", 4) == 0 ||
                                             strncasecmp(&s[startPos], "type", 4) == 0)) ||
@@ -42,7 +48,7 @@ bool IdSpecParser::parse(vespalib::stringref s)
                             ((len == 9) && (strncasecmp(&s[startPos], "namespace", 9) == 0)))
                         {
                             retval = true;
-                            setValue(ValueNode::UP(new IdValueNode(_bucketIdFactory, "id", s.substr(startPos, len), widthBits, divisionBits)));
+                            setValue(std::make_unique<IdValueNode>(_bucketIdFactory, "id", s.substr(startPos, len), widthBits, divisionBits));
                         } else {
                             pos = startPos;
                         }
@@ -58,7 +64,7 @@ bool IdSpecParser::parse(vespalib::stringref s)
                 case ' ':
                     {
                         retval = true;
-                        setValue(ValueNode::UP(new IdValueNode(_bucketIdFactory, "id", "")));
+                        setValue(std::make_unique<IdValueNode>(_bucketIdFactory, "id", ""));
                     }
                     break;
                 default:
@@ -67,11 +73,11 @@ bool IdSpecParser::parse(vespalib::stringref s)
             }
         }
     }
-    setRemaining(s.substr(pos));
+    setRemaining(s, pos);
     return retval;
 }
 
-bool OperatorParser::parse(vespalib::stringref s)
+bool OperatorParser::parse(std::string_view s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -111,11 +117,11 @@ bool OperatorParser::parse(vespalib::stringref s)
             retval = false;
         }
     }
-    setRemaining(s.substr(pos));
+    setRemaining(s, pos);
     return retval;
 }
 
-bool StringParser::parse(vespalib::stringref s)
+bool StringParser::parse(std::string_view s)
 {
     bool retval(false);
     setRemaining(s);
@@ -132,20 +138,20 @@ bool StringParser::parse(vespalib::stringref s)
             if (s[pos] == '"') {
                 pos++;
                 retval = true;
-                setValue(ValueNode::UP(new StringValueNode(str)));
+                setValue(std::make_unique<StringValueNode>(str));
             }
         }
-        setRemaining(s.substr(pos+1));
+        setRemaining(s, pos+1);
     }
     return retval;
 }
 
-bool IntegerParser::parse(vespalib::stringref s)
+bool IntegerParser::parse(std::string_view s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
     if (pos < s.size()) {
-        char * err(NULL);
+        char * err(nullptr);
         errno = 0;
         bool isHex((s.size() - pos) && (s[pos] == '0') && (s[pos+1] == 'x'));
         int64_t v = isHex
@@ -155,14 +161,14 @@ bool IntegerParser::parse(vespalib::stringref s)
         if ((errno == 0) && (pos+len <= s.size())) {
             retval = true;
             pos += len;
-            setValue(ValueNode::UP(new IntegerValueNode(v, false)));
+            setValue(std::make_unique<IntegerValueNode>(v, false));
         }
     }
-    setRemaining(s.substr(pos));
+    setRemaining(s, pos);
     return retval;
 }
 
-bool SelectionParser::parse(vespalib::stringref s)
+bool SelectionParser::parse(std::string_view s)
 {
     bool retval(false);
     IdSpecParser id(_bucketIdFactory);
@@ -172,14 +178,14 @@ bool SelectionParser::parse(vespalib::stringref s)
             if (id.isUserSpec()) {
                 IntegerParser v;
                 if (v.parse(op.getRemaining())) {
-                    setNode(Node::UP(new Compare(id.stealValue(), *op.getOperator(), v.stealValue(), _bucketIdFactory)));
+                    setNode(std::make_unique<Compare>(id.stealValue(), *op.getOperator(), v.stealValue(), _bucketIdFactory));
                     retval = true;
                 }
                 setRemaining(v.getRemaining());
             } else {
                 StringParser v;
                 if (v.parse(op.getRemaining())) {
-                    setNode(Node::UP(new Compare(id.stealValue(), *op.getOperator(), v.stealValue(), _bucketIdFactory)));
+                    setNode(std::make_unique<Compare>(id.stealValue(), *op.getOperator(), v.stealValue(), _bucketIdFactory));
                     retval = true;
                 }
                 setRemaining(v.getRemaining());

@@ -407,10 +407,10 @@ public:
     std::vector<uint16_t> expand_node_vec(const std::vector<uint16_t>& nodes);
 
     void trigger_completed_but_not_yet_activated_transition(
-            vespalib::stringref initial_state_str,
+            std::string_view initial_state_str,
             uint32_t initial_buckets,
             uint32_t initial_expected_msgs,
-            vespalib::stringref pending_state_str,
+            std::string_view pending_state_str,
             uint32_t pending_buckets,
             uint32_t pending_expected_msgs);
 
@@ -603,10 +603,10 @@ TopLevelBucketDBUpdaterTest::get_node_list(const std::vector<uint16_t>& nodes)
 
 void
 TopLevelBucketDBUpdaterTest::trigger_completed_but_not_yet_activated_transition(
-        vespalib::stringref initial_state_str,
+        std::string_view initial_state_str,
         uint32_t initial_buckets,
         uint32_t initial_expected_msgs,
-        vespalib::stringref pending_state_str,
+        std::string_view pending_state_str,
         uint32_t pending_buckets,
         uint32_t pending_expected_msgs)
 {

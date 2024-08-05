@@ -5,6 +5,12 @@
 
 using namespace vespalib;
 
+#if VESPALIB_ARRAYREF_IS_STD_SPAN
+
+// Testing of std::span should be handled by upstream
+
+#else
+
 TEST("require that default constructors create references to empty arrays") {
     ArrayRef<int> array_ref;
     ConstArrayRef<int> const_ref;
@@ -72,5 +78,6 @@ TEST("require that references can be unconstified") {
     array_ref[1] = 5;
     EXPECT_EQUAL(data[1], 5);
 }
+#endif
 
 TEST_MAIN() { TEST_RUN_ALL(); }

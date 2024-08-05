@@ -25,7 +25,7 @@ BasicType::Type getBasicType(const std::shared_ptr<attribute::ReadableAttributeV
 }
 
 std::shared_ptr<ImportedAttributeVector>
-ImportedAttributeVectorFactory::create(vespalib::stringref name,
+ImportedAttributeVectorFactory::create(std::string_view name,
                                        std::shared_ptr<ReferenceAttribute> reference_attribute,
                                        std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                        std::shared_ptr<ReadableAttributeVector> target_attribute,
@@ -42,7 +42,7 @@ ImportedAttributeVectorFactory::create(vespalib::stringref name,
 
 
 std::shared_ptr<ImportedAttributeVector>
-ImportedAttributeVectorFactory::create(vespalib::stringref name,
+ImportedAttributeVectorFactory::create(std::string_view name,
                                        std::shared_ptr<ReferenceAttribute> reference_attribute,
                                        std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                        std::shared_ptr<ReadableAttributeVector> target_attribute,

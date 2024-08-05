@@ -38,8 +38,8 @@ public class DataplaneProxyCredentials extends AbstractComponent {
     @Inject
     public DataplaneProxyCredentials() {
         this(
-                Paths.get(Defaults.getDefaults().underVespaHome("tmp/proxy_cert.pem")),
-                Paths.get(Defaults.getDefaults().underVespaHome("tmp/proxy_key.pem"))
+                Paths.get(Defaults.getDefaults().underVespaHome("secure/proxy_cert.pem")),
+                Paths.get(Defaults.getDefaults().underVespaHome("secure/proxy_key.pem"))
         );
     }
 

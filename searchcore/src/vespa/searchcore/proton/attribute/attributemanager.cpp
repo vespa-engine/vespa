@@ -155,7 +155,7 @@ AttributeManager::addAttribute(AttributeWrap attributeWrap, const ShrinkerSP &sh
 }
 
 AttributeVector::SP
-AttributeManager::findAttribute(const vespalib::string &name) const
+AttributeManager::findAttribute(std::string_view name) const
 {
     auto itr = _attributes.find(name);
     return (itr != _attributes.end())
@@ -419,13 +419,13 @@ AttributeManager::padAttribute(AttributeVector &v, uint32_t docIdLimit)
 }
 
 AttributeGuard::UP
-AttributeManager::getAttribute(const vespalib::string &name) const
+AttributeManager::getAttribute(std::string_view name) const
 {
     return std::make_unique<AttributeGuard>(findAttribute(name));
 }
 
 std::unique_ptr<search::attribute::AttributeReadGuard>
-AttributeManager::getAttributeReadGuard(const string &name, bool stableEnumGuard) const
+AttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const
 {
     auto attribute = findAttribute(name);
     if (attribute) {
@@ -461,14 +461,14 @@ public:
           _importedCtx(importedAttributes)
     {
     }
-    const IAttributeVector *getAttribute(const vespalib::string &name) const override {
+    const IAttributeVector *getAttribute(std::string_view name) const override {
         const IAttributeVector *result = _ctx.getAttribute(name);
         if (result == nullptr) {
             result = _importedCtx.getAttribute(name);
         }
         return result;
     }
-    const IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override {
+    const IAttributeVector *getAttributeStableEnum(std::string_view name) const override {
         const IAttributeVector *result = _ctx.getAttributeStableEnum(name);
         if (result == nullptr) {
             result = _importedCtx.getAttributeStableEnum(name);
@@ -487,7 +487,7 @@ public:
         _ctx.enableMultiThreadSafe();
         _importedCtx.enableMultiThreadSafe();
     }
-    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override {
+    void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const override {
         _ctx.asyncForAttribute(name, std::move(func));
     }
 };
@@ -584,7 +584,7 @@ AttributeManager::getAttributeFieldWriter() const
 }
 
 AttributeVector *
-AttributeManager::getWritableAttribute(const vespalib::string &name) const
+AttributeManager::getWritableAttribute(std::string_view name) const
 {
     auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra()) {
@@ -631,13 +631,13 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func,
 }
 
 void
-AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
+AttributeManager::asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const {
     auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra() || !func) {
         return;
     }
     AttributeVector::SP attrsp = itr->second.getAttribute();
-    vespalib::string attrName = attrsp->getNamePrefix();
+    string attrName(attrsp->getNamePrefix());
     _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrName),
                                   [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
 }
@@ -649,7 +649,7 @@ AttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> 
 }
 
 std::shared_ptr<search::attribute::ReadableAttributeVector>
-AttributeManager::readable_attribute_vector(const string& name) const
+AttributeManager::readable_attribute_vector(std::string_view name) const
 {
     auto attribute = findAttribute(name);
     if (attribute || !_importedAttributes) {

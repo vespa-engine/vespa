@@ -162,8 +162,8 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         if (initializer && initializer->hasReprocessors()) {
             tasks.emplace_back(createReprocessingTask(*initializer, newConfigSnapshot.getDocumentTypeRepoSP()));
         }
-        proton::IAttributeManager::SP newMgr = getAttributeManager();
         if (_addMetrics) {
+            proton::IAttributeManager::SP newMgr = getAttributeManager();
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
     } else {
@@ -309,10 +309,10 @@ SearchableDocSubDB::getSearchableStats() const
     return _indexMgr ? _indexMgr->getSearchableStats() : search::SearchableStats();
 }
 
-IDocumentRetriever::UP
+std::shared_ptr<IDocumentRetriever>
 SearchableDocSubDB::getDocumentRetriever()
 {
-    return std::make_unique<FastAccessDocumentRetriever>(_rFeedView.get(), _rSearchView.get()->getAttributeManager());
+    return std::make_shared<FastAccessDocumentRetriever>(_rFeedView.get(), _rSearchView.get()->getAttributeManager());
 }
 
 MatchingStats

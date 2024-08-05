@@ -8,7 +8,7 @@ namespace storage::api {
 IMPLEMENT_COMMAND(RemoveLocationCommand, RemoveLocationReply)
 IMPLEMENT_REPLY(RemoveLocationReply)
 
-RemoveLocationCommand::RemoveLocationCommand(vespalib::stringref documentSelection,
+RemoveLocationCommand::RemoveLocationCommand(std::string_view documentSelection,
                                              const document::Bucket &bucket)
     : BucketInfoCommand(MessageType::REMOVELOCATION, bucket),
       _documentSelection(documentSelection),

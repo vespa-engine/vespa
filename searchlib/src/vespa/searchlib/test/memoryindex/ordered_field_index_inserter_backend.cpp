@@ -26,7 +26,7 @@ OrderedFieldIndexInserterBackend::addComma()
 }
 
 void
-OrderedFieldIndexInserterBackend::setNextWord(const vespalib::stringref word)
+OrderedFieldIndexInserterBackend::setNextWord(const std::string_view word)
 {
     addComma();
     _ss << "w=" << word;

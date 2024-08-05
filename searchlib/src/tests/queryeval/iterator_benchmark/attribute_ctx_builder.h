@@ -19,7 +19,7 @@ private:
 
 public:
     AttributeContextBuilder();
-    void add(const search::attribute::Config& cfg, vespalib::stringref field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms);
+    void add(const search::attribute::Config& cfg, std::string_view field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms);
     std::unique_ptr<BenchmarkSearchable> build();
 };
 

@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "flush_target_candidate.h"
 #include "prepare_restart_flush_strategy.h"
 #include <vespa/vespalib/util/arrayref.h>
 
 namespace proton {
 
 namespace flushengine { class TlsStats; }
-
-class FlushTargetCandidate;
 
 /**
  * A set of flush targets that are candidates to be flushed.

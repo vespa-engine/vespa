@@ -23,10 +23,10 @@ class ServiceLayerComponent;
 class ProviderErrorListener {
 public:
     virtual ~ProviderErrorListener() = default;
-    virtual void on_fatal_error(vespalib::stringref message) {
+    virtual void on_fatal_error(std::string_view message) {
         (void)message;
     }
-    virtual void on_resource_exhaustion_error(vespalib::stringref message) {
+    virtual void on_resource_exhaustion_error(std::string_view message) {
         (void)message;
     }
 };
@@ -69,8 +69,8 @@ private:
     ResultType checkResult(ResultType&& result) const;
     void handle(const spi::Result &) const override;
 
-    void trigger_shutdown_listeners(vespalib::stringref reason) const;
-    void trigger_resource_exhaustion_listeners(vespalib::stringref reason) const;
+    void trigger_shutdown_listeners(std::string_view reason) const;
+    void trigger_resource_exhaustion_listeners(std::string_view reason) const;
 
     spi::PersistenceProvider& _impl;
     std::vector<std::shared_ptr<ProviderErrorListener>> _listeners;

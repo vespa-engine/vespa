@@ -244,8 +244,8 @@ struct MyWorld {
 
         // config
         config.add(indexproperties::rank::FirstPhase::NAME, "attribute(a1)");
-        config.add(indexproperties::hitcollector::HeapSize::NAME, (vespalib::asciistream() << heapSize).str());
-        config.add(indexproperties::hitcollector::ArraySize::NAME, (vespalib::asciistream() << arraySize).str());
+        config.add(indexproperties::hitcollector::HeapSize::NAME, (vespalib::asciistream() << heapSize).view());
+        config.add(indexproperties::hitcollector::ArraySize::NAME, (vespalib::asciistream() << arraySize).view());
         config.add(indexproperties::summary::Feature::NAME, "matches(f1)");
         config.add(indexproperties::summary::Feature::NAME, "rankingExpression(\"reduce(tensor(x[3])(x),sum)\")");
         config.add(indexproperties::summary::Feature::NAME, "rankingExpression(\"tensor(x[3])(x)\")");
@@ -1279,8 +1279,8 @@ struct AttributeBlueprintParamsFixture {
        rank_setup.set_target_hits_max_adjustment_factor(target_hits_max_adjustment_factor);
        rank_setup.set_fuzzy_matching_algorithm(fuzzy_matching_algorithm);
    }
-   void set_query_properties(vespalib::stringref lower_limit, vespalib::stringref upper_limit,
-                             vespalib::stringref target_hits_max_adjustment_factor,
+   void set_query_properties(std::string_view lower_limit, std::string_view upper_limit,
+                             std::string_view target_hits_max_adjustment_factor,
                              const vespalib::string & fuzzy_matching_algorithm) {
        rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
        rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);

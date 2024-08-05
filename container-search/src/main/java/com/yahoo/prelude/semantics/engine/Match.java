@@ -77,9 +77,8 @@ public class Match {
 
     @Override
     public boolean equals(Object o) {
-        if (! (o instanceof Match)) return false;
+        if (! (o instanceof Match other)) return false;
 
-        Match other = (Match)o;
         if (other.position != position) return false;
         if ( ! other.item.equals(item)) return false;
 

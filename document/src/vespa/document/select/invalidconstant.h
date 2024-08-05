@@ -17,7 +17,7 @@ namespace document::select {
 class InvalidConstant : public Node
 {
 public:
-    explicit InvalidConstant(vespalib::stringref value);
+    explicit InvalidConstant(std::string_view value);
 
     ResultList contains(const Context&) const override { return ResultList(Result::Invalid); }
     ResultList trace(const Context&, std::ostream& trace) const override;

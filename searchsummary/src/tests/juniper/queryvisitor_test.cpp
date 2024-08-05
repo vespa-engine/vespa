@@ -16,7 +16,7 @@ struct MyQueryItem : public QueryItem
     { }
     ~MyQueryItem() override = default;
 
-    vespalib::stringref get_index() const override { return {}; }
+    std::string_view get_index() const override { return {}; }
     int get_weight() const override { return 0; }
     ItemCreator get_creator() const override { return ItemCreator::CREA_ORIG; }
 };

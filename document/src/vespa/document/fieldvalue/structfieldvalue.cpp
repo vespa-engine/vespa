@@ -112,13 +112,13 @@ StructFieldValue::getRawFieldIds(vector<int> &raw_ids,const FieldSet& fieldSet) 
 }
 
 bool
-StructFieldValue::hasField(vespalib::stringref name) const
+StructFieldValue::hasField(std::string_view name) const
 {
     return getStructType().hasField(name);
 }
 
 const Field&
-StructFieldValue::getField(vespalib::stringref name) const
+StructFieldValue::getField(std::string_view name) const
 {
     return getStructType().getField(name);
 }

@@ -20,7 +20,7 @@ import java.util.Objects;
 public final class WeakAndItem extends NonReducibleCompositeItem {
 
     /** The default N used if none is specified: 100 */
-    public static final int defaultN = 100;  //TODO Make private
+    public static final int defaultN = 100;  // TODO Vespa 9: Make private
 
     private int n;
     private String index;
@@ -85,6 +85,40 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         super.encodeThis(buffer);
         IntegerCompressor.putCompressedPositiveNumber(getN(), buffer);
         putString(index, buffer);
+    }
+
+    private WeakAndItem foldSegments() {
+        var result = new WeakAndItem(this.index, this.n);
+        for (var child : items()) {
+            if (child instanceof SegmentItem segment && segment.shouldFoldIntoWand()) {
+                for (var subItem : segment.items()) {
+                    result.addItem(subItem);
+                }
+            } else {
+                result.addItem(child);
+            }
+        }
+        return result;
+    }
+
+    private boolean needsFolding() {
+        for (var subItem : items()) {
+            if (subItem instanceof SegmentItem segment) {
+                if (segment.shouldFoldIntoWand()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int encode(ByteBuffer buffer) {
+        if (needsFolding()) {
+            return foldSegments().encode(buffer);
+        } else {
+            return super.encode(buffer);
+        }
     }
 
     @Override

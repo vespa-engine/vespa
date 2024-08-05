@@ -11,7 +11,7 @@ IMPLEMENT_COMMAND(GetBucketListCommand, GetBucketListReply)
 IMPLEMENT_REPLY(GetBucketListReply)
 
 StatBucketCommand::StatBucketCommand(const document::Bucket& bucket,
-                                     vespalib::stringref documentSelection)
+                                     std::string_view documentSelection)
     : BucketCommand(MessageType::STATBUCKET, bucket),
       _docSelection(documentSelection)
 {
@@ -32,7 +32,7 @@ StatBucketCommand::print(std::ostream& out, bool verbose,
 }
 
 StatBucketReply::StatBucketReply(const StatBucketCommand& cmd,
-                                 vespalib::stringref results)
+                                 std::string_view results)
     : BucketReply(cmd),
       _results(results)
 {

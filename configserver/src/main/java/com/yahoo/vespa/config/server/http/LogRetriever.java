@@ -5,14 +5,11 @@ import ai.vespa.http.HttpURL;
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.yolean.Exceptions;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -38,7 +35,7 @@ public class LogRetriever {
             if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(2))))
                 return new EmptyResponse();
 
-            return HttpErrorResponse.internalServerError("Failed to get logs: " + Exceptions.toMessageString(e));
+            throw new RuntimeException("Failed to get logs from " + logServerUri, e);
         }
     }
 

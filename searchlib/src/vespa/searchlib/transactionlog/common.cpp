@@ -26,7 +26,7 @@ throwRangeError(SerialNum prev, SerialNum next) {
 }
 
 int
-makeDirectory(vespalib::stringref dir)
+makeDirectory(std::string_view dir)
 {
     if ( fs::exists(fs::path(dir)) ) {
         return fs::is_directory(fs::path(dir)) ? 0 : -2;

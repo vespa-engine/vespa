@@ -9,6 +9,7 @@
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using search::attribute::IAttributeVector;
 using search::tensor::ITensorAttribute;
@@ -191,8 +192,8 @@ TEST_F("Singled-valued floating point attribute values can be retrieved via refe
             {{DocId(2), dummy_gid(3), DocId(3), 10.5f},
              {DocId(4), dummy_gid(8), DocId(8), 3.14f}});
 
-    EXPECT_EQUAL(10.5f, f.get_imported_attr()->getFloat(DocId(2)));
-    EXPECT_EQUAL(3.14f, f.get_imported_attr()->getFloat(DocId(4)));
+    EXPECT_EQUAL(10.5, f.get_imported_attr()->getFloat(DocId(2)));
+    EXPECT_EQUAL(3.14, f.get_imported_attr()->getFloat(DocId(4)));
 }
 
 TEST_F("Multi-valued floating point attribute values can be retrieved via reference", Fixture) {
@@ -277,9 +278,9 @@ SingleStringAttrFixture::~SingleStringAttrFixture() = default;
 TEST_F("Single-valued string attribute values can be retrieved via reference", SingleStringAttrFixture)
 {
     auto buf = f.get_imported_attr()->get_raw(DocId(2));
-    EXPECT_EQUAL(vespalib::stringref("foo"), vespalib::stringref(buf.data(), buf.size()));
+    EXPECT_EQUAL(std::string_view("foo"), std::string_view(buf.data(), buf.size()));
     buf = f.get_imported_attr()->get_raw(DocId(4));
-    EXPECT_EQUAL(vespalib::stringref("bar"), vespalib::stringref(buf.data(), buf.size()));
+    EXPECT_EQUAL(std::string_view("bar"), std::string_view(buf.data(), buf.size()));
 }
 
 TEST_F("getEnum() returns target vector enum via reference", SingleStringAttrFixture)

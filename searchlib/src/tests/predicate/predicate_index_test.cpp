@@ -5,15 +5,13 @@
 #include <vespa/searchlib/predicate/simple_index.hpp>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/util/data_buffer_writer.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
-
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_index_test");
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search;
 using namespace search::predicate;
@@ -454,5 +452,3 @@ TEST("require that predicate index saver protected by a generation guard observe
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

@@ -240,7 +240,7 @@ AttributeMapLookupNode::AttributeMapLookupNode()
 
 AttributeMapLookupNode::AttributeMapLookupNode(const AttributeMapLookupNode &) = default;
 
-AttributeMapLookupNode::AttributeMapLookupNode(vespalib::stringref name, vespalib::stringref keyAttributeName, vespalib::stringref valueAttributeName, vespalib::stringref key, vespalib::stringref keySourceAttributeName)
+AttributeMapLookupNode::AttributeMapLookupNode(std::string_view name, std::string_view keyAttributeName, std::string_view valueAttributeName, std::string_view key, std::string_view keySourceAttributeName)
     : AttributeNode(name),
       _keyAttributeName(keyAttributeName),
       _valueAttributeName(valueAttributeName),

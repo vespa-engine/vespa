@@ -22,7 +22,7 @@ public:
      * Construct a config URI from a given config id.
      * @param configId The config id.
      */
-    explicit ConfigUri(vespalib::stringref configId);
+    explicit ConfigUri(std::string_view configId);
 
     /**
      * Construct a config URI from a config id and a context.

@@ -286,7 +286,7 @@ void MemoryWatcher<T, S>::parseOptions(char * options)
             *p = ignore;
         } else {
             if (isWhite) {
-                if (!isspace(c)) {
+                if (!isspace(static_cast<unsigned char>(c))) {
                     if (valueName == nullptr) {
                         valueName = p;
                     } else {
@@ -297,7 +297,7 @@ void MemoryWatcher<T, S>::parseOptions(char * options)
                     *p = ignore;
                 }
             } else {
-                if (isspace(c)) {
+                if (isspace(static_cast<unsigned char>(c))) {
                     isWhite = true;
                     *p = ignore;
                 }

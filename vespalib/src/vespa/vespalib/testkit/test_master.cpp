@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "test_master.h"
+#include "test_master.hpp"
 #include <vespa/vespalib/util/barrier.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <cstring>
@@ -29,14 +29,20 @@ TestMaster TestMaster::master;
 __thread TestMaster::ThreadState *TestMaster::_threadState = nullptr;
 
 //-----------------------------------------------------------------------------
-TestMaster::TraceItem::TraceItem(const std::string &file_in, uint32_t line_in, const std::string &msg_in)
-    : file(file_in), line(line_in), msg(msg_in)
+TestMaster::TraceItem::TraceItem(std::string file_in, uint32_t line_in, std::string msg_in)
+    : file(std::move(file_in)), line(line_in), msg(std::move(msg_in))
 {}
 TestMaster::TraceItem::TraceItem(TraceItem &&) noexcept = default;
 TestMaster::TraceItem & TestMaster::TraceItem::operator=(TraceItem &&) noexcept = default;
 TestMaster::TraceItem::TraceItem(const TraceItem &) = default;
 TestMaster::TraceItem & TestMaster::TraceItem::operator=(const TraceItem &) = default;
 TestMaster::TraceItem::~TraceItem() = default;
+
+TestMaster::ThreadState::~ThreadState() = default;
+TestMaster::ThreadState::ThreadState(std::string n)
+    : name(std::move(n)), passCnt(0), failCnt(0), preIgnoreFailCnt(0),
+      ignore(false), unwind(false), traceStack(), barrier(nullptr)
+{}
 
 TestMaster::ThreadState &
 TestMaster::threadState(const lock_guard &)
@@ -160,6 +166,27 @@ TestMaster::reportConclusion(const lock_guard &)
     return ok;
 }
 
+void
+TestMaster::report_compare(const char *file, uint32_t line, const char *aName, const char *bName, const char *opText, bool fatal,
+                           const std::function<void(std::ostream &)> & printLhs,
+                           const std::function<void(std::ostream &)> & printRhs)
+{
+    std::string str;
+    str += aName;
+    str += opText;
+    str += bName;
+    std::ostringstream lhs;
+    std::ostringstream rhs;
+    printLhs(lhs);
+    printRhs(rhs);
+    {
+        lock_guard guard(_lock);
+        checkFailed(guard, file, line, str.c_str());
+        printDiff(guard, str, file, line, lhs.str(), rhs.str());
+        handleFailure(guard, fatal);
+    }
+}
+
 //-----------------------------------------------------------------------------
 
 TestMaster::TestMaster()
@@ -170,6 +197,8 @@ TestMaster::TestMaster()
 {
     setThreadName("master");
 }
+
+TestMaster::~TestMaster() = default;
 
 //-----------------------------------------------------------------------------
 

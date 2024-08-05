@@ -14,7 +14,7 @@ namespace document::select {
 
 Operator::OperatorMap Operator::_operators;
 
-Operator::Operator(vespalib::stringref name)
+Operator::Operator(std::string_view name)
     : _name(name)
 {
     OperatorMap::iterator it = _operators.find(name);
@@ -25,7 +25,7 @@ Operator::Operator(vespalib::stringref name)
 }
 
 const Operator&
-Operator::get(vespalib::stringref name)
+Operator::get(std::string_view name)
 {
     OperatorMap::iterator it = _operators.find(name);
     if (it == _operators.end()) {
@@ -76,7 +76,7 @@ FunctionOperator::LT("<", &Value::operator<);
 const FunctionOperator
 FunctionOperator::NE("!=", &Value::operator!=);
 
-RegexOperator::RegexOperator(vespalib::stringref name)
+RegexOperator::RegexOperator(std::string_view name)
     : Operator(name)
 {
 }
@@ -126,7 +126,7 @@ RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) cons
 }
 
 ResultList
-RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) const
+RegexOperator::match(const vespalib::string& val, std::string_view expr) const
 {
     if (expr.empty()) {
         return ResultList(Result::True); // Should we catch this in parsing?
@@ -138,7 +138,7 @@ RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) cons
 
 const RegexOperator RegexOperator::REGEX("=~");
 
-GlobOperator::GlobOperator(vespalib::stringref name)
+GlobOperator::GlobOperator(std::string_view name)
     : RegexOperator(name)
 {
 }
@@ -197,7 +197,7 @@ namespace {
 
 // Returns the number of consecutive wildcard ('*') characters found from
 // _and including_ the character at `i`, i.e. the wildcard run length.
-size_t wildcard_run_length(size_t i, vespalib::stringref str) {
+size_t wildcard_run_length(size_t i, std::string_view str) {
     size_t n = 0;
     for (; (i < str.size()) && (str[i] == '*'); ++n, ++i) {}
     return n;
@@ -206,7 +206,7 @@ size_t wildcard_run_length(size_t i, vespalib::stringref str) {
 }
 
 vespalib::string
-GlobOperator::convertToRegex(vespalib::stringref globpattern)
+GlobOperator::convertToRegex(std::string_view globpattern)
 {
     if (globpattern.empty()) {
         return "^$"; // Empty glob can only match the empty string.
@@ -255,7 +255,7 @@ GlobOperator::convertToRegex(vespalib::stringref globpattern)
 }
 
 bool
-GlobOperator::containsVariables(vespalib::stringref expression)
+GlobOperator::containsVariables(std::string_view expression)
 {
     for (size_t i=0, n=expression.size(); i<n; ++i) {
         if (expression[i] == '*' || expression[i] == '?') {

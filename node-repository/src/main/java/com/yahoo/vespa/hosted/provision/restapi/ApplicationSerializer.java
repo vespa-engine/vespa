@@ -83,7 +83,7 @@ public class ApplicationSerializer {
         }
         toSlime(cluster.target(), clusterObject.setObject("target"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-        clusterObject.setLong("scalingDuration", cluster.scalingDuration(nodes.clusterSpec()).toMillis());
+        clusterObject.setLong("scalingDuration", cluster.scalingDuration().toMillis());
     }
 
     private static void toSlime(List<Autoscaling> suggestions, Cursor autoscalingArray) {

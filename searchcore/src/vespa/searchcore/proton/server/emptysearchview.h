@@ -11,12 +11,9 @@ class EmptySearchView : public ISearchHandler
 public:
     using SP = std::shared_ptr<EmptySearchView>;
 
-    EmptySearchView();
-
     std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
-
-    std::unique_ptr<SearchReply>
-    match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
+    std::unique_ptr<SearchReply> match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
+private:
 };
 
 } // namespace proton

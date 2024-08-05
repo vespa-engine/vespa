@@ -22,7 +22,7 @@ private:
 protected:
     virtual std::unique_ptr<IntermediateBlueprint> make_self() const = 0;
 public:
-    IntermediateBlueprintFactory(vespalib::stringref name);
+    IntermediateBlueprintFactory(std::string_view name);
     ~IntermediateBlueprintFactory();
     void add_child(std::shared_ptr<BenchmarkBlueprintFactory> child) {
         _children.push_back(std::move(child));

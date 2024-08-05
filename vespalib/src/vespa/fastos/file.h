@@ -86,15 +86,17 @@ private:
     void WriteBufInternal(const void *buffer, size_t length);
 
 protected:
+    static bool   _fsyncEnabled;
     std::string   _filename;
     unsigned int  _openFlags;
     bool          _directIOEnabled;
     bool          _syncWritesEnabled;
 
 public:
-    static void setDefaultFAdviseOptions(int options) { _defaultFAdviseOptions = options; }
-    int getFAdviseOptions()                     const { return _fAdviseOptions; }
-    void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
+    static void enableFSync() noexcept { _fsyncEnabled = true; }
+    static void setDefaultFAdviseOptions(int options) noexcept { _defaultFAdviseOptions = options; }
+    int getFAdviseOptions()                     const noexcept { return _fAdviseOptions; }
+    void setFAdviseOptions(int options)               noexcept { _fAdviseOptions = options; }
 
     /**
      * Constructor. A filename could be supplied at this point, or specified

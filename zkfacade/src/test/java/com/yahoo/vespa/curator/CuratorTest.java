@@ -73,10 +73,10 @@ public class CuratorTest {
     }
 
     private Curator createCurator(CuratorConfig curatorConfig)  {
-        return createCurator(curatorConfig, Curator.defaultJuteMaxBuffer);
+        return createCurator(curatorConfig, 12345);
     }
 
-    private Curator createCurator(CuratorConfig curatorConfig, long juteMaxBuffer)  {
+    private Curator createCurator(CuratorConfig curatorConfig, int juteMaxBuffer)  {
         return new Curator(ConnectionSpec.create(curatorConfig.server(),
                                                  CuratorConfig.Server::hostname,
                                                  CuratorConfig.Server::port,

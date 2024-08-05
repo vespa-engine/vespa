@@ -34,7 +34,7 @@ public:
      * @param name name of the attribute vector.
      * @return view of the attribute vector or empty view if the attribute vector does not exists.
      **/
-    virtual AttributeGuard::UP getAttribute(const string & name) const = 0;
+    virtual AttributeGuard::UP getAttribute(std::string_view name) const = 0;
 
     /**
      * Returns a read view of the attribute vector with the given name.
@@ -43,7 +43,7 @@ public:
      * @param stableEnumGuard flag to block enumeration changes during use of the attribute vector via the view.
      * @return read view of the attribute vector if the attribute vector exists
      **/
-    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const = 0;
+    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const = 0;
 
     /**
      * Fill the given list with all attribute vectors registered in this manager.
@@ -66,7 +66,7 @@ public:
      * @param name name of the attribute vector.
      * @return The attribute vector, or an empty shared_ptr if no vector was found with the given name.
      */
-    virtual std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const = 0;
+    virtual std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const = 0;
 
     ~IAttributeManager() override = default;
 protected:

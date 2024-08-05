@@ -26,7 +26,7 @@ public:
     using AttributeList = std::vector<AttributeGuard>;
     using VectorHolder = std::shared_ptr<AttributeVector>;
     AttributeManager();
-    AttributeManager(const string & base);
+    explicit AttributeManager(string base);
     ~AttributeManager() override;
 
     /**
@@ -35,22 +35,22 @@ public:
      * about the content of the attribute. If that is required some of
      * the other getAttributeXX methods must be used.
      **/
-    const VectorHolder * getAttributeRef(const string & name) const;
+    const VectorHolder * getAttributeRef(std::string_view name) const;
 
-    AttributeGuard::UP getAttribute(const string & name) const override;
-    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
-    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
+    AttributeGuard::UP getAttribute(std::string_view name) const override;
+    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const override;
+    void asyncForAttribute(std::string_view name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
 
     /**
      * This will load attributes in the most memory economical way by loading largest first.
      */
-    bool addVector(const string & name, const Config & config);
+    bool addVector(std::string_view name, const Config & config);
     bool add(const VectorHolder & vector);
 
     void getAttributeList(AttributeList & list) const override;
     attribute::IAttributeContext::UP createContext() const override;
 
-    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const override;
 
     const Snapshot & getSnapshot()         const { return _snapShot; }
     const string & getBaseDir()       const { return _baseDir; }
@@ -62,8 +62,8 @@ protected:
     AttributeMap   _attributes;
     mutable std::mutex _loadLock;
 private:
-    const VectorHolder * findAndLoadAttribute(const string & name) const;
-    string createBaseFileName(const string & name) const;
+    const VectorHolder * findAndLoadAttribute(std::string_view name) const;
+    string createBaseFileName(std::string_view name) const;
     string    _baseDir;
     Snapshot  _snapShot;
     std::shared_ptr<attribute::Interlock> _interlock;

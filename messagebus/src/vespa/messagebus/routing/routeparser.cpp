@@ -7,7 +7,7 @@
 #include "verbatimdirective.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
-using vespalib::stringref;
+using std::string_view;
 
 namespace mbus {
 
@@ -18,13 +18,13 @@ RouteParser::isWhitespace(char c)
 }
 
 IHopDirective::SP
-RouteParser::createRouteDirective(stringref str)
+RouteParser::createRouteDirective(string_view str)
 {
     return IHopDirective::SP(new RouteDirective(str));
 }
 
 IHopDirective::SP
-RouteParser::createTcpDirective(stringref str)
+RouteParser::createTcpDirective(string_view str)
 {
     size_t posP = str.find(":");
     if (posP == string::npos || posP == 0) {
@@ -41,7 +41,7 @@ RouteParser::createTcpDirective(stringref str)
 }
 
 IHopDirective::SP
-RouteParser::createPolicyDirective(stringref str)
+RouteParser::createPolicyDirective(string_view str)
 {
     size_t pos = str.find(":");
     if (pos == string::npos) {
@@ -51,19 +51,19 @@ RouteParser::createPolicyDirective(stringref str)
 }
 
 IHopDirective::SP
-RouteParser::createVerbatimDirective(stringref str)
+RouteParser::createVerbatimDirective(string_view str)
 {
     return IHopDirective::SP(new VerbatimDirective(str));
 }
 
 IHopDirective::SP
-RouteParser::createErrorDirective(stringref str)
+RouteParser::createErrorDirective(string_view str)
 {
     return IHopDirective::SP(new ErrorDirective(str));
 }
 
 IHopDirective::SP
-RouteParser::createDirective(stringref str)
+RouteParser::createDirective(string_view str)
 {
     if (str.size() > 2 && str[0] == '[') {
         return createPolicyDirective(str.substr(1, str.size() - 2));
@@ -72,7 +72,7 @@ RouteParser::createDirective(stringref str)
 }
 
 Hop
-RouteParser::createHop(stringref str)
+RouteParser::createHop(string_view str)
 {
     if (str.empty()) {
         return Hop().addDirective(createErrorDirective("Failed to parse empty string."));
@@ -120,7 +120,7 @@ RouteParser::createHop(stringref str)
 }
 
 Route
-RouteParser::createRoute(stringref str)
+RouteParser::createRoute(string_view str)
 {
     Route ret;
     for (size_t from = 0, at = 0, depth = 0; at <= str.size(); ++at) {

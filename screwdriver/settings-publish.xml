@@ -14,22 +14,15 @@
         <profile>
             <id>ossrh-deploy-vespa</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <snapshotDeploymentRepository>https://oss.sonatype.org/content/repositories/snapshots</snapshotDeploymentRepository>
-                <releaseDeploymentRepository>https://oss.sonatype.org/service/local/staging/deploy/maven2/</releaseDeploymentRepository>
-                <altDeploymentRepository>ossrh::default::${snapshotDeploymentRepository}</altDeploymentRepository>
-                <altSnapshotDeploymentRepository>ossrh::default::${snapshotDeploymentRepository}</altSnapshotDeploymentRepository>
-                <altReleaseDeploymentRepository>ossrh::default::${releaseDeploymentRepository}</altReleaseDeploymentRepository>
                 <gpg.executable>gpg</gpg.executable>
                 <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
-                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
                 <gpg.defaultKeyring>false</gpg.defaultKeyring>
-                <gpg.homedir>${env.SD_SOURCE_DIR}/screwdriver/deploy</gpg.homedir>
+                <gpg.homedir>${env.SOURCE_DIR}/screwdriver/deploy</gpg.homedir>
                 <gpg.publickeyring>pubring.gpg</gpg.publickeyring>
                 <gpg.secretkeyring>secring.gpg</gpg.secretkeyring>
-                <nexus.staging.maven.plugin.version>1.6.12</nexus.staging.maven.plugin.version>
             </properties>
         </profile>
     </profiles>

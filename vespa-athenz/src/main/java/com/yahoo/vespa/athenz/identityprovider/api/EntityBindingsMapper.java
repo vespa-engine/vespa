@@ -5,9 +5,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.DefaultSignedIdentityDocumentEntity;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.V4SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.V5SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.yolean.Exceptions;
 
@@ -52,22 +53,32 @@ public class EntityBindingsMapper {
     }
 
     public static SignedIdentityDocument toSignedIdentityDocument(SignedIdentityDocumentEntity entity) {
-        if (entity instanceof DefaultSignedIdentityDocumentEntity docEntity) {
-            return new DefaultSignedIdentityDocument(docEntity.signature(),
-                                                     docEntity.signingKeyVersion(),
-                                                     docEntity.documentVersion(),
-                                                     docEntity.data());
+        if (entity instanceof V4SignedIdentityDocumentEntity docEntity) {
+            return new V4SignedIdentityDocument(docEntity.signature(),
+                    docEntity.signingKeyVersion(),
+                    docEntity.documentVersion(),
+                    docEntity.data());
+        } else if (entity instanceof V5SignedIdentityDocumentEntity docEntity) {
+            return new V5SignedIdentityDocument(docEntity.signature(),
+                    docEntity.signingKeyVersion(),
+                    docEntity.documentVersion(),
+                    docEntity.data());
         } else {
             throw new IllegalArgumentException("Unknown signed identity document type: " + entity.getClass().getName());
         }
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
-        if (model instanceof DefaultSignedIdentityDocument defaultModel){
-            return new DefaultSignedIdentityDocumentEntity(defaultModel.signature(),
-                                                           defaultModel.signingKeyVersion(),
-                                                           defaultModel.documentVersion(),
-                                                           defaultModel.data());
+        if (model instanceof V4SignedIdentityDocument defaultModel) {
+            return new V4SignedIdentityDocumentEntity(defaultModel.signature(),
+                    defaultModel.v4SigningKeyVersion(),
+                    defaultModel.documentVersion(),
+                    defaultModel.data());
+        } else if (model instanceof V5SignedIdentityDocument defaultModel){
+                return new V5SignedIdentityDocumentEntity(defaultModel.signature(),
+                        defaultModel.signingKeyVersion(),
+                        defaultModel.documentVersion(),
+                        defaultModel.data());
         } else {
             throw new IllegalArgumentException("Unsupported model type: " + model.getClass().getName());
         }

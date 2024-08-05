@@ -45,15 +45,16 @@ public class EuclideanDistance<NAMETYPE extends Name> extends TensorFunction<NAM
     public TensorType type(TypeContext<NAMETYPE> context) {
         TensorType t1 = arg1.toPrimitive().type(context);
         TensorType t2 = arg2.toPrimitive().type(context);
-        var d1 = t1.dimension(dimension);
-        var d2 = t2.dimension(dimension);
+        String resolvedDimension = context.resolveBinding(dimension);
+        var d1 = t1.dimension(resolvedDimension);
+        var d2 = t2.dimension(resolvedDimension);
         if (d1.isEmpty() || d2.isEmpty()
             || d1.get().type() != Dimension.Type.indexedBound
             || d2.get().type() != Dimension.Type.indexedBound
             || ! d1.get().size().equals(d2.get().size()))
         {
             throw new IllegalArgumentException("euclidean_distance expects both arguments to have the '"
-                                               + dimension + "' dimension with same size, but input types were "
+                                               + resolvedDimension + "' dimension with same size, but input types were "
                                                + t1 + " and " + t2);
         }
         // Finds the type this produces by first converting it to a primitive function
@@ -79,7 +80,7 @@ public class EuclideanDistance<NAMETYPE extends Name> extends TensorFunction<NAM
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
-        return "euclidean_distance(" + arg1.toString(context) + ", " + arg2.toString(context) + ", " + dimension + ")";
+        return "euclidean_distance(" + arg1.toString(context) + ", " + arg2.toString(context) + ", " + context.resolveBinding(dimension) + ")";
     }
 
     @Override

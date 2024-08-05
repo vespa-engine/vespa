@@ -16,29 +16,24 @@ using search::attribute::IAttributeContext;
 
 GroupingSession::GroupingSession(const SessionId &sessionId,
                                  GroupingContext & groupingContext,
-                                 const IAttributeContext &attrCtx)
+                                 const IAttributeContext &attrCtx,
+                                 const document::DocumentType * documentType)
     : _sessionId(sessionId),
       _mgrContext(std::make_unique<GroupingContext>(groupingContext)),
       _groupingManager(std::make_unique<GroupingManager>(*_mgrContext)),
       _timeOfDoom(groupingContext.getTimeOfDoom())
 {
-    init(groupingContext, attrCtx);
+    init(groupingContext, attrCtx, documentType);
 }
 
 GroupingSession::~GroupingSession() = default;
 
-using search::expression::ExpressionNode;
-using search::expression::AttributeNode;
-using search::expression::ConfigureStaticParams;
-using search::aggregation::Grouping;
-using search::aggregation::GroupingLevel;
-
 void
-GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext &attrCtx)
+GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext &attrCtx,
+                      const document::DocumentType * documentType)
 {
     GroupingList & sessionList(groupingContext.getGroupingList());
-    for (size_t i = 0; i < sessionList.size(); ++i) {
-        GroupingPtr g(sessionList[i]);
+    for (auto g : sessionList) {
         // Make internal copy of those we want to keep for another pass
         if (!_sessionId.empty() && g->getLastLevel() < g->levels().size()) {
             auto gp = std::make_shared<Grouping>(*g);
@@ -48,7 +43,7 @@ GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext
         }
         _mgrContext->addGrouping(std::move(g));
     }
-    _groupingManager->init(attrCtx);
+    _groupingManager->init(attrCtx, documentType);
 }
 
 void
@@ -60,7 +55,8 @@ GroupingSession::prepareThreadContextCreation(size_t num_threads)
 }
 
 GroupingContext::UP
-GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &attrCtx)
+GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &attrCtx,
+                                     const document::DocumentType * documentType)
 {
     auto ctx = std::make_unique<GroupingContext>(*_mgrContext);
     if (thread_id == 0) {
@@ -70,7 +66,7 @@ GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &
     } else {
         ctx->deserialize(_mgrContext->getResult().peek(), _mgrContext->getResult().size());
         GroupingManager man(*ctx);
-        man.init(attrCtx);
+        man.init(attrCtx, documentType);
     }
     return ctx;
 }

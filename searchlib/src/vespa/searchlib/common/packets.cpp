@@ -9,7 +9,7 @@
 LOG_SETUP(".searchlib.common.fs4packets");
 
 using vespalib::make_string;
-using vespalib::stringref;
+using std::string_view;
 
 namespace search::fs4transport {
 
@@ -52,7 +52,7 @@ FS4Properties::operator=(FS4Properties && rhs) noexcept
 
 FS4Properties::~FS4Properties() = default;
 
-void FS4Properties::set(StringRef & e, vespalib::stringref s)
+void FS4Properties::set(StringRef & e, std::string_view s)
 {
     e.first = _backing.size();
     e.second = s.size();
@@ -62,13 +62,13 @@ void FS4Properties::set(StringRef & e, vespalib::stringref s)
 void
 FS4Properties::setKey(uint32_t entry, const char *key, uint32_t keySize)
 {
-    set(_entries[entry].first, vespalib::stringref(key, keySize));
+    set(_entries[entry].first, std::string_view(key, keySize));
 }
 
 void
 FS4Properties::setValue(uint32_t entry, const char *value, uint32_t valueSize)
 {
-    set(_entries[entry].second, vespalib::stringref(value, valueSize));
+    set(_entries[entry].second, std::string_view(value, valueSize));
 }
 
 uint32_t
@@ -80,12 +80,12 @@ FS4Properties::getLength() const noexcept
     return len;
 }
 
-vespalib::stringref
+std::string_view
 FS4Properties::key(uint32_t entry) const noexcept {
     auto pair = _entries[entry].first;
     return {c_str(pair.first), pair.second};
 }
-vespalib::stringref
+std::string_view
 FS4Properties::value(uint32_t entry) const noexcept {
     auto pair = _entries[entry].second;
     return {c_str(pair.first), pair.second};

@@ -309,18 +309,7 @@ public:
         }
         return end();
     }
-    constexpr const_iterator find(const Key & key) const noexcept {
-        next_t h = hash(key);
-        if (__builtin_expect(_nodes[h].valid(), true)) {
-            do {
-                if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
-                    return const_iterator(this, h);
-                }
-                h = _nodes[h].getNext();
-            } while (h != Node::npos);
-        }
-        return end();
-    }
+    const_iterator find(const Key & key) const noexcept;
     template <typename V>
     insert_result insert(V && node) {
         return insert_internal(std::forward<V>(node));

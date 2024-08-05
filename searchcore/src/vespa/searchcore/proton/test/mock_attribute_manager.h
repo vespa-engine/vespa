@@ -27,7 +27,7 @@ public:
           _shared()
     {}
 
-    search::AttributeVector::SP addAttribute(const vespalib::string &name, const search::AttributeVector::SP &attr) {
+    search::AttributeVector::SP addAttribute(std::string_view name, const search::AttributeVector::SP &attr) {
         _mock.addAttribute(name, attr);
         _writables.push_back(attr.get());
         return attr;
@@ -38,10 +38,10 @@ public:
     void set_shared_executor(vespalib::Executor& shared) {
         _shared = &shared;
     }
-    search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
+    search::AttributeGuard::UP getAttribute(std::string_view name) const override {
         return _mock.getAttribute(name);
     }
-    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override {
+    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const override {
         return _mock.getAttributeReadGuard(name, stableEnumGuard);
     }
     void getAttributeList(std::vector<search::AttributeGuard> &list) const override {
@@ -54,9 +54,9 @@ public:
         return {};
     }
     std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override {
-        return std::vector<searchcorespi::IFlushTarget::SP>();
+        return {};
     }
-    search::SerialNum getFlushedSerialNum(const vespalib::string &) const override {
+    search::SerialNum getFlushedSerialNum(const string &) const override {
         return search::SerialNum();
     }
     search::SerialNum getOldestFlushedSerialNumber() const override {
@@ -78,7 +78,7 @@ public:
         assert(_shared != nullptr);
         return *_shared;
     }
-    search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override {
+    search::AttributeVector *getWritableAttribute(std::string_view name) const override {
         auto attr = getAttribute(name);
         if (attr) {
             return attr->get();
@@ -97,10 +97,10 @@ public:
     const ImportedAttributesRepo *getImportedAttributes() const override {
         return _importedAttributes.get();
     }
-    void asyncForAttribute(const vespalib::string & name, std::unique_ptr<IAttributeFunctor> func) const override {
+    void asyncForAttribute(std::string_view  name, std::unique_ptr<IAttributeFunctor> func) const override {
         _mock.asyncForAttribute(name, std::move(func));
     }
-    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override {
+    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const override {
         return _mock.readable_attribute_vector(name);
     }
     TransientResourceUsage get_transient_resource_usage() const override { return {}; }

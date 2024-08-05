@@ -29,7 +29,7 @@ main(int argc, char* argv[])                \
         TRY_BLOCK;                                                        \
         FAIL() << "exception '" << MESSAGE << "' not thrown at all!";     \
     } catch(EXCEPTION_TYPE& e) {                                          \
-        EXPECT_TRUE(contains(stringref(e.what()), stringref(MESSAGE))) << \
+        EXPECT_TRUE(contains(std::string_view(e.what()), std::string_view(MESSAGE))) << \
             " e.what(): " << e.what() << "\n";                            \
     } catch(...) {                                                        \
         FAIL() << "wrong exception type thrown";                          \

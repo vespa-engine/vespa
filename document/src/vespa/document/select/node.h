@@ -29,13 +29,13 @@ public:
     using UP = std::unique_ptr<Node>;
     using SP = std::shared_ptr<Node>;
 
-    Node(vespalib::stringref name, uint32_t max_depth)
+    Node(std::string_view name, uint32_t max_depth)
         : _name(name), _max_depth(max_depth), _parentheses(false)
     {
         throw_parse_error_if_max_depth_exceeded();
     }
 
-    explicit Node(vespalib::stringref name)
+    explicit Node(std::string_view name)
         : _name(name), _max_depth(1), _parentheses(false)
     {}
     ~Node() override = default;

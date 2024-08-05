@@ -24,7 +24,7 @@ class IFieldIndexInsertListener;
 template <bool interleaved_features>
 class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
 private:
-    vespalib::stringref _word;
+    std::string_view _word;
     uint32_t _prevDocId;
     bool     _prevAdd;
     using FieldIndexType = FieldIndex<interleaved_features>;
@@ -41,7 +41,7 @@ private:
     // Pending changes to posting list for (_word)
     std::vector<uint32_t>    _removes;
     std::vector<PostingListKeyDataType> _adds;
-    using WordEntry = std::tuple<vespalib::stringref, size_t, size_t>;
+    using WordEntry = std::tuple<std::string_view, size_t, size_t>;
     std::vector<WordEntry> _word_entries;
     size_t _removes_offset;
     size_t _adds_offset;
@@ -59,7 +59,7 @@ private:
 public:
     OrderedFieldIndexInserter(FieldIndexType& fieldIndex);
     ~OrderedFieldIndexInserter() override;
-    void setNextWord(const vespalib::stringref word) override;
+    void setNextWord(const std::string_view word) override;
     void add(uint32_t docId, const index::DocIdAndFeatures &features) override;
     void remove(uint32_t docId) override;
 

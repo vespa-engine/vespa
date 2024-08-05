@@ -67,7 +67,7 @@ UpdateBucketDatabaseProcessor::UpdateBucketDatabaseProcessor(const framework::Cl
     : BucketDatabase::EntryUpdateProcessor(),
       _clock(clock),
       _changed_nodes(changed_nodes),
-      _ideal_nodes(ideal_nodes.cbegin(), ideal_nodes.cend()),
+      _ideal_nodes(ideal_nodes.begin(), ideal_nodes.end()),
       _reset_trusted(reset_trusted)
 {
 }

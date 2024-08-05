@@ -12,8 +12,9 @@ namespace search {
 using attribute::CollectionType;
 
 AttributeVector::SP
-AttributeFactory::createAttribute(stringref name, const Config & cfg)
+AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
 {
+    vespalib::string name(name_view);
     AttributeVector::SP ret;
     if (cfg.collectionType().type() == CollectionType::ARRAY) {
         if (cfg.fastSearch()) {
@@ -21,7 +22,7 @@ AttributeFactory::createAttribute(stringref name, const Config & cfg)
             if ( ! ret) {
                 LOG(warning, "Cannot apply fastsearch hint on attribute %s of type array<%s>. "
                     "Falling back to normal. You should correct your .sd file.",
-                    name.data(), cfg.basicType().asString());
+                    name.c_str(), cfg.basicType().asString());
                 ret = createArrayStd(name, cfg);
             }
         } else {
@@ -34,7 +35,7 @@ AttributeFactory::createAttribute(stringref name, const Config & cfg)
             if ( ! ret) {
                 LOG(warning, "Cannot apply fastsearch hint on attribute %s of type set<%s>. "
                     "Falling back to normal. You should correct your .sd file.",
-                    name.data(), cfg.basicType().asString());
+                    name.c_str(), cfg.basicType().asString());
                 ret = createSetStd(name, cfg);
             }
         } else {
@@ -46,7 +47,7 @@ AttributeFactory::createAttribute(stringref name, const Config & cfg)
             if ( ! ret) {
                 LOG(warning, "Cannot apply fastsearch hint on attribute %s of type %s. "
                     "Falling back to normal. You should correct your .sd file.",
-                    name.data(), cfg.basicType().asString());
+                    name.c_str(), cfg.basicType().asString());
                 ret = createSingleStd(name, cfg);
             }
         } else {

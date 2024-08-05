@@ -13,7 +13,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("selectpruner_test");
+LOG_SETUP(".selectpruner_test");
 
 using document::DataType;
 using document::Document;
@@ -824,5 +824,3 @@ TEST_F("Complex imported field references return Invalid", TestFixture)
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

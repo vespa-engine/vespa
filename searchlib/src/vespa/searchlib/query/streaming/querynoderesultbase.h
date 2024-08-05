@@ -21,11 +21,11 @@ public:
 class QueryNodeResultFactory {
 public:
     virtual ~QueryNodeResultFactory() = default;
-    virtual bool allow_float_terms_rewrite(vespalib::stringref index) const noexcept {
+    virtual bool allow_float_terms_rewrite(std::string_view index) const noexcept {
         (void) index;
         return false;
     }
-    virtual Normalizing normalizing_mode(vespalib::stringref index) const noexcept {
+    virtual Normalizing normalizing_mode(std::string_view index) const noexcept {
         (void) index;
         return Normalizing::NONE;
     }

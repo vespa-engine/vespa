@@ -18,8 +18,8 @@ public:
 
     static const StructDataType &getInstance();
     static vespalib::string getZCurveFieldName(const vespalib::string &name);
-    static vespalib::stringref cutZCurveFieldName(vespalib::stringref name);
-    static bool isZCurveFieldName(vespalib::stringref name);
+    static std::string_view cutZCurveFieldName(std::string_view name);
+    static bool isZCurveFieldName(std::string_view name);
 };
 
 } // document

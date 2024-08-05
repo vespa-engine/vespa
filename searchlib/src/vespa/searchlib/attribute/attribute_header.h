@@ -38,8 +38,8 @@ private:
     void internalExtractTags(const vespalib::GenericHeader &header);
 public:
     AttributeHeader();
-    AttributeHeader(const vespalib::string &fileName);
-    AttributeHeader(const vespalib::string &fileName,
+    AttributeHeader(vespalib::string fileName);
+    AttributeHeader(vespalib::string fileName,
                     BasicType basicType,
                     CollectionType collectionType,
                     const vespalib::eval::ValueType &tensorType,

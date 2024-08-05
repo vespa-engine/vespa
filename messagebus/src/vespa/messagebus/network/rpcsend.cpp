@@ -193,7 +193,7 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
 }
 
 std::unique_ptr<Reply>
-RPCSend::decode(vespalib::stringref protocolName, const vespalib::Version & version, BlobRef payload, Error & error) const
+RPCSend::decode(std::string_view protocolName, const vespalib::Version & version, BlobRef payload, Error & error) const
 {
     Reply::UP reply;
     IProtocol * protocol = _net->getOwner().getProtocol(protocolName);
@@ -278,7 +278,7 @@ RPCSend::doRequest(FRT_RPCRequest *req)
         return;
     }
     Message::UP msg(static_cast<Message*>(routable.release()));
-    vespalib::stringref route = params->getRoute();
+    std::string_view route = params->getRoute();
     if (!route.empty()) {
         msg->setRoute(Route::parse(route));
     }

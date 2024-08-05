@@ -5,6 +5,7 @@ vespa_add_library(vespalib_vespalib_test OBJECT
     memory_allocator_observer.cpp
     nexus.cpp
     peer_policy_utils.cpp
+    test_data_base.cpp
     thread_meets.cpp
     time_tracer.cpp
     DEPENDS

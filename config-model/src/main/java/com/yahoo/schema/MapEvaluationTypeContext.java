@@ -135,12 +135,13 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             () -> new IllegalArgumentException("argument "+forArgument+" is bound to "+boundTo+" but there is no parent context"));
     }
 
-    String resolveBinding(String argument) {
-        String bound = getBinding(argument);
+    @Override
+    public String resolveBinding(String name) {
+        String bound = getBinding(name);
         if (bound == null) {
-            return argument;
+            return name;
         }
-        return getParent(argument, bound).resolveBinding(bound);
+        return getParent(name, bound).resolveBinding(bound);
     }
 
     private TensorType resolveType(Reference reference) {
@@ -148,7 +149,6 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             throw new IllegalArgumentException("Invocation loop: " +
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
-
         // Bound to a function argument?
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {
@@ -156,8 +156,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
                 var expr = new RankingExpression(binding.get());
-                var type = expr.type(getParent(reference.name(), binding.get()));
-                return type;
+                return expr.type(getParent(reference.name(), binding.get()));
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -180,8 +179,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             if (function.isPresent()) {
                 var body = function.get().getBody();
                 var child = this.withBindings(bind(function.get().arguments(), reference.arguments()));
-                var type = body.type(child);
-                return type;
+                return body.type(child);
             }
 
             // A reference to an ONNX model?

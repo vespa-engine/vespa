@@ -38,7 +38,7 @@ public:
     int compare(const FieldValue& other) const override;
     int fastCompare(const FieldValue& other) const override final;
 
-    FieldValue& operator=(vespalib::stringref) override;
+    FieldValue& operator=(std::string_view) override;
     size_t hash() const override final { return vespalib::hash<Number>()(_value); }
 
     char getAsByte() const override;

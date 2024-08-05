@@ -257,7 +257,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.searchlib.rankingexpression.ExpressionFunction, java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
       "public java.lang.String getName()",
       "public java.lang.String getExpressionString()"
     ],
@@ -424,6 +424,7 @@
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",
       "public final com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
       "public final double getDouble(int)",
+      "public java.lang.String resolveBinding(java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext clone()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
       "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
@@ -537,6 +538,7 @@
       "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",
       "public final com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
+      "public java.lang.String resolveBinding(java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleOnlyArrayContext clone()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
       "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
@@ -629,6 +631,7 @@
       "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",
       "public void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public java.lang.String resolveBinding(java.lang.String)",
       "public java.util.Map bindings()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.MapContext thawedCopy()",
       "public java.util.Set names()",
@@ -651,6 +654,7 @@
       "public void setType(com.yahoo.searchlib.rankingexpression.Reference, com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorType getType(java.lang.String)",
       "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public java.lang.String resolveBinding(java.lang.String)",
       "public java.util.Map bindings()",
       "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)"
     ],

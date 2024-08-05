@@ -85,7 +85,7 @@ func (t *unixTail) openTail() {
 	if err != nil {
 		return
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if t.lineBuf[i] == '\n' {
 			sz, err = file.Seek(sz+int64(i+1), os.SEEK_SET)
 			if err == nil {

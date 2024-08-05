@@ -8,7 +8,7 @@
 
 namespace config {
 
-void ConfigParser::throwNoDefaultValue(vespalib::stringref key) {
+void ConfigParser::throwNoDefaultValue(std::string_view key) {
     throw InvalidConfigException("Config parameter " + key + " has no "
             "default value and is not specified in config", VESPA_STRLOC);
 }
@@ -29,7 +29,7 @@ ConfigParser::deQuote(const vespalib::string & source)
         isQuoted = false;
     }
 
-    while (1) {
+    while (true) {
         const char hexchars[] = "0123456789abcdefABCDEF";
 
         char c = *s++;
@@ -79,20 +79,19 @@ ConfigParser::deQuote(const vespalib::string & source)
         }
     }
     *d = 0;
-    return vespalib::string(&dst[0], d - &dst[0]);
+    return vespalib::string(dst.data(), d - dst.data());
 }
 
 namespace {
 
 bool
-getValueForKey(vespalib::stringref key, vespalib::stringref line,
-               vespalib::string& retval)
+getValueForKey(std::string_view key, std::string_view line, vespalib::string& retval)
 {
     if (line.length() <= key.length()) {
         return false;
     }
 
-    vespalib::stringref sub = line.substr(0, key.length());
+    std::string_view sub = line.substr(0, key.length());
     if (sub != key) {
         return false;
     }
@@ -124,7 +123,7 @@ getValueForKey(vespalib::stringref key, vespalib::stringref line,
 }
 
 StringVector
-ConfigParser::getLinesForKey(vespalib::stringref key, Cfg lines)
+ConfigParser::getLinesForKey(std::string_view key, Cfg lines)
 {
     StringVector retval;
 
@@ -152,14 +151,13 @@ ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
 }
 
 void
-ConfigParser::stripLinesForKey(vespalib::stringref key,
+ConfigParser::stripLinesForKey(std::string_view key,
                                std::set<vespalib::string>& config)
 {
     vespalib::string value;
-    for (std::set<vespalib::string>::iterator it = config.begin(); it != config.end();) {
+    for (auto it = config.begin(); it != config.end();) {
         if (getValueForKey(key, *it, value)) {
-            std::set<vespalib::string>::iterator it2 = it++;
-            config.erase(it2);
+            it = config.erase(it);
         } else {
             ++it;
         }
@@ -225,7 +223,7 @@ ConfigParser::splitArray(Cfg config)
         vespalib::string value = config[i].substr(pos + 1);
 
         if (key != lastValue) {
-            items.push_back(StringVector());
+            items.emplace_back();
             lastValue = key;
         }
 
@@ -239,11 +237,11 @@ ConfigParser::splitArray(Cfg config)
 }
 
 vespalib::string
-ConfigParser::stripWhitespace(vespalib::stringref source)
+ConfigParser::stripWhitespace(std::string_view source)
 {
     // Remove leading spaces and return.
     if (source.empty()) {
-        return source;
+        return vespalib::string(source);
     }
     size_t start = 0;
     bool found = false;
@@ -273,7 +271,7 @@ ConfigParser::stripWhitespace(vespalib::stringref source)
                 found = true;
         }
     }
-    return source.substr(start, stop - start + 1);
+    return std::string(source.substr(start, stop - start + 1));
 }
 
 vespalib::string

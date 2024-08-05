@@ -7,7 +7,13 @@
 
 namespace document {
 
+using namespace std::literals;
+
 namespace {
+
+constexpr auto key_keyword = "key"sv;
+constexpr auto value_keyword = "value"sv;
+
 vespalib::string createName(const DataType& keyType, const DataType& valueType)
 {
     vespalib::asciistream ost;
@@ -56,34 +62,34 @@ MapDataType::equals(const DataType& other) const noexcept
 
 void
 MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
-                                vespalib::stringref remainFieldName,
+                                std::string_view remainFieldName,
                                 const DataType &keyType, const DataType &valueType)
 {
     if (!remainFieldName.empty() && remainFieldName[0] == '{') {
-        vespalib::stringref rest = remainFieldName;
+        std::string_view rest = remainFieldName;
         vespalib::string keyValue = FieldPathEntry::parseKey(rest);
 
-        valueType.buildFieldPath(path, (rest[0] == '.') ? rest.substr(1) : rest);
+        valueType.buildFieldPath(path, (!rest.empty() && rest[0] == '.') ? rest.substr(1) : rest);
 
-        if (remainFieldName[1] == '$') {
+        if (remainFieldName.size() > 1 && remainFieldName[1] == '$') {
             path.insert(path.begin(), std::make_unique<FieldPathEntry>(valueType, keyValue.substr(1)));
         } else {
             FieldValue::UP fv = keyType.createFieldValue();
             *fv = keyValue;
             path.insert(path.begin(), std::make_unique<FieldPathEntry>(valueType, dataType, std::move(fv)));
         }
-    } else if (memcmp(remainFieldName.data(), "key", 3) == 0) {
-        size_t endPos = 3;
-        if (remainFieldName[endPos] == '.') {
+    } else if (remainFieldName.starts_with(key_keyword)) {
+        size_t endPos = key_keyword.size();;
+        if (remainFieldName.size() > endPos && remainFieldName[endPos] == '.') {
             endPos++;
         }
 
         keyType.buildFieldPath(path, remainFieldName.substr(endPos));
 
         path.insert(path.begin(), std::make_unique<FieldPathEntry>(dataType, keyType, valueType, true, false));
-    } else if (memcmp(remainFieldName.data(), "value", 5) == 0) {
-        size_t endPos = 5;
-        if (remainFieldName[endPos] == '.') {
+    } else if (remainFieldName.starts_with(value_keyword)) {
+        size_t endPos = value_keyword.size();
+        if (remainFieldName.size() > endPos && remainFieldName[endPos] == '.') {
             endPos++;
         }
 
@@ -96,7 +102,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
 }
 
 void
-MapDataType::onBuildFieldPath(FieldPath & fieldPath, vespalib::stringref remainFieldName) const
+MapDataType::onBuildFieldPath(FieldPath & fieldPath, std::string_view remainFieldName) const
 {
     buildFieldPathImpl(fieldPath, *this, remainFieldName, getKeyType(), getValueType());
 }

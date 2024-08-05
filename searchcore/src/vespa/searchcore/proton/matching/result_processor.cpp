@@ -74,7 +74,7 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
       _wasMerged(false)
 {
     if (!_groupingContext.empty()) {
-        _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext);
+        _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
     }
 }
 
@@ -98,7 +98,7 @@ ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thr
     auto result = std::make_unique<PartialResult>((_offset + _hits), sort->hasSortData());
     search::grouping::GroupingContext::UP groupingContext;
     if (_groupingSession) {
-        groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext);
+        groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext, nullptr);
     }
     return std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result), std::move(groupingContext));
 }

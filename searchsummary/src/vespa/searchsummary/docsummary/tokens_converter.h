@@ -16,11 +16,11 @@ namespace search::docsummary {
 class TokensConverter : public IStringFieldConverter
 {
     const linguistics::TokenExtractor& _token_extractor;
-    vespalib::stringref                _text;
+    std::string_view                _text;
 
     template <typename ForwardIt>
     void handle_alternative_index_terms(ForwardIt it, ForwardIt last, vespalib::slime::Inserter& inserter);
-    void handle_index_term(vespalib::stringref word, vespalib::slime::Inserter& inserter);
+    void handle_index_term(std::string_view word, vespalib::slime::Inserter& inserter);
     void handle_indexing_terms(const document::StringFieldValue& value, vespalib::slime::Inserter& inserter);
 public:
     TokensConverter(const linguistics::TokenExtractor& token_extractor);

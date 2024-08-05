@@ -103,7 +103,7 @@ public:
         vespalib::string _indent;
 
     public:
-        PrintProperties(PrintMode mode = NORMAL, stringref indent_ = "")
+        PrintProperties(PrintMode mode = NORMAL, std::string_view indent_ = "")
             : _mode(mode), _indent(indent_) {}
 
         PrintProperties indentedCopy() const

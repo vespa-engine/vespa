@@ -16,7 +16,7 @@ public:
     using Normalizing = search::Normalizing;
     FieldSearchSpec();
     FieldSearchSpec(const FieldIdT & id, const vespalib::string & name, Searchmethod searchMethod,
-                    Normalizing normalize_mode, vespalib::stringref arg1, size_t maxLength);
+                    Normalizing normalize_mode, std::string_view arg1, size_t maxLength);
     ~FieldSearchSpec();
     FieldSearchSpec(FieldSearchSpec&& rhs) noexcept;
     FieldSearchSpec& operator=(FieldSearchSpec&& rhs) noexcept;
@@ -86,7 +86,7 @@ public:
      * This is achieved by mapping from query term index name -> list of field ids -> [field name, field id] pairs.
      **/
     StringFieldIdTMap buildFieldsInQuery(const search::streaming::Query & query) const;
-    void addFieldsFromIndex(vespalib::stringref index, StringFieldIdTMap & fieldIdMap) const;
+    void addFieldsFromIndex(std::string_view index, StringFieldIdTMap & fieldIdMap) const;
 
     /**
      * Adds a FieldSearcher object to the given field searcher map for each field name in the other map.
@@ -99,7 +99,7 @@ public:
     const StringFieldIdTMap & nameIdMap()                 const { return _nameIdMap; }
     friend vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & f);
 
-    static vespalib::string stripNonFields(vespalib::stringref rawIndex);
+    static vespalib::string stripNonFields(std::string_view rawIndex);
     search::attribute::DistanceMetric get_distance_metric(const vespalib::string& name) const;
     static search::Normalizing convert_normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode);
 

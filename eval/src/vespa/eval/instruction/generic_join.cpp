@@ -45,9 +45,9 @@ generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param)
     while (outer->next_result(sparse.first_address, sparse.first_subspace)) {
         inner->lookup(sparse.address_overlap);
         while (inner->next_result(sparse.second_only_address, sparse.second_subspace)) {
-            dense_join(lhs_cells.begin() + param.dense_plan.lhs_size * sparse.lhs_subspace,
-                       rhs_cells.begin() + param.dense_plan.rhs_size * sparse.rhs_subspace,
-                       builder->add_subspace(sparse.full_address).begin());
+            dense_join(lhs_cells.data() + param.dense_plan.lhs_size * sparse.lhs_subspace,
+                       rhs_cells.data() + param.dense_plan.rhs_size * sparse.rhs_subspace,
+                       builder->add_subspace(sparse.full_address).data());
         }
     }
     return builder->build(std::move(builder));
@@ -77,9 +77,9 @@ void my_mixed_dense_join_op(State &state, uint64_t param_in) {
     const auto &index = state.peek(forward_lhs ? 1 : 0).index();
     size_t num_subspaces = index.size();
     ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(param.dense_plan.out_size * num_subspaces);
-    OCT *dst = out_cells.begin();
-    const LCT *lhs = lhs_cells.begin();
-    const RCT *rhs = rhs_cells.begin();
+    OCT *dst = out_cells.data();
+    const LCT *lhs = lhs_cells.data();
+    const RCT *rhs = rhs_cells.data();
     auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs[lhs_idx], rhs[rhs_idx]); };
     for (size_t i = 0; i < num_subspaces; ++i) {
         param.dense_plan.execute(0, 0, join_cells);
@@ -90,9 +90,9 @@ void my_mixed_dense_join_op(State &state, uint64_t param_in) {
         }
     }
     if (forward_lhs) {
-        assert(lhs == lhs_cells.end());
+        assert(lhs == lhs_cells.data() + lhs_cells.size());
     } else {
-        assert(rhs == rhs_cells.end());
+        assert(rhs == rhs_cells.data() + rhs_cells.size());
     }
     state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
@@ -106,7 +106,7 @@ void my_dense_join_op(State &state, uint64_t param_in) {
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
     ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(param.dense_plan.out_size);
-    OCT *dst = out_cells.begin();
+    OCT *dst = out_cells.data();
     auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
     param.dense_plan.execute(0, 0, join_cells);
     state.pop_pop_push(state.stash.create<DenseValueView>(param.res_type, TypedCells(out_cells)));

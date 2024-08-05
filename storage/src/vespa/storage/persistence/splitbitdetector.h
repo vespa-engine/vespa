@@ -42,7 +42,7 @@ struct SplitBitDetector
 
     public:
         Result() : _result(EMPTY), _singleTarget(false) {}
-        Result(vespalib::stringref error)
+        Result(std::string_view error)
             : _result(ERROR), _reason(error), _singleTarget(false) {}
         Result(const document::BucketId& t1, const document::BucketId& t2,
                bool single)

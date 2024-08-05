@@ -18,7 +18,7 @@ class IQueryTermFilterFactory
 public:
     virtual ~IQueryTermFilterFactory() = default;
 
-    virtual std::shared_ptr<const IQueryTermFilter> make(vespalib::stringref input_field) const = 0;
+    virtual std::shared_ptr<const IQueryTermFilter> make(std::string_view input_field) const = 0;
 };
 
 }

@@ -8,7 +8,7 @@ vespa_add_executable(vespamalloc_testatomic_app TEST
     vespamalloc_util
     EXTERNAL_DEPENDS
     ${VESPA_ATOMIC_LIB}
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_test(NAME vespamalloc_testatomic_app NO_VALGRIND COMMAND vespamalloc_testatomic_app)
 
@@ -16,7 +16,7 @@ vespa_add_executable(vespamalloc_new_test_app TEST
     SOURCES
     new_test.cpp
     EXTERNAL_DEPENDS
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_test(NAME vespamalloc_new_test_app NO_VALGRIND COMMAND vespamalloc_new_test_app)
 

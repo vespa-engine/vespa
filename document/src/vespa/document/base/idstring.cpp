@@ -9,7 +9,7 @@
 #include <charconv>
 
 using vespalib::string;
-using vespalib::stringref;
+using std::string_view;
 using vespalib::make_string;
 
 namespace document {
@@ -106,7 +106,7 @@ validate(uint16_t numComponents)
 
 constexpr uint32_t NAMESPACE_OFFSET = 3;
 
-constexpr vespalib::stringref DEFAULT_ID("id::::", 6);
+constexpr std::string_view DEFAULT_ID("id::::", 6);
 
 union LocationUnion {
     uint8_t _key[16];
@@ -114,7 +114,7 @@ union LocationUnion {
 };
 
 uint64_t
-parseNumber(stringref s) {
+parseNumber(string_view s) {
     uint64_t n(0);
     auto res = std::from_chars(s.data(), s.data() + s.size(), n, 10);
     if (res.ptr != s.data() + s.size()) [[unlikely]]{
@@ -128,7 +128,7 @@ parseNumber(stringref s) {
 
 void
 setLocation(IdString::LocationType &loc, IdString::LocationType val,
-                 bool &has_set_location, stringref key_values) {
+                 bool &has_set_location, string_view key_values) {
     if (has_set_location) [[unlikely]] {
         throw IdParseException("Illegal key combination in " + key_values);
     }
@@ -141,14 +141,14 @@ setLocation(IdString::LocationType &loc, IdString::LocationType val,
 
 const IdString::Offsets IdString::Offsets::DefaultID(DEFAULT_ID);
 
-IdString::Offsets::Offsets(stringref id) noexcept
+IdString::Offsets::Offsets(string_view id) noexcept
     : _offsets()
 {
     compute(id);
 }
 
 uint16_t
-IdString::Offsets::compute(stringref id)
+IdString::Offsets::compute(string_view id)
 {
     _offsets[0] = NAMESPACE_OFFSET;
     size_t index(1);
@@ -168,7 +168,7 @@ IdString::Offsets::compute(stringref id)
 }
 
 IdString::LocationType
-IdString::makeLocation(stringref s) {
+IdString::makeLocation(string_view s) {
     LocationUnion location;
     fastc_md5sum(reinterpret_cast<const unsigned char*>(s.data()), s.size(), location._key);
     return location._location[0];
@@ -183,7 +183,7 @@ IdString::IdString()
 {
 }
 
-IdString::IdString(stringref id)
+IdString::IdString(string_view id)
     : _rawId(id),
       _location(0),
       _offsets(),
@@ -194,7 +194,7 @@ IdString::IdString(stringref id)
     verifyIdString(id.data(), id.size());
     validate(_offsets.compute(id));
 
-    stringref key_values(getComponent(2));
+    string_view key_values(getComponent(2));
     char key(0);
     string::size_type pos = 0;
     bool has_set_location = false;
@@ -205,7 +205,7 @@ IdString::IdString(stringref id)
             pos = i + 1;
             hasFoundKey = true;
         } else if (key_values[i] == ',' || i == key_values.size() - 1) {
-            stringref value(key_values.substr(pos, i - pos + (i == key_values.size() - 1)));
+            string_view value(key_values.substr(pos, i - pos + (i == key_values.size() - 1)));
             if (key == 'n') {
                 char tmp=value[value.size()];
                 const_cast<char &>(value[value.size()]) = 0;

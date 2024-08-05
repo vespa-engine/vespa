@@ -81,7 +81,7 @@ getBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const vespa
 {
     const auto& bucketSpaces = getNode(root, nodeIndex)["bucket-spaces"];
     for (size_t i = 0; i < bucketSpaces.entries(); ++i) {
-        if (bucketSpaces[i]["name"].asString().make_stringref() == bucketSpaceName) {
+        if (bucketSpaces[i]["name"].asString().make_stringview() == bucketSpaceName) {
             return bucketSpaces[i];
         }
     }
@@ -181,7 +181,7 @@ TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
     stream << End();
     stream.finalize();
 
-    std::string jsonString = json.str();
+    std::string_view jsonString = json.view();
 
     std::string path = TEST_PATH("../../../../protocols/getnodestate/distributor.json");
     std::string goldenString = File::readAll(path);

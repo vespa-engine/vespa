@@ -33,7 +33,7 @@ AnnotationReferenceDataType::createFieldValue() const {
     return std::make_unique<AnnotationReferenceFieldValue>(*this, 0);
 }
 
-void AnnotationReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref) const { }
+void AnnotationReferenceDataType::onBuildFieldPath(FieldPath &, std::string_view) const { }
 
 
 }  // namespace document

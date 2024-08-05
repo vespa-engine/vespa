@@ -28,7 +28,7 @@ public class RankingExpressionValidationTestCase extends AbstractSchemaTestCase 
             fail("No exception on incorrect ranking expression " + expression);
         } catch (IllegalArgumentException e) {
             // Success
-            assertTrue(Exceptions.toMessageString(e).startsWith("Illegal first phase ranking function: Could not parse ranking expression '" + expression + "' in default, firstphase.:"));
+            assertTrue(Exceptions.toMessageString(e).startsWith("In rank-profile 'default': Invalid first-phase function: Invalid expression '" + expression));
         }
     }
 

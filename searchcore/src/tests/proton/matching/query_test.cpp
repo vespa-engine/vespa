@@ -30,8 +30,9 @@
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("query_test");
@@ -237,7 +238,8 @@ public:
     template <class TermType>
     void checkNode(const TermType &n, int estimatedHitCount, bool empty) {
         EXPECT_EQUAL(empty, (estimatedHitCount == 0));
-        EXPECT_EQUAL((double)estimatedHitCount / doc_count, n.field(0).getDocFreq());
+        EXPECT_EQUAL(static_cast<uint64_t>(estimatedHitCount), n.field(0).get_doc_freq().frequency);
+        EXPECT_EQUAL(static_cast<uint64_t>(doc_count), n.field(0).get_doc_freq().count);
     }
 
     void visit(ProtonNumberTerm &n) override { checkNode(n, 1, false); }
@@ -383,7 +385,8 @@ public:
         EXPECT_EQUAL(term_data.numFields(), n.numFields());
         for (size_t i = 0; i < term_data.numFields(); ++i) {
             const ITermFieldData &term_field_data = term_data.field(i);
-            EXPECT_APPROX(2.0 / doc_count, term_field_data.getDocFreq(), 1.0e-6);
+            EXPECT_EQUAL(2u, term_field_data.get_doc_freq().frequency);
+            EXPECT_EQUAL(static_cast<uint64_t>(doc_count), term_field_data.get_doc_freq().count);
             EXPECT_TRUE(!n.field(i).attribute_field);
             EXPECT_EQUAL(field_id + i, term_field_data.getFieldId());
         }
@@ -823,7 +826,8 @@ TEST("requireThatNoDocsGiveZeroDocFrequency") {
     Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
 
     EXPECT_EQUAL(1u, node.numFields());
-    EXPECT_EQUAL(0.0, node.field(0).getDocFreq());
+    EXPECT_EQUAL(0u, node.field(0).get_doc_freq().frequency);
+    EXPECT_EQUAL(1u, node.field( 0).get_doc_freq().count);
 }
 
 TEST("requireThatWeakAndBlueprintsAreCreatedCorrectly") {

@@ -136,7 +136,7 @@ class QueryTerm : public QueryExpr
 public:
     QueryTerm(const QueryTerm &) = delete;
     QueryTerm &operator=(const QueryTerm &) = delete;
-    QueryTerm(vespalib::stringref, int ix, int weight);
+    QueryTerm(std::string_view, int ix, int weight);
     explicit QueryTerm(QueryTerm*);
     ~QueryTerm() override;
     int Limit() override;

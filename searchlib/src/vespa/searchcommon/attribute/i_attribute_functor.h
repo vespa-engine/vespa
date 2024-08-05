@@ -31,7 +31,7 @@ public:
 class IAttributeExecutor {
 public:
     virtual ~IAttributeExecutor() = default;
-    virtual void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const = 0;
+    virtual void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const = 0;
 };
 
 }

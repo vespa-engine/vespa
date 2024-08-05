@@ -23,7 +23,7 @@ public:
     [[nodiscard]] std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     [[nodiscard]] bool equals(const DataType& other) const noexcept override;
-    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const override;
 
     [[nodiscard]] bool isArray() const noexcept override { return true; }
 };

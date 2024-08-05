@@ -17,8 +17,9 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <set>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using document::BucketId;
 using document::BucketSpace;
@@ -223,7 +224,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     void handleRemoveByGid(FeedToken token, const Bucket& bucket,
                            Timestamp timestamp,
-                           vespalib::stringref, const GlobalId&) override {
+                           std::string_view, const GlobalId&) override {
         bool wasFound = existingTimestamp > 0;
         token->setResult(std::make_unique<RemoveResult>(wasFound), wasFound);
         handle(token, bucket, timestamp, DocumentId());

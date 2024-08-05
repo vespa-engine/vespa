@@ -18,21 +18,21 @@ namespace {
 template <typename T>
 struct Inc {
     using V = T;
-    Inc(T ) {}
+    explicit Inc(T ) {}
     T operator()(T oldVal) const { return oldVal + 1; }
 };
 
 template <typename T>
 struct Dec {
     using V = T;
-    Dec(T ) {}
+    explicit Dec(T ) {}
     T operator()(T oldVal) const { return oldVal - 1; }
 };
 
 template <typename T>
 struct Add {
     using V = T;
-    Add(T m) : _m(m) {}
+    explicit Add(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal + _m; }
 };
@@ -40,7 +40,7 @@ struct Add {
 template <typename T>
 struct Mul {
     using V = T;
-    Mul(T m) : _m(m) {}
+    explicit Mul(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal * _m; }
 };
@@ -48,7 +48,7 @@ struct Mul {
 template <typename T>
 struct Div {
     using V = T;
-    Div(T m) : _m(m) {}
+    explicit Div(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal / _m; }
 };
@@ -56,7 +56,7 @@ struct Div {
 template <typename T>
 struct Mod {
     using V = T;
-    Mod(T m) : _m(m) {}
+    explicit Mod(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal % static_cast<int64_t>(_m); }
 };
@@ -64,21 +64,21 @@ struct Mod {
 template <>
 struct Mod<double> {
     using V = double;
-    Mod(double ) {}
+    explicit Mod(double ) {}
     double operator()(double oldVal) const { return oldVal; }
 };
 
 template <>
 struct Mod<float> {
     using V = float;
-    Mod(float ) {}
+    explicit Mod(float ) {}
     float operator()(float oldVal) const { return oldVal; }
 };
 
 template <typename T>
 struct Set {
     using V = T;
-    Set(T m) : _m(m) {}
+    explicit Set(T m) : _m(m) {}
     T _m;
     T operator()(T) const { return  _m; }
 };
@@ -165,7 +165,7 @@ private:
 
 struct Operation {
     enum class Type { INC, DEC, ADD, SUB, MUL, DIV, MOD, SET, BAD };
-    Operation(Type operation_in, vespalib::stringref operand_in) : operation(operation_in), operand(operand_in) { }
+    Operation(Type operation_in, std::string_view operand_in) : operation(operation_in), operand(operand_in) { }
     template <typename V>
     std::unique_ptr<AttributeOperation> create(BasicType type, V vector) const;
     template <typename IT, typename V>
@@ -173,12 +173,12 @@ struct Operation {
     bool valid() const { return operation != Type::BAD; }
     bool hasArgument() const { return valid() && (operation != Type::INC) && (operation != Type::DEC); }
     Type operation;
-    vespalib::stringref operand;
-    static Operation create(vespalib::stringref s);
+    std::string_view operand;
+    static Operation create(std::string_view s);
 };
 
 Operation
-Operation::create(vespalib::stringref s)
+Operation::create(std::string_view s)
 {
     Type op = Type::BAD;
     if (s.size() >= 2) {
@@ -206,7 +206,7 @@ Operation::create(vespalib::stringref s)
             s = s.substr(2);
         }
     }
-    return Operation(op, s);
+    return {op, s};
 }
 
 template<typename T, typename OP>
@@ -239,11 +239,12 @@ Operation::create(V vector) const {
         try {
             is >> value;
             if (!is.empty()) {
-                LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.", operand.data(), is.c_str());
+                LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.",
+                    std::string(operand).c_str(), is.c_str());
                 validOp = Type::BAD;
             }
             if (((validOp == Type::DIV) || (validOp == Type::MOD)) && (value == 0)) {
-                LOG(warning, "Division by zero is not acceptable (%s).", operand.data());
+                LOG(warning, "Division by zero is not acceptable (%s).", std::string(operand).c_str());
                 validOp = Type::BAD;
             }
         } catch (vespalib::IllegalArgumentException & e) {
@@ -269,7 +270,7 @@ Operation::create(V vector) const {
         case Type::SET:
             return createOperation<T, UpdateFast<A, Set<T>>>(std::move(vector), value);
         default:
-            return std::unique_ptr<AttributeOperation>();
+            return {};
     }
 }
 
@@ -301,7 +302,7 @@ template <typename V>
 std::unique_ptr<AttributeOperation>
 Operation::create(BasicType type, V hits) const {
     if ( ! valid()) {
-        return std::unique_ptr<AttributeOperation>();
+        return {};
     }
     switch (type.type()) {
         case BasicType::INT64:
@@ -315,7 +316,7 @@ Operation::create(BasicType type, V hits) const {
         case BasicType::FLOAT:
             return create<FloatT, V>(std::move(hits));
         default:
-            return std::unique_ptr<AttributeOperation>();
+            return {};
     }
 }
 
@@ -323,19 +324,19 @@ Operation::create(BasicType type, V hits) const {
 
 template <typename Hits>
 std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType type, const vespalib::string & operation, Hits docs) {
+AttributeOperation::create(BasicType type, std::string_view operation, Hits docs) {
     Operation op = Operation::create(operation);
     return op.create<Hits>(type, std::move(docs));
 }
 
 template std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType, const vespalib::string &, std::vector<uint32_t>);
+AttributeOperation::create(BasicType, std::string_view, std::vector<uint32_t>);
 
 template std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType, const vespalib::string &, std::vector<Hit>);
+AttributeOperation::create(BasicType, std::string_view, std::vector<Hit>);
 
 template std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType, const vespalib::string &, FullResult);
+AttributeOperation::create(BasicType, std::string_view, FullResult);
 
 }
 

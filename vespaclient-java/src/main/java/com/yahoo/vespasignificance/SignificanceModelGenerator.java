@@ -2,8 +2,6 @@
 
 package com.yahoo.vespasignificance;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -27,6 +25,8 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.significance.impl.DocumentFrequencyFile;
 import com.yahoo.language.significance.impl.SignificanceModelFile;
 import com.yahoo.text.Utf8;
+import io.airlift.compress.zstd.ZstdInputStream;
+import io.airlift.compress.zstd.ZstdOutputStream;
 
 import java.io.IOException;
 import java.io.BufferedReader;
@@ -34,6 +34,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,6 +44,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.List;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -53,12 +58,15 @@ public class SignificanceModelGenerator {
     private final Tokenizer tokenizer;
     private final TreeMap<String, Long> documentFrequency = new TreeMap<>();
 
-    private final Language language;
+    private final List<Language> languages;
+
+    private final Language languageTag;
     private final ObjectMapper objectMapper;
     private final static JsonFactory parserFactory = new JsonFactory();
 
     final DocumentTypeManager types = new DocumentTypeManager();
     final DocumentType docType;
+    private final boolean useZstCompression;
     private final static String VERSION = "1.0";
     private final static String ID = "1";
     private final static String SIGNIFICANCE_DESCRIPTION = "Significance model for input file";
@@ -66,14 +74,29 @@ public class SignificanceModelGenerator {
 
     public SignificanceModelGenerator(ClientParameters clientParameters) {
         this.clientParameters = clientParameters;
+
+        if (clientParameters.zstCompression && !clientParameters.outputFile.endsWith(".zst")) {
+            throw new IllegalArgumentException("Output file must have .zst extension when using zst compression");
+        }
+
+        if (!clientParameters.zstCompression && clientParameters.outputFile.endsWith(".zst")) {
+            throw new IllegalArgumentException("Output file must not have .zst extension when not using zst compression");
+        }
+
+        this.languages = Arrays.stream(clientParameters.language.split(","))
+                .map(Language::fromLanguageTag)
+                .collect(Collectors.toList());
+
+        this.languageTag = this.languages.get(0);
+
         OpenNlpLinguistics openNlpLinguistics = new OpenNlpLinguistics();
         tokenizer = openNlpLinguistics.getTokenizer();
         objectMapper = new ObjectMapper();
 
-        language = Language.fromLanguageTag(clientParameters.language);
-
         docType = new DocumentType(clientParameters.docType);
         docType.addField(new Field(clientParameters.field, DataType.STRING));
+        useZstCompression = clientParameters.zstCompression;
+
         types.registerDocumentType(docType);
     }
 
@@ -90,7 +113,7 @@ public class SignificanceModelGenerator {
         while (reader.ready()) {
             String line = reader.readLine();
             JsonReader jsonReader = new JsonReader(types, new ByteArrayInputStream(Utf8.toBytes(line)), parserFactory);
-            String wikimediaId = "id:wikimedia:" + language.languageCode() + "::" + i;
+            String wikimediaId = "id:wikimedia:" + languageTag.languageCode() + "::" + i;
 
             ParsedDocumentOperation operation = jsonReader.readSingleDocumentStreaming(DocumentOperationType.PUT, wikimediaId);
             DocumentPut put = (DocumentPut) operation.operation();
@@ -103,28 +126,40 @@ public class SignificanceModelGenerator {
         long pageCount = i - 1;
 
         SignificanceModelFile modelFile;
-        if (Paths.get(clientParameters.outputFile).toFile().exists()) {
-            modelFile = objectMapper.readValue(new File(clientParameters.outputFile), SignificanceModelFile.class);
+        File outputFile = Paths.get(clientParameters.outputFile).toFile();
+        String languagesKey = String.join(",", this.languages.stream().map(Language::languageCode).toList());
+        if (outputFile.exists()) {
 
-            modelFile.addLanguage(clientParameters.language, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
+            InputStream in = outputFile.toString().endsWith(".zst") ?
+                    new ZstdInputStream(new FileInputStream(outputFile)) :
+                    new FileInputStream(outputFile);
+
+            modelFile = objectMapper.readValue(in, SignificanceModelFile.class);
+
+            modelFile.addLanguage(languagesKey, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
 
         } else {
             HashMap<String, DocumentFrequencyFile> languages = new HashMap<>() {{
-                put(clientParameters.language, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
+                put(languagesKey, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
             }};
 
             modelFile = new SignificanceModelFile(VERSION, ID, SIGNIFICANCE_DESCRIPTION + clientParameters.inputFile, languages);
         }
         try {
             ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
-            writer.writeValue(new File(clientParameters.outputFile), modelFile);
+
+            OutputStream out = useZstCompression ?
+                    new ZstdOutputStream(new FileOutputStream(clientParameters.outputFile)) :
+                    new FileOutputStream(clientParameters.outputFile);
+
+            writer.writeValue(out, modelFile);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to write model to output file", e);
         }
     }
 
     private void handleTokenization(String field) {
-        var tokens = tokenizer.tokenize(field, language, StemMode.ALL, false);
+        var tokens = tokenizer.tokenize(field, languageTag, StemMode.ALL, false);
 
         Set<String> uniqueWords = StreamSupport.stream(tokens.spliterator(), false)
                 .filter(t -> t.getType() == TokenType.ALPHABETIC)

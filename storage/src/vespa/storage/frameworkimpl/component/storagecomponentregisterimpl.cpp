@@ -41,7 +41,7 @@ StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
 }
 
 void
-StorageComponentRegisterImpl::setNodeInfo(vespalib::stringref clusterName,
+StorageComponentRegisterImpl::setNodeInfo(std::string_view clusterName,
                                           const lib::NodeType& nodeType,
                                           uint16_t index)
 {
@@ -91,7 +91,7 @@ StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory
 }
 
 void
-StorageComponentRegisterImpl::setDistribution(std::shared_ptr<lib::Distribution> distribution)
+StorageComponentRegisterImpl::setDistribution(std::shared_ptr<const lib::Distribution> distribution)
 {
     std::lock_guard lock(_componentLock);
     _distribution = distribution;

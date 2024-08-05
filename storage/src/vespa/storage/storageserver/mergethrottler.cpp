@@ -475,7 +475,7 @@ MergeThrottler::rejectMergeIfOutdated(
         << ", storage node has version "
         << rejectLessThanVersion;
     sendReply(cmd,
-              api::ReturnCode(api::ReturnCode::WRONG_DISTRIBUTION, oss.str()),
+              api::ReturnCode(api::ReturnCode::WRONG_DISTRIBUTION, oss.view()),
               msgGuard, _metrics->chaining);
     LOG(debug, "Immediately rejected %s, due to it having state version < %u",
         cmd.toString().c_str(), rejectLessThanVersion);
@@ -582,7 +582,7 @@ MergeThrottler::attemptProcessNextQueuedMerge(MessageGuard& msgGuard)
                "been started by someone else since it was queued";
         LOG(debug, "%s", oss.c_str());
         sendReply(dynamic_cast<const api::MergeBucketCommand&>(*msg),
-                  api::ReturnCode(api::ReturnCode::BUSY, oss.str()),
+                  api::ReturnCode(api::ReturnCode::BUSY, oss.view()),
                   msgGuard, _metrics->chaining);
     }
     return true;
@@ -852,7 +852,7 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString() << " sent to node "
             << _component.getIndex()
             << ", which is not in its forwarding chain";
-        LOG(error, "%s", oss.str().data());
+        LOG(error, "%s", oss.c_str());
     } else if (mergeCmd.getChain().size() >= nodeSeq.unordered_nodes().size()) {
         // Chain is full but we haven't seen the merge! This means
         // the node has probably gone down with a merge it previously
@@ -860,19 +860,19 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString()
             << " is not in node's internal state, but has a "
             << "full chain, meaning it cannot be forwarded.";
-        LOG(debug, "%s", oss.str().data());
+        LOG(debug, "%s", oss.c_str());
     } else if (nodeSeq.chain_contains_this_node()) {
         oss << mergeCmd.toString()
             << " is not in node's internal state, but contains "
             << "this node in its non-full chain. This should not happen!";
-        LOG(error, "%s", oss.str().data());
+        LOG(error, "%s", oss.c_str());
     } else {
         valid = true;
     }
 
     if (!valid) {
         sendReply(mergeCmd,
-                  api::ReturnCode(api::ReturnCode::REJECTED, oss.str()),
+                  api::ReturnCode(api::ReturnCode::REJECTED, oss.view()),
                   msgGuard,
                   _metrics->local);
     }
@@ -1184,10 +1184,10 @@ MergeThrottler::bucketIsUnknownOrAborted(const document::Bucket& bucket) const
 
 std::shared_ptr<api::StorageMessage>
 MergeThrottler::makeAbortReply(api::StorageCommand& cmd,
-                               vespalib::stringref reason) const
+                               std::string_view reason) const
 {
     LOG(debug, "Aborting message %s with reason '%s'",
-        cmd.toString().c_str(), reason.data());
+        cmd.toString().c_str(), std::string(reason).c_str());
     std::unique_ptr<api::StorageReply> reply(cmd.makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, reason));
     return std::shared_ptr<api::StorageMessage>(reply.release());

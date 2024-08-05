@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 
@@ -15,7 +15,6 @@ LOG_SETUP("summaryengine_test");
 using namespace search::engine;
 using namespace document;
 using namespace vespalib::slime;
-using vespalib::stringref;
 using vespalib::ConstBufferRef;
 using vespalib::DataBuffer;
 using vespalib::Memory;
@@ -44,17 +43,17 @@ getAnswer(size_t num, const char * reply = "myreply") {
 namespace proton {
 
 namespace {
-stringref MYREPLY("myreply");
+std::string_view MYREPLY("myreply");
 Memory DOCSUMS("docsums");
 Memory DOCSUM("docsum");
 }
 
 class MySearchHandler : public ISearchHandler {
     std::string _name;
-    stringref _reply;
+    std::string_view _reply;
 public:
-    MySearchHandler(const std::string &name = "my", stringref reply = MYREPLY)
-        : _name(name), _reply(reply)
+    explicit MySearchHandler(std::string name = "my", std::string_view reply = MYREPLY) noexcept
+        : _name(std::move(name)), _reply(reply)
     {}
 
     DocsumReply::UP getDocsums(const DocsumRequest &request) override {
@@ -127,7 +126,7 @@ createRequest(size_t num = 1) {
     return r;
 }
 
-void assertSlime(const std::string &exp, const DocsumReply &reply) {
+void assertSlime(const std::string_view &exp, const DocsumReply &reply) {
     vespalib::Slime expSlime;
     size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
@@ -185,7 +184,7 @@ TEST("requireThatHandlersAreStored") {
 }
 
 bool
-assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, stringref expReply) {
+assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, std::string_view expReply) {
     DocsumRequest::UP request(createRequest());
     request->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", searchDocType);
     MyDocsumClient client;

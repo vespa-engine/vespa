@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -28,7 +29,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                                    MetricsFetcher metricsFetcher,
                                    Duration interval,
                                    Metric metric) {
-        super(nodeRepository, interval, metric);
+        super(nodeRepository, interval, metric, false); // No locking because this not modify shared state
         this.metricsFetcher = metricsFetcher;
     }
 
@@ -75,9 +76,10 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                                 MutableInteger failures,
                                 ApplicationId application) {
         if (exception != null) {
-            if (failures.get() < maxWarningsPerInvocation)
+            if (nodeRepository().zone().environment() == Environment.prod
+                    && failures.get() < maxWarningsPerInvocation)
                 log.log(Level.WARNING, "Could not update metrics for " + application + ": " +
-                                       Exceptions.toMessageString(exception));
+                        Exceptions.toMessageString(exception));
             failures.add(1);
         }
         else if (response != null) {

@@ -24,7 +24,10 @@ autopurge.snapRetainCount int default=15
 
 # Vespa home is prepended if the file is relative
 myidFile string default="var/zookeeper/myid"
-# Change from default of 1 Mb in zookeeper to 50 Mb
+
+# Jute maxbuffer. Used by zookeeper to determine max buffer when serializing/deserializing
+# Note: If decreasing it one must be sure that no node has stored more bytes than this
+# See also corresponding field in curator.def
 juteMaxBuffer int default=52428800
 
 myid int restart

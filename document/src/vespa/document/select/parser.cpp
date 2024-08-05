@@ -11,7 +11,7 @@ namespace document::select {
 
 namespace {
 
-void verify_expression_not_too_large(const std::string& expr) {
+void verify_expression_not_too_large(std::string_view expr) {
     if (expr.size() > ParserLimits::MaxSelectionByteSize) {
         throw ParsingFailedException(vespalib::make_string(
                 "expression is too large to be parsed (max %zu bytes, got %zu)",
@@ -21,7 +21,8 @@ void verify_expression_not_too_large(const std::string& expr) {
 
 }
 
-std::unique_ptr<Node> Parser::parse(const std::string& str) const {
+std::unique_ptr<Node>
+Parser::parse(const std::string& str) const {
     verify_expression_not_too_large(str);
     try {
         std::istringstream ss(str);

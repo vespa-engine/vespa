@@ -101,7 +101,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
             current = last_clear_doc;
         }
         MultiValueArrayRef old_values(_mvMapping.get(doc));
-        ValueVector new_values(old_values.cbegin(), old_values.cend());
+        ValueVector new_values(old_values.begin(), old_values.end());
         vespalib::hash_map<NonAtomicValueType, size_t, typename HashFn<NonAtomicValueType>::type> tombstones;
 
         // iterate through all changes for this document

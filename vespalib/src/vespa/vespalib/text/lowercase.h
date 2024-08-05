@@ -53,25 +53,19 @@ public:
             int lowblock = codepoint >> 8;
             unsigned char lb = codepoint & 0xFF;
 
-            /**/ if (lowblock == 16) {
+            if (lowblock == 16) {
                 return lowercase_16_block[lb];
-            }
-            else if (lowblock == 30) {
+            } else if (lowblock == 30) {
                 return lowercase_30_block[lb];
-            }
-            else if (lowblock == 31) {
+            } else if (lowblock == 31) {
                 return lowercase_31_block[lb];
-            }
-            else if (lowblock == 33) {
+            } else if (lowblock == 33) {
                 return lowercase_33_block[lb];
-            }
-            else if (lowblock == 44) {
+            } else if (lowblock == 44) {
                 return lowercase_44_block[lb];
-            }
-            else if (lowblock == 260) {
+            } else if (lowblock == 260) {
                 return lowercase_260_block[lb];
-            }
-            else {
+            } else {
                 return codepoint;
             }
         }
@@ -103,15 +97,12 @@ public:
      * any bytes that aren't valid UTF-8 with the Unicode REPLACEMENT
      * CHARACTER (U+FFFD).
      **/
-    static vespalib::string convert(vespalib::stringref input);
+    static vespalib::string convert(std::string_view input);
 
     /**
      * Lowercase a string in UTF-8 format while converting it to UCS-4 codepoints.
      */
-    static std::vector<uint32_t> convert_to_ucs4(vespalib::stringref input);
-    static std::vector<uint32_t> convert_to_ucs4(std::string_view input) {
-        return convert_to_ucs4(vespalib::stringref(input.data(), input.size()));
-    }
+    static std::vector<uint32_t> convert_to_ucs4(std::string_view input);
 
 };
 

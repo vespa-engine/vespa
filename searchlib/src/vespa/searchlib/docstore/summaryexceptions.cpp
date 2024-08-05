@@ -8,9 +8,9 @@ using vespalib::make_string;
 
 namespace search {
 
-SummaryException::SummaryException(vespalib::stringref msg,
+SummaryException::SummaryException(std::string_view msg,
                                    FastOS_FileInterface &file,
-                                   vespalib::stringref location)
+                                   std::string_view location)
     : IoException(make_string("%s : Failing file = '%s'. Reason given by OS = '%s'",
                               vespalib::string(msg).c_str(), file.GetFileName(), file.getLastErrorString().c_str()),
                   getErrorType(file.GetLastError()), location)

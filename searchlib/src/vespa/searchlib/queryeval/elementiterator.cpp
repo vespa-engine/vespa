@@ -53,10 +53,10 @@ ElementIteratorWrapper::mergeElementIds(uint32_t docId, std::vector<uint32_t> & 
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::ElementIterator *obj)
 {
-    if (obj != 0) {
+    if (obj != nullptr) {
         self.openStruct(name, "ElementIterator");
         obj->visitMembers(self);
         self.closeStruct();
@@ -65,7 +65,7 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
     }
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::ElementIterator &obj)
 {
     visit(self, name, &obj);

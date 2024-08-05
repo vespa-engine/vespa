@@ -13,7 +13,7 @@ RangeLimitMetaInfo::RangeLimitMetaInfo()
       _low(),
       _high()
 {}
-RangeLimitMetaInfo::RangeLimitMetaInfo(vespalib::stringref low_, vespalib::stringref high_, size_t estimate_)
+RangeLimitMetaInfo::RangeLimitMetaInfo(std::string_view low_, std::string_view high_, size_t estimate_)
     : _valid(true),
       _estimate(estimate_),
       _low(low_),

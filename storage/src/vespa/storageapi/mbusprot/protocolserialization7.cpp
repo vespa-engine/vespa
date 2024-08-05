@@ -523,7 +523,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveReply& msg) c
 
 api::StorageCommand::UP ProtocolSerialization7::onDecodeRemoveCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::RemoveRequest>(buf, [&](auto& req, auto& bucket) {
-        document::DocumentId doc_id(vespalib::stringref(req.document_id().data(), req.document_id().size()));
+        document::DocumentId doc_id(std::string_view(req.document_id().data(), req.document_id().size()));
         auto cmd = std::make_unique<api::RemoveCommand>(bucket, doc_id, req.new_timestamp());
         if (req.has_condition()) {
             cmd->setCondition(get_tas_condition(req.condition()));
@@ -600,7 +600,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetReply& msg) cons
 
 api::StorageCommand::UP ProtocolSerialization7::onDecodeGetCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::GetRequest>(buf, [&](auto& req, auto& bucket) {
-        document::DocumentId doc_id(vespalib::stringref(req.document_id().data(), req.document_id().size()));
+        document::DocumentId doc_id(std::string_view(req.document_id().data(), req.document_id().size()));
         auto op = std::make_unique<api::GetCommand>(bucket, std::move(doc_id),
                                                     req.field_set(), req.before_timestamp());
         op->set_internal_read_consistency(read_consistency_from_protobuf(req.internal_read_consistency()));

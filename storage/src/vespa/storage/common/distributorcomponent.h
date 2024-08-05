@@ -75,7 +75,7 @@ class DistributorComponent : public StorageComponent,
 public:
     using UP = std::unique_ptr<DistributorComponent>;
 
-    DistributorComponent(DistributorComponentRegister& compReg, vespalib::stringref name);
+    DistributorComponent(DistributorComponentRegister& compReg, std::string_view name);
     ~DistributorComponent() override;
 
     [[nodiscard]] api::Timestamp getUniqueTimestamp() const {

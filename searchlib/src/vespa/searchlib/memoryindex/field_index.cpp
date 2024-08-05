@@ -83,7 +83,7 @@ FieldIndex<interleaved_features>::~FieldIndex()
 
 template <bool interleaved_features>
 typename FieldIndex<interleaved_features>::PostingList::Iterator
-FieldIndex<interleaved_features>::find(const vespalib::stringref word) const
+FieldIndex<interleaved_features>::find(const std::string_view word) const
 {
     DictionaryTree::Iterator itr = _dict.find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
@@ -94,7 +94,7 @@ FieldIndex<interleaved_features>::find(const vespalib::stringref word) const
 
 template <bool interleaved_features>
 typename FieldIndex<interleaved_features>::PostingList::ConstIterator
-FieldIndex<interleaved_features>::findFrozen(const vespalib::stringref word) const
+FieldIndex<interleaved_features>::findFrozen(const std::string_view word) const
 {
     auto itr = _dict.getFrozenView().find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
@@ -154,7 +154,7 @@ template <bool interleaved_features>
 void
 FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder & indexBuilder)
 {
-    vespalib::stringref word;
+    std::string_view word;
     FeatureStore::DecodeContextCooked decoder(nullptr);
     DocIdAndFeatures features;
     vespalib::Array<uint32_t> wordMap(_numUniqueWords + 1, 0);

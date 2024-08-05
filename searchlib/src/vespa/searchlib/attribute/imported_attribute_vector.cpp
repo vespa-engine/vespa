@@ -8,7 +8,7 @@
 namespace search::attribute {
 
 ImportedAttributeVector::ImportedAttributeVector(
-            vespalib::stringref name,
+            std::string_view name,
             std::shared_ptr<ReferenceAttribute> reference_attribute,
             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
             std::shared_ptr<ReadableAttributeVector> target_attribute,
@@ -24,7 +24,7 @@ ImportedAttributeVector::ImportedAttributeVector(
 {
 }
 
-ImportedAttributeVector::ImportedAttributeVector(vespalib::stringref name,
+ImportedAttributeVector::ImportedAttributeVector(std::string_view name,
                                                  std::shared_ptr<ReferenceAttribute> reference_attribute,
                                                  std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                                  std::shared_ptr<ReadableAttributeVector> target_attribute,

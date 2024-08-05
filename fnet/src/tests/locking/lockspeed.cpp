@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "dummy.h"
 #include <chrono>
+#include <condition_variable>
 
 class SpinLock {
 private:
@@ -202,16 +203,16 @@ TEST("lock speed") {
 
   start = clock::now();
   for (i = 0; i < 1000000; i++) {
-      DummyObj *dummy0 = new DummyObj();
-      DummyObj *dummy1 = new DummyObj();
-      DummyObj *dummy2 = new DummyObj();
-      DummyObj *dummy3 = new DummyObj();
-      DummyObj *dummy4 = new DummyObj();
-      DummyObj *dummy5 = new DummyObj();
-      DummyObj *dummy6 = new DummyObj();
-      DummyObj *dummy7 = new DummyObj();
-      DummyObj *dummy8 = new DummyObj();
-      DummyObj *dummy9 = new DummyObj();
+      auto *dummy0 = new DummyObj();
+      auto *dummy1 = new DummyObj();
+      auto *dummy2 = new DummyObj();
+      auto *dummy3 = new DummyObj();
+      auto *dummy4 = new DummyObj();
+      auto *dummy5 = new DummyObj();
+      auto *dummy6 = new DummyObj();
+      auto *dummy7 = new DummyObj();
+      auto *dummy8 = new DummyObj();
+      auto *dummy9 = new DummyObj();
       delete dummy9;
       delete dummy8;
       delete dummy7;

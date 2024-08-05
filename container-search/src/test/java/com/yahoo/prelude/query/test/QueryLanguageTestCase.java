@@ -6,6 +6,7 @@ import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.Model;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -100,6 +101,10 @@ public class QueryLanguageTestCase {
 
     private void assertLanguage(Language expectedLanguage, String languageParameter) {
         Query query = new Query("?query=test&language=" + languageParameter);
+        Query query2 = new Query("?query=test");
+        Model model = query.getModel();
+        Model model2 = query2.getModel();
+
         assertEquals(expectedLanguage, query.getModel().getParsingLanguage());
 
         /*

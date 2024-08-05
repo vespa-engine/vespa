@@ -5,6 +5,7 @@
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using vespalib::string;
 using namespace document::config_builder;

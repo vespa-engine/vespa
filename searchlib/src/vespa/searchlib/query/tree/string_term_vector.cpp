@@ -15,7 +15,7 @@ StringTermVector::StringTermVector(uint32_t sz)
 StringTermVector::~StringTermVector() = default;
 
 void
-StringTermVector::addTerm(vespalib::stringref, Weight)
+StringTermVector::addTerm(std::string_view, Weight)
 {
     // Will/should never happen
     assert(false);
@@ -29,7 +29,7 @@ StringTermVector::addTerm(int64_t, Weight)
 }
 
 void
-StringTermVector::addTerm(vespalib::stringref term)
+StringTermVector::addTerm(std::string_view term)
 {
     _terms.emplace_back(term);
 }

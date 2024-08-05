@@ -261,7 +261,7 @@ DocumentMetaStore::reclaim_memory(generation_t oldest_used_gen)
 }
 
 std::unique_ptr<search::AttributeSaver>
-DocumentMetaStore::onInitSave(vespalib::stringref fileName)
+DocumentMetaStore::onInitSave(std::string_view fileName)
 {
     GenerationHandler::Guard guard(getGuard());
     return std::make_unique<DocumentMetaStoreSaver>

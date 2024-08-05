@@ -35,6 +35,8 @@ public class EventDiffCalculatorTest {
         Map<String, AnnotatedClusterState.Builder> derivedAfter = new HashMap<>();
         ClusterStateBundle.FeedBlock feedBlockBefore = null;
         ClusterStateBundle.FeedBlock feedBlockAfter = null;
+        DistributionConfigBundle distributionConfigBefore = null;
+        DistributionConfigBundle distributionConfigAfter = null;
         long currentTimeMs = 0;
         long maxMaintenanceGracePeriodTimeMs = 10_000;
 
@@ -98,6 +100,14 @@ public class EventDiffCalculatorTest {
             this.feedBlockAfter = feedBlock;
             return this;
         }
+        EventFixture distributionConfigBefore(DistributionConfigBundle configBefore) {
+            this.distributionConfigBefore = configBefore;
+            return this;
+        }
+        EventFixture distributionConfigAfter(DistributionConfigBundle configAfter) {
+            this.distributionConfigAfter = configAfter;
+            return this;
+        }
         private static AnnotatedClusterState.Builder getBuilder(Map<String, AnnotatedClusterState.Builder> derivedStates, String bucketSpace) {
             return derivedStates.computeIfAbsent(bucketSpace, key -> new AnnotatedClusterState.Builder());
         }
@@ -106,8 +116,10 @@ public class EventDiffCalculatorTest {
             return EventDiffCalculator.computeEventDiff(
                     EventDiffCalculator.params()
                             .cluster(clusterFixture.cluster())
-                            .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore), feedBlockBefore, false))
-                            .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter), feedBlockAfter, false))
+                            .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore),
+                                    feedBlockBefore, distributionConfigBefore, false))
+                            .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter),
+                                    feedBlockAfter, distributionConfigAfter, false))
                             .currentTimeMs(currentTimeMs)
                             .maxMaintenanceGracePeriodTimeMs(maxMaintenanceGracePeriodTimeMs));
         }
@@ -548,6 +560,65 @@ public class EventDiffCalculatorTest {
                 eventForNode(storageNode(2)),
                 nodeEventWithDescription("Removed resource exhaustion: cpu_brake_fluid on node 2 [unknown hostname] (<= 70.0%)"),
                 nodeEventForBaseline())));
+    }
+
+    private static DistributionConfigBundle flatClusterDistribution(int nodes) {
+        return DistributionConfigBundle.of(DistributionBuilder.configForFlatCluster(nodes));
+    }
+
+    @Test
+    void enabling_distribution_config_in_state_bundle_emits_cluster_level_event() {
+        var fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3")
+                .distributionConfigBefore(null)
+                .distributionConfigAfter(flatClusterDistribution(3));
+
+        var events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(clusterEventWithDescription(
+                "Cluster controller is now the authoritative source for distribution config. " +
+                "Active config: 3 nodes; 1 groups; redundancy 2; searchable-copies 0")));
+    }
+
+    @Test
+    void disabling_distribution_config_in_state_bundle_emits_cluster_level_event() {
+        var fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3")
+                .distributionConfigBefore(flatClusterDistribution(3))
+                .distributionConfigAfter(null);
+
+        var events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(clusterEventWithDescription(
+                "Cluster controller is no longer the authoritative source for distribution config")));
+    }
+
+    @Test
+    void changed_distribution_config_emits_event_with_config_diff() {
+        var fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3")
+                .distributionConfigBefore(flatClusterDistribution(3))
+                .distributionConfigAfter(flatClusterDistribution(5));
+
+        var events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(clusterEventWithDescription(
+                "Distribution config changed: root group: added {3, 4}")));
+    }
+
+    @Test
+    void unchanged_distribution_config_does_not_emit_event() {
+        var fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3")
+                .distributionConfigBefore(flatClusterDistribution(3))
+                .distributionConfigAfter(flatClusterDistribution(3));
+
+        var events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(0));
     }
 
 }

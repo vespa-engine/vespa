@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.server.http.ContentRequest;
  * are handled by this class.
  *
  * @author hmusum
- * @since 5.3
  */
 public class SessionContentRequestV2 extends ContentRequest {
 
@@ -21,10 +20,10 @@ public class SessionContentRequestV2 extends ContentRequest {
     private final long sessionId;
 
     public SessionContentRequestV2(HttpRequest request,
-                            long sessionId,
-                            TenantName tenantName,
-                            HttpURL.Path path,
-                            ApplicationFile applicationFile) {
+                                   long sessionId,
+                                   TenantName tenantName,
+                                   HttpURL.Path path,
+                                   ApplicationFile applicationFile) {
         super(request, sessionId, path, applicationFile);
         this.tenantName = tenantName;
         this.sessionId = sessionId;
@@ -38,7 +37,8 @@ public class SessionContentRequestV2 extends ContentRequest {
     public static HttpURL.Path getContentPath(HttpRequest request) {
         Path path = new Path(request.getUri());
         if ( ! path.matches("/application/v2/tenant/{tenant}/session/{session}/content/{*}"))
-            throw new IllegalStateException("error in request routing");
+            throw new IllegalStateException("error in request routing, " + path +
+                                             " does not match '/application/v2/tenant/{tenant}/session/{session}/content/{*}'");
         return path.getRest();
     }
 

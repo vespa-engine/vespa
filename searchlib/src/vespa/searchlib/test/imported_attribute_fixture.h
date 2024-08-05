@@ -57,7 +57,7 @@ std::shared_ptr<AttrVecType> create_typed_attribute(BasicType basic_type,
                                                     CollectionType collection_type,
                                                     FastSearchConfig fast_search = FastSearchConfig::Default,
                                                     FilterConfig filter = FilterConfig::Default,
-                                                    vespalib::stringref name = "parent") {
+                                                    std::string_view name = "parent") {
     Config cfg(basic_type, collection_type);
     if (fast_search == FastSearchConfig::ExplicitlyEnabled) {
         cfg.setFastSearch(true);
@@ -73,12 +73,12 @@ template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_single_attribute(BasicType type,
                                                      FastSearchConfig fast_search = FastSearchConfig::Default,
                                                      FilterConfig filter = FilterConfig::Default,
-                                                     vespalib::stringref name = "parent") {
+                                                     std::string_view name = "parent") {
     return create_typed_attribute<AttrVecType>(type, CollectionType::SINGLE, fast_search, filter, name);
 }
 
 template<typename AttrVecType>
-std::shared_ptr<AttrVecType> create_array_attribute(BasicType type, vespalib::stringref name = "parent") {
+std::shared_ptr<AttrVecType> create_array_attribute(BasicType type, std::string_view name = "parent") {
     return create_typed_attribute<AttrVecType>(type, CollectionType::ARRAY,
                                                FastSearchConfig::Default, FilterConfig::Default, name);
 }
@@ -86,13 +86,13 @@ std::shared_ptr<AttrVecType> create_array_attribute(BasicType type, vespalib::st
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_wset_attribute(BasicType type,
                                                    FastSearchConfig fast_search = FastSearchConfig::Default,
-                                                   vespalib::stringref name = "parent") {
+                                                   std::string_view name = "parent") {
     return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, fast_search, FilterConfig::Default, name);
 }
 
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_tensor_attribute(const vespalib::eval::ValueType &tensorType,
-                                                     vespalib::stringref name = "parent") {
+                                                     std::string_view name = "parent") {
     Config cfg(BasicType::Type::TENSOR, CollectionType::Type::SINGLE);
     cfg.setTensorType(tensorType);
     return std::dynamic_pointer_cast<AttrVecType>(
@@ -106,11 +106,12 @@ void add_n_docs_with_undefined_values(VectorType &vec, size_t n) {
 }
 
 GlobalId dummy_gid(uint32_t doc_index);
-std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term);
+
+std::unique_ptr<QueryTermSimple> word_term(std::string_view term);
 
 struct ReadGuardWrapper {
     std::unique_ptr<AttributeReadGuard> guard;
-    ReadGuardWrapper(std::unique_ptr<AttributeReadGuard> guard_) : guard(std::move(guard_)) {}
+    explicit ReadGuardWrapper(std::unique_ptr<AttributeReadGuard> guard_) : guard(std::move(guard_)) {}
     const IAttributeVector *operator->() const { return guard->operator->(); }
     const IAttributeVector &operator*() const { return guard->operator*(); }
 };
@@ -124,7 +125,7 @@ struct ImportedAttributeFixture {
     std::shared_ptr<ImportedAttributeVector> imported_attr;
     std::shared_ptr<test::MockGidToLidMapperFactory> mapper_factory;
 
-    ImportedAttributeFixture(bool use_search_cache_ = false, FastSearchConfig fastSearch = FastSearchConfig::Default);
+    explicit ImportedAttributeFixture(bool use_search_cache_ = false, FastSearchConfig fastSearch = FastSearchConfig::Default);
 
     virtual ~ImportedAttributeFixture();
 
@@ -134,12 +135,12 @@ struct ImportedAttributeFixture {
 
     void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid);
 
-    static vespalib::stringref default_imported_attr_name() {
+    static std::string_view default_imported_attr_name() {
         return "imported";
     }
 
     std::shared_ptr<ImportedAttributeVector>
-    create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name());
+    create_attribute_vector_from_members(std::string_view name = default_imported_attr_name());
 
     template<typename AttrVecType>
     std::shared_ptr<AttrVecType> target_attr_as() {

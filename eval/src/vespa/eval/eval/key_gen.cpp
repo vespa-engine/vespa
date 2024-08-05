@@ -3,6 +3,7 @@
 #include "key_gen.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace vespalib::eval {
 
@@ -11,13 +12,13 @@ using namespace nodes;
 namespace {
 
 struct KeyGen : public NodeVisitor, public NodeTraverser {
-    vespalib::string key;
+    vespalib::nbostream key;
 
     // build
-    void add_double(double value) { key.append(&value, sizeof(value)); }
-    void add_size(size_t value) { key.append(&value, sizeof(value)); }
-    void add_int(int value) { key.append(&value, sizeof(value)); }
-    void add_byte(uint8_t value) { key.append(&value, sizeof(value)); }
+    void add_double(double value) { key.write(&value, sizeof(value)); }
+    void add_size(size_t value) { key.write(&value, sizeof(value)); }
+    void add_int(int value) { key.write(&value, sizeof(value)); }
+    void add_byte(uint8_t value) { key.write(&value, sizeof(value)); }
 
     // visit
     void visit(const Number &node) override {
@@ -112,7 +113,7 @@ vespalib::string gen_key(const Function &function, PassParams pass_params)
     key_gen.add_byte(uint8_t(pass_params));
     key_gen.add_size(function.num_params());
     function.root().traverse(key_gen);
-    return key_gen.key;
+    return {key_gen.key.data(), key_gen.key.size()};
 }
 
 }

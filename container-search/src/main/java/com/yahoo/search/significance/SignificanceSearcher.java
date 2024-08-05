@@ -8,12 +8,14 @@ import com.yahoo.language.Language;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.query.ranking.Significance;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
@@ -22,6 +24,7 @@ import com.yahoo.search.searchchain.Execution;
 
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -69,6 +72,7 @@ public class SignificanceSearcher extends Searcher {
                         // This will result in a failure later (in a "backend searcher") anyway.
                         Optional.ofNullable(schema.rankProfiles().get(rankProfileName))
                                 .map(RankProfile::useSignificanceModel).orElse(false)));
+        log.log(Level.FINE, () -> "Significance setup per schema: " + perSchemaSetup);
         var uniqueSetups = new HashSet<>(perSchemaSetup.values());
 
         // Fail if the significance setup for the selected schemas are conflicting
@@ -93,36 +97,77 @@ public class SignificanceSearcher extends Searcher {
     }
 
     private Result calculateAndSetSignificance(Query query, Execution execution) {
-        Language language = query.getModel().getParsingLanguage();
-        Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
+        try {
+            var significanceModel = getSignificanceModelFromQueryLanguage(query);
+            log.log(Level.FINE, () -> "Got model for language %s: %s"
+                    .formatted(query.getModel().getParsingLanguage(), significanceModel.getId()));
 
-        if (model.isEmpty()) return execution.search(query);
+            setIDF(query.getModel().getQueryTree().getRoot(), significanceModel);
 
-        setIDF(query.getModel().getQueryTree().getRoot(), model.get());
+            return execution.search(query);
+        } catch (IllegalArgumentException e) {
+            var result = new Result(query);
+            result.hits().addError(
+                    ErrorMessage.createIllegalQuery(e.getMessage()));
+            return result;
+        }
+    }
 
-        return execution.search(query);
+    private SignificanceModel getSignificanceModelFromQueryLanguage(Query query) throws IllegalArgumentException {
+        Language explicitLanguage = query.getModel().getLanguage();
+        Language implicitLanguage = query.getModel().getParsingLanguage();
+
+        if (explicitLanguage == null && implicitLanguage == null) {
+            throw new IllegalArgumentException("No language found in query");
+        }
+
+        if (explicitLanguage != null) {
+            if (explicitLanguage == Language.UNKNOWN) {
+                return handleFallBackToUnknownLanguage();
+            }
+            var model = significanceModelRegistry.getModel(explicitLanguage);
+            if (model.isEmpty()) {
+                throw new IllegalArgumentException("No significance model available for set language " + explicitLanguage);
+            }
+            return model.get();
+        }
+
+        if (implicitLanguage == Language.UNKNOWN) {
+            return handleFallBackToUnknownLanguage();
+        }
+        var model = significanceModelRegistry.getModel(implicitLanguage);
+        if (model.isEmpty()) {
+            throw new IllegalArgumentException("No significance model available for implicit language " + implicitLanguage);
+        }
+        return model.get();
+    }
+
+    private SignificanceModel handleFallBackToUnknownLanguage() throws IllegalArgumentException {
+        var unknownModel = significanceModelRegistry.getModel(Language.UNKNOWN);
+        var englishModel = significanceModelRegistry.getModel(Language.ENGLISH);
+
+        if (unknownModel.isEmpty() && englishModel.isEmpty()) {
+            throw new IllegalArgumentException("No significance model available for unknown or english language");
+        }
+
+        return unknownModel.orElseGet(englishModel::get);
     }
 
     private void setIDF(Item root, SignificanceModel significanceModel) {
         if (root == null || root instanceof NullItem) return;
 
-        if (root instanceof WordItem) {
-
-            var documentFrequency = significanceModel.documentFrequency(((WordItem) root).getWord());
+        if (root instanceof WordItem wi) {
+            var word = wi.getWord();
+            var documentFrequency = significanceModel.documentFrequency(word);
             long N                = documentFrequency.corpusSize();
             long nq_i             = documentFrequency.frequency();
-            double idf            = calculateIDF(N, nq_i);
-
-            ((WordItem) root).setSignificance(idf);
-        } else if (root instanceof CompositeItem) {
-            for (int i = 0; i < ((CompositeItem) root).getItemCount(); i++) {
-                setIDF(((CompositeItem) root).getItem(i), significanceModel);
+            log.log(Level.FINE, () -> "Setting document frequency for " + word + " to {frequency: " + nq_i + ", count: " + N + "}");
+            wi.setDocumentFrequency(new DocumentFrequency(nq_i, N));
+        } else if (root instanceof CompositeItem ci) {
+            for (int i = 0; i < ci.getItemCount(); i++) {
+                setIDF(ci.getItem(i), significanceModel);
             }
         }
-    }
-
-    public static double calculateIDF(long N, long nq_i) {
-        return Math.log(1 + (N - nq_i + 0.5) / (nq_i + 0.5));
     }
 }
 

@@ -8,6 +8,8 @@
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/aggregation/predicates.h>
+#include <vespa/searchlib/aggregation/modifiers.h>
+#include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
@@ -51,7 +53,7 @@ public:
             add(val);
         }
     }
-    AttrBuilder(const std::string &name)
+    explicit AttrBuilder(const std::string &name)
         : _attr(new A(name)),
           _attrSP(_attr)
     {
@@ -127,19 +129,19 @@ private:
     ResultBuilder    _result;
     IAttributeContext::UP _attrCtx;
 
-    AggregationContext(const AggregationContext &);
-    AggregationContext &operator=(const AggregationContext &);
-
 public:
     AggregationContext();
+    AggregationContext(const AggregationContext &) = delete;
+    AggregationContext &operator=(const AggregationContext &) = delete;
     ~AggregationContext();
     ResultBuilder &result() { return _result; }
-    void add(AttributeVector::SP attr) {
+    void add(const AttributeVector::SP & attr) {
         _attrMan.add(attr);
     }
     void setup(Grouping &g) {
-        g.configureStaticStuff(ConfigureStaticParams(_attrCtx.get(), 0));
+        g.configureStaticStuff(ConfigureStaticParams(_attrCtx.get(), nullptr));
     }
+    const IAttributeContext & attrCtx() const { return *_attrCtx; }
 };
 
 AggregationContext::AggregationContext() : _attrMan(), _result(), _attrCtx(_attrMan.createContext()) {}
@@ -688,7 +690,7 @@ TEST("testAggregationGroupCapping")
         EXPECT_TRUE(testAggregation(ctx, request, expect));
     }
     {
-        AddFunctionNode *add = new AddFunctionNode();
+        auto add = std::make_unique<AddFunctionNode>();
         add->addArg(MU<AggregationRefNode>(0));
         add->appendArg(MU<ConstantNode>(MU<Int64ResultNode>(3)));
 
@@ -697,7 +699,7 @@ TEST("testAggregationGroupCapping")
                 .setLastLevel(1)
                 .addLevel(std::move(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr"))
                                   .addAggregationResult(createAggr<SumAggregationResult>(MU<AttributeNode>("attr")))
-                                  .addOrderBy(ExpressionNode::UP(add), false)));
+                                  .addOrderBy(std::move(add), false)));
 
         Group expect;
         expect.addChild(Group().setId(Int64ResultNode(7)).setRank(RawRank(7))
@@ -1824,6 +1826,33 @@ TEST("testAttributeMapLookup")
     testAggregationSimple(ctx, MinAggregationResult(), Int64ResultNode(20), "smap{attribute(key2)}.weight");
     testAggregationSimple(ctx, MaxAggregationResult(), Int64ResultNode(200), "smap{attribute(key1)}.weight");
     testAggregationSimple(ctx, MaxAggregationResult(), Int64ResultNode(100), "smap{attribute(key2)}.weight");
+}
+
+TEST("test that non-attributes are converted to document field nodes") {
+    AggregationContext ctx;
+    ctx.add(IntAttrBuilder("attr").sp());
+
+    Grouping attrRequest;
+    attrRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr"))));
+    aggregation::NonAttribute2DocumentAccessor optional2DocumentAccessor(ctx.attrCtx());
+    attrRequest.select(optional2DocumentAccessor, optional2DocumentAccessor);
+    EXPECT_TRUE(attrRequest.getRoot().getAggregationResult(0).getExpression()->inherits(AttributeNode::classId));
+
+    Grouping nonAttrRequest;
+    nonAttrRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("non-attr"))));
+    nonAttrRequest.select(optional2DocumentAccessor, optional2DocumentAccessor);
+    EXPECT_TRUE(nonAttrRequest.getRoot().getAggregationResult(0).getExpression()->inherits(DocumentFieldNode::classId));
+}
+
+TEST("test that attributes can be unconditionally converted to document field nodes") {
+    AggregationContext ctx;
+    ctx.add(IntAttrBuilder("attr").sp());
+
+    Grouping attrRequest;
+    attrRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr"))));
+    aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
+    attrRequest.select(attr2DocumentAccessor, attr2DocumentAccessor);
+    EXPECT_TRUE(attrRequest.getRoot().getAggregationResult(0).getExpression()->inherits(DocumentFieldNode::classId));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -350,7 +350,7 @@ TEST_F(SearchReplyTest, require_that_match_features_are_converted) {
 
 TEST_F(SearchReplyTest, require_that_grouping_blob_is_converted) {
     vespalib::string tmp("grouping-result");
-    reply.groupResult.assign(tmp.begin(), tmp.end());
+    reply.groupResult.assign(tmp.data(), tmp.data() + tmp.size());
     convert();
     EXPECT_EQ(proto.grouping_blob(), "grouping-result");
 }

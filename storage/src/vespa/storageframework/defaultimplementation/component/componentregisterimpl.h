@@ -36,7 +36,7 @@ namespace storage::framework::defaultimplementation {
 
 struct ShutdownListener {
     virtual ~ShutdownListener() = default;
-    virtual void requestShutdown(vespalib::stringref reason) = 0;
+    virtual void requestShutdown(std::string_view reason) = 0;
 };
 
 class ComponentRegisterImpl : public virtual ComponentRegister,
@@ -63,17 +63,17 @@ public:
     metrics::MetricManager& getMetricManager() { return *_metricManager; }
 
     void registerComponent(ManagedComponent&) override;
-    void requestShutdown(vespalib::stringref reason) override;
+    void requestShutdown(std::string_view reason) override;
 
     void setMetricManager(metrics::MetricManager&);
     void setClock(Clock&);
     void setThreadPool(ThreadPool&);
 
-    const StatusReporter* getStatusReporter(vespalib::stringref id) override;
+    const StatusReporter* getStatusReporter(std::string_view id) override;
     std::vector<const StatusReporter*> getStatusReporters() override;
 
     void registerMetric(metrics::Metric&) override;
-    void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, vespalib::system_time::duration period) override;
+    void registerUpdateHook(std::string_view name, MetricUpdateHook& hook, vespalib::system_time::duration period) override;
     void registerShutdownListener(ShutdownListener&);
 
 };

@@ -30,9 +30,9 @@ public:
     bool equals(const DataType& other) const noexcept override;
     const MapDataType * cast_map() const noexcept override { return this; }
 
-    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const override;
     static void buildFieldPathImpl(FieldPath & path, const DataType& dataType,
-                                   vespalib::stringref remainFieldName,
+                                   std::string_view remainFieldName,
                                    const DataType &keyType, const DataType &valueType);
 };
 

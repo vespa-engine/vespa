@@ -25,7 +25,7 @@ public:
     StringBucketResultNode();
     StringBucketResultNode(const StringBucketResultNode&);
     StringBucketResultNode(StringBucketResultNode&&) noexcept = default;
-    StringBucketResultNode(vespalib::stringref from, vespalib::stringref to);
+    StringBucketResultNode(std::string_view from, std::string_view to);
     StringBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
     ~StringBucketResultNode();
     StringBucketResultNode& operator=(const StringBucketResultNode&);
@@ -36,7 +36,7 @@ public:
     int contains(const ConstBufferRef & v) const { return contains(v.c_str()); }
     int contains(const char * v) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    StringBucketResultNode &setRange(vespalib::stringref from, vespalib::stringref to) {
+    StringBucketResultNode &setRange(std::string_view from, std::string_view to) {
         _from.reset(new StringResultNode(from));
         _to.reset(new StringResultNode(to));
         return *this;

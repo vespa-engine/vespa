@@ -23,8 +23,8 @@ public:
     vespalib::duration getTimeLeft() const;
     bool expired() const { return getTimeLeft() <= vespalib::duration::zero(); }
 
-    vespalib::stringref getStackRef() const {
-        return vespalib::stringref(stackDump.data(), stackDump.size());
+    std::string_view getStackRef() const {
+        return std::string_view(stackDump.data(), stackDump.size());
     }
 
     void setTraceLevel(uint32_t level, uint32_t minLevel) const {

@@ -47,7 +47,7 @@ class MockJuniperConverter : public IJuniperConverter
 {
     vespalib::string _result;
 public:
-    void convert(vespalib::stringref input, vespalib::slime::Inserter&) override {
+    void convert(std::string_view input, vespalib::slime::Inserter&) override {
         _result = input;
     }
     const vespalib::string& get_result() const noexcept { return _result; }

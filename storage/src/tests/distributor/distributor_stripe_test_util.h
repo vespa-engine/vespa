@@ -264,7 +264,7 @@ protected:
     };
     MessageSenderImpl _messageSender;
 
-    void enable_cluster_state(vespalib::stringref state);
+    void enable_cluster_state(std::string_view state);
     void enable_cluster_state(const lib::ClusterStateBundle& state);
 };
 

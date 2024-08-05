@@ -22,7 +22,7 @@ public:
     ThreadPoolImpl(Clock&);
     ~ThreadPoolImpl() override;
 
-    std::unique_ptr<Thread> startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTime,
+    std::unique_ptr<Thread> startThread(Runnable&, std::string_view id, vespalib::duration waitTime,
                                         vespalib::duration maxProcessTime, int ticksBeforeWait,
                                         std::optional<vespalib::CpuUsage::Category> cpu_category) override;
     void visitThreads(ThreadVisitor&) const override;

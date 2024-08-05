@@ -192,7 +192,7 @@ public:
         }
     }
     void skip_spaces() {
-        while (!eos() && isspace(_curr)) {
+        while (!eos() && std::isspace(static_cast<unsigned char>(_curr))) {
             next();
         }
     }
@@ -447,7 +447,7 @@ vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
 size_t get_size_t(ParseContext &ctx) {
     ctx.skip_spaces();
     vespalib::string num;
-    for (; isdigit(ctx.get()); ctx.next()) {
+    for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
         num.push_back(ctx.get());
     }
     if (num.empty()) {
@@ -457,7 +457,7 @@ size_t get_size_t(ParseContext &ctx) {
 }
 
 bool is_label_end(char c) {
-    return (isspace(c) || (c == '\0') ||
+    return (std::isspace(static_cast<unsigned char>(c)) || (c == '\0') ||
             (c == ':') || (c == ',') || (c == '}'));
 }
 
@@ -960,7 +960,7 @@ void parse_value(ParseContext &ctx) {
         parse_string(ctx, '"');
     } else if (ctx.get() == '\'') {
         parse_string(ctx, '\'');
-    } else if (isdigit(ctx.get())) {
+    } else if (std::isdigit(static_cast<unsigned char>(ctx.get()))) {
         parse_number(ctx);
     } else {
         parse_symbol_or_call(ctx);
@@ -1008,7 +1008,7 @@ void parse_expression(ParseContext &ctx) {
     }
 }
 
-auto parse_function(const Params &params, vespalib::stringref expression,
+auto parse_function(const Params &params, std::string_view expression,
                     const SymbolExtractor *symbol_extractor)
 {
     ParseContext ctx(params, expression.data(), expression.size(), symbol_extractor);
@@ -1044,25 +1044,25 @@ Function::create(nodes::Node_UP root_in, std::vector<vespalib::string> params_in
 }
 
 std::shared_ptr<Function const>
-Function::parse(vespalib::stringref expression)
+Function::parse(std::string_view expression)
 {
     return parse_function(ImplicitParams(), expression, nullptr);
 }
 
 std::shared_ptr<Function const>
-Function::parse(vespalib::stringref expression, const SymbolExtractor &symbol_extractor)
+Function::parse(std::string_view expression, const SymbolExtractor &symbol_extractor)
 {
     return parse_function(ImplicitParams(), expression, &symbol_extractor);
 }
 
 std::shared_ptr<Function const>
-Function::parse(const std::vector<vespalib::string> &params, vespalib::stringref expression)
+Function::parse(const std::vector<vespalib::string> &params, std::string_view expression)
 {
     return parse_function(ExplicitParams(params), expression, nullptr);
 }
 
 std::shared_ptr<Function const>
-Function::parse(const std::vector<vespalib::string> &params, vespalib::stringref expression,
+Function::parse(const std::vector<vespalib::string> &params, std::string_view expression,
                 const SymbolExtractor &symbol_extractor)
 {
     return parse_function(ExplicitParams(params), expression, &symbol_extractor);
@@ -1093,35 +1093,35 @@ Function::dump_as_lambda() const
 }
 
 bool
-Function::unwrap(vespalib::stringref input,
+Function::unwrap(std::string_view input,
                  vespalib::string &wrapper,
                  vespalib::string &body,
                  vespalib::string &error)
 {
     size_t pos = 0;
-    for (; pos < input.size() && isspace(input[pos]); ++pos);
+    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos);
     size_t wrapper_begin = pos;
-    for (; pos < input.size() && isalpha(input[pos]); ++pos);
+    for (; pos < input.size() && std::isalpha(static_cast<unsigned char>(input[pos])); ++pos);
     size_t wrapper_end = pos;
     if (wrapper_end == wrapper_begin) {
         error = "could not extract wrapper name";
         return false;
     }
-    for (; pos < input.size() && isspace(input[pos]); ++pos);
+    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos);
     if (pos == input.size() || input[pos] != '(') {
         error = "could not match opening '('";
         return false;
     }
     size_t body_begin = (pos + 1);
     size_t body_end = (input.size() - 1);
-    for (; body_end > body_begin && isspace(input[body_end]); --body_end);
+    for (; body_end > body_begin && std::isspace(static_cast<unsigned char>(input[body_end])); --body_end);
     if (input[body_end] != ')') {
         error = "could not match closing ')'";
         return false;
     }
     assert(body_end >= body_begin);
-    wrapper = vespalib::stringref(input.data() + wrapper_begin, wrapper_end - wrapper_begin);
-    body = vespalib::stringref(input.data() + body_begin, body_end - body_begin);
+    wrapper = std::string_view(input.data() + wrapper_begin, wrapper_end - wrapper_begin);
+    body = std::string_view(input.data() + body_begin, body_end - body_begin);
     return true;
 }
 

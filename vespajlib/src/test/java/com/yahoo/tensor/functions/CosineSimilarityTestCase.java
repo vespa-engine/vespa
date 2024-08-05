@@ -12,6 +12,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -51,8 +52,10 @@ public class CosineSimilarityTestCase {
 
     static class MyContext implements TypeContext<Name> {
         Map<String, TensorType> map = new HashMap<>();
+        Map<String, String> bindings = new HashMap<>();
         public TensorType getType(Name name) { return getType(name.name()); }
         public TensorType getType(String name) { return map.get(name); }
+        public String resolveBinding(String name) { return Optional.ofNullable(bindings.get(name)).orElse(name); }
     }
 
     @Test
@@ -80,4 +83,29 @@ public class CosineSimilarityTestCase {
         assertEquals("tensor(foo{},z[4])", resType.toString());
     }
 
+    @Test
+    public void testExpansionWithDimensionBinding() {
+        var tTypeA = TensorType.fromSpec("tensor(foo{},vecdim[128])");
+        var tTypeB = TensorType.fromSpec("tensor(vecdim[128],z[4])");
+        var a = new VariableTensor<>("left", tTypeA);
+        var b = new VariableTensor<>("right", tTypeB);
+        var op = new CosineSimilarity<>(a, b, "dimensionArgument");
+        assertEquals("join(" +
+                     ( "reduce(join(left, right, f(a,b)(a * b)), sum, dimensionArgument), " +
+                       "map(" +
+                       ( "join(" +
+                         ( "reduce(join(left, left, f(a,b)(a * b)), sum, dimensionArgument), " +
+                           "reduce(join(right, right, f(a,b)(a * b)), sum, dimensionArgument), " +
+                           "f(a,b)(a * b)), " ) +
+                         "f(a)(sqrt(a))), " ) +
+                       "f(a,b)(a / b)" ) +
+                     ")",
+                     op.toPrimitive().toString());
+        var context = new MyContext();
+        context.map.put("left", tTypeA);
+        context.map.put("right", tTypeB);
+        context.bindings.put("dimensionArgument", "vecdim");
+        var resType = op.type(context);
+        assertEquals("tensor(foo{},z[4])", resType.toString());
+    }
 }

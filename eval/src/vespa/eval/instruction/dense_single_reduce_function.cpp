@@ -107,9 +107,9 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     static_assert(std::is_same_v<OCT,typename AGGR::value_type>);
     constexpr bool aggr_is_simple = is_simple(AGGR::enum_value());
     const auto &params = unwrap_param<Params>(param);
-    const ICT *src = state.peek(0).cells().typify<ICT>().cbegin();
+    const ICT *src = state.peek(0).cells().typify<ICT>().data();
     auto dst_cells = state.stash.create_uninitialized_array<OCT>(params.outer_size * params.inner_size);
-    OCT *dst = dst_cells.begin();
+    OCT *dst = dst_cells.data();
     if constexpr (aggr_is_simple && !is_inner) {
         fold_reduce_impl<ICT, OCT, AGGR>(params, src, dst);
     } else {

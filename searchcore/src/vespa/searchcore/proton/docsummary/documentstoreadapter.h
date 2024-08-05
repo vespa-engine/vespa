@@ -16,7 +16,7 @@ private:
 public:
     DocumentStoreAdapter(const search::IDocumentStore &docStore,
                          const document::DocumentTypeRepo &repo);
-    ~DocumentStoreAdapter();
+    ~DocumentStoreAdapter() override;
 
     std::unique_ptr<const search::docsummary::IDocsumStoreDocument> get_document(uint32_t docId) override;
 };

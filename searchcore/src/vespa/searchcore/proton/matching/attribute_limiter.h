@@ -44,7 +44,7 @@ public:
     std::unique_ptr<SearchIterator> create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch);
     bool was_used() const;
     ssize_t getEstimatedHits() const;
-    static DiversityCutoffStrategy toDiversityCutoffStrategy(vespalib::stringref strategy);
+    static DiversityCutoffStrategy toDiversityCutoffStrategy(std::string_view strategy);
 private:
     using BlueprintAndMatchData = std::pair<search::queryeval::Blueprint &, search::fef::MatchData &>;
     BlueprintAndMatchData create_match_data(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch);

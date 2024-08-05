@@ -62,6 +62,8 @@ public class SchemaInfoTester {
                 .addInput("query(myTensor4)", InputType.fromSpec("tensor<float>(x[5])"));
         schemas.add(new Schema.Builder("a")
                             .add(common.build())
+                            .add(new Field.Builder("field1", "string").setIndex(true).addAlias("alias1").addAlias("alias2").build())
+                            .add(new Field.Builder("field2", "int").setAttribute(true).build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
@@ -101,6 +103,12 @@ public class SchemaInfoTester {
         // ----- Schema A
         var schemaA = new SchemaInfoConfig.Schema.Builder();
         schemaA.name("a");
+
+        schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field1").type("string")
+                                                                 .index(true).attribute(false)
+                                                                 .alias("alias1").alias("alias2"));
+        schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
+                                                                 .index(false).attribute(true));
 
         schemaA.rankprofile(rankProfileCommon);
         var rankProfileInconsistentA = new SchemaInfoConfig.Schema.Rankprofile.Builder();

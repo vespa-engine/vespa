@@ -16,7 +16,7 @@ namespace search::queryeval::test {
 
 constexpr search::queryeval::Source default_source = 0;
 
-DiskIndexBuilder::DiskIndexBuilder(const Schema& schema, vespalib::stringref index_dir, uint32_t docid_limit, uint64_t num_words)
+DiskIndexBuilder::DiskIndexBuilder(const Schema& schema, std::string_view index_dir, uint32_t docid_limit, uint64_t num_words)
     : _schema(schema),
       _field_length_inspector(),
       _tune_file_indexing(),
@@ -35,7 +35,7 @@ DiskIndexBuilder::DiskIndexBuilder(const Schema& schema, vespalib::stringref ind
 }
 
 void
-DiskIndexBuilder::add_word(vespalib::stringref word, search::BitVector& docids, uint32_t num_occs)
+DiskIndexBuilder::add_word(std::string_view word, search::BitVector& docids, uint32_t num_occs)
 {
     DocIdAndPosOccFeatures diaf;
     diaf.word_positions().reserve(num_occs);

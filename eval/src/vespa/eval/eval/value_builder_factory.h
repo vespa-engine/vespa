@@ -26,7 +26,7 @@ struct ValueBuilder : ValueBuilderBase {
     // returned subspaces will be invalidated when new subspaces are
     // added. Also note that adding the same subspace multiple times
     // is not allowed.
-    virtual ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) = 0;
+    virtual ArrayRef<T> add_subspace(ConstArrayRef<std::string_view> addr) = 0;
 
     // add a dense subspace for the given address where labels are
     // specified by shared string repo ids. Note that the caller is

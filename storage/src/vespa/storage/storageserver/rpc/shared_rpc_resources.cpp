@@ -84,7 +84,7 @@ SharedRpcResources::~SharedRpcResources() {
     }
 }
 
-void SharedRpcResources::start_server_and_register_slobrok(vespalib::stringref my_handle) {
+void SharedRpcResources::start_server_and_register_slobrok(std::string_view my_handle) {
     LOG(debug, "Starting main RPC supervisor on port %d with slobrok handle '%s'",
         _rpc_server_port, vespalib::string(my_handle).c_str());
     if (!_orb->Listen(_rpc_server_port)) {

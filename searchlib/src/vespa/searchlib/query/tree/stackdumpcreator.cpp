@@ -22,12 +22,12 @@ class QueryNodeConverter : public QueryVisitor {
     RawBuf _buf;
 
     void visitNodes(const vector<Node *> &nodes) {
-        for (size_t i = 0; i < nodes.size(); ++i) {
-            nodes[i]->accept(*this);
+        for (auto node : nodes) {
+            node->accept(*this);
         }
     }
 
-    void appendString(const string &s) {
+    void appendString(std::string_view s) {
         _buf.preAlloc(sizeof(uint32_t) + s.size());
         _buf.appendCompressedPositiveNumber(s.size());
         _buf.append(s.data(), s.size());
@@ -337,7 +337,7 @@ template <typename T>
 void QueryNodeConverter::appendTerm(const TermBase<T> &node) {
     vespalib::asciistream ost;
     ost << node.getTerm();
-    appendString(ost.str());
+    appendString(ost.view());
 }
 template <>
 void QueryNodeConverter::appendTerm(const TermBase<string> &node) {

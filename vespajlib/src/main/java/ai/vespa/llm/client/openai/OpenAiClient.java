@@ -12,15 +12,21 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
+import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,8 +41,11 @@ import java.util.stream.Stream;
 @Beta
 public class OpenAiClient implements LanguageModel {
 
-    private static final String DEFAULT_MODEL = "gpt-3.5-turbo";
+    private static final String DEFAULT_MODEL = "gpt-4o-mini";
     private static final String DATA_FIELD = "data: ";
+
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 250;
 
     private static final String OPTION_MODEL = "model";
     private static final String OPTION_TEMPERATURE = "temperature";
@@ -45,7 +54,9 @@ public class OpenAiClient implements LanguageModel {
     private final HttpClient httpClient;
 
     public OpenAiClient() {
-        this.httpClient = HttpClient.newBuilder().build();
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(500))
+                .build();
     }
 
     @Override
@@ -66,37 +77,98 @@ public class OpenAiClient implements LanguageModel {
     public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
                                                                     InferenceParameters options,
                                                                     Consumer<Completion> consumer) {
+        var completionContext = new CompletionContext(prompt, options, consumer);
+        completeAsyncAttempt(completionContext, 0);
+        return completionContext.completionFuture();
+    }
+
+    private record CompletionContext(Prompt prompt,
+                                     InferenceParameters options,
+                                     Consumer<Completion> consumer,
+                                     CompletableFuture<Completion.FinishReason> completionFuture) {
+        CompletionContext(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
+            this(prompt, options, consumer, new CompletableFuture<>());
+        }
+    }
+
+    private void completeAsyncAttempt(CompletionContext context, int attempt) {
         try {
-            var request = toRequest(prompt, options, true);
-            var futureResponse = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines());
-            var completionFuture = new CompletableFuture<Completion.FinishReason>();
+            var request = toRequest(context.prompt(), context.options(), true);
+            var futureResponse = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
+                                           .orTimeout(10, TimeUnit.SECONDS);  // timeout for start of response
 
-            futureResponse.thenAcceptAsync(response -> {
-                try {
-                    int responseCode = response.statusCode();
-                    if (responseCode != 200) {
-                        throw new LanguageModelException(responseCode, response.body().collect(Collectors.joining()));
-                    }
-
-                    Stream<String> lines = response.body();
-                    lines.forEach(line -> {
-                        if (line.startsWith(DATA_FIELD)) {
-                            var root = SlimeUtils.jsonToSlime(line.substring(DATA_FIELD.length())).get();
-                            var completion = toCompletions(root, "delta").get(0);
-                            consumer.accept(completion);
-                            if (!completion.finishReason().equals(Completion.FinishReason.none)) {
-                                completionFuture.complete(completion.finishReason());
-                            }
-                        }
-                    });
-                } catch (Exception e) {
-                    completionFuture.completeExceptionally(e);
-                }
+            futureResponse.thenAccept(response -> {
+                handleHttpResponse(response, context);
+            }).exceptionally(exception -> {
+                handleHttpException(exception, context, attempt);
+                return null;
             });
-            return completionFuture;
 
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void handleHttpResponse(HttpResponse<Stream<String>> response, CompletionContext context) {
+        try {
+            int responseCode = response.statusCode();
+            if (responseCode != 200) {
+                throw new LanguageModelException(responseCode, response.body().collect(Collectors.joining()));
+            }
+            try (Stream<String> lines = response.body()) {
+                lines.forEach(line -> processLine(context, line));
+            }
+        } catch (Exception e) {
+            context.completionFuture().completeExceptionally(e);
+        }
+    }
+
+    private void processLine(CompletionContext context, String line) {
+        if (line.startsWith(DATA_FIELD)) {
+            var root = SlimeUtils.jsonToSlime(line.substring(DATA_FIELD.length())).get();
+            var completion = toCompletions(root, "delta").get(0);
+            context.consumer().accept(completion);
+            if (!completion.finishReason().equals(Completion.FinishReason.none)) {
+                context.completionFuture().complete(completion.finishReason());
+            }
+        }
+    }
+
+    private void waitBeforeRetry() {
+        try {
+            TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private boolean shouldRetry(Throwable exception) {
+        Throwable cause = exception.getCause();
+        if (cause instanceof IOException && cause.getMessage().contains("Connection reset")) {
+            return true;
+        }
+        if (cause instanceof HttpConnectTimeoutException) {
+            return true;
+        }
+        if (cause instanceof HttpTimeoutException) {
+            return true;
+        }
+        if (cause instanceof EOFException) {
+            return true;
+        }
+        return false;
+    }
+
+    private void handleHttpException(Throwable exception, CompletionContext context, int attempt) {
+        if (shouldRetry(exception)) {
+            if (attempt < MAX_RETRIES) {
+                waitBeforeRetry();
+                completeAsyncAttempt(context, attempt + 1);
+            } else {
+                context.completionFuture().completeExceptionally(new RuntimeException("OpenAI: max retries reached", exception));
+            }
+        } else {
+            context.completionFuture().completeExceptionally(exception);
         }
     }
 

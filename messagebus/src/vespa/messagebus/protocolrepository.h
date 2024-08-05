@@ -52,7 +52,7 @@ public:
      * @param name The name of the protocol to return.
      * @return The protocol registered, or null.
      */
-    IProtocol * getProtocol(const string &name);
+    IProtocol * getProtocol(std::string_view name);
 
     /**
      * Creates and returns a routing policy that matches the given arguments. If a routing policy has been

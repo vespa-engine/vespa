@@ -29,8 +29,8 @@ public:
           _shutdown_initiated(false)
     {}
 
-    void on_fatal_error(vespalib::stringref message) override;
-    void on_resource_exhaustion_error(vespalib::stringref message) override;
+    void on_fatal_error(std::string_view message) override;
+    void on_resource_exhaustion_error(std::string_view message) override;
 };
 
 }

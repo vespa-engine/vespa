@@ -54,7 +54,7 @@ vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const 
 
 }
 
-TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory)
+TensorAttribute::TensorAttribute(std::string_view name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory)
     : NotImplementedAttribute(name, cfg),
       _refVector(cfg.getGrowStrategy(), getGenerationHolder()),
       _tensorStore(tensorStore),
@@ -353,7 +353,7 @@ TensorAttribute::onLoad(vespalib::Executor* executor)
 }
 
 std::unique_ptr<AttributeSaver>
-TensorAttribute::onInitSave(vespalib::stringref fileName)
+TensorAttribute::onInitSave(std::string_view fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());

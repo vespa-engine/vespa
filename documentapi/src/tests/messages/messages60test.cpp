@@ -193,7 +193,7 @@ TEST_F(Messages60Test, testRemoveLocationMessage) {
             auto& ref = dynamic_cast<RemoveLocationMessage&>(*obj);
             EXPECT_EQ(string("id.group == \"mygroup\""), ref.getDocumentSelection());
             // FIXME add to wire format, currently hardcoded.
-            EXPECT_EQ(string(document::FixedBucketSpaces::default_space_name()), ref.getBucketSpace());
+            EXPECT_EQ(document::FixedBucketSpaces::default_space_name(), ref.getBucketSpace());
         }
     }
 }
@@ -201,7 +201,7 @@ TEST_F(Messages60Test, testRemoveLocationMessage) {
 TEST_F(Messages60Test, testGetDocumentMessage) {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
-    EXPECT_EQ(280u, sizeof(GetDocumentMessage));
+    EXPECT_EQ(152u + 2 *sizeof(vespalib::string), sizeof(GetDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -263,11 +263,10 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(64u, sizeof(vespalib::string));
     EXPECT_EQ(sizeof(vespalib::string), sizeof(TestAndSetCondition));
     EXPECT_EQ(112u, sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
-    EXPECT_EQ(sizeof(TestAndSetMessage) + 32, sizeof(PutDocumentMessage));
+    EXPECT_EQ(sizeof(TestAndSetMessage) + 40, sizeof(PutDocumentMessage));
     int size_of_create_if_non_existent_flag = 1;
     EXPECT_EQ(MESSAGE_BASE_LENGTH +
                  45u +
@@ -286,6 +285,7 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
         EXPECT_EQ(72u, deserializedMsg.getApproxSize());
         EXPECT_EQ(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
         EXPECT_EQ(false, deserializedMsg.get_create_if_non_existent());
+        EXPECT_EQ(deserializedMsg.persisted_timestamp(), 0); // Not supported on this protocol version
     }
 
     //-------------------------------------------------------------------------
@@ -363,7 +363,7 @@ TEST_F(Messages60Test, testRemoveDocumentMessage) {
 
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(sizeof(TestAndSetMessage) + 104, sizeof(RemoveDocumentMessage));
+    EXPECT_EQ(sizeof(TestAndSetMessage) + 48 + sizeof(vespalib::string), sizeof(RemoveDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -372,6 +372,7 @@ TEST_F(Messages60Test, testRemoveDocumentMessage) {
         auto& ref = dynamic_cast<RemoveDocumentMessage&>(*routablePtr);
         EXPECT_EQ(string("id:ns:testdoc::"), ref.getDocumentId().toString());
         EXPECT_EQ(msg.getCondition().getSelection(), ref.getCondition().getSelection());
+        EXPECT_EQ(ref.persisted_timestamp(), 0); // Not supported on this protocol version
     }
 }
 

@@ -4,8 +4,8 @@ package com.yahoo.vespa.config.server.http.v2;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -217,7 +217,7 @@ public class ApplicationHandler extends HttpHandler {
     private HttpResponse logs(ApplicationId applicationId, HttpRequest request) {
         HttpURL requestURL = HttpURL.from(request.getUri());
         Optional<DomainName> hostname = Optional.ofNullable(requestURL.query().lastEntries().get("hostname")).map(DomainName::of);
-        return applicationRepository.getLogs(applicationId, hostname, requestURL.query().remove("hostname"));
+        return applicationRepository.getLogs(applicationId, hostname, requestURL.query());
     }
 
     private HttpResponse searchNodeMetrics(ApplicationId applicationId) {

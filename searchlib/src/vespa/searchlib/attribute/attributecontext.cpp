@@ -10,7 +10,7 @@ using namespace search::attribute;
 namespace search {
 
 const IAttributeVector *
-AttributeContext::getAttribute(AttributeMap & map, const string & name, bool stableEnum) const
+AttributeContext::getAttribute(AttributeMap & map, std::string_view name, bool stableEnum) const
 {
     auto itr = map.find(name);
     if (itr != map.end()) {
@@ -25,13 +25,13 @@ AttributeContext::getAttribute(AttributeMap & map, const string & name, bool sta
         if (readGuard) {
             attribute = readGuard->attribute();
         }
-        map[name] = std::move(readGuard);
+        map[vespalib::string(name)] = std::move(readGuard);
         return attribute;
     }
 }
 
 const IAttributeVector *
-AttributeContext::getAttributeMtSafe(AttributeMap &map, const string &name, bool stableEnum) const {
+AttributeContext::getAttributeMtSafe(AttributeMap &map, std::string_view name, bool stableEnum) const {
     std::lock_guard<std::mutex> guard(_cacheLock);
     return getAttribute(map, name, stableEnum);
 }
@@ -47,7 +47,7 @@ AttributeContext::AttributeContext(const IAttributeManager & manager)
 AttributeContext::~AttributeContext() = default;
 
 const IAttributeVector *
-AttributeContext::getAttribute(const string & name) const
+AttributeContext::getAttribute(std::string_view name) const
 {
     return _mtSafe
         ? getAttributeMtSafe(_attributes, name, false)
@@ -55,7 +55,7 @@ AttributeContext::getAttribute(const string & name) const
 }
 
 const IAttributeVector *
-AttributeContext::getAttributeStableEnum(const string & name) const
+AttributeContext::getAttributeStableEnum(std::string_view name) const
 {
     return _mtSafe
            ? getAttributeMtSafe(_enumAttributes, name, true)
@@ -76,13 +76,13 @@ AttributeContext::getAttributeList(std::vector<const IAttributeVector *> & list)
 {
     std::vector<AttributeGuard> attributes;
     _manager.getAttributeList(attributes);
-    for (size_t i = 0; i < attributes.size(); ++i) {
-        list.push_back(getAttribute(attributes[i]->getName()));
+    for (auto & attribute : attributes) {
+        list.push_back(getAttribute(attribute->getName()));
     }
 }
 
 void
-AttributeContext::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
+AttributeContext::asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const {
     _manager.asyncForAttribute(name, std::move(func));
 }
 

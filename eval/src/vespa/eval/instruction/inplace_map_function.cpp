@@ -22,7 +22,7 @@ void my_inplace_map_op(State &state, uint64_t param) {
     auto const &child = state.peek(0);
     auto src_cells = child.cells().typify<CT>();
     auto dst_cells = unconstify(src_cells);
-    apply_op1_vec(dst_cells.begin(), src_cells.begin(), dst_cells.size(), my_fun);
+    apply_op1_vec(dst_cells.data(), src_cells.data(), dst_cells.size(), my_fun);
 }
 
 //-----------------------------------------------------------------------------

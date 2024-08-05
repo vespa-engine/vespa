@@ -339,11 +339,12 @@ ControlFile::hasWord(const char *word, const char *haystack)
     int len = strlen(word);
     const char *start = strstr(haystack, word);
     const char *end = start + len;
-    if (!start)
+    if (!start) {
         return false;
+    }
 
-    return ((start == haystack) || isspace(start[-1]))
-                    && (!*end || isspace(*end));
+    return ((start == haystack) || std::isspace(static_cast<unsigned char>(start[-1])))
+                    && (!*end || std::isspace(static_cast<unsigned char>(*end)));
 }
 
 bool
@@ -352,9 +353,10 @@ ControlFile::hasNegWord(const char *word, const char *haystack)
     int len = strlen(word);
     const char *start = strstr(haystack, word);
     const char *end = start + len;
-    if (!start || start == haystack)
+    if (!start || start == haystack) {
         return false;
-    return start[-1] == '-' && (!*end || isspace(*end));
+    }
+    return start[-1] == '-' && (!*end || std::isspace(static_cast<unsigned char>(*end)));
 }
 
 void

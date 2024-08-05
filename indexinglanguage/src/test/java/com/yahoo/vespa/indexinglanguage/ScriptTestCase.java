@@ -202,9 +202,9 @@ public class ScriptTestCase {
                            "my input", "[110.0, 122.0, 33.0, 106.0]");
 
         assertThrows(() -> testEmbedStatement("input myText | embed | attribute 'myTensor'", embedders, "input text", "[105, 110, 112, 117]"),
-                     "Multiple embedders are provided but no embedder id is given. Valid embedders are emb1,emb2");
+                     "Multiple embedders are provided but no embedder id is given. Valid embedders are emb1, emb2");
         assertThrows(() -> testEmbedStatement("input myText | embed emb3 | attribute 'myTensor'", embedders, "input text", "[105, 110, 112, 117]"),
-                     "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
+                     "Can't find embedder 'emb3'. Valid embedders are emb1, emb2");
     }
 
     private void testEmbedStatement(String expressionString, Map<String, Embedder> embedders, String input, String expected) {
@@ -562,12 +562,12 @@ public class ScriptTestCase {
     }
 
 
-    private void assertThrows(Runnable r, String msg) {
+    private void assertThrows(Runnable r, String expectedMessage) {
         try {
             r.run();
             fail();
         } catch (IllegalStateException e) {
-            assertEquals(e.getMessage(), msg);
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 

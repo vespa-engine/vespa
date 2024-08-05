@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <cctype>
 #include <filesystem>
 #include <unistd.h>
 #include <assert.h>
@@ -184,7 +185,7 @@ LineReader::read_line(vespalib::string &line)
 bool look_for_eof(Input &input) {
     for (auto mem = input.obtain(); mem.size > 0; mem = input.obtain()) {
         for (size_t i = 0; i < mem.size; ++i) {
-            if (!isspace(mem.data[i])) {
+            if (!std::isspace(static_cast<unsigned char>(mem.data[i]))) {
                 input.evict(i);
                 return false;
             }

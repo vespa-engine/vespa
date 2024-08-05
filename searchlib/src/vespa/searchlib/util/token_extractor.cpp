@@ -67,8 +67,8 @@ getSpan(const SpanNode &span_node)
     return finder.span();
 }
 
-vespalib::stringref
-get_span_string_or_alternative(vespalib::stringref s, const Span &span, const FieldValue* fv)
+std::string_view
+get_span_string_or_alternative(std::string_view s, const Span &span, const FieldValue* fv)
 {
     if (fv != nullptr) {
         auto raw = fv->getAsRaw();
@@ -79,7 +79,7 @@ get_span_string_or_alternative(vespalib::stringref s, const Span &span, const Fi
 }
 
 size_t
-truncated_word_len(vespalib::stringref word, size_t max_byte_len)
+truncated_word_len(std::string_view word, size_t max_byte_len)
 {
     Utf8Reader reader(word);
     while (reader.hasMore()) {
@@ -104,8 +104,8 @@ TokenExtractor::TokenExtractor(const vespalib::string& field_name, size_t max_wo
 
 TokenExtractor::~TokenExtractor() = default;
 
-vespalib::stringref
-TokenExtractor::sanitize_word(vespalib::stringref word, const document::Document* doc) const
+std::string_view
+TokenExtractor::sanitize_word(std::string_view word, const document::Document* doc) const
 {
     size_t len = strnlen(word.data(), word.size());
     if (len < word.size()) {
@@ -126,7 +126,7 @@ TokenExtractor::sanitize_word(vespalib::stringref word, const document::Document
 }
 
 void
-TokenExtractor::consider_word(std::vector<SpanTerm>& terms, vespalib::stringref text, const Span& span, const FieldValue* fv, const Document* doc) const
+TokenExtractor::consider_word(std::vector<SpanTerm>& terms, std::string_view text, const Span& span, const FieldValue* fv, const Document* doc) const
 {
     if (span.length() > 0 && span.from() >= 0 &&
         static_cast<size_t>(span.from()) + static_cast<size_t>(span.length()) <= text.size()) {
@@ -139,7 +139,7 @@ TokenExtractor::consider_word(std::vector<SpanTerm>& terms, vespalib::stringref 
 }
 
 void
-TokenExtractor::extract(std::vector<SpanTerm>& terms, const document::StringFieldValue::SpanTrees& trees, vespalib::stringref text, const Document* doc) const
+TokenExtractor::extract(std::vector<SpanTerm>& terms, const document::StringFieldValue::SpanTrees& trees, std::string_view text, const Document* doc) const
 {
     auto tree = StringFieldValue::findTree(trees, SPANTREE_NAME);
     if (tree == nullptr) {

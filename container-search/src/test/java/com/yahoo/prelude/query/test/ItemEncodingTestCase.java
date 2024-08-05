@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
@@ -285,6 +286,40 @@ public class ItemEncodingTestCase {
 
         assertWord(buffer, "a");
         assertWord(buffer, "b");
+    }
+
+    @Test
+    void testWandSegmentEncoding() {
+        WordItem a = new WordItem("a");
+        WordItem b = new WordItem("b");
+        WordItem c = new WordItem("c");
+        WordItem d = new WordItem("d");
+        var bc = new AndSegmentItem("bc", true, true);
+        bc.addItem(b);
+        bc.addItem(c);
+        bc.shouldFoldIntoWand(true);
+        WeakAndItem wand = new WeakAndItem();
+        wand.setN(321);
+        wand.addItem(a);
+        wand.addItem(bc);
+        wand.addItem(d);
+        ByteBuffer buffer = ByteBuffer.allocate(128);
+        int count = wand.encode(buffer);
+        assertEquals(5, count, "Serialization count");
+        buffer.flip();
+        assertType(buffer, 16, 0);
+        assertEquals(4, buffer.get(), "WeakAnd arity");
+        assertEquals(321, buffer.getShort() & 0x3fff, "WeakAnd N");
+        assertEquals(0, buffer.get());
+        assertWord(buffer, "a");
+        assertWord(buffer, "b");
+        assertWord(buffer, "c");
+        assertWord(buffer, "d");
+        assertEquals(0, buffer.remaining());
+        bc.shouldFoldIntoWand(false);
+        buffer = ByteBuffer.allocate(128);
+        count = wand.encode(buffer);
+        assertEquals(6, count, "Serialization count");
     }
 
     @Test

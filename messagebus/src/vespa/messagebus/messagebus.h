@@ -10,6 +10,7 @@
 #include "sourcesession.h"
 #include <vespa/messagebus/network/inetworkowner.h>
 #include <vespa/messagebus/routing/routingspec.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
 #include <string>
 #include <atomic>
@@ -38,8 +39,8 @@ private:
     using RoutingTableSP = std::shared_ptr<RoutingTable>;
     INetwork                            &_network;
     std::mutex                           _lock;
-    std::map<string, RoutingTableSP>     _routingTables;
-    std::map<string, IMessageHandler*>   _sessions;
+    vespalib::hash_map<string, RoutingTableSP>     _routingTables;
+    vespalib::hash_map<string, IMessageHandler*> _sessions;
     std::unique_ptr<ProtocolRepository>  _protocolRepository;
     std::unique_ptr<Messenger>           _msn;
     std::unique_ptr<Resender>            _resender;
@@ -96,7 +97,7 @@ public:
     /**
      * Destruct. The destructor will shut down the underlying INetwork object.
      **/
-    virtual ~MessageBus();
+    ~MessageBus() override;
 
     /**
      * This is a convenience method to call {@link this#createSourceSession(SourceSessionParams)} with default
@@ -301,10 +302,10 @@ public:
     bool setupRouting(RoutingSpec spec) override;
 
     // Implements INetworkOwner.
-    IProtocol * getProtocol(const string &name) override;
+    IProtocol * getProtocol(std::string_view name) override;
 
     // Implements INetworkOwner.
-    void deliverMessage(Message::UP msg, const string &session) override;
+    void deliverMessage(Message::UP msg, std::string_view session) override;
 
     // Implements INetworkOwner.
     void deliverReply(Reply::UP reply, IReplyHandler &handler) override;

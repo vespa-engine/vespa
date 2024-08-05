@@ -5,18 +5,13 @@
 
 namespace vespalib {
 
-SimpleBuffer::SimpleBuffer()
-    : _data(),
-      _used(0)
-{
-}
 
 SimpleBuffer::~SimpleBuffer() = default;
 
 Memory
 SimpleBuffer::obtain()
 {
-    return Memory(_data.data(), _used);
+    return {_data.data(), _used};
 }
 
 Input &
@@ -33,7 +28,7 @@ SimpleBuffer::reserve(size_t bytes)
 {
     assert((_used + bytes) >= _used);
     _data.resize(_used + bytes, char(0x55));
-    return WritableMemory(&_data[_used], bytes);
+    return {&_data[_used], bytes};
 }
 
 Output &

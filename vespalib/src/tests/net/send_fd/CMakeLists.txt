@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_send_fd_test_app TEST
     send_fd_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_send_fd_test_app COMMAND vespalib_send_fd_test_app)

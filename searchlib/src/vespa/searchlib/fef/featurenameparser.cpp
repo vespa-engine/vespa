@@ -83,7 +83,7 @@ DoLog<A> doLog(A a) {
 class ParseContext
 {
 private:
-    const vespalib::string &_str;   // the input string
+    const vespalib::string &_str;   // the input string. TODO Use std::string_view
     uint32_t           _pos;   // current position
     char               _curr;  // current character, 0 means eos
     bool               _error; // flag indicating whether we have a parse error
@@ -286,7 +286,7 @@ private:
     vespalib::string  &_dst;    // where to save the dequoted string
 
 public:
-    DoDequote(vespalib::string &str) : _escape(false), _hex(0), _c(0), _dst(str) {}
+    explicit DoDequote(vespalib::string &str) : _escape(false), _hex(0), _c(0), _dst(str) {}
     bool operator()(char c) {
         if (_escape) {
             if (_hex > 0) {
@@ -446,8 +446,8 @@ bool normalizeFeatureName(ParseContext &ctx, vespalib::string &name) {
     }
     search::fef::FeatureNameBuilder builder;
     builder.baseName(baseName);
-    for (uint32_t i = 0; i < params.size(); ++i) {
-        builder.parameter(params[i]);
+    for (const auto & param : params) {
+        builder.parameter(param);
     }
     builder.output(output);
     name = builder.buildName();
@@ -456,8 +456,7 @@ bool normalizeFeatureName(ParseContext &ctx, vespalib::string &name) {
 
 } // namespace <unnamed>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 FeatureNameParser::FeatureNameParser(const string &input)
     : _valid(false),
@@ -479,8 +478,8 @@ FeatureNameParser::FeatureNameParser(const string &input)
     if (_valid && ctx.eos()) {
         FeatureNameBuilder builder;
         builder.baseName(_baseName);
-        for (uint32_t i = 0; i < _parameters.size(); ++i) {
-            builder.parameter(_parameters[i]);
+        for (const auto & _parameter : _parameters) {
+            builder.parameter(_parameter);
         }
         _executorName = builder.buildName();
         builder.output(_output);
@@ -495,8 +494,7 @@ FeatureNameParser::FeatureNameParser(const string &input)
     }
 }
 
-FeatureNameParser::~FeatureNameParser() { }
+FeatureNameParser::~FeatureNameParser() = default;
 
 
-} // namespace fef
-} // namespace search
+}

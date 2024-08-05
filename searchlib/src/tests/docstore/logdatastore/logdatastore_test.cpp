@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -22,6 +21,8 @@
 #include <filesystem>
 #include <iomanip>
 #include <random>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using document::BucketId;
 using document::StringFieldValue;
@@ -424,7 +425,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field, size_t numRe
 {
     asciistream idstr;
     idstr << "id:test:test:: " << i;
-    DocumentId id(idstr.str());
+    DocumentId id(idstr.view());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
     Document::UP doc(new Document(repo, *docType, id));
     ASSERT_TRUE(doc.get());
@@ -434,7 +435,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field, size_t numRe
         mainstr << (j + i * 1000) << " ";
     }
     mainstr << " and end field";
-    doc->setValue("main", StringFieldValue::make(mainstr.str()));
+    doc->setValue("main", StringFieldValue::make(mainstr.view()));
     if (extra_field) {
         doc->setValue("extra", StringFieldValue::make("foo"));
     }
@@ -565,8 +566,9 @@ TEST("Control static memory usage") {
     IDocumentStore &ds = vcs.getStore();
     vespalib::MemoryUsage usage = ds.getMemoryUsage();
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
-    EXPECT_EQUAL(74668 + mutex_size, usage.allocatedBytes());
-    EXPECT_EQUAL(944u + mutex_size, usage.usedBytes());
+    constexpr size_t string_size = sizeof(vespalib::string);
+    EXPECT_EQUAL(74476 + mutex_size + 3 * string_size, usage.allocatedBytes());
+    EXPECT_EQUAL(752u + mutex_size + 3 * string_size, usage.usedBytes());
 }
 
 TEST("test the update cache strategy") {
@@ -1005,9 +1007,9 @@ TEST_F("require that lid space can be increased after being compacted and then s
 TEST_F("require that there is control of static memory usage", Fixture)
 {
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQUAL(520u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex), sizeof(LogDataStore));
-    EXPECT_EQUAL(74108u, usage.allocatedBytes());
-    EXPECT_EQUAL(384u, usage.usedBytes());
+    EXPECT_EQUAL(456u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(vespalib::string), sizeof(LogDataStore));
+    EXPECT_EQUAL(73916u + 3 * sizeof(vespalib::string), usage.allocatedBytes());
+    EXPECT_EQUAL(192u + 3 * sizeof(vespalib::string), usage.usedBytes());
 }
 
 TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)

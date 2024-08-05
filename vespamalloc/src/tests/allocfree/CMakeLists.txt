@@ -16,8 +16,8 @@ vespa_add_executable(vespamalloc_linklist_test_app
     ../../vespamalloc/malloc/common.cpp
     $<TARGET_OBJECTS:vespamalloc_util>
     EXTERNAL_DEPENDS
-    dl
     ${VESPA_ATOMIC_LIB}
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_test(NAME vespamalloc_allocfree_shared_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/allocfree_test.sh BENCHMARK
                DEPENDS vespamalloc_allocfree_shared_test_app vespamalloc_linklist_test_app

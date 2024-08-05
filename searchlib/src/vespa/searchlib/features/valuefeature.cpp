@@ -55,7 +55,7 @@ ValueBlueprint::setup(const IIndexEnvironment &, const ParameterList & params)
         name << i;
         vespalib::asciistream desc;
         desc << "value " << i;
-        describeOutput(name.str(), desc.str());
+        describeOutput(name.str(), desc.view());
         // we have no inputs
     }
     return true;

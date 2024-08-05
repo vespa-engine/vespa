@@ -73,7 +73,7 @@ namespace {
 
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer {
 
-    virtual bool reconfigure(std::unique_ptr<Configure> configure) override {
+    bool reconfigure(std::unique_ptr<Configure> configure) override {
         bool ret = true;
         if (configure) {
             ret = configure->configure(); // Perform index manager reconfiguration now
@@ -773,7 +773,7 @@ TEST_F(IndexManagerTest, require_that_serial_number_is_read_on_load)
 void crippleFusion(uint32_t fusionId) {
     vespalib::asciistream ost;
     ost << index_dir << "/index.flush." << fusionId << "/serial.dat";
-    std::filesystem::remove(std::filesystem::path(ost.str()));
+    std::filesystem::remove(std::filesystem::path(ost.view()));
 }
 
 TEST_F(IndexManagerTest, require_that_failed_fusion_is_retried)
@@ -942,6 +942,9 @@ struct EnableInterleavedFeaturesParam
     bool doc = false;          // Feed doc after enabling interleaved fatures
     bool pruned_config = false; // Original config has been pruned
 
+    EnableInterleavedFeaturesParam() noexcept;
+    EnableInterleavedFeaturesParam(const EnableInterleavedFeaturesParam &) noexcept;
+    ~EnableInterleavedFeaturesParam();
     EnableInterleavedFeaturesParam no_doc_restart1() && {
         name = "restart1";
         restart = Restart::RESTART1;
@@ -967,6 +970,10 @@ struct EnableInterleavedFeaturesParam
         return *this;
     }
 };
+
+EnableInterleavedFeaturesParam::EnableInterleavedFeaturesParam(const EnableInterleavedFeaturesParam &) noexcept = default;
+EnableInterleavedFeaturesParam::EnableInterleavedFeaturesParam() noexcept = default;
+EnableInterleavedFeaturesParam::~EnableInterleavedFeaturesParam() = default;
 
 std::ostream& operator<<(std::ostream& os, const EnableInterleavedFeaturesParam& param)
 {

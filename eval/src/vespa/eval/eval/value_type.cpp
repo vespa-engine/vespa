@@ -4,6 +4,7 @@
 #include "value_type_spec.h"
 #include <algorithm>
 #include <cassert>
+#include <ostream>
 
 namespace vespalib::eval {
 

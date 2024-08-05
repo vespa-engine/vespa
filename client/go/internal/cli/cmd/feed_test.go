@@ -82,13 +82,13 @@ func TestFeed(t *testing.T) {
 	require.Nil(t, cli.Run("feed", "-"))
 	assert.Equal(t, want, stdout.String())
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		httpClient.NextResponseString(503, `{"message":"it's broken yo"}`)
 	}
 	require.Nil(t, cli.Run("feed", jsonFile1))
 	assert.Equal(t, "feed: got status 503 ({\"message\":\"it's broken yo\"}) for put id:ns:type::doc1: giving up after 10 attempts\n", stderr.String())
 	stderr.Reset()
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		httpClient.NextResponseError(fmt.Errorf("something else is broken"))
 	}
 	require.Nil(t, cli.Run("feed", jsonFile1))

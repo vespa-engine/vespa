@@ -16,7 +16,6 @@ using vespalib::datastore::ArrayStore;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::EntryRef;
 using vespalib::DataBuffer;
-using vespalib::stringref;
 using std::unordered_map;
 using std::vector;
 
@@ -89,7 +88,7 @@ deserializeWords(DataBuffer &buffer, memoryindex::WordStore &word_store, WordInd
         word.clear();
         word.resize(size);
         buffer.readBytes(&word[0], size);
-        word_refs.push_back(word_store.addWord(stringref(&word[0], size)));
+        word_refs.push_back(word_store.addWord(std::string_view(&word[0], size)));
         word_index.insert(word_refs.back(), BTreeNoLeafData(), cmp);
     }
 }
@@ -188,7 +187,7 @@ DocumentFeaturesStore::insert(const PredicateTreeAnnotations &annotations, uint3
         auto old_ranges =  _ranges.get(old_ranges_ref);
         std::vector<Range> ranges(old_ranges.begin(), old_ranges.end());
         for (const auto &range : annotations.range_features) {
-            stringref word(range.label.data, range.label.size);
+            std::string_view word(range.label.data, range.label.size);
             KeyComp cmp(_word_store, word);
             auto word_it = _word_index.find(vespalib::datastore::EntryRef(), cmp);
             vespalib::datastore::EntryRef ref;

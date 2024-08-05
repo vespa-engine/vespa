@@ -48,7 +48,7 @@ FieldInverter::processAnnotations(const StringFieldValue &value, const Document&
 {
     _terms.clear();
     auto span_trees = value.getSpanTrees();
-    vespalib::stringref text = value.getValueRef();
+    std::string_view text = value.getValueRef();
     _token_extractor.extract(_terms, span_trees, text, &doc);
     auto it  = _terms.begin();
     auto ite = _terms.end();
@@ -139,7 +139,7 @@ FieldInverter::endElement()
 }
 
 uint32_t
-FieldInverter::saveWord(vespalib::stringref word)
+FieldInverter::saveWord(std::string_view word)
 {
     const size_t wordsSize = _words.size();
     // assert((wordsSize & 3) == 0); // Check alignment
@@ -160,7 +160,7 @@ FieldInverter::saveWord(vespalib::stringref word)
 }
 
 void
-FieldInverter::remove(const vespalib::stringref word, uint32_t docId)
+FieldInverter::remove(const std::string_view word, uint32_t docId)
 {
     uint32_t wordRef = saveWord(word);
     _positions.emplace_back(wordRef, docId);
@@ -190,7 +190,7 @@ FieldInverter::endDoc()
 }
 
 void
-FieldInverter::addWord(vespalib::stringref word, const document::Document& doc)
+FieldInverter::addWord(std::string_view word, const document::Document& doc)
 {
     word = _token_extractor.sanitize_word(word, &doc);
     if (!word.empty()) {
@@ -433,7 +433,7 @@ FieldInverter::push_documents_internal()
     uint32_t lastWordPos = 0;
     uint32_t numWordIds = _wordRefs.size() - 1;
     uint32_t lastDocId = 0;
-    vespalib::stringref word;
+    std::string_view word;
     bool emptyFeatures = true;
     uint32_t last_field_length = 0;
 

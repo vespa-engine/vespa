@@ -10,9 +10,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <sstream>
 
-#include <vespa/log/log.h>
-LOG_SETUP("PredicateTreeAnnotator_test");
-
 using document::Predicate;
 using std::ostringstream;
 using std::pair;
@@ -380,7 +377,7 @@ TEST("require that default open range works") {
     EXPECT_EQUAL(0u, result.features.size());
     ASSERT_EQUAL(1u, result.range_features.size());
     EXPECT_EQUAL("foo", result.range_features[0].label.make_string());
-    EXPECT_EQUAL(LLONG_MIN, result.range_features[0].from);
+    EXPECT_EQUAL(LONG_MIN, result.range_features[0].from);
     EXPECT_EQUAL(39, result.range_features[0].to);
 }
 
@@ -403,5 +400,3 @@ TEST("require that open range works") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

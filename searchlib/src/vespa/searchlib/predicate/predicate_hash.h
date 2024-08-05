@@ -9,7 +9,7 @@ namespace search::predicate {
  * Hash function used for predicate fields.
  */
 struct PredicateHash {
-    static uint64_t hash64(vespalib::stringref aKey) {
+    static uint64_t hash64(std::string_view aKey) {
         return hash64(aKey.data(), aKey.size());
     }
 

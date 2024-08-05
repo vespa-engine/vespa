@@ -3,6 +3,8 @@
 #include "auxTest.h"
 #include <vespa/juniper/juniper_separators.h>
 #include <vespa/fastos/file.h>
+#include <cctype>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".auxtest");
 
@@ -361,7 +363,7 @@ void AuxTest::TestUTF8(unsigned int size)
         const unsigned char* pc = &c;
         ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(pc);
         bool utf8res = Fast_UnicodeUtil::IsWordChar(u);
-        bool asciires = isalnum(c);
+        bool asciires = std::isalnum(c);
         _test(utf8res == asciires);
         if (utf8res != asciires)
             fprintf(stderr, ":%c:%d != :%c:%d\n", u, utf8res, c, asciires);

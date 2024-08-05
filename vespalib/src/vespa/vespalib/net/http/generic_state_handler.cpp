@@ -22,11 +22,11 @@ vespalib::string url_escape(const vespalib::string &item) {
             || (c == '_')
             || (c == '-'))
         {
-            r.append(c);
+            r += c;
         } else {
-            r.append('%');
-            r.append(hexdigits[0xF & (c >> 4)]);
-            r.append(hexdigits[0xF & c]);
+            r += '%';
+            r += hexdigits[0xF & (c >> 4)];
+            r += hexdigits[0xF & c];
         }
     }
     return r;
@@ -37,7 +37,7 @@ private:
     vespalib::string _url;
     void append(const vespalib::string &item) {
         if (*_url.rbegin() != '/') {
-            _url.append('/');
+            _url += '/';
         }
         _url.append(url_escape(item));
     }
@@ -46,7 +46,7 @@ public:
         : _url("http://")
     {
         _url.append(host);
-        _url.append('/');
+        _url += '/';
         for (const auto &item: items) {
             append(item);
         }

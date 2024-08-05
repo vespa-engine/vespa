@@ -28,34 +28,26 @@ using IndexList = lib::Distribution::IndexList;
 
 vespalib::string
 ActiveCopy::getReason() const {
+    vespalib::asciistream ost;
     if (_ready && (_doc_count > 0) && valid_ideal()) {
-        vespalib::asciistream ost;
         ost << "copy is ready, has " << _doc_count
             << " docs and ideal state priority " << _ideal;
-        return ost.str();
     } else if (_ready && (_doc_count > 0)) {
-        vespalib::asciistream ost;
         ost << "copy is ready with " << _doc_count << " docs";
-        return ost.str();
     } else if (_ready) {
         return "copy is ready";
     } else if ((_doc_count > 0) && valid_ideal()) {
-        vespalib::asciistream ost;
         ost << "copy has " << _doc_count << " docs and ideal state priority " << _ideal;
-        return ost.str();
     } else if (_doc_count > 0) {
-        vespalib::asciistream ost;
         ost << "copy has " << _doc_count << " docs";
-        return ost.str();
     } else if (_active) {
         return "copy is already active";
     } else if (valid_ideal()) {
-        vespalib::asciistream ost;
         ost << "copy is ideal state priority " << _ideal;
-        return ost.str();
     } else {
         return "first available copy";
     }
+    return ost.str();
 }
 
 std::ostream&

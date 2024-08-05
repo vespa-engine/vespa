@@ -16,11 +16,11 @@ struct ProviderErrorWrapperTest : PersistenceTestUtils {
 namespace {
 
 struct MockErrorListener : ProviderErrorListener {
-    void on_fatal_error(vespalib::stringref message) override {
+    void on_fatal_error(std::string_view message) override {
         _seen_fatal_error = true;
         _fatal_error = message;
     }
-    void on_resource_exhaustion_error(vespalib::stringref message) override {
+    void on_resource_exhaustion_error(std::string_view message) override {
         _seen_resource_exhaustion_error = true;
         _resource_exhaustion_error = message;
     }

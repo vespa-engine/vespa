@@ -13,6 +13,7 @@
 #include <variant>
 #include <vector>
 #include <map>
+#include <unistd.h>
 
 using namespace vespalib::slime::convenience;
 using vespalib::make_string_short::fmt;
@@ -37,15 +38,11 @@ int rel_diff(double a, double b, double e, double m) {
 
 void apply_diff(vespalib::string &str, int diff, char small, char big, int len) {
     for (int i = 0; i < diff && i < len; ++i) {
-        if (diff + i >= len * 2) {
-            str.append(big);
-        } else {
-            str.append(small);
-        }
+        str += ((diff + i >= len * 2) ? big :small);
     }
 }
 
-using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
+using Path = std::vector<std::variant<size_t,std::string_view>>;
 using Paths = std::vector<Path>;
 
 template <typename F>
@@ -53,8 +50,8 @@ struct Matcher : vespalib::slime::ObjectTraverser {
     Path path;
     Paths result;
     F match;
-    ~Matcher();
-    Matcher(F match_in) noexcept : path(), result(), match(match_in) {}
+    ~Matcher() override;
+    explicit Matcher(F match_in) noexcept : path(), result(), match(match_in) {}
     void search(const Inspector &node) {
         if (path.empty() && match(path, node)) {
             result.push_back(path);
@@ -75,7 +72,7 @@ struct Matcher : vespalib::slime::ObjectTraverser {
         }
     }
     void field(const Memory &symbol, const Inspector &inspector) final {
-        path.emplace_back(symbol.make_stringref());
+        path.emplace_back(symbol.make_stringview());
         if (match(path, inspector)) {
             result.push_back(path);
         }
@@ -88,8 +85,8 @@ template <typename F> Matcher<F>::~Matcher() = default;
 std::vector<Path> find_field(const Inspector &root, const vespalib::string &name) {
     auto matcher = Matcher([&](const Path &path, const Inspector &){
                                return ((path.size() > 0) &&
-                                       (std::holds_alternative<vespalib::stringref>(path.back())) &&
-                                       (std::get<vespalib::stringref>(path.back()) == name));
+                                       (std::holds_alternative<std::string_view>(path.back())) &&
+                                       (std::get<std::string_view>(path.back()) == name));
                            });
     matcher.search(root);
     return matcher.result;
@@ -98,9 +95,9 @@ std::vector<Path> find_field(const Inspector &root, const vespalib::string &name
 std::vector<Path> find_tag(const Inspector &root, const vespalib::string &name) {
     auto matcher = Matcher([&](const Path &path, const Inspector &value){
                                return ((path.size() > 0) &&
-                                       (std::holds_alternative<vespalib::stringref>(path.back())) &&
-                                       (std::get<vespalib::stringref>(path.back()) == "tag") &&
-                                       (value.asString().make_stringref() == name));
+                                       (std::holds_alternative<std::string_view>(path.back())) &&
+                                       (std::get<std::string_view>(path.back()) == "tag") &&
+                                       (value.asString().make_stringview() == name));
                            });
     matcher.search(root);
     return matcher.result;
@@ -115,17 +112,17 @@ vespalib::string path_to_str(const Path &path) {
         }
         std::visit(vespalib::overload{
                 [&str](size_t value)noexcept{ str.append(fmt("%zu", value)); },
-                [&str](vespalib::stringref value)noexcept{ str.append(value); }}, item);
+                [&str](std::string_view value)noexcept{ str.append(value); }}, item);
     }
     str.append("]");
     return str;
 }
 
-vespalib::string strip_name(vespalib::stringref name) {
+vespalib::string strip_name(std::string_view name) {
     auto end = name.find("<");
     auto ns = name.rfind("::", end);
     size_t begin = (ns > name.size()) ? 0 : ns + 2;
-    return name.substr(begin, end - begin);
+    return vespalib::string(name.substr(begin, end - begin));
 }
 
 const Inspector &apply_path(const Inspector &node, const Path &path, size_t max = -1) {
@@ -138,8 +135,8 @@ const Inspector &apply_path(const Inspector &node, const Path &path, size_t max 
         if (std::holds_alternative<size_t>(elem)) {
             ptr = &((*ptr)[std::get<size_t>(elem)]);
         }
-        if (std::holds_alternative<vespalib::stringref>(elem)) {
-            auto ref = std::get<vespalib::stringref>(elem);
+        if (std::holds_alternative<std::string_view>(elem)) {
+            auto ref = std::get<std::string_view>(elem);
             ptr = &((*ptr)[Memory(ref.data(), ref.size())]);
         }
     }
@@ -148,7 +145,7 @@ const Inspector &apply_path(const Inspector &node, const Path &path, size_t max 
 
 void extract(vespalib::string &value, const Inspector &data) {
     if (data.valid() && data.type() == STRING()) {
-        value = data.asString().make_stringref();
+        value = data.asString().make_stringview();
     }
 }
 
@@ -159,8 +156,8 @@ struct Sample {
     double self_time_ms = 0.0;
     double total_time_ms = 0.0;
     size_t count = 0;
-    Sample(const Inspector &sample) {
-        auto name = sample["name"].asString().make_stringref();
+    explicit Sample(const Inspector &sample) {
+        auto name = sample["name"].asString().make_stringview();
         if (ends_with(name, "/init")) {
             type = Type::INIT;
         }
@@ -314,23 +311,23 @@ struct Node {
     double            ms_self_limit = 0.0;
     double            ms_limit = 0.0;
     std::vector<Node> children;
-    Node(const Inspector &obj) {
+    explicit Node(const Inspector &obj) {
         extract(type, obj["[type]"]);
         type = strip_name(type);
         id = obj["id"].asLong();
         docid_limit = obj["docid_limit"].asLong();
-        query_term = obj["query_term"].asString().make_stringref();
+        query_term = obj["query_term"].asString().make_stringview();
         if (query_term.size() > 0) {
             const Inspector &attr = obj["attribute"];
             if (attr.valid()) {
-                field_name = attr["name"].asString().make_stringref();
+                field_name = attr["name"].asString().make_stringview();
                 if (type == "AttributeFieldBlueprint") {
                     type = fmt("Attribute{%s,%s}",
                                attr["type"].asString().make_string().c_str(),
                                attr["fast_search"].asBool() ? "fs" : "lookup");
                 }
             } else {
-                field_name = obj["field_name"].asString().make_stringref();
+                field_name = obj["field_name"].asString().make_stringview();
                 if (type == "DiskTermBlueprint") {
                     type = "DiskTerm";
                 }
@@ -353,6 +350,7 @@ struct Node {
             }
         }
     }
+    Node(const Node &);
     ~Node();
     vespalib::string name() const {
         vespalib::string res = type;
@@ -540,6 +538,7 @@ struct Node {
         print_separator();
     }
 };
+Node::Node(const Node &) = default;
 Node::~Node() = default;
 
 void each_sample_list(const Inspector &list, auto f) {
@@ -567,7 +566,7 @@ struct Analyzer {
                 std::map<Sample::Type,double> time_map;
                 for (const Path &prof_path: prof_list) {
                     const Inspector &prof = apply_path(node, prof_path, prof_path.size()-1);
-                    if (prof["profiler"].asString().make_stringref() == "tree") {
+                    if (prof["profiler"].asString().make_stringview() == "tree") {
                         total_ms += prof["total_time_ms"].asDouble();
                         each_sample(prof, [&](const Sample &sample) {
                                               if (sample.type == Sample::Type::SEEK) {

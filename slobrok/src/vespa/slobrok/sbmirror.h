@@ -51,7 +51,7 @@ public:
     ~MirrorAPI() override;
 
     // Inherit doc from IMirrorAPI.
-    SpecList lookup(vespalib::stringref pattern) const override;
+    SpecList lookup(std::string_view pattern) const override;
 
     // Inherit doc from IMirrorAPI.
     uint32_t updates() const override { return _updates.getAsInt(); }

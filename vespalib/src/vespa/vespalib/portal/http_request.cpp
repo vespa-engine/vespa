@@ -3,6 +3,7 @@
 #include "http_request.h"
 
 #include <algorithm>
+#include <cctype>
 #include <vector>
 
 namespace vespalib::portal {
@@ -15,7 +16,7 @@ void strip_cr(vespalib::string &str) {
     }
 }
 
-std::vector<vespalib::string> split(vespalib::stringref str, char sep) {
+std::vector<vespalib::string> split(std::string_view str, char sep) {
     vespalib::string token;
     std::vector<vespalib::string> list;
     for (char c: str) {
@@ -45,7 +46,7 @@ int decode_hex_digit(char c) {
     return -1;
 }
 
-int decode_hex_num(vespalib::stringref src, size_t idx) {
+int decode_hex_num(std::string_view src, size_t idx) {
     if (src.size() < (idx + 2)) {
         return -1;
     }
@@ -57,7 +58,7 @@ int decode_hex_num(vespalib::stringref src, size_t idx) {
     return ((a << 4) | b);
 }
 
-vespalib::string dequote(vespalib::stringref src) {
+vespalib::string dequote(std::string_view src) {
     vespalib::string dst;
     for (size_t idx = 0; idx < src.size(); ++idx) {
         char c = src[idx];
@@ -134,16 +135,16 @@ HttpRequest::handle_header_line(const vespalib::string &line)
         } else {
             _header_name.assign(line, 0, pos++);
             std::transform(_header_name.begin(), _header_name.end(),
-                           _header_name.begin(), ::tolower);
+                           _header_name.begin(), [](unsigned char c) { return std::tolower(c); });
         }
     }
     if (_header_name.empty()) {
         return set_error(); // missing header name
     }
-    while ((pos < end) && (isspace(line[pos]))) {
+    while ((pos < end) && (std::isspace(static_cast<unsigned char>(line[pos])))) {
         ++pos; // strip leading whitespace
     }
-    while ((pos < end) && (isspace(line[end - 1]))) {
+    while ((pos < end) && (std::isspace(static_cast<unsigned char>(line[end - 1])))) {
         --end; // strip trailing whitespace
     }
     auto header_insert_result = _headers.insert(std::make_pair(_header_name, vespalib::string()));

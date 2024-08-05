@@ -32,9 +32,9 @@ public:
     AuthorizationMode authorization_mode() const noexcept override { return _authorization_mode; }
 private:
     // Note: single use per instance; does _not_ clear existing chain!
-    void add_certificate_authorities(stringref ca_pem);
-    void add_certificate_chain(stringref chain_pem);
-    void use_private_key(stringref key_pem);
+    void add_certificate_authorities(std::string_view ca_pem);
+    void add_certificate_chain(std::string_view chain_pem);
+    void use_private_key(std::string_view key_pem);
     void verify_private_key();
     // Enable use of ephemeral key exchange (ECDHE), allowing forward secrecy.
     void enable_ephemeral_key_exchange();

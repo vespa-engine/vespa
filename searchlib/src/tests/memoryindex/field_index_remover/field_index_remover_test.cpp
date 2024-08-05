@@ -16,7 +16,7 @@ using namespace search::memoryindex;
 struct WordFieldPair {
     vespalib::string _word;
     uint32_t _fieldId;
-    WordFieldPair(vespalib::stringref word, uint32_t fieldId) noexcept
+    WordFieldPair(std::string_view word, uint32_t fieldId) noexcept
         : _word(word), _fieldId(fieldId)
     {}
     bool operator<(const WordFieldPair &rhs) const noexcept {
@@ -40,7 +40,7 @@ struct MockRemoveListener : public IFieldIndexRemoveListener {
     WordFieldVector _words;
     uint32_t _expDocId;
     uint32_t _fieldId;
-    virtual void remove(const vespalib::stringref word, uint32_t docId) override {
+    virtual void remove(const std::string_view word, uint32_t docId) override {
         EXPECT_EQ(_expDocId, docId);
         _words.emplace_back(word, _fieldId);
     }

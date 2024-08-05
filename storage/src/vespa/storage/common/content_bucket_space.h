@@ -25,7 +25,9 @@ struct ClusterStateAndDistribution {
 
     // Precondition: valid() == true
     [[nodiscard]] const lib::ClusterState& cluster_state() const noexcept { return *_cluster_state; }
+    [[nodiscard]] const std::shared_ptr<const lib::ClusterState>& cluster_state_sp() const noexcept { return _cluster_state; }
     [[nodiscard]] const lib::Distribution& distribution() const noexcept { return  *_distribution; }
+    [[nodiscard]] const std::shared_ptr<const lib::Distribution>& distribution_sp() const noexcept { return  _distribution; }
 
     [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> with_new_state(
             std::shared_ptr<const lib::ClusterState> cluster_state) const;
@@ -54,14 +56,6 @@ public:
 
     void set_state_and_distribution(std::shared_ptr<const ClusterStateAndDistribution> state_and_distr) noexcept;
     [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> state_and_distribution() const noexcept;
-    // TODO deprecate; only use atomic state+distribution setter
-    void setClusterState(std::shared_ptr<const lib::ClusterState> clusterState);
-    // TODO deprecate; only use atomic state+distribution getter
-    std::shared_ptr<const lib::ClusterState> getClusterState() const;
-    // TODO deprecate; only use atomic state+distribution setter
-    void setDistribution(std::shared_ptr<const lib::Distribution> distribution);
-    // TODO deprecate; only use atomic state+distribution getter
-    std::shared_ptr<const lib::Distribution> getDistribution() const;
 
     bool getNodeUpInLastNodeStateSeenByProvider() const;
     void setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNodeStateSeenByProvider);

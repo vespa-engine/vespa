@@ -13,7 +13,7 @@ namespace search::streaming {
 class RegexpTerm : public QueryTerm {
     vespalib::Regex _regexp;
 public:
-    RegexpTerm(std::unique_ptr<QueryNodeResultBase> result_base, stringref term,
+    RegexpTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term,
                const string& index, Type type, Normalizing normalizing);
     ~RegexpTerm() override;
 

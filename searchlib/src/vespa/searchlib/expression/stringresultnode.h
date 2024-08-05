@@ -12,14 +12,14 @@ public:
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     StringResultNode(const char * v="") noexcept : _value(v) { }
-    StringResultNode(vespalib::stringref v) : _value(v) { }
+    StringResultNode(std::string_view v) : _value(v) { }
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;
     void set(const ResultNode & rhs) override;
     StringResultNode & append(const ResultNode & rhs);
     StringResultNode & clear() { _value.clear(); return *this; }
     const vespalib::string & get() const { return _value; }
-    void set(vespalib::stringref value) { _value = value; }
+    void set(std::string_view value) { _value = value; }
     void min(const ResultNode & b) override;
     void max(const ResultNode & b) override;
     void add(const ResultNode & b) override;

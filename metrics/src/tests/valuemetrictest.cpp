@@ -172,7 +172,7 @@ TEST(ValueMetricTest, test_add_value_batch)
 
 namespace {
 
-vespalib::string extractMetricJson(vespalib::stringref s) {
+vespalib::string extractMetricJson(std::string_view s) {
     vespalib::StringTokenizer st(s, "\n", "");
     for (uint32_t i = st.size() - 1; i < st.size(); --i) {
         if (st[i].find("\"name\":\"") != std::string::npos) {

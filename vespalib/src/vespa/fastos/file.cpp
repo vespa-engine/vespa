@@ -27,13 +27,15 @@ DirectIOException::DirectIOException(const char * fileName, const void * buffer,
     _what = os.str();
 }
 
-DirectIOException::~DirectIOException() {}
+DirectIOException::~DirectIOException() = default;
 
 #ifdef __linux__
 int FastOS_FileInterface::_defaultFAdviseOptions = POSIX_FADV_NORMAL;
 #else
 int FastOS_FileInterface::_defaultFAdviseOptions = 0;
 #endif
+
+bool FastOS_FileInterface::_fsyncEnabled = false;
 
 static const size_t MAX_CHUNK_SIZE = 0x4000000; // 64 MB
 

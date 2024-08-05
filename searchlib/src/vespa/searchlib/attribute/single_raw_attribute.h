@@ -23,7 +23,7 @@ class SingleRawAttribute : public RawAttribute
     vespalib::MemoryUsage update_stat();
     EntryRef acquire_entry_ref(DocId docid) const noexcept { return _ref_vector.acquire_elem_ref(docid).load_acquire(); }
     bool onLoad(vespalib::Executor *executor) override;
-    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 public:
     SingleRawAttribute(const vespalib::string& name, const Config& config);

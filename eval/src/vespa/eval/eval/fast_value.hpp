@@ -121,7 +121,7 @@ struct FastValue final : Value, ValueBuilder<T> {
             return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size);
         }
     }
-    void add_mapping(ConstArrayRef<vespalib::stringref> addr) {
+    void add_mapping(ConstArrayRef<std::string_view> addr) {
         if constexpr (transient) {
             (void) addr;
             abort(); // cannot use this for transient values
@@ -151,7 +151,7 @@ struct FastValue final : Value, ValueBuilder<T> {
         my_handles.push_back(label);
         my_index.map.add_mapping(FastAddrMap::hash_label(label));
     }
-    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override {
+    ArrayRef<T> add_subspace(ConstArrayRef<std::string_view> addr) override {
         add_mapping(addr);
         return my_cells.add_cells(my_subspace_size);
     }
@@ -223,7 +223,7 @@ struct FastDenseValue final : Value, ValueBuilder<T> {
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return TrivialIndex::get(); }
     TypedCells cells() const override { return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size); }
-    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) override {
+    ArrayRef<T> add_subspace(ConstArrayRef<std::string_view>) override {
         return ArrayRef<T>(my_cells.get(0), my_cells.size);
     }
     ArrayRef<T> add_subspace(ConstArrayRef<string_id>) override {
@@ -247,7 +247,7 @@ template <typename T> FastDenseValue<T>::~FastDenseValue() = default;
 
 struct FastDoubleValueBuilder final : ValueBuilder<double> {
     double _value;
-    ArrayRef<double> add_subspace(ConstArrayRef<vespalib::stringref>) final override { return ArrayRef<double>(&_value, 1); }
+    ArrayRef<double> add_subspace(ConstArrayRef<std::string_view>) final override { return ArrayRef<double>(&_value, 1); }
     ArrayRef<double> add_subspace(ConstArrayRef<string_id>) final override { return ArrayRef<double>(&_value, 1); };
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<double>>) final override { return std::make_unique<DoubleValue>(_value); }
 };

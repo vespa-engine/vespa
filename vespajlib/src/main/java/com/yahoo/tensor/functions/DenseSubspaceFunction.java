@@ -37,6 +37,7 @@ class DenseSubspaceFunction<NAMETYPE extends Name> {
         MyTypeContext(TensorType subspaceType) { this.subspaceType = subspaceType; }
         public TensorType getType(NAMETYPE name) { return getType(name.name()); }
         public TensorType getType(String name) { return argName.equals(name) ? subspaceType : null; }
+        public String resolveBinding(String name) { return name; }
     }
 
     TensorType outputType(TensorType subspaceType) {

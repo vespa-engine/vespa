@@ -40,6 +40,7 @@ vespa_add_library(vespa_searchlib
     ICU::i18n
     ICU::uc
     protobuf::libprotobuf
+    EXTERNAL_DEPENDS
     ${VESPA_ATOMIC_LIB}
 )
 

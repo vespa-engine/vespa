@@ -19,6 +19,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 
 using document::Bucket;
@@ -71,7 +72,7 @@ struct DocumentApiConverterTest : Test {
 
     DocumentApiConverterTest()
         : _bucketResolver(std::make_shared<MockBucketResolver>()),
-          _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig("../config-doctypes.cfg"))),
+          _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(TEST_PATH("../config-doctypes.cfg")))),
           _html_type(*_repo->getDocumentType("text/html"))
     {
     }

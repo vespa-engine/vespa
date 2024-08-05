@@ -13,7 +13,7 @@ using namespace vespalib::slime::convenience;
 using vespalib::make_string_short::fmt;
 using vespalib::slime::NIX;
 
-using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
+using Path = std::vector<std::variant<size_t,std::string_view>>;
 using Hook = std::function<bool(const Path &, const Inspector &, const Inspector &)>;
 using vespalib::slime::Inspector;
 
@@ -92,7 +92,7 @@ vespalib::string path_to_str(const Path &path) {
         }
         std::visit(vespalib::overload{
                 [&str](size_t value)noexcept{ str.append(fmt("%zu", value)); },
-                [&str](vespalib::stringref value)noexcept{ str.append(value); }}, item);
+                [&str](std::string_view value)noexcept{ str.append(value); }}, item);
     }
     str.append("]");
     return str;

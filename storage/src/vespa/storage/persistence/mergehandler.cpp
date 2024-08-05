@@ -655,7 +655,7 @@ MergeHandler::enumerate_newest_document_versions(const std::vector<api::ApplyBuc
         if (e._docName.empty()) {
             continue;
         }
-        auto [existing_iter, inserted] = newest_per_doc.insert(std::make_pair(vespalib::stringref(e._docName), e._entry._timestamp));
+        auto [existing_iter, inserted] = newest_per_doc.insert(std::make_pair(std::string_view(e._docName), e._entry._timestamp));
         if (!inserted) {
             assert(existing_iter != newest_per_doc.end());
             existing_iter->second = std::max(existing_iter->second, e._entry._timestamp);

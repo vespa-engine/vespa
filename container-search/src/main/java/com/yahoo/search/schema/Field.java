@@ -83,6 +83,11 @@ public class Field implements FieldInfo {
          */
         public Kind kind() { return kind; }
 
+        @Override
+        public String toString() {
+            return kind.toString();
+        }
+
         /** Creates this from a type string on the syntax following "field [name] type " in a schema definition. */
         public static Type from(String typeString) {
             if (typeString.startsWith("annotationreference<"))
@@ -136,6 +141,11 @@ public class Field implements FieldInfo {
 
         public TensorType tensorType() { return tensorType; }
 
+        @Override
+        public String toString() {
+            return tensorType.toString();
+        }
+
     }
 
     public static class Builder {
@@ -171,7 +181,5 @@ public class Field implements FieldInfo {
         }
 
     }
-
-
 
 }

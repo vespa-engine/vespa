@@ -24,10 +24,10 @@ checkVariableAccess(const FunctionTestConfig & config)
     EXPECT_EQUAL(true, config.boolWithDef);
     EXPECT_EQUAL(5, config.intVal);
     EXPECT_EQUAL(-14, config.intWithDef);
-    EXPECT_EQUAL(12345678901LL, config.longVal);
-    EXPECT_EQUAL(-9876543210LL, config.longWithDef);
+    EXPECT_EQUAL(12345678901L, config.longVal);
+    EXPECT_EQUAL(-9876543210L, config.longWithDef);
     EXPECT_APPROX(41.23, config.doubleVal, 0.000001);
-    EXPECT_APPROX(-12, config.doubleWithDef, 0.000001);
+    EXPECT_APPROX(-12.0, config.doubleWithDef, 0.000001);
     EXPECT_EQUAL("foo", config.stringVal);
     EXPECT_EQUAL("bar", config.stringwithdef);
     EXPECT_EQUAL("FOOBAR", FunctionTestConfig::getEnumValName(config.enumVal));
@@ -188,8 +188,8 @@ TEST_F("testDefaultValues", TestFixture("defaultvalues")) {
     EXPECT_EQUAL(false, f._config->boolWithDef);
     EXPECT_EQUAL(5, f._config->intVal);
     EXPECT_EQUAL(-545, f._config->intWithDef);
-    EXPECT_EQUAL(1234567890123LL, f._config->longVal);
-    EXPECT_EQUAL(-50000000000LL, f._config->longWithDef);
+    EXPECT_EQUAL(1234567890123L, f._config->longVal);
+    EXPECT_EQUAL(-50000000000L, f._config->longWithDef);
     EXPECT_APPROX(41.23, f._config->doubleVal, 0.000001);
     EXPECT_APPROX(-6.43, f._config->doubleWithDef, 0.000001);
     EXPECT_EQUAL("foo", f._config->stringVal);
@@ -265,10 +265,10 @@ TEST_F("testRandomOrder", TestFixture("randomorder")) {
     EXPECT_EQUAL(true, f._config->boolWithDef);
     EXPECT_EQUAL(5, f._config->intVal);
     EXPECT_EQUAL(-14, f._config->intWithDef);
-    EXPECT_EQUAL(666000666000LL, f._config->longVal);
-    EXPECT_EQUAL(-333000333000LL, f._config->longWithDef);
+    EXPECT_EQUAL(666000666000L, f._config->longVal);
+    EXPECT_EQUAL(-333000333000L, f._config->longWithDef);
     EXPECT_APPROX(41.23, f._config->doubleVal, 0.000001);
-    EXPECT_APPROX(-12, f._config->doubleWithDef, 0.000001);
+    EXPECT_APPROX(-12.0, f._config->doubleWithDef, 0.000001);
     EXPECT_EQUAL("foo", f._config->stringVal);
     EXPECT_EQUAL("bar", f._config->stringwithdef);
     EXPECT_EQUAL("FOOBAR", FunctionTestConfig::getEnumValName(f._config->enumVal));

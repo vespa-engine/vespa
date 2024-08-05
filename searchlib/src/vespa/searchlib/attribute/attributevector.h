@@ -102,8 +102,8 @@ protected:
     using CollectionType = search::attribute::CollectionType;
     using BasicType = search::attribute::BasicType;
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
-    using QueryPacketT = vespalib::stringref;
-    using stringref = vespalib::stringref;
+    using QueryPacketT = std::string_view;
+    using string_view = std::string_view;
     using ValueModifier = attribute::ValueModifier;
     using EnumModifier = attribute::EnumModifier;
 public:
@@ -123,7 +123,7 @@ protected:
     void updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
                           uint64_t used, uint64_t dead, uint64_t onHold);
 
-    AttributeVector(vespalib::stringref baseFileName, const Config & c);
+    AttributeVector(std::string_view baseFileName, const Config & c);
 
     void checkSetMaxValueCount(int index) {
         if (index > _highestValueCount.load(std::memory_order_relaxed)) {
@@ -284,7 +284,7 @@ public:
     const Config &getConfig() const noexcept { return *_config; }
     void update_config(const Config& cfg);
     const attribute::BaseName & getBaseFileName() const { return _baseFileName; }
-    void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
+    void setBaseFileName(std::string_view name) { _baseFileName = name; }
     bool isUpdateableInMemoryOnly() const { return _isUpdateableInMemoryOnly; }
 
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
@@ -319,15 +319,15 @@ public:
     /**
      * Saves this attribute vector to named file(s)
      */
-    bool save(vespalib::stringref fileName);
+    bool save(std::string_view fileName);
 
     /** Saves this attribute vector to file(s) **/
     bool save();
 
     /** Saves this attribute vector using the given saveTarget and fileName **/
-    bool save(IAttributeSaveTarget & saveTarget, vespalib::stringref fileName);
+    bool save(IAttributeSaveTarget & saveTarget, std::string_view fileName);
 
-    attribute::AttributeHeader createAttributeHeader(vespalib::stringref fileName) const;
+    attribute::AttributeHeader createAttributeHeader(std::string_view fileName) const;
 
     /** Returns whether this attribute has load data files on disk **/
     bool hasLoadData() const;
@@ -486,9 +486,9 @@ public:
         return _interlock;
     }
 
-    std::unique_ptr<AttributeSaver> initSave(vespalib::stringref fileName);
+    std::unique_ptr<AttributeSaver> initSave(std::string_view fileName);
 
-    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName);
+    virtual std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName);
     virtual uint64_t getEstimatedSaveByteSize() const;
 
     static bool isEnumerated(const vespalib::GenericHeader &header);

@@ -24,7 +24,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("cachedselect_test");
+LOG_SETUP(".cachedselect_test");
 
 using document::DataType;
 using document::Document;
@@ -145,9 +145,7 @@ checkSelect(const NodeUP &sel,
     }
     std::ostringstream os;
     EXPECT_TRUE(sel->trace(ctx, os) == exp);
-    LOG(info,
-        "trace output: '%s'",
-        os.str().c_str());
+    LOG(info, "trace output: '%s'", os.str().c_str());
     return false;
 }
 
@@ -679,7 +677,4 @@ TEST_F("Test performance when using attributes", TestFixture)
     
 }
 
-
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

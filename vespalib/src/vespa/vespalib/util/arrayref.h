@@ -4,12 +4,24 @@
 #include <cstddef>
 #include <vector>
 #include <array>
+#include <span>
 
 namespace vespalib {
 
+#define VESPALIB_ARRAYREF_IS_STD_SPAN 1
+
+#if VESPALIB_ARRAYREF_IS_STD_SPAN
+
+template <typename T>
+using ArrayRef = std::span<T>;
+
+template <typename T>
+using ConstArrayRef = std::span<const T>;
+
+#else
 /**
  * This is a simple wrapper class for a typed array with no memory ownership.
- * It is similar to vespalib::stringref
+ * It is similar to std::string_view
  **/
 template <typename T>
 class ArrayRef {
@@ -55,6 +67,7 @@ private:
     const T *_v;
     size_t   _sz;
 };
+#endif
 
 // const-cast for array references; use with care
 template <typename T>

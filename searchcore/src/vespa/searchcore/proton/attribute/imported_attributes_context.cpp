@@ -14,7 +14,7 @@ using LockGuard = std::lock_guard<std::mutex>;
 namespace proton {
 
 const IAttributeVector *
-ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes, bool stableEnumGuard) const
+ImportedAttributesContext::getOrCacheAttribute(std::string_view name, AttributeCache &attributes, bool stableEnumGuard) const
 {
     auto itr = attributes.find(name);
     if (itr != attributes.end()) {
@@ -30,7 +30,7 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, Att
         } else {
             metaGuard = metaItr->second;
         }
-        auto insRes = attributes.insert(std::make_pair(name, result->makeReadGuard(std::move(metaGuard), stableEnumGuard)));
+        auto insRes = attributes.insert(std::make_pair(string(name), result->makeReadGuard(std::move(metaGuard), stableEnumGuard)));
         return insRes.first->second->attribute();
     } else {
         return nullptr;
@@ -38,7 +38,7 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, Att
 }
 
 const IAttributeVector *
-ImportedAttributesContext::getOrCacheAttributeMtSafe(const vespalib::string &name, AttributeCache &attributes, bool stableEnumGuard) const {
+ImportedAttributesContext::getOrCacheAttributeMtSafe(std::string_view name, AttributeCache &attributes, bool stableEnumGuard) const {
     LockGuard guard(_cacheMutex);
     return getOrCacheAttribute(name, attributes, stableEnumGuard);
 }
@@ -56,7 +56,7 @@ ImportedAttributesContext::ImportedAttributesContext(const ImportedAttributesRep
 ImportedAttributesContext::~ImportedAttributesContext() = default;
 
 const IAttributeVector *
-ImportedAttributesContext::getAttribute(const vespalib::string &name) const
+ImportedAttributesContext::getAttribute(std::string_view name) const
 {
     return _mtSafe
         ? getOrCacheAttributeMtSafe(name, _guardedAttributes, false)
@@ -64,7 +64,7 @@ ImportedAttributesContext::getAttribute(const vespalib::string &name) const
 }
 
 const IAttributeVector *
-ImportedAttributesContext::getAttributeStableEnum(const vespalib::string &name) const
+ImportedAttributesContext::getAttributeStableEnum(std::string_view name) const
 {
     return _mtSafe
            ? getOrCacheAttributeMtSafe(name, _enumGuardedAttributes, true)
@@ -93,7 +93,7 @@ ImportedAttributesContext::releaseEnumGuards()
 }
 
 void
-ImportedAttributesContext::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor> ) const {
+ImportedAttributesContext::asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor> ) const {
     throw std::runtime_error("proton::ImportedAttributesContext::asyncForAttribute should never be called.");
 }
 

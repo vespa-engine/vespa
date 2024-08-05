@@ -18,6 +18,7 @@ public:
 
     constexpr BucketSpace(const BucketSpace&) noexcept = default;
     constexpr BucketSpace& operator=(const BucketSpace&) noexcept = default;
+    constexpr BucketSpace() noexcept : BucketSpace(invalid()) {}
     constexpr explicit BucketSpace(Type id) noexcept : _id(id) {}
 
     constexpr bool operator <(const BucketSpace& bucket) const noexcept { return _id < bucket._id; }

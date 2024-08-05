@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SchemaImporterTestCase extends AbstractSchemaTestCase {
 
     @Test
-    @SuppressWarnings("deprecation")
     void testSimpleImporting() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder sb = new ApplicationBuilder(rankProfileRegistry, new QueryProfileRegistry());

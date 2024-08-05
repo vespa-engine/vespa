@@ -10,7 +10,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -439,7 +438,7 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     void testSetNodeStateOutOfRange() throws Exception {
         FleetControllerOptions.Builder options = defaultOptions();
-        options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
+        options.setDistributionConfig(DistributionBuilder.configForFlatCluster(10));
         setUpFleetController(timer, options);
         setUpVdsNodes(timer);
         waitForStableSystem();

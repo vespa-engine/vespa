@@ -38,7 +38,7 @@ GetDocsumArgs::setStackDump(uint32_t stackDumpLen, const char *stackDump)
 }
 
 bool
-GetDocsumArgs::need_field(vespalib::stringref field) const {
+GetDocsumArgs::need_field(std::string_view field) const {
     return _fields.empty() || _fields.contains(field);
 }
 

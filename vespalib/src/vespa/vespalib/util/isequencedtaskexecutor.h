@@ -41,7 +41,7 @@ public:
     virtual ExecutorId getExecutorId(uint64_t componentId) const = 0;
     uint32_t getNumExecutors() const { return _numExecutors; }
 
-    ExecutorId getExecutorIdFromName(stringref componentId) const;
+    ExecutorId getExecutorIdFromName(std::string_view componentId) const;
 
     /**
      * Returns an executor id that is NOT equal to the given executor id,

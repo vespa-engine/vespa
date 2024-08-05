@@ -41,7 +41,7 @@ public:
     void decBitVectors() { _bitVectors.store(getBitVectors() - 1, std::memory_order_relaxed); }
 
     static vespalib::string
-    createName(vespalib::stringref index, vespalib::stringref attr);
+    createName(std::string_view index, std::string_view attr);
 private:
     std::atomic<uint64_t> _numDocs;
     std::atomic<uint64_t> _numValues;

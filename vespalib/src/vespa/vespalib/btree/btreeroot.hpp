@@ -20,21 +20,19 @@ BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 toString(BTreeNode::Ref node,
          const NodeAllocatorType &allocator) const
 {
+    vespalib::asciistream ss;
     if (allocator.isLeafRef(node)) {
-        vespalib::asciistream ss;
         ss << "{" << allocator.toString(node) << "}";
-        return ss.str();
     } else {
         const InternalNodeType * inode = allocator.mapInternalRef(node);
-        vespalib::asciistream ss;
         ss << "{" << allocator.toString(inode) << ",children(" << inode->validSlots() << ")[";
         for (size_t i = 0; i < inode->validSlots(); ++i) {
             if (i > 0) ss << ",";
             ss << "c[" << i << "]" << toString(inode->getChild(i), allocator);
         }
         ss << "]}";
-        return ss.str();
     }
+    return ss.str();
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,

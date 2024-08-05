@@ -469,6 +469,13 @@ public class PermanentFlags {
             list -> list.stream().allMatch(s -> s.matches("^[a-zA-Z/.0-9-]+:(0(\\.\\d+)?|1(\\.0+)?):\\d+(B|kB|MB|GB)?$")),
             INSTANCE_ID);
 
+    public static final UnboundIntFlag ZOOKEEPER_JUTE_MAX_BUFFER = defineIntFlag(
+            "zookeeper-jute-max-buffer", 104857600,
+            "Jute maxbuffer. Used by zookeeper to determine max buffer when serializing/deserializing." +
+                    "Values used in server and client must correspond (so if decreasing this one must be sure" +
+                    "that no node has stored more bytes than this)",
+            "Takes effect on next reboot of config server");
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

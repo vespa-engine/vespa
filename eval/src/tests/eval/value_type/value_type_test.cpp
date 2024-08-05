@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 #include <ostream>
 
 using vespalib::BFloat16;

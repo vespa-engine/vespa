@@ -23,13 +23,13 @@ public:
     using SpanTrees = std::vector<SpanTree::UP>;
 
     StringFieldValue() : Parent(Type::STRING), _annotationData() { }
-    StringFieldValue(const vespalib::stringref &value)
+    StringFieldValue(const std::string_view &value)
             : Parent(Type::STRING, value), _annotationData() { }
 
     StringFieldValue(const StringFieldValue &rhs);
 
     StringFieldValue &operator=(const StringFieldValue &rhs);
-    StringFieldValue &operator=(vespalib::stringref value) override;
+    StringFieldValue &operator=(std::string_view value) override;
     ~StringFieldValue() override;
 
     FieldValue &assign(const FieldValue &) override;
@@ -47,7 +47,7 @@ public:
         return _annotationData ? _annotationData->getSerializedAnnotations() : vespalib::ConstBufferRef();
     }
     bool hasSpanTrees() const { return _annotationData ? _annotationData->hasSpanTrees() : false; }
-    static const SpanTree *findTree(const SpanTrees &trees, vespalib::stringref name);
+    static const SpanTree *findTree(const SpanTrees &trees, std::string_view name);
     void clearSpanTrees() {
         if (_annotationData) {
             doClearSpanTrees();
@@ -55,7 +55,7 @@ public:
     }
 
     using LiteralFieldValueB::operator=;
-    static std::unique_ptr<StringFieldValue> make(vespalib::stringref value) { return std::make_unique<StringFieldValue>(value); }
+    static std::unique_ptr<StringFieldValue> make(std::string_view value) { return std::make_unique<StringFieldValue>(value); }
     static std::unique_ptr<StringFieldValue> make() { return StringFieldValue::make(""); }
 private:
     void doClearSpanTrees();

@@ -146,12 +146,12 @@ Application::printVerbose(FileHeader &header)
          << "+" << std::string(valueWidth + 2, '-')
          << "+";
 
-    std::cout << std::left << line.str() << std::endl;
+    std::cout << std::left << line.view() << std::endl;
     std::cout << "| " << std::setw(nameWidth) << "Tag" << " "
               << "| " << std::setw(typeWidth) << "Type" << " "
               << "| " << std::setw(valueWidth)<< "Value" << " "
               << "| " << std::endl;
-    std::cout << line.str() << std::endl;
+    std::cout << line.view() << std::endl;
     for (uint32_t i = 0, len = header.getNumTags(); i < len; ++i) {
         const FileHeader::Tag &tag = header.getTag(i);
         std::cout << "| " << std::setw(nameWidth) << escape(tag.getName()) << " "
@@ -159,7 +159,7 @@ Application::printVerbose(FileHeader &header)
                   << "| " << std::setw(valueWidth) << escape(getValueString(tag)) << " "
                   << "| " << std::endl;
     }
-    std::cout << line.str() << std::endl;
+    std::cout << line.view() << std::endl;
 }
 
 vespalib::string

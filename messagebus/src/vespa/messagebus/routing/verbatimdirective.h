@@ -22,7 +22,7 @@ public:
      *
      * @param image The image to assign to this.
      */
-    VerbatimDirective(vespalib::stringref image);
+    VerbatimDirective(std::string_view image);
     ~VerbatimDirective() override;
 
     /**

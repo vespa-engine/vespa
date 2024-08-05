@@ -337,6 +337,7 @@ abstract class RoutableFactories80 {
                 .encoder((apiMsg) -> {
                     var builder = DocapiFeed.PutDocumentRequest.newBuilder()
                             .setForceAssignTimestamp(apiMsg.getTimestamp())
+                            .setPersistedTimestamp(apiMsg.getPersistedTimestamp())
                             .setCreateIfMissing(apiMsg.getCreateIfNonExistent())
                             .setDocument(toProtoDocument(apiMsg.getDocumentPut().getDocument()));
                     if (apiMsg.getCondition().isPresent()) {
@@ -351,6 +352,7 @@ abstract class RoutableFactories80 {
                         msg.setCondition(fromProtoTasCondition(protoMsg.getCondition()));
                     }
                     msg.setTimestamp(protoMsg.getForceAssignTimestamp());
+                    msg.setPersistedTimestamp(protoMsg.getPersistedTimestamp());
                     msg.setCreateIfNonExistent(protoMsg.getCreateIfMissing());
                     return msg;
                 })
@@ -431,7 +433,8 @@ abstract class RoutableFactories80 {
                 .of(RemoveDocumentMessage.class, DocapiFeed.RemoveDocumentRequest.class)
                 .encoder((apiMsg) -> {
                     var builder = DocapiFeed.RemoveDocumentRequest.newBuilder()
-                            .setDocumentId(toProtoDocId(apiMsg.getDocumentId()));
+                            .setDocumentId(toProtoDocId(apiMsg.getDocumentId()))
+                            .setPersistedTimestamp(apiMsg.getPersistedTimestamp());
                     if (apiMsg.getCondition().isPresent()) {
                         builder.setCondition(toProtoTasCondition(apiMsg.getCondition()));
                     }
@@ -442,6 +445,7 @@ abstract class RoutableFactories80 {
                     if (protoMsg.hasCondition()) {
                         msg.setCondition(fromProtoTasCondition(protoMsg.getCondition()));
                     }
+                    msg.setPersistedTimestamp(protoMsg.getPersistedTimestamp());
                     return msg;
                 })
                 .build();

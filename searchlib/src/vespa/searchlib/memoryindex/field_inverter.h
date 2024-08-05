@@ -203,7 +203,7 @@ private:
     /**
      * Save the given word in the word buffer and return the word reference.
      */
-    VESPA_DLL_LOCAL uint32_t saveWord(vespalib::stringref word);
+    VESPA_DLL_LOCAL uint32_t saveWord(std::string_view word);
 
     /**
      * Get pointer to saved word from a word reference.
@@ -311,7 +311,7 @@ public:
     /**
      * Setup remove of word in old version of document.
      */
-    void remove(const vespalib::stringref word, uint32_t docId) override;
+    void remove(const std::string_view word, uint32_t docId) override;
 
     void removeDocument(uint32_t docId) {
         abortPendingDoc(docId);
@@ -322,7 +322,7 @@ public:
 
     void endDoc();
 
-    void addWord(vespalib::stringref word, const document::Document& doc);
+    void addWord(std::string_view word, const document::Document& doc);
 };
 
 }

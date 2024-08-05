@@ -15,7 +15,7 @@ RemoveFieldPathUpdate::RemoveFieldPathUpdate() noexcept
 
 RemoveFieldPathUpdate::~RemoveFieldPathUpdate() = default;
 
-RemoveFieldPathUpdate::RemoveFieldPathUpdate(stringref fieldPath, stringref whereClause)
+RemoveFieldPathUpdate::RemoveFieldPathUpdate(string_view fieldPath, string_view whereClause)
     : FieldPathUpdate(Remove, fieldPath, whereClause)
 {
 }

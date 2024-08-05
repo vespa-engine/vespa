@@ -3,6 +3,7 @@ import {
   ACTION,
   reducer,
 } from 'app/pages/querybuilder/context/query-builder-provider';
+import { expect, test } from 'vitest';
 
 const state = reducer();
 
@@ -29,7 +30,7 @@ test('manipulates inputs', () => {
   function assert(state, queryJson, querySearchParams, params) {
     expect(hideTypes(state.params).value).toEqual(params);
     expect({ ...state.query, input: JSON.parse(state.query.input) }).toEqual(
-      queryJson
+      queryJson,
     );
 
     const spState = reducer(state, { action: ACTION.SET_METHOD, data: 'GET' });
@@ -38,9 +39,9 @@ test('manipulates inputs', () => {
   }
 
   const s1 = reduce(state, [[ACTION.INPUT_ADD, { type: 'hits' }]]);
-  assert(s1, { input: { yql: '', hits: null } }, { input: 'yql=&hits=' }, [
+  assert(s1, { input: { yql: '', hits: 10 } }, { input: 'yql=&hits=10' }, [
     { id: '0', value: '', type: 'yql' },
-    { id: '1', value: '', type: 'hits' },
+    { id: '1', value: '10', type: 'hits' },
   ]);
 
   const s2 = reduce(s1, [
@@ -80,24 +81,24 @@ test('manipulates inputs', () => {
           },
         ],
       },
-    ]
+    ],
   );
 
   assert(
     reduce(s2, [[ACTION.INPUT_UPDATE, { id: '2', type: 'noCache' }]]),
     { input: { offset: 12, noCache: false } },
-    { input: 'offset=12&noCache=' },
+    { input: 'offset=12&noCache=false' },
     [
       { id: '1', value: '12', type: 'offset' },
-      { id: '2', value: '', type: 'noCache' },
-    ]
+      { id: '2', value: 'false', type: 'noCache' },
+    ],
   );
 
   assert(
     reduce(s2, [[ACTION.INPUT_REMOVE, '2']]),
     { input: { offset: 12 } },
     { input: 'offset=12' },
-    [{ id: '1', value: '12', type: 'offset' }]
+    [{ id: '1', value: '12', type: 'offset' }],
   );
 });
 
@@ -149,7 +150,7 @@ test('set query', () => {
       },
       { id: '2', value: 'true', type: 'noCache' },
       { id: '3', value: '', type: 'offset' },
-    ]
+    ],
   );
 
   assert('{"ranking":{"matchPhase":{}}}', null, [
@@ -178,7 +179,7 @@ test('set query', () => {
           },
         ],
       },
-    ]
+    ],
   );
 
   let msg = "Unknown property 'asd' on root level";
@@ -208,6 +209,6 @@ function hideTypes({ type, value, ...copy }) {
 function reduce(state, operations) {
   return operations.reduce(
     (acc, [action, data]) => reducer(acc, { action, data }),
-    state
+    state,
   );
 }

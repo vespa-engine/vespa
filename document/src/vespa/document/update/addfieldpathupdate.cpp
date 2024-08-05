@@ -17,8 +17,8 @@ namespace document {
 using namespace fieldvalue;
 using vespalib::make_string;
 
-AddFieldPathUpdate::AddFieldPathUpdate(const DataType& type, stringref fieldPath,
-                                       stringref whereClause, std::unique_ptr<ArrayFieldValue> values)
+AddFieldPathUpdate::AddFieldPathUpdate(const DataType& type, string_view fieldPath,
+                                       string_view whereClause, std::unique_ptr<ArrayFieldValue> values)
     : FieldPathUpdate(Add, fieldPath, whereClause),
       _values(std::move(values))
 {

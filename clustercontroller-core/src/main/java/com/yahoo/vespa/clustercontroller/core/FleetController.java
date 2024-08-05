@@ -850,6 +850,10 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         return timeNowMs >= firstAllowedStateBroadcast || cluster.allStatesReported();
     }
 
+    private DistributionConfigBundle distributionConfigIfEnabledOrNull() {
+        return options.includeDistributionConfigInClusterStateBundles() ? options.distributionConfig() : null;
+    }
+
     private boolean recomputeClusterStateIfRequired() {
         boolean stateWasChanged = false;
         if (mustRecomputeCandidateClusterState()) {
@@ -860,6 +864,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             final ClusterStateBundle candidateBundle = ClusterStateBundle.builder(candidate)
                     .bucketSpaces(configuredBucketSpaces)
                     .stateDeriver(createBucketSpaceStateDeriver())
+                    .distributionConfig(distributionConfigIfEnabledOrNull())
                     .deferredActivation(options.enableTwoPhaseClusterStateActivation())
                     .feedBlock(createResourceExhaustionCalculator()
                             .inferContentClusterFeedBlockOrNull(cluster))

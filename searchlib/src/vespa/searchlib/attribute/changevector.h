@@ -79,8 +79,9 @@ class StringChangeData {
 public:
     using DataType = vespalib::string;
 
-    StringChangeData(const DataType & s);
-    StringChangeData() : _s() { }
+    StringChangeData(std::string_view s) noexcept : StringChangeData(DataType(s)) {}
+    StringChangeData(DataType s) noexcept;
+    StringChangeData() noexcept : _s() { }
 
     const DataType & get() const { return _s; }
     const char * raw() const { return _s.c_str(); }

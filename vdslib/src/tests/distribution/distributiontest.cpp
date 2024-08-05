@@ -11,11 +11,14 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
+#include <vespa/vespalib/test/test_data.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <gmock/gmock.h>
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <thread>
@@ -30,7 +33,35 @@ T readConfig(const config::ConfigUri & uri)
     return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
 }
 
-TEST(DistributionTest, test_verify_java_distributions)
+class DistributionTest : public ::testing::Test, public vespalib::test::TestData<DistributionTest> {
+protected:
+    DistributionTest();
+    ~DistributionTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+DistributionTest::DistributionTest()
+        : ::testing::Test(),
+          vespalib::test::TestData<DistributionTest>()
+{
+}
+
+DistributionTest::~DistributionTest() = default;
+
+void
+DistributionTest::SetUpTestSuite()
+{
+    setup_test_data(TEST_PATH("distribution/testdata"), "distribution-testdata");
+}
+
+void
+DistributionTest::TearDownTestSuite()
+{
+    tear_down_test_data();
+}
+
+TEST_F(DistributionTest, test_verify_java_distributions)
 {
     std::vector<std::string> tests;
     tests.push_back("capacity");
@@ -39,16 +70,19 @@ TEST(DistributionTest, test_verify_java_distributions)
     tests.push_back("retired");
     for (uint32_t i=0; i<tests.size(); ++i) {
         std::string test = tests[i];
+        std::string java_cfg(source_testdata() + "/java_" + test + ".cfg");
+        std::string java_testfile(source_testdata() + "/java_" + test + ".distribution");
+        std::string cpp_testfile(build_testdata() + "/cpp_" + test + ".distribution");
         std::string mystate;
         {
-            std::ifstream in("distribution/testdata/java_" + test + ".state");
+            std::ifstream in(source_testdata() + "/java_" + test + ".state");
             in >> mystate;
             in.close();
         }
         ClusterState state(mystate);
         Distribution distr(readConfig<vespa::config::content::StorDistributionConfig>(
-                config::ConfigUri("file:distribution/testdata/java_" + test + ".cfg")));
-        std::ofstream of("distribution/testdata/cpp_" + test + ".distribution");
+                config::ConfigUri("file:" + java_cfg)));
+        std::ofstream of(cpp_testfile);
 
         long maxBucket = 1;
         long mask = 0;
@@ -74,10 +108,13 @@ TEST(DistributionTest, test_verify_java_distributions)
         }
         of.close();
         std::ostringstream cmd;
-        cmd << "diff -u " << "distribution/testdata/cpp_" << test << ".distribution "
-            << "distribution/testdata/java_" << test << ".distribution";
+
+        cmd << "diff -u " << cpp_testfile << " " << java_testfile;
         int result = system(cmd.str().c_str());
-        EXPECT_EQ(0, result) << "Failed distribution sync test: " + test;
+        EXPECT_EQ(0, result) << "Failed distribution sync test: " << test;
+        if (result == 0) {
+            std::filesystem::remove(cpp_testfile);
+        }
     }
 }
 
@@ -143,7 +180,7 @@ struct ExpectedResult {
 void
 verifyJavaDistribution(const vespalib::string& name, const ClusterState& state, const Distribution& distribution,
                        const NodeType& nodeType, uint16_t redundancy, uint16_t nodeCount,
-                       vespalib::stringref upStates, const std::vector<ExpectedResult> results)
+                       std::string_view upStates, const std::vector<ExpectedResult> results)
 {
     (void) nodeCount;
     for (uint32_t i=0, n=results.size(); i<n; ++i) {
@@ -186,9 +223,9 @@ auto readFile(const std::string & filename) {
     return buf;
 }
 
-TEST(DistributionTest, test_verify_java_distributions_2)
+TEST_F(DistributionTest, test_verify_java_distributions_2)
 {
-    vespalib::DirectoryList files(vespalib::listDirectory("distribution/testdata"));
+    vespalib::DirectoryList files(vespalib::listDirectory(source_testdata()));
     for (uint32_t i=0, n=files.size(); i<n; ++i) {
         size_t pos = files[i].find(".java.results");
         if (pos == vespalib::string::npos || pos + 13 != files[i].size()) {
@@ -200,14 +237,14 @@ TEST(DistributionTest, test_verify_java_distributions_2)
         using namespace vespalib::slime;
         vespalib::Slime slime;
 
-        auto buf = readFile("distribution/testdata/" + files[i]);
+        auto buf = readFile(source_testdata() + "/" + files[i]);
         auto size = JsonFormat::decode({&buf[0], buf.size()}, slime);
 
         if (size == 0) {
             std::cerr << "\n\nSize of " << files[i] << " is 0. Maybe is not generated yet? Taking a 5 second nap!";
             std::this_thread::sleep_for(std::chrono::seconds(5));
 
-            buf = readFile("distribution/testdata/" + files[i]);
+            buf = readFile(source_testdata() + "/" + files[i]);
             size = JsonFormat::decode({&buf[0], buf.size()}, slime);
 
             if (size == 0) {
@@ -245,12 +282,12 @@ TEST(DistributionTest, test_verify_java_distributions_2)
     }
 }
 
-TEST(DistributionTest, test_unchanged_distribution)
+TEST_F(DistributionTest, test_unchanged_distribution)
 {
     ClusterState state("distributor:10 storage:10");
 
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 10));
-    std::ifstream in("distribution/testdata/41-distributordistribution");
+    std::ifstream in(source_testdata() + "/41-distributordistribution");
 
     for (unsigned i = 0; i < 64_Ki; i++) {
         uint16_t node = distr.getIdealDistributorNode(state, document::BucketId(16, i), "u");
@@ -353,7 +390,7 @@ std::vector<uint16_t> createNodeCountList(const std::string& source, std::vector
     EXPECT_EQ(exp123, cnt123); \
 }
 
-TEST(DistributionTest, test_down)
+TEST_F(DistributionTest, test_down)
 {
     ASSERT_BUCKET_NODE_COUNTS(
             MyTest().state("storage:10 .4.s:m .5.s:m .6.s:d .7.s:d .9.s:r")
@@ -366,7 +403,7 @@ TEST(DistributionTest, test_down)
             "0:+ 1:+ 2:+ 3:+ 8:+ 9:+");
 }
 
-TEST(DistributionTest, test_serialize_deserialize)
+TEST_F(DistributionTest, test_serialize_deserialize)
 {
     MyTest t1;
     MyTest t2;
@@ -374,7 +411,7 @@ TEST(DistributionTest, test_serialize_deserialize)
     EXPECT_EQ(t1.getNodeCounts(), t2.getNodeCounts());
 }
 
-TEST(DistributionTest, test_initializing)
+TEST_F(DistributionTest, test_initializing)
 {
     ASSERT_BUCKET_NODE_COUNTS(
             MyTest().state("distributor:3 .0.s:i .1.s:i .2.s:i")
@@ -383,7 +420,7 @@ TEST(DistributionTest, test_initializing)
             "0:+ 1:+ 2:+");
 }
 
-TEST(DistributionTest, testHighSplitBit)
+TEST_F(DistributionTest, testHighSplitBit)
 {
     // Only 3 nodes of 10 are up => all copies should end on the 3 nodes and
     // none on the down nodes
@@ -419,10 +456,10 @@ TEST(DistributionTest, testHighSplitBit)
         ost2 << "\n";
     }
 
-    EXPECT_EQ(ost1.str(), ost2.str());
+    EXPECT_EQ(ost1.view(), ost2.view());
 }
 
-TEST(DistributionTest, test_distribution)
+TEST_F(DistributionTest, test_distribution)
 {
     const int min_buckets = 64_Ki;
     const int max_buckets = 64_Ki;
@@ -478,7 +515,7 @@ TEST(DistributionTest, test_distribution)
     }
 }
 
-TEST(DistributionTest, test_move)
+TEST_F(DistributionTest, test_move)
 {
     // This test is quite fragile, it will break if the ideal state algorithm is
     // changed in such a way that Bucket 0x8b4f67ae remains on node 0 and 1 if
@@ -511,7 +548,7 @@ TEST(DistributionTest, test_move)
     EXPECT_EQ(1, int(it-diff.begin()));
 }
 
-TEST(DistributionTest, test_move_constraints)
+TEST_F(DistributionTest, test_move_constraints)
 {
     ClusterState clusterState("storage:10");
 
@@ -598,7 +635,7 @@ TEST(DistributionTest, test_move_constraints)
     }
 }
 
-TEST(DistributionTest, test_distribution_bits)
+TEST_F(DistributionTest, test_distribution_bits)
 {
     ClusterState state1("bits:16 distributor:10");
     ClusterState state2("bits:19 distributor:10");
@@ -619,7 +656,7 @@ TEST(DistributionTest, test_distribution_bits)
     EXPECT_NE(ost1.str(), ost2.str());
 }
 
-TEST(DistributionTest, test_redundancy_hierarchical_distribution)
+TEST_F(DistributionTest, test_redundancy_hierarchical_distribution)
 {
     ClusterState state("storage:10 distributor:10");
 
@@ -633,7 +670,7 @@ TEST(DistributionTest, test_redundancy_hierarchical_distribution)
     }
 }
 
-TEST(DistributionTest, test_hierarchical_distribution)
+TEST_F(DistributionTest, test_hierarchical_distribution)
 {
     std::string distConfig(
             "redundancy 4\n"
@@ -683,7 +720,7 @@ TEST(DistributionTest, test_hierarchical_distribution)
     EXPECT_EQ(expectedMains, mainNode);
 }
 
-TEST(DistributionTest, test_group_capacity)
+TEST_F(DistributionTest, test_group_capacity)
 {
     std::string distConfig(
             "redundancy 1\n"
@@ -727,7 +764,7 @@ TEST(DistributionTest, test_group_capacity)
     EXPECT_EQ(1000 - group0count, group1count);
 }
 
-TEST(DistributionTest, test_hierarchical_no_redistribution)
+TEST_F(DistributionTest, test_hierarchical_no_redistribution)
 {
     std::string distConfig(
             "redundancy 2\n"
@@ -871,7 +908,7 @@ std::string groupConfig("group[3]\n"
                         "group[2].nodes[2].index 5\n");
 }
 
-TEST(DistributionTest, test_active_per_group)
+TEST_F(DistributionTest, test_active_per_group)
 {
     using IndexList = Distribution::IndexList;
         // Disabled feature
@@ -946,7 +983,7 @@ TEST(DistributionTest, test_active_per_group)
     }
 }
 
-TEST(DistributionTest, test_hierarchical_distribute_less_than_redundancy)
+TEST_F(DistributionTest, test_hierarchical_distribute_less_than_redundancy)
 {
     Distribution distr("redundancy 4\nactive_per_leaf_group true\n" + groupConfig);
     ClusterState state("storage:6");
@@ -974,7 +1011,7 @@ TEST(DistributionTest, test_hierarchical_distribute_less_than_redundancy)
     }
 }
 
-TEST(DistributionTest, wildcard_top_level_distribution_gives_expected_node_results) {
+TEST_F(DistributionTest, wildcard_top_level_distribution_gives_expected_node_results) {
     std::string raw_config = R"(redundancy 2
 initial_redundancy 2
 ensure_primary_persisted true
@@ -1062,7 +1099,7 @@ std::string generate_state_with_n_nodes_up(int n_nodes) {
 
 }
 
-TEST(DistributionTest, DISABLED_benchmark_ideal_state_for_many_groups) {
+TEST_F(DistributionTest, DISABLED_benchmark_ideal_state_for_many_groups) {
     const int n_groups = 150;
     Distribution distr(generate_config_with_n_1node_groups(n_groups));
     ClusterState state(generate_state_with_n_nodes_up(n_groups));
@@ -1075,7 +1112,7 @@ TEST(DistributionTest, DISABLED_benchmark_ideal_state_for_many_groups) {
     fprintf(stderr, "%.10f seconds\n", min_time);
 }
 
-TEST(DistributionTest, control_size_of_IndexList) {
+TEST_F(DistributionTest, control_size_of_IndexList) {
     EXPECT_EQ(24u, sizeof(Distribution::IndexList));
 }
 

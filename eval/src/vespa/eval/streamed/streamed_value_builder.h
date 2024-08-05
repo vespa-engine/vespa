@@ -41,7 +41,7 @@ public:
 
     ~StreamedValueBuilder();
 
-    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override {
+    ArrayRef<T> add_subspace(ConstArrayRef<std::string_view> addr) override {
         for (auto label : addr) {
             _labels.add(label);
         }

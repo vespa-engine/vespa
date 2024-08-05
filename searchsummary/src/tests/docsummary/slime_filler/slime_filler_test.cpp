@@ -97,7 +97,7 @@ slime_to_string(const Slime& slime)
 }
 
 vespalib::string
-make_slime_data_string(vespalib::stringref data)
+make_slime_data_string(std::string_view data)
 {
     Slime slime;
     SlimeInserter inserter(slime);
@@ -595,7 +595,7 @@ TEST_F(SlimeFillerTest, insert_struct_map)
     for (int i = 0; i < 3; ++i) {
         vespalib::asciistream key;
         key << "key" << (i + 1);
-        map.put(StringFieldValue(key.str()), make_nested_value(i));
+        map.put(StringFieldValue(key.view()), make_nested_value(i));
     }
     expect_insert(R"([{"key":"key1","value":{"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}}},{"key":"key2","value":{"f":{"c":166,"a":162},"c":146,"a":142,"b":144,"d":{"c":166,"a":162}}},{"key":"key3","value":{"f":{"c":266,"a":262},"c":246,"a":242,"b":244,"d":{"c":266,"a":262}}}])", map);
     SlimeFillerFilter filter;

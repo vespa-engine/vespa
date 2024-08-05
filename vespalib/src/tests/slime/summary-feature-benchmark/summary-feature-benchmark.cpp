@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <cassert>
 
 using namespace vespalib;
 using namespace vespalib::slime::convenience;

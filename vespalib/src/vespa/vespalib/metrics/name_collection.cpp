@@ -27,13 +27,13 @@ NameCollection::lookup(size_t id) const
 }
 
 size_t
-NameCollection::resolve(const vespalib::string& name)
+NameCollection::resolve(std::string_view name)
 {
     Guard guard(_lock);
     size_t nextId = _names_by_id.size();
     auto iter_check = _names.emplace(name, nextId);
     if (iter_check.second) {
-        _names_by_id.push_back(iter_check.first);
+        _names_by_id.emplace_back(iter_check.first);
     }
     return iter_check.first->second;
 }

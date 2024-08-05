@@ -14,7 +14,7 @@ namespace proton::test {
  */
 struct MockDocumentDBReference : public IDocumentDBReference {
     using SP = std::shared_ptr<MockDocumentDBReference>;
-    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref) override {
+    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view) override {
         return std::shared_ptr<search::attribute::ReadableAttributeVector>();
     }
     virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const override {

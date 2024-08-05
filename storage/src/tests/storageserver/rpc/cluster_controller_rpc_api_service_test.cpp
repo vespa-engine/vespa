@@ -121,11 +121,11 @@ struct SetStateFixture : FixtureBase {
     }
 
     static lib::ClusterStateBundle dummy_baseline_bundle_with_deferred_activation(bool deferred) {
-        return lib::ClusterStateBundle(lib::ClusterState("version:123 distributor:3 storage:3"), {}, deferred);
+        return {lib::ClusterState("version:123 distributor:3 storage:3"), {}, deferred};
     }
 };
 
-std::shared_ptr<const lib::ClusterState> state_of(vespalib::stringref state) {
+std::shared_ptr<const lib::ClusterState> state_of(std::string_view state) {
     return std::make_shared<const lib::ClusterState>(state);
 }
 
@@ -135,7 +135,7 @@ vespalib::string make_compressable_state_string() {
         ss << " ." << i << ".s:d";
     }
     return vespalib::make_string("version:123 distributor:100%s storage:100%s",
-                                 ss.str().data(), ss.str().data());
+                                 ss.view().data(), ss.view().data());
 }
 
 } // anon namespace
@@ -162,6 +162,16 @@ TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_states_rpc_with_feed
     lib::ClusterStateBundle bundle(
             lib::ClusterState("version:123 distributor:3 storage:3"), {},
             lib::ClusterStateBundle::FeedBlock(true, "full disk"), true);
+
+    f.assert_request_received_and_propagated(bundle);
+}
+
+TEST_F(ClusterControllerApiRpcServiceTest, can_receive_cluster_state_bundle_with_embedded_distribution_config) {
+    auto distr_cfg = lib::DistributionConfigBundle::of(lib::Distribution::getDefaultDistributionConfig(3, 14));
+    SetStateFixture f;
+    lib::ClusterStateBundle bundle(
+            std::make_shared<const lib::ClusterState>("version:123 distributor:3 storage:3"),
+            {}, std::nullopt, std::move(distr_cfg), false);
 
     f.assert_request_received_and_propagated(bundle);
 }

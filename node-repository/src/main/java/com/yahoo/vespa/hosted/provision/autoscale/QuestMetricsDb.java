@@ -51,7 +51,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  *
  * @author bratseth
  */
-public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
+public class QuestMetricsDb extends AbstractComponent implements MetricsDb, AutoCloseable {
 
     private static final Logger log = Logger.getLogger(QuestMetricsDb.class.getName());
 

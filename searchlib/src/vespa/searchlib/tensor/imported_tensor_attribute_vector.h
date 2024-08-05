@@ -17,13 +17,13 @@ class ImportedTensorAttributeVector : public attribute::ImportedAttributeVector
     using BitVectorSearchCache = attribute::BitVectorSearchCache;
 
 public:
-    ImportedTensorAttributeVector(vespalib::stringref name,
+    ImportedTensorAttributeVector(std::string_view name,
                                   std::shared_ptr<ReferenceAttribute> reference_attribute,
                                   std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                   std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
                                   std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                                   bool use_search_cache);
-    ImportedTensorAttributeVector(vespalib::stringref name,
+    ImportedTensorAttributeVector(std::string_view name,
                                   std::shared_ptr<ReferenceAttribute> reference_attribute,
                                   std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                   std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,

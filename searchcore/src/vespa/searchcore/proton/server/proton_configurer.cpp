@@ -37,7 +37,7 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
     }
     vespalib::asciistream ost;
     ost << "Could not map from document type name '" << name.getName() << "' to bucket space name";
-    throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
+    throw vespalib::IllegalStateException(ost.view(), VESPA_STRLOC);
 }
 
 }
@@ -197,8 +197,8 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
         assert(documentDB);
         auto old_bucket_space = documentDB->getBucketSpace();
         if (bucketSpace != old_bucket_space) {
-            vespalib::string old_bucket_space_name = document::FixedBucketSpaces::to_string(old_bucket_space);
-            vespalib::string bucket_space_name = document::FixedBucketSpaces::to_string(bucketSpace);
+            const vespalib::string & old_bucket_space_name(document::FixedBucketSpaces::to_string(old_bucket_space));
+            const vespalib::string & bucket_space_name(document::FixedBucketSpaces::to_string(bucketSpace));
             LOG(fatal, "Bucket space for document type %s changed from %s to %s. This triggers undefined behavior on a running system. Restarting process immediately to fix it.", docTypeName.getName().c_str(), old_bucket_space_name.c_str(), bucket_space_name.c_str());
             std::_Exit(1);
         }

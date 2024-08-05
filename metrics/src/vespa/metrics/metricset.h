@@ -57,11 +57,11 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent, uint64_t secondsPassed) const override;
 
     // These should never be called on metrics set.
-    int64_t getLongValue(stringref id) const override;
-    double getDoubleValue(stringref id) const override;
+    int64_t getLongValue(string_view id) const override;
+    double getDoubleValue(string_view id) const override;
 
-    const Metric* getMetric(stringref name) const;
-    Metric* getMetric(stringref name) {
+    const Metric* getMetric(string_view name) const;
+    Metric* getMetric(string_view name) {
         return const_cast<Metric*>(const_cast<const MetricSet*>(this)->getMetric(name));
     }
 
@@ -78,7 +78,7 @@ public:
 
 private:
     void tagRegistrationAltered();
-    const Metric* getMetricInternal(stringref name) const;
+    const Metric* getMetricInternal(string_view name) const;
 
     virtual void addTo(Metric&, std::vector<Metric::UP> *ownerList) const;
 };

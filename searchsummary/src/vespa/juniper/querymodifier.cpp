@@ -2,7 +2,6 @@
 
 #include "juniperdebug.h"
 #include "querymodifier.h"
-#include "querynode.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.querymodifier");
@@ -47,9 +46,9 @@ void QueryModifier::AddRewriter(const char* index_name, IRewriter* rewriter,
 
 
 /* Return any configured reducer/expander for the index, if any */
-Rewriter* QueryModifier::FindRewriter(vespalib::stringref index_name)
+Rewriter* QueryModifier::FindRewriter(std::string_view index_name)
 {
-    return _rewriters.find(index_name);
+    return _rewriters.find(std::string(index_name));
 }
 
 } // end namespace juniper
