@@ -225,7 +225,9 @@ func (c *Client) newRequest(method, url string, body io.Reader, gzipped bool) (*
 	for k, v := range c.options.Header {
 		req.Header[k] = v
 	}
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	if method != http.MethodGet {
+		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	}
 	if gzipped {
 		req.Header.Set("Content-Encoding", "gzip")
 	}
@@ -296,7 +298,7 @@ func (c *Client) Get(id Id, fieldSet string) Result {
 	}
 	url := buf.String()
 	result := Result{Id: id}
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := c.newRequest(http.MethodGet, url, nil, false)
 	if err != nil {
 		return resultWithErr(result, err, 0)
 	}
