@@ -48,8 +48,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.INFO;
-
 /**
  * Curator interface for Vespa.
  * This contains method for constructing common recipes and utilities as well as
@@ -131,7 +129,6 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         this.connectionSpec = Objects.requireNonNull(connectionSpec);
         this.curatorFramework = Objects.requireNonNull(curatorFramework);
         this.juteMaxBuffer = juteMaxBuffer;
-        LOG.log(INFO, "Using juteMaxBuffer=" + this.juteMaxBuffer);
         this.sessionTimeout = sessionTimeout;
         addLoggingListener();
         curatorFramework.start();
