@@ -9,7 +9,7 @@ import (
 
 func TestAdjustment(t *testing.T) {
 	lastAdj := 64
-	for i := 0; i < 4096; i++ {
+	for i := range 4096 {
 		adj := adjustAvailableMemory(MegaBytesOfMemory(i)).ToMB()
 		assert.True(t, int(adj) >= lastAdj)
 		lastAdj = int(adj)

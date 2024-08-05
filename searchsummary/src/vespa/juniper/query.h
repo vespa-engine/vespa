@@ -154,7 +154,7 @@ public:
      *   otherwise caller should proceed as normal
      * @param specialToken true if this term is treated as a special token
      */
-    virtual void visitKeyword(const QueryItem* item, vespalib::stringref keyword, bool prefix, bool specialToken) = 0;
+    virtual void visitKeyword(const QueryItem* item, std::string_view keyword, bool prefix, bool specialToken) = 0;
 
     virtual ~IQueryVisitor() = default;
 };

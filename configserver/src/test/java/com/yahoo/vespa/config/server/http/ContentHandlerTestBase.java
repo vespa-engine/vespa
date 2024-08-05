@@ -5,8 +5,10 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -30,7 +32,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
         assertContent("/foo/bar/", generateResultArray("foo/bar/file-without-extension", "foo/bar/test.jar"), "application/json");
         assertContent("/foo/bar", generateResultArray("foo/bar/"), "application/json");
         assertContent("/foo/bar/file-without-extension", "content");
-        assertContent("/foo/bar/test.jar", "bim\n", "application/java-archive");
+        assertBinaryContent("/foo/bar/test.jar", "56f62ad750881d2f8276136896ff84fb", "application/java-archive");
         assertContent("/foo/?recursive=true", generateResultArray("foo/bar/", "foo/bar/file-without-extension", "foo/bar/test.jar", "foo/test1.json", "foo/test2.txt"), "application/json");
     }
 
@@ -63,7 +65,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
         assertStatus("/foo/?return=status&recursive=true",
                 "[{\"status\":\"new\",\"md5\":\"\",\"name\":\"" + baseUrl + "foo/bar\"}," +
                         "{\"status\":\"new\",\"md5\":\"9a0364b9e99bb480dd25e1f0284c8555\",\"name\":\"" + baseUrl + "foo/bar/file-without-extension\"}," +
-                        "{\"status\":\"new\",\"md5\":\"579cae6111b269c0129af36a2243b873\",\"name\":\"" + baseUrl + "foo/bar/test.jar\"}," +
+                        "{\"status\":\"new\",\"md5\":\"dd9f9fbaf9adb96fd7be2f9bbe562714\",\"name\":\"" + baseUrl + "foo/bar/test.jar\"}," +
                         "{\"status\":\"new\",\"md5\":\"c157a79031e1c40f85931829bc5fc552\",\"name\":\"" + baseUrl + "foo/test1.json\"}," +
                         "{\"status\":\"new\",\"md5\":\"258622b1688250cb619f3c9ccaefb7eb\",\"name\":\"" + baseUrl + "foo/test2.txt\"}]");
     }
@@ -72,10 +74,20 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
         assertContent(path, expectedContent, HttpResponse.DEFAULT_MIME_TYPE);
     }
 
+    protected void assertBinaryContent(String path, String md5sum, String expectedContentType) throws IOException {
+        HttpResponse response = doRequest(HttpRequest.Method.GET, path);
+        assertNotNull(response);
+        assertEquals(OK, response.getStatus());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.render(baos);
+        assertEquals(md5sum, ConfigUtils.getMd5(baos.toByteArray()));
+        assertEquals(expectedContentType, response.getContentType());
+    }
+
     protected void assertContent(String path, String expectedContent, String expectedContentType) throws IOException {
         HttpResponse response = doRequest(HttpRequest.Method.GET, path);
         assertNotNull(response);
-        final String renderedString = SessionHandlerTest.getRenderedString(response);
+        String renderedString = getRenderedString(response);
         assertEquals(renderedString, OK, response.getStatus());
         assertEquals(expectedContent, renderedString);
         assertEquals(expectedContentType, response.getContentType());
@@ -84,7 +96,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     protected void assertStatus(String path, String expectedContent) throws IOException {
         HttpResponse response = doRequest(HttpRequest.Method.GET, path);
         assertNotNull(response);
-        final String renderedString = SessionHandlerTest.getRenderedString(response);
+        String renderedString = getRenderedString(response);
         assertEquals(renderedString, OK, response.getStatus());
         assertEquals(expectedContent, renderedString);
     }

@@ -20,10 +20,10 @@ public:
     DocumentDBReferenceRegistry();
     virtual ~DocumentDBReferenceRegistry();
 
-    virtual std::shared_ptr<IDocumentDBReference> get(vespalib::stringref docType) const override;
-    virtual std::shared_ptr<IDocumentDBReference> tryGet(vespalib::stringref docType) const override;
-    virtual void add(vespalib::stringref name, std::shared_ptr<IDocumentDBReference> referee) override;
-    virtual void remove(vespalib::stringref name) override;
+    virtual std::shared_ptr<IDocumentDBReference> get(std::string_view docType) const override;
+    virtual std::shared_ptr<IDocumentDBReference> tryGet(std::string_view docType) const override;
+    virtual void add(std::string_view name, std::shared_ptr<IDocumentDBReference> referee) override;
+    virtual void remove(std::string_view name) override;
 };
 
 } // namespace proton

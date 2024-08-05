@@ -47,7 +47,7 @@ public:
      * @return a list of all matching services, with corresponding connect specs
      * @param pattern The pattern used for matching
      **/
-    virtual SpecList lookup(vespalib::stringref pattern) const = 0;
+    virtual SpecList lookup(std::string_view pattern) const = 0;
 
     /**
      * Obtain the number of updates seen by this mirror. The value may wrap, but will never become 0 again. This can be

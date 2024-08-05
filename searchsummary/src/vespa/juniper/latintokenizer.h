@@ -346,7 +346,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::GetOriginalText() {
 *****************************************************************************/
 
 struct Fast_IsSpace {
-    bool operator()(char c) {return (isspace(static_cast<unsigned char>(c)) != 0);}
+    bool operator()(char c) {return (std::isspace(static_cast<unsigned char>(c)) != 0);}
 };
 
 /**
@@ -362,7 +362,7 @@ struct Fast_IsSpace {
 *****************************************************************************/
 
 struct Fast_IsPunctuation {
-    bool operator()(char c) {return (ispunct(static_cast<unsigned char>(c)) != 0);}
+    bool operator()(char c) {return (std::ispunct(static_cast<unsigned char>(c)) != 0);}
 };
 
 /**

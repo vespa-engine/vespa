@@ -115,6 +115,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     public InstanceName name() { return name; }
 
+    // TODO: make package private after 8.370 is gone.
     public Tags tags() { return tags; }
 
     /**
@@ -288,7 +289,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
     public boolean deploysTo(Environment environment, RegionName region) {
-        return zones().stream().anyMatch(zone -> zone.concerns(environment, Optional.of(region)));
+        return zones().stream().anyMatch(zone -> zone.concerns(environment, Optional.ofNullable(region)));
     }
 
     /** Returns the zone endpoint specified for the given region, or empty. */
@@ -335,7 +336,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     int deployableHashCode() {
         List<DeploymentSpec.DeclaredZone> zones = zones().stream().filter(zone -> zone.concerns(prod)).toList();
-        Object[] toHash = new Object[zones.size() + 7];
+        Object[] toHash = new Object[zones.size() + 8];
         int i = 0;
         toHash[i++] = name;
         toHash[i++] = endpoints;
@@ -343,8 +344,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         toHash[i++] = tags;
         toHash[i++] = bcp;
         toHash[i++] = cloudAccounts;
+        toHash[i++] = athenzService;
         for (DeploymentSpec.DeclaredZone zone : zones)
-            toHash[i++] = Objects.hash(zone, zone.athenzService(), zone.cloudAccounts());
+            toHash[i++] = Objects.hash(zone, zone.athenzService(), zone.cloudAccounts(), zone.testerNodes());
 
         return Arrays.hashCode(toHash);
     }

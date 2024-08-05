@@ -49,7 +49,7 @@ TEST_F("Test that hw_info_sampler uses override info", Fixture)
     Config samplerCfg(0, 75.0, 100.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_EQUAL(75.0, sampler.diskWriteSpeed());
-    EXPECT_NOT_EQUAL(0, time_point_to_long(sampler.sampleTime()));
+    EXPECT_NOT_EQUAL(0l, time_point_to_long(sampler.sampleTime()));
     EXPECT_TRUE(sampler.hwInfo().disk().slow());
 }
 
@@ -71,7 +71,7 @@ TEST_F("Test that hw_info_sampler can sample disk write speed", Fixture)
     Config samplerCfg(0, 0.0, 100.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     ASSERT_NOT_EQUAL(0.0, sampler.diskWriteSpeed());
-    ASSERT_NOT_EQUAL(0, time_point_to_long(sampler.sampleTime()));
+    ASSERT_NOT_EQUAL(0l, time_point_to_long(sampler.sampleTime()));
     HwInfoSampler sampler2(test_dir, samplerCfg);
     EXPECT_APPROX(sampler.diskWriteSpeed(), sampler2.diskWriteSpeed(), 0.1);
     EXPECT_EQUAL(time_point_to_long(sampler.sampleTime()),

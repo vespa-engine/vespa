@@ -60,7 +60,7 @@ RemoveOperationWithGid::RemoveOperationWithGid()
 {}
 
 
-RemoveOperationWithGid::RemoveOperationWithGid(BucketId bucketId, Timestamp timestamp, const GlobalId &gid, vespalib::stringref docType)
+RemoveOperationWithGid::RemoveOperationWithGid(BucketId bucketId, Timestamp timestamp, const GlobalId &gid, std::string_view docType)
     : RemoveOperation(FeedOperation::REMOVE_GID, bucketId, timestamp),
       _gid(gid),
       _docType(docType)

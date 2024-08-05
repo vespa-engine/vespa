@@ -4,26 +4,26 @@
 #include <vespa/vespalib/io/fileutil.h>
 
 namespace {
-    bool isFileLegacy(const std::string & configId) {
+    bool isFileLegacy(std::string_view configId) {
         return configId.compare(0, 5, "file:") == 0;
     }
-    bool isDirLegacy(const std::string & configId) {
+    bool isDirLegacy(std::string_view configId) {
         return configId.compare(0, 4, "dir:") == 0;
     }
-    const std::string dirNameFromId(const std::string & configId) {
+    std::string_view dirNameFromId(std::string_view configId) {
         return configId.substr(4);
     }
-    const std::string createFileSpecFromId(const std::string & configId) {
+    std::string_view createFileSpecFromId(std::string_view configId) {
         return configId.substr(5);
     }
-    const std::string createBaseId(const std::string & configId) {
-        std::string::size_type end = configId.find_last_of(".");
+    std::string_view createBaseId(std::string_view configId) {
+        std::string::size_type end = configId.find_last_of('.');
         return configId.substr(5, end - 5);
     }
-    bool isRawLegacy(const std::string & configId) {
+    bool isRawLegacy(std::string_view configId) {
         return configId.compare(0, 4, "raw:") == 0;
     }
-    const std::string createRawSpecFromId(const std::string & configId) {
+    std::string_view createRawSpecFromId(std::string_view configId) {
         return configId.substr(4);
     }
 }
@@ -31,7 +31,7 @@ namespace {
 namespace config {
 
 bool
-isLegacyConfigId(const std::string & configId)
+isLegacyConfigId(std::string_view configId)
 {
     return (isRawLegacy(configId) ||
             isFileLegacy(configId) ||
@@ -39,7 +39,7 @@ isLegacyConfigId(const std::string & configId)
 }
 
 std::unique_ptr<SourceSpec>
-legacyConfigId2Spec(const std::string & configId)
+legacyConfigId2Spec(std::string_view configId)
 {
     if (isFileLegacy(configId)) {
         return std::make_unique<FileSpec>(createFileSpecFromId(configId));
@@ -52,7 +52,7 @@ legacyConfigId2Spec(const std::string & configId)
 }
 
 const std::string
-legacyConfigId2ConfigId(const std::string & configId)
+legacyConfigId2ConfigId(std::string_view configId)
 {
     std::string newId(configId);
     if (isFileLegacy(configId)) {

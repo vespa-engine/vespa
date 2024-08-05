@@ -10,17 +10,19 @@ namespace document::select::simple {
 
 class Parser {
 public:
-    virtual ~Parser() { }
-    virtual bool parse(vespalib::stringref s) = 0;
-    vespalib::stringref getRemaining() const { return _remaining; }
+    virtual ~Parser() = default;
+    virtual bool parse(std::string_view s) = 0;
+    std::string_view getRemaining() const { return _remaining; }
 protected:
-    void setRemaining(vespalib::stringref s) { _remaining = s; }
+    void setRemaining(std::string_view s) { _remaining = s; }
+    void setRemaining(std::string_view s, size_t fromPos);
 private:
-    vespalib::stringref _remaining;
+    std::string_view _remaining;
 };
 
 class NodeResult {
 public:
+    //TODO Dirty, should force use of std::move
     Node::UP getNode() { return std::move(_node); }
 protected:
     void setNode(Node::UP node) { _node = std::move(node); }
@@ -30,6 +32,7 @@ private:
 
 class ValueResult {
 public:
+    //TODO Dirty, should force use of std::move
     ValueNode::UP stealValue() { return std::move(_value); }
     const ValueNode & getValue() const { return *_value; }
 protected:
@@ -41,10 +44,10 @@ private:
 class IdSpecParser : public Parser, public ValueResult
 {
 public:
-    IdSpecParser(const BucketIdFactory& bucketIdFactory) :
-        _bucketIdFactory(bucketIdFactory)
+    explicit IdSpecParser(const BucketIdFactory& bucketIdFactory) noexcept
+        : _bucketIdFactory(bucketIdFactory)
     {}
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
     const IdValueNode & getId() const { return static_cast<const IdValueNode &>(getValue()); }
     bool isUserSpec() const { return getId().getType() == IdValueNode::USER; }
 private:
@@ -54,7 +57,7 @@ private:
 class OperatorParser : public Parser
 {
 public:
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
     const Operator * getOperator() const { return _operator; }
 private:
     const Operator *_operator;
@@ -63,22 +66,22 @@ private:
 class StringParser : public Parser, public ValueResult
 {
 public:
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
 };
 
 class IntegerParser : public Parser, public ValueResult
 {
 public:
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
 };
 
 class SelectionParser : public Parser, public NodeResult
 {
 public:
-    SelectionParser(const BucketIdFactory& bucketIdFactory) :
-        _bucketIdFactory(bucketIdFactory)
+    explicit SelectionParser(const BucketIdFactory& bucketIdFactory) noexcept
+        : _bucketIdFactory(bucketIdFactory)
     {}
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
 private:
     const BucketIdFactory & _bucketIdFactory;
 };

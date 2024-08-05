@@ -152,7 +152,7 @@ private:
     MessageType *_reply;
     const MessageType *_replyOf;
 
-    MessageType(vespalib::stringref name, Id id, const MessageType* replyOf = 0);
+    MessageType(std::string_view name, Id id, const MessageType* replyOf = 0);
 public:
     static const MessageType DOCBLOCK;
     static const MessageType DOCBLOCK_REPLY;

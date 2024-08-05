@@ -3,6 +3,7 @@
 #include "ft_test_app_base.h"
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".ft_test_app_base");

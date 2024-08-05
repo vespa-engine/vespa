@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import java.util.Optional;
+
 /**
  * Common implementation for Item classes implementing the TaggableItem interface.
  * Note that this file exist in 3 copies that should be kept in sync:
@@ -80,6 +82,12 @@ public abstract class TaggableSegmentItem extends SegmentItem implements Taggabl
     public double getSignificance() {
         return significance;
     }
+
+    @Override
+    public void setDocumentFrequency(DocumentFrequency documentFrequency) { this.documentFrequency = documentFrequency; }
+
+    @Override
+    public Optional<DocumentFrequency> getDocumentFrequency() { return Optional.ofNullable(documentFrequency); }
 
     //Change access privilege from protected to public.
     @Override

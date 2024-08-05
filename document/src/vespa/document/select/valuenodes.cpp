@@ -22,7 +22,7 @@ namespace document::select {
 
 namespace {
 
-[[nodiscard]] bool document_type_is_a(const DocumentType& type, vespalib::stringref name) {
+[[nodiscard]] bool document_type_is_a(const DocumentType& type, std::string_view name) {
     if (type.getName() == name) {
         return true;
     }
@@ -37,7 +37,7 @@ namespace {
 
 }
 
-InvalidValueNode::InvalidValueNode(vespalib::stringref name)
+InvalidValueNode::InvalidValueNode(std::string_view name)
     : _name(name)
 {}
 
@@ -78,7 +78,7 @@ NullValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
-StringValueNode::StringValueNode(vespalib::stringref val)
+StringValueNode::StringValueNode(std::string_view val)
     : _value(val)
 {
 }
@@ -521,7 +521,7 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
 }
 
 IdValueNode::IdValueNode(const BucketIdFactory& bucketIdFactory,
-                         vespalib::stringref name, vespalib::stringref type,
+                         std::string_view name, std::string_view type,
                          int widthBits, int divisionBits)
     : _bucketIdFactory(bucketIdFactory),
       _id(name),
@@ -729,7 +729,7 @@ namespace {
     }
 }
 
-FunctionValueNode::FunctionValueNode(vespalib::stringref name,
+FunctionValueNode::FunctionValueNode(std::string_view name,
                                      std::unique_ptr<ValueNode> src)
     : _function(),
       _funcname(name),
@@ -889,7 +889,7 @@ FunctionValueNode::print(std::ostream& out, bool verbose,
 }
 
 ArithmeticValueNode::ArithmeticValueNode(
-        std::unique_ptr<ValueNode> left, vespalib::stringref op,
+        std::unique_ptr<ValueNode> left, std::string_view op,
         std::unique_ptr<ValueNode> right)
     : ValueNode(std::max(left->max_depth(), right->max_depth()) + 1),
       _operator(),

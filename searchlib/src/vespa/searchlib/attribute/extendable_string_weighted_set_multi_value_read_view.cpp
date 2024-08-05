@@ -35,7 +35,7 @@ ExtendableStringWeightedSetMultiValueReadView<MultiValueType>::get_values(uint32
         ++src_weight;
         ++dst;
     }
-    return vespalib::ConstArrayRef(_copy.data(), raw.size());
+   return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
 }
 
 template class ExtendableStringWeightedSetMultiValueReadView<multivalue::WeightedValue<const char*>>;

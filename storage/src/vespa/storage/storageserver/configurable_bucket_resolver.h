@@ -4,8 +4,8 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <memory>
-#include <unordered_map>
 
 namespace storage {
 
@@ -18,7 +18,7 @@ namespace storage {
  */
 class ConfigurableBucketResolver : public BucketResolver {
 public:
-    using BucketSpaceMapping = std::unordered_map<vespalib::string, document::BucketSpace, vespalib::hash<vespalib::string>>;
+    using BucketSpaceMapping = vespalib::hash_map<vespalib::string, document::BucketSpace>;
     const BucketSpaceMapping _type_to_space;
 public:
     explicit ConfigurableBucketResolver(BucketSpaceMapping type_to_space) noexcept;

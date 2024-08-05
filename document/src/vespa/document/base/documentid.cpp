@@ -14,7 +14,7 @@ DocumentId::DocumentId()
 {
 }
 
-DocumentId::DocumentId(vespalib::stringref id)
+DocumentId::DocumentId(std::string_view id)
     : _globalId(),
       _id(id)
 {
@@ -37,7 +37,7 @@ DocumentId::toString() const {
 }
 
 void
-DocumentId::set(vespalib::stringref id) {
+DocumentId::set(std::string_view id) {
     _id = IdString(id);
     _globalId.first = false;
 }

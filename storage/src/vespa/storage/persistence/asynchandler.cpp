@@ -284,7 +284,7 @@ AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, Mes
     for (auto& meta : meta_entries) {
         auto token = throttler.blocking_acquire_one();
         remove_by_gid_metric->count.inc();
-        std::vector<spi::DocTypeGidAndTimestamp> to_remove = {{meta->getDocumentType(), meta->getGid(), meta->getTimestamp()}};
+        std::vector<spi::DocTypeGidAndTimestamp> to_remove = {{vespalib::string(meta->getDocumentType()), meta->getGid(), meta->getTimestamp()}};
         auto task = makeResultTask([bucket = cmd.getBucket(), token = std::move(token),
                                     invoke_delete_on_zero_refs, remove_by_gid_metric,
                                     op_timer = framework::MilliSecTimer(_env._component.getClock())]

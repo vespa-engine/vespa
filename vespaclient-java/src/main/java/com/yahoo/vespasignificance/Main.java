@@ -32,8 +32,8 @@ public class Main {
             if (params.help) {
                 options.printHelp();
             } else {
+                System.setProperty("vespa.replace_invalid_unicode", "true");
                 SignificanceModelGenerator significanceModelGenerator = createSignificanceModelGenerator(params);
-
                 significanceModelGenerator.generate();
             }
         } catch (IllegalArgumentException e) {

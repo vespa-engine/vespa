@@ -32,7 +32,7 @@ vespalib::string do_http(int port, CryptoEngine::SP crypto, const vespalib::stri
     vespalib::string result;
     ssize_t res = conn->read(buf, sizeof(buf));
     while (res > 0) {
-        result.append(vespalib::stringref(buf, res));
+        result.append(std::string_view(buf, res));
         res = conn->read(buf, sizeof(buf));
     }
     ASSERT_EQUAL(res, 0);

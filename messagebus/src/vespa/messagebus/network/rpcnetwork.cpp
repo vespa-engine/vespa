@@ -226,7 +226,7 @@ RPCNetwork::waitUntilReady(duration timeout) const
         LOG(error, "failed to get config for slobroks in %2.2f seconds", vespalib::to_s(timeout));
     } else if (! _mirror->ready()) {
         auto brokers = brokerList.logString();
-        LOG(error, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(), vespalib::to_s(timeout));
+        LOG(warning, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(), vespalib::to_s(timeout));
     }
     return false;
 }

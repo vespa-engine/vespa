@@ -133,7 +133,7 @@ struct ExecFixture
         vespalib::nbostream stream;
         encode_value(*tensor, stream);
         test.getQueryEnv().getProperties().add(tensorName,
-                vespalib::stringref(stream.peek(), stream.size()));
+                std::string_view(stream.peek(), stream.size()));
         setQueryTensorType(tensorName, tensorTypeSpec);
     }
 

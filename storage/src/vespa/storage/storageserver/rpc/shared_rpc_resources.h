@@ -40,7 +40,7 @@ public:
     slobrok::api::MirrorAPI& slobrok_mirror() noexcept { return *_slobrok_mirror; }
     const slobrok::api::MirrorAPI& slobrok_mirror() const noexcept { return *_slobrok_mirror; }
     // To be called after all RPC handlers have been registered.
-    void start_server_and_register_slobrok(vespalib::stringref my_handle);
+    void start_server_and_register_slobrok(std::string_view my_handle);
 
     void sync_all_threads();
 

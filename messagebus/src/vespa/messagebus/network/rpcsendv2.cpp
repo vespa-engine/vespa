@@ -19,7 +19,7 @@ using vespalib::compression::decompress;
 using vespalib::compression::compress;
 using vespalib::DataBuffer;
 using vespalib::ConstBufferRef;
-using vespalib::stringref;
+using std::string_view;
 using vespalib::Memory;
 using vespalib::Slime;
 using vespalib::Version;
@@ -52,7 +52,7 @@ Memory SERVICE_F("service");
 }
 
 bool
-RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
+RPCSendV2::isCompatible(string_view method, string_view request, string_view response)
 {
     return  (method == METHOD_NAME) &&
             (request == METHOD_PARAMS) &&
@@ -166,16 +166,16 @@ public:
     duration getRemainingTime() const override { return std::chrono::milliseconds(_slime.get()[TIMELEFT_F].asLong()); }
 
     Version getVersion() const override {
-        return Version(_slime.get()[VERSION_F].asString().make_stringref());
+        return Version(_slime.get()[VERSION_F].asString().make_string());
     }
-    stringref getRoute() const override {
-        return _slime.get()[ROUTE_F].asString().make_stringref();
+    string_view getRoute() const override {
+        return _slime.get()[ROUTE_F].asString().make_stringview();
     }
-    stringref getSession() const override {
-        return _slime.get()[SESSION_F].asString().make_stringref();
+    string_view getSession() const override {
+        return _slime.get()[SESSION_F].asString().make_stringview();
     }
-    stringref getProtocol() const override {
-        return _slime.get()[PROTOCOL_F].asString().make_stringref();
+    string_view getProtocol() const override {
+        return _slime.get()[PROTOCOL_F].asString().make_stringview();
     }
     BlobRef getPayload() const override {
         Memory m = _slime.get()[BLOB_F].asData();
@@ -211,7 +211,7 @@ RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
 
     Reply::UP reply;
     if (payload.size > 0) {
-        reply = decode(root[PROTOCOL_F].asString().make_stringref(), version, BlobRef(payload.data, payload.size), error);
+        reply = decode(root[PROTOCOL_F].asString().make_stringview(), version, BlobRef(payload.data, payload.size), error);
     }
     if ( ! reply ) {
         reply = std::make_unique<EmptyReply>();

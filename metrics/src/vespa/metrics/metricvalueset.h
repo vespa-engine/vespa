@@ -27,21 +27,21 @@
  */
 #pragma once
 
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/jsonstream.h>
 #include <vector>
 #include <atomic>
 #include <array>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/jsonstream.h>
 
 namespace metrics {
 
 struct MetricValueClass {
     using UP = std::unique_ptr<MetricValueClass>;
-    using stringref = vespalib::stringref;
-    virtual ~MetricValueClass() {}
+    using string_view = std::string_view;
+    virtual ~MetricValueClass() = default;
 
-    virtual double getDoubleValue(stringref id) const = 0;
-    virtual uint64_t getLongValue(stringref id) const = 0;
+    virtual double getDoubleValue(string_view id) const = 0;
+    virtual uint64_t getLongValue(string_view id) const = 0;
     virtual void output(const std::string& id, std::ostream&) const = 0;
     virtual void output(const std::string& id, vespalib::JsonStream&) const = 0;
     std::string toString(const std::string& id);
@@ -55,7 +55,7 @@ class MetricValueSet {
     std::atomic<uint32_t>       _flags;
 
     enum Flag { RESET = 1 };
-    bool isReset() const { return hasFlag(RESET); }
+    bool isReset() const noexcept { return hasFlag(RESET); }
 public:
     MetricValueSet() noexcept;
     MetricValueSet(const MetricValueSet&) noexcept;
@@ -79,16 +79,16 @@ public:
 
     std::string toString();
 
-    uint32_t size() const { return _values.size(); }
+    uint32_t size() const noexcept { return _values.size(); }
 
-    bool hasFlag(uint32_t flags) const {
+    bool hasFlag(uint32_t flags) const noexcept {
         return ((_flags.load(std::memory_order_relaxed) & flags) != 0);
     }
     void setFlag(uint32_t flags) {
         _flags.store(_flags.load(std::memory_order_relaxed) | flags,
                      std::memory_order_relaxed);
     }
-    void removeFlag(uint32_t flags) {
+    void removeFlag(uint32_t flags) noexcept {
         _flags.store(_flags.load(std::memory_order_relaxed) & ~flags,
                      std::memory_order_relaxed);
     }

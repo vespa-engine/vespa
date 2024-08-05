@@ -15,7 +15,7 @@ template <typename LCT, typename RCT>
 void my_dot_product_op(InterpretedFunction::State &state, uint64_t) {
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
-    double result = DotProduct<LCT,RCT>::apply(lhs_cells.cbegin(), rhs_cells.cbegin(), lhs_cells.size());
+    double result = DotProduct<LCT,RCT>::apply(lhs_cells.data(), rhs_cells.data(), lhs_cells.size());
     state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 

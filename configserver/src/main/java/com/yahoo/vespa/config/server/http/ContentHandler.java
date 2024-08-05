@@ -8,9 +8,10 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 
-import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
+
+import static com.yahoo.vespa.config.server.http.ContentRequest.ReturnType.STATUS;
 
 /**
  * Requests for content and content status, both for prepared and active sessions,
@@ -23,11 +24,9 @@ public class ContentHandler {
     public HttpResponse get(ContentRequest request) {
         ContentRequest.ReturnType returnType = request.getReturnType();
         String urlBase = request.getUrlBase("/content/");
-        if (ContentRequest.ReturnType.STATUS.equals(returnType)) {
-            return status(request, urlBase);
-        } else {
-            return content(request, urlBase);
-        }
+        return STATUS.equals(returnType)
+                ? status(request, urlBase)
+                : content(request, urlBase);
     }
 
     public HttpResponse put(ContentRequest request) {
@@ -76,7 +75,7 @@ public class ContentHandler {
             throw new BadRequestException("Request must contain body when creating a file");
         }
         try {
-            file.writeFile(new InputStreamReader(request.getData()));
+            file.writeFile(request.getData());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

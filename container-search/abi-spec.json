@@ -480,7 +480,27 @@
       "public void setExplicitSignificance(boolean)",
       "public boolean hasExplicitSignificance()",
       "public double getSignificance()",
+      "public void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public java.util.Optional getDocumentFrequency()",
       "public boolean hasUniqueID()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.DocumentFrequency" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(long, long)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public long frequency()",
+      "public long count()"
     ],
     "fields" : [ ]
   },
@@ -874,7 +894,8 @@
       "protected com.yahoo.prelude.query.Item connectedBacklink",
       "protected double connectivity",
       "protected double significance",
-      "protected boolean explicitSignificance"
+      "protected boolean explicitSignificance",
+      "protected com.yahoo.prelude.query.DocumentFrequency documentFrequency"
     ]
   },
   "com.yahoo.prelude.query.ItemHelper" : {
@@ -1471,6 +1492,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()",
+      "public void setIndexName(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
@@ -1510,6 +1532,8 @@
       "public void setSegmentingRule(com.yahoo.prelude.query.SegmentingRule)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
+      "public boolean shouldFoldIntoWand()",
+      "public void shouldFoldIntoWand(boolean)",
       "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -1576,6 +1600,8 @@
       "public void setExplicitSignificance(boolean)",
       "public boolean hasExplicitSignificance()",
       "public double getSignificance()",
+      "public void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public java.util.Optional getDocumentFrequency()",
       "public boolean hasUniqueID()"
     ],
     "fields" : [ ]
@@ -1677,7 +1703,9 @@
       "public abstract void setSignificance(double)",
       "public abstract boolean hasExplicitSignificance()",
       "public abstract void setExplicitSignificance(boolean)",
-      "public abstract double getSignificance()"
+      "public abstract double getSignificance()",
+      "public abstract void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public abstract java.util.Optional getDocumentFrequency()"
     ],
     "fields" : [ ]
   },
@@ -1701,6 +1729,8 @@
       "public void setExplicitSignificance(boolean)",
       "public boolean hasExplicitSignificance()",
       "public double getSignificance()",
+      "public void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public java.util.Optional getDocumentFrequency()",
       "public boolean hasUniqueID()"
     ],
     "fields" : [ ]
@@ -1877,6 +1907,7 @@
       "public int getN()",
       "public boolean nIsExplicit()",
       "public void setN(int)",
+      "public int encode(java.nio.ByteBuffer)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
@@ -5909,6 +5940,27 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.query.parser.ParserEnvironment$ParserSettings" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(boolean, boolean, boolean, boolean)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public boolean keepImplicitAnds()",
+      "public boolean markSegmentAnds()",
+      "public boolean keepSegmentAnds()",
+      "public boolean keepIdeographicPunctuation()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.query.parser.ParserEnvironment" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -5918,6 +5970,8 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public com.yahoo.search.query.parser.ParserEnvironment$ParserSettings getParserSettings()",
+      "public com.yahoo.search.query.parser.ParserEnvironment setParserSettings(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)",
       "public com.yahoo.prelude.IndexFacts getIndexFacts()",
       "public com.yahoo.search.query.parser.ParserEnvironment setIndexFacts(com.yahoo.prelude.IndexFacts)",
       "public com.yahoo.language.Linguistics getLinguistics()",
@@ -7581,6 +7635,7 @@
       "protected void moreChildren()",
       "protected void renderHitGroupHead(com.yahoo.search.result.HitGroup)",
       "protected void renderErrors(java.util.Set)",
+      "protected boolean shouldRenderStacktraceOf(java.lang.Throwable)",
       "protected void renderCoverage()",
       "protected void renderHit(com.yahoo.search.result.Hit)",
       "protected boolean shouldRender(com.yahoo.search.result.Hit)",
@@ -7977,6 +8032,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.data.access.Inspector)",
+      "public void <init>(java.util.Map)",
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
@@ -8467,7 +8523,8 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
-      "public com.yahoo.tensor.TensorType tensorType()"
+      "public com.yahoo.tensor.TensorType tensorType()",
+      "public java.lang.String toString()"
     ],
     "fields" : [ ]
   },
@@ -8512,6 +8569,7 @@
     ],
     "methods" : [
       "public com.yahoo.search.schema.Field$Type$Kind kind()",
+      "public java.lang.String toString()",
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]
@@ -8697,8 +8755,10 @@
     "methods" : [
       "public void <init>(com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
       "public void <init>(java.util.List, java.util.List)",
+      "public static com.yahoo.search.schema.SchemaInfo createStub(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)",
       "public java.util.Map schemas()",
       "public java.util.Map clusters()",
+      "public com.yahoo.search.query.parser.ParserEnvironment$ParserSettings parserSettings()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",

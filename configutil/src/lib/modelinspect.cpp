@@ -83,7 +83,7 @@ ModelInspect::printService(const cloud::config::ModelConfig::Hosts::Services &sv
 int
 ModelInspect::action(int cnt, char **argv)
 {
-    const vespalib::string cmd = *argv++;
+    const vespalib::string cmd = vespalib::safe_char_2_string(*argv++);
     if (cnt == 1) {
         if (cmd == "yamldump") {
             yamlDump();
@@ -122,7 +122,7 @@ ModelInspect::action(int cnt, char **argv)
         }
     }
     if (cnt == 2) {
-        vespalib::string arg = *argv++;
+        vespalib::string arg = vespalib::safe_char_2_string(*argv++);
         if (cmd == "host") {
             return listHost(arg);
         }
@@ -143,8 +143,8 @@ ModelInspect::action(int cnt, char **argv)
         }
     }
     if (cnt == 3) {
-        vespalib::string arg1 = *argv++;
-        vespalib::string arg2 = *argv++;
+        vespalib::string arg1 = vespalib::safe_char_2_string(*argv++);
+        vespalib::string arg2 = vespalib::safe_char_2_string(*argv++);
         if (cmd == "get-index-of") {
             return getIndexOf(arg1, arg2);
         }

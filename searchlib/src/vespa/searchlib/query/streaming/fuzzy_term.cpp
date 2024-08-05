@@ -11,7 +11,7 @@ constexpr bool normalizing_implies_cased(Normalizing norm) noexcept {
 
 }
 
-FuzzyTerm::FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, stringref term,
+FuzzyTerm::FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term,
                      const string& index, Type type, Normalizing normalizing,
                      uint8_t max_edits, uint32_t prefix_lock_length, bool prefix_match)
     : QueryTerm(std::move(result_base), term, index, type, normalizing),

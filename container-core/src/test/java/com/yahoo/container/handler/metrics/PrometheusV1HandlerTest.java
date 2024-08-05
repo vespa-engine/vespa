@@ -109,6 +109,6 @@ public class PrometheusV1HandlerTest {
     void consumer_is_propagated_to_metrics_proxy_api() {
         String response = testDriver.sendRequest(VALUES_URI + consumerQuery(CUSTOM_CONSUMER)).readAll();
 
-        assertTrue(response.contains(REPLACED_CPU_METRIC));
+        assertTrue(response.contains(REPLACED_CPU_METRIC), response);
     }
 }

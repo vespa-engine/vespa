@@ -43,7 +43,7 @@ private:
     using MessageTrackerUP = std::unique_ptr<MessageTracker>;
     using Timestamp = framework::MicroSecTime;
 public:
-    using NewestDocumentVersionMapping = vespalib::hash_map<vespalib::stringref, api::Timestamp>;
+    using NewestDocumentVersionMapping = vespalib::hash_map<std::string_view, api::Timestamp>;
 
     enum StateFlag {
         IN_USE                     = 0x01,

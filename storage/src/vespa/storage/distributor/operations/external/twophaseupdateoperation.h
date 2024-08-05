@@ -131,7 +131,7 @@ private:
     void addTraceFromReply(api::StorageReply& reply);
     [[nodiscard]] bool hasTasCondition() const noexcept;
     void replyWithTasFailure(DistributorStripeMessageSender& sender,
-                             vespalib::stringref message);
+                             std::string_view message);
     bool may_restart_with_fast_path(const api::GetReply& reply);
     [[nodiscard]] bool replica_set_unchanged_after_get_operation() const;
     void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorStripeMessageSender& sender);

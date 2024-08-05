@@ -43,7 +43,7 @@ SlimeConfigRequest::~SlimeConfigRequest() = default;
 bool
 SlimeConfigRequest::verifyState(const ConfigState & state) const
 {
-    return (state.xxhash64.compare(_data[REQUEST_CONFIG_XXHASH64].asString().make_stringref()) == 0 &&
+    return (state.xxhash64.compare(_data[REQUEST_CONFIG_XXHASH64].asString().make_stringview()) == 0 &&
             state.generation == _data[REQUEST_CURRENT_GENERATION].asLong());
 }
 

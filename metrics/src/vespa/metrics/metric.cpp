@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <iterator>
 #include <cassert>
 #include <algorithm>
 #include <ostream>
@@ -43,11 +42,11 @@ namespace {
     std::regex name_pattern_regex(namePattern);
 }
 
-Tag::Tag(vespalib::stringref k)
+Tag::Tag(std::string_view k)
     : _key(NameRepo::tagKeyId(k)),
       _value(TagValueId::empty_handle)
 { }
-Tag::Tag(vespalib::stringref k, vespalib::stringref v)
+Tag::Tag(std::string_view k, std::string_view v)
     : _key(NameRepo::tagKeyId(k)),
       _value(NameRepo::tagValueId(v))
 { }
@@ -174,7 +173,7 @@ Metric::getPath() const
         return getName();
     } else {
         vespalib::string path(_owner->getPath());
-        path.append('.');
+        path += '.';
         path.append(getName());
         return path;
     }

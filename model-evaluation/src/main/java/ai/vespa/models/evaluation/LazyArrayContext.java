@@ -113,6 +113,11 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     }
 
     @Override
+    public String resolveBinding(String argument) {
+        return null;
+    }
+
+    @Override
     public int size() {
         return indexedBindings.names().size();
     }

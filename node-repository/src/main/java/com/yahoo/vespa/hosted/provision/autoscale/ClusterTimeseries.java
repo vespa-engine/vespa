@@ -3,13 +3,11 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
@@ -18,6 +16,12 @@ import java.util.OptionalDouble;
  * @author bratseth
  */
 public class ClusterTimeseries {
+
+    // The minimum increase in query rate that is considered significant growth.
+    private static final double SIGNIFICANT_GROWTH_FACTOR = 0.3;
+
+    // The minimum interval to consider when determining growth rate between snapshots.
+    private static final Duration GROWTH_RATE_MIN_INTERVAL = Duration.ofMinutes(5);
 
     private final ClusterSpec.Id cluster;
     private final List<ClusterMetricSnapshot> snapshots;
@@ -48,9 +52,12 @@ public class ClusterTimeseries {
     /**
      * The max query growth rate we can predict from this time-series as a fraction of the average traffic in the window
      *
+     * This considers query over all known snapshots, but snapshots are effectively bounded in time by the retention
+     * period of the metrics database.
+     *
      * @return the predicted max growth of the query rate, per minute as a fraction of the current load
      */
-    public double maxQueryGrowthRate(Duration window, Clock clock) {
+    public double maxQueryGrowthRate(Duration window, Instant now) {
         if (snapshots.isEmpty()) return 0.1;
         // Find the period having the highest growth rate, where total growth exceeds 30% increase
         double maxGrowthRate = 0; // In query rate growth per second (to get good resolution)
@@ -64,10 +71,12 @@ public class ClusterTimeseries {
                         continue;
                 }
             }
+            // Find a subsequent snapshot where the query rate has increased significantly
             for (int end = start + 1; end < snapshots.size(); end++) {
-                if (queryRateAt(end) >= queryRateAt(start) * 1.3) {
-                    Duration duration = durationBetween(start, end);
-                    if (duration.toSeconds() == 0) continue;
+                Duration duration = durationBetween(start, end);
+                if (duration.toSeconds() == 0) continue;
+                if (duration.compareTo(GROWTH_RATE_MIN_INTERVAL) < 0) continue; // Too short period to be considered
+                if (significantGrowthBetween(start, end)) {
                     double growthRate = (queryRateAt(end) - queryRateAt(start)) / duration.toSeconds();
                     if (growthRate > maxGrowthRate)
                         maxGrowthRate = growthRate;
@@ -80,27 +89,31 @@ public class ClusterTimeseries {
             else
                 return 0.0; //       ... because load is stable
         }
-        OptionalDouble queryRate = queryRate(window, clock);
+        OptionalDouble queryRate = queryRate(window, now);
         if (queryRate.orElse(0) == 0) return 0.1; // Growth not expressible as a fraction of the current rate
         return maxGrowthRate * 60 / queryRate.getAsDouble();
+    }
+
+    private boolean significantGrowthBetween(int start, int end) {
+        return queryRateAt(end) >= queryRateAt(start) * (1 + SIGNIFICANT_GROWTH_FACTOR);
     }
 
     /**
      * The current query rate, averaged over the same window we average utilization over,
      * as a fraction of the peak rate in this timeseries
      */
-    public double queryFractionOfMax(Duration window, Clock clock) {
+    public double queryFractionOfMax(Duration window, Instant now) {
         if (snapshots.isEmpty()) return 0.5;
         var max = snapshots.stream().mapToDouble(ClusterMetricSnapshot::queryRate).max().getAsDouble();
         if (max == 0) return 1.0;
-        var average = queryRate(window, clock);
+        var average = queryRate(window, now);
         if (average.isEmpty()) return 0.5; // No measurements in the relevant time period
         return average.getAsDouble() / max;
     }
 
     /** Returns the average query rate in the given window, or empty if there are no measurements in it */
-    public OptionalDouble queryRate(Duration window, Clock clock) {
-        Instant oldest = clock.instant().minus(window);
+    public OptionalDouble queryRate(Duration window, Instant now) {
+        Instant oldest = now.minus(window);
         return snapshots.stream()
                         .filter(snapshot -> ! snapshot.at().isBefore(oldest))
                         .mapToDouble(snapshot -> snapshot.queryRate())
@@ -108,8 +121,8 @@ public class ClusterTimeseries {
     }
 
     /** Returns the average query rate in the given window, or empty if there are no measurements in it */
-    public OptionalDouble writeRate(Duration window, Clock clock) {
-        Instant oldest = clock.instant().minus(window);
+    public OptionalDouble writeRate(Duration window, Instant now) {
+        Instant oldest = now.minus(window);
         return snapshots.stream()
                         .filter(snapshot -> ! snapshot.at().isBefore(oldest))
                         .mapToDouble(snapshot -> snapshot.writeRate())

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/fef/document_frequency.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/table.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -10,6 +11,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <limits>
+#include <optional>
 
 namespace search::features::util {
 
@@ -32,7 +34,7 @@ using ConstCharPtr = const char *;
  * @return The numeric value.
  */
 template <typename T>
-T strToNum(vespalib::stringref str);
+T strToNum(std::string_view str);
 
 template <typename T>
 feature_t getAsFeature(T value) __attribute__((__always_inline__));
@@ -67,24 +69,8 @@ inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
  * @return The feature value.
  */
 template <>
-inline feature_t getAsFeature<vespalib::stringref>(vespalib::stringref value) {
+inline feature_t getAsFeature<std::string_view>(std::string_view value) {
     return vespalib::hash2d(value);
-}
-
-
-/**
- * This method inputs a value to cap to the range [capFloor, capCeil] and then normalize this
- * value to the unit range [0, 1].
- *
- * @param val      The value to unit normalize.
- * @param capFloor The minimum value of the cap range.
- * @param capCeil  The maximum value of the cap range.
- * @return The unit normalized value.
- */
-template <typename T>
-T unitNormalize(const T &val, const T &capFloor, const T &capCeil)
-{
-    return (std::max(capFloor, std::min(capCeil, val)) - capFloor) / (capCeil - capFloor);
 }
 
 /**
@@ -123,30 +109,12 @@ feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env,
 feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term, feature_t fallback);
 
 /**
- * Returns the significance of the given term.
- * Uses the property map of the query environment to lookup this data.
+ * Returns the significance based on the given document frequency
  *
- * @param env          The query environment.
- * @param termId       The term id.
- * @param fallback     The value to return if the significance was not found in the property map.
- * @return             The significance.
+ * @param doc_freq The document frequency
+ * @return         The significance.
  */
-feature_t lookupSignificance(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback = 0.0f);
-
-/**
- * Returns the Robertson-Sparck-Jones weight based on the given document count
- * (number of documents containing the term) and the number of documents in the corpus.
- * This weight is a variant of inverse document frequency.
- */
-double getRobertsonSparckJonesWeight(double docCount, double docsInCorpus);
-
-/**
- * Returns the significance based on the given scaled number of documents containing the term.
- *
- * @param docFreq The scaled number of documents containing the term.
- * @return        The significance.
- */
-feature_t getSignificance(double docFreq);
+feature_t calculate_legacy_significance(search::fef::DocumentFrequency doc_freq);
 
 /**
  * Returns the significance based on max known frequency of the term
@@ -154,7 +122,7 @@ feature_t getSignificance(double docFreq);
  * @param  termData Data for the term
  * @return          The significance.
  */
-feature_t getSignificance(const search::fef::ITermData &termData);
+feature_t calculate_legacy_significance(const search::fef::ITermData& termData);
 
 /**
  * Lookups a table by using the properties and the table manager in the given index environment.
@@ -213,5 +181,11 @@ getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, u
  **/
 const search::fef::ITermData *
 getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label);
+
+std::optional<search::fef::DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
+
+feature_t
+get_legacy_significance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
 
 }

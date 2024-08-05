@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cassert>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.base.globalid");
@@ -52,7 +53,7 @@ vespalib::string GlobalId::toString() const {
 }
 
 GlobalId
-GlobalId::parse(vespalib::stringref source)
+GlobalId::parse(std::string_view source)
 {
     if (source.substr(0, 6) != "gid(0x") {
         throw vespalib::IllegalArgumentException(
@@ -64,7 +65,7 @@ GlobalId::parse(vespalib::stringref source)
         ost << "A gid string representation must be exactly "
             << (2 * LENGTH + 7) << " bytes long. Invalid source: '"
             << source << "'.";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException(ost.view(), VESPA_STRLOC);
     }
     if (source.substr(2 * LENGTH + 6, 1) != ")") {
         throw vespalib::IllegalArgumentException(

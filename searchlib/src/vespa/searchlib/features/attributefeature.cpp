@@ -49,7 +49,7 @@ bool equals(X lhs, Y rhs) {
 }
 
 template <>
-bool equals<ConstCharPtr, vespalib::stringref>(ConstCharPtr lhs, vespalib::stringref rhs) {
+bool equals<ConstCharPtr, std::string_view>(ConstCharPtr lhs, std::string_view rhs) {
     return strcmp(lhs, rhs.data()) == 0;
 }
 
@@ -77,7 +77,7 @@ isUndefined(T value, BasicType::Type type)
 
 template <>
 bool
-isUndefined<vespalib::stringref>(vespalib::stringref, BasicType::Type)
+isUndefined<std::string_view>(std::string_view, BasicType::Type)
 {
     return false;
 }
@@ -362,7 +362,7 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
-                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>>(attribute, extraParam);
+                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, std::string_view>>(attribute, extraParam);
             } else if (attribute->isIntegerType()) {
                 return stash.create<WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>>(attribute, util::strToNum<int64_t>(extraParam));
             } else { // FLOAT

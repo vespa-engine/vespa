@@ -82,7 +82,7 @@ populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hi
 }
 
 AttributeVector::SP
-make_attribute(const Config& cfg, vespalib::stringref field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms)
+make_attribute(const Config& cfg, std::string_view field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms)
 {
     auto attr = AttributeFactory::createAttribute(field_name, cfg);
     attr->addReservedDoc();
@@ -131,7 +131,7 @@ AttributeContextBuilder::AttributeContextBuilder()
 }
 
 void
-AttributeContextBuilder::add(const search::attribute::Config& cfg, vespalib::stringref field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms)
+AttributeContextBuilder::add(const search::attribute::Config& cfg, std::string_view field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms)
 {
     auto attr = make_attribute(cfg, field_name, num_docs, hit_specs, disjunct_terms);
     _ctx->add(std::move(attr));

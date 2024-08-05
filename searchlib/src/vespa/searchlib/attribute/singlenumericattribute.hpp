@@ -206,7 +206,7 @@ SingleValueNumericAttribute<B>::onShrinkLidSpace()
 
 template <typename B>
 std::unique_ptr<AttributeSaver>
-SingleValueNumericAttribute<B>::onInitSave(vespalib::stringref fileName)
+SingleValueNumericAttribute<B>::onInitSave(std::string_view fileName)
 {
     const uint32_t numDocs(this->getCommittedDocIdLimit());
     assert(numDocs <= _data.size());

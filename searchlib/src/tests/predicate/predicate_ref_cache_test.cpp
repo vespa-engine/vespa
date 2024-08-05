@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_ref_cache.
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_ref_cache_test");
-
 #include <vespa/searchlib/predicate/predicate_ref_cache.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vector>
@@ -101,5 +98,3 @@ TEST("require that cache handles large entries") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

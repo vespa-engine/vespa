@@ -4,7 +4,7 @@
 
 namespace storage::framework {
 
-HtmlStatusReporter::HtmlStatusReporter(vespalib::stringref id, vespalib::stringref name)
+HtmlStatusReporter::HtmlStatusReporter(std::string_view id, std::string_view name)
     : StatusReporter(id, name)
 { }
 

@@ -34,7 +34,7 @@ struct PartInfo {
     size_t numEntries;
     size_t byteSize;
     vespalib::string file;
-    PartInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, vespalib::stringref file_in)
+    PartInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, std::string_view file_in)
         : range(range_in),
           numEntries(numEntries_in),
           byteSize(byteSize_in),

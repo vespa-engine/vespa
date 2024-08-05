@@ -34,9 +34,9 @@ class QueryNormalization {
 public:
     using Normalizing = search::Normalizing;
     virtual ~QueryNormalization() = default;
-    virtual bool is_text_matching(vespalib::stringref index) const noexcept = 0;
-    virtual Normalizing normalizing_mode(vespalib::stringref index) const noexcept = 0;
-    static vespalib::string optional_fold(vespalib::stringref s, TermType type, Normalizing normalizing);
+    virtual bool is_text_matching(std::string_view index) const noexcept = 0;
+    virtual Normalizing normalizing_mode(std::string_view index) const noexcept = 0;
+    static vespalib::string optional_fold(std::string_view s, TermType type, Normalizing normalizing);
 };
 
 }

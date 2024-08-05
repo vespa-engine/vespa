@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.filter.security.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.component.chain.ChainedComponent;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-public abstract class JsonSecurityRequestFilterBase extends AbstractComponent implements SecurityRequestFilter {
+public abstract class JsonSecurityRequestFilterBase extends ChainedComponent implements SecurityRequestFilter {
 
     private static final Logger log = Logger.getLogger(JsonSecurityRequestFilterBase.class.getName());
 

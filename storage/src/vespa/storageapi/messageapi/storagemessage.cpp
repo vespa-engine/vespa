@@ -106,7 +106,7 @@ MessageType::MessageType::get(Id id)
     }
     return *it->second;
 }
-MessageType::MessageType(vespalib::stringref name, Id id,
+MessageType::MessageType(std::string_view name, Id id,
                          const MessageType* replyOf)
     : _name(name), _id(id), _reply(nullptr), _replyOf(replyOf)
 {
@@ -139,7 +139,7 @@ std::ostream & operator << (std::ostream & os, const StorageMessageAddress & add
 namespace {
 
 vespalib::string
-createAddress(vespalib::stringref cluster, const lib::NodeType &type, uint16_t index) {
+createAddress(std::string_view cluster, const lib::NodeType &type, uint16_t index) {
     vespalib::asciistream os;
     os << STORAGEADDRESS_PREFIX << cluster << '/' << type.toString() << '/' << index << "/default";
     return os.str();

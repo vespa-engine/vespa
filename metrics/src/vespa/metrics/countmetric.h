@@ -81,11 +81,11 @@ public:
                const std::string& indent, uint64_t secondsPassed) const override;
 
     // Only one metric in valuemetric, so return it on any id.
-    int64_t getLongValue(stringref id) const override {
+    int64_t getLongValue(string_view id) const override {
         (void) id;
         return static_cast<int64_t>(getValue());
     }
-    double getDoubleValue(stringref id) const override {
+    double getDoubleValue(string_view id) const override {
         (void) id;
         return static_cast<double>(getValue());
     }

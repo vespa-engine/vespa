@@ -18,7 +18,7 @@ struct DummyPersistenceHandler : public IPersistenceHandler {
     void handlePut(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, DocumentSP) override {}
     void handleUpdate(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, DocumentUpdateSP) override {}
     void handleRemove(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentId &) override {}
-    void handleRemoveByGid(FeedToken, const storage::spi::Bucket&, storage::spi::Timestamp, vespalib::stringref, const GlobalId&) override { }
+    void handleRemoveByGid(FeedToken, const storage::spi::Bucket&, storage::spi::Timestamp, std::string_view, const GlobalId&) override { }
     void handleListBuckets(IBucketIdListResultHandler &) override {}
     void handleSetClusterState(const storage::spi::ClusterState &, IGenericResultHandler &) override {}
     void handleSetActiveState(const storage::spi::Bucket &, storage::spi::BucketInfo::ActiveState, std::shared_ptr<IGenericResultHandler>) override {}

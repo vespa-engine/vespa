@@ -28,13 +28,13 @@ class ImportedAttributeVector : public ReadableAttributeVector {
 public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
     using MetaStoreReadGuard = search::IDocumentMetaStoreContext::IReadGuard;
-    ImportedAttributeVector(vespalib::stringref name,
+    ImportedAttributeVector(std::string_view name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                             std::shared_ptr<ReadableAttributeVector> target_attribute,
                             std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                             bool use_search_cache);
-    ImportedAttributeVector(vespalib::stringref name,
+    ImportedAttributeVector(std::string_view name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                             std::shared_ptr<ReadableAttributeVector> target_attribute,

@@ -951,7 +951,7 @@ struct StateExplorerProxy : vespalib::StateExplorer {
     explicit StateExplorerProxy(const StateExplorer &explorer_in) : explorer(explorer_in) {}
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override { explorer.get_state(inserter, full); }
     std::vector<vespalib::string> get_children_names() const override { return explorer.get_children_names(); }
-    std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override { return explorer.get_child(name); }
+    std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override { return explorer.get_child(name); }
 };
 
 struct DocumentDBMapExplorer : vespalib::StateExplorer {
@@ -969,7 +969,7 @@ struct DocumentDBMapExplorer : vespalib::StateExplorer {
         }
         return names;
     }
-    std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override {
+    std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override {
         std::shared_lock<std::shared_mutex> guard(mutex);
         auto result = documentDBMap.find(DocTypeName(vespalib::string(name)));
         if (result == documentDBMap.end()) {
@@ -993,7 +993,7 @@ Proton::get_children_names() const
 }
 
 std::unique_ptr<vespalib::StateExplorer>
-Proton::get_child(vespalib::stringref name) const
+Proton::get_child(std::string_view name) const
 {
     if (name == MATCH_ENGINE && _matchEngine) {
         return std::make_unique<StateExplorerProxy>(*_matchEngine);

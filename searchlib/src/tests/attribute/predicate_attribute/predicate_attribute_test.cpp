@@ -54,7 +54,7 @@ Config get_predicate_with_arity(uint32_t arity)
 }
 
 std::shared_ptr<AttributeVector>
-make_attribute(vespalib::stringref name, const Config& cfg, bool setup)
+make_attribute(std::string_view name, const Config& cfg, bool setup)
 {
     auto attribute = AttributeFactory::createAttribute(name, cfg);
     if (attribute && setup) {

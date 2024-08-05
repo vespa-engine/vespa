@@ -53,7 +53,7 @@ MirrorAPI::~MirrorAPI()
 
 
 MirrorAPI::SpecList
-MirrorAPI::lookup(vespalib::stringref pattern) const
+MirrorAPI::lookup(std::string_view pattern) const
 {
     SpecList ret;
     ret.reserve(1);

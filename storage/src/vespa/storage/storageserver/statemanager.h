@@ -55,6 +55,7 @@ class StateManager : public NodeStateUpdater,
     std::mutex                                _listenerLock;
     std::shared_ptr<lib::NodeState>           _nodeState;
     std::shared_ptr<lib::NodeState>           _nextNodeState;
+    std::shared_ptr<const lib::Distribution>  _configured_distribution; // From config system, not from CC
     std::shared_ptr<const ClusterStateBundle> _systemState;
     std::shared_ptr<const ClusterStateBundle> _nextSystemState;
     uint32_t                                  _reported_host_info_cluster_state_version;
@@ -78,6 +79,7 @@ class StateManager : public NodeStateUpdater,
     bool                                      _noThreadTestMode;
     bool                                      _grabbedExternalLock;
     bool                                      _require_strictly_increasing_cluster_state_versions;
+    bool                                      _receiving_distribution_config_from_cc;
     std::atomic<bool>                         _notifyingListeners;
     std::atomic<bool>                         _requested_almost_immediate_node_state_replies;
 
@@ -101,6 +103,8 @@ public:
     lib::NodeState::CSP getReportedNodeState() const override;
     lib::NodeState::CSP getCurrentNodeState() const override;
     std::shared_ptr<const ClusterStateBundle> getClusterStateBundle() const override;
+
+    void storageDistributionChanged() override;
 
     void addStateListener(StateListener&) override;
     void removeStateListener(StateListener&) override;

@@ -17,7 +17,7 @@ class IJuniperConverter
 {
 public:
     virtual ~IJuniperConverter() = default;
-    virtual void convert(vespalib::stringref input, vespalib::slime::Inserter& inserter) = 0;
+    virtual void convert(std::string_view input, vespalib::slime::Inserter& inserter) = 0;
 };
 
 }

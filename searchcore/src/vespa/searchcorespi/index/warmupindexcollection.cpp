@@ -39,8 +39,8 @@ public:
     ~WarmupRequestContext() override;
     const vespalib::Doom & getDoom() const override { return vespalib::Doom::never(); }
     vespalib::ThreadBundle & thread_bundle() const override { return vespalib::ThreadBundle::trivial(); }
-    const IAttributeVector *getAttribute(const vespalib::string &) const override { return nullptr; }
-    const IAttributeVector *getAttributeStableEnum(const vespalib::string &) const override { return nullptr; }
+    const IAttributeVector *getAttribute(std::string_view) const override { return nullptr; }
+    const IAttributeVector *getAttributeStableEnum(std::string_view) const override { return nullptr; }
     const vespalib::eval::Value* get_query_tensor(const vespalib::string&) const override;
     const AttributeBlueprintParams& get_attribute_blueprint_params() const override { return _params; }
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }

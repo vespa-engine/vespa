@@ -16,7 +16,7 @@ class DirectTensorAttribute final : public TensorAttribute
 
     void set_tensor(DocId docId, std::unique_ptr<vespalib::eval::Value> tensor);
 public:
-    DirectTensorAttribute(vespalib::stringref baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
+    DirectTensorAttribute(std::string_view baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~DirectTensorAttribute() override;
     void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
     void update_tensor(DocId docId,

@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
+#include <ostream>
 
 namespace vespalib::net::tls {
 
@@ -18,7 +19,7 @@ string CapabilitySet::to_string() const {
            emit_comma = true;
        }
        // TODO let asciistream and std::string_view play along
-       os << stringref(cap.name().data(), cap.name().size());
+       os << std::string_view(cap.name().data(), cap.name().size());
     });
     os << "})";
     return os.str();

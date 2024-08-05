@@ -1,7 +1,0 @@
-{
-  "files":{
-    "private-key": "test_key.pem",
-    "ca-certificates": "test_ca.pem",
-    "certificates": "test_cert.pem"
-  }
-}

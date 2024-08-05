@@ -4,7 +4,7 @@
 
 namespace mbus {
 
-VerbatimDirective::VerbatimDirective(vespalib::stringref image) :
+VerbatimDirective::VerbatimDirective(std::string_view image) :
     _image(image)
 {
     // empty

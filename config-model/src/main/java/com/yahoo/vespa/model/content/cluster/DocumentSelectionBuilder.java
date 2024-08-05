@@ -35,12 +35,12 @@ public class DocumentSelectionBuilder {
             if (!type.equals(this.allowedType)) {
                 if (this.allowedType == null) {
                     throw new IllegalArgumentException("Document type references are not allowed " +
-                                                       "in global <documents> tag selection attribute " +
-                                                       "(found reference to type '" + type + "')");
+                                                       "in global <documents> tag selection attribute, " +
+                                                       "but references " + type);
                 } else {
                     throw new IllegalArgumentException("Selection for document type '" + this.allowedType +
-                                                       "' can not contain references to other document types " +
-                                                       "(found reference to type '" + type + "')");
+                                                       "' can not contain references to other document types, " +
+                                                       "but references " + type);
                 }
             }
         }

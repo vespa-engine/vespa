@@ -19,8 +19,8 @@ using schema::CollectionType;
 using SIAF = Schema::ImportedAttributeField;
 using SIF = Schema::IndexField;
 
-vespalib::string src_path(vespalib::stringref prefix, vespalib::stringref path) {
-    return prefix + TEST_PATH(path);
+vespalib::string src_path(std::string_view prefix, std::string_view path) {
+    return prefix + TEST_PATH(std::string(path));
 }
 
 void

@@ -23,15 +23,15 @@ namespace document {
 class LiteralFieldValueB : public FieldValue {
 public:
     using string = vespalib::string;
-    using stringref = vespalib::stringref;
+    using string_view = std::string_view;
     using UP = std::unique_ptr<LiteralFieldValueB>;
     using value_type = string;
 
     explicit LiteralFieldValueB(Type type);
-    ~LiteralFieldValueB();
+    ~LiteralFieldValueB() override;
 
     LiteralFieldValueB(const LiteralFieldValueB &);
-    LiteralFieldValueB(Type type, const stringref & value);
+    LiteralFieldValueB(Type type, const string_view & value);
 
     const value_type & getValue() const { sync(); return _backing; }
     /**
@@ -39,20 +39,20 @@ public:
      * never needed as an std::string before, this method lets you get a hold
      * of the data without creating the string.
      */
-    stringref getValueRef() const { return _value; }
+    string_view getValueRef() const { return _value; }
 
     LiteralFieldValueB & operator=(const LiteralFieldValueB &);
 
-    void setValueRef(stringref value) {
+    void setValueRef(string_view value) {
         _value = value;
     }
 
-    void setValue(stringref value) {
+    void setValue(string_view value) {
         _backing = value;
         _value = _backing;
     }
     size_t hash() const override final { return vespalib::hashValue(_value.data(), _value.size()); }
-    void setValue(const char* val, size_t size) { setValue(stringref(val, size)); }
+    void setValue(const char* val, size_t size) { setValue(string_view(val, size)); }
 
     int compare(const FieldValue& other) const override;
     int fastCompare(const FieldValue& other) const override final;
@@ -64,7 +64,7 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     FieldValue& assign(const FieldValue&) override;
 
-    FieldValue& operator=(vespalib::stringref) override;
+    FieldValue& operator=(std::string_view) override;
 protected:
     void syncBacking() const __attribute__((noinline));
     void sync() const {
@@ -72,7 +72,7 @@ protected:
             syncBacking();
         }
     }
-    mutable stringref _value;
+    mutable string_view _value;
     mutable string    _backing; // Lazily set when needed
 };
 
@@ -80,7 +80,7 @@ template<typename SubClass, int dataType>
 class LiteralFieldValue : public LiteralFieldValueB {
 public:
     explicit LiteralFieldValue(Type type) : LiteralFieldValueB(type) { }
-    LiteralFieldValue(Type type, const stringref& value) : LiteralFieldValueB(type, value) { }
+    LiteralFieldValue(Type type, const string_view& value) : LiteralFieldValueB(type, value) { }
     const DataType *getDataType() const override;
 };
 

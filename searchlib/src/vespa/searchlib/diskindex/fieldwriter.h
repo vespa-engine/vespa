@@ -28,11 +28,11 @@ public:
     FieldWriter(const FieldWriter &&rhs) = delete;
     FieldWriter &operator=(const FieldWriter &rhs) = delete;
     FieldWriter &operator=(const FieldWriter &&rhs) = delete;
-    FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref prefix);
+    FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, std::string_view prefix);
     ~FieldWriter();
 
-    void newWord(uint64_t wordNum, vespalib::stringref word);
-    void newWord(vespalib::stringref word);
+    void newWord(uint64_t wordNum, std::string_view word);
+    void newWord(std::string_view word);
 
     void add(const DocIdAndFeatures &features) {
         assert(features.doc_id() < _docIdLimit);

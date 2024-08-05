@@ -31,6 +31,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");
 
+using namespace std::literals;
+
 namespace search {
 
 namespace {
@@ -341,7 +343,7 @@ SearchContextTest::fillVector(std::vector<vespalib::string> & values, size_t num
     for (size_t i = 0; i < numValues; ++i) {
         vespalib::asciistream ss;
         ss << "string" << (i < 10 ? "0" : "") << i;
-        values.emplace_back(ss.str());
+        values.emplace_back(ss.view());
     }
 }
 
@@ -449,7 +451,7 @@ SearchContextTest::getSearch(const V & vec, const T & term, TermType termType)
     buildTermQuery(query, vec.getName(), ss.str(), termType);
 
     return (dynamic_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(&query[0], query.size()),
+        getSearch(std::string_view(&query[0], query.size()),
                   attribute::SearchContextParams());
 }
 
@@ -907,7 +909,7 @@ TEST_F(SearchContextTest, test_search_iterator)
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         cfg.setFastSearch(true);
         auto ptr = AttributeBuilder("sfs-string", cfg).
-                fill({"three", "two", "three", "two", "three"}).get();
+                fill({"three"s, "two"s, "three"s, "two"s, "three"s}).get();
 
         SearchContextPtr threeHits = getSearch(*ptr.get(), "three");
         SearchContextPtr noHits = getSearch(*ptr.get(), "none");
@@ -1421,7 +1423,7 @@ SearchContextTest::testRegexSearch(const vespalib::string& name, const Config& c
 {
     LOG(info, "testRegexSearch: vector '%s'", name.c_str());
     auto attr = AttributeBuilder(name, cfg).
-            fill({"abc1def", "abc2Def", "abc2def", "abc4def", "abc5def", "abc6def"}).get();
+            fill({"abc1def"s, "abc2Def"s, "abc2def"s, "abc4def"s, "abc5def"s, "abc6def"s}).get();
 
     std::vector<const char *> terms = { "abc", "bc2de", "^abc1def.*bar" };
     std::vector<DocSet> expected;
@@ -1461,7 +1463,7 @@ SearchContextTest::testPrefixSearch(const vespalib::string& name, const Config& 
 {
     LOG(info, "testPrefixSearch: vector '%s'", name.c_str());
     auto attr = AttributeBuilder(name, cfg).
-            fill({"prefixsearch", "PREFIXSEARCH", "PrefixSearch", "precommit", "PRECOMMIT", "PreCommit"}).get();
+            fill({"prefixsearch"s, "PREFIXSEARCH"s, "PrefixSearch"s, "precommit"s, "PRECOMMIT"s, "PreCommit"s}).get();
 
     const char * terms[][3] = {{"pre", "PRE", "Pre"},
                                {"pref", "PREF", "Pref"},
@@ -1498,9 +1500,9 @@ SearchContextTest::testPrefixSearch(const vespalib::string& name, const Config& 
     for (uint32_t i = 0; i < longrange_values; ++i) {
         vespalib::asciistream ss;
         ss << "lpref" << i;
-        vespalib::string sss(ss.str());
+        vespalib::string sss(ss.view());
         exp_longrange.put(old_size + i);
-        vec.update(old_size + i, vespalib::string(ss.str()).c_str());
+        vec.update(old_size + i, vespalib::string(ss.view()).c_str());
     }
     attr->commit();
     performSearch(*attr, "lpref", exp_longrange, TermType::PREFIXTERM);
@@ -1522,7 +1524,7 @@ void
 SearchContextTest::testFuzzySearch(const vespalib::string& name, const Config& cfg)
 {
     LOG(info, "testFuzzySearch: vector '%s'", name.c_str());
-    auto attr = AttributeBuilder(name, cfg).fill({"fuzzysearch", "notthis", "FUZZYSEARCH"}).get();
+    auto attr = AttributeBuilder(name, cfg).fill({"fuzzysearch"s, "notthis"s, "FUZZYSEARCH"s}).get();
 
     const char * terms[][2] = {
         {"fuzzysearch", "FUZZYSEARCH"},

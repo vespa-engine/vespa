@@ -84,8 +84,8 @@ struct Tag
     const vespalib::string& key() const { return NameRepo::tagKey(_key); }
     const vespalib::string& value() const { return NameRepo::tagValue(_value); }
 
-    Tag(vespalib::stringref k);
-    Tag(vespalib::stringref k, vespalib::stringref v);
+    Tag(std::string_view k);
+    Tag(std::string_view k, std::string_view v);
     Tag(const Tag &) noexcept;
     Tag & operator = (const Tag &);
     Tag(Tag &&) noexcept = default;
@@ -103,22 +103,19 @@ class Metric : public vespalib::Printable
 {
 public:
     using String = vespalib::string;
-    using stringref = vespalib::stringref;
+    using string_view = std::string_view;
     using UP = std::unique_ptr<Metric>;
     using SP = std::shared_ptr<Metric>;
     using Tags = std::vector<Tag>;
 
-    Metric(const String& name,
-           Tags dimensions,
-           const String& description,
-           MetricSet* owner = 0);
+    Metric(const String& name, Tags dimensions, const String& description, MetricSet* owner = nullptr);
 
     Metric(const Metric& other, MetricSet* owner);
     Metric(const Metric& rhs);
     Metric & operator = (const Metric& rhs);
-    Metric(Metric && rhs) = default;
-    Metric & operator = (Metric && rhs) = default;
-    ~Metric();
+    Metric(Metric && rhs) noexcept = default;
+    Metric & operator = (Metric && rhs) noexcept = default;
+    ~Metric() override;
 
     const vespalib::string& getName() const { return NameRepo::metricName(_name); }
     /**
@@ -173,8 +170,8 @@ public:
      * @param id The part of the metric to extract. For instance, an average
      *           metric have average,
      */
-    virtual int64_t getLongValue(stringref id) const = 0;
-    virtual double getDoubleValue(stringref id) const = 0;
+    virtual int64_t getLongValue(string_view id) const = 0;
+    virtual double getDoubleValue(string_view id) const = 0;
 
     /**
      * When snapshotting we need to be able to add data from one set of metrics
@@ -228,7 +225,7 @@ public:
     virtual bool used() const = 0;
 
     /** Returns true if this metric is registered in a metric set. */
-    bool isRegistered() const { return (_owner != 0); }
+    bool isRegistered() const { return (_owner != nullptr); }
 
     const MetricSet* getOwner() const { return _owner; }
     const MetricSet* getRoot() const;
@@ -283,7 +280,6 @@ protected:
     DescriptionId _description;
     std::vector<Tag> _tags;
     MetricSet* _owner;
-
 };
 
 } // metrics

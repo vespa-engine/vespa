@@ -64,7 +64,7 @@ public:
     inline bool HasRewriters() { return _has_expanders || _has_reducers; }
 
     /* Return any configured reducer/expander for the index, if any */
-    Rewriter* FindRewriter(vespalib::stringref index_name);
+    Rewriter* FindRewriter(std::string_view index_name);
 
     /* Delete/dereference all rewriters (needed for testing/debugging) */
     void FlushRewriters();

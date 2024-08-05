@@ -21,7 +21,7 @@ class ReferenceAttribute;
 class ImportedAttributeVectorFactory {
 public:
     static std::shared_ptr<ImportedAttributeVector>
-    create(vespalib::stringref name,
+    create(std::string_view name,
            std::shared_ptr<ReferenceAttribute> reference_attribute,
            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
            std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
@@ -29,7 +29,7 @@ public:
            bool use_search_cache);
 
     static std::shared_ptr<ImportedAttributeVector>
-    create(vespalib::stringref name,
+    create(std::string_view name,
            std::shared_ptr<ReferenceAttribute> reference_attribute,
            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
            std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,

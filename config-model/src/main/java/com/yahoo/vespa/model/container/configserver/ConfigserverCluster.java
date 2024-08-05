@@ -87,6 +87,7 @@ public class ConfigserverCluster extends TreeConfigProducer
 
         builder.dynamicReconfiguration(options.hostedVespa().orElse(false));
         builder.snapshotMethod(options.zooKeeperSnapshotMethod());
+        builder.juteMaxBuffer(options.zookeeperJuteMaxBuffer());
     }
 
     @Override
@@ -197,6 +198,7 @@ public class ConfigserverCluster extends TreeConfigProducer
             builder.server(curatorBuilder);
         }
         builder.zookeeperLocalhostAffinity(true);
+        builder.juteMaxBuffer(options.zookeeperJuteMaxBuffer());
     }
 
 }

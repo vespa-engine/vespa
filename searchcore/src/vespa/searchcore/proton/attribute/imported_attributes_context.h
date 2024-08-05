@@ -44,21 +44,21 @@ private:
     mutable MetaStoreCache        _metaStores;
     mutable std::mutex            _cacheMutex;
 
-    const IAttributeVector *getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes, bool stableEnumGuard) const;
-    const IAttributeVector *getOrCacheAttributeMtSafe(const vespalib::string &name, AttributeCache &attributes, bool stableEnumGuard) const;
+    const IAttributeVector *getOrCacheAttribute(std::string_view name, AttributeCache &attributes, bool stableEnumGuard) const;
+    const IAttributeVector *getOrCacheAttributeMtSafe(std::string_view name, AttributeCache &attributes, bool stableEnumGuard) const;
 
 public:
-    ImportedAttributesContext(const ImportedAttributesRepo &repo);
+    explicit ImportedAttributesContext(const ImportedAttributesRepo &repo);
     ~ImportedAttributesContext() override;
 
     // Implements search::attribute::IAttributeContext
-    const IAttributeVector *getAttribute(const vespalib::string &name) const override;
-    const IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
+    const IAttributeVector *getAttribute(std::string_view name) const override;
+    const IAttributeVector *getAttributeStableEnum(std::string_view name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> &list) const override;
     void releaseEnumGuards() override;
     void enableMultiThreadSafe() override { _mtSafe = true; }
 
-    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const override;
 };
 
 }

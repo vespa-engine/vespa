@@ -148,7 +148,7 @@ FloatResultNode::onCmp(const Identifiable & b) const
 }
 
 void StringResultNode::setMin() { _value.clear(); }
-void StringResultNode::setMax() { _value.clear(); _value.append(char(-1)); }
+void StringResultNode::setMax() { _value.clear(); _value += (char(-1)); }
 void RawResultNode::setMin() { _value.clear(); }
 void RawResultNode::setMax() { _value.push_back(-1); }
 void FloatResultNode::setMin() { _value = -std::numeric_limits<double>::max(); }
@@ -267,7 +267,7 @@ StringResultNode::add(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    vespalib::stringref bs(s.c_str(), s.size());
+    std::string_view bs(s.c_str(), s.size());
     size_t i(0);
     for (; i < _value.length() && i < bs.length(); i++) {
         _value[i] += bs[i];
@@ -283,7 +283,7 @@ StringResultNode::min(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    vespalib::stringref bs(s.c_str(), s.size());
+    std::string_view bs(s.c_str(), s.size());
     if (_value > bs) {
         _value = bs;
     }
@@ -294,7 +294,7 @@ StringResultNode::max(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    vespalib::stringref bs(s.c_str(), s.size());
+    std::string_view bs(s.c_str(), s.size());
     if (_value < bs) {
         _value = bs;
     }

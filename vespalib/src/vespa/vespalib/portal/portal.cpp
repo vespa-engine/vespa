@@ -78,8 +78,8 @@ Portal::GetRequest::export_params() const
 }
 
 void
-Portal::GetRequest::respond_with_content(vespalib::stringref content_type,
-                                         vespalib::stringref content)
+Portal::GetRequest::respond_with_content(std::string_view content_type,
+                                         std::string_view content)
 {
     assert(active());
     _conn->respond_with_content(content_type, content);
@@ -87,7 +87,7 @@ Portal::GetRequest::respond_with_content(vespalib::stringref content_type,
 }
 
 void
-Portal::GetRequest::respond_with_error(int code, vespalib::stringref msg)
+Portal::GetRequest::respond_with_error(int code, std::string_view msg)
 {
     assert(active());
     _conn->respond_with_error(code, msg);

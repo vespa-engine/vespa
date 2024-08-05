@@ -4,6 +4,7 @@
 #include "groupingcontext.h"
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -30,7 +31,7 @@ bool GroupingManager::empty() const {
 }
 
 void
-GroupingManager::init(const IAttributeContext &attrCtx)
+GroupingManager::init(const IAttributeContext &attrCtx, const document::DocumentType * documentType)
 {
     GroupingContext::GroupingList list;
     GroupingContext::GroupingList &groupingList(_groupingContext.getGroupingList());
@@ -48,7 +49,8 @@ GroupingManager::init(const IAttributeContext &attrCtx)
                     an.enableEnumOptimization(true);
                 }
             }
-            ConfigureStaticParams stuff(&attrCtx, nullptr);
+            aggregation::NonAttribute2DocumentAccessor nonAttributes2DocumentAccess(attrCtx);
+            ConfigureStaticParams stuff(&attrCtx, documentType);
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception & e) {

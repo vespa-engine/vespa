@@ -22,7 +22,7 @@ AttributeExecutor::~AttributeExecutor() = default;
 void
 AttributeExecutor::run_sync(std::function<void()> task) const
 {
-    vespalib::string name = _attr->getNamePrefix();
+    vespalib::string name(_attr->getNamePrefix());
     auto& writer = _mgr->getAttributeFieldWriter();
     std::promise<void> promise;
     auto future = promise.get_future();

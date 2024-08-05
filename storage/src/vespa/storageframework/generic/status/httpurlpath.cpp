@@ -44,7 +44,7 @@ HttpUrlPath::init(const vespalib::string &urlpath)
         vespalib::string sub(urlpath.substr(pos+1));
         vespalib::StringTokenizer tokenizer(sub, "&", "");
         for (uint32_t i=0, n=tokenizer.size(); i<n; ++i) {
-            const vespalib::string& s(tokenizer[i]);
+            vespalib::string s(tokenizer[i]);
             pos = s.find('=');
             if (pos == vespalib::string::npos) {
                 _attributes[s] = "";
@@ -65,8 +65,7 @@ vespalib::string
 HttpUrlPath::getAttribute(const vespalib::string& id,
                           const vespalib::string& defaultValue) const
 {
-    std::map<vespalib::string, vespalib::string>::const_iterator it
-            = _attributes.find(id);
+    auto it = _attributes.find(id);
     return (it == _attributes.end() ? defaultValue : it->second);
 }
 

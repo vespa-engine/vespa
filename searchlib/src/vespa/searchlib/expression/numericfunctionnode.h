@@ -104,7 +104,7 @@ private:
         void handleFirst(const ResultNode & arg) override {
             char buf[32];
             vespalib::ConstBufferRef b = arg.getString(vespalib::BufferRef(buf, sizeof(buf)));
-            _result.set(vespalib::stringref(b.c_str(), b.size()));
+            _result.set(std::string_view(b.c_str(), b.size()));
         }
     protected:
         StringResultNode & _result;

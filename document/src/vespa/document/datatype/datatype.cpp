@@ -119,7 +119,7 @@ namespace {
 // should only be used in testing anyways. In production this will be
 // set from the document manager config.
 uint32_t
-crappyJavaStringHash(vespalib::stringref value) {
+crappyJavaStringHash(std::string_view value) {
     uint32_t h = 0;
     for (uint32_t i = 0; i < value.size(); ++i) {
         h = 31 * h + value[i];
@@ -127,7 +127,7 @@ crappyJavaStringHash(vespalib::stringref value) {
     return h;
 }
 
-int32_t createId(vespalib::stringref name)
+int32_t createId(std::string_view name)
 {
     if (name == "Tag") {
         return DataType::T_TAG;
@@ -137,13 +137,13 @@ int32_t createId(vespalib::stringref name)
 
 } // anon namespace
 
-DataType::DataType(vespalib::stringref name, int dataTypeId) noexcept
+DataType::DataType(std::string_view name, int dataTypeId) noexcept
     : _dataTypeId(dataTypeId),
       _name(name)
 {
 }
 
-DataType::DataType(vespalib::stringref name) noexcept
+DataType::DataType(std::string_view name) noexcept
     : DataType(name, createId(name))
 {
 }
@@ -151,7 +151,7 @@ DataType::DataType(vespalib::stringref name) noexcept
 DataType::~DataType() = default;
 
 void
-DataType::buildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const
+DataType::buildFieldPath(FieldPath & path, std::string_view remainFieldName) const
 {
     if ( !remainFieldName.empty() ) {
         path.reserve(4);  // Optimize for short paths

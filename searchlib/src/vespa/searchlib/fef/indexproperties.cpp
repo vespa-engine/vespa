@@ -37,7 +37,7 @@ lookupStringVector(const Properties &props, const vespalib::string &name,
 }
 
 std::optional<double>
-lookup_opt_double(const Properties &props, vespalib::stringref name, std::optional<double> default_value)
+lookup_opt_double(const Properties &props, std::string_view name, std::optional<double> default_value)
 {
     Property p = props.lookup(name);
     if (p.found()) {
@@ -61,7 +61,7 @@ lookupUint32(const Properties &props, const vespalib::string &name, uint32_t def
         const auto & valS = p.get();
         const char * start = valS.c_str();
         const char * end = start + valS.size();
-        while ((start != end) && isspace(start[0])) { start++; }
+        while ((start != end) && std::isspace(static_cast<unsigned char>(start[0]))) { start++; }
         std::from_chars(start, end, value);
     }
     return value;

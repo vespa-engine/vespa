@@ -6,7 +6,7 @@
 
 namespace storage::lib {
 
-std::vector<uint16_t> DistributionConfigUtil::getGroupPath(vespalib::stringref path) {
+std::vector<uint16_t> DistributionConfigUtil::getGroupPath(std::string_view path) {
     vespalib::StringTokenizer st(path, ".", "");
     std::vector<uint16_t> result(st.size());
     for (uint32_t i=0, n=result.size(); i<n; ++i) {

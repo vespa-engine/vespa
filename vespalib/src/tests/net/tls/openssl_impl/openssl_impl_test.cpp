@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/crypto/private_key.h>
 #include <vespa/vespalib/crypto/x509_certificate.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
@@ -14,7 +13,8 @@
 #include <vespa/vespalib/test/peer_policy_utils.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <stdexcept>
-#include <stdlib.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 using namespace vespalib::crypto;
@@ -59,9 +59,9 @@ void print_decode_result(const char* mode, const DecodeResult& res) {
             decode_state_to_str(res.state));
 }
 
-TransportSecurityOptions ts_from_pems(vespalib::stringref ca_certs_pem,
-                                      vespalib::stringref cert_chain_pem,
-                                      vespalib::stringref private_key_pem)
+TransportSecurityOptions ts_from_pems(std::string_view ca_certs_pem,
+                                      std::string_view cert_chain_pem,
+                                      std::string_view private_key_pem)
 {
     auto ts_builder = TransportSecurityOptions::Params().
             ca_certs_pem(ca_certs_pem).
@@ -128,7 +128,7 @@ struct Fixture {
         return create_openssl_codec(ctx, mode, SocketSpec::invalid);
     }
 
-    static EncodeResult do_encode(CryptoCodec& codec, Output& buffer, vespalib::stringref plaintext) {
+    static EncodeResult do_encode(CryptoCodec& codec, Output& buffer, std::string_view plaintext) {
         auto out = buffer.reserve(codec.min_encode_buffer_size());
         auto enc_res = codec.encode(plaintext.data(), plaintext.size(), out.data, out.size);
         buffer.commit(enc_res.bytes_produced);
@@ -146,13 +146,13 @@ struct Fixture {
         return enc_res;
     }
 
-    EncodeResult client_encode(vespalib::stringref plaintext) {
+    EncodeResult client_encode(std::string_view plaintext) {
         auto res = do_encode(*client, client_to_server, plaintext);
         print_encode_result("client", res);
         return res;
     }
 
-    EncodeResult server_encode(vespalib::stringref plaintext) {
+    EncodeResult server_encode(std::string_view plaintext) {
         auto res = do_encode(*server, server_to_client, plaintext);
         print_encode_result("server", res);
         return res;

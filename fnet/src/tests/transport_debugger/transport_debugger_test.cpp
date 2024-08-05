@@ -12,6 +12,7 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 vespalib::CryptoEngine::SP tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
 

@@ -11,7 +11,7 @@ namespace search {
  * Class used to decode a single term.
  */
 struct QueryTermDecoder {
-    using QueryPacketT = vespalib::stringref;
+    using QueryPacketT = std::string_view;
 
     static QueryTermSimple::UP decodeTerm(QueryPacketT term);
 };

@@ -39,7 +39,7 @@ void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_con
     }
 }
 
-bool is_exact_match(vespalib::stringref arg1) {
+bool is_exact_match(std::string_view arg1) {
     return ((arg1 == "exact") || (arg1 == "word"));
 }
 

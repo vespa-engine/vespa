@@ -14,9 +14,9 @@ using search::query::StringTermVector;
 
 namespace search {
 
-vespalib::stringref SimpleQueryStackDumpIterator::DEFAULT_INDEX = "default";
+std::string_view SimpleQueryStackDumpIterator::DEFAULT_INDEX = "default";
 
-SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref buf)
+SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(std::string_view buf)
     : _buf(buf.begin()),
       _bufEnd(buf.end()),
       _currPos(0),
@@ -41,12 +41,12 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref b
 
 SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator() = default;
 
-vespalib::stringref
-SimpleQueryStackDumpIterator::read_stringref(const char *&p)
+std::string_view
+SimpleQueryStackDumpIterator::read_string_view(const char *&p)
 {
     uint64_t len = readCompressedPositiveInt(p);
     if ((p + len) > _bufEnd) throw false;
-    vespalib::stringref result(p, len);
+    std::string_view result(p, len);
     p += len;
     return result;
 }
@@ -143,32 +143,32 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_RANK:
     case ParseItem::ITEM_ANY:
         _currArity = readCompressedPositiveInt(p);
-        _curr_index_name = vespalib::stringref();
-        _curr_term = vespalib::stringref();
+        _curr_index_name = std::string_view();
+        _curr_term = std::string_view();
         break;
 
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
         _currArity = readCompressedPositiveInt(p);
         _extraIntArg1 = readCompressedPositiveInt(p);
-        _curr_index_name = vespalib::stringref();
-        _curr_term = vespalib::stringref();
+        _curr_index_name = std::string_view();
+        _curr_term = std::string_view();
         break;
 
     case ParseItem::ITEM_WEAK_AND:
         _currArity = readCompressedPositiveInt(p);
         _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
-        _curr_index_name = read_stringref(p);
-        _curr_term = vespalib::stringref();
+        _curr_index_name = read_string_view(p);
+        _curr_term = std::string_view();
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
         _currArity = readCompressedPositiveInt(p);
-        _curr_index_name = read_stringref(p);
-        _curr_term = vespalib::stringref();
+        _curr_index_name = read_string_view(p);
+        _curr_term = std::string_view();
         break;
 
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
-        _curr_term = read_stringref(p);
+        _curr_term = read_string_view(p);
         _currArity = 0;
         break;
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
@@ -176,9 +176,9 @@ bool SimpleQueryStackDumpIterator::readNext() {
         _currArity = 0;
         break;
     case ParseItem::ITEM_WORD_ALTERNATIVES:
-        _curr_index_name = read_stringref(p);
+        _curr_index_name = read_string_view(p);
         _currArity = readCompressedPositiveInt(p);
-        _curr_term = vespalib::stringref();
+        _curr_term = std::string_view();
         break;
     case ParseItem::ITEM_NUMTERM:
     case ParseItem::ITEM_GEO_LOCATION_TERM:
@@ -188,8 +188,8 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_EXACTSTRINGTERM:
     case ParseItem::ITEM_SUFFIXTERM:
     case ParseItem::ITEM_REGEXP:
-        _curr_index_name = read_stringref(p);
-        _curr_term = read_stringref(p);
+        _curr_index_name = read_string_view(p);
+        _curr_term = read_string_view(p);
         _currArity = 0;
         break;
     case ParseItem::ITEM_PREDICATE_QUERY:
@@ -231,29 +231,29 @@ bool SimpleQueryStackDumpIterator::readNext() {
 
 void
 SimpleQueryStackDumpIterator::readPredicate(const char *&p) {
-    _curr_index_name = read_stringref(p);
+    _curr_index_name = read_string_view(p);
     _predicate_query_term = std::make_unique<PredicateQueryTerm>();
 
     size_t count = readCompressedPositiveInt(p);
     for (size_t i = 0; i < count; ++i) {
-        vespalib::stringref key = read_stringref(p);
-        vespalib::stringref value = read_stringref(p);
+        std::string_view key = read_string_view(p);
+        std::string_view value = read_string_view(p);
         uint64_t sub_queries = read_value<uint64_t>(p);
-        _predicate_query_term->addFeature(key, value, sub_queries);
+        _predicate_query_term->addFeature(vespalib::string(key), vespalib::string(value), sub_queries);
     }
     count = readCompressedPositiveInt(p);
     for (size_t i = 0; i < count; ++i) {
-        vespalib::stringref key = read_stringref(p);
+        std::string_view key = read_string_view(p);
         uint64_t value = read_value<uint64_t>(p);
         uint64_t sub_queries = read_value<uint64_t>(p);
-        _predicate_query_term->addRangeFeature(key, value, sub_queries);
+        _predicate_query_term->addRangeFeature(vespalib::string(key), value, sub_queries);
     }
 }
 
 void
 SimpleQueryStackDumpIterator::readNN(const char *& p) {
-    _curr_index_name = read_stringref(p);
-    _curr_term = read_stringref(p); // query_tensor_name
+    _curr_index_name = read_string_view(p);
+    _curr_term = read_string_view(p); // query_tensor_name
     _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
     _extraIntArg2 = readCompressedPositiveInt(p); // allow_approximate
     _extraIntArg3 = readCompressedPositiveInt(p); // explore_additional_hits
@@ -267,19 +267,19 @@ SimpleQueryStackDumpIterator::readNN(const char *& p) {
 void
 SimpleQueryStackDumpIterator::readComplexTerm(const char *& p) {
     _currArity = readCompressedPositiveInt(p);
-    _curr_index_name = read_stringref(p);
+    _curr_index_name = read_string_view(p);
     if (_currType == ParseItem::ITEM_WAND) {
         _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
         _extraDoubleArg4 = read_value<double>(p); // scoreThreshold
         _extraDoubleArg5 = read_value<double>(p); // thresholdBoostFactor
     }
-    _curr_term = vespalib::stringref();
+    _curr_term = std::string_view();
 }
 
 void
 SimpleQueryStackDumpIterator::readFuzzy(const char *&p) {
-    _curr_index_name = read_stringref(p);
-    _curr_term = read_stringref(p); // fuzzy term
+    _curr_index_name = read_string_view(p);
+    _curr_term = read_string_view(p); // fuzzy term
     _extraIntArg1 = readCompressedPositiveInt(p); // maxEditDistance
     _extraIntArg2 = readCompressedPositiveInt(p); // prefixLength
     _currArity = 0;
@@ -296,11 +296,11 @@ SimpleQueryStackDumpIterator::read_string_in(const char*& p)
 {
     uint32_t num_terms = readCompressedPositiveInt(p);
     _currArity = 0;
-    _curr_index_name = read_stringref(p);
-    _curr_term = vespalib::stringref();
+    _curr_index_name = read_string_view(p);
+    _curr_term = std::string_view();
     auto terms = std::make_unique<StringTermVector>(num_terms);
     for (uint32_t i = 0; i < num_terms; ++i) {
-        terms->addTerm(read_stringref(p));
+        terms->addTerm(read_string_view(p));
     }
     _terms = std::move(terms);
 }
@@ -310,8 +310,8 @@ SimpleQueryStackDumpIterator::read_numeric_in(const char*& p)
 {
     uint32_t num_terms = readCompressedPositiveInt(p);
     _currArity = 0;
-    _curr_index_name = read_stringref(p);
-    _curr_term = vespalib::stringref();
+    _curr_index_name = read_string_view(p);
+    _curr_term = std::string_view();
     auto terms = std::make_unique<IntegerTermVector>(num_terms);
     for (uint32_t i = 0; i < num_terms; ++i) {
         terms->addTerm(read_value<int64_t>(p));

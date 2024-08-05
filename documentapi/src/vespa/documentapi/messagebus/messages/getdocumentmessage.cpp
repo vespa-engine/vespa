@@ -21,7 +21,7 @@ GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId) :
 }
 
 GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId,
-                                       vespalib::stringref fieldSet) :
+                                       std::string_view fieldSet) :
     DocumentMessage(),
     _documentId(documentId),
     _fieldSet(fieldSet)

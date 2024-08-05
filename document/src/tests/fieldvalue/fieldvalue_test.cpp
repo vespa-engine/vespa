@@ -24,7 +24,7 @@ TEST("require that FieldValues does not change their storage size.") {
     EXPECT_EQUAL(16u, sizeof(FieldValue));
     EXPECT_EQUAL(16u, sizeof(IntFieldValue));
     EXPECT_EQUAL(24u, sizeof(LongFieldValue));
-    EXPECT_EQUAL(104u, sizeof(StringFieldValue));
+    EXPECT_EQUAL(40u + sizeof(vespalib::string), sizeof(StringFieldValue));
 }
 
 }  // namespace

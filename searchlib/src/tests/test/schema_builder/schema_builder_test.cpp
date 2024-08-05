@@ -42,9 +42,9 @@ protected:
 
     SchemaBuilderTest();
     ~SchemaBuilderTest();
-    void assert_index(vespalib::stringref name, search::index::schema::DataType exp_dt, CollectionType exp_ct);
+    void assert_index(std::string_view name, search::index::schema::DataType exp_dt, CollectionType exp_ct);
     void assert_all_indexes();
-    void assert_attribute(vespalib::stringref name, search::index::schema::DataType exp_dt, CollectionType exp_ct, const vespalib::string exp_tensor_spec = "");
+    void assert_attribute(std::string_view name, search::index::schema::DataType exp_dt, CollectionType exp_ct, const vespalib::string exp_tensor_spec = "");
     void assert_all_attributes();
 };
 
@@ -56,7 +56,7 @@ SchemaBuilderTest::SchemaBuilderTest()
 SchemaBuilderTest::~SchemaBuilderTest() = default;
 
 void
-SchemaBuilderTest::assert_index(vespalib::stringref name, search::index::schema::DataType exp_dt, CollectionType exp_ct)
+SchemaBuilderTest::assert_index(std::string_view name, search::index::schema::DataType exp_dt, CollectionType exp_ct)
 {
     auto field_id = schema.getIndexFieldId(name);
     ASSERT_NE(Schema::UNKNOWN_FIELD_ID, field_id);
@@ -78,7 +78,7 @@ SchemaBuilderTest::assert_all_indexes()
 }
 
 void
-SchemaBuilderTest::assert_attribute(vespalib::stringref name, search::index::schema::DataType exp_dt, CollectionType exp_ct, const vespalib::string exp_tensor_spec)
+SchemaBuilderTest::assert_attribute(std::string_view name, search::index::schema::DataType exp_dt, CollectionType exp_ct, const vespalib::string exp_tensor_spec)
 {
     auto field_id = schema.getAttributeFieldId(name);
     ASSERT_NE(Schema::UNKNOWN_FIELD_ID, field_id);

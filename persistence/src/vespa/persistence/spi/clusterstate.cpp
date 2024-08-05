@@ -12,35 +12,29 @@ using vespalib::Trinary;
 
 namespace storage::spi {
 
+ClusterState::ClusterState(std::shared_ptr<const lib::ClusterState> state,
+                           std::shared_ptr<const lib::Distribution> distribution,
+                           uint16_t node_index,
+                           bool maintenance_in_all_spaces)
+    : _state(std::move(state)),
+      _distribution(std::move(distribution)),
+      _nodeIndex(node_index),
+      _maintenanceInAllSpaces(maintenance_in_all_spaces)
+{
+}
+
 ClusterState::ClusterState(const lib::ClusterState& state,
                            uint16_t nodeIndex,
                            const lib::Distribution& distribution,
                            bool maintenanceInAllSpaces)
-    : _state(std::make_unique<lib::ClusterState>(state)),
-      _distribution(std::make_unique<lib::Distribution>(distribution.serialized())),
+    : _state(std::make_shared<const lib::ClusterState>(state)),
+      _distribution(std::make_shared<const lib::Distribution>(distribution.serialized())),
       _nodeIndex(nodeIndex),
       _maintenanceInAllSpaces(maintenanceInAllSpaces)
 {
 }
 
-void ClusterState::deserialize(vespalib::nbostream& i) {
-    vespalib::string clusterState;
-    vespalib::string distribution;
-
-    i >> clusterState;
-    i >> _nodeIndex;
-    i >> distribution;
-
-    _state = std::make_unique<lib::ClusterState>(clusterState);
-    _distribution = std::make_unique<lib::Distribution>(distribution);
-}
-
-ClusterState::ClusterState(const ClusterState& other) {
-    vespalib::nbostream o;
-    other.serialize(o);
-    deserialize(o);
-    _maintenanceInAllSpaces = other._maintenanceInAllSpaces;
-}
+ClusterState::ClusterState(const ClusterState& other) = default;
 
 ClusterState::~ClusterState() = default;
 
@@ -91,15 +85,6 @@ bool ClusterState::nodeRetired() const noexcept {
 
 bool ClusterState::nodeMaintenance() const noexcept {
     return _maintenanceInAllSpaces;
-}
-
-void ClusterState::serialize(vespalib::nbostream& o) const {
-    assert(_distribution);
-    assert(_state);
-    vespalib::asciistream tmp;
-    _state->serialize(tmp);
-    o << tmp.str() << _nodeIndex;
-    o << _distribution->serialized();
 }
 
 }

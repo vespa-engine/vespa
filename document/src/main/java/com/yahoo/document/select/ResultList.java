@@ -5,8 +5,10 @@ import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.select.rule.AttributeNode;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 public class ResultList {
     public static class ResultPair {
@@ -43,7 +45,7 @@ public class ResultList {
         }
     }
 
-    private List<ResultPair> results = new ArrayList<>();
+    private final List<ResultPair> results = new ArrayList<>();
 
     public ResultList() {
     }
@@ -86,7 +88,7 @@ public class ResultList {
         }
     }
 
-    private boolean combineVariables(FieldPathIteratorHandler.VariableMap output, FieldPathIteratorHandler.VariableMap input) {
+    private static boolean combineVariables(FieldPathIteratorHandler.VariableMap output, FieldPathIteratorHandler.VariableMap input) {
         // First, verify that all variables are overlapping
         for (Map.Entry<String, FieldPathIteratorHandler.IndexValue> entry : output.entrySet()) {
             FieldPathIteratorHandler.IndexValue found = input.get(entry.getKey());
@@ -120,24 +122,11 @@ public class ResultList {
         ResultList getResult();
     }
 
-    public ResultList combineAND(LazyResultList other)
-    {
-        if (Result.FALSE == toResult()) return ResultList.toResultList(false);
-
-        ResultList result = new ResultList();
-
-        // TODO: optimize
-        for (ResultPair pair : results) {
-            for (ResultPair otherPair : other.getResult().results) {
-                FieldPathIteratorHandler.VariableMap varMap = (FieldPathIteratorHandler.VariableMap)pair.variables.clone();
-
-                if (combineVariables(varMap, otherPair.variables)) {
-                    result.add(varMap, combineAND(pair.result, otherPair.result));
-                }
-            }
+    public ResultList combineAND(LazyResultList other) {
+        if (Result.FALSE == toResult()){
+            return ResultList.toResultList(false);
         }
-
-        return result;
+        return combineBinaryOp(other, ResultList::combineAND);
     }
 
     private static Result combineAND(Result lhs, Result rhs) {
@@ -150,21 +139,35 @@ public class ResultList {
         return Result.INVALID;
     }
 
-    public ResultList combineOR(LazyResultList other)
-    {
-        if (Result.TRUE == toResult()) return ResultList.toResultList(true);
+    public ResultList combineOR(LazyResultList other) {
+        if (Result.TRUE == toResult()) {
+            return ResultList.toResultList(true);
+        }
+        return combineBinaryOp(other, ResultList::combineOR);
+    }
 
-        ResultList result = new ResultList();
-
-        // TODO: optimize
+    private ResultList combineBinaryOp(LazyResultList other, BiFunction<Result, Result, Result> op) {
+        var result = new ResultList();
+        // TODO: optimize further
+        var observedNoVarResults = EnumSet.noneOf(Result.class);
         for (ResultPair pair : results) {
             for (ResultPair otherPair : other.getResult().results) {
-                FieldPathIteratorHandler.VariableMap varMap = (FieldPathIteratorHandler.VariableMap)pair.variables.clone();
-
-                if (combineVariables(varMap, otherPair.variables)) {
-                    result.add(varMap, combineOR(pair.result, otherPair.result));
+                // If possible, collapse all non-variable results from O(nm) entries down to O(1).
+                // This the expected common case.
+                if (pair.variables.isEmpty() && otherPair.variables.isEmpty()) {
+                    // combineVariables(lhs, rhs) is always true when both sides are empty, so we can
+                    // elide that check entirely here.
+                    observedNoVarResults.add(op.apply(pair.result, otherPair.result));
+                } else {
+                    var varMap = (FieldPathIteratorHandler.VariableMap) pair.variables.clone();
+                    if (combineVariables(varMap, otherPair.variables)) {
+                        result.add(varMap, op.apply(pair.result, otherPair.result));
+                    }
                 }
             }
+        }
+        for (var mergedResult : observedNoVarResults) {
+            result.add(new FieldPathIteratorHandler.VariableMap(), mergedResult); // TODO sentinel empty var map
         }
 
         return result;

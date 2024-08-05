@@ -33,8 +33,11 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/test/test_data.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <filesystem>
 #include <fstream>
 #include <unistd.h>
 
@@ -44,6 +47,7 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::nbostream;
+using vespalib::test::TestDataBase;
 
 namespace document {
 
@@ -87,31 +91,38 @@ void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
     }
 }
 
+}
+
+class DocumentUpdateTest : public ::testing::Test, public vespalib::test::TestData<DocumentUpdateTest> {
+protected:
+    DocumentUpdateTest();
+    ~DocumentUpdateTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+DocumentUpdateTest::DocumentUpdateTest()
+        : ::testing::Test(),
+          vespalib::test::TestData<DocumentUpdateTest>()
+{
+}
+
+DocumentUpdateTest::~DocumentUpdateTest() = default;
+
 void
-writeBufferToFile(const nbostream &buf, const vespalib::string &fileName)
+DocumentUpdateTest::SetUpTestSuite()
 {
-    auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
-    file.write(buf.data(), buf.size());
-    assert(file.good());
-    file.close();
+   setup_test_data(TEST_PATH("data"), "documentupdate-build-data");
+   std::filesystem::create_directory(build_testdata());
 }
 
-nbostream
-readBufferFromFile(const vespalib::string &fileName)
+void
+DocumentUpdateTest::TearDownTestSuite()
 {
-    auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
-    auto size = file.tellg();
-    file.seekg(0);
-    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(size);
-    file.read(static_cast<char *>(buf.get()), size);
-    assert(file.good());
-    file.close();
-    return nbostream(std::move(buf), size);
+    tear_down_test_data();
 }
 
-}
-
-TEST(DocumentUpdateTest, testSimpleUsage)
+TEST_F(DocumentUpdateTest, testSimpleUsage)
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(42, "test",
@@ -205,7 +216,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     }
 }
 
-TEST(DocumentUpdateTest, testClearField)
+TEST_F(DocumentUpdateTest, testClearField)
 {
     // Create a document.
     TestDocMan docMan;
@@ -220,7 +231,7 @@ TEST(DocumentUpdateTest, testClearField)
     EXPECT_FALSE(doc->getValue("headerval"));
 }
 
-TEST(DocumentUpdateTest, testUpdateApplySingleValue)
+TEST_F(DocumentUpdateTest, testUpdateApplySingleValue)
 {
     // Create a document.
     TestDocMan docMan;
@@ -235,7 +246,7 @@ TEST(DocumentUpdateTest, testUpdateApplySingleValue)
     EXPECT_EQ(9, doc->getValue("headerval")->getAsInt());
 }
 
-TEST(DocumentUpdateTest, testUpdateArray)
+TEST_F(DocumentUpdateTest, testUpdateArray)
 {
     // Create a document.
     TestDocMan docMan;
@@ -301,7 +312,7 @@ TEST(DocumentUpdateTest, testUpdateArray)
 }
 
 std::unique_ptr<ValueUpdate>
-createAddUpdate(vespalib::stringref key, int weight) {
+createAddUpdate(std::string_view key, int weight) {
     auto upd = std::make_unique<AddValueUpdate>(StringFieldValue::make(key));
     upd->setWeight(weight);
     return upd;
@@ -314,7 +325,7 @@ createAddUpdate(int key, int weight) {
     return upd;
 }
 
-TEST(DocumentUpdateTest, testUpdateWeightedSet)
+TEST_F(DocumentUpdateTest, testUpdateWeightedSet)
 {
     // Create a test document
     TestDocMan docMan;
@@ -427,7 +438,7 @@ WeightedSetAutoCreateFixture::WeightedSetAutoCreateFixture()
 }
 } // anon ns
 
-TEST(DocumentUpdateTest, testIncrementNonExistingAutoCreateWSetField)
+TEST_F(DocumentUpdateTest, testIncrementNonExistingAutoCreateWSetField)
 {
     WeightedSetAutoCreateFixture fixture;
 
@@ -440,7 +451,7 @@ TEST(DocumentUpdateTest, testIncrementNonExistingAutoCreateWSetField)
     EXPECT_EQ(1, ws->get(StringFieldValue("foo"), 0));
 }
 
-TEST(DocumentUpdateTest, testIncrementExistingWSetField)
+TEST_F(DocumentUpdateTest, testIncrementExistingWSetField)
 {
     WeightedSetAutoCreateFixture fixture;
     {
@@ -456,7 +467,7 @@ TEST(DocumentUpdateTest, testIncrementExistingWSetField)
     EXPECT_EQ(1, ws->get(StringFieldValue("foo"), 0));
 }
 
-TEST(DocumentUpdateTest, testIncrementWithZeroResultWeightIsRemoved)
+TEST_F(DocumentUpdateTest, testIncrementWithZeroResultWeightIsRemoved)
 {
     WeightedSetAutoCreateFixture fixture;
     fixture.update.addUpdate(FieldUpdate(fixture.field)
@@ -471,13 +482,13 @@ TEST(DocumentUpdateTest, testIncrementWithZeroResultWeightIsRemoved)
     EXPECT_FALSE(ws->contains(StringFieldValue("baz")));
 }
 
-TEST(DocumentUpdateTest, testReadSerializedFile)
+TEST_F(DocumentUpdateTest, testReadSerializedFile)
 {
     // Reads a file serialized from java
-    const std::string file_name = "data/crossplatform-java-cpp-doctypes.cfg";
+    const std::string file_name = source_testdata() + "/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
-    auto is = readBufferFromFile("data/serializeupdatejava.dat");
+    auto is = read_buffer_from_file(source_testdata() + "/serializeupdatejava.dat");
     DocumentUpdate::UP updp(DocumentUpdate::createHEAD(repo, is));
     DocumentUpdate& upd(*updp);
 
@@ -533,11 +544,11 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
 
 }
 
-TEST(DocumentUpdateTest, testGenerateSerializedFile)
+TEST_F(DocumentUpdateTest, testGenerateSerializedFile)
 {
     // Tests nothing, only generates a file for java test
-    const std::string file_name = "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
+    const std::string cfg_file_name = source_testdata() + "/crossplatform-java-cpp-doctypes.cfg";
+    DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name));
 
     const DocumentType *type(repo.getDocumentType("serializetest"));
     DocumentUpdate upd(repo, *type, DocumentId("id:ns:serializetest::update"));
@@ -557,11 +568,13 @@ TEST(DocumentUpdateTest, testGenerateSerializedFile)
           .addUpdate(std::make_unique<MapValueUpdate>(StringFieldValue::make("foo"),
                         std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Mul, 2))));
     nbostream buf(serializeHEAD(upd));
-    writeBufferToFile(buf, "data/serializeupdatecpp.dat");
+    std::string file_name("serializeupdatecpp.dat");
+    write_buffer_to_file(buf, build_testdata() + "/" + file_name);
+    ASSERT_NO_FATAL_FAILURE(remove_unchanged_build_testdata_file_or_fail(buf, file_name));
 }
 
 
-TEST(DocumentUpdateTest, testSetBadFieldTypes)
+TEST_F(DocumentUpdateTest, testSetBadFieldTypes)
 {
     // Create a test document
     TestDocMan docMan;
@@ -582,7 +595,7 @@ TEST(DocumentUpdateTest, testSetBadFieldTypes)
 			 doc->getValue(doc->getField("headerval")).get());
 }
 
-TEST(DocumentUpdateTest, testUpdateApplyNoParams)
+TEST_F(DocumentUpdateTest, testUpdateApplyNoParams)
 {
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
@@ -597,7 +610,7 @@ TEST(DocumentUpdateTest, testUpdateApplyNoParams)
     EXPECT_FALSE(doc->hasValue(doc->getField("tags")));
 }
 
-TEST(DocumentUpdateTest, testUpdateApplyNoArrayValues)
+TEST_F(DocumentUpdateTest, testUpdateApplyNoArrayValues)
 {
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
@@ -617,7 +630,7 @@ TEST(DocumentUpdateTest, testUpdateApplyNoArrayValues)
     EXPECT_EQ((size_t) 0, fval->size());
 }
 
-TEST(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
+TEST_F(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
 {
     // Create a test document.
     TestDocMan docMan;
@@ -645,7 +658,7 @@ TEST(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
     EXPECT_FALSE(fval2);
 }
 
-TEST(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
+TEST_F(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
 {
     // Create a test document
     TestDocMan docMan;
@@ -673,7 +686,7 @@ TEST(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
     EXPECT_FALSE(fval2);
 }
 
-TEST(DocumentUpdateTest, testUpdateArrayWrongSubtype)
+TEST_F(DocumentUpdateTest, testUpdateArrayWrongSubtype)
 {
     // Create a test document
     TestDocMan docMan;
@@ -697,7 +710,7 @@ TEST(DocumentUpdateTest, testUpdateArrayWrongSubtype)
     EXPECT_EQ((document::FieldValue*) 0, fval.get());
 }
 
-TEST(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
+TEST_F(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
 {
     // Create a test document
     TestDocMan docMan;
@@ -721,7 +734,7 @@ TEST(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
     EXPECT_EQ((document::FieldValue*) 0, fval.get());
 }
 
-TEST(DocumentUpdateTest, testMapValueUpdate)
+TEST_F(DocumentUpdateTest, testMapValueUpdate)
 {
     // Create a test document
     TestDocMan docMan;
@@ -940,7 +953,7 @@ struct TensorUpdateFixture {
 
 };
 
-TEST(DocumentUpdateTest, tensor_assign_update_can_be_applied)
+TEST_F(DocumentUpdateTest, tensor_assign_update_can_be_applied)
 {
     TensorUpdateFixture f;
     f.applyUpdate(std::make_unique<AssignValueUpdate>(f.makeBaselineTensor()));
@@ -948,7 +961,7 @@ TEST(DocumentUpdateTest, tensor_assign_update_can_be_applied)
     f.assertTensor(*f.makeBaselineTensor());
 }
 
-TEST(DocumentUpdateTest, tensor_clear_update_can_be_applied)
+TEST_F(DocumentUpdateTest, tensor_clear_update_can_be_applied)
 {
     TensorUpdateFixture f;
     f.setTensor(*f.makeBaselineTensor());
@@ -957,7 +970,7 @@ TEST(DocumentUpdateTest, tensor_clear_update_can_be_applied)
     EXPECT_FALSE(f.getTensor());
 }
 
-TEST(DocumentUpdateTest, tensor_add_update_can_be_applied)
+TEST_F(DocumentUpdateTest, tensor_add_update_can_be_applied)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdate(f.spec().add({{"x", "a"}}, 2)
@@ -971,7 +984,7 @@ TEST(DocumentUpdateTest, tensor_add_update_can_be_applied)
                                 .add({{"x", "c"}}, 7));
 }
 
-TEST(DocumentUpdateTest, tensor_add_update_can_be_applied_to_nonexisting_tensor)
+TEST_F(DocumentUpdateTest, tensor_add_update_can_be_applied_to_nonexisting_tensor)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdateNonExisting(std::make_unique<TensorAddUpdate>(f.makeTensor(f.spec().add({{"x", "b"}}, 5)
@@ -981,7 +994,7 @@ TEST(DocumentUpdateTest, tensor_add_update_can_be_applied_to_nonexisting_tensor)
                                 .add({{"x", "c"}}, 7));
 }
 
-TEST(DocumentUpdateTest, tensor_remove_update_can_be_applied)
+TEST_F(DocumentUpdateTest, tensor_remove_update_can_be_applied)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdate(f.spec().add({{"x", "a"}}, 2)
@@ -992,13 +1005,13 @@ TEST(DocumentUpdateTest, tensor_remove_update_can_be_applied)
                         f.spec().add({{"x", "a"}}, 2));
 }
 
-TEST(DocumentUpdateTest, tensor_remove_update_can_be_applied_to_nonexisting_tensor)
+TEST_F(DocumentUpdateTest, tensor_remove_update_can_be_applied_to_nonexisting_tensor)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdateNonExisting(std::make_unique<TensorRemoveUpdate>(f.makeTensor(f.spec().add({{"x", "b"}}, 1))));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied)
+TEST_F(DocumentUpdateTest, tensor_modify_update_can_be_applied)
 {
     TensorUpdateFixture f;
     auto baseLine = f.spec().add({{"x", "a"}}, 2)
@@ -1024,7 +1037,7 @@ TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied)
                                 .add({{"x", "b"}}, 15));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_can_be_applied)
+TEST_F(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_can_be_applied)
 {
     TensorUpdateFixture f;
     auto baseLine = f.spec().add({{"x", "a"}}, 2)
@@ -1038,14 +1051,14 @@ TEST(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_can
                                 .add({{"x", "c"}}, 6));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_is_ignored_when_applied_to_nonexisting_tensor)
+TEST_F(DocumentUpdateTest, tensor_modify_update_is_ignored_when_applied_to_nonexisting_tensor)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdateNonExisting(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD,
                                                       f.makeTensor(f.spec().add({{"x", "b"}}, 5))));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_is_applied_to_nonexisting_tensor)
+TEST_F(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_is_applied_to_nonexisting_tensor)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdateNonExisting(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD,
@@ -1055,25 +1068,25 @@ TEST(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_is_
                                            .add({{"x", "c"}}, 6));
 }
 
-TEST(DocumentUpdateTest, tensor_assign_update_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_assign_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(AssignValueUpdate(f.makeBaselineTensor()));
 }
 
-TEST(DocumentUpdateTest, tensor_add_update_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_add_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorAddUpdate(f.makeBaselineTensor()));
 }
 
-TEST(DocumentUpdateTest, tensor_remove_update_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_remove_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
-TEST(DocumentUpdateTest, tensor_remove_update_with_not_fully_specified_address_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_remove_update_with_not_fully_specified_address_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f("sparse_xy_tensor");
     TensorDataType type(ValueType::from_spec("tensor(y{})"));
@@ -1081,13 +1094,13 @@ TEST(DocumentUpdateTest, tensor_remove_update_with_not_fully_specified_address_c
             makeTensorFieldValue(TensorSpec("tensor(y{})").add({{"y", "a"}}, 1), type)));
 }
 
-TEST(DocumentUpdateTest, tensor_remove_update_on_float_tensor_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_remove_update_on_float_tensor_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f("sparse_float_tensor");
     f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
@@ -1098,7 +1111,7 @@ TEST(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor(), 1.0));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_on_float_tensor_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_modify_update_on_float_tensor_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f("sparse_float_tensor");
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
@@ -1109,7 +1122,7 @@ TEST(DocumentUpdateTest, tensor_modify_update_on_float_tensor_can_be_roundtrip_s
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor(), 1.0));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_on_dense_tensor_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, tensor_modify_update_on_dense_tensor_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f("dense_tensor");
     vespalib::string sparseType("tensor(x{})");
@@ -1118,25 +1131,25 @@ TEST(DocumentUpdateTest, tensor_modify_update_on_dense_tensor_can_be_roundtrip_s
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::move(sparseTensor)));
 }
 
-TEST(DocumentUpdateTest, tensor_add_update_throws_on_non_tensor_field)
+TEST_F(DocumentUpdateTest, tensor_add_update_throws_on_non_tensor_field)
 {
     TensorUpdateFixture f;
     f.assertThrowOnNonTensorField(TensorAddUpdate(f.makeBaselineTensor()));
 }
 
-TEST(DocumentUpdateTest, tensor_remove_update_throws_on_non_tensor_field)
+TEST_F(DocumentUpdateTest, tensor_remove_update_throws_on_non_tensor_field)
 {
     TensorUpdateFixture f;
     f.assertThrowOnNonTensorField(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_throws_on_non_tensor_field)
+TEST_F(DocumentUpdateTest, tensor_modify_update_throws_on_non_tensor_field)
 {
     TensorUpdateFixture f;
     f.assertThrowOnNonTensorField(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
 }
 
-TEST(DocumentUpdateTest, tensor_remove_update_throws_if_address_tensor_is_not_sparse)
+TEST_F(DocumentUpdateTest, tensor_remove_update_throws_if_address_tensor_is_not_sparse)
 {
     TensorUpdateFixture f("dense_tensor");
     auto addressTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense address tensor
@@ -1145,7 +1158,7 @@ TEST(DocumentUpdateTest, tensor_remove_update_throws_if_address_tensor_is_not_sp
             vespalib::IllegalStateException);
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_sparse)
+TEST_F(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_sparse)
 {
     TensorUpdateFixture f("dense_tensor");
     auto cellsTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense cells tensor
@@ -1209,30 +1222,33 @@ struct TensorUpdateSerializeFixture {
 
     void serializeUpdateToFile(const DocumentUpdate &update, const vespalib::string &fileName) {
         nbostream buf = serializeHEAD(update);
-        writeBufferToFile(buf, fileName);
+        TestDataBase::write_buffer_to_file(buf, fileName);
     }
 
     DocumentUpdate::UP deserializeUpdateFromFile(const vespalib::string &fileName) {
-        auto stream = readBufferFromFile(fileName);
+        auto stream = TestDataBase::read_buffer_from_file(fileName);
         return DocumentUpdate::createHEAD(*repo, stream);
     }
 
 };
 
-TEST(DocumentUpdateTest, tensor_update_file_java_can_be_deserialized)
+TEST_F(DocumentUpdateTest, tensor_update_file_java_can_be_deserialized)
 {
     TensorUpdateSerializeFixture f;
-    auto update = f.deserializeUpdateFromFile("data/serialize-tensor-update-java.dat");
+    auto update = f.deserializeUpdateFromFile(source_testdata() + "/serialize-tensor-update-java.dat");
     EXPECT_EQ(*f.makeUpdate(), *update);
 }
 
-TEST(DocumentUpdateTest, generate_serialized_tensor_update_file_cpp)
+TEST_F(DocumentUpdateTest, generate_serialized_tensor_update_file_cpp)
 {
     TensorUpdateSerializeFixture f;
     auto update = f.makeUpdate();
-    f.serializeUpdateToFile(*update, "data/serialize-tensor-update-cpp.dat");
+    std::string file_name("serialize-tensor-update-cpp.dat");
+    auto act_path = build_testdata() + "/" + file_name;
+    f.serializeUpdateToFile(*update, act_path);
+    auto buf = read_buffer_from_file(act_path);
+    ASSERT_NO_FATAL_FAILURE(remove_unchanged_build_testdata_file_or_fail(buf, file_name));
 }
-
 
 void
 assertDocumentUpdateFlag(bool createIfNonExistent, int value)
@@ -1249,7 +1265,7 @@ assertDocumentUpdateFlag(bool createIfNonExistent, int value)
     EXPECT_EQ(value, extractedValue);
 }
 
-TEST(DocumentUpdateTest, testThatDocumentUpdateFlagsIsWorking)
+TEST_F(DocumentUpdateTest, testThatDocumentUpdateFlagsIsWorking)
 {
     { // create-if-non-existent = true
         assertDocumentUpdateFlag(true, 0);
@@ -1289,7 +1305,7 @@ CreateIfNonExistentFixture::CreateIfNonExistentFixture()
     update->setCreateIfNonExistent(true);
 }
 
-TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerializedAndDeserialized)
+TEST_F(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerializedAndDeserialized)
 {
     CreateIfNonExistentFixture f;
 
@@ -1322,7 +1338,7 @@ ArrayUpdateFixture::ArrayUpdateFixture()
 }
 ArrayUpdateFixture::~ArrayUpdateFixture() = default;
 
-TEST(DocumentUpdateTest, array_element_update_can_be_roundtrip_serialized)
+TEST_F(DocumentUpdateTest, array_element_update_can_be_roundtrip_serialized)
 {
     ArrayUpdateFixture f;
 
@@ -1332,7 +1348,7 @@ TEST(DocumentUpdateTest, array_element_update_can_be_roundtrip_serialized)
     EXPECT_EQ(*f.update, *deserialized);
 }
 
-TEST(DocumentUpdateTest, array_element_update_applies_to_specified_element)
+TEST_F(DocumentUpdateTest, array_element_update_applies_to_specified_element)
 {
     ArrayUpdateFixture f;
 
@@ -1351,7 +1367,7 @@ TEST(DocumentUpdateTest, array_element_update_applies_to_specified_element)
     EXPECT_EQ(vespalib::string("blarg"), (*result_array)[2].getAsString());
 }
 
-TEST(DocumentUpdateTest, array_element_update_for_invalid_index_is_ignored)
+TEST_F(DocumentUpdateTest, array_element_update_for_invalid_index_is_ignored)
 {
     ArrayUpdateFixture f;
 
@@ -1414,7 +1430,7 @@ struct UpdateToEmptyDocumentFixture {
     }
 };
 
-TEST(DocumentUpdateTest, string_field_annotations_can_be_deserialized_after_assign_update_to_empty_document)
+TEST_F(DocumentUpdateTest, string_field_annotations_can_be_deserialized_after_assign_update_to_empty_document)
 {
     UpdateToEmptyDocumentFixture f;
     auto doc = f.make_empty_doc();

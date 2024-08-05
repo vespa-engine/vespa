@@ -61,7 +61,7 @@ struct InputInfo {
     std::vector<double> cmp_with;
     double usage_probability;
     double expected_usage;
-    InputInfo(vespalib::stringref name_in, double usage_probability_in, double expected_usage_in) noexcept
+    InputInfo(std::string_view name_in, double usage_probability_in, double expected_usage_in) noexcept
         : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in)
     {}
     double select_value() const {

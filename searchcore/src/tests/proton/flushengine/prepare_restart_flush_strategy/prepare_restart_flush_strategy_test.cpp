@@ -189,7 +189,7 @@ TEST_F("require that tls replay cost is correct for zero operations to replay", 
 
 TEST_F("require that flush cost is correct for zero flush targets", CandidatesFixture)
 {
-    EXPECT_EQUAL(0, f.builder.build().getFlushTargetsWriteCost());
+    EXPECT_EQUAL(0.0, f.builder.build().getFlushTargetsWriteCost());
 }
 
 TEST_F("require that flush cost is sum of flush targets", CandidatesFixture)

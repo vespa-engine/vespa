@@ -22,7 +22,7 @@ public:
      * Create a group distribution spec from the serialized version.
      * Asterisk entries are represented as zero.
      */
-    RedundancyGroupDistribution(vespalib::stringref serialized);
+    RedundancyGroupDistribution(std::string_view serialized);
     /**
      * Create a group distribution for a given redundancy. Will fail if there
      * are no asterisk entries in spec. Should prefer to use every copy before

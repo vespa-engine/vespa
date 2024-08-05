@@ -62,7 +62,7 @@ public:
     public:
         DynTeaserState();
         ~DynTeaserState();
-        std::unique_ptr<juniper::QueryHandle>& get_query(vespalib::stringref field);
+        std::unique_ptr<juniper::QueryHandle>& get_query(std::string_view field);
     };
     DynTeaserState _dynteaser;
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;

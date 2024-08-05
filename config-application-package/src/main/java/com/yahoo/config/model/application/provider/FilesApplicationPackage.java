@@ -601,9 +601,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                     zone.environment(),
                                                     zone.region(),
                                                     zone.cloud().name(),
-                                                    getDeploymentSpec().instance(instance)
-                                                                       .map(DeploymentInstanceSpec::tags)
-                                                                       .orElse(Tags.empty()))
+                                                    getDeploymentSpec().tags(instance, zone.environment()))
                     .run();
 
             try (FileOutputStream outputStream = new FileOutputStream(destination)) {

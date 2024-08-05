@@ -15,6 +15,7 @@
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_node_test");

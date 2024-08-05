@@ -111,7 +111,7 @@ public:
     }
     MyDocVectorStore& set(uint32_t docid, ConstVectorRef vec) {
         assert(docid < NUM_POSSIBLE_DOCS);
-        memcpy(&_vectors[docid], vec.cbegin(), sizeof(MallocPointVector));
+        memcpy(&_vectors[docid], vec.data(), sizeof(MallocPointVector));
         return *this;
     }
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override {

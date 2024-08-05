@@ -25,7 +25,7 @@ namespace {
     const char *Predicate = "Predicate";
     const char *Tensor = "Tensor";
 
-    const vespalib::stringref getTypeName(DataType::Type type) {
+    const std::string_view getTypeName(DataType::Type type) {
         switch (type) {
             case DataType::T_INT: return Int;
             case DataType::T_SHORT: return Short;
@@ -79,7 +79,7 @@ PrimitiveDataType::print(std::ostream& out, bool verbose, const std::string& ind
 }
 
 void
-PrimitiveDataType::onBuildFieldPath(FieldPath &, vespalib::stringref rest) const
+PrimitiveDataType::onBuildFieldPath(FieldPath &, std::string_view rest) const
 {
     if ( ! rest.empty()) {
         std::ostringstream ost;

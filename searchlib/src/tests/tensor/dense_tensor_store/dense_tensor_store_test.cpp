@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/tensor/dense_tensor_store.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -8,6 +7,9 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/util/size_literals.h>
+
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("dense_tensor_store_test");

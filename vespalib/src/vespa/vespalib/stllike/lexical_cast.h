@@ -6,7 +6,7 @@
 namespace vespalib {
 
 template <typename T>
-T lexical_cast(const stringref s)
+T lexical_cast(const std::string_view s)
 {
     T v;
     asciistream is(s);

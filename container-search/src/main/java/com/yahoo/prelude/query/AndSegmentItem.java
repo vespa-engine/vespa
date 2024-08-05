@@ -21,6 +21,7 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
 
     public AndSegmentItem(PhraseSegmentItem item) {
         super(item.getRawWord(), item.stringValue(), item.isFromQuery(), item.isStemmed(), null);
+        shouldFoldIntoWand(item.shouldFoldIntoWand());
         int weight = item.getWeight();
         if (item.getItemCount() > 0) {
             for (Iterator<Item> i = item.getItemIterator(); i.hasNext();) {

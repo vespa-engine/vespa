@@ -26,6 +26,21 @@ MatchingElementsSearch::~MatchingElementsSearch() = default;
 
 inline namespace matchingelements {
 
+int8_t get_from_enum(const IntegerAttributeTemplate<int8_t> &attr, EntryRef enum_idx)
+{
+    return attr.getFromEnum(enum_idx.ref());
+}
+
+int16_t get_from_enum(const IntegerAttributeTemplate<int16_t> &attr, EntryRef enum_idx)
+{
+    return attr.getFromEnum(enum_idx.ref());
+}
+
+int32_t get_from_enum(const IntegerAttributeTemplate<int32_t> &attr, EntryRef enum_idx)
+{
+    return attr.getFromEnum(enum_idx.ref());
+}
+
 int64_t get_from_enum(const IntegerAttributeTemplate<int64_t> &attr, EntryRef enum_idx)
 {
     return attr.getFromEnum(enum_idx.ref());
@@ -45,19 +60,21 @@ struct EqualCStringValue {
 template <typename BufferType, typename AttributeType>
 class FilterMatchingElementsSearch : public MatchingElementsSearch {
     const AttributeType&           _attr;
+    vespalib::string               _field_name;
     AttributeContent<BufferType>   _content;
     using EqualFunc = std::conditional_t<std::is_same_v<BufferType, const char *>, EqualCStringValue, std::equal_to<>>;
     vespalib::hash_set<BufferType, vespalib::hash<BufferType>, EqualFunc> _matches;
 
 public:
-    FilterMatchingElementsSearch(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries);
+    FilterMatchingElementsSearch(const IAttributeVector &attr, const vespalib::string& field_name, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries);
     void find_matching_elements(uint32_t doc_id, MatchingElements& result) override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
 };
 
 template <typename BufferType, typename AttributeType>
-FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsSearch(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
+FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsSearch(const IAttributeVector &attr, const vespalib::string& field_name, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
     : _attr(dynamic_cast<const AttributeType &>(attr)),
+      _field_name(field_name),
       _content(),
       _matches()
 {
@@ -85,7 +102,7 @@ FilterMatchingElementsSearch<BufferType, AttributeType>::find_matching_elements(
         ++element_id;
     }
     if (!_matching_elements.empty()) {
-        result.add_matching_elements(doc_id, _attr.getName(), _matching_elements);
+        result.add_matching_elements(doc_id, _field_name, _matching_elements);
     }
 }
 
@@ -96,15 +113,24 @@ FilterMatchingElementsSearch<BufferType, AttributeType>::initRange(uint32_t, uin
 }
 
 std::unique_ptr<MatchingElementsSearch>
-MatchingElementsSearch::create(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
+MatchingElementsSearch::create(const IAttributeVector &attr, const vespalib::string& field_name, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
 {
+    if (attr.as_docid_with_weight_posting_store() == nullptr) {
+        return {};
+    }
     switch(attr.getBasicType()) {
+    case BasicType::INT8:
+        return std::make_unique<FilterMatchingElementsSearch<int64_t, IntegerAttributeTemplate<int8_t>>>(attr, field_name, dictionary_snapshot, dict_entries);
+    case BasicType::INT16:
+        return std::make_unique<FilterMatchingElementsSearch<int64_t, IntegerAttributeTemplate<int16_t>>>(attr, field_name, dictionary_snapshot, dict_entries);
+    case BasicType::INT32:
+        return std::make_unique<FilterMatchingElementsSearch<int64_t, IntegerAttributeTemplate<int32_t>>>(attr, field_name, dictionary_snapshot, dict_entries);
     case BasicType::INT64:
-        return std::make_unique<FilterMatchingElementsSearch<int64_t, IntegerAttributeTemplate<int64_t>>>(attr, dictionary_snapshot, dict_entries);
+        return std::make_unique<FilterMatchingElementsSearch<int64_t, IntegerAttributeTemplate<int64_t>>>(attr, field_name, dictionary_snapshot, dict_entries);
     case BasicType::STRING:
-        return std::make_unique<FilterMatchingElementsSearch<const char *, StringAttribute>>(attr, dictionary_snapshot, dict_entries);
+        return std::make_unique<FilterMatchingElementsSearch<const char *, StringAttribute>>(attr, field_name, dictionary_snapshot, dict_entries);
     default:
-        return std::unique_ptr<MatchingElementsSearch>();
+        return {};
     }
 }
 

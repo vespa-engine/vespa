@@ -73,6 +73,11 @@ public class MapContext extends Context {
         bindings.put(key, value.freeze());
     }
 
+    @Override
+    public String resolveBinding(String argument) {
+        return null;
+    }
+
     /** Returns an immutable view of the bindings of this. */
     public Map<String, Value> bindings() {
         if (frozen) return bindings;

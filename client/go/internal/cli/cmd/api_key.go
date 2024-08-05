@@ -21,8 +21,9 @@ func newAPIKeyCmd(cli *CLI) *cobra.Command {
 		Short: "Create a new developer key for headless authentication with Vespa Cloud control plane",
 		Long: `Create a new developer key for headless authentication with Vespa Cloud control plane
 
-A developer key is intended for headless communication with the Vespa Cloud
-control plane. For example when deploying from a continuous integration system.
+A developer key is a tenant-wide secret, intended for headless communication
+with the Vespa Cloud control plane. For example when deploying from a continuous
+integration system.
 
 The developer key will be stored in the Vespa CLI home directory
 (see 'vespa help config'). Other commands will then automatically load the developer
@@ -43,7 +44,7 @@ Note that when overriding the developer key through environment variables,
 that key will always be used. It's not possible to specify a tenant-specific
 key through the environment.
 
-Read more in https://cloud.vespa.ai/en/security/guide`,
+See https://cloud.vespa.ai/en/security/guide for more details about developer keys.`,
 		Example:           "$ vespa auth api-key -a my-tenant.my-app.my-instance",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,

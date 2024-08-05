@@ -9,7 +9,7 @@ namespace vdslib {
 template<typename T>
 T
 Parameters::get(KeyT id, T def) const {
-    vespalib::stringref ref;
+    std::string_view ref;
     if (!lookup(id, ref)) return def;
     vespalib::asciistream ist(ref);
     T t;

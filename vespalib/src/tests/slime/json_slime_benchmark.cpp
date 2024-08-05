@@ -4,6 +4,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <iostream>
 #include <fstream>
+#include <cassert>
 
 using namespace vespalib::slime::convenience;
 

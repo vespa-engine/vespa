@@ -151,7 +151,7 @@ func nSpacedFields(s string, n int) []string {
 
 // pretty strict for now, can be more lenient if needed
 func isValidShellVariableName(s string) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		b := s[i]
 		switch {
 		case (b >= 'A' && b <= 'Z'): // ok

@@ -80,12 +80,12 @@ public:
     {
     }
 
-    AttributeGuard::UP getAttribute(const string &) const override {
+    AttributeGuard::UP getAttribute(std::string_view) const override {
         return std::make_unique<AttributeGuard>(_attribute_vector);
     }
 
     std::unique_ptr<attribute::AttributeReadGuard>
-    getAttributeReadGuard(const string &, bool stableEnumGuard) const override {
+    getAttributeReadGuard(std::string_view, bool stableEnumGuard) const override {
         if (_attribute_vector) {
             return _attribute_vector->makeReadGuard(stableEnumGuard);
         } else {
@@ -100,11 +100,11 @@ public:
         return IAttributeContext::UP();
     }
 
-    void asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
+    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
         assert(!"Not implemented");
     }
 
-    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string&) const override {
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view) const override {
         return _attribute_vector;
     }
 };

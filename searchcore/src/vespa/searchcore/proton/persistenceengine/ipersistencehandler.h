@@ -51,7 +51,7 @@ public:
                               storage::spi::Timestamp timestamp, const document::DocumentId &id) = 0;
     virtual void handleRemoveByGid(FeedToken token, const storage::spi::Bucket &bucket,
                                    storage::spi::Timestamp timestamp,
-                                   vespalib::stringref doc_type, const document::GlobalId& gid) = 0;
+                                   std::string_view doc_type, const document::GlobalId& gid) = 0;
 
     virtual void handleListBuckets(IBucketIdListResultHandler &resultHandler) = 0;
     virtual void handleSetClusterState(const storage::spi::ClusterState &calc, IGenericResultHandler &resultHandler) = 0;

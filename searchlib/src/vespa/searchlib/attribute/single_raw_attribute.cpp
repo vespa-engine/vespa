@@ -132,7 +132,7 @@ SingleRawAttribute::clearDoc(DocId docId)
 }
 
 std::unique_ptr<AttributeSaver>
-SingleRawAttribute::onInitSave(vespalib::stringref fileName)
+SingleRawAttribute::onInitSave(std::string_view fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
     return std::make_unique<SingleRawAttributeSaver>

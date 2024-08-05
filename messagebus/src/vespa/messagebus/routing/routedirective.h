@@ -23,7 +23,7 @@ public:
      *
      * @param name The name of the route to insert.
      */
-    explicit RouteDirective(vespalib::stringref name);
+    explicit RouteDirective(std::string_view name);
     ~RouteDirective() override;
 
     /**

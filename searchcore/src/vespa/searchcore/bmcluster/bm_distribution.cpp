@@ -52,7 +52,7 @@ make_distribution_config(uint32_t nodes_per_group, uint32_t groups, uint32_t red
                         partitions << '*';
                     }
                 }
-                group.partitions = partitions.str();
+                group.partitions = partitions.view();
                 dc.redundancy = redundancy * groups;
                 dc.readyCopies = redundancy * groups;
             }
@@ -78,7 +78,7 @@ make_cluster_state(uint32_t num_nodes)
 {
     vespalib::asciistream s;
     s << "version:2 distributor:" << num_nodes << " storage:" << num_nodes;
-    return storage::lib::ClusterState(s.str());
+    return storage::lib::ClusterState(s.view());
 }
 
 }

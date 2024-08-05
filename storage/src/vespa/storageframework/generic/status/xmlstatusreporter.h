@@ -23,7 +23,7 @@
 namespace storage::framework {
 
 struct XmlStatusReporter : public StatusReporter {
-    XmlStatusReporter(vespalib::stringref id, vespalib::stringref name);
+    XmlStatusReporter(std::string_view id, std::string_view name);
     virtual ~XmlStatusReporter();
 
     virtual void initXmlReport(vespalib::xml::XmlOutputStream&,

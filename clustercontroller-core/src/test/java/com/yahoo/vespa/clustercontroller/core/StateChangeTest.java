@@ -8,6 +8,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.testutils.StateWaiter;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -233,6 +235,34 @@ public class StateChangeTest extends FleetControllerTest {
 
         assertEquals(1, ctrl.getCluster().getNodeInfo(new Node(NodeType.DISTRIBUTOR, 0)).getPrematureCrashCount());
         assertEquals(1, ctrl.getCluster().getNodeInfo(new Node(NodeType.STORAGE, 0)).getPrematureCrashCount());
+    }
+
+    // If a node reports a new start timestamp, it means it has restarted quickly enough to not trigger an
+    // explicit Down-edge. We have to bump the state version to introduce a distinct edge in the cluster's
+    // history between the old availability-state and the new.
+    @Test
+    void node_reporting_new_start_timestamp_publishes_new_state_version() throws Exception {
+        FleetControllerOptions.Builder builder = defaultOptions()
+                .setNodeStateRequestTimeoutMS(60 * 60 * 1000)
+                .setMinTimeBetweenNewSystemStates(0)
+                .setMaxInitProgressTime(50000)
+                .enableTwoPhaseClusterStateActivation(false);
+
+        initialize(builder);
+        ctrl.tick();
+        assertEquals("version:2 distributor:10 storage:10", ctrl.getSystemState().toString());
+
+        communicator.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setStartTimestamp(12345678), "");
+        ctrl.tick();
+        assertEquals("version:3 distributor:10 storage:10 .0.t:12345678", ctrl.getSystemState().toString());
+
+        communicator.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setStartTimestamp(12345679), "");
+        ctrl.tick();
+        assertEquals("version:4 distributor:10 storage:10 .0.t:12345679", ctrl.getSystemState().toString());
+
+        communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, 2), new NodeState(NodeType.STORAGE, State.UP).setStartTimestamp(12345680), "");
+        ctrl.tick();
+        assertEquals("version:5 distributor:10 .2.t:12345680 storage:10 .0.t:12345679", ctrl.getSystemState().toString());
     }
 
     private void tick(int timeMs) throws Exception {
@@ -1249,7 +1279,56 @@ public class StateChangeTest extends FleetControllerTest {
                                  Event: storage.2: Altered node state in cluster state from 'U' to 'I, i 0.100 (read)'
                                  Event: storage.2: Altered min distribution bit count from 16 to 17
                                  """);
+    }
 
+    class DistributionConfigInBundleFixture {
+        StorDistributionConfig bootstrapConfig;
+        FleetControllerOptions.Builder options;
+
+        DistributionConfigInBundleFixture(boolean enableConfigInBundle) throws Exception {
+            bootstrapConfig = DistributionBuilder.configForFlatCluster(7);
+            options = defaultOptions()
+                    .setIncludeDistributionConfigInClusterStateBundles(enableConfigInBundle)
+                    .setDistributionConfig(bootstrapConfig);
+            initialize(options);
+            ctrl.tick();
+        }
+
+        void updateWithNewConfig(StorDistributionConfig newConfig) throws Exception {
+            ctrl.updateOptions(options.setDistributionConfig(newConfig).build());
+            ctrl.tick(); // Propagate options internally
+            ctrl.tick(); // New options actually take effect
+        }
+    }
+
+    @Test
+    void cluster_state_bundles_do_not_contain_distribution_config_if_feature_is_disabled() throws Exception {
+        var f = new DistributionConfigInBundleFixture(false);
+        var bundleCfg = ctrl.getClusterStateBundle().distributionConfig();
+        assertFalse(bundleCfg.isPresent());
+    }
+
+    @Test
+    void cluster_state_bundles_contain_distribution_config_if_feature_is_enabled() throws Exception {
+        var f = new DistributionConfigInBundleFixture(true);
+        var bundleCfg = ctrl.getClusterStateBundle().distributionConfig();
+        assertTrue(bundleCfg.isPresent());
+        assertEquals(f.bootstrapConfig, bundleCfg.get().config());
+    }
+
+    @Test
+    void distribution_config_change_triggers_new_versioned_state_bundle_with_updated_config() throws Exception {
+        var f = new DistributionConfigInBundleFixture(true);
+        int oldVersion = ctrl.getClusterStateBundle().getVersion();
+
+        var newDistrCfg = DistributionBuilder.configForFlatCluster(8);
+        f.updateWithNewConfig(newDistrCfg);
+
+        int newVersion = ctrl.getClusterStateBundle().getVersion();
+        assertThat(newVersion, greaterThan(oldVersion));
+        var bundleCfg = ctrl.getClusterStateBundle().distributionConfig();
+        assertTrue(bundleCfg.isPresent());
+        assertEquals(newDistrCfg, bundleCfg.get().config());
     }
 
     private static abstract class MockTask extends RemoteClusterControllerTask {

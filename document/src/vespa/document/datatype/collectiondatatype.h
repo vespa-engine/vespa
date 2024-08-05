@@ -17,8 +17,8 @@ class CollectionDataType : public DataType {
     const DataType *_nestedType;
 
 protected:
-    CollectionDataType(vespalib::stringref name, const DataType &nestedType) noexcept;
-    CollectionDataType(vespalib::stringref name, const DataType &nestedType, int32_t id) noexcept;
+    CollectionDataType(std::string_view name, const DataType &nestedType) noexcept;
+    CollectionDataType(std::string_view name, const DataType &nestedType, int32_t id) noexcept;
 
 public:
     CollectionDataType(const CollectionDataType&) = delete;

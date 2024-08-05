@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mysearch.h"
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow.h>
@@ -22,6 +21,8 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/normalize_class_name.h>
 #include <filesystem>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("blueprint_test");
@@ -37,7 +38,7 @@ using vespalib::slime::Inspector;
 using vespalib::slime::SlimeInserter;
 using vespalib::make_string_short::fmt;
 using vespalib::normalize_class_name;
-using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
+using Path = std::vector<std::variant<size_t,std::string_view>>;
 
 vespalib::string strict_equiv_name = "search::queryeval::EquivImpl<true, search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char> >";
 
@@ -526,7 +527,7 @@ vespalib::string path_to_str(const Path &path) {
         }
         std::visit(vespalib::overload{
                 [&str](size_t value)noexcept{ str.append(fmt("%zu", value)); },
-                [&str](vespalib::stringref value)noexcept{ str.append(value); }}, item);
+                [&str](std::string_view value)noexcept{ str.append(value); }}, item);
     }
     str.append("]");
     return str;
@@ -543,8 +544,8 @@ vespalib::string to_str(const Inspector &value) {
 
 void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
     auto cmp_hook = [expect_eq](const auto &path, const auto &a, const auto &b) {
-                        if (!path.empty() && std::holds_alternative<vespalib::stringref>(path.back())) {
-                            vespalib::stringref field = std::get<vespalib::stringref>(path.back());
+                        if (!path.empty() && std::holds_alternative<std::string_view>(path.back())) {
+                            std::string_view field = std::get<std::string_view>(path.back());
                             // ignore these fields to enable comparing optimized with unoptimized trees
                             if (field == "relative_estimate" || field == "cost" || field == "strict_cost") {
                                 auto check_value = [&](double value){
@@ -999,9 +1000,9 @@ TEST("test WeakAnd Blueprint") {
                 auto &s = dynamic_cast<WeakAndSearch&>(*search);
                 EXPECT_EQUAL(456u, s.getN());
                 ASSERT_EQUAL(3u, s.getTerms().size());
-                EXPECT_GREATER(s.get_max_score(0), 0.0);
-                EXPECT_GREATER(s.get_max_score(1), 0.0);
-                EXPECT_GREATER(s.get_max_score(2), 0.0);
+                EXPECT_GREATER(s.get_max_score(0), 0l);
+                EXPECT_GREATER(s.get_max_score(1), 0l);
+                EXPECT_GREATER(s.get_max_score(2), 0l);
                 wand::Terms terms = s.getTerms();
                 std::sort(terms.begin(), terms.end(), WeightOrder());
                 EXPECT_EQUAL(120, terms[0].weight);

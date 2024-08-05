@@ -19,7 +19,7 @@ public:
 
     template <typename Hits>
     static std::unique_ptr<AttributeOperation>
-    create(search::attribute::BasicType type, const vespalib::string & operation, Hits docIds);
+    create(search::attribute::BasicType type, std::string_view operation, Hits docIds);
 };
 
 }

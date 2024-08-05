@@ -31,10 +31,11 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
       _stateLock(),
       _currentState(), // Not set yet, so ownership will not be valid
       _currentOwnership(std::make_shared<OwnershipState>(
-            _component.getBucketSpaceRepo(), _currentState)),
+              _currentState, lib::DistributionConfigBundle::of(_component.getDistribution()))),
       _abortQueuedAndPendingOnStateChange(false),
       _abortMutatingIdealStateOps(false),
-      _abortMutatingExternalLoadOps(false)
+      _abortMutatingExternalLoadOps(false),
+      _receiving_distribution_config_from_cc(false)
 {
     on_configure(bootstrap_config);
     _component.registerMetric(_metrics);
@@ -61,16 +62,29 @@ ChangedBucketOwnershipHandler::reloadClusterState()
 {
     std::lock_guard guard(_stateLock);
     const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    setCurrentOwnershipWithStateNoLock(*clusterStateBundle);
+    setCurrentOwnershipWithStateNoLock(std::move(clusterStateBundle));
 }
 
 void
-ChangedBucketOwnershipHandler::setCurrentOwnershipWithStateNoLock(
-        const lib::ClusterStateBundle& newState)
+ChangedBucketOwnershipHandler::setCurrentOwnershipWithStateNoLock(std::shared_ptr<const lib::ClusterStateBundle> new_state)
 {
-    _currentState = std::make_shared<const lib::ClusterStateBundle>(newState);
-    _currentOwnership = std::make_shared<const OwnershipState>(
-            _component.getBucketSpaceRepo(), _currentState);
+    LOG(debug, "Setting new ownership state bundle: %s", new_state->toString().c_str());
+    std::shared_ptr<const lib::DistributionConfigBundle> distributions;
+    _currentState = std::move(new_state);
+    // This partially duplicates distribution config fallback logic from StateManager, but that's because
+    // this component has the same approach to intercepting both state commands and distribution config
+    // changes.
+    // `new_state` can come straight from a SetSystemStateCommand, which may or may not have a state bundle
+    // with distribution config strapped to it.
+    if (_currentState->has_distribution_config()) {
+        distributions = _currentState->distribution_config_bundle();
+    } else {
+        distributions = lib::DistributionConfigBundle::of(_component.getDistribution());
+        LOG(debug, "No distribution config in bundle; using current host config of '%s'",
+            distributions->default_distribution().getNodeGraph().getDistributionConfigHash().c_str());
+    }
+    _receiving_distribution_config_from_cc = _currentState->has_distribution_config();
+    _currentOwnership = std::make_shared<const OwnershipState>(_currentState, std::move(distributions));
 }
 
 namespace {
@@ -98,17 +112,11 @@ ChangedBucketOwnershipHandler::Metrics::Metrics(metrics::MetricSet* owner)
 {}
 ChangedBucketOwnershipHandler::Metrics::~Metrics() = default;
 
-ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
-                                                              std::shared_ptr<const lib::ClusterStateBundle> state)
-    : _distributions(),
-      _state(std::move(state))
+ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(std::shared_ptr<const lib::ClusterStateBundle> state,
+                                                              std::shared_ptr<const lib::DistributionConfigBundle> distributions)
+    : _state(std::move(state)),
+      _distributions(std::move(distributions))
 {
-    for (const auto &elem : contentBucketSpaceRepo) {
-        auto distribution = elem.second->getDistribution();
-        if (distribution) {
-            _distributions.emplace(elem.first, std::move(distribution));
-        }
-    }
 }
 
 
@@ -123,19 +131,15 @@ ChangedBucketOwnershipHandler::OwnershipState::getBaselineState() const
 }
 
 uint16_t
-ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
-        const document::Bucket& bucket) const
+ChangedBucketOwnershipHandler::OwnershipState::ownerOf(const document::Bucket& bucket) const
 {
-    auto distributionItr = _distributions.find(bucket.getBucketSpace());
-    assert(distributionItr != _distributions.end());
-    const auto &distribution = *distributionItr->second;
-    const auto &derivedState = *_state->getDerivedClusterState(bucket.getBucketSpace());
+    const auto* distribution = _distributions->bucket_space_distribution_or_nullptr_raw(bucket.getBucketSpace());
+    assert(distribution);
+    const auto& derivedState = *_state->getDerivedClusterState(bucket.getBucketSpace());
     try {
-        return distribution.getIdealDistributorNode(derivedState, bucket.getBucketId());
+        return distribution->getIdealDistributorNode(derivedState, bucket.getBucketId());
     } catch (lib::TooFewBucketBitsInUseException& e) {
-        LOGBP(debug,
-              "Too few bucket bits used for %s to be assigned to "
-              "a distributor.",
+        LOGBP(debug, "Too few bucket bits used for %s to be assigned to a distributor.",
               bucket.toString().c_str());
     } catch (lib::NoDistributorsAvailableException& e) {
         LOGBP(warning,
@@ -144,11 +148,9 @@ ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
               "for available distributors before reaching this code path! "
               "Cluster state is '%s', distribution is '%s'",
               derivedState.toString().c_str(),
-              distribution.toString().c_str());
+              distribution->toString().c_str());
     } catch (const std::exception& e) {
-        LOG(error,
-            "Got unknown exception while resolving distributor: %s",
-            e.what());
+        LOG(error, "Got unknown exception while resolving distributor: %s", e.what());
     }
     return FAILED_TO_RESOLVE;
 }
@@ -162,9 +164,7 @@ ChangedBucketOwnershipHandler::OwnershipState::storageNodeUp(document::BucketSpa
 }
 
 void
-ChangedBucketOwnershipHandler::logTransition(
-        const lib::ClusterState& currentState,
-        const lib::ClusterState& newState) const
+ChangedBucketOwnershipHandler::logTransition(const lib::ClusterState& currentState, const lib::ClusterState& newState)
 {
     LOG(debug,
         "State transition '%s' -> '%s' changes distributor bucket ownership, "
@@ -269,7 +269,7 @@ public:
         {
             std::lock_guard guard(_owner._stateLock);
             old_ownership = _owner._currentOwnership;
-            _owner.setCurrentOwnershipWithStateNoLock(_command->getClusterStateBundle());
+            _owner.setCurrentOwnershipWithStateNoLock(_command->cluster_state_bundle_ptr());
             new_ownership = _owner._currentOwnership;
         }
         assert(new_ownership->valid());
@@ -287,7 +287,7 @@ public:
                 new_ownership->getBaselineState().toString().c_str());
             return _owner.sendDown(_command);;
         }
-        _owner.logTransition(old_ownership->getBaselineState(), new_ownership->getBaselineState());
+        logTransition(old_ownership->getBaselineState(), new_ownership->getBaselineState());
 
         metrics::MetricTimer duration_timer;
         auto predicate = _owner.makeLazyAbortPredicate(old_ownership, new_ownership);
@@ -327,17 +327,19 @@ ChangedBucketOwnershipHandler::onSetSystemState(
  * Invoked whenever a distribution config change happens and is called in the
  * context of the config updater thread (which is why we have to lock).
  */
+ // TODO remove this when there are no more state bundles without distribution config
 void
 ChangedBucketOwnershipHandler::storageDistributionChanged()
 {
     std::lock_guard guard(_stateLock);
-    _currentOwnership = std::make_shared<OwnershipState>(
-            _component.getBucketSpaceRepo(), _currentState);
+    if (!_receiving_distribution_config_from_cc) {
+        _currentOwnership = std::make_shared<OwnershipState>(
+                _currentState, lib::DistributionConfigBundle::of(_component.getDistribution()));
+    }
 }
 
 bool
-ChangedBucketOwnershipHandler::isMutatingIdealStateOperation(
-        const api::StorageMessage& msg) const
+ChangedBucketOwnershipHandler::isMutatingIdealStateOperation(const api::StorageMessage& msg)
 {
     switch (msg.getType().getId()) {
     case api::MessageType::CREATEBUCKET_ID:
@@ -357,8 +359,7 @@ ChangedBucketOwnershipHandler::isMutatingIdealStateOperation(
 
 
 bool
-ChangedBucketOwnershipHandler::isMutatingExternalOperation(
-        const api::StorageMessage& msg) const
+ChangedBucketOwnershipHandler::isMutatingExternalOperation(const api::StorageMessage& msg)
 {
     switch (msg.getType().getId()) {
     case api::MessageType::PUT_ID:
@@ -418,8 +419,7 @@ ChangedBucketOwnershipHandler::abortOperation(api::StorageCommand& cmd)
 }
 
 bool
-ChangedBucketOwnershipHandler::isMutatingCommandAndNeedsChecking(
-        const api::StorageMessage& msg) const
+ChangedBucketOwnershipHandler::isMutatingCommandAndNeedsChecking(const api::StorageMessage& msg) const
 {
     if (enabledIdealStateAborting() && isMutatingIdealStateOperation(msg)) {
         return true;

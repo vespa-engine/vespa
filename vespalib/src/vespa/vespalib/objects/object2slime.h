@@ -21,16 +21,16 @@ private:
     std::vector<std::reference_wrapper<slime::Cursor>> _stack;
 
 public:
-    Object2Slime(slime::Cursor & cursor);
-    ~Object2Slime();
+    explicit Object2Slime(slime::Cursor & cursor);
+    ~Object2Slime() override;
 
-    void openStruct(const vespalib::string &name, const vespalib::string &type) override;
+    void openStruct(std::string_view name, std::string_view type) override;
     void closeStruct() override;
-    void visitBool(const vespalib::string &name, bool value) override;
-    void visitInt(const vespalib::string &name, int64_t value) override;
-    void visitFloat(const vespalib::string &name, double value) override;
-    void visitString(const vespalib::string &name, const vespalib::string &value) override;
-    void visitNull(const vespalib::string &name) override;
+    void visitBool(std::string_view name, bool value) override;
+    void visitInt(std::string_view name, int64_t value) override;
+    void visitFloat(std::string_view name, double value) override;
+    void visitString(std::string_view name, std::string_view value) override;
+    void visitNull(std::string_view name) override;
     void visitNotImplemented() override;
 };
 

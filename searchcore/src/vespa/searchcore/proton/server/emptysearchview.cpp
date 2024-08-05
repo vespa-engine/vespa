@@ -18,9 +18,6 @@ using namespace vespalib::slime;
 
 namespace proton {
 
-EmptySearchView::EmptySearchView() = default;
-
-
 DocsumReply::UP
 EmptySearchView::getDocsums(const DocsumRequest &req)
 {

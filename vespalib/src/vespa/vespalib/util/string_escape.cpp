@@ -24,7 +24,7 @@ std::vector<bool> precompute_escaped_xml_chars() {
 std::vector<bool> escaped_xml_chars = precompute_escaped_xml_chars();
 
 template <typename StreamT>
-void do_write_xml_content_escaped(StreamT& out, vespalib::stringref str) {
+void do_write_xml_content_escaped(StreamT& out, std::string_view str) {
     for (const char s : str) {
         if (escaped_xml_chars[static_cast<uint8_t>(s)]) {
             if      (s == '<') out << "&lt;";
@@ -41,7 +41,7 @@ void do_write_xml_content_escaped(StreamT& out, vespalib::stringref str) {
 
 }
 
-vespalib::string xml_attribute_escaped(vespalib::stringref str) {
+vespalib::string xml_attribute_escaped(std::string_view str) {
     vespalib::asciistream ost;
     for (const char s : str) {
         if (s == '"' || s == '\'' || s == '\n'
@@ -62,17 +62,17 @@ vespalib::string xml_attribute_escaped(vespalib::stringref str) {
     return ost.str();
 }
 
-vespalib::string xml_content_escaped(vespalib::stringref str) {
+vespalib::string xml_content_escaped(std::string_view str) {
     vespalib::asciistream out;
     do_write_xml_content_escaped(out, str);
     return out.str();
 }
 
-void write_xml_content_escaped(vespalib::asciistream& out, vespalib::stringref str) {
+void write_xml_content_escaped(vespalib::asciistream& out, std::string_view str) {
     do_write_xml_content_escaped(out, str);
 }
 
-void write_xml_content_escaped(std::ostream& out, vespalib::stringref str) {
+void write_xml_content_escaped(std::ostream& out, std::string_view str) {
     do_write_xml_content_escaped(out, str);
 }
 

@@ -24,7 +24,7 @@ struct SingleLabel : public Labels {
         key << "vespa.label." << label << ".id";
         vespalib::asciistream value;
         value << uid;
-        p.add(key.str(), value.str());
+        p.add(key.view(), value.view());
     }
 };
 

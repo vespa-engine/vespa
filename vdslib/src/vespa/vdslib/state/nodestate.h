@@ -40,10 +40,10 @@ public:
     NodeState(NodeState &&) noexcept;
     NodeState & operator = (NodeState &&) noexcept;
     NodeState(const NodeType& nodeType, const State&,
-              vespalib::stringref description = "",
+              std::string_view description = "",
               double capacity = 1.0);
     /** Set type if you want to verify that content fit with the given type. */
-    explicit NodeState(vespalib::stringref serialized, const NodeType* nodeType = nullptr);
+    explicit NodeState(std::string_view serialized, const NodeType* nodeType = nullptr);
     ~NodeState() override;
 
     /**
@@ -51,7 +51,7 @@ public:
      * part of the system state. Don't set prefix if you want to be able to
      * recreate the nodestate with NodeState(string) function.
      */
-    void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
+    void serialize(vespalib::asciistream & out, std::string_view prefix = "",
                    bool includeDescription = true) const;
 
     [[nodiscard]] const State& getState() const { return *_state; }
@@ -66,7 +66,7 @@ public:
     void setMinUsedBits(uint32_t usedBits);
     void setInitProgress(vespalib::Double initProgress);
     void setStartTimestamp(uint64_t startTimestamp);
-    void setDescription(vespalib::stringref desc) { _description = desc; }
+    void setDescription(std::string_view desc) { _description = desc; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const NodeState& other) const;

@@ -137,7 +137,7 @@ DistanceClosenessFixture::set_query_tensor(const vespalib::string& query_tensor_
     auto tensor = SimpleValue::from_spec(spec);
     vespalib::nbostream stream;
     vespalib::eval::encode_value(*tensor, stream);
-    queryEnv.getProperties().add(query_tensor_name, vespalib::stringref(stream.peek(), stream.size()));
+    queryEnv.getProperties().add(query_tensor_name, std::string_view(stream.peek(), stream.size()));
 }
 
 }

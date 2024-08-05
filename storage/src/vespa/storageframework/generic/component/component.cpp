@@ -20,7 +20,7 @@ Component::close()
 {
 }
 
-Component::Component(ComponentRegister& cr, vespalib::stringref name)
+Component::Component(ComponentRegister& cr, std::string_view name)
     : _componentRegister(&cr),
       _name(name),
       _status(nullptr),
@@ -89,7 +89,7 @@ Component::startThread(Runnable& runnable, vespalib::duration waitTime, vespalib
 }
 
 void
-Component::requestShutdown(vespalib::stringref reason)
+Component::requestShutdown(std::string_view reason)
 {
     _componentRegister->requestShutdown(reason);
 }

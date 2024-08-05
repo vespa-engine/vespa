@@ -10,3 +10,8 @@ zookeeperLocalhostAffinity bool default=false
 
 # session timeout, the high default is used by config servers
 zookeeperSessionTimeoutSeconds int default=120
+
+# Jute maxbuffer. Used by zookeeper to determine max buffer when serializing/deserializing
+# Value used in server must equal or than this one (so if decreasing it one must be sure
+# that no client needs to use more bytes than this), see corresponding field in zookeeper-server.def
+juteMaxBuffer int default=52428800

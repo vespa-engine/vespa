@@ -10,6 +10,7 @@
 #include "config-my.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/util/barrier.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("failover");

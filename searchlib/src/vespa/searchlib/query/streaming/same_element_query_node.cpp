@@ -3,11 +3,10 @@
 #include "same_element_query_node.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
-#include <cassert>
 
 namespace search::streaming {
 
-SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, uint32_t num_terms) noexcept
+SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept
     : MultiTerm(std::move(result_base), index, num_terms)
 {
 }

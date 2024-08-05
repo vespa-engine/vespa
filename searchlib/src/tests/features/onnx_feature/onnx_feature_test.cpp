@@ -11,7 +11,7 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/rank_program.h>
-#include <vespa/searchlib/fef/test/test_features.h>
+#include <vespa/searchlib/test/test_features.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;

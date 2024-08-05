@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace document {
 

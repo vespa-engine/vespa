@@ -23,11 +23,9 @@ ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(ServiceLayerMan
 }
 
 void
-ServiceLayerComponentRegisterImpl::setDistribution(std::shared_ptr<lib::Distribution> distribution)
+ServiceLayerComponentRegisterImpl::setDistribution(std::shared_ptr<const lib::Distribution> distribution)
 {
-    _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
-    auto global_distr = lib::GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-    _bucketSpaceRepo.get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
+    // TODO remove this override entirely?
     StorageComponentRegisterImpl::setDistribution(distribution);
 }
 

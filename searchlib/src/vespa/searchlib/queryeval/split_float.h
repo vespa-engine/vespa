@@ -13,7 +13,7 @@ class SplitFloat
 private:
     std::vector<vespalib::string> _parts;
 public:
-    SplitFloat(const vespalib::string &input);
+    explicit SplitFloat(std::string_view input);
     size_t parts() const { return _parts.size(); }
     const vespalib::string &getPart(size_t i) const { return _parts[i]; }
 };

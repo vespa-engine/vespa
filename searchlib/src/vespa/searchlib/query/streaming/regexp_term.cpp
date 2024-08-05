@@ -15,7 +15,7 @@ constexpr Regex::Options normalize_mode_to_regex_opts(Normalizing norm) noexcept
 
 }
 
-RegexpTerm::RegexpTerm(std::unique_ptr<QueryNodeResultBase> result_base, stringref term,
+RegexpTerm::RegexpTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term,
                        const string& index, Type type, Normalizing normalizing)
     : QueryTerm(std::move(result_base), term, index, type, normalizing),
       _regexp(Regex::from_pattern({term.data(), term.size()}, normalize_mode_to_regex_opts(normalizing)))

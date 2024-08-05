@@ -49,7 +49,7 @@ SlimeExplorer::get_children_names() const
 }
 
 std::unique_ptr<StateExplorer>
-SlimeExplorer::get_child(vespalib::stringref name) const
+SlimeExplorer::get_child(std::string_view name) const
 {
     slime::Inspector &child = _self[name];
     if (!child.valid()) {

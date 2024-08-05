@@ -48,6 +48,15 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag USE_VESPA_ATHENZ = defineFeatureFlag(
+            "use-vespa-athenz", false,
+            List.of("hakonhall"), "2024-06-25", "2024-10-25",
+            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public systems. " +
+            "node-type is config in config server, controller in controller, and the appropriate " +
+            "host node type in host-admin.",
+            "Takes immediate effect wherever possible.",
+            NODE_TYPE);
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -177,6 +186,7 @@ public class Flags {
             "Will trigger a heap dump during if container shutdown times out",
             "Takes effect at redeployment",
             INSTANCE_ID);
+
     public static final UnboundBooleanFlag LOAD_CODE_AS_HUGEPAGES = defineFeatureFlag(
             "load-code-as-hugepages", false,
             List.of("baldersheim"), "2022-05-13", "2024-12-31",
@@ -397,18 +407,6 @@ public class Flags {
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
-    public static UnboundBooleanFlag CALYPSO_ENABLED = defineFeatureFlag(
-            "calypso-enabled", true,
-            List.of("mortent"), "2024-02-19", "2024-08-01",
-            "Whether to enable calypso for host",
-            "Takes effect immediately", HOSTNAME);
-
-    public static UnboundBooleanFlag ATHENZ_PROVIDER = defineFeatureFlag(
-            "athenz-provider", false,
-            List.of("mortent"), "2024-02-19", "2024-08-01",
-            "Whether to use athenz as node identity provider",
-            "Takes effect on next identity refresh", HOSTNAME);
-
     public static UnboundJacksonFlag<RoleList> ROLE_DEFINITIONS = defineJacksonFlag(
             "role-definitions", RoleList.empty(), RoleList.class,
             List.of("mortent"), "2024-04-05", "2024-10-01",
@@ -444,7 +442,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
-            List.of("vekterli"), "2024-05-23", "2024-08-01",
+            List.of("vekterli"), "2024-05-23", "2024-09-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -460,7 +458,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", false,
-            List.of("vekterli"), "2024-06-03", "2024-08-01",
+            List.of("vekterli"), "2024-06-03", "2024-09-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
             "Takes effect immediately",
@@ -468,7 +466,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_VESPA_ATHENZ_HOST_IDENTITY = defineFeatureFlag(
             "use-vespa-athenz-host-identity", false,
-            List.of("freva"), "2024-06-12", "2024-08-01",
+            List.of("freva"), "2024-06-12", "2024-10-01",
             "Whether the host should get identity from Vespa Athenz. Only valid in public systems, noclave, AWS. Vespa version dimension refers to OS version.",
             "Takes effect on next provisioning",
             INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
@@ -488,8 +486,43 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE = defineFeatureFlag(
             "delete-expired-config-sessions-new-procedure", false,
-            List.of("hmusum"), "2024-06-10", "2024-08-10",
+            List.of("hmusum"), "2024-06-10", "2024-10-01",
             "Whether to delete remote and local config sessions at the same time",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
+            "distribution-config-from-cluster-controller", false,
+            List.of("vekterli"), "2024-07-01", "2024-09-01",
+            "Iff true, the cluster controller will be the authoritative source of distribution " +
+            "config changes in a content cluster, and distribution changes will be part of explicitly " +
+            "versioned cluster states.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
+    public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
+            "use-legacy-wand-query-parsing", true,
+            List.of("arnej"), "2023-07-26", "2025-12-31",
+            "If true, force leagy mode for weakAnd query parsing",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
+            "monitoring-jwt", false,
+            List.of("olaa"), "2024-07-05", "2025-01-01",
+            "Whether a monitoring JWT should be issued by the controller",
+            "Takes effect immediately",
+            TENANT_ID);
+
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
+            "hubspot-sync-companies", false,
+            List.of("bjorncs"), "2024-07-19", "2025-01-01",
+            "Whether to sync companies to HubSpot",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
+            "sdm-enabled-provisioning", true,
+            List.of("olaa"), "2024-07-31", "2024-10-01",
+            "Whether to provision with SDM enabled",
             "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

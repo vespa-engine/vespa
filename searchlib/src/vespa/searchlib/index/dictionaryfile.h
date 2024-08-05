@@ -44,7 +44,7 @@ public:
     /**
      * Write word and counts.  Only nonzero counts should be supplied.
      */
-    virtual void writeWord(vespalib::stringref word, const PostingListCounts &counts) = 0;
+    virtual void writeWord(std::string_view word, const PostingListCounts &counts) = 0;
 };
 
 
@@ -59,7 +59,7 @@ public:
     DictionaryFileRandRead();
     virtual ~DictionaryFileRandRead();
 
-    virtual bool lookup(vespalib::stringref word, uint64_t &wordNum,
+    virtual bool lookup(std::string_view word, uint64_t &wordNum,
                         PostingListOffsetAndCounts &offsetAndCounts) = 0;
 
     /**

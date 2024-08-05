@@ -42,7 +42,7 @@ public:
         uint32_t          numTranportThreads;
 
         Params(Proton &parent, uint32_t port, const config::ConfigUri & configUri,
-               vespalib::stringref slobrokId, uint32_t numTransportThreads);
+               std::string_view slobrokId, uint32_t numTransportThreads);
         ~Params();
     };
     RPCHooksBase(const RPCHooksBase &) = delete;

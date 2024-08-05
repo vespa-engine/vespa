@@ -25,6 +25,7 @@ namespace lib {
     class ClusterState;
     class ClusterStateBundle;
     class Distribution;
+    class DistributionConfigBundle;
 }
 
 /**
@@ -77,20 +78,20 @@ public:
      */
     class OwnershipState {
         using BucketSpace = document::BucketSpace;
-        std::unordered_map<BucketSpace, std::shared_ptr<const lib::Distribution>, BucketSpace::hash> _distributions;
         std::shared_ptr<const lib::ClusterStateBundle> _state;
+        std::shared_ptr<const lib::DistributionConfigBundle> _distributions;
     public:
         using SP = std::shared_ptr<OwnershipState>;
         using CSP = std::shared_ptr<const OwnershipState>;
 
-        OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
-                       std::shared_ptr<const lib::ClusterStateBundle> state);
+        OwnershipState(std::shared_ptr<const lib::ClusterStateBundle> state,
+                       std::shared_ptr<const lib::DistributionConfigBundle> distributions);
         ~OwnershipState();
 
         static const uint16_t FAILED_TO_RESOLVE = 0xffff;
 
         [[nodiscard]] bool valid() const noexcept {
-            return (!_distributions.empty() && _state);
+            return (_distributions && _state);
         }
 
         /**
@@ -124,20 +125,21 @@ private:
     std::atomic<bool>             _abortQueuedAndPendingOnStateChange;
     std::atomic<bool>             _abortMutatingIdealStateOps;
     std::atomic<bool>             _abortMutatingExternalLoadOps;
+    bool                          _receiving_distribution_config_from_cc;
 
     std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate>
     makeLazyAbortPredicate(
             const OwnershipState::CSP& oldOwnership,
             const OwnershipState::CSP& newOwnership) const;
 
-    void logTransition(const lib::ClusterState& currentState,
-                       const lib::ClusterState& newState) const;
+    static void logTransition(const lib::ClusterState& currentState,
+                              const lib::ClusterState& newState);
 
     /**
      * Creates a new immutable OwnershipState based on the current distribution
      * and the provided cluster state and assigns it to _currentOwnership.
      */
-    void setCurrentOwnershipWithStateNoLock(const lib::ClusterStateBundle&);
+    void setCurrentOwnershipWithStateNoLock(std::shared_ptr<const lib::ClusterStateBundle>);
 
     /**
      * Grabs _stateLock and returns a shared_ptr to the current ownership
@@ -147,9 +149,9 @@ private:
 
     bool isMutatingCommandAndNeedsChecking(const api::StorageMessage&) const;
 
-    bool isMutatingIdealStateOperation(const api::StorageMessage&) const;
+    static bool isMutatingIdealStateOperation(const api::StorageMessage&);
 
-    bool isMutatingExternalOperation(const api::StorageMessage&) const;
+    static bool isMutatingExternalOperation(const api::StorageMessage&);
     /**
      * Returns whether the operation in cmd has a bucket whose ownership in
      * the current cluster state does not match the distributor marked as

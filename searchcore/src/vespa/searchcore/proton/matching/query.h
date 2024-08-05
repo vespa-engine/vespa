@@ -56,14 +56,14 @@ public:
      *
      * @return success(true)/failure(false)
      **/
-    bool buildTree(vespalib::stringref stack,
+    bool buildTree(std::string_view stack,
                    const vespalib::string &location,
                    const ViewResolver &resolver,
                    const search::fef::IIndexEnvironment &idxEnv)
     {
         return buildTree(stack, location, resolver, idxEnv, false);
     }
-    bool buildTree(vespalib::stringref stack,
+    bool buildTree(std::string_view stack,
                    const vespalib::string &location,
                    const ViewResolver &resolver,
                    const search::fef::IIndexEnvironment &idxEnv,

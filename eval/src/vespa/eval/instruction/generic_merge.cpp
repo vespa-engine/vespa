@@ -44,7 +44,7 @@ generic_mixed_merge(const Value &a, const Value &b,
     auto outer = a.index().create_view({});
     outer->lookup({});
     while (outer->next_result(addr_ref, lhs_subspace)) {
-        OCT *dst = builder->add_subspace(address).begin();
+        OCT *dst = builder->add_subspace(address).data();
         inner->lookup(addr_cref);
         if (inner->next_result({}, rhs_subspace)) {
             const LCT *lhs_src = &lhs_cells[lhs_subspace * subspace_size];
@@ -65,7 +65,7 @@ generic_mixed_merge(const Value &a, const Value &b,
     while (outer->next_result(addr_ref, rhs_subspace)) {
         inner->lookup(addr_cref);
         if (! inner->next_result({}, lhs_subspace)) {
-            OCT *dst = builder->add_subspace(address).begin();
+            OCT *dst = builder->add_subspace(address).data();
             const RCT *src = &rhs_cells[rhs_subspace * subspace_size];
             for (size_t i = 0; i < subspace_size; ++i) {
                 *dst++ = *src++;

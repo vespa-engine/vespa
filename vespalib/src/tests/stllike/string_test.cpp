@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/small_string.h>
 #include <algorithm>
 
-using namespace vespalib;
+using string = vespalib::vespa_string;
 
 TEST("testStringInsert") {
     string s("first string ");
@@ -97,39 +97,6 @@ void verify_move(string org) {
 TEST("test move constructor") {
     TEST_DO(verify_move("short string"));
     TEST_DO(verify_move("longer string than the 47 bytes that can be held in the short string optimization."));
-}
-
-TEST("testStringAlloc") {
-    fprintf(stderr, "... testing allocations\n");
-    string a("abcde");
-
-    for (int i=0; i<99999; i++) {
-        a.append("12345");
-    }
-    EXPECT_TRUE(a.size() == 5u*100000);
-    EXPECT_TRUE(a.capacity() > a.size());
-    EXPECT_TRUE(a.capacity() < 2*a.size());
-
-    string foo;
-    EXPECT_EQUAL(64ul, sizeof(foo));
-
-    small_string<112> bar;
-    EXPECT_EQUAL(128ul, sizeof(bar));
-
-    string reset;
-    for (int i=0; i<100; i++) {
-        reset.append("12345");
-    }
-    EXPECT_EQUAL(500u, reset.size());
-    EXPECT_EQUAL(511u, reset.capacity());
-    reset.reserve(2000);
-    EXPECT_EQUAL(500u, reset.size());
-    EXPECT_EQUAL(2000u, reset.capacity());
-    reset.reset();
-    EXPECT_EQUAL(0u, reset.size());
-    EXPECT_EQUAL(47u, reset.capacity());
-
-    TEST_FLUSH();
 }
 
 TEST("testStringCompare") {
@@ -291,7 +258,7 @@ TEST("testString") {
         EXPECT_EQUAL(3u, s.rfind("ab"));
     }
     {
-        stringref s("abcabca");
+        std::string_view s("abcabca");
         EXPECT_EQUAL(string::npos, s.find('g'));
         EXPECT_EQUAL(string::npos, s.rfind('g'));
         EXPECT_EQUAL(0u, s.find('a'));
@@ -302,26 +269,27 @@ TEST("testString") {
         EXPECT_EQUAL(5u, s.rfind("ca"));
         EXPECT_EQUAL(0u, s.find("ab"));
         EXPECT_EQUAL(3u, s.rfind("ab"));
-        stringref s2("abc");
+        std::string_view s2("abc");
         EXPECT_EQUAL(2u, s2.rfind('c'));
         EXPECT_EQUAL(1u, s2.rfind('b'));
         EXPECT_EQUAL(0u, s2.rfind('a'));
         EXPECT_EQUAL(string::npos, s2.rfind('d'));
     }
 
-    EXPECT_EQUAL("a" + stringref("b"), string("ab"));
+    EXPECT_EQUAL("a" + std::string_view("b"), string("ab"));
     EXPECT_EQUAL("a" + string("b"), string("ab"));
     EXPECT_EQUAL(string("a") + string("b"), string("ab"));
-    EXPECT_EQUAL(string("a") + stringref("b"), string("ab"));
+    EXPECT_EQUAL(string("a") + std::string_view("b"), string("ab"));
     EXPECT_EQUAL(string("a") + "b", string("ab"));
-    EXPECT_EQUAL(stringref("a") + stringref("b"), string("ab"));
+    EXPECT_EQUAL(std::string_view("a") + std::string_view("b"), string("ab"));
 
     // Test std::string conversion of empty string
-    stringref sref;
+    std::string_view sref;
     std::string stdString(sref);
-    EXPECT_TRUE(strcmp("", sref.data()) == 0);
+    EXPECT_EQUAL(nullptr, sref.data());
+    EXPECT_TRUE(strcmp("", stdString.data()) == 0);
     stdString = "abc";
-    stringref sref2(stdString);
+    std::string_view sref2(stdString);
     EXPECT_TRUE(stdString.c_str() == sref2.data());
     EXPECT_TRUE(stdString == sref2);
     EXPECT_TRUE(sref2 == stdString);
@@ -338,7 +306,7 @@ TEST("testString") {
     }
     {
         EXPECT_EQUAL(string("abc"), string("abcd", 3));
-        EXPECT_EQUAL(string("abc"), string(stringref("abc")));
+        EXPECT_EQUAL(string("abc"), string(std::string_view("abc")));
     }
     {
         string s("abc");
@@ -350,7 +318,7 @@ TEST("testString") {
         EXPECT_EQUAL(string("c"), s.substr(2));
     }
     {
-        stringref s("abc");
+        std::string_view s("abc");
         EXPECT_EQUAL(string("a"), s.substr(0,1));
         EXPECT_EQUAL(string("b"), s.substr(1,1));
         EXPECT_EQUAL(string("c"), s.substr(2,1));
@@ -368,35 +336,8 @@ TEST("testString") {
     TEST_FLUSH();
 }
 
-TEST("require that vespalib::string can append characters (non-standard)") {
-    char c = 'x';
-    vespalib::string str;
-    str.append(c);
-    str.append(c);
-    str.append(c);
-    EXPECT_EQUAL(str, "xxx");
-}
-
-TEST("require that vespalib::append_from_reserved gives uninitialized data (non-standard)") {
-    vespalib::string str;
-    str.reserve(8);
-    char *s = &str[0];
-    s[0] = 'x';
-    s[1] = 'x';
-    s[2] = 'x';
-    str.append_from_reserved(3);
-    EXPECT_EQUAL(3u, str.size());
-    EXPECT_EQUAL(str, "xxx");
-    s[3] = 'y';
-    s[4] = 'y';
-    s[5] = 'y';
-    str.append_from_reserved(3);
-    EXPECT_EQUAL(6u, str.size());
-    EXPECT_EQUAL(str, "xxxyyy");
-}
-
 TEST("require that vespalib::resize works") {
-    vespalib::string s("abcdefghijk");
+    string s("abcdefghijk");
     EXPECT_EQUAL(11u, s.size());
     s.resize(5);
     EXPECT_EQUAL(5u, s.size());
@@ -420,6 +361,7 @@ TEST("require that you can format a number into a vespalib::string easily") {
     EXPECT_EQUAL(vespalib::stringify(18446744073709551615uLL), "18446744073709551615");
 }
 
+using vespalib::contains;
 TEST("require that contains works") {
     vespalib::string s("require that contains works");
     EXPECT_TRUE(contains(s, "require"));
@@ -430,6 +372,7 @@ TEST("require that contains works") {
     EXPECT_FALSE(contains(s, "not in there"));
 }
 
+using vespalib::starts_with;
 TEST("require that starts_with works") {
     vespalib::string s("require that starts_with works");
     EXPECT_TRUE(starts_with(s, "require"));
@@ -439,6 +382,7 @@ TEST("require that starts_with works") {
     EXPECT_FALSE(starts_with(s, "not in there"));
 }
 
+using vespalib::ends_with;
 TEST("require that ends_with works") {
     vespalib::string s("require that ends_with works");
     EXPECT_FALSE(ends_with(s, "require"));
@@ -461,10 +405,10 @@ TEST("test that small_string::pop_back works") {
 }
 
 
-TEST("test that operator<() works with stringref versus string") {
-    vespalib::stringref sra("a");
+TEST("test that operator<() works with std::string_view versus string") {
+    std::string_view sra("a");
     vespalib::string sa("a");
-    vespalib::stringref srb("b");
+    std::string_view srb("b");
     vespalib::string sb("b");
     EXPECT_FALSE(sra < sra);
     EXPECT_FALSE(sra < sa);
@@ -485,8 +429,8 @@ TEST("test that operator<() works with stringref versus string") {
 }
 
 TEST("test that empty_string is shared and empty") {
-    EXPECT_TRUE(&empty_string() == &empty_string());
-    EXPECT_EQUAL(empty_string(), "");
+    EXPECT_TRUE(&vespalib::empty_string() == &vespalib::empty_string());
+    EXPECT_EQUAL(vespalib::empty_string(), "");
 }
 
 TEST("starts_with has expected semantics for small_string") {
@@ -498,14 +442,20 @@ TEST("starts_with has expected semantics for small_string") {
     EXPECT_FALSE(a.starts_with("oobar"));
 }
 
-TEST("starts_with has expected semantics for stringref") {
+TEST("starts_with has expected semantics for std::string_view") {
     vespalib::string a("foobar");
-    vespalib::stringref ar(a);
+    std::string_view ar(a);
     EXPECT_TRUE(ar.starts_with(""));
     EXPECT_TRUE(ar.starts_with("foo"));
     EXPECT_TRUE(ar.starts_with("foobar"));
     EXPECT_FALSE(ar.starts_with("foobarf"));
     EXPECT_FALSE(ar.starts_with("oobar"));
+}
+
+TEST("test allowed nullptr construction - legal, but not legitimate use.") {
+    EXPECT_TRUE(vespalib::string(nullptr, 0).empty());
+    EXPECT_TRUE(std::string(nullptr, 0).empty());
+    EXPECT_TRUE(std::string_view(nullptr, 0).empty());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

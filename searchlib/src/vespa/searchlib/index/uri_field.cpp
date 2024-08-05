@@ -71,10 +71,10 @@ UriField::setup(const Schema &schema, const vespalib::string &field)
 }
 
 bool
-UriField::mightBePartofUri(vespalib::stringref name) {
+UriField::mightBePartofUri(std::string_view name) {
     size_t dotPos = name.find('.');
     if ((dotPos != 0) && (dotPos != vespalib::string::npos)) {
-        vespalib::stringref suffix = name.substr(dotPos + 1);
+        std::string_view suffix = name.substr(dotPos + 1);
         return ((suffix == "all") || (suffix == "scheme") || (suffix == "host") || (suffix == "port") ||
                 (suffix == "path") || (suffix == "query") || (suffix == "fragment") || (suffix == "hostname"));
     }

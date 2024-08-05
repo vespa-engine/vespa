@@ -26,4 +26,7 @@ public interface TypeContext<NAMETYPE extends Name> {
      */
     TensorType getType(String name);
 
+    /** Returns the string a parameter is bound to, or the input name if none. */
+    String resolveBinding(String name);
+
 }

@@ -3,7 +3,6 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/parsequery/parse.h>
@@ -207,7 +206,7 @@ BitVectorTest::getSearch(const V &vec, const T &term, bool prefix, bool useBitVe
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
     return (static_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(&query[0], query.size()),
+        getSearch(std::string_view(&query[0], query.size()),
                   SearchContextParams().useBitVector(useBitVector));
 }
 

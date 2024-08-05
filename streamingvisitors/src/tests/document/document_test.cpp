@@ -97,7 +97,7 @@ TEST(DocumentTest, string_field_id_t_map)
         t.add("b");
         t.add("a");
         os << t;
-        EXPECT_EQ(vespalib::string("a = 1\nb = 0\n"), os.str());
+        EXPECT_EQ(vespalib::string("a = 1\nb = 0\n"), os.view());
     }
     
 }

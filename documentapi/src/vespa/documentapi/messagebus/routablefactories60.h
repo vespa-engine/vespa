@@ -134,7 +134,7 @@ public:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
 
-        virtual bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const;
+        virtual bool encodeBucketSpace(std::string_view bucketSpace, vespalib::GrowableByteBuffer& buf) const;
         virtual string decodeBucketSpace(document::ByteBuffer&) const;
     public:
         CreateVisitorMessageFactory() noexcept : DocumentMessageFactory() {}
@@ -183,7 +183,7 @@ public:
         bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class GetBucketListMessageFactory : public DocumentMessageFactory {
-        virtual bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const;
+        virtual bool encodeBucketSpace(std::string_view bucketSpace, vespalib::GrowableByteBuffer& buf) const;
         virtual string decodeBucketSpace(document::ByteBuffer&) const;
     protected:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
@@ -273,7 +273,7 @@ public:
         bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class StatBucketMessageFactory : public DocumentMessageFactory {
-        virtual bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const;
+        virtual bool encodeBucketSpace(std::string_view bucketSpace, vespalib::GrowableByteBuffer& buf) const;
         virtual string decodeBucketSpace(document::ByteBuffer&) const;
     protected:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
@@ -394,7 +394,7 @@ public:
 
     static void decodeTasCondition(DocumentMessage & docMsg, document::ByteBuffer & buf);
     static void encodeTasCondition(vespalib::GrowableByteBuffer & buf, const DocumentMessage & docMsg);
-    static void doEncodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf);
+    static void doEncodeBucketSpace(std::string_view bucketSpace, vespalib::GrowableByteBuffer& buf);
     static string doDecodeBucketSpace(document::ByteBuffer&);
 };
 

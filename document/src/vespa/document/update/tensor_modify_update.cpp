@@ -2,7 +2,6 @@
 
 #include "tensor_modify_update.h"
 #include "tensor_partial_update.h"
-#include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -278,8 +277,7 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     if (tensor->isA(FieldValue::Type::TENSOR)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
-        vespalib::string err = make_string("Expected tensor field value, got a '%s' field value",
-                                           tensor->className());
+        vespalib::string err = make_string("Expected tensor field value, got a '%s' field value", tensor->className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());

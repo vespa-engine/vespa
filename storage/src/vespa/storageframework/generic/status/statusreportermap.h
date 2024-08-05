@@ -16,7 +16,7 @@ struct StatusReporter;
 struct StatusReporterMap {
     virtual ~StatusReporterMap() = default;
 
-    virtual const StatusReporter* getStatusReporter(vespalib::stringref id) = 0;
+    virtual const StatusReporter* getStatusReporter(std::string_view id) = 0;
 
     virtual std::vector<const StatusReporter*> getStatusReporters() = 0;
 };

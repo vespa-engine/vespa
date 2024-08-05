@@ -68,8 +68,8 @@ public:
     using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
     using SessionManager = matching::SessionManager;
 public:
-    IDocumentSubDB() { }
-    virtual ~IDocumentSubDB() { }
+    IDocumentSubDB() noexcept { }
+    virtual ~IDocumentSubDB() = default;
     virtual uint32_t getSubDbId() const = 0;
     virtual vespalib::string getName() const = 0;
 
@@ -124,7 +124,7 @@ public:
     virtual void pruneRemovedFields(SerialNum serialNum) = 0;
     virtual void setIndexSchema(const SchemaSP &schema, SerialNum serialNum) = 0;
     virtual search::SearchableStats getSearchableStats() const = 0;
-    virtual std::unique_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
+    virtual std::shared_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
 
     virtual matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const = 0;
     virtual void close() = 0;

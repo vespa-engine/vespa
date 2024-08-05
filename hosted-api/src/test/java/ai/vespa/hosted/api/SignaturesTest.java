@@ -34,28 +34,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SignaturesTest {
 
-    private static final String ecPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
-                                                 "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
-                                                 "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
-                                                 "-----END PUBLIC KEY-----\n";
+    private static final String ecPemPublicKey = """
+                                                 -----BEGIN PUBLIC KEY-----
+                                                 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9
+                                                 z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==
+                                                 -----END PUBLIC KEY-----
+                                                 """;
 
-    private static final String ecPemPrivateKey = "-----BEGIN EC PRIVATE KEY-----\n" +
-                                                  "MHcCAQEEIJUmbIX8YFLHtpRgkwqDDE3igU9RG6JD9cYHWAZii9j7oAoGCCqGSM49\n" +
-                                                  "AwEHoUQDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9z/4jKSTHwbYR8wdsOSrJGVEU\n" +
-                                                  "PbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
-                                                  "-----END EC PRIVATE KEY-----\n";
+    private static final String ecPemPrivateKey = """
+                                                  -----BEGIN EC PRIVATE KEY-----
+                                                  MHcCAQEEIJUmbIX8YFLHtpRgkwqDDE3igU9RG6JD9cYHWAZii9j7oAoGCCqGSM49
+                                                  AwEHoUQDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9z/4jKSTHwbYR8wdsOSrJGVEU
+                                                  PbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==
+                                                  -----END EC PRIVATE KEY-----
+                                                  """;
 
-    private static final String otherEcPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
-                                                      "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\n" +
-                                                      "pDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\n" +
-                                                      "-----END PUBLIC KEY-----\n";
+    private static final String otherEcPemPublicKey = """
+                                                      -----BEGIN PUBLIC KEY-----
+                                                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE
+                                                      pDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==
+                                                      -----END PUBLIC KEY-----
+                                                      """;
 
-    private static final byte[] message = ("Hello,\n" +
-                                           "\n" +
-                                           "this is a secret message.\n" +
-                                           "\n" +
-                                           "Yours truly,\n" +
-                                           "∠( ᐛ 」∠)＿").getBytes(UTF_8);
+    private static final byte[] message = ("""
+                                           Hello,
+
+                                           this is a secret message.
+
+                                           Yours truly,
+                                           ∠( ᐛ 」∠)＿""").getBytes(UTF_8);
 
     @Test
     void testHashing() throws Exception {

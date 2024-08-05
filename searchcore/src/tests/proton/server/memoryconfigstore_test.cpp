@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for memoryconfigstore.
 
-#include <vespa/log/log.h>
-LOG_SETUP("memoryconfigstore_test");
-
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
@@ -106,5 +103,3 @@ TEST("require that MemoryConfigStores preserves state of "
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

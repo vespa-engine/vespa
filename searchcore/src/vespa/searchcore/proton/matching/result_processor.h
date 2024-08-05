@@ -41,7 +41,7 @@ public:
         Sort(const Sort &) = delete;
         Sort & operator = (const Sort &) = delete;
         Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss);
-        bool hasSortData() const {
+        bool hasSortData() const noexcept {
             return (sorter == (const FastS_IResultSorter *) &sortSpec);
         }
     };
@@ -51,7 +51,7 @@ public:
      **/
     struct GroupingSource : vespalib::DualMergeDirector::Source {
         GroupingContext *ctx;
-        GroupingSource(GroupingContext *g) : ctx(g) {}
+        explicit GroupingSource(GroupingContext *g) noexcept : ctx(g) {}
         void merge(Source &s) override;
     };
 

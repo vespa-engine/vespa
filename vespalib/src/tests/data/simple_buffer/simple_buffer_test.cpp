@@ -5,7 +5,7 @@
 using namespace vespalib;
 
 void checkMemory(const string &expect, const Memory &mem) {
-    EXPECT_EQUAL(expect, string(mem.data, mem.size));
+    EXPECT_EQUAL(expect, mem.make_stringview());
 }
 
 void checkBuffer(const string &expect, const SimpleBuffer &buf) {

@@ -55,7 +55,7 @@ private:
     void domainSync(FRT_RPCRequest *req);
 
     std::vector<vespalib::string> getDomainNames();
-    DomainSP findDomain(vespalib::stringref name) const;
+    DomainSP findDomain(std::string_view name) const;
     vespalib::string dir()        const { return _baseDir + "/" + _name; }
     vespalib::string domainList() const { return dir() + "/" + _name + ".domains"; }
 

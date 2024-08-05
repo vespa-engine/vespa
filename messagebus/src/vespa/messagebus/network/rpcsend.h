@@ -40,13 +40,13 @@ public:
     public:
         virtual ~Params() {}
         virtual vespalib::Version getVersion() const = 0;
-        virtual vespalib::stringref getProtocol() const = 0;
+        virtual std::string_view getProtocol() const = 0;
         virtual uint32_t getTraceLevel() const = 0;
         virtual bool useRetry() const = 0;
         virtual uint32_t getRetries() const = 0;
         virtual duration getRemainingTime() const = 0;
-        virtual vespalib::stringref getRoute() const = 0;
-        virtual vespalib::stringref getSession() const = 0;
+        virtual std::string_view getRoute() const = 0;
+        virtual std::string_view getSession() const = 0;
         virtual BlobRef getPayload() const = 0;
     };
 protected:
@@ -66,7 +66,7 @@ protected:
 
     void send(RoutingNode &recipient, const vespalib::Version &version,
               const PayLoadFiller & filler, duration timeRemaining);
-    std::unique_ptr<Reply> decode(vespalib::stringref protocol, const vespalib::Version & version,
+    std::unique_ptr<Reply> decode(std::string_view protocol, const vespalib::Version & version,
                                   BlobRef payload, Error & error) const;
     /**
      * Send an error reply for a given request.

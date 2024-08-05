@@ -82,7 +82,7 @@ assert_setup(vespalib::string field_name,
         setup_args.emplace_back(label.value());
     }
     feature_name << ")";
-    f1.setName(feature_name.str());
+    f1.setName(feature_name.view());
     if (attr_type_spec.has_value()) {
         search::fef::indexproperties::type::Attribute::set(f2.indexEnv.getProperties(), field_name, attr_type_spec.value());
     }

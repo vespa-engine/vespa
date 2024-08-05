@@ -1,11 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * \class storage::TestNodeStateUpdater
- * \ingroup common
- *
- * \brief Test implementation of the node state updater.
- */
-
 #pragma once
 
 #include <vespa/storage/common/nodestateupdater.h>
@@ -14,6 +7,7 @@
 namespace storage::lib {
     class ClusterState;
     class ClusterStateBundle;
+    class Distribution;
 }
 namespace storage {
 
@@ -53,6 +47,7 @@ public:
         _current = std::make_shared<lib::NodeState>(state);
     }
 
+    void patch_distribution(std::shared_ptr<const lib::Distribution> distribution);
     void setClusterState(std::shared_ptr<const lib::ClusterState> c);
     void setClusterStateBundle(std::shared_ptr<const lib::ClusterStateBundle> clusterStateBundle);
 

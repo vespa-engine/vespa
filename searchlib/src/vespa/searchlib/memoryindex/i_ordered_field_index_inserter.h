@@ -23,7 +23,7 @@ public:
     /**
      * Set next word to operate on.
      */
-    virtual void setNextWord(const vespalib::stringref word) = 0;
+    virtual void setNextWord(const std::string_view word) = 0;
 
     /**
      * Add (word, docId) tuple with the given features.

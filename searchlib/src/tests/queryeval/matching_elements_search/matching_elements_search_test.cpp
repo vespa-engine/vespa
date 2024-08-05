@@ -44,7 +44,7 @@ std::unique_ptr<MatchingElementsSearch> make_search(AttributeVector &attr, const
     for (const auto &term : terms) {
         dict_entries.emplace_back(dwa->lookup(term, snapshot));
     }
-    auto result = MatchingElementsSearch::create(attr, snapshot, dict_entries);
+    auto result = MatchingElementsSearch::create(attr, attr.getName(), snapshot, dict_entries);
     result->initRange(1, attr.getCommittedDocIdLimit());
     return result;
 }

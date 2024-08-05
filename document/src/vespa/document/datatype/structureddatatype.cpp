@@ -9,12 +9,12 @@ using vespalib::make_string;
 
 namespace document {
 
-StructuredDataType::StructuredDataType(vespalib::stringref name)
+StructuredDataType::StructuredDataType(std::string_view name)
     : DataType(name, createId(name))
 {
 }
 
-StructuredDataType::StructuredDataType(vespalib::stringref name, int dataTypeId)
+StructuredDataType::StructuredDataType(std::string_view name, int dataTypeId)
     : DataType(name, dataTypeId)
 {
 }
@@ -24,7 +24,7 @@ bool StructuredDataType::equals(const DataType &other) const noexcept {
 }
 
 namespace {
-uint32_t crappyJavaStringHash(vespalib::stringref value) {
+uint32_t crappyJavaStringHash(std::string_view value) {
     uint32_t h = 0;
     for (uint32_t i = 0; i < value.size(); ++i) {
         h = 31 * h + value[i];
@@ -33,7 +33,7 @@ uint32_t crappyJavaStringHash(vespalib::stringref value) {
 }
 }  // namespace
 
-int32_t StructuredDataType::createId(vespalib::stringref name)
+int32_t StructuredDataType::createId(std::string_view name)
 {
     if (name == "document") {
         return 8;
@@ -48,19 +48,19 @@ int32_t StructuredDataType::createId(vespalib::stringref name)
         memcpy(buf, name.data(), name.size());
         buf[name.size()] = '.';
         buf[name.size() + 1] = '0';
-        return crappyJavaStringHash(vespalib::stringref(buf, name.size() + 2));
+        return crappyJavaStringHash(std::string_view(buf, name.size() + 2));
     } else {
         vespalib::asciistream ost;
         ost << name << ".0";  // Hardcode version 0 (version is not supported).
-        return crappyJavaStringHash(ost.str());
+        return crappyJavaStringHash(ost.view());
     }
 }
 
 void
-StructuredDataType::onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const
+StructuredDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const
 {
-    vespalib::stringref currFieldName(remainFieldName);
-    vespalib::stringref subFieldName;
+    std::string_view currFieldName(remainFieldName);
+    std::string_view subFieldName;
 
     for (uint32_t i = 0; i < remainFieldName.size(); i++) {
         if (remainFieldName[i] == '.') {
@@ -82,9 +82,10 @@ StructuredDataType::onBuildFieldPath(FieldPath & path, vespalib::stringref remai
 
         path.insert(path.begin(), std::make_unique<FieldPathEntry>(fp));
     } else {
-        throw FieldNotFoundException(currFieldName, make_string("Invalid field path '%s', no field named '%s'",
-                                                                vespalib::string(remainFieldName).c_str(),
-                                                                vespalib::string(currFieldName).c_str()));
+        throw FieldNotFoundException(vespalib::string(currFieldName),
+                                     make_string("Invalid field path '%s', no field named '%s'",
+                                                 vespalib::string(remainFieldName).c_str(),
+                                                 vespalib::string(currFieldName).c_str()));
     }
 }
 

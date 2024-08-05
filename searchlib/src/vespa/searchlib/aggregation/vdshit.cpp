@@ -17,6 +17,8 @@ namespace {
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, VdsHit, Hit);
 
+VdsHit::VdsHit(const VdsHit &) = default;
+VdsHit & VdsHit::operator=(const VdsHit &) = default;
 VdsHit::~VdsHit() = default;
 
 Serializer &

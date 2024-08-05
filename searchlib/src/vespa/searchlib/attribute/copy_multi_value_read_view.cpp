@@ -30,7 +30,7 @@ CopyMultiValueReadView<MultiValueType, RawMultiValueType>::get_values(uint32_t d
         *dst = multivalue::ValueBuilder<MultiValueType>::build(v, multivalue::get_weight(src));
         ++dst;
     }
-    return vespalib::ConstArrayRef(_copy.data(), raw.size());
+    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
 }
 
 using multivalue::WeightedValue;

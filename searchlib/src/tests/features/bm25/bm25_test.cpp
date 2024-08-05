@@ -175,7 +175,7 @@ struct Bm25ExecutorTest : public ::testing::Test {
     }
 
     double idf(uint32_t matching_doc_count) const {
-        return Bm25Executor::calculate_inverse_document_frequency(matching_doc_count, total_doc_count);
+        return Bm25Executor::calculate_inverse_document_frequency({matching_doc_count, total_doc_count});
     }
 
     feature_t score(feature_t num_occs, feature_t field_length, double inverse_doc_freq) const {
@@ -226,11 +226,17 @@ TEST_F(Bm25ExecutorTest, uses_average_field_length_from_shared_state_if_found)
 TEST_F(Bm25ExecutorTest, calculates_inverse_document_frequency)
 {
     EXPECT_DOUBLE_EQ(std::log(1 + (99 + 0.5) / (1 + 0.5)),
-                     Bm25Executor::calculate_inverse_document_frequency(1, 100));
+                     Bm25Executor::calculate_inverse_document_frequency({1, 100}));
     EXPECT_DOUBLE_EQ(std::log(1 + (60 + 0.5) / (40 + 0.5)),
-                     Bm25Executor::calculate_inverse_document_frequency(40, 100));
+                     Bm25Executor::calculate_inverse_document_frequency({40, 100}));
     EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (100 + 0.5)),
-                     Bm25Executor::calculate_inverse_document_frequency(100, 100));
+                     Bm25Executor::calculate_inverse_document_frequency({100, 100}));
+    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (100 + 0.5)),
+                    Bm25Executor::calculate_inverse_document_frequency({200, 100}));
+    EXPECT_DOUBLE_EQ(std::log(1 + (99 + 0.5) / (1 + 0.5)),
+                     Bm25Executor::calculate_inverse_document_frequency({0, 100}));
+    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (1 + 0.5)),
+                     Bm25Executor::calculate_inverse_document_frequency({0, 0}));
 }
 
 TEST_F(Bm25ExecutorTest, k1_param_can_be_overriden)

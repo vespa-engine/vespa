@@ -24,12 +24,12 @@ using namespace fieldvalue;
 namespace {
 
 std::unique_ptr<select::Node>
-parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
+parseDocumentSelection(std::string_view query, const DocumentTypeRepo& repo)
 {
     BucketIdFactory factory;
     try {
         select::Parser parser(repo, factory);
-        return parser.parse(query);
+        return parser.parse(std::string(query));
     } catch (const ParsingFailedException &e) {
         LOG(warning, "Failed to parse selection for field path update: %s", e.getMessage().c_str());
         return std::make_unique<select::Constant>(false);
@@ -47,7 +47,7 @@ FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type) noexcept
 FieldPathUpdate::FieldPathUpdate(const FieldPathUpdate &) = default;
 FieldPathUpdate & FieldPathUpdate::operator =(const FieldPathUpdate &) = default;
 
-FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type, stringref fieldPath, stringref whereClause)
+FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type, string_view fieldPath, string_view whereClause)
     : _type(type),
       _originalFieldPath(fieldPath),
       _originalWhereClause(whereClause)
@@ -115,13 +115,13 @@ FieldPathUpdate::getResultingDataType(const FieldPath & path) const
     return path.back().getDataType();
 }
 
-vespalib::stringref
+std::string_view
 FieldPathUpdate::getString(nbostream & stream)
 {
     uint32_t sz(0);
     stream >> sz;
 
-    vespalib::stringref s(stream.peek(), sz - 1);
+    std::string_view s(stream.peek(), sz - 1);
     stream.adjustReadPos(sz);
     return s;
 }

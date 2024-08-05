@@ -16,7 +16,7 @@ public:
     DECLARE_NBO_SERIALIZE;
 
     InterpolatedDocumentFieldLookupNode() noexcept;
-    InterpolatedDocumentFieldLookupNode(vespalib::stringref name, std::unique_ptr<ExpressionNode> arg);
+    InterpolatedDocumentFieldLookupNode(std::string_view name, std::unique_ptr<ExpressionNode> arg);
     InterpolatedDocumentFieldLookupNode(const InterpolatedDocumentFieldLookupNode& rhs);
     ~InterpolatedDocumentFieldLookupNode() override;
     InterpolatedDocumentFieldLookupNode& operator=(const InterpolatedDocumentFieldLookupNode &rhs);

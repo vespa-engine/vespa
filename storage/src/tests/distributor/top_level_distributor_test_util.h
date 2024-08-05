@@ -168,7 +168,7 @@ protected:
     MessageSenderImpl _message_sender;
     uint32_t _num_distributor_stripes;
 
-    void enable_distributor_cluster_state(vespalib::stringref state, bool has_bucket_ownership_transfer = false);
+    void enable_distributor_cluster_state(std::string_view state, bool has_bucket_ownership_transfer = false);
     void enable_distributor_cluster_state(const lib::ClusterStateBundle& state);
 };
 

@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for tensor_fieldvalue.
 
-#include <vespa/log/log.h>
-LOG_SETUP("fieldvalue_test");
-
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
@@ -12,6 +9,10 @@ LOG_SETUP("fieldvalue_test");
 #include <vespa/eval/eval/value.h>
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP("fieldvalue_test");
 
 using namespace document;
 using vespalib::eval::SimpleValue;

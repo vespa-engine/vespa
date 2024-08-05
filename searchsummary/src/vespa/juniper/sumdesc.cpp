@@ -6,6 +6,7 @@
 #include "Matcher.h"
 #include "appender.h"
 #include <vespa/fastlib/text/unicodeutil.h>
+#include <cctype>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -40,7 +41,7 @@ bool wordchar(const unsigned char* s)
         ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
         return Fast_UnicodeUtil::IsWordChar(u);
     } else {
-        return isalnum(c);
+        return std::isalnum(c);
     }
 }
 
@@ -52,7 +53,7 @@ bool wordchar_or_il_ann_char(const unsigned char* s, char32_t annotation_char)
         return Fast_UnicodeUtil::IsWordChar(u) ||
             static_cast<char32_t>(u) == annotation_char;
     } else {
-        return isalnum(c);
+        return std::isalnum(c);
     }
 }
 
@@ -73,7 +74,7 @@ bool nonwordchar(const unsigned char* s)
         ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
         return !Fast_UnicodeUtil::IsWordChar(u);
     } else {
-        return !isalnum(c);
+        return !std::isalnum(c);
     }
 }
 

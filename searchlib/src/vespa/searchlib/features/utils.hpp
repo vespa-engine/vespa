@@ -9,7 +9,7 @@
 namespace search::features::util {
 
 template <typename T>
-T strToNum(vespalib::stringref str)
+T strToNum(std::string_view str)
 {
     vespalib::asciistream iss(str);
     T retval = 0;

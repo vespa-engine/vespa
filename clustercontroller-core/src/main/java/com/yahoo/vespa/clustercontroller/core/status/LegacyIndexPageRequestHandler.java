@@ -109,6 +109,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     public void writeHtmlState(StateVersionTracker stateVersionTracker, StringBuilder sb) {
         sb.append("<h2 id=\"clusterstates\">Cluster states</h2>\n");
         writeClusterStates(sb, stateVersionTracker.getVersionedClusterStateBundle());
+        writeDistributionConfig(sb, stateVersionTracker.getVersionedClusterStateBundle());
 
         if ( ! stateVersionTracker.getClusterStateHistory().isEmpty()) {
             TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -127,10 +128,25 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     }
 
     private static void writeClusterStates(StringBuilder sb, ClusterStateBundle clusterStates) {
-        sb.append("<p>Baseline cluster state:<br><code>").append(clusterStates.getBaselineClusterState().toString()).append("</code></p>\n");
+        sb.append("<p>Baseline cluster state:<br><code>")
+          .append(escaped(clusterStates.getBaselineClusterState().toString()))
+          .append("</code></p>\n");
         clusterStates.getDerivedBucketSpaceStates().forEach((bucketSpace, state) -> {
-            sb.append("<p>" + bucketSpace + " cluster state:<br><code>").append(state.getClusterState().toString()).append("</code></p>\n");
+            sb.append("<p>").append(bucketSpace).append(" cluster state:<br><code>")
+              .append(escaped(state.getClusterState().toString()))
+              .append("</code></p>\n");
         });
+    }
+
+    private static void writeDistributionConfig(StringBuilder sb, ClusterStateBundle stateBundle) {
+        // If distribution config is not pushed by the cluster controller, the state bundle will
+        // not contain it. To avoid confusing output, simply avoid printing anything in this case.
+        if (stateBundle.distributionConfig().isEmpty()) {
+            return;
+        }
+        sb.append("<h3 id=\"distribution-config\">Current distribution config</h3>\n<p>")
+          .append(escaped(stateBundle.distributionConfig().get().highLevelDescription()))
+          .append("</p>\n");
     }
 
     private void writeClusterStateEntry(ClusterStateHistoryEntry entry, StringBuilder sb, TimeZone tz) {
@@ -208,7 +224,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         if (state.clusterFeedIsBlocked()) { // Implies FeedBlock != null
             table.appendRaw("<h3 style=\"color: red\">Cluster feeding is blocked!</h3>\n");
             table.appendRaw(String.format("<p>Summary: <strong>%s</strong></p>\n",
-                                          HtmlTable.escape(state.getFeedBlockOrNull().getDescription())));
+                                          escaped(state.getFeedBlockOrNull().getDescription())));
         }
     }
 
@@ -266,15 +282,15 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         sb.append("<h1>Current config</h1>\n")
           .append("<table border=\"1\" cellspacing=\"0\"><tr><th>Property</th><th>Value</th></tr>\n");
 
-        sb.append("<tr><td><nobr>Cluster name</nobr></td><td align=\"right\">").append(options.clusterName()).append("</td></tr>");
+        sb.append("<tr><td><nobr>Cluster name</nobr></td><td align=\"right\">").append(escaped(options.clusterName())).append("</td></tr>");
         sb.append("<tr><td><nobr>Fleet controller index</nobr></td><td align=\"right\">").append(options.fleetControllerIndex()).append("/").append(options.fleetControllerCount()).append("</td></tr>");
 
-        sb.append("<tr><td><nobr>Slobrok connection spec</nobr></td><td align=\"right\">").append(slobrokspecs).append("</td></tr>");
+        sb.append("<tr><td><nobr>Slobrok connection spec</nobr></td><td align=\"right\">").append(escaped(slobrokspecs)).append("</td></tr>");
         sb.append("<tr><td><nobr>RPC port</nobr></td><td align=\"right\">").append(options.rpcPort() == 0 ? "Pick random available" : options.rpcPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>HTTP port</nobr></td><td align=\"right\">").append(options.httpPort() == 0 ? "Pick random available" : options.httpPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>Master cooldown period</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.masterZooKeeperCooldownPeriod())).append("</td></tr>");
         String zooKeeperAddress = splitZooKeeperAddress(options.zooKeeperServerAddress());
-        sb.append("<tr><td><nobr>Zookeeper server address</nobr></td><td align=\"right\">").append(zooKeeperAddress).append("</td></tr>");
+        sb.append("<tr><td><nobr>Zookeeper server address</nobr></td><td align=\"right\">").append(escaped(zooKeeperAddress)).append("</td></tr>");
         sb.append("<tr><td><nobr>Zookeeper session timeout</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.zooKeeperSessionTimeout())).append("</td></tr>");
 
         sb.append("<tr><td><nobr>Cycle wait time</nobr></td><td align=\"right\">").append(options.cycleWaitTime()).append(" ms</td></tr>");
@@ -307,11 +323,15 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
           .append(options.clusterFeedBlockEnabled()).append("</td></tr>");
         sb.append("<tr><td><nobr>Feed block limits</nobr></td><td align=\"right\">")
           .append(options.clusterFeedBlockLimit().entrySet().stream()
-                                       .map(kv -> String.format("%s: %.2f%%", kv.getKey(), kv.getValue() * 100.0))
+                                       .map(kv -> String.format("%s: %.2f%%", escaped(kv.getKey()), kv.getValue() * 100.0))
                                        .sorted()
                                        .collect(Collectors.joining("<br/>"))).append("</td></tr>");
 
         sb.append("</table>");
+    }
+
+    private static String escaped(String input) {
+        return HtmlTable.escape(input);
     }
 
     private static String splitZooKeeperAddress(String s) {

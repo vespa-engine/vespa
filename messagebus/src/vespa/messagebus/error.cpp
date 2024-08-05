@@ -15,7 +15,7 @@ Error::Error()
 
 Error::~Error() = default;
 
-Error::Error(uint32_t c, vespalib::stringref m, vespalib::stringref s)
+Error::Error(uint32_t c, std::string_view m, std::string_view s)
     : _code(c),
       _msg(m),
       _service(s)

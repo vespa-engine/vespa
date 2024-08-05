@@ -3,7 +3,6 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.producer.AnyConfigProducer;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 
 import java.util.Set;

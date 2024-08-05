@@ -223,7 +223,7 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
         }
     }
     shared_state_key_builder << "]";
-    _shared_state_key = shared_state_key_builder.str();
+    _shared_state_key = shared_state_key_builder.view();
 
     describeOutput("score", "The native proximity score");
     return true;

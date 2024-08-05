@@ -36,7 +36,7 @@ public:
         : _key(key)
     {
     }
-    vespalib::stringref asString() const override { return ""; }
+    std::string_view asString() const override { return ""; }
     bool asInteger(int64_t &value) const override { value=_key; return true; }
     
 };

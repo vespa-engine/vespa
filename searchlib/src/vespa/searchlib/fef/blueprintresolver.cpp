@@ -136,7 +136,7 @@ struct Compiler : public Blueprint::DependencyHandler {
             auto trace = make_trace(skip_self);
             vespalib::string msg;
             msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
-            msg.chomp();
+            vespalib::chomp(msg);
             errors.emplace_back(msg);
         }
         probe_stack();
@@ -283,7 +283,7 @@ BlueprintResolver::describe_feature(const vespalib::string &name)
 }
 
 void
-BlueprintResolver::addSeed(vespalib::stringref feature)
+BlueprintResolver::addSeed(std::string_view feature)
 {
     _seeds.emplace_back(feature);
 }

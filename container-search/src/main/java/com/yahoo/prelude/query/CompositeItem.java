@@ -363,12 +363,13 @@ public abstract class CompositeItem extends Item {
 
         @Override
         public void remove() {
-            owner.removing(current);
             wrapped.remove();
+            owner.removing(current);
         }
 
         @Override
         public void set(Item newItem) {
+            if (newItem == current) return;
             owner.removing(current);
             owner.adding(newItem);
             current = newItem;

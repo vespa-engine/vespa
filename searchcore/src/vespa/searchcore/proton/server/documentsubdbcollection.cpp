@@ -108,7 +108,7 @@ DocumentSubDBCollection::~DocumentSubDBCollection()
 void
 DocumentSubDBCollection::createRetrievers()
 {
-    RetrieversSP retrievers(std::make_shared<std::vector<IDocumentRetriever::SP>>());
+    RetrieversSP retrievers(std::make_shared<std::vector<std::shared_ptr<IDocumentRetriever>>>());
     retrievers->reserve(_subDBs.size());
     for (auto subDb : _subDBs) {
         retrievers->emplace_back(subDb->getDocumentRetriever());

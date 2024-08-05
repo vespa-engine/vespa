@@ -19,11 +19,11 @@ std::mutex _GlobalDirtyICUThreadSafeLock;
 }
 
 BlobConverter::UP
-UcaConverterFactory::create(stringref local, stringref strength) const {
+UcaConverterFactory::create(string_view local, string_view strength) const {
     return std::make_unique<UcaConverter>(local, strength);
 }
 
-UcaConverter::UcaConverter(vespalib::stringref locale, vespalib::stringref strength) :
+UcaConverter::UcaConverter(std::string_view locale, std::string_view strength) :
     _buffer(),
     _u16Buffer(128),
     _collator()

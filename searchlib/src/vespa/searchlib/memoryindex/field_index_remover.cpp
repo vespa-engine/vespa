@@ -26,7 +26,7 @@ FieldIndexRemover::remove(uint32_t docId, IFieldIndexRemoveListener &listener)
     Iterator itr = _store.get(docId);
     if (itr.valid()) {
         for (; itr.valid(); ++itr) {
-            vespalib::stringref word = _wordStore.getWord(itr.wordRef());
+            std::string_view word = _wordStore.getWord(itr.wordRef());
             listener.remove(word, docId);
         }
         _store.remove(docId);

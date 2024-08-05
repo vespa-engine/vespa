@@ -125,7 +125,7 @@ PayloadConverter::encodeValue(const Inspector & value)
             encodeBool(value.asBool());
             break;
     }
-    _lines.push_back(_buf.str());
+    _lines.emplace_back(_buf.view());
     _buf.clear();
 }
 

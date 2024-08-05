@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vdslib/state/state.h>
-
 #include <vespa/vespalib/util/exceptions.h>
+#include <ostream>
 
 namespace storage::lib {
 
 const State&
-State::get(vespalib::stringref serialized)
+State::get(std::string_view serialized)
 {
     if (serialized.size() == 1) switch(serialized[0]) {
         case '-': return UNKNOWN;
@@ -23,7 +23,7 @@ State::get(vespalib::stringref serialized)
             "Unknown state " + serialized + " given.", VESPA_STRLOC);
 }
 
-State::State(vespalib::stringref name, vespalib::stringref serialized,
+State::State(std::string_view name, std::string_view serialized,
              uint8_t rank,
              bool validDistributorReported, bool validStorageReported,
              bool validDistributorWanted, bool validStorageWanted,

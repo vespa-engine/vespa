@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/singleexecutor.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <condition_variable>
 #include <unistd.h>
@@ -71,7 +72,7 @@ public:
     }
 };
 
-vespalib::stringref ZERO("0");
+std::string_view ZERO("0");
 
 TEST_F("testExecute", Fixture) {
     std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
@@ -158,7 +159,7 @@ TEST_F("require that task with same string component id are serialized", Fixture
 namespace {
 
 int
-detectSerializeFailure(Fixture &f, vespalib::stringref altComponentId, int tryLimit)
+detectSerializeFailure(Fixture &f, std::string_view altComponentId, int tryLimit)
 {
     int tryCnt = 0;
     for (tryCnt = 0; tryCnt < tryLimit; ++tryCnt) {

@@ -42,7 +42,7 @@ public:
         Result & operator=(Result &&) = default;
         ~Result();
         Result & addParameter(const Parameter & param) { _params.push_back(param); return *this; }
-        Result & setError(vespalib::stringref str) {
+        Result & setError(std::string_view str) {
             _errorStr = str;
             _params.clear();
             _valid = false;

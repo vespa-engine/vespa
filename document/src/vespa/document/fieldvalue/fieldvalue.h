@@ -161,7 +161,7 @@ public:
     virtual void printXml(XmlOutputStream& out) const = 0;
 
     // Utility functions to set commonly used value types.
-    virtual FieldValue& operator=(vespalib::stringref);
+    virtual FieldValue& operator=(std::string_view);
 
     Type type() const noexcept { return _type; }
     bool isA(Type type) const noexcept { return type == _type; }

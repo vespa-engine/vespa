@@ -4,13 +4,14 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/arraysize.h>
+#include <ostream>
 
 namespace search::index::schema {
 
 using config::InvalidConfigException;
 
 DataType
-dataTypeFromName(vespalib::stringref name) {
+dataTypeFromName(std::string_view name) {
     if      (name == "BOOL")   { return DataType::BOOL; }
     else if (name == "UINT2")   { return DataType::UINT2; }
     else if (name == "UINT4")   { return DataType::UINT4; }
@@ -51,7 +52,7 @@ const char *datatype_str[] = { "BOOL",
 vespalib::string
 getTypeName(DataType type) {
     size_t typeAsNum = static_cast<size_t>(type);
-    if (typeAsNum > vespalib::arraysize(datatype_str)) {
+    if (typeAsNum >= vespalib::arraysize(datatype_str)) {
         vespalib::asciistream ost;
         ost << "UNKNOWN(" << typeAsNum << ")";
         return ost.str();
@@ -67,7 +68,7 @@ operator<<(std::ostream &os, const DataType &type)
 }
 
 CollectionType
-collectionTypeFromName(vespalib::stringref name) {
+collectionTypeFromName(std::string_view name) {
     if (name == "SINGLE") { return CollectionType::SINGLE; }
     else if (name == "ARRAY") { return CollectionType::ARRAY; }
     else if (name == "WEIGHTEDSET") { return CollectionType::WEIGHTEDSET; }
@@ -83,7 +84,7 @@ const char *collectiontype_str[] = { "SINGLE",
 vespalib::string
 getTypeName(CollectionType type) {
     size_t typeAsNum = static_cast<size_t>(type);
-    if (typeAsNum > vespalib::arraysize(collectiontype_str)) {
+    if (typeAsNum >= vespalib::arraysize(collectiontype_str)) {
         vespalib::asciistream ost;
         ost << "UNKNOWN(" << typeAsNum << ")";
         return ost.str();

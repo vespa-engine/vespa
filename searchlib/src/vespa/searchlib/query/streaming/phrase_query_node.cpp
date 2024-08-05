@@ -2,12 +2,11 @@
 
 #include "phrase_query_node.h"
 #include "hit_iterator_pack.h"
-#include <cassert>
 
 namespace search::streaming {
 
-PhraseQueryNode::PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, uint32_t num_terms)
-    : MultiTerm(std::move(result_base), index, num_terms)
+PhraseQueryNode::PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms)
+    : MultiTerm(std::move(result_base), std::move(index), num_terms)
 {
 }
 

@@ -126,10 +126,10 @@ class JettyCluster implements Cluster {
                         else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
                     }
                 });
-            } catch (Exception e) {
-                log.log(Level.FINE, e, () -> "Failed to dispatch request: " + e.getMessage());
+            } catch (Throwable t) {
+                log.log(t instanceof Exception ? Level.FINE : Level.WARNING, "Failed to dispatch request: " + req, t.getMessage());
                 endpoint.inflight.decrementAndGet();
-                vessel.completeExceptionally(e);
+                vessel.completeExceptionally(t);
             }
         });
     }

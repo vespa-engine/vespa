@@ -15,7 +15,7 @@ namespace vespalib {
 struct StateExplorer {
     virtual void get_state(const slime::Inserter &inserter, bool full) const = 0;
     virtual std::vector<vespalib::string> get_children_names() const;
-    virtual std::unique_ptr<StateExplorer> get_child(vespalib::stringref name) const;
+    virtual std::unique_ptr<StateExplorer> get_child(std::string_view name) const;
     virtual ~StateExplorer();
 };
 

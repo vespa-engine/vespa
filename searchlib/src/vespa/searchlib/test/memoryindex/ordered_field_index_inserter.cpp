@@ -14,7 +14,7 @@ OrderedFieldIndexInserter::OrderedFieldIndexInserter(OrderedFieldIndexInserterBa
 OrderedFieldIndexInserter::~OrderedFieldIndexInserter() = default;
 
 void
-OrderedFieldIndexInserter::setNextWord(const vespalib::stringref word)
+OrderedFieldIndexInserter::setNextWord(const std::string_view word)
 {
     _backend.setNextWord(word);
 }

@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cctype>
 #include <charconv>
 #ifdef __linux__
 #include <malloc.h>
@@ -26,7 +27,7 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
 struct MyError : public std::exception {
-    explicit MyError(vespalib::stringref m) :
+    explicit MyError(std::string_view m) :
         std::exception(),
         msg(m)
     {}
@@ -42,16 +43,16 @@ bool read_line(FilePointer &file, vespalib::string &line) {
         return false;
     }
     line = line_buffer;
-    while (!line.empty() && isspace(line[line.size() - 1])) {
+    while (!line.empty() && std::isspace(static_cast<unsigned char>(line[line.size() - 1]))) {
         line.pop_back();
     }
     return true;
 }
 
 void extract(const vespalib::string &str, const vespalib::string &prefix, vespalib::string &dst) {
-    if (starts_with(str, prefix)) {
+    if (str.starts_with(prefix)) {
         size_t pos = prefix.size();
-        while ((str.size() > pos) && isspace(str[pos])) {
+        while ((str.size() > pos) && std::isspace(static_cast<unsigned char>(str[pos]))) {
             ++pos;
         }
         dst = str.substr(pos);

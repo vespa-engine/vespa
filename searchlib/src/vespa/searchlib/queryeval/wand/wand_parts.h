@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/fef/document_frequency.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/features/bm25_feature.h>
@@ -448,7 +449,7 @@ public:
     Bm25TermFrequencyScorer(uint32_t num_docs, float range) noexcept
         : _num_docs(num_docs),
           _range(range),
-          _max_idf(Bm25Executor::calculate_inverse_document_frequency(1, _num_docs))
+          _max_idf(Bm25Executor::calculate_inverse_document_frequency({1, _num_docs}))
     { }
     double apply_range(double idf) const noexcept {
         return (1.0 - _range)*_max_idf + _range * idf;
@@ -456,7 +457,7 @@ public:
     // weight * scaled_bm25_idf, scaled to fixedpoint
     score_t calculateMaxScore(double estHits, double weight) const noexcept {
         return score_t(TermFrequencyScorer_TERM_SCORE_FACTOR * weight *
-                       apply_range(Bm25Executor::calculate_inverse_document_frequency(estHits, _num_docs)));
+                       apply_range(Bm25Executor::calculate_inverse_document_frequency({static_cast<uint64_t>(estHits), _num_docs})));
     }
 
     score_t calculateMaxScore(const Term &term) const noexcept {

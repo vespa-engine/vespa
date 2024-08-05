@@ -4,7 +4,6 @@ package com.yahoo.search.yql;
 import com.google.common.base.Charsets;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -163,9 +162,40 @@ public class MinimalQueryInserterTestCase {
     void testUserLanguageIsDetectedWithUserQuery() {
         String japaneseWord = "\u30ab\u30bf\u30ab\u30ca";
         Query query = new Query("search/?query=" + encode(japaneseWord) + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
-        execution.search(query);
+        Result result = execution.search(query);
+        assertNull(result.hits().getError());
         assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
         assertEquals("AND title:madonna (WEAKAND(100) " + japaneseWord + ")", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testUserLanguageIsDetectedWithUserQueryEnglish() {
+        Query query = new Query("search/?query=executions&yql=" +
+                                encode("select * from sources where userQuery()"));
+        Result result = execution.search(query);
+        assertNull(result.hits().getError());
+        assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
+        assertEquals("WEAKAND(100) executions", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testUserLanguageIsDetectedWithUserQueryEnglishAlsoWithNonEnglishStructuredQuery() {
+        Query query = new Query("search/?query=executions&yql=" +
+                                encode("select * from sources * where attribute_key contains \"我能吞下玻璃而不伤身体。\" AND userQuery()"));
+        Result result = execution.search(query);
+        assertNull(result.hits().getError());
+        assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
+        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND(100) executions)", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testUserLanguageIsDetectedWithUserInputEnglishAlsoWithNonEnglishStructuredQuery() {
+        Query query = new Query("search/?q=executions&yql=" +
+                                encode("select * from sources * where attribute_key contains \"我能吞下玻璃而不伤身体。\" AND userInput(@q)"));
+        Result result = execution.search(query);
+        assertNull(result.hits().getError());
+        assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
+        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND(100) default:executions)", query.getModel().getQueryTree().toString());
     }
 
     @Test

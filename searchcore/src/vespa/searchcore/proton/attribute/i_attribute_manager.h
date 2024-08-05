@@ -87,7 +87,7 @@ struct IAttributeManager : public search::IAttributeManager
      * attributes.  Lifetime should be guaranteed by syncing threads
      * at config changes.
      */
-    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &name) const = 0;
+    virtual search::AttributeVector *getWritableAttribute(std::string_view name) const = 0;
 
     /*
      * Get pointers to all writable attributes.

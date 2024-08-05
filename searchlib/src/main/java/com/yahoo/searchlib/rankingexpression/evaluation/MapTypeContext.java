@@ -32,6 +32,11 @@ public class MapTypeContext implements TypeContext<Reference> {
         return featureTypes.get(reference);
     }
 
+    @Override
+    public String resolveBinding(String argument) {
+        return null;
+    }
+
     /** Returns an unmodifiable map of the bindings in this */
     public Map<Reference, TensorType> bindings() { return Collections.unmodifiableMap(featureTypes); }
 

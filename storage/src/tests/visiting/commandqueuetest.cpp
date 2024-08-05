@@ -16,13 +16,13 @@ namespace storage {
 namespace {
 
 std::shared_ptr<api::CreateVisitorCommand> getCommand(
-        vespalib::stringref name, vespalib::duration timeout,
+        std::string_view name, vespalib::duration timeout,
         uint8_t priority = 0)
 {
     vespalib::asciistream ost;
     ost << name << " t=" << vespalib::count_ms(timeout) << " p=" << static_cast<unsigned int>(priority);
     // Piggyback name in document selection
-    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "", "", ost.str());
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "", "", ost.view());
     cmd->setQueueTimeout(timeout);
     cmd->setPriority(priority);
     return cmd;

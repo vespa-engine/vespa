@@ -11,7 +11,7 @@ namespace proton::matching {
 class RangeLimitMetaInfo {
 public:
     RangeLimitMetaInfo();
-    RangeLimitMetaInfo(vespalib::stringref low, vespalib::stringref high, size_t estimate);
+    RangeLimitMetaInfo(std::string_view low, std::string_view high, size_t estimate);
     ~RangeLimitMetaInfo();
     const vespalib::string & low() const { return _low; }
     const vespalib::string & high() const { return _high; }

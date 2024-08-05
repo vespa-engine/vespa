@@ -20,7 +20,7 @@ class WordDocElementWordPosFeatures;
 class FieldIndexBuilder {
 public:
     virtual ~FieldIndexBuilder() = default;
-    virtual void startWord(vespalib::stringref word) = 0;
+    virtual void startWord(std::string_view word) = 0;
     virtual void endWord() = 0;
     virtual void add_document(const DocIdAndFeatures &features) = 0;
 };

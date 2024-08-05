@@ -136,7 +136,7 @@ public:
      * startOffset represents file position / accNumDocs after word.
      */
     void
-    addL6Skip(vespalib::stringref word,
+    addL6Skip(std::string_view word,
               const StartOffset &startOffset,
               uint64_t wordNum,
               uint64_t pageNum,
@@ -148,7 +148,7 @@ public:
      * startOffset represents file position / accNumDocs at start of entry.
      */
     void
-    addOverflowCounts(vespalib::stringref word,
+    addOverflowCounts(std::string_view word,
                       const Counts &counts,
                       const StartOffset &startOffset,
                       uint64_t wordNum);
@@ -246,7 +246,7 @@ public:
     void flushPage();
     void flush();
     void resetPage();
-    void addL3Skip(vespalib::stringref word, const StartOffset &startOffset, uint64_t wordNum, uint64_t pageNum);
+    void addL3Skip(std::string_view word, const StartOffset &startOffset, uint64_t wordNum, uint64_t pageNum);
     void addL4Skip(size_t &lcp);
     void addL5Skip(size_t &lcp);
 
@@ -258,7 +258,7 @@ public:
      *
      * startOffset represents file position / accNumDocs at start of entry.
      */
-    void addOverflowCounts(vespalib::stringref word, const Counts &counts, const StartOffset &startOffset, uint64_t wordNum)
+    void addOverflowCounts(std::string_view word, const Counts &counts, const StartOffset &startOffset, uint64_t wordNum)
     {
         _ssWriter.addOverflowCounts(word, counts, startOffset, wordNum);
     }
@@ -348,7 +348,7 @@ private:
     EC &_pe;
 
     void
-    addOverflowCounts(vespalib::stringref word,
+    addOverflowCounts(std::string_view word,
                       const Counts &counts);
 
 public:
@@ -359,7 +359,7 @@ public:
     void flushPage();
     void flush();
     void resetPage();
-    void addCounts(vespalib::stringref word, const Counts &counts);
+    void addCounts(std::string_view word, const Counts &counts);
     void addL1Skip(size_t &lcp);
     void addL2Skip(size_t &lcp);
     bool empty() const { return _countsEntries == 0;}
@@ -423,7 +423,7 @@ public:
         {
         }
 
-        L7Entry(vespalib::stringref l7Word,
+        L7Entry(std::string_view l7Word,
                 const StartOffset         &l7StartOffset,
                 uint64_t l7WordNum,
                 uint64_t l6Offset,
@@ -440,7 +440,7 @@ public:
         {
         }
 
-        bool operator<(vespalib::stringref word) const {
+        bool operator<(std::string_view word) const {
             return _l7Word < word;
         }
     };
@@ -498,7 +498,7 @@ public:
     ~PageDict4SSReader();
 
     void setup(DC &ssd);
-    PageDict4SSLookupRes lookup(vespalib::stringref key);
+    PageDict4SSLookupRes lookup(std::string_view key);
     PageDict4SSLookupRes lookupOverflow(uint64_t wordNum) const;
     const DC & getSSD() const { return _ssd; }
 };
@@ -525,9 +525,9 @@ public:
     void
     lookup(const SSReader &ssReader,
            const void *sparsePage,
-           vespalib::stringref key,
-           vespalib::stringref l6Word,
-           vespalib::stringref lastSPWord,
+           std::string_view key,
+           std::string_view l6Word,
+           std::string_view lastSPWord,
            const StartOffset         &l6StartOffset,
            uint64_t l6WordNum,
            uint64_t lowestPageNum);
@@ -555,9 +555,9 @@ public:
     bool
     lookup(const SSReader &ssReader,
            const void *page,
-           vespalib::stringref key,
-           vespalib::stringref l3Word,
-           vespalib::stringref lastPWord,
+           std::string_view key,
+           std::string_view l3Word,
+           std::string_view lastPWord,
            const StartOffset &l3StartOffset,
            uint64_t l3WordNum);
 };

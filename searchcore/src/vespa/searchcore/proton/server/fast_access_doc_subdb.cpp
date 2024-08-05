@@ -201,8 +201,7 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
       _fastAccessAttributesOnly(cfg._fastAccessAttributesOnly),
       _initAttrMgr(),
       _fastAccessFeedView(),
-      _configurer(_fastAccessFeedView,
-                  getSubDbName()),
+      _configurer(_fastAccessFeedView, getSubDbName()),
       _subAttributeMetrics(ctx._subAttributeMetrics),
       _addMetrics(cfg._addMetrics),
       _metricsWireService(ctx._metricsWireService),
@@ -306,12 +305,12 @@ FastAccessDocSubDB::getAttributeManager() const
     return extractAttributeManager(_fastAccessFeedView.get());
 }
 
-IDocumentRetriever::UP
+std::shared_ptr<IDocumentRetriever>
 FastAccessDocSubDB::getDocumentRetriever()
 {
     FastAccessFeedView::SP feedView = _fastAccessFeedView.get();
     proton::IAttributeManager::SP attrMgr = extractAttributeManager(feedView);
-    return std::make_unique<FastAccessDocumentRetriever>(feedView, attrMgr);
+    return std::make_shared<FastAccessDocumentRetriever>(feedView, attrMgr);
 }
 
 void

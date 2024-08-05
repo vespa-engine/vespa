@@ -34,7 +34,7 @@ struct UseHammingDist {
 template <typename CT, typename AGGR, typename DIST>
 float best_similarity(const CT *pri, ConstArrayRef<CT> sec_cells, size_t inner_size) {
     AGGR aggr;
-    for (const CT *sec = sec_cells.begin(); sec < sec_cells.end(); sec += inner_size) {
+    for (const CT *sec = sec_cells.data(); sec < sec_cells.data() + sec_cells.size(); sec += inner_size) {
         aggr.sample(DIST::calc(pri, sec, inner_size));
     }
     return aggr.result();
@@ -63,11 +63,11 @@ void my_best_similarity_op(InterpretedFunction::State &state, uint64_t param) {
         return state.pop_pop_push(create_empty_result<is_double>(res_type, state.stash));
     }
     if (is_double) {
-        auto best_sim = best_similarity<CT, AGGR, DIST>(pri_cells.begin(), sec_cells, inner_size);
+        auto best_sim = best_similarity<CT, AGGR, DIST>(pri_cells.data(), sec_cells, inner_size);
         return state.pop_pop_push(state.stash.create<DoubleValue>(best_sim));
     }
     auto out_cells = state.stash.create_uninitialized_array<float>(pri_cells.size() / inner_size);
-    const CT *pri = pri_cells.begin();
+    const CT *pri = pri_cells.data();
     for (auto &out: out_cells) {
         out = best_similarity<CT, AGGR, DIST>(pri, sec_cells, inner_size);
         pri += inner_size;

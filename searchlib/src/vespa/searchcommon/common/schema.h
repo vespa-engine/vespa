@@ -35,9 +35,9 @@ public:
         vespalib::string  _tensor_spec;
 
     public:
-        Field(vespalib::stringref n, DataType dt) noexcept;
-        Field(vespalib::stringref n, DataType dt, CollectionType ct) noexcept;
-        Field(vespalib::stringref n, DataType dt, CollectionType ct, vespalib::stringref tensor_spec) noexcept;
+        Field(std::string_view n, DataType dt) noexcept;
+        Field(std::string_view n, DataType dt, CollectionType ct) noexcept;
+        Field(std::string_view n, DataType dt, CollectionType ct, std::string_view tensor_spec) noexcept;
 
         /**
          * Create this field based on the given config lines.
@@ -50,7 +50,7 @@ public:
 
         virtual ~Field();
 
-        virtual void write(vespalib::asciistream & os, vespalib::stringref prefix) const;
+        virtual void write(vespalib::asciistream & os, std::string_view prefix) const;
 
         const vespalib::string &getName() const noexcept { return _name; }
         DataType getDataType() const noexcept { return _dataType; }
@@ -77,8 +77,8 @@ public:
         bool _interleaved_features;
 
     public:
-        IndexField(vespalib::stringref name, DataType dt) noexcept;
-        IndexField(vespalib::stringref name, DataType dt, CollectionType ct) noexcept;
+        IndexField(std::string_view name, DataType dt) noexcept;
+        IndexField(std::string_view name, DataType dt, CollectionType ct) noexcept;
         IndexField(const IndexField &) noexcept;
         IndexField & operator = (const IndexField &) noexcept;
         IndexField(IndexField &&) noexcept;
@@ -95,7 +95,7 @@ public:
         }
 
         void write(vespalib::asciistream &os,
-                   vespalib::stringref prefix) const override;
+                   std::string_view prefix) const override;
 
         uint32_t getAvgElemLen() const noexcept { return _avgElemLen; }
         bool use_interleaved_features() const noexcept { return _interleaved_features; }
@@ -117,7 +117,7 @@ public:
         std::vector<vespalib::string> _fields;
 
     public:
-        explicit FieldSet(vespalib::stringref n) noexcept : _name(n), _fields() {}
+        explicit FieldSet(std::string_view n) noexcept : _name(n), _fields() {}
         FieldSet(const FieldSet &);
         FieldSet & operator =(const FieldSet &);
         FieldSet(FieldSet &&) noexcept = default;
@@ -130,7 +130,7 @@ public:
 
         ~FieldSet();
 
-        FieldSet &addField(vespalib::stringref fieldName) {
+        FieldSet &addField(std::string_view fieldName) {
             _fields.emplace_back(fieldName);
             return *this;
         }
@@ -254,7 +254,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getIndexFieldId(vespalib::stringref name) const noexcept;
+    uint32_t getIndexFieldId(std::string_view name) const noexcept;
 
     /**
      * Check if a field is an index
@@ -262,7 +262,7 @@ public:
      * @return true if field is an index field.
      * @param name the name of the field.
      **/
-    bool isIndexField(vespalib::stringref name) const noexcept;
+    bool isIndexField(std::string_view name) const noexcept;
 
     /**
      * Check if a field is a attribute field
@@ -270,7 +270,7 @@ public:
      * @return true if field is an attribute field.
      * @param name the name of the field.
      **/
-    bool isAttributeField(vespalib::stringref name) const noexcept;
+    bool isAttributeField(std::string_view name) const noexcept;
 
     /**
      * Get information about a specific attribute field using the given fieldId.
@@ -291,7 +291,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getAttributeFieldId(vespalib::stringref name) const noexcept;
+    uint32_t getAttributeFieldId(std::string_view name) const noexcept;
 
     /**
      * Get information about a specific field set
@@ -307,7 +307,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field set.
      **/
-    uint32_t getFieldSetId(vespalib::stringref name) const noexcept;
+    uint32_t getFieldSetId(std::string_view name) const noexcept;
 
     const std::vector<ImportedAttributeField> &getImportedAttributeFields() const noexcept {
         return _importedAttributeFields;

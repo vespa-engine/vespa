@@ -20,22 +20,22 @@ namespace document {
 class IdString {
 public:
     using LocationType = uint64_t;
-    static LocationType makeLocation(vespalib::stringref s);
+    static LocationType makeLocation(std::string_view s);
 
-    explicit IdString(vespalib::stringref ns);
+    explicit IdString(std::string_view ns);
     IdString();
 
-    [[nodiscard]] vespalib::stringref getNamespace() const { return getComponent(0); }
+    [[nodiscard]] std::string_view getNamespace() const { return getComponent(0); }
     [[nodiscard]] bool hasDocType() const { return size(1) != 0; }
-    [[nodiscard]] vespalib::stringref getDocType() const  { return getComponent(1); }
+    [[nodiscard]] std::string_view getDocType() const  { return getComponent(1); }
     [[nodiscard]] LocationType getLocation() const  { return _location; }
     [[nodiscard]] bool hasNumber() const  { return _has_number; }
     [[nodiscard]] uint64_t getNumber() const  { return _location; }
     [[nodiscard]] bool hasGroup() const  { return _groupOffset != 0; }
-    [[nodiscard]] vespalib::stringref getGroup() const  {
+    [[nodiscard]] std::string_view getGroup() const  {
         return {getRawId().c_str() + _groupOffset, size_t(offset(3) - _groupOffset - 1)};
     }
-    [[nodiscard]] vespalib::stringref getNamespaceSpecific() const {
+    [[nodiscard]] std::string_view getNamespaceSpecific() const {
         return {_rawId.c_str() + offset(3), _rawId.size() - offset(3)};
     }
 
@@ -47,18 +47,18 @@ public:
 private:
     [[nodiscard]] uint16_t offset(uint32_t index) const { return _offsets[index]; }
     [[nodiscard]] uint16_t size(uint32_t index) const { return std::max(0, int(offset(index+1)) - int(offset(index)) - 1); }
-    [[nodiscard]] vespalib::stringref getComponent(size_t index) const { return {_rawId.c_str() + offset(index), size(index)}; }
+    [[nodiscard]] std::string_view getComponent(size_t index) const { return {_rawId.c_str() + offset(index), size(index)}; }
     [[nodiscard]] const vespalib::string & getRawId() const { return _rawId; }
 
     class Offsets {
     public:
         Offsets() noexcept = default;
-        VESPA_DLL_LOCAL uint16_t compute(vespalib::stringref id);
+        VESPA_DLL_LOCAL uint16_t compute(std::string_view id);
         uint16_t operator [] (size_t i) const { return _offsets[i]; }
         static const Offsets DefaultID;
     private:
         static constexpr uint32_t MAX_COMPONENTS = 4;
-        VESPA_DLL_LOCAL explicit Offsets(vespalib::stringref id) noexcept;
+        VESPA_DLL_LOCAL explicit Offsets(std::string_view id) noexcept;
         uint16_t _offsets[MAX_COMPONENTS];
     };
 

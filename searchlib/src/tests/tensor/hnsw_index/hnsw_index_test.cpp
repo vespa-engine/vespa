@@ -268,7 +268,7 @@ public:
         SCOPED_TRACE(label);
         uint32_t k = 3;
         uint32_t explore_k = 100;
-        vespalib::ArrayRef qv_ref(qv);
+        vespalib::ArrayRef<float> qv_ref(qv);
         vespalib::eval::TypedCells qv_cells(qv_ref);
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?

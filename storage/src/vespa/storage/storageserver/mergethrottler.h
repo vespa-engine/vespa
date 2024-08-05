@@ -405,7 +405,7 @@ private:
 
     std::shared_ptr<api::StorageMessage> makeAbortReply(
             api::StorageCommand& cmd,
-            vespalib::stringref reason) const;
+            std::string_view reason) const;
 
     void handleOutdatedMerges(const api::SetSystemStateCommand&);
     void rejectOperationsInThreadQueue(MessageGuard&, uint32_t minimumStateVersion);

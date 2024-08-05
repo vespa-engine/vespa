@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -15,6 +16,7 @@ import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.query.parser.ParserEnvironment.ParserSettings;
 
 import java.util.Iterator;
 
@@ -30,6 +32,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 public class AllParser extends SimpleParser {
 
     private final boolean weakAnd;
+    private final ParserSettings parserSettings;
 
     /**
      * Creates an all/weakAnd parser
@@ -39,6 +42,7 @@ public class AllParser extends SimpleParser {
     public AllParser(ParserEnvironment environment, boolean weakAnd) {
         super(environment);
         this.weakAnd = weakAnd;
+        this.parserSettings = environment.getParserSettings();
     }
 
     @Override
@@ -66,7 +70,7 @@ public class AllParser extends SimpleParser {
 
             current = positiveItem();
             if (current == null)
-                current = indexableItem().getFirst();
+                current = indexableItem("").getFirst();
             if (current == null)
                 current = compositeItem();
 
@@ -98,10 +102,32 @@ public class AllParser extends SimpleParser {
         return root.getRoot() instanceof NullItem ? null : root.getRoot();
     }
 
+    private boolean foldIntoAnd(CompositeItem other) {
+        if (other instanceof AndItem) {
+            return ! parserSettings.keepImplicitAnds();
+        }
+        if (weakAnd && other instanceof AndSegmentItem sand) {
+            if (parserSettings.keepSegmentAnds()) {
+                return false;
+            } else if (parserSettings.markSegmentAnds()) {
+                sand.shouldFoldIntoWand(weakAnd);
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     protected CompositeItem addAnd(Item item, CompositeItem and) {
         if (and == null)
             and = createAnd();
-        and.addItem(item);
+        if (item instanceof CompositeItem composite && foldIntoAnd(composite)) {
+            for (var subItem : composite.items()) {
+                addAnd(subItem, and);
+            }
+        } else {
+            and.addItem(item);
+        }
         return and;
     }
 
@@ -130,7 +156,7 @@ public class AllParser extends SimpleParser {
         try {
             if ( ! tokens.skip(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
-            var itemAndExplicitIndex = indexableItem();
+            var itemAndExplicitIndex = indexableItem("");
 
             item = itemAndExplicitIndex.getFirst();
             boolean explicitIndex = itemAndExplicitIndex.getSecond();

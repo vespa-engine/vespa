@@ -1608,14 +1608,13 @@ public class ParseTestCase {
 
     @Test
     void testTooGreedyUrlParsing() {
-        tester.assertParsed("AND site:\"nypost com $\" about", "site:nypost.com about",
-                Query.Type.ALL);
+        tester.assertParsed("AND site:\"nypost com $\" about", "site:nypost.com about", Query.Type.ALL);
     }
 
     @Test
     void testTooGreedyUrlParsing2() {
         tester.assertParsed("AND site:\"nypost com $\" about foo",
-                "site:nypost.com about foo", Query.Type.ALL);
+                            "site:nypost.com about foo", Query.Type.ALL);
     }
 
     @Test
@@ -2606,6 +2605,36 @@ public class ParseTestCase {
         tester.assertParsed(emoji2, emoji2, Query.Type.ANY);
         tester.assertParsed("AND " + emoji1 + " " + emoji2, emoji1 + emoji2, Query.Type.ANY);
         tester.assertParsed("AND " + emoji1 + " foo " + emoji2, emoji1 + "foo" + emoji2, Query.Type.ANY);
+    }
+
+    @Test
+    void testSameElement() {
+        tester.assertParsed("str_map.key:key1", "str_map.key:key1", Query.Type.ALL);
+        tester.assertParsed("str_map.value:value1", "str_map.value:value1", Query.Type.ALL);
+        tester.assertParsed("str_map:{key:key1 value:value1}", "str_map:{key:key1 value:value1}", Query.Type.ALL);
+        tester.assertParsed("map", "str_map:{", Query.Type.ALL);
+        tester.assertParsed("map", "str_map:{.", Query.Type.ALL);
+    }
+
+    @Test
+    void testImplicitPhrase() {
+        tester.assertParsed("AND title:with title:precision","title:with.precision", Query.Type.ALL);
+    }
+
+    @Test
+    void testImplicitPhraseWithPhraseSegmenting1() {
+        tester.assertParsed("phraseSegment:\"with precision\"","phraseSegment:with.precision", Query.Type.ALL);
+    }
+
+    @Test
+    void testImplicitPhraseWithPhraseSegmenting2() {
+        tester.assertParsed("phraseSegment:\"with precision\"","phraseSegment:with{.}precision", Query.Type.ALL);
+    }
+
+    @Test
+    void testLongQuery() {
+        var tester = new ParsingTester("index");
+        tester.assertParsed("WEAKAND(100) index:search index:terms", "{search terms}", Query.Type.WEAKAND);
     }
 
 }

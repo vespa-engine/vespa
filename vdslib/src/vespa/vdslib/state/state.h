@@ -25,7 +25,7 @@ class State : public vespalib::Printable {
     bool _validClusterState;
 
     State(const State&);
-    State(vespalib::stringref name, vespalib::stringref serialized,
+    State(std::string_view name, std::string_view serialized,
           uint8_t rank,
           bool validDistributorReported, bool validStorageReported,
           bool validDistributorWanted, bool validStorageWanted,
@@ -44,7 +44,7 @@ public:
     static const State UP;
 
     /** Throws vespalib::IllegalArgumentException if invalid state given. */
-    static const State& get(vespalib::stringref serialized);
+    static const State& get(std::string_view serialized);
     const vespalib::string& serialize() const { return _serialized; }
 
     bool validReportedNodeState(const NodeType& node) const { return _validReportedNodeState[node]; }

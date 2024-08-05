@@ -27,8 +27,8 @@ class TestAndSetException : public std::runtime_error {
     api::ReturnCode _code;
 public:
     explicit TestAndSetException(api::ReturnCode code)
-        : std::runtime_error(code.getMessage()),
-        _code(std::move(code))
+        : std::runtime_error(std::string(code.getMessage())),
+          _code(std::move(code))
     {}
 
     const api::ReturnCode & getCode() const { return _code; }

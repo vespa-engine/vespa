@@ -25,14 +25,14 @@ createSpec(FRT_Supervisor &orb)
         str << vespalib::HostName::get();
         str << ":";
         str << orb.GetListenPort();
-        spec = str.str();
+        spec = str.view();
     }
     return spec;
 }
 
 
 void
-discard(std::vector<vespalib::string> &vec, vespalib::stringref val)
+discard(std::vector<vespalib::string> &vec, std::string_view val)
 {
     uint32_t i = 0;
     uint32_t size = vec.size();
@@ -99,7 +99,7 @@ RegisterAPI::~RegisterAPI()
 
 
 void
-RegisterAPI::registerName(vespalib::stringref name)
+RegisterAPI::registerName(std::string_view name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     for (uint32_t i = 0; i < _names.size(); ++i) {
@@ -108,21 +108,21 @@ RegisterAPI::registerName(vespalib::stringref name)
         }
     }
     _busy.store(true, std::memory_order_relaxed);
-    _names.push_back(name);
-    _pending.push_back(name);
+    _names.emplace_back(name);
+    _pending.emplace_back(name);
     discard(_unreg, name);
     ScheduleNow();
 }
 
 
 void
-RegisterAPI::unregisterName(vespalib::stringref name)
+RegisterAPI::unregisterName(std::string_view name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _busy.store(true, std::memory_order_relaxed);
     discard(_names, name);
     discard(_pending, name);
-    _unreg.push_back(name);
+    _unreg.emplace_back(name);
     ScheduleNow();
 }
 

@@ -9,6 +9,6 @@ namespace search::expression { class AttributeNode; }
 namespace search::expression::test {
 
 std::unique_ptr<AttributeNode>
-makeAttributeMapLookupNode(vespalib::stringref attributeName);
+makeAttributeMapLookupNode(std::string_view attributeName);
 
 }

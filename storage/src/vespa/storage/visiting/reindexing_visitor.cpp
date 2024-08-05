@@ -47,9 +47,9 @@ bool ReindexingVisitor::remap_docapi_message_error_code(api::ReturnCode& in_out_
 
 vespalib::string ReindexingVisitor::make_lock_access_token() const {
     vespalib::string prefix = reindexing_bucket_lock_bypass_prefix();
-    vespalib::stringref passed_token = visitor_parameters().get(
+    std::string_view passed_token = visitor_parameters().get(
             reindexing_bucket_lock_visitor_parameter_key(),
-            vespalib::stringref(""));
+            std::string_view(""));
     if (passed_token.empty()) {
         return prefix;
     }

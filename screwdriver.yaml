@@ -1,9 +1,5 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ---
-cache:
-  job:
-    build-vespa: [/main_job_cache]
-    component-build: [/main_job_cache]
 
 shared:
   image: docker.io/vespaengine/vespa-build-almalinux-8
@@ -52,188 +48,6 @@ shared:
         fi
 
 jobs:
-  build-vespa:
-    annotations:
-      screwdriver.cd/cpu: 7
-      screwdriver.cd/ram: 16
-      screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 90
-      #screwdriver.cd/buildPeriodically: H 4 * * *
-
-    environment:
-      LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
-      VESPA_MAVEN_EXTRA_OPTS: "-Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.source.skip=true"
-      CCACHE_TMP_DIR: "/tmp/ccache_tmp"
-      CCACHE_DATA_DIR: "/tmp/vespa/ccache"
-      MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
-
-    steps:
-      - inspect: |
-          set -x
-          env | grep -v TOKEN
-          cat /proc/cpuinfo
-          cat /proc/meminfo
-          df -h
-          uname -a
-          rpm -qa | grep "vespa"
-      - *restore-cache
-      - compile: |
-          screwdriver/build-vespa.sh
-      - *save-cache
-      - inspect-after: |
-          du -sh /tmp/vespa/*
-          ls -la /main_job_cache || true
-          df -h
-
-  component-build:
-    requires: [~pr]
-    annotations:
-      screwdriver.cd/cpu: 7
-      screwdriver.cd/ram: 16
-      screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 150
-      screwdriver.cd/dockerEnabled: true
-      screwdriver.cd/dockerCpu: TURBO
-      screwdriver.cd/dockerRam: HIGH
-
-    environment:
-      LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
-      VESPA_MAVEN_EXTRA_OPTS: "--show-version --batch-mode --no-snapshot-updates -Dmaven.repo.local=/tmp/vespa/mvnrepo"
-      CCACHE_TMP_DIR: "/tmp/ccache_tmp"
-      CCACHE_DATA_DIR: "/tmp/vespa/ccache"
-      MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
-      CCACHE_COMPRESS: "1"
-      GOPATH: "/tmp/vespa/go"
-    secrets:
-      - DOCKER_HUB_DEPLOY_KEY
-      - SVC_OKTA_VESPA_FACTORY_TOKEN
-    steps:
-      - get-vespa-version: |
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            VERSION_INFO=$(screwdriver/factory-command.sh create-build)
-            echo "Version information from Factory : $VERSION_INFO"
-
-            VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
-            VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
-            SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
-            if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
-              echo "Must have valid Vespa version and reference to continue \
-                    (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
-              exit 1
-            fi
-          else
-            # We'll just use the version number from the latest factory build for PRs
-            VESPA_VERSION=$(meta get vespa.version --external component-build)
-          fi
-          meta set vespa.version $VESPA_VERSION
-      - checkout: |
-          WORKDIR=$(pwd)/..
-          cd $WORKDIR
-
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            git clone -q https://github.com/vespa-engine/system-test
-            git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
-            (cd vespa && git checkout $VESPA_REF)
-            (cd system-test && git checkout $SYSTEM_TEST_REF)
-            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
-            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
-          else
-            git clone -q --depth 1 https://github.com/vespa-engine/system-test
-          fi
-
-          # We set the tag locally to make the SRPM build like Copr does it
-          (cd vespa && git tag v$VESPA_VERSION)
-          # Set correct version in pom.xml files
-          (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
-      - make-srpm: |
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
-          fi
-          echo "%_binary_payload w0.gzdio" >> $HOME/.rpmmacros
-          make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
-      - *restore-cache
-      - build: |
-          cd $WORKDIR/vespa
-          export FACTORY_VESPA_VERSION=$VESPA_VERSION
-          NUM_THREADS=$(( $(nproc) + 2 ))
-
-          VESPA_CMAKE_SANITIZERS_OPTION=""
-          VESPA_USE_SANITIZER=$(meta get vespa.build.sanitizer)
-          if [[ -n $VESPA_USE_SANITIZER ]] && [[ $VESPA_USE_SANITIZER != null ]]; then
-            VESPA_CMAKE_SANITIZERS_OPTION="-DVESPA_USE_SANITIZER=$VESPA_USE_SANITIZER"
-          fi
-
-          time make -C client/go BIN=$WORKDIR/vespa-install/opt/vespa/bin SHARE=$WORKDIR/vespa-install/usr/share install-all
-          time ./bootstrap.sh java
-          time ./mvnw -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install
-          cmake3 -DVESPA_UNPRIVILEGED=no $VESPA_CMAKE_SANITIZERS_OPTION .
-          time make -j ${NUM_THREADS}
-          time ctest3 --output-on-failure -j ${NUM_THREADS}
-          ccache --show-stats
-          time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
-      - build-sample-apps: |
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            (cd $WORKDIR/sample-apps && time ../vespa/mvnw -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
-          fi
-      - verify-rpm-build: |
-          cd $WORKDIR
-          ulimit -c 0
-          time rpmbuild --rebuild --define="_topdir $WORKDIR/vespa-rpmbuild" \
-                        --define "_debugsource_template %{nil}" \
-                        --define "installdir $WORKDIR/vespa-install" *.src.rpm
-          mkdir -p $WORKDIR/system-test/docker/rpms
-          mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm $WORKDIR/system-test/docker/rpms
-          if test -z "$VESPA_CMAKE_SANITIZERS_OPTION"
-          then
-              rm -f $WORKDIR/system-test/docker/rpms/*debuginfo*rpm
-          fi
-          ls -la $WORKDIR/system-test/docker/rpms
-      - build-test-image: |
-          cd $WORKDIR/system-test
-          mkdir -p docker/vespa-systemtests
-          git archive HEAD --format tar | tar x -C docker/vespa-systemtests
-          cp -a $LOCAL_MVN_REPO docker/repository
-          cd docker
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            SKIP_M2_POPULATE=false
-          else
-            SKIP_M2_POPULATE=true
-          fi
-          docker build --file Dockerfile.systemtest \
-                       --progress=plain \
-                       --build-arg VESPA_BASE_IMAGE=docker.io/vespaengine/vespa-systemtest-base-el8:latest \
-                       --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=$SKIP_M2_POPULATE \
-                       --target systemtest \
-                       --tag docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION \
-                       --tag docker.io/vespaengine/vespa-systemtest-el8:latest .
-      - verify-test-image: |
-          docker run --rm -ti --entrypoint bash docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION -lc \
-          "/opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__INDEXED"
-      - publish-test-image: |
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            OPT_STATE="$(set +o)"
-            set +x
-            docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
-            eval "$OPT_STATE"
-            docker push docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION
-            docker push docker.io/vespaengine/vespa-systemtest-el8:latest
-          fi
-      - *save-cache
-      - update-build-status: |
-          meta set vespa.factory.build.status success
-      - teardown-report-build-status: |
-          FACTORY_BUILD_STATUS=$(meta get vespa.factory.build.status)
-          if [[ $FACTORY_BUILD_STATUS == success ]]; then
-            DESCRIPTION="Build success"
-          else
-            FACTORY_BUILD_STATUS=failure
-            DESCRIPTION="Build failed"
-          fi
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            echo "Reporting build status as $FACTORY_BUILD_STATUS"
-            $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status $FACTORY_BUILD_STATUS "$DESCRIPTION"
-          fi
-
   publish-release:
     annotations:
       screwdriver.cd/cpu: 7
@@ -247,6 +61,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 4,10,16,22 * * 1,2,3,4
 
     secrets:
+      - BUILDKITE_TRIGGER_TOKEN
       - COPR_WEBHOOK
       - OSSRH_USER
       - OSSRH_TOKEN
@@ -276,20 +91,12 @@ jobs:
             return 1
           fi
           meta set vespa.version $VESPA_VERSION
-      - install-dependencies: |
-          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf install -y docker-ce docker-ce-cli containerd.io python3 python3-pip
-          docker system info
-      - release-java-artifacts: |
-          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
-      - release-rpms: |
-          screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
-      - release-container-image: |
-          screwdriver/release-container-image-docker.sh $VESPA_VERSION
-      - release-ann-benchmark: |
-          screwdriver/release-ann-benchmark.sh $VESPA_VERSION
-      - update-sample-apps: |
-          screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
+      - trig-buildkite: |
+          BUILDKITE_JSON=$(screwdriver/trig-buildkite-pipeline.sh vespa-engine-vespa-release master $VESPA_VERSION $VESPA_REF "Releasing open-source Vespa version $VESPA_VERSION :rocket:")
+      - wait-for-buildkite: |
+          BUILDKITE_URL=$(jq -re '.url' <<< "$BUILDKITE_JSON")
+          BUILDKITE_WEB_URL=$(jq -re '.web_url' <<< "$BUILDKITE_JSON")
+          screwdriver/wait-for-buildkite-build.sh $BUILDKITE_URL $BUILDKITE_WEB_URL 1800
       - update-released-time: |
           screwdriver/factory-command.sh update-released-time $VESPA_VERSION
 
@@ -519,6 +326,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 6 * * *
     secrets:
       - CLOUDSMITH_API_CREDS
+      - CLOUDSMITH_API_TOKEN
     steps:
       - install: |
           dnf install -y dnf-plugins-core jq

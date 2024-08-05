@@ -31,9 +31,9 @@ public:
         Params(Params&&) noexcept;
         Params& operator=(Params&&) noexcept;
 
-        Params& ca_certs_pem(vespalib::stringref pem) { _ca_certs_pem = pem; return *this; }
-        Params& cert_chain_pem(vespalib::stringref pem) { _cert_chain_pem = pem; return *this; }
-        Params& private_key_pem(vespalib::stringref pem) { _private_key_pem = pem; return *this; }
+        Params& ca_certs_pem(std::string_view pem) { _ca_certs_pem = pem; return *this; }
+        Params& cert_chain_pem(std::string_view pem) { _cert_chain_pem = pem; return *this; }
+        Params& private_key_pem(std::string_view pem) { _private_key_pem = pem; return *this; }
         Params& authorized_peers(AuthorizedPeers auth) { _authorized_peers = std::move(auth); return *this; }
         Params& accepted_ciphers(std::vector<vespalib::string> ciphers) {
             _accepted_ciphers = std::move(ciphers);

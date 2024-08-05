@@ -44,6 +44,9 @@ public class EquivItem extends CompositeTaggableItem {
         if (item.explicitSignificance) {
             setSignificance(item.significance);
         }
+        if (item.documentFrequency != null) {
+            setDocumentFrequency(item.documentFrequency);
+        }
 
         // steal other item's weight:
         setWeight(item.getWeight());

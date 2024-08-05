@@ -101,18 +101,18 @@ public class SchemaInfoTestCase {
     void testFieldWithAttributeExporting() {
         var schemaInfoTester = new SchemaInfoTester();
         var schema = schemaInfoTester.createSchema("test");
-        var field = (SDField)schema.getDocument().addField(new SDField("f1", DataType.STRING));
+        var field = (SDField)schema.getDocument().addField(new SDField("f1", DataType.INT));
         var attribute = field.addAttribute(new Attribute(schema.getName(), field.getName(), "f1Attribute", field.getDataType()));
         attribute.getAliases().add("a1");
         attribute.getAliases().add("a2");
         assertEquals("""
     schema[0].name "test"
     schema[0].field[0].name "f1"
-    schema[0].field[0].type "string"
+    schema[0].field[0].type "int"
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[1].name "f1Attribute"
-    schema[0].field[1].type "string"
+    schema[0].field[1].type "int"
     schema[0].field[1].alias[0] "a1"
     schema[0].field[1].alias[1] "a2"
     schema[0].field[1].attribute true

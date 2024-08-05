@@ -41,7 +41,7 @@ TEST("requireThatTooLargeNumTermIsTreatedAsFloat") {
     RawBuf buf(1024);
     appendNumTerm(buf, term_string);
 
-    SimpleQueryStackDumpIterator query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
+    SimpleQueryStackDumpIterator query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
     Node::UP node = StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
     auto *term = dynamic_cast<NumberTerm *>(node.get());
@@ -55,7 +55,7 @@ TEST("requireThatTooLargeFloatNumTermIsTreatedAsFloat") {
     appendNumTerm(buf, term_string);
 
     SimpleQueryStackDumpIterator
-        query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
+        query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
     Node::UP node =
         StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
@@ -73,21 +73,21 @@ TEST("require that PredicateQueryItem stack dump item can be read") {
     buf.appendCompressedNumber(2);
     appendString(buf, "key1");
     appendString(buf, "value1");
-    buf.Put64ToInet(-1ULL);
+    buf.Put64ToInet(-1UL);
     appendString(buf, "key2");
     appendString(buf, "value2");
-    buf.Put64ToInet(0xffffULL);
+    buf.Put64ToInet(0xffffUL);
 
     buf.appendCompressedNumber(2);
     appendString(buf, "key3");
-    buf.Put64ToInet(42ULL);
-    buf.Put64ToInet(-1ULL);
+    buf.Put64ToInet(42UL);
+    buf.Put64ToInet(-1UL);
     appendString(buf, "key4");
-    buf.Put64ToInet(84ULL);
-    buf.Put64ToInet(0xffffULL);
+    buf.Put64ToInet(84UL);
+    buf.Put64ToInet(0xffffUL);
 
     SimpleQueryStackDumpIterator
-        query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
+        query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
     Node::UP node =
         StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
@@ -97,7 +97,7 @@ TEST("require that PredicateQueryItem stack dump item can be read") {
     ASSERT_EQUAL(2u, term.getFeatures().size());
     ASSERT_EQUAL(2u, term.getRangeFeatures().size());
     ASSERT_EQUAL("value1", term.getFeatures()[0].getValue());
-    ASSERT_EQUAL(0xffffffffffffffffULL,
+    ASSERT_EQUAL(0xffffffffffffffffUL,
                  term.getFeatures()[0].getSubQueryBitmap());
     ASSERT_EQUAL("key2", term.getFeatures()[1].getKey());
     ASSERT_EQUAL(42u, term.getRangeFeatures()[0].getValue());

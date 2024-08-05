@@ -30,7 +30,7 @@ public:
     struct LookupKey {
         virtual ~LookupKey() = default;
         // It is required that the string is zero terminated
-        virtual vespalib::stringref asString() const = 0;
+        virtual std::string_view asString() const = 0;
         virtual bool asInteger(int64_t &value) const;
     };
 
@@ -48,7 +48,7 @@ public:
     virtual LookupResult lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const = 0;
 
     // Convenience only use by various tests.
-    LookupResult lookup(vespalib::stringref term, vespalib::datastore::EntryRef dictionary_snapshot) const;
+    LookupResult lookup(std::string_view term, vespalib::datastore::EntryRef dictionary_snapshot) const;
     /*
      * Collect enum indexes (via callback) where folded
      * (e.g. lowercased) value equals the folded value for enum_idx.

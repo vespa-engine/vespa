@@ -10,6 +10,7 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BoolItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
@@ -60,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -367,6 +369,9 @@ public class YqlParserTestCase {
                         "({annotations: {cox: \"another\"}}\"colors\")").getAnnotation("cox"));
         assertEquals(23.0, getRootWord("select foo from bar where baz contains " +
                 "({significance: 23.0}\"colors\")").getSignificance(), 1E-6);
+        assertEquals(Optional.of(new DocumentFrequency(13, 101)),
+                getRootWord("select foo from bar where baz contains " +
+                "({documentFrequency: {frequency: 13, count: 101L}}\"colors\")").getDocumentFrequency());
         assertEquals(23, getRootWord("select foo from bar where baz contains " +
                 "({id: 23}\"colors\")").getUniqueID());
         assertEquals(150, getRootWord("select foo from bar where baz contains " +

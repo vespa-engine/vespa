@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FleetControllerClusterTest {
 
@@ -131,6 +133,16 @@ public class FleetControllerClusterTest {
                                "  </resource-limits>",
                                "</tuning>" +
                                        "</content>"));
+    }
+
+    @Test
+    void feature_flag_controls_distribution_config_from_cluster_controller() {
+        // TODO change default
+        assertFalse(getConfigForBasicCluster(new TestProperties()).include_distribution_config_in_cluster_state_bundle());
+        assertFalse(getConfigForBasicCluster(new TestProperties().setDistributionConfigFromClusterController(false))
+                .include_distribution_config_in_cluster_state_bundle());
+        assertTrue(getConfigForBasicCluster(new TestProperties().setDistributionConfigFromClusterController(true))
+                .include_distribution_config_in_cluster_state_bundle());
     }
 
     @Test

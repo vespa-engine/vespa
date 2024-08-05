@@ -18,7 +18,7 @@ public:
     NBOSerializer &put(uint64_t value) override;
     NBOSerializer &put(float value) override;
     NBOSerializer &put(double value) override;
-    NBOSerializer &put(stringref val) override;
+    NBOSerializer &put(std::string_view val) override;
 
     NBOSerializer &get(bool &value) override;
     NBOSerializer &get(uint8_t &value) override;

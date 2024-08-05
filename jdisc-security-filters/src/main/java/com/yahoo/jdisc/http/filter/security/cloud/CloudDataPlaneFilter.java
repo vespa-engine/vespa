@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.filter.security.cloud;
 
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
@@ -31,6 +32,7 @@ import static com.yahoo.jdisc.http.filter.security.cloud.Permission.WRITE;
  *
  * @author bjorncs
  */
+@Provides("Vespa Cloud mTLS Authorization Filter")
 public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(CloudDataPlaneFilter.class.getName());

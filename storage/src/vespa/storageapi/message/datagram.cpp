@@ -25,7 +25,7 @@ MapVisitorCommand::print(std::ostream& out, bool verbose,
     if (verbose) {
         for (const auto & stat : _statistics) {
             out << ",\n" << indent << "  " << stat.first << ": "
-                << vespalib::stringref(stat.second.c_str(), stat.second.length());
+                << std::string_view(stat.second.c_str(), stat.second.length());
         }
         out << ") : ";
         StorageCommand::print(out, verbose, indent);

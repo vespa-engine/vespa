@@ -107,8 +107,8 @@ make_json_snapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
     return snapshot.asString();
 }
 
-void emit_prometheus_counter(vespalib::asciistream &out, vespalib::stringref name,
-                             vespalib::stringref description, uint64_t value,
+void emit_prometheus_counter(vespalib::asciistream &out, std::string_view name,
+                             std::string_view description, uint64_t value,
                              system_clock::time_point now)
 {
     // Prometheus naming conventions state that "_total" should be used for counter metrics.
@@ -117,8 +117,8 @@ void emit_prometheus_counter(vespalib::asciistream &out, vespalib::stringref nam
     out << name << "_total " << value << ' ' << ms_since_epoch(now).count() << '\n';
 }
 
-void emit_prometheus_gauge(vespalib::asciistream &out, vespalib::stringref name,
-                           vespalib::stringref description, uint64_t value,
+void emit_prometheus_gauge(vespalib::asciistream &out, std::string_view name,
+                           std::string_view description, uint64_t value,
                            system_clock::time_point now)
 {
     // Gauge metrics do not appear to have any convention for name suffixes, so emit name verbatim.

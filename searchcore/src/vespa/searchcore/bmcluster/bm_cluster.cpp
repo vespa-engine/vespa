@@ -252,7 +252,7 @@ BmCluster::make_node(uint32_t node_idx)
     assert(!_nodes[node_idx]);
     vespalib::asciistream s;
     s << _base_dir << "/n" << node_idx;
-    vespalib::string node_base_dir(s.str());
+    vespalib::string node_base_dir(s.view());
     int node_base_port = port_number(_base_port, PortBias::NUM_PORTS) + BmNode::num_ports() * node_idx;
     _nodes[node_idx] = BmNode::create(node_base_dir, node_base_port, node_idx, *this, _params, _document_types, _slobrok_port);
 }

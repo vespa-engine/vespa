@@ -10,6 +10,8 @@ namespace search {
 using search::common::FileHeaderContext;
 using vespalib::IllegalArgumentException;
 
+AttributeMemorySaveTarget::WriterEntry::~WriterEntry() = default;
+
 AttributeMemorySaveTarget::AttributeMemorySaveTarget()
     : _datWriter(),
       _idxWriter(),

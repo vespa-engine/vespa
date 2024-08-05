@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import com.yahoo.prelude.Index;
@@ -24,11 +25,13 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TaggableItem;
@@ -215,7 +218,7 @@ public class StemmingSearcher extends Searcher {
             TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
 
             if (composite instanceof AndSegmentItem) {
-                setSignificance(w, current);
+                setSignificanceAndDocumentFrequency(w, current);
             }
             composite.addItem((Item) w);
         }
@@ -226,7 +229,7 @@ public class StemmingSearcher extends Searcher {
         composite.lock();
 
         if (composite instanceof PhraseSegmentItem replacement) {
-            setSignificance(replacement, current);
+            setSignificanceAndDocumentFrequency(replacement, current);
             phraseSegmentConnectivity(current, context.reverseConnectivity, replacement);
         }
         return composite;
@@ -242,7 +245,7 @@ public class StemmingSearcher extends Searcher {
         setConnectivity(current, reverseConnectivity, replacement);
     }
 
-    private void andSegmentConnectivity(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, 
+    private void andSegmentConnectivity(BlockItem current, Map<Item, TaggableItem> reverseConnectivity,
                                         CompositeItem composite) {
         // if the original has connectivity to something, add to last word
         Connectivity connectivity = getConnectivity(current);
@@ -312,7 +315,7 @@ public class StemmingSearcher extends Searcher {
 
     private void setMetaData(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, TaggableItem replacement) {
         copyAttributes((Item) current, (Item) replacement);
-        setSignificance(replacement, current);
+        setSignificanceAndDocumentFrequency(replacement, current);
         Connectivity c = getConnectivity(current);
         if (c != null) {
             replacement.setConnectivity(c.word, c.value);
@@ -364,12 +367,19 @@ public class StemmingSearcher extends Searcher {
     }
 
     private AndSegmentItem createAndSegment(BlockItem current) {
-        return new AndSegmentItem(current.stringValue(), true, true);
+        var composite = new AndSegmentItem(current.stringValue(), true, true);
+        if (current instanceof SegmentItem segment) {
+            composite.shouldFoldIntoWand(segment.shouldFoldIntoWand());
+        }
+        return composite;
     }
 
     private CompositeItem createPhraseSegment(BlockItem current, String indexName) {
-        CompositeItem composite = new PhraseSegmentItem(current.getRawWord(), current.stringValue(), true, true);
+        var composite = new PhraseSegmentItem(current.getRawWord(), current.stringValue(), true, true);
         composite.setIndexName(indexName);
+        if (current instanceof SegmentItem segment) {
+            composite.shouldFoldIntoWand(segment.shouldFoldIntoWand());
+        }
         return composite;
     }
 
@@ -405,14 +415,12 @@ public class StemmingSearcher extends Searcher {
         }
     }
 
-    // TODO: Next four methods indicate Significance should be bubbled up the class hierarchy
-    // TODO: Perhaps Significance should bubble up, but the real problem is the class/interface hierarchy for queries is in dire need of restructuring
-    private void setSignificance(PhraseSegmentItem target, BlockItem original) {
-        if (hasExplicitSignificance(original)) target.setSignificance(getSignificance(original));
-    }
-
-    private void setSignificance(TaggableItem target, BlockItem original) {
+    // TODO: Next four methods indicate Significance and DocumentFrequency should be bubbled up the class hierarchy
+    // TODO: Perhaps Significance and DocumentFrequency should bubble up, but the real problem is the class/interface hierarchy for queries is in dire need of restructuring
+    private void setSignificanceAndDocumentFrequency(TaggableItem target, BlockItem original) {
         if (hasExplicitSignificance(original)) target.setSignificance(getSignificance(original)); //copy
+        var documentFrequency = getDocumentFrequency(original);
+        if (documentFrequency.isPresent()) target.setDocumentFrequency(documentFrequency.get());
     }
 
     private boolean hasExplicitSignificance(BlockItem blockItem) {
@@ -425,6 +433,12 @@ public class StemmingSearcher extends Searcher {
     private double getSignificance(BlockItem blockItem) {
         if (blockItem instanceof TermItem) return ((TermItem)blockItem).getSignificance();
         else return ((PhraseSegmentItem)blockItem).getSignificance();
+    }
+
+    private Optional<DocumentFrequency> getDocumentFrequency(BlockItem blockItem) {
+        if (blockItem instanceof TermItem termItem) return termItem.getDocumentFrequency();
+        if (blockItem instanceof PhraseSegmentItem phraseSegmentItem) return phraseSegmentItem.getDocumentFrequency();
+        return Optional.empty();
     }
 
     private static class Connectivity {

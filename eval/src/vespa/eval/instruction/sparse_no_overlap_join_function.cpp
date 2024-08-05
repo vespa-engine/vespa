@@ -69,7 +69,7 @@ void my_sparse_no_overlap_join_op(InterpretedFunction::State &state, uint64_t pa
     const auto &rhs_idx = rhs.index();
     if (__builtin_expect(are_fast(lhs_idx, rhs_idx), true)) {
         const Value &res = my_fast_no_overlap_sparse_join<CT,Fun>(as_fast(lhs_idx).map, as_fast(rhs_idx).map,
-                lhs.cells().typify<CT>().cbegin(), rhs.cells().typify<CT>().cbegin(), param, state.stash);
+                lhs.cells().typify<CT>().data(), rhs.cells().typify<CT>().data(), param, state.stash);
         state.pop_pop_push(res);
     } else {
         auto res = generic_mixed_join<CT,CT,CT,Fun>(lhs, rhs, param);

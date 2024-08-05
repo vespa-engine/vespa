@@ -58,7 +58,7 @@ TransLogServerExplorer::get_children_names() const
 }
 
 std::unique_ptr<vespalib::StateExplorer>
-TransLogServerExplorer::get_child(vespalib::stringref name) const
+TransLogServerExplorer::get_child(std::string_view name) const
 {
     Domain::SP domain = _server->findDomain(name);
     if (!domain) {

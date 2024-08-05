@@ -64,8 +64,10 @@ public class Json implements Iterable<Json> {
 
     public int length() { return inspector.children(); }
     public boolean has(String field) { return inspector.field(field).valid(); }
-    public boolean isPresent() { return inspector.valid(); }
+    public boolean isPresent() { return inspector.type() != Type.NIX; }
     public boolean isMissing() { return !isPresent(); }
+    /** @return true if the JSON field was present but its value was 'null' */
+    public boolean isExplicitNull() { return isMissing() && inspector.valid(); }
 
     public Optional<String> asOptionalString() { return Optional.ofNullable(asString(null)); }
     public String asString() { requireType(STRING); return inspector.asString(); }
@@ -210,6 +212,18 @@ public class Json implements Iterable<Json> {
         public static Builder.Array existingSlimeArrayCursor(Cursor cursor) {
             if (cursor.type() != Type.ARRAY) throw new InvalidJsonException("Input is not an array");
             return new Builder.Array(cursor);
+        }
+        public static Builder.Object fromObject(Json json) {
+            json.requireType(Type.OBJECT);
+            var builder = newObject();
+            SlimeUtils.copyObject(json.inspector, builder.cursor);
+            return builder;
+        }
+        public static Builder.Array fromArray(Json json) {
+            json.requireType(Type.ARRAY);
+            var builder = newArray();
+            SlimeUtils.copyArray(json.inspector, builder.cursor);
+            return builder;
         }
 
         private Builder(Cursor cursor) { this.cursor = cursor; }

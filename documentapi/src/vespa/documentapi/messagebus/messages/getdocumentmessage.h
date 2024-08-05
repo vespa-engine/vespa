@@ -39,7 +39,7 @@ public:
      * @param documentId The identifier of the document to retrieve.
      * @param fieldSet The fields to retrieve (comma-separated)
      */
-    GetDocumentMessage(const document::DocumentId &documentId, vespalib::stringref fieldSet);
+    GetDocumentMessage(const document::DocumentId &documentId, std::string_view fieldSet);
 
     ~GetDocumentMessage();
 

@@ -22,7 +22,7 @@ class OrderedFieldIndexInserterBackend {
 public:
     OrderedFieldIndexInserterBackend();
     ~OrderedFieldIndexInserterBackend();
-    void setNextWord(const vespalib::stringref word);
+    void setNextWord(const std::string_view word);
     void add(uint32_t docId, const index::DocIdAndFeatures &features);
     void remove(uint32_t docId);
     void rewind(uint32_t field_id);

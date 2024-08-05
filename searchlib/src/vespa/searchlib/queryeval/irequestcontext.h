@@ -38,8 +38,8 @@ public:
      * Provide access to attributevectors
      * @return AttributeVector or nullptr if it does not exist.
      */
-    virtual const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const = 0;
-    virtual const attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const = 0;
+    virtual const attribute::IAttributeVector *getAttribute(std::string_view name) const = 0;
+    virtual const attribute::IAttributeVector *getAttributeStableEnum(std::string_view name) const = 0;
 
     /**
      * Returns the tensor of the given name that was passed with the query.

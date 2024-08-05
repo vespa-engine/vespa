@@ -21,7 +21,7 @@ JsonConfigFormatter::encode(ConfigDataBuffer & buffer) const
 {
     SimpleBuffer buf;
     JsonFormat::encode(buffer.slimeObject(), buf, _compact);
-    buffer.setEncodedString(buf.get().make_string());
+    buffer.setEncodedString(buf.get().make_stringview());
 }
 
 size_t

@@ -19,9 +19,9 @@ public:
     FieldSetRepo(const DocumentTypeRepo& repo);
     ~FieldSetRepo();
 
-    FieldSet::SP getFieldSet(vespalib::stringref fieldSetString) const;
+    FieldSet::SP getFieldSet(std::string_view fieldSetString) const;
 
-    static FieldSet::SP parse(const DocumentTypeRepo& repo, vespalib::stringref fieldSetString);
+    static FieldSet::SP parse(const DocumentTypeRepo& repo, std::string_view fieldSetString);
     static vespalib::string serialize(const FieldSet& fs);
 private:
     void configureDocumentType(const DocumentType & documentType);

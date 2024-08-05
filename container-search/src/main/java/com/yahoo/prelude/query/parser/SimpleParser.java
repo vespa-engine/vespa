@@ -97,7 +97,7 @@ abstract class SimpleParser extends StructuredParser {
             }
 
             if (item == null) {
-                item = indexableItem().getFirst();
+                item = indexableItem("").getFirst();
                 if (item != null) {
                     if (topLevelItem == null) {
                         topLevelItem = item;
@@ -179,7 +179,7 @@ abstract class SimpleParser extends StructuredParser {
                 return null;
             }
 
-            item = indexableItem().getFirst();
+            item = indexableItem("").getFirst();
 
             if (item == null) {
                 item = compositeItem();

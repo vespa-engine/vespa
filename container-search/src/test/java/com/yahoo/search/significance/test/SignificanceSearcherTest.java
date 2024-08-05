@@ -4,10 +4,17 @@ package com.yahoo.search.significance.test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.detect.Detection;
+import com.yahoo.language.detect.Detector;
+import com.yahoo.language.detect.Hint;
+import com.yahoo.language.opennlp.OpenNlpLinguistics;
+import com.yahoo.language.process.*;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -20,13 +27,16 @@ import com.yahoo.search.significance.SignificanceSearcher;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 
 import static com.yahoo.test.JunitCompat.assertEquals;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Tests significance term in the search chain.
@@ -51,12 +61,90 @@ public class SignificanceSearcherTest {
         searcher = new SignificanceSearcher(significanceModelRegistry, new SchemaInfo(List.of(schema.build()), List.of()));
     }
 
+    private static class MockLinguistics implements Linguistics {
+
+        private final MockDetector mockDetector;
+        MockLinguistics(Language language) {
+            this.mockDetector = new MockDetector(language);
+        }
+
+        @Override
+        public Stemmer getStemmer() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Tokenizer getTokenizer() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Normalizer getNormalizer() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Transformer getTransformer() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Segmenter getSegmenter() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Detector getDetector() {
+            return this.mockDetector;
+        }
+
+        @Override
+        public GramSplitter getGramSplitter() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public CharacterClasses getCharacterClasses() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public boolean equals(Linguistics other) {
+            return false;
+        }
+    }
+
+    private static class MockDetector implements Detector {
+
+        private Language detectionLanguage;
+        MockDetector(Language detectionLanguage) {
+            this.detectionLanguage = detectionLanguage;
+        }
+
+        @Override
+        public Detection detect(byte[] input, int offset, int length, Hint hint) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Detection detect(ByteBuffer input, Hint hint) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Detection detect(String input, Hint hint) {
+            return new Detection(detectionLanguage, UTF_8.name(), false);
+        }
+    }
+
     private Execution createExecution(SignificanceSearcher searcher) {
         return new Execution(new Chain<>(searcher), Execution.Context.createContextStub());
     }
 
-    private Execution createExecution() {
-        return new Execution(new Chain<>(), Execution.Context.createContextStub());
+    private Execution createExecution(SignificanceSearcher searcher, Language language) {
+        var context = Execution.Context.createContextStub();
+        context.setLinguistics(new MockLinguistics(language));
+        return new Execution(new Chain<>(searcher), context);
     }
 
     @Test
@@ -71,13 +159,12 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
         Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
-        assertEquals(helloSignificanceValue, w0.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
     }
 
     @Test
@@ -92,13 +179,12 @@ public class SignificanceSearcherTest {
         q1.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
         Result r = createExecution(searcher).search(q1);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
-        assertEquals(helloSignificanceValue, w0.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
 
         Query q2 = new Query("?query=hello&ranking.significance.useModel=false");
         q2.getRanking().setProfile("significance-ranking");
@@ -110,7 +196,11 @@ public class SignificanceSearcherTest {
         Result r2 = createExecution(searcher).search(q2);
         root = (AndItem) r2.getQuery().getModel().getQueryTree().getRoot();
         WordItem w1 = (WordItem) root.getItem(0);
-        assertEquals(0.0, w1.getSignificance());
+        assertEquals(Optional.empty(), w1.getDocumentFrequency());
+    }
+
+    private static Optional<DocumentFrequency> makeDocumentFrequency(com.yahoo.language.significance.DocumentFrequency source) {
+        return Optional.of(new DocumentFrequency(source.frequency(), source.corpusSize()));
     }
 
     @Test
@@ -128,11 +218,8 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("Hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
-
-        var worldFrequency = model.documentFrequency("world");
-        var worldSignificanceValue = SignificanceSearcher.calculateIDF(worldFrequency.corpusSize(), worldFrequency.frequency());
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("Hello"));
+        var worldDocumentFrequency = makeDocumentFrequency(model.documentFrequency("world"));
 
         Result r = createExecution(searcher).search(q);
 
@@ -140,8 +227,8 @@ public class SignificanceSearcherTest {
         WordItem w0 = (WordItem) root.getItem(0);
         WordItem w1 = (WordItem) root.getItem(1);
 
-        assertEquals(helloSignificanceValue, w0.getSignificance());
-        assertEquals(worldSignificanceValue, w1.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
+        assertEquals(worldDocumentFrequency, w1.getDocumentFrequency());
 
     }
 
@@ -170,14 +257,8 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
-
-        var testFrequency = model.documentFrequency("test");
-        var testSignificanceValue = SignificanceSearcher.calculateIDF(testFrequency.corpusSize(), testFrequency.frequency());
-
-
-
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
+        var testDocumentFrequency = makeDocumentFrequency(model.documentFrequency("test"));
         Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
@@ -185,41 +266,12 @@ public class SignificanceSearcherTest {
         WordItem w1 = (WordItem) ((AndItem) root.getItem(1)).getItem(0);
         WordItem w3 = (WordItem) ((AndItem) ((AndItem) root.getItem(2)).getItem(0)).getItem(0);
 
-        assertEquals(helloSignificanceValue, w0.getSignificance());
-        assertEquals(testSignificanceValue, w1.getSignificance());
-        assertEquals(SignificanceSearcher.calculateIDF(16, 2), w3.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
+        assertEquals(testDocumentFrequency, w1.getDocumentFrequency());
+        assertEquals(Optional.of(new DocumentFrequency(2, 16)), w3.getDocumentFrequency());
 
     }
 
-    @Test
-    void testSignificanceValueOnEmptyQuery() {
-        Query q = new Query();
-        q.getModel().setLanguage(Language.NORWEGIAN_BOKMAL);
-        AndItem root = new AndItem();
-        WordItem tmp;
-        tmp = new WordItem("Hei", true);
-        root.addItem(tmp);
-        tmp = new WordItem("Verden", true);
-        root.addItem(tmp);
-
-
-        q.getModel().getQueryTree().setRoot(root);
-        Result r = createExecution(searcher).search(q);
-        root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
-
-        WordItem w0 = (WordItem) root.getItem(0);
-        WordItem w1 = (WordItem) root.getItem(1);
-
-        Result r0 = createExecution().search(q);
-        root = (AndItem) r0.getQuery().getModel().getQueryTree().getRoot();
-
-        WordItem w0_0 = (WordItem) root.getItem(0);
-        WordItem w0_1 = (WordItem) root.getItem(1);
-
-        assertEquals(w0_0.getSignificance(), w0.getSignificance());
-        assertEquals(w0_1.getSignificance(), w1.getSignificance());
-
-    }
 
     @Test
     public void failsOnConflictingSignificanceConfiguration() {
@@ -251,5 +303,52 @@ public class SignificanceSearcherTest {
                              "Specify same 'significance' configuration for all selected schemas " +
                              "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).",
                      errorMessage.getDetailedMessage());
+    }
+
+    @Test
+    public void testSignificanceSearcherWithExplictitAndImplictSetLanguages() {
+        Query q = new Query();
+        q.getModel().setLanguage(Language.UNKNOWN);
+        q.getRanking().setProfile("significance-ranking");
+        AndItem root = new AndItem();
+        WordItem tmp;
+        tmp = new WordItem("hello", true);
+        root.addItem(tmp);
+
+        q.getModel().getQueryTree().setRoot(root);
+
+        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
+        Result r = createExecution(searcher).search(q);
+
+        root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
+        WordItem w0 = (WordItem) root.getItem(0);
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
+
+        Query q2 = new Query();
+        q2.getModel().setLanguage(Language.FRENCH);
+        q2.getRanking().setProfile("significance-ranking");
+        AndItem root2 = new AndItem();
+        WordItem tmp2;
+        tmp2 = new WordItem("hello", true);
+        root2.addItem(tmp2);
+
+        q2.getModel().getQueryTree().setRoot(root2);
+        Result r2 = createExecution(searcher).search(q2);
+
+        assertEquals(1, r2.hits().getErrorHit().errors().size());
+
+
+        Query q3 = new Query();
+        q3.getRanking().setProfile("significance-ranking");
+        WordItem root3 = new WordItem("Я с детства хотел завести собаку, но родители мне не разрешали.", true);
+
+        q3.getModel().getQueryTree().setRoot(root3);
+        Execution execution = createExecution(searcher, Language.RUSSIAN);
+        Result r3 = execution.search(q3);
+
+        assertEquals(1, r3.hits().getErrorHit().errors().size());
+
+
     }
 }

@@ -31,7 +31,7 @@ ReferenceDataType::print(std::ostream& os, bool verbose, const std::string& inde
 }
 
 void
-ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remainingFieldName) const {
+ReferenceDataType::onBuildFieldPath(FieldPath &, std::string_view remainingFieldName) const {
     if ( ! remainingFieldName.empty() ) {
         throw IllegalArgumentException(make_string("Reference data type does not support further field recursion: '%s'",
                                                    vespalib::string(remainingFieldName).c_str()), VESPA_STRLOC);

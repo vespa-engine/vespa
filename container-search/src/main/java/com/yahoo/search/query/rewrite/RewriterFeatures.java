@@ -588,12 +588,11 @@ public class RewriterFeatures {
     }
 
     /**
-     * Convert String to query tree
+     * Parses a string into a tree of query items.
      *
-     * @param stringToParse The string to be converted to a
-     *                      query tree
-     * @param query Query object from searcher
-     * @return Item The resulting query tree
+     * @param stringToParse the string to be converted to a query tree
+     * @param query Query object supplying context to this parsing
+     * @return Item the resulting query tree
      */
     static Item convertStringToQTree(Query query, String stringToParse) {
         RewriterUtils.log(logger, query, "Converting string [" + stringToParse + "] to query tree");

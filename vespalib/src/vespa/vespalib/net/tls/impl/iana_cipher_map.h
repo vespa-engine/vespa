@@ -13,7 +13,7 @@ namespace vespalib::net::tls {
  *
  * Note that this only covers a very restricted subset of the existing IANA ciphers.
  */
-const char* iana_cipher_suite_to_openssl(vespalib::stringref iana_name);
+const char* iana_cipher_suite_to_openssl(std::string_view iana_name);
 
 /**
  * Returns a vector of all IANA cipher suite names that we support internally.

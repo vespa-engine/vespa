@@ -35,9 +35,14 @@ public class ParsingTester {
     private static final Linguistics linguistics = new SimpleLinguistics();
     private final IndexFacts indexFacts;
     private SpecialTokenRegistry tokenRegistry;
+    private String defaultIndex;
 
     public ParsingTester() {
         this(createIndexFacts(), createSpecialTokens());
+    }
+
+    public ParsingTester(String defaultIndex) {
+        this(createIndexFacts(), createSpecialTokens(), defaultIndex);
     }
 
     public ParsingTester(SpecialTokens specialTokens) {
@@ -52,6 +57,15 @@ public class ParsingTester {
         indexFacts.freeze();
 
         this.indexFacts = indexFacts;
+        tokenRegistry = new SpecialTokenRegistry();
+        tokenRegistry = new SpecialTokenRegistry(List.of(specialTokens));
+    }
+
+    public ParsingTester(IndexFacts indexFacts, SpecialTokens specialTokens, String defaultIndex) {
+        indexFacts.freeze();
+
+        this.indexFacts = indexFacts;
+        this.defaultIndex = defaultIndex;
         tokenRegistry = new SpecialTokenRegistry();
         tokenRegistry = new SpecialTokenRegistry(List.of(specialTokens));
     }
@@ -114,10 +128,10 @@ public class ParsingTester {
      * @return the produced root
      */
     public Item assertParsed(String parsed, String toParse, String filter, Query.Type mode,
-                              Language language, Linguistics linguistics) {
+                             Language language, Linguistics linguistics) {
         Item root = parseQuery(toParse, filter, language, mode, linguistics);
         if (parsed == null) {
-            assertTrue(root instanceof NullItem, "root is " + root);
+            assertInstanceOf(NullItem.class, root, "root is " + root);
         } else {
             assertNotNull(root, "Got null from parsing " + toParse);
             assertEquals(parsed, root.toString(), "Parse of '" + toParse + "'");
@@ -134,7 +148,7 @@ public class ParsingTester {
                 .setIndexFacts(indexFacts)
                 .setLinguistics(linguistics)
                 .setSpecialTokens(tokenRegistry.getSpecialTokens("default")));
-        Item root = parser.parse(new Parsable().setQuery(query).setFilter(filter).setLanguage(language)).getRoot();
+        Item root = parser.parse(new Parsable().setQuery(query).setFilter(filter).setLanguage(language).setDefaultIndexName(defaultIndex)).getRoot();
         if (root == null) throw new NullPointerException(); // Should be NullItem
         return root;
     }

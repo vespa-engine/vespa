@@ -8,12 +8,14 @@ package com.yahoo.vespa.athenz.identityprovider.api;
  */
 public interface SignedIdentityDocument {
 
-    int DEFAULT_DOCUMENT_VERSION = 4;
+    int LEGACY_DOCUMENT_VERSION = 4;
+    int DEFAULT_DOCUMENT_VERSION = 5;
 
     default boolean outdated() { return documentVersion() < DEFAULT_DOCUMENT_VERSION; }
 
     IdentityDocument identityDocument();
     String signature();
-    int signingKeyVersion();
+    String signingKeyVersion();
     int documentVersion();
+    String data();
 }

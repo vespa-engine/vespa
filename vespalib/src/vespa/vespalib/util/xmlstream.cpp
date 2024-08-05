@@ -339,7 +339,7 @@ XmlAttribute::XmlAttribute(const std::string& name, const char * value, uint32_t
     vespalib::asciistream ost;
     if (flags & HEX) ost << vespalib::hex << "0x";
     ost << value;
-    _value = ost.str();
+    _value = ost.view();
     if (!isLegalName(name)) {
         throw vespalib::IllegalArgumentException("Name '" + name + "' contains "
                 "illegal XML characters and cannot be used as attribute name");
@@ -398,11 +398,9 @@ XmlContentWrapper::XmlContentWrapper(const char* value, uint32_t size)
 }
 
 using CharP = char *;
-using ConstCharP = const char *;
 
-template XmlAttribute::XmlAttribute(const std::string &, std::string, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, vespalib::string, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, vespalib::stringref, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, std::string_view, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, CharP, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, bool, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, short, unsigned int);
