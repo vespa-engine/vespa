@@ -76,6 +76,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(SymbolType.RANK_CONSTANT);
         add(SymbolType.PROPERTY);
         add(SymbolType.LAMBDA_FUNCTION);
+        add(SymbolType.DIMENSION);
     }};
 
     // Keyword
@@ -330,6 +331,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.RANK_CONSTANT, "variable");
         put(SymbolType.PROPERTY, "property");
         put(SymbolType.LAMBDA_FUNCTION, "keyword");
+        put(SymbolType.DIMENSION, "keyword");
     }};
 
     private static ArrayList<String> tokenTypes;
