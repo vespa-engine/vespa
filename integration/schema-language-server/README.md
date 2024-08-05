@@ -64,6 +64,23 @@ the execution, the server will also look for a /schemas directory among the file
 - textDocument/rename: If the cursor is at a symbol, rename it to a new identifier. It will find all references to the symbol and create TextEdit objects describing how to change them. May involve renaming symbols across files and renaming files.
 - textDocument/semanticTokens/full: Gives a list of all tokens in the current document, translated to some standard types. This enables syntax highlighting. As constructs in the schema language
 are not common in other languages (for instance "rank-profile"), we have made a somewhat arbitrary conversion to the standard types that makes the colors look good.
+- textDocument/hover: If the cursor is at a symbol, give information about type and doc comments. If at a keyword, show a snippet from the Vespa schema documentation.
 - textDocument/definition: If the cursor is a symbol, give the location where it was defined. For instance a field reference in a fieldset will refer to the original place where field was defined.
 - workspace/didDeleteFiles: Unregister files and symbols.
 - workspace/didRenameFiles: Effectively delete -> add.
+
+## Testing
+We scraped /config-model for *.sd files to use for testing. The testing mainly tests that a file or directory parses and generates the appropriate number of errors.
+
+The appropriate number of errors is defined as 0 if the schema in question is supposed to be "deployable" as-is. Otherwise it is defined as the number of errors we expect given our current implementation of the language server.
+
+# Future work
+There are some things we wanted to implement but we didn't have the time for:
+
+- Support for services.xml file. This could involve automatically adding documents to the application, giving warnings and errors if some configuration is obviously wrong etc.
+- Support for generating a schema from a json file or similar. This doesn't necessarily involve the language server, but it could be implemented as a custom command.
+- Better analysis of indexing language and ranking expressions. The current implementation is very simple and does not verify that indexing expressions make sense. 
+- More refactoring options other than just renaming. 
+- Support for managing multiple workspaces at once. We currently only support one workspace (schemas directory).
+- Catch more errors. Several settings are incompatible with each other, and should show as diagnostics. For instance, stemming settings for fields in a fieldset.
+- Support for document formatting requests.
