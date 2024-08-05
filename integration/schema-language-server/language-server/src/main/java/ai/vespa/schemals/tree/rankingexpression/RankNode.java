@@ -253,7 +253,7 @@ public class RankNode implements Iterable<RankNode>  {
     }
 
     public String toString() {
-        return "[RANK: " + type + "] " + schemaNode.toString();
+        return "[RANK: " + type + "] " + schemaNode.toString() + (hasSymbol() ? " Symbol: " + getSymbol().toString() : "");
     }
 
     @Override

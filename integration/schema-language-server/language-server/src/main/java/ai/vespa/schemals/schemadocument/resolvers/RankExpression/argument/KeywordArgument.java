@@ -9,12 +9,13 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
+import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
-public class DimensionArgument implements Argument {
+public class KeywordArgument implements Argument {
 
     private String argument;
 
-    public DimensionArgument(String argument) {
+    public KeywordArgument(String argument) {
         this.argument = argument;
     }
 
@@ -32,11 +33,21 @@ public class DimensionArgument implements Argument {
 
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
+        RankingExpressionUtils.printTree(context.logger(), node);
+
         if (!validateArgument(node)) {
             return Optional.empty();
         }
 
-        Symbol symbol = node.getSymbol();
+        RankNode leaf = node;
+
+        while (leaf.getChildren().size() > 0) {
+            leaf = leaf.getChildren().get(0);
+        }
+
+        context.logger().println(leaf);
+
+        Symbol symbol = leaf.getSymbol();
 
         if (symbol == null) {
             return Optional.empty();
@@ -48,6 +59,8 @@ public class DimensionArgument implements Argument {
 
         symbol.setType(SymbolType.DIMENSION);
         symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
+
+        context.logger().println("Updated symbol: " + symbol);
 
         return Optional.empty();
     }

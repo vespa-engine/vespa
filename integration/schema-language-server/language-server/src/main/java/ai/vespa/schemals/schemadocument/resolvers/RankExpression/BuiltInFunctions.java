@@ -8,7 +8,8 @@ import java.util.Set;
 
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.DimensionArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ExpressionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
@@ -148,15 +149,14 @@ public class BuiltInFunctions {
 
 
 
-        // put("distance", new DistanceFunction());
         put("distance", new GenericFunction(new ArrayList<>() {{
             add(new FunctionSignature(new ArrayList<>() {{
-                add(new DimensionArgument("field"));
+                add(new KeywordArgument("field"));
                 add(new FieldArgument());
             }}));
             add(new FunctionSignature(new ArrayList<>() {{
-                add(new DimensionArgument("label"));
-                add(new StringArgument("label"));
+                add(new KeywordArgument("label"));
+                add(new LabelArgument());
             }}));
         }}));
 
@@ -173,7 +173,7 @@ public class BuiltInFunctions {
         add("closestdistanceage");
         add("constant");
         add("customTokenInputIds");
-        add("distance");
+        // add("distance");
         add("distanceToPath");
         add("dotProduct");
         add("elementCompleteness");
@@ -196,7 +196,7 @@ public class BuiltInFunctions {
         add("nativeProximity");
         add("nativeRank");
         add("now");
-        add("query");
+        // add("query");
         add("queryTermCount");
         add("random");
         add("randomNormal");
