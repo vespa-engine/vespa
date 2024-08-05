@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionItemLabelDetails;
 import org.eclipse.lsp4j.CompletionItemTag;
 import org.eclipse.lsp4j.InsertTextFormat;
+import org.eclipse.lsp4j.InsertTextMode;
 
 
 public class CompletionUtils {
@@ -17,6 +18,7 @@ public class CompletionUtils {
         item.setKind(CompletionItemKind.Snippet);
         item.setInsertTextFormat(InsertTextFormat.Snippet);
         item.setInsertText(snippet);
+        item.setInsertTextMode(InsertTextMode.AdjustIndentation);
         item.setDetail(detail);
         return item;
     }
@@ -65,6 +67,7 @@ public class CompletionUtils {
         labelDetails.setDescription(longIdentifier);
         item.setLabelDetails(labelDetails);
         item.setInsertTextFormat(InsertTextFormat.Snippet);
+        item.setInsertTextMode(InsertTextMode.AdjustIndentation);
 
         signature = signature.trim();
         if (signature.length() > 2 && signature.startsWith("(") && signature.endsWith(")")) {

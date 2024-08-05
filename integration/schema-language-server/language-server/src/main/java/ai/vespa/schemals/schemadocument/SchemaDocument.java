@@ -114,7 +114,7 @@ public class SchemaDocument implements DocumentManager {
 
 
 
-        schemaIndex.dumpIndex();
+        //schemaIndex.dumpIndex();
 
     }
 

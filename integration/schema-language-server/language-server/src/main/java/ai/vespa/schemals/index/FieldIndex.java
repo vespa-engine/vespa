@@ -12,7 +12,6 @@ import java.util.Set;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
-import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
