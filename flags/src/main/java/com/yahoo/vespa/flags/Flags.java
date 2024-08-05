@@ -407,18 +407,6 @@ public class Flags {
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
-    public static UnboundBooleanFlag CALYPSO_ENABLED = defineFeatureFlag(
-            "calypso-enabled", true,
-            List.of("mortent"), "2024-02-19", "2024-09-01",
-            "Whether to enable calypso for host",
-            "Takes effect immediately", HOSTNAME);
-
-    public static UnboundBooleanFlag ATHENZ_PROVIDER = defineFeatureFlag(
-            "athenz-provider", false,
-            List.of("mortent"), "2024-02-19", "2024-09-01",
-            "Whether to use athenz as node identity provider",
-            "Takes effect on next identity refresh", HOSTNAME);
-
     public static UnboundJacksonFlag<RoleList> ROLE_DEFINITIONS = defineJacksonFlag(
             "role-definitions", RoleList.empty(), RoleList.class,
             List.of("mortent"), "2024-04-05", "2024-10-01",
