@@ -401,19 +401,3 @@ func (g *Generator) Read(p []byte) (int, error) {
 	}
 	return g.buf.Read(p)
 }
-
-type number interface{ float64 | int64 | int }
-
-func min[T number](x, y T) T {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-func max[T number](x, y T) T {
-	if x > y {
-		return x
-	}
-	return y
-}
