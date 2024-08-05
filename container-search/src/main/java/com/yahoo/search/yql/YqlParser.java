@@ -1029,7 +1029,6 @@ public class YqlParser implements Parser {
 
     private OperatorNode<?> fetchSummaryFields(OperatorNode<?> ast) {
         if (ast.getOperator() != SequenceOperator.PROJECT) return ast;
-
         Preconditions.checkArgument(ast.getArguments().length == 2,
                                    "Expected 2 arguments to PROJECT, got %s.",
                                    ast.getArguments().length);

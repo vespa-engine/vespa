@@ -181,7 +181,7 @@ public class SimpleToken implements Token {
 
     @Override
     public boolean isIndexable() {
-        return getType().isIndexable() && (getOrig().length() > 0);
+        return getType().isIndexable() && ( ! getOrig().isEmpty());
     }
 
     public static SimpleToken fromStems(String original, List<String> stems) {
