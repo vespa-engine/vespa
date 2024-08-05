@@ -15,6 +15,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.yahoo.io.IOUtils;
 
@@ -69,6 +70,21 @@ public class FileUtils {
         if (components.length == 0) return null;
 
         return components[0];
+    }
+
+    public static Optional<URI> findSchemaDirectory(URI initialURI) {
+        Path path = Paths.get(initialURI);
+        while (path != null && path.getFileName() != null) {
+            if (path.getFileName().toString().equals("schemas")) {
+                break;
+            }
+            path = path.getParent();
+        }
+
+        if (path == null || path.getFileName() == null) {
+            return Optional.empty();
+        }
+        return Optional.of(path.toUri());
     }
 
     private static List<String> walkFileTree(Path rootDir, String pathMatcherStr, PrintStream logger) {
