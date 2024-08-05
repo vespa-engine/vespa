@@ -9,7 +9,6 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
-import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class KeywordArgument implements Argument {
 
@@ -33,8 +32,6 @@ public class KeywordArgument implements Argument {
 
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
-        RankingExpressionUtils.printTree(context.logger(), node);
-
         if (!validateArgument(node)) {
             return Optional.empty();
         }
@@ -44,8 +41,6 @@ public class KeywordArgument implements Argument {
         while (leaf.getChildren().size() > 0) {
             leaf = leaf.getChildren().get(0);
         }
-
-        context.logger().println(leaf);
 
         Symbol symbol = leaf.getSymbol();
 
@@ -59,8 +54,6 @@ public class KeywordArgument implements Argument {
 
         symbol.setType(SymbolType.DIMENSION);
         symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
-
-        context.logger().println("Updated symbol: " + symbol);
 
         return Optional.empty();
     }

@@ -127,7 +127,7 @@ public class BuiltInFunctions {
             add("queryCompleteness");
             add("elementWeight");
         }})));
-        put("elemenSimilarity", new GenericFunction(new FunctionSignature(new FieldArgument())));
+        put("elementSimilarity", new GenericFunction(new FunctionSignature(new FieldArgument())));
 
 
 
@@ -144,8 +144,8 @@ public class BuiltInFunctions {
         // ==== Global features ====
         put("globalSequence", new GenericFunction());
         put("now", new GenericFunction());
-        put("random", new GenericFunction());
-        put("random.match", new GenericFunction()); // This is buggy
+        // put("random", new GenericFunction());
+        // put("random.match", new GenericFunction()); // This is buggy
 
 
 
@@ -167,7 +167,7 @@ public class BuiltInFunctions {
         add("age");
         // add("attribute");
         add("attributeMatch");
-        add("bm25");
+        // add("bm25");
         add("closeness");
         add("closest");
         add("closestdistanceage");
@@ -176,28 +176,28 @@ public class BuiltInFunctions {
         // add("distance");
         add("distanceToPath");
         add("dotProduct");
-        add("elementCompleteness");
-        add("elementSimilarity");
-        add("fieldLength");
-        add("fieldMatch");;
-        add("fieldTermMatch");
+        // add("elementCompleteness");
+        // add("elementSimilarity");
+        // add("fieldLength");
+        // add("fieldMatch");
+        // add("fieldTermMatch");
         add("firstPhase");
         add("firstPhaseRank");
         add("foreach");
         add("freshness");
-        add("globalSequence");
+        // add("globalSequence");
         add("itemRawScore");
         add("match");
-        add("matchCount");
-        add("matches");
+        // add("matchCount");
+        // add("matches");
         add("nativeAttributeMatch");
         add("nativeDotProduct");
         add("nativeFieldMatch");
         add("nativeProximity");
-        add("nativeRank");
-        add("now");
+        // add("nativeRank");
+        // add("now");
         // add("query");
-        add("queryTermCount");
+        // add("queryTermCount");
         add("random");
         add("randomNormal");
         add("randomNormalStable");
@@ -206,9 +206,9 @@ public class BuiltInFunctions {
         add("secondPhase");
         add("tensorFromLabels");
         add("tensorFromWeightedSet");
-        add("term");
-        add("termDistance");
-        add("textSimilarity");
+        // add("term");
+        // add("termDistance");
+        // add("textSimilarity");
         add("tokenAttentionMask");
         add("tokenInputIds");
         add("tokenTypeIds");
