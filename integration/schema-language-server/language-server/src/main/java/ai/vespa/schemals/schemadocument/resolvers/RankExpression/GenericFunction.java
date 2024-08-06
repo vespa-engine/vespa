@@ -20,12 +20,14 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argume
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
-public class GenericFunction implements FunctionHandler {
-    
+public class GenericFunction {
+
+    private String name;
     List<FunctionSignature> signatures;
     Set<String> properties;
 
-    public GenericFunction(List<FunctionSignature> signatures) {
+    public GenericFunction(String name, List<FunctionSignature> signatures) {
+        this.name = name;
         this.signatures = signatures;
         this.properties = new HashSet<>();
 
@@ -40,29 +42,30 @@ public class GenericFunction implements FunctionHandler {
         }
     }
 
-    public GenericFunction(FunctionSignature signature) {
-        this(new ArrayList<>() {{
+    public GenericFunction(String name, FunctionSignature signature) {
+        this(name, new ArrayList<>() {{
             add(signature);
         }});
     }
 
-    public GenericFunction(Argument argument, Set<String> properties) {
-        this(new FunctionSignature(argument, properties));
+    public GenericFunction(String name, Argument argument, Set<String> properties) {
+        this(name, new FunctionSignature(argument, properties));
     }
 
-    public GenericFunction(List<Argument> arguments, Set<String> proerties) {
-        this(new FunctionSignature(arguments, proerties));
+    public GenericFunction(String name, List<Argument> arguments, Set<String> proerties) {
+        this(name, new FunctionSignature(arguments, proerties));
     }
 
-    public GenericFunction() {
-        this(new FunctionSignature());
+    public GenericFunction(String name) {
+        this(name, new FunctionSignature());
     }
 
     public List<FunctionSignature> getSignatures() {
         return List.copyOf(signatures);
     }
 
-    @Override
+    public String getName() { return name; }
+
     public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
@@ -94,6 +97,7 @@ public class GenericFunction implements FunctionHandler {
 
         if (property.isEmpty() && (signatureProps.contains("") || signatureProps.size() == 0)) {
             // This is valid
+            node.setBuiltInFunctionSignature(new SpecificFunction(this, signature.get()));
             return diagnostics;
         }
         
@@ -136,6 +140,8 @@ public class GenericFunction implements FunctionHandler {
             symbolNode.setSymbol(SymbolType.PROPERTY, context.fileURI());
             symbolNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
+
+        node.setBuiltInFunctionSignature(new SpecificFunction(this, signature.get(), propertyString));
 
         return diagnostics;
     }

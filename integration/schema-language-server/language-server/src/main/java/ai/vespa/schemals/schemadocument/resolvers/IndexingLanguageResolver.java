@@ -92,7 +92,7 @@ public class IndexingLanguageResolver {
         if (node.isASTInstance(ai.vespa.schemals.parser.indexinglanguage.ast.identifierStr.class) && node.getParent().isASTInstance(inputExp.class)) {
             Optional<Symbol> scope = CSTUtils.findScope(node);
             if (scope.isPresent()) {
-                Optional<Symbol> fieldDefinition = context.schemaIndex().findSymbol(scope.get(), SymbolType.FIELD, node.getText().toLowerCase());
+                Optional<Symbol> fieldDefinition = context.schemaIndex().findSymbol(scope.get(), SymbolType.FIELD, node.getText());
 
                 if (fieldDefinition.isPresent()) {
                     if (!context.fieldIndex().getIsInsideDoc(fieldDefinition.get())) {

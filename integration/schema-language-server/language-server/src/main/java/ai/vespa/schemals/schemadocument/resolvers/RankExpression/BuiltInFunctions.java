@@ -8,6 +8,8 @@ import java.util.Set;
 
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ExpressionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
@@ -16,19 +18,19 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Symbol
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.FieldType;
 
 public class BuiltInFunctions {
-    public static final Map<String, FunctionHandler> rankExpressionBuiltInFunctions = new HashMap<>() {{
+    public static final Map<String, GenericFunction> rankExpressionBuiltInFunctions = new HashMap<>() {{
         // ==== Query features ====
-        put("query", new GenericFunction(new FunctionSignature(new SymbolArgument(SymbolType.QUERY_INPUT, "value"))));
-        put("term", new GenericFunction(new IntegerArgument(), new HashSet<>() {{
+        put("query", new GenericFunction("query", new FunctionSignature(new SymbolArgument(SymbolType.QUERY_INPUT, "value"))));
+        put("term", new GenericFunction("term", new IntegerArgument(), new HashSet<>() {{
             add("significance");
             add("weight");
             add("connectedness");
         }}));
-        put("queryTermCount", new GenericFunction());
+        put("queryTermCount", new GenericFunction("queryTermCount"));
         
         // ==== Document features ====
-        put("fieldLength", new GenericFunction(new FunctionSignature(new FieldArgument())));
-        put("attribute", new GenericFunction(new ArrayList<>() {{
+        put("fieldLength", new GenericFunction("fieldLength", new FunctionSignature(new FieldArgument())));
+        put("attribute", new GenericFunction("attribute", new ArrayList<>() {{
             add(new FunctionSignature(new FieldArgument(FieldArgument.NumericOrTensorFieldType, IndexingType.ATTRIBUTE)));
             add(new FunctionSignature(new ArrayList<>() {{
                 add(new FieldArgument(FieldType.NUMERIC_ARRAY, IndexingType.ATTRIBUTE));
@@ -45,7 +47,7 @@ public class BuiltInFunctions {
         }}));
 
         // ==== Field match features - normalized ====
-        put("fieldMatch", new GenericFunction(new FieldArgument(FieldType.STRING), new HashSet<>() {{
+        put("fieldMatch", new GenericFunction("fieldMatch", new FieldArgument(FieldType.STRING), new HashSet<>() {{
             add("");
             add("proximity");
             add("completeness");
@@ -83,7 +85,7 @@ public class BuiltInFunctions {
         }}));
 
         // ==== Query and field similarity ====
-        put("textSimilarity", new GenericFunction(new FieldArgument(FieldType.STRING), new HashSet<>() {{
+        put("textSimilarity", new GenericFunction("textSimilarity", new FieldArgument(FieldType.STRING), new HashSet<>() {{
             add("");
             add("proximity");
             add("order");
@@ -92,22 +94,22 @@ public class BuiltInFunctions {
         }}));
 
         // ==== Query term and field match features ====
-        put("fieldTermMatch", new GenericFunction(new FunctionSignature(new ArrayList<>() {{
+        put("fieldTermMatch", new GenericFunction("fieldTermMatch", new FunctionSignature(new ArrayList<>() {{
             add(new FieldArgument(FieldType.STRING));
             add(new IntegerArgument());
         }}, new HashSet<>() {{
             add("firstPosition");
             add("occurences");
         }})));
-        put("matchCount", new GenericFunction(new FunctionSignature(new FieldArgument(FieldType.STRING, FieldArgument.IndexAttributeType))));
-        put("matches", new GenericFunction(new ArrayList<>() {{
+        put("matchCount", new GenericFunction("mathCount", new FunctionSignature(new FieldArgument(FieldType.STRING, FieldArgument.IndexAttributeType))));
+        put("matches", new GenericFunction("matches", new ArrayList<>() {{
             add(new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType)));
             add(new FunctionSignature(new ArrayList<>() {{
                 add(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType));
                 add(new IntegerArgument());
             }}));
         }}));
-        put("termDistance", new GenericFunction(new FunctionSignature(new ArrayList<>() {{
+        put("termDistance", new GenericFunction("termDistance", new FunctionSignature(new ArrayList<>() {{
             add(new FieldArgument());
             add(new ExpressionArgument("x"));
             add(new ExpressionArgument("y"));
@@ -119,72 +121,88 @@ public class BuiltInFunctions {
         }})));
 
         // ==== Features for idexed multivalue string fields ====
-        put("elementCompleteness", new GenericFunction(new FunctionSignature(new FieldArgument(), new HashSet<>() {{
+        put("elementCompleteness", new GenericFunction("elementCompleteness", new FunctionSignature(new FieldArgument(), new HashSet<>() {{
             add("completeness");
             add("fieldCompleteness");
             add("queryCompleteness");
             add("elementWeight");
         }})));
-        put("elementSimilarity", new GenericFunction(new FunctionSignature(new FieldArgument())));
+        put("elementSimilarity", new GenericFunction("elementSimilarity", new FunctionSignature(new FieldArgument())));
 
 
 
         
         // ==== Rank score ====
-        put("bm25", new GenericFunction(new FunctionSignature(new FieldArgument())));
-        put("nativeRank", new GenericFunction(new ArrayList<>() {{
+        put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
+        put("nativeRank", new GenericFunction("nativeRank", new ArrayList<>() {{
             add(new FunctionSignature());
-            add(new FunctionSignature(new FieldArgument())); // TODO: support unlimited number of fields
+            add(new FunctionSignature(new FieldArgument("field"))); // TODO: support unlimited number of fields
         }}));
 
 
 
         // ==== Global features ====
-        put("globalSequence", new GenericFunction());
-        put("now", new GenericFunction());
-        put("random", new GenericFunction());
-        put("random.match", new GenericFunction()); // This is buggy
+        put("globalSequence", new GenericFunction("globalSequence"));
+        put("now", new GenericFunction("now"));
+        // put("random", new GenericFunction());
+        // put("random.match", new GenericFunction()); // This is buggy
 
-        put("distance", new DistanceFunction());
+        put("distance", new GenericFunction("distance", new ArrayList<>() {{
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new KeywordArgument("field", "dimension"));
+                add(new FieldArgument());
+            }}));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new KeywordArgument("label", "dimension"));
+                add(new LabelArgument());
+            }}));
+        }}));
 
-        put("file", new GenericFunction());
+        put("file", new GenericFunction("file"));
+        put("closest", new GenericFunction("closest", new ArrayList<>() {{
+            add(new FunctionSignature(new FieldArgument()));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new FieldArgument());
+                add(new LabelArgument());
+            }}));
+        }}));
     }};
 
     public static final Set<String> simpleBuiltInFunctionsSet = new HashSet<>() {{
         add("age");
-        add("attribute");
+        // add("attribute");
         add("attributeMatch");
-        add("bm25");
+        // add("bm25");
         add("closeness");
-        add("closest");
+        // add("closest");
         add("closestdistanceage");
         add("constant");
         add("customTokenInputIds");
-        add("distance");
+        // add("distance");
         add("distanceToPath");
         add("dotProduct");
-        add("elementCompleteness");
-        add("elementSimilarity");
-        add("fieldLength");
-        add("fieldMatch");
-        add("fieldTermMatch");
+        // add("elementCompleteness");
+        // add("elementSimilarity");
+        // add("fieldLength");
+        // add("fieldMatch");
+        // add("fieldTermMatch");
         add("firstPhase");
         add("firstPhaseRank");
         add("foreach");
         add("freshness");
-        add("globalSequence");
+        // add("globalSequence");
         add("itemRawScore");
         add("match");
-        add("matchCount");
-        add("matches");
+        // add("matchCount");
+        // add("matches");
         add("nativeAttributeMatch");
         add("nativeDotProduct");
         add("nativeFieldMatch");
         add("nativeProximity");
-        add("nativeRank");
-        add("now");
-        add("query");
-        add("queryTermCount");
+        // add("nativeRank");
+        // add("now");
+        // add("query");
+        // add("queryTermCount");
         add("random");
         add("randomNormal");
         add("randomNormalStable");
@@ -193,9 +211,9 @@ public class BuiltInFunctions {
         add("secondPhase");
         add("tensorFromLabels");
         add("tensorFromWeightedSet");
-        add("term");
-        add("termDistance");
-        add("textSimilarity");
+        // add("term");
+        // add("termDistance");
+        // add("textSimilarity");
         add("tokenAttentionMask");
         add("tokenInputIds");
         add("tokenTypeIds");

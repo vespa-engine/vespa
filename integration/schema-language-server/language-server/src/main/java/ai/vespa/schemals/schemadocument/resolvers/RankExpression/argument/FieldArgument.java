@@ -43,10 +43,14 @@ public class FieldArgument extends SymbolArgument {
     private Set<FieldType> fieldTypes;
     private Set<IndexingType> indexingTypes;
 
-    public FieldArgument(Set<FieldType> fieldTypes, Set<IndexingType> indexingTypes) {
-        super(SymbolType.FIELD, "name");
+    public FieldArgument(Set<FieldType> fieldTypes, Set<IndexingType> indexingTypes, String displayStr) {
+        super(SymbolType.FIELD, displayStr);
         this.fieldTypes = fieldTypes;
         this.indexingTypes = indexingTypes;
+    }
+
+    public FieldArgument(Set<FieldType> fieldTypes, Set<IndexingType> indexingTypes) {
+        this(fieldTypes, indexingTypes, "name");
     }
 
     public FieldArgument(Set<FieldType> fieldTypes) {
@@ -79,6 +83,10 @@ public class FieldArgument extends SymbolArgument {
 
     public FieldArgument() {
         this(AnyFieldType);
+    }
+
+    public FieldArgument(String displayStr) {
+        this(AnyFieldType, new HashSet<>(), displayStr);
     }
 
     @Override

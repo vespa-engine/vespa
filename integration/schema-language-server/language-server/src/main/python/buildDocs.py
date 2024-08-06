@@ -3,10 +3,12 @@ import os
 import requests
 import pathlib
 from VespaDocHTMLParser import VespaDocHTMLParser
+from RankExpressionHTMLParser import RankExpressionHTMLParser
 
 URL_PREFIX: str = "https://raw.githubusercontent.com/vespa-engine/documentation/master/en"
 
 SCHEMA_URL = "/reference/schema-reference.html"
+RANK_EXPRESSION_URL = "/reference/rank-features.html"
 
 LINK_BASE_URL = "https://docs.vespa.ai/en"
 
@@ -32,6 +34,7 @@ def main():
     print("Downloading docs...")
 
     targetPath: pathlib.Path = pathlib.Path()
+    subPaths = ["schema", "rankExpression"]
 
     if (len(sys.argv) >= 2):
         targetPath = pathlib.Path(sys.argv[1])
@@ -45,23 +48,42 @@ def main():
     if not os.path.exists(targetPath):
         os.makedirs(targetPath)
 
-    data: str = fetchFile(SCHEMA_URL)
+    for subPath in subPaths:
+        absoluteSubPath = targetPath.joinpath(subPath)
+        if not os.path.exists(absoluteSubPath):
+            os.makedirs(absoluteSubPath)
+
+    shcemaDocData: str = fetchFile(SCHEMA_URL)
 
     parser = VespaDocHTMLParser(LINK_BASE_URL + SCHEMA_URL)
-    parser.feed(data)
+    parser.feed(shcemaDocData)
 
     tags = parser.getTags()
 
     for tag in tags:
 
         filename = convertToToken(tag.AST.getName())
-        data = tag.AST.toMarkdown()
+        shcemaDocData = tag.AST.toMarkdown()
 
         if filename in REPLACE_FILENAME_MAP:
             for fn in REPLACE_FILENAME_MAP[filename]:
-                 writeToFile(f"{targetPath}/{fn}.md", data)
+                 writeToFile(f"{targetPath}/schema/{fn}.md", shcemaDocData)
         else:
-            writeToFile(f"{targetPath}/{filename}.md", data)
+            writeToFile(f"{targetPath}/schema/{filename}.md", shcemaDocData)
+    
+    rankExpressionDocData: str = fetchFile(RANK_EXPRESSION_URL)
+
+    # print(rankExpressionDocData)
+
+    parser = RankExpressionHTMLParser(LINK_BASE_URL + RANK_EXPRESSION_URL)
+    parser.feed(rankExpressionDocData)
+
+    rows = parser.getRows()
+
+    for row in rows:
+        filename = row.getFunctionIdentifier()
+
+        writeToFile(f"{targetPath}/rankExpression/{filename}.md", row.getMarkdownContent())
 
 def writeToFile(filepath: str, data: str):
     with open(filepath, "w") as file:
