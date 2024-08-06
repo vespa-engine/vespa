@@ -11,8 +11,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.MarkedString;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
@@ -244,8 +246,24 @@ public class SchemaHover {
 
     public static Hover getHover(EventPositionContext context) {
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+
         if (node != null) {
-            return getSymbolHover(node, context);
+            Hover symbolHover = getSymbolHover(node, context);
+
+            if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+                var content = symbolHover.getContents();
+                if (content.isRight()) {
+                    MarkupContent markupContent = content.getRight();
+                    if (markupContent.getValue() == "builtin") {
+                        Hover builtinHover = getFileHoverInformation("rankExpression/" + node.getText(), node);
+                        if (builtinHover != null) {
+                            return builtinHover;
+                        }
+                    }
+                }
+            }
+
+            return symbolHover;
         }
 
         node = CSTUtils.getLeafNodeAtPosition(context.document.getRootNode(), context.position);
@@ -255,8 +273,10 @@ public class SchemaHover {
             return getIndexingHover(node, context);
         }
 
-        String markdownKey = node.getClassLeafIdentifierString();
+        return getFileHoverInformation("schema/" + node.getClassLeafIdentifierString(), node);
+    }
 
+    private static Hover getFileHoverInformation(String markdownKey, SchemaNode node) {
         // avoid doing unnecessary IO operations
         if (markdownContentCache.containsKey(markdownKey)) {
             return markdownContentCache.get(markdownKey);
