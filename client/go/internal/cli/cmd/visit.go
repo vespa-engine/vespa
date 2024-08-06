@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -37,7 +38,10 @@ type visitArgs struct {
 	bucketSpaces   []string
 	waitSecs       int
 	verbose        bool
-	cli            *CLI
+	headers        []string
+
+	cli    *CLI
+	header http.Header
 }
 
 func (v *visitArgs) writeBytes(b []byte) {
@@ -109,6 +113,11 @@ $ vespa visit --field-set "[id]" # list document IDs
 			if !result.Success {
 				return fmt.Errorf("argument error: %s", result.Message)
 			}
+			header, err := httputil.ParseHeader(vArgs.headers)
+			if err != nil {
+				return err
+			}
+			vArgs.header = header
 			waiter := cli.waiter(time.Duration(vArgs.waitSecs)*time.Second, cmd)
 			service, err := documentService(cli, waiter)
 			if err != nil {
@@ -117,7 +126,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 			if vArgs.verbose {
 				service.CurlWriter = vespa.CurlWriter{Writer: cli.Stderr}
 			}
-			result = probeHandler(service, cli)
+			result = probeHandler(&vArgs, service, cli)
 			if result.Success {
 				result = visitClusters(&vArgs, service)
 			}
@@ -142,6 +151,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
 	cmd.Flags().StringSliceVar(&vArgs.bucketSpaces, "bucket-space", []string{"global", "default"}, `The "default" or "global" bucket space`)
 	cmd.Flags().BoolVarP(&vArgs.verbose, "verbose", "v", false, `Print the equivalent curl command for the visit operation`)
+	cmd.Flags().StringSliceVarP(&vArgs.headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
 	cli.bindWaitFlag(cmd, 0, &vArgs.waitSecs)
 	return cmd
 }
@@ -160,7 +170,7 @@ func getEpoch(timeStamp string) (int64, error) {
 
 func checkArguments(vArgs visitArgs) (res OperationResult) {
 	if vArgs.slices > 0 || vArgs.sliceId > -1 {
-		if !(vArgs.slices > 0 && vArgs.sliceId > -1) {
+		if vArgs.slices <= 0 || vArgs.sliceId <= -1 {
 			return Failure("Both 'slices' and 'slice-id' must be set")
 		}
 		if vArgs.sliceId >= vArgs.slices {
@@ -209,7 +219,7 @@ func parseHandlersOutput(r io.Reader) (*HandlersInfo, error) {
 	return &handlersInfo, err
 }
 
-func probeHandler(service *vespa.Service, cli *CLI) (res OperationResult) {
+func probeHandler(vArgs *visitArgs, service *vespa.Service, cli *CLI) (res OperationResult) {
 	urlPath := service.BaseURL + "/"
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
@@ -218,6 +228,7 @@ func probeHandler(service *vespa.Service, cli *CLI) (res OperationResult) {
 	request := &http.Request{
 		URL:    url,
 		Method: "GET",
+		Header: vArgs.header,
 	}
 	timeout := time.Duration(90) * time.Second
 	response, err := service.Do(request, timeout)
@@ -297,7 +308,7 @@ func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 
 func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
-	var totalDocuments int = 0
+	var totalDocuments = 0
 	var continuationToken string
 	for {
 		var vvo *VespaVisitOutput
@@ -376,6 +387,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	request := &http.Request{
 		URL:    url,
 		Method: "GET",
+		Header: vArgs.header,
 	}
 	timeout := time.Duration(900) * time.Second
 	response, err := service.Do(request, timeout)

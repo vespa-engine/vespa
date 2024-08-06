@@ -106,8 +106,16 @@ func TestDocumentPutTransportError(t *testing.T) {
 }
 
 func TestDocumentGet(t *testing.T) {
-	assertDocumentGet([]string{"document", "get", "id:mynamespace:music::a-head-full-of-dreams"},
+	client := &mock.HTTPClient{}
+	assertDocumentGet(client, []string{"document", "get", "id:mynamespace:music::a-head-full-of-dreams"},
 		"id:mynamespace:music::a-head-full-of-dreams", t)
+}
+
+func TestDocumentGetWithHeader(t *testing.T) {
+	client := &mock.HTTPClient{}
+	assertDocumentGet(client, []string{"document", "get", "--header", "X-Foo: Bar", "id:mynamespace:music::a-head-full-of-dreams"},
+		"id:mynamespace:music::a-head-full-of-dreams", t)
+	assert.Equal(t, "Bar", client.LastRequest.Header.Get("X-Foo"))
 }
 
 func assertDocumentSend(args []string, expectedOperation string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
@@ -154,8 +162,7 @@ func assertDocumentSend(args []string, expectedOperation string, expectedMethod 
 	}
 }
 
-func assertDocumentGet(args []string, documentId string, t *testing.T) {
-	client := &mock.HTTPClient{}
+func assertDocumentGet(client *mock.HTTPClient, args []string, documentId string, t *testing.T) {
 	documentURL := "http://127.0.0.1:8080"
 	client.NextResponseString(200, "{\"fields\":{\"foo\":\"bar\"}}")
 	cli, stdout, _ := newTestCLI(t)
