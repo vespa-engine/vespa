@@ -136,7 +136,7 @@ public class BuiltInFunctions {
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
         put("nativeRank", new GenericFunction("nativeRank", new ArrayList<>() {{
             add(new FunctionSignature());
-            add(new FunctionSignature(new FieldArgument("field"))); // TODO: support unlimited number of fields
+            add(new FunctionSignature(new FieldArgument("field"), true)); // TODO: support unlimited number of fields
         }}));
 
 
