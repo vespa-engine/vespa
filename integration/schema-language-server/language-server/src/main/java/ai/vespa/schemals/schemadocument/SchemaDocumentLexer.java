@@ -11,9 +11,11 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /*
- * Class to manage a document as a list of tokens.
+ * Class to view a document as a list of tokens.
  * Contrary to usual standards, this will construct a list of tokens *after* parsing is done.
  * This is because we can exploit CongoCC to avoid dealing with complex lexing logic.
+ *
+ * Mainly used for completion.
  *
  * @author mangern
  * */

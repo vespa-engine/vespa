@@ -12,6 +12,9 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Responsible for LSP textDocument/definition requests.
+ */
 public class SchemaDefinition {
     public static ArrayList<Location> getDefinition(EventPositionContext context) {
 

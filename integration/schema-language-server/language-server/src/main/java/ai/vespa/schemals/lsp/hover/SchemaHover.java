@@ -27,7 +27,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 /**
- * Handles LSP hover requests.
+ * Responsible for LSP textDocument/hover requests.
  *
  * As a TODO it would have been nice with some highlighting on the generated Markdown.
  */

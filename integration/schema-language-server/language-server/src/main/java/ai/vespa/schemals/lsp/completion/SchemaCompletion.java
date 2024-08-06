@@ -18,6 +18,9 @@ import ai.vespa.schemals.lsp.completion.provider.SimpleColonCompletion;
 import ai.vespa.schemals.lsp.completion.provider.StructFieldCompletion;
 import ai.vespa.schemals.lsp.completion.provider.TypeCompletion;
 
+/**
+ * Responsible for LSP textDocument/completion requests.
+ */
 public class SchemaCompletion {
 
     private static CompletionProvider[] providers = {
