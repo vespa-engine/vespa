@@ -48,27 +48,44 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return signature.toString();
     }
 
+    List<CompletionItem> getUserDefinedFunctions(EventCompletionContext context, SchemaNode node) {
+        Optional<Symbol> scope = CSTUtils.findScope(node);
+        if (scope.isEmpty())return List.of();
+
+        Symbol scopeIterator = scope.get();
+
+        Symbol myFunction = null;
+
+        while (scopeIterator != null && scopeIterator.getType() != SymbolType.RANK_PROFILE) {
+            // cannot use user defined functions in lambda
+            if (scopeIterator.getType() == SymbolType.LAMBDA_FUNCTION) return List.of();
+
+            if (scopeIterator.getType() == SymbolType.FUNCTION)
+                myFunction = scopeIterator;
+
+            scopeIterator = scopeIterator.getScope();
+        }
+        if (scopeIterator == null) return List.of();
+
+        List<CompletionItem> ret = new ArrayList<>();
+
+        for (Symbol symbol : context.schemaIndex.listSymbolsInScope(scopeIterator, SymbolType.FUNCTION)) {
+            if (symbol.equals(myFunction)) continue;
+            ret.add(
+                CompletionUtils.constructFunction(symbol.getShortIdentifier(), getFunctionSignature(symbol), symbol.getPrettyIdentifier())
+            );
+        }
+        return ret;
+    }
+
 	@Override
 	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         SchemaNode clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
         if (matchFunctionCompletion(context,clean)) {
-            Optional<Symbol> scope = CSTUtils.findScope(clean);
-
             List<CompletionItem> result = new ArrayList<>();
 
-            if (scope.isPresent()) {
-                Symbol scopeIterator = scope.get();
-                while (scopeIterator != null && scopeIterator.getType() != SymbolType.RANK_PROFILE)scopeIterator = scopeIterator.getScope();
-                List<Symbol> userDefinedFunctions = context.schemaIndex.listSymbolsInScope(scopeIterator, EnumSet.of(SymbolType.FUNCTION));
-
-                result.addAll(
-                    userDefinedFunctions.stream()
-                    .map(symbol -> 
-                        CompletionUtils.constructFunction(symbol.getShortIdentifier(), getFunctionSignature(symbol), symbol.getPrettyIdentifier())
-                    ).toList()
-                );
-            }
+            result.addAll(getUserDefinedFunctions(context, clean));
 
             return result;
         }
