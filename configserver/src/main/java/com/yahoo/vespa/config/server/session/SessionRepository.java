@@ -636,7 +636,7 @@ public class SessionRepository {
                     continue;
 
                 log.log(Level.FINE, () -> "Candidate local session for deletion: " + sessionId +
-                        ", created: " + created(getSessionAppDir(sessionId)));
+                        ", created (on disk): " + created(getSessionAppDir(sessionId)));
 
                 var sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
                 Instant createTime = sessionZooKeeperClient.readCreateTime();
@@ -644,7 +644,7 @@ public class SessionRepository {
 
                 var expired = sessionLifeTimeElapsed(createTime);
                 log.log(Level.FINE, () -> "Candidate local session for deletion: " + sessionId +
-                        ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status) +
+                        ", created (in zk): " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status) +
                         ", hasExpired: " + expired);
 
                 if (expired && canBeDeleted(sessionId, status)) {

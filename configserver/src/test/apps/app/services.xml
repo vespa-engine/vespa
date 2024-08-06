@@ -8,7 +8,7 @@
     </admin>
 
     <content version="1.0">
-        <redundancy>2</redundancy>
+        <redundancy>1</redundancy>
         <documents>
             <document type="music" mode="index"/>
         </documents>
