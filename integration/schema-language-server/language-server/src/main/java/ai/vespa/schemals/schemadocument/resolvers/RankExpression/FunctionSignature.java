@@ -34,6 +34,10 @@ public class FunctionSignature {
         this(argument, properties, false);
     }
 
+    public FunctionSignature(List<Argument> arguments, boolean expandable) {
+        this(arguments, new HashSet<>(), expandable);
+    }
+
     public FunctionSignature(List<Argument> arguments) {
         this(arguments, new HashSet<>());
     }

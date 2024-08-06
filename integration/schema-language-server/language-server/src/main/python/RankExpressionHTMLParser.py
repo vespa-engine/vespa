@@ -40,7 +40,7 @@ class TRElm:
         return self.__str__()
 
     def getFunctionIdentifier(self) -> str:
-        return self.children[0].getContent()
+        return self.children[0].getContent().replace(", ", ",").replace("input_1,input_2,...", "input,...")
 
     def getMarkdownContent(self) -> str:
         rawContent = self.children[2].getNode().toMarkdown(False)

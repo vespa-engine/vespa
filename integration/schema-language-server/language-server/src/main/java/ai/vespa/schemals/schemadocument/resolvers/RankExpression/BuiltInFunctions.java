@@ -3,6 +3,7 @@ package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -138,8 +139,33 @@ public class BuiltInFunctions {
             add(new FunctionSignature());
             add(new FunctionSignature(new FieldArgument("field"), true)); // TODO: support unlimited number of fields
         }}));
+        put("nativeFieldMatch", new GenericFunction("nativeFieldMatch", List.of(
+            new FunctionSignature(),
+            new FunctionSignature(new FieldArgument(), true)
+        )));
+        put("nativeAttributeMatch", new GenericFunction("nativeAttributeMatch", List.of(
+            new FunctionSignature(),
+            new FunctionSignature(new FieldArgument(), true)
+        )));
 
-
+        // ==== Utility features ====
+        put("tokenInputIds", new GenericFunction("tokenInputIds", new FunctionSignature(List.of(
+            new IntegerArgument("length"),
+            new ExpressionArgument("input")
+        ), true)));
+        put("customTokenInputIds", new GenericFunction("customTokenInputIds", new FunctionSignature(List.of(
+            new IntegerArgument("start_sequence_id"),
+            new IntegerArgument("sep_sequence_idlenght"),
+            new ExpressionArgument("input")
+        ), true)));
+        put("tokenTypeIds", new GenericFunction("tokenTypeIds", new FunctionSignature(List.of(
+            new IntegerArgument("length"),
+            new ExpressionArgument("input")
+        ), true)));
+        put("tokenAttentionMask", new GenericFunction("tokenAttentionMask", new FunctionSignature(List.of(
+            new IntegerArgument("length"),
+            new ExpressionArgument("input")
+        ), true)));
 
         // ==== Global features ====
         put("globalSequence", new GenericFunction("globalSequence"));
@@ -179,7 +205,7 @@ public class BuiltInFunctions {
         // add("closest");
         add("closestdistanceage");
         add("constant");
-        add("customTokenInputIds");
+        // add("customTokenInputIds");
         // add("distance");
         add("distanceToPath");
         add("dotProduct");
@@ -197,9 +223,9 @@ public class BuiltInFunctions {
         add("match");
         // add("matchCount");
         // add("matches");
-        add("nativeAttributeMatch");
+        // add("nativeAttributeMatch");
         add("nativeDotProduct");
-        add("nativeFieldMatch");
+        // add("nativeFieldMatch");
         add("nativeProximity");
         // add("nativeRank");
         // add("now");
@@ -216,9 +242,9 @@ public class BuiltInFunctions {
         // add("term");
         // add("termDistance");
         // add("textSimilarity");
-        add("tokenAttentionMask");
-        add("tokenInputIds");
-        add("tokenTypeIds");
+        // add("tokenAttentionMask");
+        // add("tokenInputIds");
+        // add("tokenTypeIds");
         
 
         // TODO: these are only allowed in global-phase
