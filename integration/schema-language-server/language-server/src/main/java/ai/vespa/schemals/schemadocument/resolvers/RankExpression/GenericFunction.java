@@ -93,7 +93,7 @@ public class GenericFunction {
 
         if (property.isEmpty() && (signatureProps.contains("") || signatureProps.size() == 0)) {
             // This is valid
-            node.setBuiltInFunctionSignature(name + signature.get().toString());
+            node.setBuiltInFunctionSignature(new SpecificFunction(this, signature.get()));
             return diagnostics;
         }
         
@@ -137,7 +137,7 @@ public class GenericFunction {
             symbolNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
 
-        node.setBuiltInFunctionSignature(name + signature.get().toString() + (property.isPresent() ? "." + propertyString.get() : ""));
+        node.setBuiltInFunctionSignature(new SpecificFunction(this, signature.get(), propertyString));
 
         return diagnostics;
     }

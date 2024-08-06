@@ -23,6 +23,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -259,16 +260,22 @@ public class SchemaHover {
 
         RankNode rankNode = currentNode.getRankNode().get();
         logger.println(rankNode);
-        Optional<String> signatureString = rankNode.getBuiltInFunctionSignature();
+        Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
 
-        if (signatureString.isEmpty()) {
-            logger.println("No signature string is set");
+        if (functionSignature.isEmpty()) {
             return Optional.empty();
         }
 
-        logger.println("LOOKING FOR: " + signatureString.get());
+        logger.println("LOOKING FOR: " + functionSignature.get().getSignatureString());
+        Optional<Hover> result = getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(), node.getRange());
 
-        return getFileHoverInformation("rankExpression/" + signatureString.get(), node.getRange());
+        if (result.isPresent()) {
+            return result;
+        }
+
+        logger.println("NEW LOOKUP: " + functionSignature.get().getSignatureString(true));
+        
+        return getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(true), node.getRange());
     }
 
     public static Hover getHover(EventPositionContext context) {

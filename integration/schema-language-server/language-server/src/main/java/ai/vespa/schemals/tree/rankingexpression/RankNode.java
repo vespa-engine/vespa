@@ -19,6 +19,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class RankNode implements Iterable<RankNode>  {
@@ -64,7 +65,7 @@ public class RankNode implements Iterable<RankNode>  {
 
     private Optional<SchemaNode> proptery;
 
-    private Optional<String> builtInFunctionSignature = Optional.empty();
+    private Optional<SpecificFunction> builtInFunctionSignature = Optional.empty();
 
     private RankNode(SchemaNode node) {
         this.schemaNode = node;
@@ -200,11 +201,11 @@ public class RankNode implements Iterable<RankNode>  {
         return type;
     }
 
-    public Optional<String> getBuiltInFunctionSignature() {
+    public Optional<SpecificFunction> getBuiltInFunctionSignature() {
         return builtInFunctionSignature;
     }
 
-    public void setBuiltInFunctionSignature(String signature) {
+    public void setBuiltInFunctionSignature(SpecificFunction signature) {
         builtInFunctionSignature = Optional.of(signature);
     }
 
