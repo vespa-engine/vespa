@@ -2,8 +2,10 @@ package ai.vespa.schemals.lsp.completion.provider;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.CompletionItem;
 
@@ -15,6 +17,9 @@ import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
 import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionSignature;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -78,6 +83,35 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return ret;
     }
 
+    List<CompletionItem> getBuiltinFunctions(EventCompletionContext context, SchemaNode node) {
+        List<CompletionItem> ret = new ArrayList<>();
+        Set<String> addedNames = new HashSet<>();
+        for (var entry : BuiltInFunctions.rankExpressionBuiltInFunctions.entrySet()) {
+            if (!(entry.getValue() instanceof GenericFunction)) continue;
+            GenericFunction function = (GenericFunction)entry.getValue();
+
+            for (FunctionSignature signature : function.getSignatures()) {
+                StringBuilder signatureStr = new StringBuilder("(");
+                signatureStr.append(String.join(", ", signature.getArgumentList().stream().map(arg -> arg.displayString()).toList()));
+                signatureStr.append(")");
+                ret.add(CompletionUtils.constructFunction(entry.getKey(), signatureStr.toString(), "builtin"));
+                addedNames.add(entry.getKey());
+            }
+        }
+
+        for (String function : BuiltInFunctions.simpleBuiltInFunctionsSet) {
+            if (addedNames.contains(function))continue;
+            ret.add(CompletionUtils.constructFunction(function, "()", "builtin"));
+        }
+
+        return ret;
+    }
+
+    boolean matchFunctionProperty(EventCompletionContext context, SchemaNode node) {
+        context.logger.println(CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position));
+        return false;
+    }
+
 	@Override
 	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         SchemaNode clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
@@ -86,8 +120,10 @@ public class RankingExpressionCompletion implements CompletionProvider {
             List<CompletionItem> result = new ArrayList<>();
 
             result.addAll(getUserDefinedFunctions(context, clean));
+            result.addAll(getBuiltinFunctions(context, clean));
 
             return result;
+        } else if (matchFunctionProperty(context, clean)) {
         }
 
         return List.of();

@@ -58,6 +58,10 @@ public class GenericFunction implements FunctionHandler {
         this(new FunctionSignature());
     }
 
+    public List<FunctionSignature> getSignatures() {
+        return List.copyOf(signatures);
+    }
+
     @Override
     public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node) {
         List<Diagnostic> diagnostics = new ArrayList<>();

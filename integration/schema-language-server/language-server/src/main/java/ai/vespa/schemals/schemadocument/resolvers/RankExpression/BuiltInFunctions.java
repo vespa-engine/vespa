@@ -119,13 +119,13 @@ public class BuiltInFunctions {
         }})));
 
         // ==== Features for idexed multivalue string fields ====
-        put("elementCompletness", new GenericFunction(new FunctionSignature(new FieldArgument(), new HashSet<>() {{
+        put("elementCompleteness", new GenericFunction(new FunctionSignature(new FieldArgument(), new HashSet<>() {{
             add("completeness");
             add("fieldCompleteness");
             add("queryCompleteness");
             add("elementWeight");
         }})));
-        put("elemenSimilarity", new GenericFunction(new FunctionSignature(new FieldArgument())));
+        put("elementSimilarity", new GenericFunction(new FunctionSignature(new FieldArgument())));
 
 
 
@@ -144,8 +144,6 @@ public class BuiltInFunctions {
         put("now", new GenericFunction());
         put("random", new GenericFunction());
         put("random.match", new GenericFunction()); // This is buggy
-
-
 
         put("distance", new DistanceFunction());
 

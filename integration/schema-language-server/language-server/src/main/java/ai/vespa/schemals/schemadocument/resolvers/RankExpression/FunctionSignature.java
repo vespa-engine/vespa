@@ -67,8 +67,8 @@ public class FunctionSignature {
         return score;
     }
 
-    List<Argument> getArgumentList() {
-        return argumentList;
+    public List<Argument> getArgumentList() {
+        return List.copyOf(argumentList);
     }
 
     Set<String> getProperties() {

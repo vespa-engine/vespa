@@ -82,6 +82,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.schemaType = calculateSchemaType();
 
         for (var child : node) {
+            if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child);
             newNode.setParent(this);
             children.add(newNode);
@@ -103,6 +104,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         }
 
         for (var child : node) {
+            if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
             newNode.setParent(this);
             children.add(newNode);
@@ -124,6 +126,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         }
 
         for (var child : node) {
+            if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
             newNode.setParent(this);
             children.add(newNode);

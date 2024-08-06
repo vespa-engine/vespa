@@ -1,5 +1,6 @@
 package ai.vespa.schemals;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.PrepareRenameDefaultBehavior;
 import org.eclipse.lsp4j.PrepareRenameParams;
 import org.eclipse.lsp4j.PrepareRenameResult;
@@ -201,7 +203,18 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
         var contentChanges = params.getContentChanges();
         for (int i = 0; i < contentChanges.size(); i++) {
-            scheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
+            try {
+                scheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
+            } catch(Exception e) {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                PrintStream logger = new PrintStream(outputStream);
+
+                e.printStackTrace(logger);
+
+                schemaMessageHandler.logMessage(MessageType.Error, 
+                    "Updating file " + document.getUri() + " failed with error: " + outputStream.toString() 
+                );
+            }
         }
     }
 

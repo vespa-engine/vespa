@@ -146,6 +146,8 @@ public class CSTUtils {
     }
 
     private static SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
+        if (node == null) return null;
+
         if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
             return node;
         }
