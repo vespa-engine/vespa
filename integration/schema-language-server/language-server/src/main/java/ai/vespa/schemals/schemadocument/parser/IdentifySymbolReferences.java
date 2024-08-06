@@ -41,6 +41,8 @@ import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryItem;
 import ai.vespa.schemals.parser.ast.summarySourceList;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
+import ai.vespa.schemals.parser.rankingexpression.ast.LBRACE;
+import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -174,7 +176,8 @@ public class IdentifySymbolReferences extends Identifier {
                 node.setSymbol(type, context.fileURI(), null, referenceTo);
             }
             node.setSymbolStatus(SymbolStatus.UNRESOLVED);
-        }  else if (parent.getOriginalRankExpressionNode() instanceof BaseNode && ((BaseNode)parent.getOriginalRankExpressionNode()).expressionNode instanceof FunctionNode) {
+        } else if (parent.getOriginalRankExpressionNode() instanceof BaseNode 
+            && ((BaseNode)parent.getOriginalRankExpressionNode()).expressionNode instanceof FunctionNode) {
             // This might be a function reference
             Optional<Symbol> scope = CSTUtils.findScope(node);
             if (scope.isPresent()) {
@@ -183,6 +186,16 @@ public class IdentifySymbolReferences extends Identifier {
                 node.setSymbol(SymbolType.FUNCTION, context.fileURI(), null, node.getText());
             }
             node.setSymbolStatus(SymbolStatus.UNRESOLVED);
+        } else if (parent.getIsDirty() && node.getNextSibling().isASTInstance(LBRACE.class) && node.getNextSibling().getNextSibling().isASTInstance(args.class)) {
+            // This case happens if you write feature(). (with nothing after the dot). 
+            // Parser marks the parent as dirty, so it doesnt receive a ReferenceNode
+            Optional<Symbol> scope = CSTUtils.findScope(node);
+
+            if (scope.isPresent()) {
+                node.setSymbol(SymbolType.FUNCTION, context.fileURI(), scope.get());
+            } else {
+                node.setSymbol(SymbolType.FUNCTION, context.fileURI());
+            }
         }
         return ret;
     }

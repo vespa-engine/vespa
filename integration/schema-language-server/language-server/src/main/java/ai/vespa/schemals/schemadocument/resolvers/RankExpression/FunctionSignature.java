@@ -71,7 +71,7 @@ public class FunctionSignature {
         return List.copyOf(argumentList);
     }
 
-    Set<String> getProperties() {
+    public Set<String> getProperties() {
         return properties;
     }
 

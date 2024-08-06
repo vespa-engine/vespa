@@ -100,16 +100,20 @@ public class RankExpressionSymbolResolver {
     }
 
     private static void removeSymbolFromIndex(ParseContext context, SchemaNode node) {
-        do {
+        // walk down first-child path and remove the first symbol found 
+        // because some branches of the tree look like a long chain
+        while (true) {
             if (node.hasSymbol()) {
                 Symbol symbol = node.getSymbol();
                 if (symbol.getStatus() == SymbolStatus.REFERENCE) {
                     context.schemaIndex().deleteSymbolReference(symbol);
                 }
                 node.removeSymbol();
+                return;
             }
-            node = node.get(0);
-        } while (node.size() > 0);
+            if (node.size() > 0)node = node.get(0);
+            else break;
+        }
     }
 
     private static void findBuiltInFunction(RankNode node, ParseContext context, List<Diagnostic> diagnostics) {

@@ -1,7 +1,6 @@
 package ai.vespa.schemals.lsp.completion.provider;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -17,12 +16,15 @@ import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
 import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.parser.rankingexpression.ast.feature;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionSignature;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
  * RankingExpressionCompletion
@@ -107,25 +109,47 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return ret;
     }
 
-    boolean matchFunctionProperty(EventCompletionContext context, SchemaNode node) {
-        context.logger.println(CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position));
-        return false;
+    List<CompletionItem> getFunctionPropertyCompletion(EventCompletionContext context, SchemaNode startOfWordNode) {
+        if (context.triggerCharacter != '.') return List.of();
+        SchemaNode featureNode = CSTUtils.findASTClassAncestor(startOfWordNode, feature.class);
+        if (featureNode == null || featureNode.size() == 0) {
+            return List.of();
+        }
+        if (featureNode.getRankNode().isEmpty()) {
+            return List.of();
+        }
+
+        RankNode rankNode = featureNode.getRankNode().get();
+
+        Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
+        if (functionSignature.isEmpty()) {
+            return List.of();
+        }
+
+        FunctionSignature signature = functionSignature.get().getSignature();
+
+        List<CompletionItem> result = new ArrayList<>();
+
+        for (String prop : signature.getProperties()) {
+            if (prop.isBlank()) continue;
+            result.add(CompletionUtils.constructBasic(prop));
+        }
+        return result;
     }
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         SchemaNode clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
+        List<CompletionItem> result = new ArrayList<>();
         if (matchFunctionCompletion(context,clean)) {
-            List<CompletionItem> result = new ArrayList<>();
 
             result.addAll(getUserDefinedFunctions(context, clean));
             result.addAll(getBuiltinFunctions(context, clean));
 
-            return result;
-        } else if (matchFunctionProperty(context, clean)) {
+        } else {
+            result.addAll(getFunctionPropertyCompletion(context, CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.startOfWord())));
         }
-
-        return List.of();
+        return result;
 	}
 }
