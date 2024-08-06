@@ -21,6 +21,7 @@ import static com.yahoo.language.opennlp.OpenNlpTokenizer.Mode.*;
  */
 public class OpenNlpLinguistics extends SimpleLinguistics {
 
+    private final boolean snowballStemmingForEnglish;
     private final boolean cjk;
     private final boolean createCjkGrams;
     private final Detector detector;
@@ -31,6 +32,7 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
 
     @Inject
     public OpenNlpLinguistics(OpenNlpConfig config) {
+        this.snowballStemmingForEnglish = config.snowballStemmingForEnglish();
         this.cjk = config.cjk();
         this.createCjkGrams = config.createCjkGrams();
         this.detector = new OpenNlpDetector();
@@ -38,7 +40,8 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
 
     @Override
     public Tokenizer getTokenizer() {
-        return new OpenNlpTokenizer(OpenNlpTokenizer.Mode.index, getNormalizer(), getTransformer(), cjk, createCjkGrams);
+        return new OpenNlpTokenizer(OpenNlpTokenizer.Mode.index, getNormalizer(), getTransformer(),
+                                    snowballStemmingForEnglish, cjk, createCjkGrams);
     }
 
     @Override

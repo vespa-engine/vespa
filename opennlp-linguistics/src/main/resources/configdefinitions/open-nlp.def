@@ -1,6 +1,9 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package=ai.vespa.opennlp
 
+# Use OpenNlp instead of kStem also for english stemming. This gives more comprehensive stemming at higher cost.
+snowballStemmingForEnglish bool default=false
+
 # Do Chinese tokenization (using Jieba)
 cjk bool default=false
 
