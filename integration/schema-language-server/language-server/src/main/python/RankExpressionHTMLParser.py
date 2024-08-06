@@ -1,11 +1,12 @@
 from html.parser import HTMLParser
 from dataclasses import dataclass
 from urllib.parse import urljoin
-
+from Node import Node
 
 class TDElm:
 
     content: str
+    node: Node
 
     def __init__(self):
         self.content = ""
@@ -15,6 +16,12 @@ class TDElm:
     
     def getContent(self) -> str:
         return self.content
+
+    def setNode(self, node: Node):
+        self.node = node
+    
+    def getNode(self) -> Node:
+        return self.node
 
 class TRElm:
 
@@ -36,7 +43,7 @@ class TRElm:
         return self.children[0].getContent()
 
     def getMarkdownContent(self) -> str:
-        rawContent = self.children[2].getContent()
+        rawContent = self.children[2].getNode().toMarkdown(False)
         returnContent = ""
         for line in rawContent.split("\n"):
             returnContent += line.strip() + "\n"
@@ -52,6 +59,8 @@ class RankExpressionHTMLParser(HTMLParser):
     currentTD = None
 
     linkPrefix = ""
+
+    parseStack = []
 
     def __init__(self, linkPrefix):
         super().__init__()
@@ -73,11 +82,16 @@ class RankExpressionHTMLParser(HTMLParser):
         
         if (tag == "td"):
             self.currentTD = TDElm()
+            self.parseStack = [Node("parent", f"{self.linkPrefix}")]
+
+        elif (self.currentTD is not None):
+            self.parseStack.append(Node(tag, self.linkPrefix, attrs))
 
     
     def handle_data(self, data):
         if self.currentTD is not None:
             self.currentTD.addText(data)
+            self.parseStack[-1].addChild(data)
     
     def handle_endtag(self, tag):
         
@@ -89,7 +103,15 @@ class RankExpressionHTMLParser(HTMLParser):
                 self.tableRows.append(self.currentTR)
             self.currentTR = None
         
+        while len(self.parseStack) > 1:
+            elm = self.parseStack.pop()
+            self.parseStack[-1].addChild(elm)
+            if (elm.tag == tag):
+                break
+        
         if (tag == "td"):
+            self.currentTD.setNode(self.parseStack[0])
+            self.parseStack[0].close()
             self.currentTR.addChild(self.currentTD)
             self.currentTD = None
     

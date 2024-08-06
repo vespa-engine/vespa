@@ -63,7 +63,7 @@ def main():
     for tag in tags:
 
         filename = convertToToken(tag.AST.getName())
-        shcemaDocData = tag.AST.toMarkdown()
+        shcemaDocData = tag.AST.toMarkdown(True)
 
         if filename in REPLACE_FILENAME_MAP:
             for fn in REPLACE_FILENAME_MAP[filename]:
