@@ -11,11 +11,13 @@ import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ExpressionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.StringArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.VectorArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.FieldType;
 
 public class BuiltInFunctions {
@@ -203,13 +205,28 @@ public class BuiltInFunctions {
             add(new FunctionSignature(new FieldArgument("field"))); // TODO: support unlimited number of fields
         }}));
 
+        put("nativeDotProduct", new GenericFunction("nativeDotProduct"));
+        put("firstPhase", new GenericFunction("firstPhase"));
+        put("secondPhase", new GenericFunction("secondPhase"));
+        put("firstPhaseRank", new GenericFunction("firstPhaseRank"));
 
 
         // ==== Global features ====
         put("globalSequence", new GenericFunction("globalSequence"));
         put("now", new GenericFunction("now"));
         // put("random", new GenericFunction());
+
         // put("random.match", new GenericFunction()); // This is buggy
+        //
+        put("random", new GenericFunction("random"));
+
+        put("closest", new GenericFunction("closest", new ArrayList<>() {{
+            add(new FunctionSignature(new FieldArgument()));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new FieldArgument());
+                add(new LabelArgument());
+            }}));
+        }}));
 
         put("distance", new GenericFunction("distance", List.of( 
             new FunctionSignature(List.of(
@@ -229,56 +246,92 @@ public class BuiltInFunctions {
             ))
         )));
 
+        put("age", new GenericFunction("age", new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, IndexingType.ATTRIBUTE))));
+
         put("file", new GenericFunction("file"));
-        put("closest", new GenericFunction("closest", new ArrayList<>() {{
-            add(new FunctionSignature(new FieldArgument()));
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument());
-                add(new LabelArgument());
-            }}));
-        }}));
+
+        put("constant", new GenericFunction("constant", new FunctionSignature(new SymbolArgument(SymbolType.RANK_CONSTANT, "name"))));
+
+
+        put("distanceToPath", new GenericFunction("distanceToPath", new FunctionSignature(
+            new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE),
+            Set.of("distance", "traveled", "product")
+        )));
+
+        put("dotProduct", new GenericFunction("dotProduct", new FunctionSignature(List.of(
+            new FieldArgument(Set.of(FieldType.STRING, FieldType.INTEGER, FieldType.NUMERIC_ARRAY)),
+            new VectorArgument()
+        ))));
+
+        // === Match operator scores ===
+        put("rawScore", new GenericFunction("rawScore", new FunctionSignature(new FieldArgument())));
+        put("itemRawScore", new GenericFunction("itemRawScore", new FunctionSignature(new LabelArgument())));
+
+        put("foreach", new GenericFunction("foreach", List.of(
+            new FunctionSignature(List.of(
+                new KeywordArgument("fields"), 
+                new StringArgument("variable"), 
+                new ExpressionArgument("feature"), 
+                new StringArgument("condition"),
+                new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
+            )),
+            new FunctionSignature(List.of(
+                new KeywordArgument("terms"), 
+                new StringArgument("variable"), 
+                new ExpressionArgument("feature"), 
+                new StringArgument("condition"),
+                new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
+            )),
+            new FunctionSignature(List.of(
+                new KeywordArgument("attributes"), 
+                new StringArgument("variable"), 
+                new ExpressionArgument("feature"), 
+                new StringArgument("condition"),
+                new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
+            ))
+        )));
     }};
 
     public static final Set<String> simpleBuiltInFunctionsSet = new HashSet<>() {{
-        add("age");
+        // add("age");
         // add("attribute");
         // add("attributeMatch");
         // add("bm25");
         // add("closeness");
         // add("closest");
-        add("constant");
+        // add("constant");
         add("customTokenInputIds");
         // add("distance");
-        add("distanceToPath");
-        add("dotProduct");
+        // add("distanceToPath");
+        // add("dotProduct");
         // add("elementCompleteness");
         // add("elementSimilarity");
         // add("fieldLength");
         // add("fieldMatch");
         // add("fieldTermMatch");
-        add("firstPhase");
-        add("firstPhaseRank");
-        add("foreach");
-        add("freshness");
+        // add("firstPhase");
+        // add("firstPhaseRank");
+        // add("foreach");
+        // add("freshness");
         // add("globalSequence");
-        add("itemRawScore");
+        // add("itemRawScore");
         add("match");
         // add("matchCount");
         // add("matches");
         add("nativeAttributeMatch");
-        add("nativeDotProduct");
+        // add("nativeDotProduct");
         add("nativeFieldMatch");
         add("nativeProximity");
         // add("nativeRank");
         // add("now");
         // add("query");
         // add("queryTermCount");
-        add("random");
+        // add("random");
         add("randomNormal");
         add("randomNormalStable");
         add("rankingExpression"); // TODO: deprecated (?)
-        add("rawScore");
-        add("secondPhase");
+        // add("rawScore");
+        // add("secondPhase");
 
         // add("tensorFromLabels");
         // add("tensorFromWeightedSet");

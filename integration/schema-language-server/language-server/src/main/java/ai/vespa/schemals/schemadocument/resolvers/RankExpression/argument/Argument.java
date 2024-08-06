@@ -11,7 +11,7 @@ public interface Argument {
 
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode argument);
 
-    public boolean validateArgument(RankNode arguemnts);
+    public boolean validateArgument(RankNode arguments);
 
     public int getStrictness();
 

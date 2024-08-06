@@ -84,12 +84,19 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
 
-                return Either.forLeft(SchemaCompletion.getCompletionItems(eventContextCreator.createContext(completionParams)));
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                PrintStream errorLogger = new PrintStream(outputStream);
+                Either<List<CompletionItem>, CompletionList> result =
+                    Either.forLeft(SchemaCompletion.getCompletionItems(eventContextCreator.createContext(completionParams), errorLogger));
 
+                if (outputStream.size() > 0) {
+                    schemaMessageHandler.logMessage(MessageType.Error, 
+                        "Completion failed with errors: " + outputStream.toString() 
+                    );
+                }
+                return result;
             } catch(CancellationException ignore) {
                 // Ignore
-            } catch (Throwable e) {
-                logger.println(e);
             }
 
             // Return the list of completion items.

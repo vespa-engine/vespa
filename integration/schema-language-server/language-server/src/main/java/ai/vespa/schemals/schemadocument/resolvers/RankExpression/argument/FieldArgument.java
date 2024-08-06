@@ -19,6 +19,7 @@ public class FieldArgument extends SymbolArgument {
     public static enum FieldType {
         TENSOR,
         WSET,
+        INTEGER,
         NUMERIC,
         NUMERIC_ARRAY,
         STRING,

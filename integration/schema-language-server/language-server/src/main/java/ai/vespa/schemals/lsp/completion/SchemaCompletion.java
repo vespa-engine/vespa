@@ -1,5 +1,6 @@
 package ai.vespa.schemals.lsp.completion;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.CompletionItem;
@@ -36,7 +37,7 @@ public class SchemaCompletion {
         new RankingExpressionCompletion()
     };
 
-    public static ArrayList<CompletionItem> getCompletionItems(EventCompletionContext context) {
+    public static ArrayList<CompletionItem> getCompletionItems(EventCompletionContext context, PrintStream errorLogger) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
         if (StringUtils.isInsideComment(context.document.getCurrentContent(), context.position)) {
@@ -47,7 +48,7 @@ public class SchemaCompletion {
             try {
                 ret.addAll(provider.getCompletionItems(context));
             } catch(Exception e) {
-                //e.printStackTrace(context.logger);
+                e.printStackTrace(errorLogger);
             }
         }
 

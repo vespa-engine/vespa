@@ -23,21 +23,25 @@ public class KeywordArgument implements Argument {
     public KeywordArgument(String argument) {
         this(argument, argument);
     }
-
+    
+    @Override
     public String displayString() {
         return displayStr;
     }
 
     public String getArgument() { return argument; }
 
+    @Override
     public int getStrictness() {
         return 8;
     }
 
+    @Override
     public boolean validateArgument(RankNode node) {
         return node.getSchemaNode().getText().equals(argument);
     }
 
+    @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
         if (!validateArgument(node)) {
