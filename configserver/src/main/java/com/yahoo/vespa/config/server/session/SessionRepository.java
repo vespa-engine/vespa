@@ -682,6 +682,77 @@ public class SessionRepository {
         return created.plus(sessionLifetime).isBefore(clock.instant());
     }
 
+    public void deleteExpiredRemoteAndLocalSessions(Clock clock, Predicate<Session> sessionIsActiveForApplication) {
+        // All known sessions, both local (file) and remote (zookeeper)
+        Set<Long> sessions = getLocalSessionsIdsFromFileSystem();
+        sessions.addAll(getRemoteSessionsFromZooKeeper());
+
+        log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sessions);
+
+        // TODO: Sessions created last 30 seconds are considered new, exclude these to avoid deleting new sessions
+        Set<Long> newSessions = findNewSessionsInFileSystem();
+        // Avoid deleting too many in one run
+        int deleteMax = (int) Math.min(1000, Math.max(50, sessions.size() * 0.05));
+        int deleted = 0;
+        try {
+            for (Long sessionId : sessions) {
+                // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
+                // we will exclude these)
+                if (newSessions.contains(sessionId)) continue;
+
+                Session session = remoteSessionCache.get(sessionId);
+                if (session == null)
+                    session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
+
+                Instant createTime = session.getCreateTime();
+                Session.Status status = session.getStatus();
+                if (session.getStatus() == ACTIVATE && sessionIsActiveForApplication.test(session)) continue;
+
+                boolean hasExpired = hasExpired(createTime);
+                if (hasExpired) {
+                    log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
+                    deleteRemoteSessionFromZooKeeper(session);
+                    deleted++;
+                }
+
+                log.log(Level.FINE, () -> "Candidate local session for deletion: " + sessionId +
+                        ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status) +
+                        ", hasExpired: " + hasExpired);
+                if (hasExpired && canBeDeleted(sessionId, status)) {
+                    log.log(Level.FINE, () -> "expired: " + hasExpired + ", can be deleted: " + canBeDeleted(sessionId, status));
+                    deleteLocalSession(sessionId);
+                } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
+                    LocalSession localSession;
+                    log.log(Level.FINE, () -> "more than 1 day old: " + sessionId);
+                    try {
+                        localSession = getSessionFromFile(sessionId);
+                    } catch (Exception e) {
+                        log.log(Level.FINE, () -> "could not get session from file: " + sessionId + ": " + e.getMessage());
+                        continue;
+                    }
+                    Optional<ApplicationId> applicationId = localSession.getOptionalApplicationId();
+                    if (applicationId.isEmpty()) continue;
+
+                    if ( ! sessionIsActiveForApplication.test(localSession)) {
+                        log.log(Level.FINE, () -> "Will delete inactive session " + sessionId + " created " +
+                                createTime + " for '" + applicationId + "'");
+                        deleteLocalSession(sessionId);
+                    }
+                }
+                if (deleted >= deleteMax)
+                    return;
+            }
+        } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
+            log.log(Level.WARNING, "Error when purging old sessions ", e);
+        }
+        log.log(Level.FINE, () -> "Done purging old sessions");
+    }
+
+    private boolean hasExpired(Instant created) {
+        Duration expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
+        return created.plus(expiryTime).isBefore(clock.instant());
+    }
+
     // Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
     private boolean canBeDeleted(long sessionId, Session.Status status) {
         return ( ! List.of(UNKNOWN, ACTIVATE).contains(status))

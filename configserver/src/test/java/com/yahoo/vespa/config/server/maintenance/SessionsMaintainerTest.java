@@ -5,7 +5,6 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.LogSetup;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -186,14 +185,25 @@ public class SessionsMaintainerTest {
         assertFalse(applicationPath.toFile().exists()); // App has been deleted
     }
 
-    // Delay between deletion of local and remote sessions, simulate delay that will
-    // occur when deleting many sessions
     @Test
     @Ignore
-    public void testDeletionWithDelay() {
-        LogSetup.initVespaLogging("test");
-        flagSource = flagSource.withLongFlag(CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime);
-                //.withBooleanFlag(DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE.id(), true);
+    // Fails, due to delay between deleting local and remote sessions so that remote session
+    // might be deleted without local session being deleted. On next run there is no data in ZK, so
+    // info about when session was created is lost. New method for deleting sessions should be used, see
+    // test below
+    public void testDeletionWithDelayOldMethod() {
+        testDeletionWithDelay(flagSource.withLongFlag(CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime));
+    }
+
+    @Test
+    public void testDeletionWithDelayNewMethod() {
+        testDeletionWithDelay(flagSource.withLongFlag(CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime)
+                                      .withBooleanFlag(DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE.id(), true));
+    }
+
+    // Delay between deletion of local and remote sessions, simulate delay that will
+    // occur when deleting many sessions
+    private void testDeletionWithDelay(InMemoryFlagSource flagSource) {
         tester = createTester(flagSource);
         tester.deployApp(testApp, prepareParams()); // session 2 (numbering starts at 2)
 
@@ -218,9 +228,14 @@ public class SessionsMaintainerTest {
         clock.advance(Duration.ofSeconds(applicationRepository.configserverConfig().sessionLifetime())
                               .minus(Duration.ofSeconds(20).plus(Duration.ofSeconds(2))));
 
+        // Nothing should be deleted after maintainer has run
+        maintainer.maintain(() -> clock.advance(Duration.ofSeconds(5)));;
+        assertRemoteSessions(Set.of(2L, 3L, 4L));
+        assertLocalSessions(Set.of(2L, 3L, 4L));
+
         // Sessions 3 and 4 should be left after maintainer has run, 2 should be deleted
-        // Test this with advancing clock 5 seconds between deletion of local and remote sessions
-        maintainer.maintain(() -> clock.advance(Duration.ofSeconds(5)));
+        clock.advance(Duration.ofSeconds(5));
+        maintainer.maintain();
         assertRemoteSessions(Set.of(3L, 4L));
         assertLocalSessions(Set.of(3L, 4L));
     }
