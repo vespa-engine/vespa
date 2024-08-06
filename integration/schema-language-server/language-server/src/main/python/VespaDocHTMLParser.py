@@ -9,8 +9,8 @@ EXCLUDED_IDS = [
 
 class Node:
     tag: str
-    attrs: list[str] = []
-    children = []
+    attrs: list = []
+    children: list = []
     link: str = ""
 
     def __init__(self, tag: str, linkPrefix: str = "", attrs = []):
@@ -292,6 +292,6 @@ class VespaDocHTMLParser(HTMLParser):
                 if (elm.tag == tag):
                     break
 
-    def getTags(self) -> list[Tag]:
+    def getTags(self) -> list:
 
         return self.enconteredTags

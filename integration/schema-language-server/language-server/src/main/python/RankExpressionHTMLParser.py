@@ -18,7 +18,7 @@ class TDElm:
 
 class TRElm:
 
-    children: list[TDElm]
+    children: list
 
     def __init__(self):
         self.children = []
@@ -47,7 +47,7 @@ class RankExpressionHTMLParser(HTMLParser):
     
     insideTable = False
 
-    tableRows: list[TRElm] = []
+    tableRows: list = []
     currentTR = None
     currentTD = None
 
@@ -73,7 +73,6 @@ class RankExpressionHTMLParser(HTMLParser):
         
         if (tag == "td"):
             self.currentTD = TDElm()
-
 
     
     def handle_data(self, data):
