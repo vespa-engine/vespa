@@ -161,6 +161,13 @@ public class BuiltInFunctions {
         }}));
 
         put("file", new GenericFunction("file"));
+        put("closest", new GenericFunction("closest", new ArrayList<>() {{
+            add(new FunctionSignature(new FieldArgument()));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new FieldArgument());
+                add(new LabelArgument());
+            }}));
+        }}));
     }};
 
     public static final Set<String> simpleBuiltInFunctionsSet = new HashSet<>() {{
@@ -169,7 +176,7 @@ public class BuiltInFunctions {
         add("attributeMatch");
         // add("bm25");
         add("closeness");
-        add("closest");
+        // add("closest");
         add("closestdistanceage");
         add("constant");
         add("customTokenInputIds");

@@ -36,7 +36,7 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
 
-    private static Map<String, Hover> markdownContentCache = new HashMap<>();
+    private static Map<String, Optional<MarkupContent>> markdownContentCache = new HashMap<>();
 
     /**
      * Helper to check if a comment exists and extract it from a line
@@ -310,22 +310,29 @@ public class SchemaHover {
 
     private static Optional<Hover> getFileHoverInformation(String markdownKey, Range range) {
         // avoid doing unnecessary IO operations
-        // TODO: remove range from cache
         if (markdownContentCache.containsKey(markdownKey)) {
-            return Optional.of(markdownContentCache.get(markdownKey));
+            Optional<MarkupContent> mdContent = markdownContentCache.get(markdownKey);
+            if (mdContent != null) {
+                if (mdContent.isEmpty()) {
+                    return Optional.empty();
+                }
+                return Optional.of(new Hover(mdContent.get(), range));
+            }
         }
 
         String fileName = markdownPathRoot + markdownKey + ".md";
         InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
 
         if (inputStream == null) {
+            markdownContentCache.put(markdownKey, Optional.empty());
             return Optional.empty();
         }
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String markdown = reader.lines().collect(Collectors.joining(System.lineSeparator()));
 
-        Hover hover = new Hover(new MarkupContent(MarkupKind.MARKDOWN, markdown), range);
-		markdownContentCache.put(markdownKey, hover);
+        MarkupContent mdContent = new MarkupContent(MarkupKind.MARKDOWN, markdown);
+        Hover hover = new Hover(mdContent, range);
+		markdownContentCache.put(markdownKey, Optional.of(mdContent));
         return Optional.of(hover);
     }
 }
