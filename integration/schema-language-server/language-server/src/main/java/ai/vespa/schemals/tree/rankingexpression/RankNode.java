@@ -64,10 +64,14 @@ public class RankNode implements Iterable<RankNode>  {
 
     private Optional<SchemaNode> proptery;
 
+    private Optional<String> builtInFunctionSignature = Optional.empty();
+
     private RankNode(SchemaNode node) {
         this.schemaNode = node;
         this.type = rankNodeTypeMap.get(node.getASTClass());
         this.returnType = ReturnType.UNKNOWN;
+
+        node.setRankNode(this);
 
         if (this.type == RankNodeType.EXPRESSION) {
 
@@ -82,7 +86,11 @@ public class RankNode implements Iterable<RankNode>  {
             } else {
                 this.children = new ArrayList<>();
             }
+
             this.proptery = findProperty(node);
+            if (this.proptery.isPresent()) {
+                this.proptery.get().setRankNode(this);
+            }
 
         } else if (this.type == RankNodeType.BUILT_IN_FUNCTION) {
 
@@ -190,6 +198,14 @@ public class RankNode implements Iterable<RankNode>  {
 
     public RankNodeType getType() {
         return type;
+    }
+
+    public Optional<String> getBuiltInFunctionSignature() {
+        return builtInFunctionSignature;
+    }
+
+    public void setBuiltInFunctionSignature(String signature) {
+        builtInFunctionSignature = Optional.of(signature);
     }
 
     public SchemaNode getSymbolNode() {

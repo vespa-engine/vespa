@@ -97,7 +97,7 @@ public class FunctionSignature {
         List<String> argumentListStrings = argumentList.stream()
                                                        .map(arg -> arg.displayString())
                                                        .collect(Collectors.toList());
-        String arguments = String.join(", ", argumentListStrings);
+        String arguments = String.join(",", argumentListStrings);
         return "(" + arguments + ")";
     }
 }

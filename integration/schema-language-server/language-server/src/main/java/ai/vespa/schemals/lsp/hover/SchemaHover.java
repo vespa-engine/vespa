@@ -3,6 +3,7 @@ package ai.vespa.schemals.lsp.hover;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,22 +12,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Hover;
-import org.eclipse.lsp4j.MarkedString;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
  * Handles LSP hover requests.
@@ -244,6 +244,33 @@ public class SchemaHover {
         return null;
     }
 
+    private static Optional<Hover> rankFeatureHover(PrintStream logger, SchemaNode node) {
+
+        // Search for rankNode connection
+        SchemaNode currentNode = node;
+        while (currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION && currentNode.getRankNode().isEmpty()) {
+            currentNode = currentNode.getParent();
+            logger.println(currentNode);
+        }
+
+        if (currentNode.getRankNode().isEmpty()) {
+            return Optional.empty();
+        }
+
+        RankNode rankNode = currentNode.getRankNode().get();
+        logger.println(rankNode);
+        Optional<String> signatureString = rankNode.getBuiltInFunctionSignature();
+
+        if (signatureString.isEmpty()) {
+            logger.println("No signature string is set");
+            return Optional.empty();
+        }
+
+        logger.println("LOOKING FOR: " + signatureString.get());
+
+        return getFileHoverInformation("rankExpression/" + signatureString.get(), node.getRange());
+    }
+
     public static Hover getHover(EventPositionContext context) {
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
@@ -255,9 +282,10 @@ public class SchemaHover {
                 if (content.isRight()) {
                     MarkupContent markupContent = content.getRight();
                     if (markupContent.getValue() == "builtin") {
-                        Hover builtinHover = getFileHoverInformation("rankExpression/" + node.getText(), node);
-                        if (builtinHover != null) {
-                            return builtinHover;
+
+                        Optional<Hover> builtinHover = rankFeatureHover(context.logger, node);
+                        if (builtinHover.isPresent()) {
+                            return builtinHover.get();
                         }
                     }
                 }
@@ -273,26 +301,31 @@ public class SchemaHover {
             return getIndexingHover(node, context);
         }
 
-        return getFileHoverInformation("schema/" + node.getClassLeafIdentifierString(), node);
+        Optional<Hover> hoverInfo = getFileHoverInformation("schema/" + node.getClassLeafIdentifierString(), node.getRange());
+        if (hoverInfo.isEmpty()) {
+            return null;
+        }
+        return hoverInfo.get();
     }
 
-    private static Hover getFileHoverInformation(String markdownKey, SchemaNode node) {
+    private static Optional<Hover> getFileHoverInformation(String markdownKey, Range range) {
         // avoid doing unnecessary IO operations
+        // TODO: remove range from cache
         if (markdownContentCache.containsKey(markdownKey)) {
-            return markdownContentCache.get(markdownKey);
+            return Optional.of(markdownContentCache.get(markdownKey));
         }
 
         String fileName = markdownPathRoot + markdownKey + ".md";
         InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
 
         if (inputStream == null) {
-            return null;
+            return Optional.empty();
         }
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String markdown = reader.lines().collect(Collectors.joining(System.lineSeparator()));
 
-        Hover hover = new Hover(new MarkupContent(MarkupKind.MARKDOWN, markdown), node.getRange());
+        Hover hover = new Hover(new MarkupContent(MarkupKind.MARKDOWN, markdown), range);
 		markdownContentCache.put(markdownKey, hover);
-        return hover;
+        return Optional.of(hover);
     }
 }

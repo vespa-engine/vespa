@@ -13,13 +13,19 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 public class KeywordArgument implements Argument {
 
     private String argument;
+    private String displayStr;
+
+    public KeywordArgument(String argument, String displayStr) {
+        this.argument = argument;
+        this.displayStr = displayStr;
+    }
 
     public KeywordArgument(String argument) {
-        this.argument = argument;
+        this(argument, argument);
     }
 
     public String displayString() {
-        return argument;
+        return displayStr;
     }
 
     public int getStrictness() {
