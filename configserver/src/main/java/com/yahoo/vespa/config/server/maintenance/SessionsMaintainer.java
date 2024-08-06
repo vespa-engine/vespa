@@ -23,7 +23,19 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected double maintain() {
+        return maintain(Duration.ZERO);
+    }
+
+    // For testing, simulate delay when deleting many sessions
+    double maintain(Duration delay) {
         applicationRepository.deleteExpiredLocalSessions();
+
+        // Delay
+        try {
+            Thread.sleep(delay.toMillis());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         int deleted = applicationRepository.deleteExpiredRemoteSessions();
         log.log(Level.FINE, () -> "Deleted " + deleted + " expired remote sessions");
