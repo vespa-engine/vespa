@@ -28,6 +28,8 @@ public class KeywordArgument implements Argument {
         return displayStr;
     }
 
+    public String getArgument() { return argument; }
+
     public int getStrictness() {
         return 8;
     }

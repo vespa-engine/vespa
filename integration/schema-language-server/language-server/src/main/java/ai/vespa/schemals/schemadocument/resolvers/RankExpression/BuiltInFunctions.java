@@ -3,6 +3,7 @@ package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +47,28 @@ public class BuiltInFunctions {
             add(new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, IndexingType.ATTRIBUTE), "count"));
         }}));
 
+        // TODO: requires you to write attribute(name)
+        put("tensorFromWeightedSet", new GenericFunction("tensorFromWeightedSet", new ArrayList<>() {{
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source"));
+            }}));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source"));
+                add(new StringArgument("dimension"));
+            }}));
+        }})); 
+        
+        // TODO: requires you to write attribute(name)
+        put("tensorFromLabels", new GenericFunction("tensorFromLabels", new ArrayList<>() {{
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute"));
+            }}));
+            add(new FunctionSignature(new ArrayList<>() {{
+                add(new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute"));
+                add(new StringArgument("dimension"));
+            }}));
+        }}));
+
         // ==== Field match features - normalized ====
         put("fieldMatch", new GenericFunction("fieldMatch", new FieldArgument(FieldType.STRING), new HashSet<>() {{
             add("");
@@ -71,7 +94,7 @@ public class BuiltInFunctions {
             add("significance");
             add("importance");
         
-        // ==== Field matche features - not normalized ====
+        // ==== Field match features - not normalized ====
             add("segments");
             add("matches");
             add("degradedMatches");
@@ -101,7 +124,9 @@ public class BuiltInFunctions {
             add("firstPosition");
             add("occurences");
         }})));
+
         put("matchCount", new GenericFunction("mathCount", new FunctionSignature(new FieldArgument(FieldType.STRING, FieldArgument.IndexAttributeType))));
+
         put("matches", new GenericFunction("matches", new ArrayList<>() {{
             add(new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType)));
             add(new FunctionSignature(new ArrayList<>() {{
@@ -129,8 +154,47 @@ public class BuiltInFunctions {
         }})));
         put("elementSimilarity", new GenericFunction("elementSimilarity", new FunctionSignature(new FieldArgument())));
 
+        // === Attribute match features  ===
+        put("attributeMatch", new GenericFunction("attributeMatch", new FunctionSignature(new FieldArgument(), new HashSet<>() {{
+            // normalized
+            add("");
+            add("completeness");
+            add("queryCompleteness");
+            add("fieldCompleteness");
+            add("normalizedWeight");
+            add("normalizedWeightedWeight");
 
+            // normalized and relative to the whole query
+            add("weight");
+            add("significance");
+            add("importance");
 
+            // not normalized
+            add("matches");
+            add("totalWeight");
+            add("averageWeight");
+            add("maxWeight");
+        }})));
+
+        put("closeness", new GenericFunction("closeness", List.of( 
+            new FunctionSignature(List.of(new KeywordArgument("field", "dimension"), new FieldArgument(
+                FieldType.TENSOR,
+                IndexingType.ATTRIBUTE,
+                "name"
+            ))),
+            new FunctionSignature(List.of(new KeywordArgument("label", "dimension"), new LabelArgument("name"))),
+            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "position"), Set.of(
+                "",
+                "logscale"
+            ))
+        )));
+
+        put("freshness", new GenericFunction("freshness",
+            new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, IndexingType.ATTRIBUTE, "name"), Set.of(
+                "",
+                "logscale"
+            ))
+        ));
         
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
@@ -147,16 +211,23 @@ public class BuiltInFunctions {
         // put("random", new GenericFunction());
         // put("random.match", new GenericFunction()); // This is buggy
 
-        put("distance", new GenericFunction("distance", new ArrayList<>() {{
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new KeywordArgument("field", "dimension"));
-                add(new FieldArgument());
-            }}));
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new KeywordArgument("label", "dimension"));
-                add(new LabelArgument());
-            }}));
-        }}));
+        put("distance", new GenericFunction("distance", List.of( 
+            new FunctionSignature(List.of(
+                new KeywordArgument("field", "dimension"),
+                new FieldArgument()
+            )),
+            new FunctionSignature(List.of(
+                new KeywordArgument("label", "dimension"),
+                new LabelArgument("name")
+            )),
+            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "position"), Set.of(
+                "",
+                "km",
+                "index",
+                "latitude",
+                "longitude"
+            ))
+        )));
 
         put("file", new GenericFunction("file"));
         put("closest", new GenericFunction("closest", new ArrayList<>() {{
@@ -171,11 +242,10 @@ public class BuiltInFunctions {
     public static final Set<String> simpleBuiltInFunctionsSet = new HashSet<>() {{
         add("age");
         // add("attribute");
-        add("attributeMatch");
+        // add("attributeMatch");
         // add("bm25");
-        add("closeness");
+        // add("closeness");
         // add("closest");
-        add("closestdistanceage");
         add("constant");
         add("customTokenInputIds");
         // add("distance");
@@ -209,8 +279,9 @@ public class BuiltInFunctions {
         add("rankingExpression"); // TODO: deprecated (?)
         add("rawScore");
         add("secondPhase");
-        add("tensorFromLabels");
-        add("tensorFromWeightedSet");
+
+        // add("tensorFromLabels");
+        // add("tensorFromWeightedSet");
         // add("term");
         // add("termDistance");
         // add("textSimilarity");

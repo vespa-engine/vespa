@@ -251,7 +251,6 @@ public class SchemaHover {
         SchemaNode currentNode = node;
         while (currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION && currentNode.getRankNode().isEmpty()) {
             currentNode = currentNode.getParent();
-            logger.println(currentNode);
         }
 
         if (currentNode.getRankNode().isEmpty()) {
@@ -259,21 +258,18 @@ public class SchemaHover {
         }
 
         RankNode rankNode = currentNode.getRankNode().get();
-        logger.println(rankNode);
         Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
 
         if (functionSignature.isEmpty()) {
             return Optional.empty();
         }
 
-        logger.println("LOOKING FOR: " + functionSignature.get().getSignatureString());
         Optional<Hover> result = getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(), node.getRange());
 
         if (result.isPresent()) {
             return result;
         }
 
-        logger.println("NEW LOOKUP: " + functionSignature.get().getSignatureString(true));
         
         return getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(true), node.getRange());
     }
