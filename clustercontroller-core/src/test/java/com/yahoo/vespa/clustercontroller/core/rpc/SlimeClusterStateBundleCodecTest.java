@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundleUtil;
+import com.yahoo.vespa.clustercontroller.core.DistributionBuilder;
 import com.yahoo.vespa.clustercontroller.core.StateMapping;
 import org.junit.jupiter.api.Test;
 
@@ -93,6 +94,16 @@ public class SlimeClusterStateBundleCodecTest {
         var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
                 .feedBlock(ClusterStateBundle.FeedBlock.blockedWithDescription("more cake needed"))
                 .deriveAndBuild();
+        assertThat(roundtripEncode(stateBundle), equalTo(stateBundle));
+    }
+
+    @Test
+    void can_roundtrip_encode_bundle_with_distribution_config() {
+        var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
+                .distributionConfig(DistributionBuilder.configForHierarchicCluster(
+                        DistributionBuilder.withGroups(2).eachWithNodeCount(3)))
+                .deriveAndBuild();
+
         assertThat(roundtripEncode(stateBundle), equalTo(stateBundle));
     }
 

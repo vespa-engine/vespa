@@ -36,10 +36,11 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
 #include <iostream>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace cloud::config::filedistribution;
 using namespace proton;

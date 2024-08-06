@@ -55,7 +55,7 @@ PersistenceHandlerProxy::handleRemove(FeedToken token, const Bucket &bucket, Tim
 }
 
 void
-PersistenceHandlerProxy::handleRemoveByGid(FeedToken token, const storage::spi::Bucket &bucket, Timestamp timestamp, vespalib::stringref doc_type, const document::GlobalId& gid)
+PersistenceHandlerProxy::handleRemoveByGid(FeedToken token, const storage::spi::Bucket &bucket, Timestamp timestamp, std::string_view doc_type, const document::GlobalId& gid)
 {
     auto op = std::make_unique<RemoveOperationWithGid>(bucket.getBucketId().stripUnused(), timestamp, gid, doc_type);
     _feedHandler.handleOperation(std::move(token), std::move(op));

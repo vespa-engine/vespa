@@ -13,7 +13,7 @@ namespace vsm {
  */
 class TokensConverter : public search::docsummary::IStringFieldConverter
 {
-    vespalib::stringref _text;
+    std::string_view _text;
     bool                _exact_match;
     search::Normalizing _normalize_mode;
 

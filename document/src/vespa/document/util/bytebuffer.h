@@ -25,10 +25,10 @@ public:
 
     ByteBuffer(const ByteBuffer &);
     ByteBuffer& operator=(const ByteBuffer &) = delete;
-    ByteBuffer(ByteBuffer &&) = default;
-    ByteBuffer& operator=(ByteBuffer &&) = default;
+    ByteBuffer(ByteBuffer &&) noexcept = default;
+    ByteBuffer& operator=(ByteBuffer &&) noexcept = default;
 
-    ByteBuffer() : ByteBuffer(nullptr, 0) { }
+    ByteBuffer() noexcept : ByteBuffer(nullptr, 0) { }
     ~ByteBuffer() = default;
 
     /**
@@ -37,7 +37,7 @@ public:
      * @param buffer The buffer to represent.
      * @param len The length of the buffer
      */
-    ByteBuffer(const char* buffer, uint32_t len)
+    ByteBuffer(const char* buffer, uint32_t len) noexcept
         : _buffer(const_cast<char *>(buffer)),
           _len(len),
           _pos(0),

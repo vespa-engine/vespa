@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 
+namespace document { class DocumentType; }
 namespace search::aggregation { class Grouping; }
 namespace search::grouping {
 
@@ -44,7 +45,8 @@ public:
      **/
     GroupingSession(const SessionId & sessionId,
                     GroupingContext & groupingContext,
-                    const attribute::IAttributeContext &attrCtx);
+                    const attribute::IAttributeContext &attrCtx,
+                    const document::DocumentType * documentType);
     GroupingSession(const GroupingSession &) = delete;
     GroupingSession &operator=(const GroupingSession &) = delete;
 
@@ -63,7 +65,7 @@ public:
      * @param groupingContext The current grouping context.
      * @param attrCtx attribute context.
      **/
-    void init(GroupingContext & groupingContext, const attribute::IAttributeContext &attrCtx);
+    void init(GroupingContext & groupingContext, const attribute::IAttributeContext &attrCtx, const document::DocumentType * documentType);
 
     /**
      * This function is called to prepare for creation of individual
@@ -85,7 +87,8 @@ public:
      * @param thread_id thread id
      * @param attrCtx attribute context.
      **/
-    std::unique_ptr<GroupingContext> createThreadContext(size_t thread_id, const attribute::IAttributeContext &attrCtx);
+    std::unique_ptr<GroupingContext> createThreadContext(size_t thread_id, const attribute::IAttributeContext &attrCtx,
+                                                         const document::DocumentType * documentType);
 
     /**
      * Return the GroupingManager to use when performing grouping.

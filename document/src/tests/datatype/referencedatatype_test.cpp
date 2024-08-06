@@ -3,10 +3,10 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <ostream>
 #include <sstream>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace document;
 

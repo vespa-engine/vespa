@@ -9,16 +9,16 @@ using search::query::TermVector;
 
 namespace search::streaming {
 
-MultiTerm::MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, uint32_t num_terms)
-    : QueryTerm(std::move(result_base), "", index, Type::WORD, Normalizing::NONE),
+MultiTerm::MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms)
+    : QueryTerm(std::move(result_base), "", std::move(index), Type::WORD, Normalizing::NONE),
       _terms()
 {
     _terms.reserve(num_terms);
 }
 
-MultiTerm::MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index,
+MultiTerm::MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index,
                      std::unique_ptr<TermVector> terms, Normalizing normalizing)
-    : MultiTerm(std::move(result_base), index, terms->size())
+    : MultiTerm(std::move(result_base), std::move(index), terms->size())
 {
     auto num_terms = terms->size();
     for (uint32_t i = 0; i < num_terms; ++i) {

@@ -46,7 +46,7 @@ std::ostream &operator<<(std::ostream &os, const Inspector &inspector);
 // check if two inspectors are equal
 // has support for allowing specific mismatches
 bool are_equal(const Inspector &a, const Inspector &b,
-               std::function<bool(const std::vector<std::variant<size_t,vespalib::stringref>> &path,
+               std::function<bool(const std::vector<std::variant<size_t,std::string_view>> &path,
                                   const Inspector &sub_a, const Inspector &sub_b)> allow_mismatch);
 
 } // namespace vespalib::slime

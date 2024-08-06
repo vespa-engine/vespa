@@ -32,10 +32,10 @@ void my_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
     auto vector_cells = state.peek(1).cells().typify<LCT>();
     auto matrix_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_uninitialized_array<OCT>(self.result_size);
-    OCT *dst = dst_cells.begin();
-    const RCT *matrix = matrix_cells.cbegin();
+    OCT *dst = dst_cells.data();
+    const RCT *matrix = matrix_cells.data();
     for (size_t i = 0; i < self.result_size; ++i) {
-        *dst++ = my_dot_product<LCT,RCT,OCT,common_inner>(vector_cells.cbegin(), matrix, self.vector_size, self.result_size);
+        *dst++ = my_dot_product<LCT,RCT,OCT,common_inner>(vector_cells.data(), matrix, self.vector_size, self.result_size);
         matrix += (common_inner ? self.vector_size : 1);
     }
     state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
@@ -50,8 +50,8 @@ void my_cblas_double_xw_product_op(InterpretedFunction::State &state, uint64_t p
     cblas_dgemv(CblasRowMajor, common_inner ? CblasNoTrans : CblasTrans,
                 common_inner ? self.result_size : self.vector_size,
                 common_inner ? self.vector_size : self.result_size,
-                1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
-                0.0, dst_cells.begin(), 1);
+                1.0, matrix_cells.data(), common_inner ? self.vector_size : self.result_size, vector_cells.data(), 1,
+                0.0, dst_cells.data(), 1);
     state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
@@ -64,8 +64,8 @@ void my_cblas_float_xw_product_op(InterpretedFunction::State &state, uint64_t pa
     cblas_sgemv(CblasRowMajor, common_inner ? CblasNoTrans : CblasTrans,
                 common_inner ? self.result_size : self.vector_size,
                 common_inner ? self.vector_size : self.result_size,
-                1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
-                0.0, dst_cells.begin(), 1);
+                1.0, matrix_cells.data(), common_inner ? self.vector_size : self.result_size, vector_cells.data(), 1,
+                0.0, dst_cells.data(), 1);
     state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 

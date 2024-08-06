@@ -36,6 +36,7 @@
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
       "public double getDouble(int)",
       "public int getIndex(java.lang.String)",
+      "public java.lang.String resolveBinding(java.lang.String)",
       "public int size()",
       "public java.util.Set names()",
       "public java.util.Set arguments()",

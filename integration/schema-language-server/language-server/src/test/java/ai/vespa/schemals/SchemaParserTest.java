@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,7 +52,8 @@ public class SchemaParserTest {
         PrintStream logger = System.out;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
         TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, new ArrayList<>());
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
+        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler(logger);
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
         schemaIndex.clearDocument(fileName);
         ParseContext context = new ParseContext(input, logger, fileName, schemaIndex, scheduler);
         context.useDocumentIdentifiers();
@@ -91,23 +93,16 @@ public class SchemaParserTest {
 
         //PrintStream logger = System.err;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
-        schemaIndex.setWorkspaceURI(directoryURI);
 
         List<Diagnostic> diagnostics = new ArrayList<>();
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
+        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler(logger);
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+
+        scheduler.setupWorkspace(URI.create(directoryURI));
+
         List<String> schemaFiles = FileUtils.findSchemaFiles(directoryURI, logger);
         List<String> rankProfileFiles = FileUtils.findRankProfileFiles(directoryURI, logger);
-
-        scheduler.setReparseDescendants(false);
-        for (String schemaURI : schemaFiles) {
-            scheduler.addDocument(schemaURI);
-        }
-        for (String rankProfileURI : rankProfileFiles) {
-            scheduler.addDocument(rankProfileURI);
-        }
-        scheduler.reparseInInheritanceOrder();
-        scheduler.setReparseDescendants(true);
 
         diagnostics.clear();
 

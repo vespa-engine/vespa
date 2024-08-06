@@ -26,16 +26,15 @@ using vespalib::eval::CellType;
 using vespalib::Issue;
 using search::fef::FeatureType;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 namespace {
 
 struct WeightedStringVector
 {
     std::vector<IAttributeVector::WeightedString> _data;
-    void insert(vespalib::stringref key, vespalib::stringref weight) {
-        _data.emplace_back(key, util::strToNum<int32_t>(weight));
+    void insert(vespalib::string key, std::string_view weight) {
+        _data.emplace_back(std::move(key), util::strToNum<int32_t>(weight));
     }
 };
 
@@ -82,7 +81,7 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
                         vespalib::Stash &stash)
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(attrName);
-    if (attribute == NULL) {
+    if (attribute == nullptr) {
         Issue::report("tensor_from_weighted_set feature: The attribute vector '%s' was not found."
                       " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(valueType, stash);
@@ -117,7 +116,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
         auto factory = FastValueBuilderFactory::get();
         size_t sz = vector._data.size();
         auto builder = factory.create_value_builder<double>(valueType, 1, 1, sz);
-        std::vector<vespalib::stringref> addr_ref;
+        std::vector<std::string_view> addr_ref;
         for (const auto &elem : vector._data) {
             addr_ref.clear();
             addr_ref.push_back(elem.value());
@@ -142,5 +141,4 @@ TensorFromWeightedSetBlueprint::createExecutor(const search::fef::IQueryEnvironm
     return ConstantTensorExecutor::createEmpty(_valueType, stash);
 }
 
-} // namespace features
-} // namespace search
+}

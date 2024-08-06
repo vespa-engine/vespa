@@ -84,7 +84,7 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 	}
 	url, _ := url.Parse(service.BaseURL + "/search/")
 	urlQuery := url.Query()
-	for i := 0; i < len(arguments); i++ {
+	for i := range len(arguments) {
 		key, value := splitArg(arguments[i])
 		urlQuery.Set(key, value)
 	}

@@ -19,7 +19,7 @@ using vespalib::slime::ObjectInserter;
 namespace search::docsummary {
 
 DynamicDocsumWriter::ResolveClassInfo
-DynamicDocsumWriter::resolveClassInfo(vespalib::stringref class_name,
+DynamicDocsumWriter::resolveClassInfo(std::string_view class_name,
                                       const vespalib::hash_set<vespalib::string>& fields) const
 {
     DynamicDocsumWriter::ResolveClassInfo result;

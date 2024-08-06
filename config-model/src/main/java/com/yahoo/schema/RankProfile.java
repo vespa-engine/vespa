@@ -515,7 +515,7 @@ public class RankProfile implements Cloneable {
         try {
             firstPhaseRanking = new RankingExpressionFunction(parseRankingExpression(FIRST_PHASE, List.of(), expression), false);
         } catch (ParseException e) {
-            throw new IllegalArgumentException("Illegal first phase ranking function", e);
+            throw new IllegalArgumentException("Invalid first-phase function", e);
         }
     }
 
@@ -539,7 +539,7 @@ public class RankProfile implements Cloneable {
             secondPhaseRanking = new RankingExpressionFunction(parseRankingExpression(SECOND_PHASE, List.of(), expression), false);
         }
         catch (ParseException e) {
-            throw new IllegalArgumentException("Illegal second phase ranking function", e);
+            throw new IllegalArgumentException("Invalid second-phase function", e);
         }
     }
 
@@ -559,7 +559,7 @@ public class RankProfile implements Cloneable {
             globalPhaseRanking = new RankingExpressionFunction(parseRankingExpression(GLOBAL_PHASE, List.of(), expression), false);
         }
         catch (ParseException e) {
-            throw new IllegalArgumentException("Illegal global-phase ranking function", e);
+            throw new IllegalArgumentException("Invalid global-phase function", e);
         }
     }
 
@@ -576,8 +576,8 @@ public class RankProfile implements Cloneable {
      */
     public void setInheritedSummaryFeatures(String parentProfile) {
         if ( ! inheritedNames().contains(parentProfile))
-            throw new IllegalArgumentException("This can only inherit the summary features of a directly inherited profile, '" +
-                                               ", but attempting to inherit '" + parentProfile);
+            throw new IllegalArgumentException("This can only inherit the summary features of a directly inherited profile, " +
+                                               "but is attempting to inherit '" + parentProfile);
         this.inheritedSummaryFeaturesProfileName = parentProfile;
     }
 
@@ -592,8 +592,8 @@ public class RankProfile implements Cloneable {
      */
     public void setInheritedMatchFeatures(String parentProfile) {
         if ( ! inheritedNames().contains(parentProfile))
-            throw new IllegalArgumentException("This can only inherit the match features of a directly inherited profile, '" +
-                                               ", but attempting to inherit '" + parentProfile);
+            throw new IllegalArgumentException("This can only inherit the match features of a directly inherited profile," +
+                                               "but is attempting to inherit '" + parentProfile);
         this.inheritedMatchFeaturesProfileName = parentProfile;
     }
 
@@ -848,7 +848,7 @@ public class RankProfile implements Cloneable {
             addFunction(parseRankingExpression(name, arguments, expression), inline);
         }
         catch (ParseException e) {
-            throw new IllegalArgumentException("Could not parse function '" + name + "'", e);
+            throw new IllegalArgumentException("Invalid function '" + name + "'", e);
         }
     }
 
@@ -857,7 +857,7 @@ public class RankProfile implements Cloneable {
         RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
         if (functions.containsKey(function.getName())) {
             deployLogger.log(Level.WARNING, "Function '" + function.getName() + "' is defined twice " +
-                    "in rank profile '" + this.name + "'");
+                                            "in rank profile '" + this.name + "'");
         }
         functions.put(function.getName(), rankingExpressionFunction);
         allFunctionsCached = null;
@@ -987,14 +987,13 @@ public class RankProfile implements Cloneable {
 
     private ExpressionFunction parseRankingExpression(String name, List<String> arguments, String expression) throws ParseException {
         if (expression.trim().isEmpty())
-            throw new ParseException("Encountered an empty ranking expression in " + name() + ", " + name + ".");
+            throw new ParseException("Empty expression");
 
         try (Reader rankingExpressionReader = openRankingExpressionReader(name, expression.trim())) {
             return new ExpressionFunction(name, arguments, new RankingExpression(name, rankingExpressionReader));
         }
         catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
-            ParseException exception = new ParseException("Could not parse ranking expression '" + expression.trim() +
-                                                          "' in " + name() + ", " + name + ".");
+            ParseException exception = new ParseException("Invalid expression '" + expression.trim());
             throw (ParseException)exception.initCause(e);
         }
         catch (IOException e) {
@@ -1184,7 +1183,6 @@ public class RankProfile implements Cloneable {
                                               Map<String, RankingExpressionFunction> inlineFunctions,
                                               ExpressionTransforms expressionTransforms) {
         if (function == null) return null;
-
         RankProfileTransformContext context = new RankProfileTransformContext(this,
                                                                               queryProfiles,
                                                                               featureTypes,

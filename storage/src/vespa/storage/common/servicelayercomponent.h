@@ -62,7 +62,7 @@ public:
     using UP = std::unique_ptr<ServiceLayerComponent>;
 
     ServiceLayerComponent(ServiceLayerComponentRegister& compReg,
-                          vespalib::stringref name)
+                          std::string_view name)
         : StorageComponent(compReg, name),
           _bucketSpaceRepo(nullptr),
           _minUsedBitsTracker(nullptr)

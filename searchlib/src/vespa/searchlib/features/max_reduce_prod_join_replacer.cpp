@@ -109,9 +109,9 @@ struct MatchInputs {
     vespalib::string query_dim;
     MatchInputs() : attribute(), attribute_dim(), query(), query_dim() {}
     void process(const vespalib::string &param) {
-        if (starts_with(param, "tensorFromLabels")) {
+        if (param.starts_with("tensorFromLabels")) {
             try_extract_param(param, "attribute", attribute, attribute_dim);
-        } else if (starts_with(param, "tensorFromWeightedSet")) {
+        } else if (param.starts_with("tensorFromWeightedSet")) {
             try_extract_param(param, "query", query, query_dim);
         }
     }

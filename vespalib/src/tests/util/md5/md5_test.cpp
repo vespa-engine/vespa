@@ -6,7 +6,7 @@
 
 namespace vespalib {
 
-string md5_hash_of(stringref buffer) {
+string md5_hash_of(std::string_view buffer) {
     unsigned char hash_out[16]; // Always 128 bits.
     fastc_md5sum(buffer.data(), buffer.size(), hash_out);
     asciistream os;

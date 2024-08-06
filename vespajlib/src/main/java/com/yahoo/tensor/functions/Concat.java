@@ -62,7 +62,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
-        return "concat(" + argumentA.toString(context) + ", " + argumentB.toString(context) + ", " + dimension + ")";
+        return "concat(" + argumentA.toString(context) + ", " + argumentB.toString(context) +
+               ", " + context.resolveBinding(dimension) + ")";
     }
 
     @Override
@@ -70,7 +71,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return TypeResolver.concat(argumentA.type(context), argumentB.type(context), dimension);
+        return TypeResolver.concat(argumentA.type(context), argumentB.type(context), context.resolveBinding(dimension));
     }
 
     @Override

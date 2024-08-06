@@ -8,8 +8,10 @@
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP("sessionmanager_test");

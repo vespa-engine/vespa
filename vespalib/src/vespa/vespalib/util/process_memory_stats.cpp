@@ -24,7 +24,7 @@ namespace {
  */
 
 bool
-isRange(vespalib::stringref line) {
+isRange(std::string_view line) {
     for (char c : line) {
         if (c == ' ') {
             return true;
@@ -51,7 +51,7 @@ isRange(vespalib::stringref line) {
  */
 
 bool
-isAnonymous(vespalib::stringref line) {
+isAnonymous(std::string_view line) {
     int delims = 0;
     for (char c : line) {
         if (delims >= 4) {
@@ -78,8 +78,8 @@ isAnonymous(vespalib::stringref line) {
  * mapped pages.
  */
 
-vespalib::stringref
-getLineHeader(vespalib::stringref line)
+std::string_view
+getLineHeader(std::string_view line)
 {
     return line.substr(0, line.find(':'));
 }
@@ -97,12 +97,12 @@ ProcessMemoryStats::createStatsFromSmaps()
     uint64_t lineVal = 0;
     while (!smaps.eof()) {
         string backedLine = smaps.getline();
-        stringref line(backedLine);
+        std::string_view line(backedLine);
         if (isRange(line)) {
             ret._mappings_count += 1;
             anonymous = isAnonymous(line);
         } else if (!line.empty()) {
-            stringref lineHeader = getLineHeader(line);
+            std::string_view lineHeader = getLineHeader(line);
             if (lineHeader == "Size") {
                 asciistream is(line.substr(lineHeader.size() + 1));
                 is >> lineVal;

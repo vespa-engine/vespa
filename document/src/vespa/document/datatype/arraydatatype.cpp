@@ -42,11 +42,11 @@ ArrayDataType::equals(const DataType& other) const noexcept
 }
 
 void
-ArrayDataType::onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const
+ArrayDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const
 {
     if (remainFieldName[0] == '[') {
         size_t endPos = remainFieldName.find(']');
-        if (endPos == vespalib::stringref::npos) {
+        if (endPos == std::string_view::npos) {
             throw vespalib::IllegalArgumentException("Array subscript must be closed with ]");
         } else {
             int pos = endPos + 1;

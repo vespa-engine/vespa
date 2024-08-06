@@ -14,8 +14,8 @@ public:
     using SP = std::shared_ptr<WrongDistributionReply>;
 
     WrongDistributionReply();
-    WrongDistributionReply(const string &systemState);
-    ~WrongDistributionReply();
+    explicit WrongDistributionReply(string systemState);
+    ~WrongDistributionReply() override;
     const string &getSystemState() const { return _systemState; };
     void setSystemState(const string &state) { _systemState = state; };
     string toString() const override { return "wrongdistributionreply"; }

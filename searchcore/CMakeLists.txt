@@ -65,49 +65,26 @@ vespa_define_module(
     src/tests/proton/attribute/document_field_populator
     src/tests/proton/attribute/imported_attributes_context
     src/tests/proton/attribute/imported_attributes_repo
-    src/tests/proton/bucketdb/bucketdb
     src/tests/proton/common
     src/tests/proton/common/alloc_config
-    src/tests/proton/common/attribute_updater
-    src/tests/proton/common/document_type_inspector
     src/tests/proton/common/hw_info_sampler
     src/tests/proton/common/operation_rate_tracker
-    src/tests/proton/common/state_reporter_utils
     src/tests/proton/common/timer
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
     src/tests/proton/documentdb
-    src/tests/proton/documentdb/buckethandler
-    src/tests/proton/documentdb/clusterstatehandler
-    src/tests/proton/documentdb/combiningfeedview
-    src/tests/proton/documentdb/configurer
-    src/tests/proton/documentdb/document_scan_iterator
-    src/tests/proton/documentdb/document_subdbs
-    src/tests/proton/documentdb/documentbucketmover
-    src/tests/proton/documentdb/documentdbconfig
-    src/tests/proton/documentdb/documentdbconfigscout
-    src/tests/proton/documentdb/executor_threading_service
     src/tests/proton/documentdb/feedhandler
-    src/tests/proton/documentdb/feedview
     src/tests/proton/documentdb/fileconfigmanager
-    src/tests/proton/documentdb/job_tracked_maintenance_job
-    src/tests/proton/documentdb/lid_space_compaction
-    src/tests/proton/documentdb/maintenancecontroller
-    src/tests/proton/documentdb/move_operation_limiter
-    src/tests/proton/documentdb/storeonlyfeedview
-    src/tests/proton/documentdb/threading_service_config
     src/tests/proton/documentmetastore
     src/tests/proton/documentmetastore/lidreusedelayer
     src/tests/proton/documentmetastore/lid_allocator
     src/tests/proton/documentmetastore/lid_state_vector
     src/tests/proton/feed_and_search
-    src/tests/proton/feedoperation
     src/tests/proton/feedtoken
     src/tests/proton/flushengine
     src/tests/proton/flushengine/prepare_restart_flush_strategy
     src/tests/proton/flushengine/shrink_lid_space_flush_target
     src/tests/proton/index
-    src/tests/proton/index/index_writer
     src/tests/proton/initializer
     src/tests/proton/matchengine
     src/tests/proton/matching
@@ -121,18 +98,12 @@ vespa_define_module(
     src/tests/proton/matching/request_context
     src/tests/proton/matching/same_element_builder
     src/tests/proton/matching/unpacking_iterators_optimizer
-    src/tests/proton/metrics/documentdb_job_trackers
-    src/tests/proton/metrics/job_load_sampler
-    src/tests/proton/metrics/job_tracked_flush
-    src/tests/proton/metrics/metrics_engine
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
     src/tests/proton/persistenceengine/resource_usage_tracker
     src/tests/proton/persistenceengine/persistence_handler_map
     src/tests/proton/proton
-    src/tests/proton/proton_config_fetcher
     src/tests/proton/proton_configurer
-    src/tests/proton/proton_disk_layout
     src/tests/proton/reference/gid_to_lid_change_handler
     src/tests/proton/reference/gid_to_lid_change_listener
     src/tests/proton/reference/gid_to_lid_change_registrator
@@ -147,12 +118,9 @@ vespa_define_module(
     src/tests/proton/server/disk_mem_usage_filter
     src/tests/proton/server/disk_mem_usage_metrics
     src/tests/proton/server/disk_mem_usage_sampler
-    src/tests/proton/server/health_adapter
     src/tests/proton/server/initialize_threads_calculator
-    src/tests/proton/server/memory_flush_config_updater
     src/tests/proton/server/memoryflush
     src/tests/proton/server/shared_threading_service
-    src/tests/proton/statusreport
     src/tests/proton/summaryengine
     src/tests/proton/verify_ranksetup
     src/tests/index/disk_indexes

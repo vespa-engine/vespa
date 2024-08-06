@@ -174,6 +174,8 @@ public class LLMSearcher extends Searcher {
         int errorCode = 400;
         if (exception instanceof LanguageModelException languageModelException) {
             errorCode = languageModelException.code();
+        } else if (exception.getCause() instanceof LanguageModelException) {
+            errorCode = ((LanguageModelException) exception.getCause()).code();
         }
         eventStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage()));
     }

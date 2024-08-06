@@ -7,7 +7,7 @@ namespace mbus {
 
 class RPCSendV2 : public RPCSend {
 public:
-    static bool isCompatible(vespalib::stringref method, vespalib::stringref request, vespalib::stringref response);
+    static bool isCompatible(std::string_view method, std::string_view request, std::string_view response);
 private:
     void build(FRT_ReflectionBuilder & builder, CapabilitySet required_capabilities) override;
     const char * getReturnSpec() const override;

@@ -7,11 +7,11 @@ namespace search {
 namespace {
 class StringAsKey final : public IDirectPostingStore::LookupKey {
 public:
-    StringAsKey(vespalib::stringref key)
+    StringAsKey(std::string_view key)
         : _key(key)
     { }
 
-    vespalib::stringref asString() const override { return _key; }
+    std::string_view asString() const override { return _key; }
 private:
     vespalib::string _key;
 };
@@ -19,14 +19,14 @@ private:
 
 bool
 IDirectPostingStore::LookupKey::asInteger(int64_t &value) const {
-    vespalib::stringref str = asString();
+    std::string_view str = asString();
     const char *end = str.data() + str.size();
     auto res = std::from_chars(str.data(), end, value);
     return res.ptr == end;
 }
 
 IDirectPostingStore::LookupResult
-IDirectPostingStore::lookup(vespalib::stringref term, vespalib::datastore::EntryRef dictionary_snapshot) const {
+IDirectPostingStore::lookup(std::string_view term, vespalib::datastore::EntryRef dictionary_snapshot) const {
     return lookup(StringAsKey(term), dictionary_snapshot);
 }
 }

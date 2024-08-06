@@ -39,7 +39,7 @@ AsciiSerializer &AsciiSerializer::put(double value) {
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(stringref value) {
+AsciiSerializer &AsciiSerializer::put(std::string_view value) {
     _stream << value;
     return *this;
 }

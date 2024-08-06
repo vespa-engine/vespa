@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -eo pipefail
+
+PIPELINE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_PIPELINE_ID"
+
+if [[ $BUILDKITE_PULL_REQUEST != "false" ]]; then
+    echo "This is a pull request, skipping factory reporter"
+    exit 0
+fi
+if [[ -z $PIPELINE ]]; then
+    echo "No pipeline ID found, skipping factory reporter"
+    exit 0
+fi
+if [[ -z $BUILDKITE_BUILD_NUMBER ]]; then
+    echo "No BUILDKITE_BUILD_NUMBER environment found, skipping factory reporter"
+    exit 0
+fi
+
+if [[ -n $BUILDKITE_COMMAND_EXIT_STATUS ]] && (( $BUILDKITE_COMMAND_EXIT_STATUS != 0 )); then
+  $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE failure "Build failed"
+fi
+
+
+
+

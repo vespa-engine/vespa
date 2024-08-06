@@ -61,7 +61,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
 
     private static FleetControllerOptions.Builder createOptions(Map<String, Double> feedBlockLimits, double clusterFeedBlockNoiseLevel) {
         return defaultOptions()
-                .setStorageDistribution(DistributionBuilder.forFlatCluster(NODE_COUNT))
+                .setDistributionConfig(DistributionBuilder.configForFlatCluster(NODE_COUNT))
                 .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT)))
                 .setClusterFeedBlockEnabled(true)
                 .setClusterFeedBlockLimit(feedBlockLimits)

@@ -6,20 +6,21 @@
 
 namespace documentapi {
 
-RemoveDocumentMessage::RemoveDocumentMessage() :
-    TestAndSetMessage(),
-    _documentId()
+RemoveDocumentMessage::RemoveDocumentMessage()
+    : TestAndSetMessage(),
+      _documentId(),
+      _persisted_timestamp(0)
 {
 }
 
-RemoveDocumentMessage::RemoveDocumentMessage(const document::DocumentId& documentId) :
-    TestAndSetMessage(),
-    _documentId(documentId)
+RemoveDocumentMessage::RemoveDocumentMessage(const document::DocumentId& documentId)
+    :  TestAndSetMessage(),
+      _documentId(documentId),
+      _persisted_timestamp(0)
 {
 }
 
-RemoveDocumentMessage::~RemoveDocumentMessage() {
-}
+RemoveDocumentMessage::~RemoveDocumentMessage() = default;
 
 DocumentReply::UP
 RemoveDocumentMessage::doCreateReply() const

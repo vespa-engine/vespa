@@ -11,7 +11,8 @@ private:
     using DocumentSP = std::shared_ptr<document::Document>;
     DocumentSP _document;
     uint64_t   _time;
-    bool _create_if_non_existent = false;
+    uint64_t   _persisted_timestamp;
+    bool       _create_if_non_existent = false;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -54,7 +55,7 @@ public:
      *
      * @return The document timestamp.
      */
-    uint64_t getTimestamp() const { return _time; }
+    [[nodiscard]] uint64_t getTimestamp() const { return _time; }
 
     /**
      * Sets the timestamp of the document to put.
@@ -66,6 +67,12 @@ public:
     uint64_t getSequenceId() const override;
     uint32_t getType() const override;
     string toString() const override { return "putdocumentmessage"; }
+
+    void set_persisted_timestamp(uint64_t ts) noexcept { _persisted_timestamp = ts; }
+    // When a visitor client receives a Put as part of the visiting operation, this
+    // timestamp represents the wall clock time of the last mutating operation to the
+    // document. If zero, the content node was too old to support this feature.
+    [[nodiscard]] uint64_t persisted_timestamp() const noexcept { return _persisted_timestamp; }
 
     void set_create_if_non_existent(bool value) noexcept { _create_if_non_existent = value; }
     [[nodiscard]] bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }

@@ -175,7 +175,7 @@ struct FieldInverterTest : public ::testing::Test {
     void invertDocument(uint32_t docId, const Document &doc) {
         uint32_t fieldId = 0;
         for (auto &inverter : _inverters) {
-            vespalib::stringref fieldName =
+            std::string_view fieldName =
                 _schema.getIndexField(fieldId).getName();
             inverter->invertField(docId, doc.getValue(fieldName), doc);
             ++fieldId;

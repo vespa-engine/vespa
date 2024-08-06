@@ -50,7 +50,7 @@ MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type, MetricSet* o
 
 
 const Metric*
-MetricSet::getMetricInternal(stringref name) const
+MetricSet::getMetricInternal(string_view name) const
 {
     for (const Metric* metric : _metricOrder) {
         if (metric->getMangledName() == name) {
@@ -60,24 +60,24 @@ MetricSet::getMetricInternal(stringref name) const
     return 0;
 }
 
-int64_t MetricSet::getLongValue(stringref) const {
+int64_t MetricSet::getLongValue(string_view) const {
     assert(false);
     return 0;
 }
-double MetricSet::getDoubleValue(stringref) const {
+double MetricSet::getDoubleValue(string_view) const {
     assert(false);
     return 0;
 }
 
 const Metric*
-MetricSet::getMetric(stringref name) const
+MetricSet::getMetric(string_view name) const
 {
     vespalib::string::size_type pos = name.find('.');
     if (pos == vespalib::string::npos) {
         return getMetricInternal(name);
     } else {
-        stringref child(name.substr(0, pos));
-        stringref rest(name.substr(pos+1));
+        string_view child(name.substr(0, pos));
+        string_view rest(name.substr(pos + 1));
         const Metric* m(getMetricInternal(child));
         if (m == 0) return 0;
         if (!m->isMetricSet()) {
@@ -190,7 +190,7 @@ MetricSet::unregisterMetric(Metric& metric)
 }
 
 namespace {
-    using TmpString = vespalib::stringref;
+    using TmpString = std::string_view;
     class StringMetric {
     public:
         StringMetric(const TmpString & s, Metric * m) : first(s), second(m) { }

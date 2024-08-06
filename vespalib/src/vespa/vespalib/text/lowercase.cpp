@@ -6,7 +6,7 @@
 namespace vespalib {
 
 vespalib::string
-LowerCase::convert(vespalib::stringref input)
+LowerCase::convert(std::string_view input)
 {
     vespalib::string output;
     Utf8Reader r(input);
@@ -21,7 +21,7 @@ LowerCase::convert(vespalib::stringref input)
 }
 
 std::vector<uint32_t>
-LowerCase::convert_to_ucs4(vespalib::stringref input)
+LowerCase::convert_to_ucs4(std::string_view input)
 {
     std::vector<uint32_t> result;
     result.reserve(input.size());

@@ -77,8 +77,8 @@ public:
     FieldIndex(const index::Schema& schema, uint32_t fieldId, const index::FieldLengthInfo& info);
     ~FieldIndex();
 
-    typename PostingList::Iterator find(const vespalib::stringref word) const;
-    typename PostingList::ConstIterator findFrozen(const vespalib::stringref word) const;
+    typename PostingList::Iterator find(const std::string_view word) const;
+    typename PostingList::ConstIterator findFrozen(const std::string_view word) const;
 
     void compactFeatures() override;
 

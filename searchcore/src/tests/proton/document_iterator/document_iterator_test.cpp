@@ -18,8 +18,9 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <unordered_set>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_iterator_test");
@@ -399,7 +400,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, DocumentMetaEnum flags,
-                const GlobalId &gid, vespalib::stringref doc_type_name)
+                const GlobalId &gid, std::string_view doc_type_name)
 {
     ASSERT_LESS(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, flags, doc_type_name, gid);
@@ -425,7 +426,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
     EXPECT_GREATER(getSize(doc), 0u);
 }
 
-GlobalId gid_of(vespalib::stringref id_str) {
+GlobalId gid_of(std::string_view id_str) {
     return DocumentId(id_str).getGlobalId();
 }
 

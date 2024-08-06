@@ -32,7 +32,8 @@ public class ReplacingProductionRule extends ProductionRule {
             itemCount--;
 
             Match match = e.getNonreferencedMatch(i);
-            match.getItem().getParent().removeItem(match.getPosition());
+            if (match.getItem().getParent() != null)
+                match.getItem().getParent().removeItem(match.getPosition());
         }
     }
 

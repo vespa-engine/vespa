@@ -48,7 +48,7 @@ SmallSubspacesBufferType::fallback_copy(void *newBuffer, const void *oldBuffer, 
     }
     const char *elem = static_cast<const char *>(oldBuffer);
     while (num_entries >= 1) {
-        _ops.copied_labels(unconstify(vespalib::ConstArrayRef<char>(elem, getArraySize())));
+        _ops.copied_labels(vespalib::unconstify(vespalib::ConstArrayRef<char>(elem, getArraySize())));
         elem += getArraySize();
         --num_entries;
     }

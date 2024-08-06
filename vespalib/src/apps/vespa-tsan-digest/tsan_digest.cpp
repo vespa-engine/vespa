@@ -188,7 +188,7 @@ enum class ReportType { UNKNOWN, RACE };
 
 ReportType detect_report_type(const std::vector<vespalib::string> &lines) {
     for (const auto &line: lines) {
-        if (starts_with(line, "WARNING: ThreadSanitizer: data race")) {
+        if (line.starts_with("WARNING: ThreadSanitizer: data race")) {
             return ReportType::RACE;
         }
     }

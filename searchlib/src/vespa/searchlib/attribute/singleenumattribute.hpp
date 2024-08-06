@@ -329,7 +329,7 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
 
 template <typename B>
 std::unique_ptr<AttributeSaver>
-SingleValueEnumAttribute<B>::onInitSave(vespalib::stringref fileName)
+SingleValueEnumAttribute<B>::onInitSave(std::string_view fileName)
 {
     auto guard = this->getGenerationHandler().takeGuard();
     return std::make_unique<SingleValueEnumAttributeSaver>

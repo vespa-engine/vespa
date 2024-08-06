@@ -113,7 +113,7 @@ PosOccFieldsParams::readHeader(const vespalib::GenericHeader &header,
     for (uint32_t field = 0; field < numFields; ++field) {
         vespalib::asciistream as;
         as << prefix << "field[" << field << "].";
-        vespalib::string subPrefix(as.str());
+        vespalib::string subPrefix(as.view());
         _params[field].readHeader(header, subPrefix);
     }
 }
@@ -131,7 +131,7 @@ PosOccFieldsParams::writeHeader(vespalib::GenericHeader &header,
     for (uint32_t field = 0; field < _numFields; ++field) {
         vespalib::asciistream as;
         as << prefix << "field[" << field << "].";
-        vespalib::string subPrefix(as.str());
+        vespalib::string subPrefix(as.view());
         _params[field].writeHeader(header, subPrefix);
     }
 }

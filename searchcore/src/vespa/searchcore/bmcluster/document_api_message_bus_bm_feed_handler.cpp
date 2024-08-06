@@ -66,7 +66,7 @@ DocumentApiMessageBusBmFeedHandler::remove(const document::Bucket& bucket, const
 }
 
 void
-DocumentApiMessageBusBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
+DocumentApiMessageBusBmFeedHandler::get(const document::Bucket& bucket, std::string_view field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
 {
     auto msg = std::make_unique<documentapi::GetDocumentMessage>(document_id, field_set_string);
     send_msg(bucket, std::move(msg), tracker);

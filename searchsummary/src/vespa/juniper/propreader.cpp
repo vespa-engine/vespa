@@ -3,6 +3,8 @@
 #include "propreader.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include "juniperdebug.h"
+#include <cctype>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.propreader");
 
@@ -34,17 +36,17 @@ void PropReader::Process(const char* filename)
         if (line[0] == '#') continue; // skip comments
 
         // find key
-        for (i = 0; !isspace(line[i]); i++) { }
+        for (i = 0; !std::isspace(static_cast<unsigned char>(line[i])); i++) { }
         if (i == 0) continue; // Skip lines starting with blank
         line[i++] = 0;
         key = line;
 
-        for (; isspace(line[i]); i++) { }  // Skip blanks
+        for (; std::isspace(static_cast<unsigned char>(line[i])); i++) { }  // Skip blanks
 
         // find value
         int offset = 0;
         char* value = &line[i];
-        for (; !isspace(line[i]); i++)
+        for (; !std::isspace(static_cast<unsigned char>(line[i])); i++)
         {
             if (line[i] == '\\')
             {
@@ -55,7 +57,7 @@ void PropReader::Process(const char* filename)
                     for (int s = 1; s <= 2; s++, v<<=4)
                     {
                         unsigned char c = static_cast<unsigned char>(line[i + s]);
-                        if (isdigit(c))
+                        if (std::isdigit(c))
                             v += (c - '0');
                         else if (c < 'a')
                             v += (c - 'A' + 10);

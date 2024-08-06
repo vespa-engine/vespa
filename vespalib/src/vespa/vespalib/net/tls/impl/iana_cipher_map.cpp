@@ -7,8 +7,8 @@
 
 namespace vespalib::net::tls {
 
-using vespalib::stringref;
-using CipherMapType = std::unordered_map<stringref, stringref, vespalib::hash<stringref>>;
+using std::string_view;
+using CipherMapType = std::unordered_map<std::string_view, std::string_view, vespalib::hash<std::string_view>>;
 
 namespace {
 
@@ -34,7 +34,7 @@ const CipherMapType& modern_cipher_suites_iana_to_openssl() {
 
 } // anon ns
 
-const char* iana_cipher_suite_to_openssl(vespalib::stringref iana_name) {
+const char* iana_cipher_suite_to_openssl(std::string_view iana_name) {
     const auto& ciphers = modern_cipher_suites_iana_to_openssl();
     auto iter = ciphers.find(iana_name);
     return ((iter != ciphers.end()) ? iter->second.data() : nullptr);

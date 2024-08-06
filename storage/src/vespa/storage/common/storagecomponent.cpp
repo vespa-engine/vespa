@@ -20,7 +20,7 @@ StorageComponent::Repos::~Repos() = default;
 StorageComponent::~StorageComponent() = default;
 
 void
-StorageComponent::setNodeInfo(vespalib::stringref clusterName,
+StorageComponent::setNodeInfo(std::string_view clusterName,
                               const lib::NodeType& nodeType,
                               uint16_t index)
 {
@@ -67,7 +67,7 @@ StorageComponent::setNodeStateUpdater(NodeStateUpdater& updater)
 }
 
 StorageComponent::StorageComponent(StorageComponentRegister& compReg,
-                                   vespalib::stringref name)
+                                   std::string_view name)
     : Component(compReg, name),
       _cluster_ctx(),
       _nodeType(nullptr),

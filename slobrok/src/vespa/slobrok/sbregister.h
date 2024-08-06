@@ -41,13 +41,13 @@ public:
      * @brief Register a service with the slobrok cluster.
      * @param name service name to register
      **/
-    void registerName(vespalib::stringref name);
+    void registerName(std::string_view name);
 
     /**
      * @brief Unregister a service with the slobrok cluster
      * @param name service name to unregister
      **/
-    void unregisterName(vespalib::stringref name);
+    void unregisterName(std::string_view name);
 
     /**
      * @brief Check progress

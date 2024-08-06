@@ -32,7 +32,7 @@ ExtendableStringArrayMultiValueReadView<MultiValueType>::get_values(uint32_t doc
         *dst = multivalue::ValueBuilder<MultiValueType>::build(_buffer.data() + src, 1);
         ++dst;
     }
-    return vespalib::ConstArrayRef(_copy.data(), raw.size());
+    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
 }
 
 template class ExtendableStringArrayMultiValueReadView<const char*>;

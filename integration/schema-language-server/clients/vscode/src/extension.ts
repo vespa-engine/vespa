@@ -100,8 +100,8 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
 	};
     const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
     client.start();
-    return client;
-}
+    return client; 
+} 
 
 function showJavaErrorMessage() {
     const openSettingsButton = {

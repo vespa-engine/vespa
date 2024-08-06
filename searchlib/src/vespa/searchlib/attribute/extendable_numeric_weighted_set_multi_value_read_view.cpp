@@ -34,7 +34,7 @@ ExtendableNumericWeightedSetMultiValueReadView<MultiValueType, BaseType>::get_va
         ++src_weight;
         ++dst;
     }
-    return vespalib::ConstArrayRef(_copy.data(), raw.size());
+    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
 }
 
 template class ExtendableNumericWeightedSetMultiValueReadView<multivalue::WeightedValue<int64_t>, int64_t>;

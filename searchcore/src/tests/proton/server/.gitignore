@@ -2,8 +2,3 @@
 .depend
 Makefile
 test_data
-searchcore_attribute_metrics_test_app
-searchcore_documentretriever_test_app
-searchcore_feeddebugger_test_app
-searchcore_feedstates_test_app
-searchcore_memoryconfigstore_test_app

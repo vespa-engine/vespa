@@ -16,14 +16,14 @@ public:
     private:
         friend class CurrentIndexSetup;
         vespalib::hash_set<vespalib::string> _unbound;
-        void notify_unbound_struct_usage(vespalib::stringref name);
+        void notify_unbound_struct_usage(std::string_view name);
     public:
         Usage();
         ~Usage();
         [[nodiscard]] bool has_single_unbound_struct() const noexcept {
             return (_unbound.size() == 1);
         }
-        vespalib::stringref get_unbound_struct_name() const;
+        std::string_view get_unbound_struct_name() const;
         class Bind {
         private:
             CurrentIndexSetup &_setup;
@@ -41,8 +41,8 @@ private:
 public:
     CurrentIndexSetup();
     ~CurrentIndexSetup();
-    [[nodiscard]] const CurrentIndex *resolve(vespalib::stringref field_name) const;    
-    void bind(vespalib::stringref struct_name, const CurrentIndex &index);
+    [[nodiscard]] const CurrentIndex *resolve(std::string_view field_name) const;    
+    void bind(std::string_view struct_name, const CurrentIndex &index);
 };
 
 }

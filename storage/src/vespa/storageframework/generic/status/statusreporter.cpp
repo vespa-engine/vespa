@@ -5,7 +5,7 @@
 namespace storage {
 namespace framework {
 
-StatusReporter::StatusReporter(vespalib::stringref id, vespalib::stringref name)
+StatusReporter::StatusReporter(std::string_view id, std::string_view name)
     : _id(id),
       _name(name)
 {

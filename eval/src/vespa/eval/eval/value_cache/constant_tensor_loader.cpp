@@ -23,7 +23,7 @@ namespace {
 
 double decodeDouble(const Inspector &inspector) {
     if (inspector.type().getId() == vespalib::slime::STRING::ID) {
-        auto orig = inspector.asString().make_stringref();
+        auto orig = inspector.asString().make_stringview();
         auto lower = vespalib::LowerCase::convert(orig);
         if (lower == "infinity" || lower == "+infinity" || lower == "inf" || lower == "+inf") {
             double d = std::numeric_limits<double>::infinity();

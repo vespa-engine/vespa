@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/matching/match_phase_limiter.h>
 #include <vespa/searchcore/proton/matching/rangequerylocator.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
@@ -17,6 +16,8 @@
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace proton::matching;
 using namespace search::engine;
@@ -305,7 +306,7 @@ TEST_F("require that the match phase limiter may chose to limit the query even w
     EXPECT_TRUE(limiter.was_limited());
 }
 
-void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
+void verify(std::string_view expected, const vespalib::Slime & slime) {
     vespalib::Slime expectedSlime;
     vespalib::slime::JsonFormat::decode(expected, expectedSlime);
     EXPECT_EQUAL(expectedSlime, slime);

@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/net/http/simple_health_producer.h>
@@ -13,6 +12,8 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/process/process.h>
 #include <sys/stat.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 
@@ -56,7 +57,7 @@ get_body_and_content_type(const JsonGetHandler &handler,
     net::ConnectionAuthContext dummy_ctx(net::tls::PeerCredentials(), net::tls::CapabilitySet::all());
     auto res = handler.get(host, path, params, dummy_ctx);
     if (res.ok()) {
-        return {res.payload(), res.content_type()};
+        return {vespalib::string(res.payload()), vespalib::string(res.content_type())};
     }
     return {};
 }

@@ -33,7 +33,7 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_fastlib_text>
     $<TARGET_OBJECTS:vespalib_fastos>
     INSTALL lib64
-    DEPENDS
+    EXTERNAL_DEPENDS
     ${VESPA_GCC_LIB}
 )
 

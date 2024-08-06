@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -euo pipefail
+
+PIPELINE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_PIPELINE_ID"
+FIRST_STEP="$BUILDKITE_PLUGIN_FACTORY_REPORTER_FIRST_STEP"
+
+if [[ $BUILDKITE_PULL_REQUEST != "false" ]]; then
+    echo "This is a pull request, skipping factory reporter"
+    exit 0
+fi
+if [[ -z $PIPELINE ]]; then
+    echo "No pipeline ID found, skipping factory reporter"
+    exit 0
+fi
+
+if [[ -z $FIRST_STEP ]] || [[ $FIRST_STEP != "true" ]]; then
+    echo "Not first step, skipping build creation"
+    exit 0
+fi
+
+JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
+
+echo "Output from creating build : $JSON"
+
+VESPA_FACTORY_BUILD_ID=$(jq -re '.buildId' <<< "$JSON")
+export VESPA_FACTORY_BUILD_ID
+
+echo "Created factory build $VESPA_FACTORY_BUILD_ID for pipeline $PIPELINE"
+
+$BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE running "Building"
+
+echo "Set factory build $VESPA_FACTORY_BUILD_ID status to running"

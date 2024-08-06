@@ -54,7 +54,7 @@ public:
     /**
        Creates a field entry for an array, map or wset traversal using a variable.
     */
-    FieldPathEntry(const DataType & dataType, vespalib::stringref variableName);
+    FieldPathEntry(const DataType & dataType, std::string_view variableName);
 
     Type getType() const { return _type; }
     const vespalib::string & getName() const { return _name; }
@@ -78,7 +78,7 @@ public:
      * @param key is the incoming value, and contains what is left when done.
      * *return The unescaped value
      */
-    static vespalib::string parseKey(vespalib::stringref & key);
+    static vespalib::string parseKey(std::string_view & key);
 private:
     void setFillValue(const DataType & dataType);
     Type                                _type;

@@ -19,7 +19,16 @@ class SchemaInfoConfigurer {
     }
 
     static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {
-        Schema.Builder builder = new Schema.Builder(schemaInfoConfig.name());
+        Schema.Builder schemaBuilder = new Schema.Builder(schemaInfoConfig.name());
+
+        for (var fieldConfig : schemaInfoConfig.field()) {
+            Field.Builder fieldBuilder = new Field.Builder(fieldConfig.name(), fieldConfig.type());
+            fieldBuilder.setAttribute(fieldConfig.attribute());
+            fieldBuilder.setIndex(fieldConfig.index());
+            for (var alias : fieldConfig.alias())
+                fieldBuilder.addAlias(alias);
+            schemaBuilder.add(fieldBuilder.build());
+        }
 
         for (var profileConfig : schemaInfoConfig.rankprofile()) {
             RankProfile.Builder profileBuilder = new RankProfile.Builder(profileConfig.name())
@@ -28,7 +37,7 @@ class SchemaInfoConfigurer {
                     .setUseSignificanceModel(profileConfig.significance().useModel());
             for (var inputConfig : profileConfig.input())
                 profileBuilder.addInput(inputConfig.name(), RankProfile.InputType.fromSpec(inputConfig.type()));
-            builder.add(profileBuilder.build());
+            schemaBuilder.add(profileBuilder.build());
         }
 
         for (var summaryConfig : schemaInfoConfig.summaryclass()) {
@@ -38,10 +47,10 @@ class SchemaInfoConfigurer {
                     summaryBuilder.setDynamic(true);
                 summaryBuilder.add(new DocumentSummary.Field(field.name(), field.type()));
             }
-            builder.add(summaryBuilder.build());
+            schemaBuilder.add(summaryBuilder.build());
         }
 
-        return builder.build();
+        return schemaBuilder.build();
     }
 
     static List<Cluster> toClusters(QrSearchersConfig config) {

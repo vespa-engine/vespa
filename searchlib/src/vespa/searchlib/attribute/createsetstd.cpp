@@ -19,7 +19,7 @@ using attribute::BasicType;
 
 
 AttributeVector::SP
-AttributeFactory::createSetStd(stringref name, const Config & info)
+AttributeFactory::createSetStd(vespalib::string name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::WSET);
     AttributeVector::SP ret;

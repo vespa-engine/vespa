@@ -12,42 +12,42 @@ import java.util.stream.IntStream;
 
 public class DistributionBuilder {
     // TODO support nested groups
-    static class GroupBuilder {
+    public static class GroupBuilder {
         final int groupCount;
         List<Integer> groupsWithNodeCount;
 
-        GroupBuilder(int groupCount) {
+        public GroupBuilder(int groupCount) {
             this.groupCount = groupCount;
         }
 
-        GroupBuilder(int... nodeCounts) {
+        public GroupBuilder(int... nodeCounts) {
             this.groupCount = nodeCounts.length;
             this.groupsWithNodeCount = IntStream.of(nodeCounts).boxed()
                     .toList();
         }
 
-        GroupBuilder eachWithNodeCount(int nodeCount) {
+        public GroupBuilder eachWithNodeCount(int nodeCount) {
             groupsWithNodeCount = IntStream.range(0, groupCount)
                     .map(i -> nodeCount).boxed()
                     .toList();
             return this;
         }
 
-        int totalNodeCount() {
+        public int totalNodeCount() {
             return groupsWithNodeCount.stream().reduce(0, Integer::sum);
         }
 
-        String groupDistributionSpec() {
+        public String groupDistributionSpec() {
             return IntStream.range(0, groupCount).mapToObj(i -> "1")
                     .collect(Collectors.joining("|")) + "|*";
         }
     }
 
-    static GroupBuilder withGroups(int groups) {
+    public static GroupBuilder withGroups(int groups) {
         return new GroupBuilder(groups);
     }
 
-    static GroupBuilder withGroupNodes(int... nodeCounts) {
+    public static GroupBuilder withGroupNodes(int... nodeCounts) {
         return new GroupBuilder(nodeCounts);
     }
 
@@ -57,6 +57,10 @@ public class DistributionBuilder {
                 .toList();
     }
 
+    static List<ConfiguredNode> buildConfiguredNodes(Collection<Integer> nodes) {
+        return nodes.stream().map(i -> new ConfiguredNode(i, false)).toList();
+    }
+
     private static StorDistributionConfig.Group.Nodes.Builder configuredNode(ConfiguredNode node) {
         StorDistributionConfig.Group.Nodes.Builder builder = new StorDistributionConfig.Group.Nodes.Builder();
         builder.index(node.index());
@@ -64,25 +68,41 @@ public class DistributionBuilder {
     }
 
     private static StorDistributionConfig.Group.Builder configuredGroup(
-            String name, int index, Collection<ConfiguredNode> nodes) {
+            String name, String index, Collection<ConfiguredNode> nodes) {
         StorDistributionConfig.Group.Builder builder = new StorDistributionConfig.Group.Builder();
         builder.name(name);
-        builder.index(Integer.toString(index));
+        builder.index(index);
         nodes.forEach(n -> builder.nodes(configuredNode(n)));
         return builder;
     }
 
-    public static Distribution forFlatCluster(int nodeCount) {
-        Collection<ConfiguredNode> nodes = buildConfiguredNodes(nodeCount);
-
-        StorDistributionConfig.Builder configBuilder = new StorDistributionConfig.Builder();
-        configBuilder.redundancy(2);
-        configBuilder.group(configuredGroup("bar", 0, nodes));
-
-        return new Distribution(new StorDistributionConfig(configBuilder));
+    private static StorDistributionConfig.Group.Builder configuredGroup(
+            String name, int index, Collection<ConfiguredNode> nodes) {
+        return configuredGroup(name, Integer.toString(index), nodes);
     }
 
-    static Distribution forHierarchicCluster(GroupBuilder root) {
+    public static StorDistributionConfig configForFlatCluster(int redundancy, int searchableCopies, Collection<Integer> nodes) {
+        StorDistributionConfig.Builder configBuilder = new StorDistributionConfig.Builder();
+        configBuilder.redundancy(redundancy);
+        configBuilder.ready_copies(searchableCopies);
+        configBuilder.group(configuredGroup("invalid", "invalid", buildConfiguredNodes(nodes)));
+
+        return new StorDistributionConfig(configBuilder);
+    }
+
+    public static StorDistributionConfig configForFlatCluster(int redundancy, int searchableCopies, int nodeCount) {
+        return configForFlatCluster(redundancy, searchableCopies, IntStream.range(0, nodeCount).boxed().toList());
+    }
+
+    public static StorDistributionConfig configForFlatCluster(int nodeCount) {
+        return configForFlatCluster(2, 0, nodeCount);
+    }
+
+    public static Distribution forFlatCluster(int nodeCount) {
+        return new Distribution(configForFlatCluster(nodeCount));
+    }
+
+    public static StorDistributionConfig configForHierarchicCluster(GroupBuilder root) {
         List<ConfiguredNode> nodes = buildConfiguredNodes(root.totalNodeCount());
 
         StorDistributionConfig.Builder configBuilder = new StorDistributionConfig.Builder();
@@ -103,6 +123,10 @@ public class DistributionBuilder {
             offset += nodeCount;
         }
 
-        return new Distribution(new StorDistributionConfig(configBuilder));
+        return new StorDistributionConfig(configBuilder);
+    }
+
+    public static Distribution forHierarchicCluster(GroupBuilder root) {
+        return new Distribution(configForHierarchicCluster(root));
     }
 }

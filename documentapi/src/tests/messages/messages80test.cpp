@@ -20,17 +20,16 @@ namespace documentapi {
 
 // This is not version-dependent
 TEST(MessagesTest, concrete_types_have_expected_sizes) {
-    EXPECT_EQ(sizeof(GetDocumentMessage),    280u);
+    EXPECT_EQ(sizeof(GetDocumentMessage),    152u + 2 *sizeof(vespalib::string));
     EXPECT_EQ(sizeof(GetDocumentReply),      128u);
-    EXPECT_EQ(sizeof(vespalib::string),      64u);
     EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(vespalib::string));
     EXPECT_EQ(sizeof(DocumentMessage),       112u);
     EXPECT_EQ(sizeof(TestAndSetMessage),     sizeof(TestAndSetCondition) + sizeof(DocumentMessage));
-    EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 32);
+    EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 40);
     EXPECT_EQ(sizeof(WriteDocumentReply),    112u);
     EXPECT_EQ(sizeof(UpdateDocumentReply),   120u);
     EXPECT_EQ(sizeof(UpdateDocumentMessage), sizeof(TestAndSetMessage) + 40);
-    EXPECT_EQ(sizeof(RemoveDocumentMessage), sizeof(TestAndSetMessage) + 104);
+    EXPECT_EQ(sizeof(RemoveDocumentMessage), sizeof(TestAndSetMessage) + 48 + sizeof(vespalib::string));
     EXPECT_EQ(sizeof(RemoveDocumentReply),   120u);
 }
 
@@ -120,6 +119,7 @@ TEST_F(Messages80Test, put_document_message) {
 
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
+    msg.set_persisted_timestamp(0x1badcafef000000dULL);
 
     serialize("PutDocumentMessage", msg);
 
@@ -133,6 +133,7 @@ TEST_F(Messages80Test, put_document_message) {
         EXPECT_GT(deserializedMsg.getApproxSize(), 0u);
         EXPECT_EQ(deserializedMsg.getCondition().getSelection(), msg.getCondition().getSelection());
         EXPECT_FALSE(deserializedMsg.get_create_if_non_existent());
+        EXPECT_EQ(deserializedMsg.persisted_timestamp(), 0x1badcafef000000dULL);
     }
 
     //-------------------------------------------------------------------------
@@ -249,6 +250,7 @@ TEST_F(Messages80Test, update_document_reply) {
 TEST_F(Messages80Test, remove_document_message) {
     RemoveDocumentMessage msg(document::DocumentId("id:ns:testdoc::"));
     msg.setCondition(TestAndSetCondition("There's just one condition"));
+    msg.set_persisted_timestamp(0x1badcafef000000dULL);
 
     serialize("RemoveDocumentMessage", msg);
 
@@ -258,6 +260,7 @@ TEST_F(Messages80Test, remove_document_message) {
         auto& ref = dynamic_cast<RemoveDocumentMessage &>(*obj);
         EXPECT_EQ(ref.getDocumentId().toString(), "id:ns:testdoc::");
         EXPECT_EQ(ref.getCondition().getSelection(), msg.getCondition().getSelection());
+        EXPECT_EQ(ref.persisted_timestamp(), 0x1badcafef000000dULL);
     }
 }
 

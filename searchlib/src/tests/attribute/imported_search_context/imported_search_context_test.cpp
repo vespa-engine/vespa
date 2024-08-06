@@ -7,8 +7,9 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 namespace search::attribute {
 

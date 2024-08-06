@@ -25,17 +25,28 @@ TestNodeStateUpdater::getClusterStateBundle() const
 }
 
 void
+TestNodeStateUpdater::patch_distribution(std::shared_ptr<const lib::Distribution> distribution)
+{
+    _clusterStateBundle = _clusterStateBundle->clone_with_new_distribution(
+            lib::DistributionConfigBundle::of(std::move(distribution)));
+}
+
+void
 TestNodeStateUpdater::setClusterState(std::shared_ptr<const lib::ClusterState> c)
 {
-    setClusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(*c));
+    setClusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(std::move(c)));
 }
 
 void
 TestNodeStateUpdater::setClusterStateBundle(std::shared_ptr<const lib::ClusterStateBundle> clusterStateBundle)
 {
+    auto existing_distr = _clusterStateBundle->distribution_config_bundle();
     _clusterStateBundle = std::move(clusterStateBundle);
-    for (uint32_t i = 0; i < _listeners.size(); ++i) {
-        _listeners[i]->handleNewState();
+    if (!_clusterStateBundle->has_distribution_config() && existing_distr) {
+        _clusterStateBundle = _clusterStateBundle->clone_with_new_distribution(existing_distr);
+    }
+    for (auto* listener : _listeners) {
+        listener->handleNewState();
     }
 }
 

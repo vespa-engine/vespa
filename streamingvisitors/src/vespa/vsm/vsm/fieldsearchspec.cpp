@@ -21,8 +21,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.fieldsearchspec");
 
-#define DEBUGMASK 0x01
-
 using search::streaming::ConstQueryTermList;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
@@ -32,7 +30,7 @@ namespace vsm {
 namespace {
 
 void
-setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
+setMatchType(FieldSearcherContainer & searcher, std::string_view arg1) {
     if (arg1 == "prefix") {
         searcher->match_type(FieldSearcher::PREFIX);
     } else if (arg1 == "substring") {
@@ -63,7 +61,7 @@ FieldSearchSpec::FieldSearchSpec(FieldSearchSpec&& rhs) noexcept = default;
 FieldSearchSpec& FieldSearchSpec::operator=(FieldSearchSpec&& rhs) noexcept = default;
 
 FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname, Searchmethod searchDef,
-                                 Normalizing normalize_mode, vespalib::stringref arg1_in, size_t maxLength_in) :
+                                 Normalizing normalize_mode, std::string_view arg1_in, size_t maxLength_in) :
     _id(fid),
     _name(fname),
     _maxLength(maxLength_in),
@@ -182,7 +180,7 @@ namespace {
 }
 
 vespalib::string
-FieldSearchSpecMap::stripNonFields(vespalib::stringref rawIndex)
+FieldSearchSpecMap::stripNonFields(std::string_view rawIndex)
 {
     if ((rawIndex.find('[') != vespalib::string::npos) || (rawIndex.find('{') != vespalib::string::npos)) {
         std::string index = std::regex_replace(std::string(rawIndex), G_map1, G_value);
@@ -190,11 +188,11 @@ FieldSearchSpecMap::stripNonFields(vespalib::stringref rawIndex)
         index = std::regex_replace(index, G_array, G_empty);
         return index;
     }
-    return rawIndex;
+    return vespalib::string(rawIndex);
 }
 
 void
-FieldSearchSpecMap::addFieldsFromIndex(vespalib::stringref rawIndex, StringFieldIdTMap & fieldIdMap) const {
+FieldSearchSpecMap::addFieldsFromIndex(std::string_view rawIndex, StringFieldIdTMap & fieldIdMap) const {
     for (const auto & dtm : documentTypeMap()) {
         const IndexFieldMapT & fim = dtm.second;
         vespalib::string index(stripNonFields(rawIndex));
@@ -202,17 +200,18 @@ FieldSearchSpecMap::addFieldsFromIndex(vespalib::stringref rawIndex, StringField
         if (fIt != fim.end()) {
             for(FieldIdT fid : fIt->second) {
                 const FieldSearchSpec & spec = specMap().find(fid)->second;
-                LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", rawIndex.data(), index.c_str());
+                LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", std::string(rawIndex).c_str(), index.c_str());
                 if ((rawIndex != index) && (spec.name().find(index) == 0)) {
                     vespalib::string modIndex(rawIndex);
                     modIndex.append(spec.name().substr(index.size()));
+                    // Note: Multiple raw index names might map to the same field id
                     fieldIdMap.add(modIndex, spec.id());
                 } else {
                     fieldIdMap.add(spec.name(),spec.id());
                 }
             }
         } else {
-            LOG(warning, "No valid indexes registered for index %s", rawIndex.data());
+            LOG(warning, "No valid indexes registered for index %s", std::string(rawIndex).c_str());
         }
     }
 }

@@ -46,15 +46,15 @@ public:
         ~DistinguishedName();
 
         // TODO could add rvalue overloads as well...
-        DistinguishedName& country(vespalib::stringref c)      { _country = c; return *this; }
-        DistinguishedName& state(vespalib::stringref st)       { _state = st; return *this; }
-        DistinguishedName& locality(vespalib::stringref l)     { _locality = l; return *this; }
-        DistinguishedName& organization(vespalib::stringref o) { _organization = o; return *this; }
-        DistinguishedName& organizational_unit(vespalib::stringref ou) {
+        DistinguishedName& country(std::string_view c)      { _country = c; return *this; }
+        DistinguishedName& state(std::string_view st)       { _state = st; return *this; }
+        DistinguishedName& locality(std::string_view l)     { _locality = l; return *this; }
+        DistinguishedName& organization(std::string_view o) { _organization = o; return *this; }
+        DistinguishedName& organizational_unit(std::string_view ou) {
             _organizational_unit = ou;
             return *this;
         }
-        DistinguishedName& add_common_name(vespalib::stringref cn) {
+        DistinguishedName& add_common_name(std::string_view cn) {
             _common_names.emplace_back(cn);
             return *this;
         }

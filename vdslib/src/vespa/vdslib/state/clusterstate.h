@@ -32,10 +32,10 @@ public:
     ClusterState();
     ClusterState(const ClusterState&);
     // FIXME make ClusterState parsing not require null termination of string,
-    // then move to vespalib::stringref
-    explicit ClusterState(const vespalib::string& serialized);
+    // then move to std::string_view
+    explicit ClusterState(std::string_view serialized);
     ClusterState& operator=(const ClusterState& other) = delete;
-    ~ClusterState();
+    ~ClusterState() override;
 
     std::string getTextualDifference(const ClusterState& other) const;
     void serialize(vespalib::asciistream & out) const;
@@ -64,9 +64,9 @@ public:
 
 private:
     // Preconditions: `key` and `value` MUST point into null-terminated strings.
-    bool parse(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData);
+    bool parse(std::string_view key, std::string_view value, NodeData & nodeData);
     // Preconditions: `key` and `value` MUST point into null-terminated strings.
-    bool parseSorD(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData);
+    bool parseSorD(std::string_view key, std::string_view value, NodeData & nodeData);
     void removeExtraElements();
     void removeExtraElements(const NodeType& type);
     void printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, bool rootGroup) const;

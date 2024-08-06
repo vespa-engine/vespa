@@ -484,7 +484,7 @@ EnumeratedSaveTest::getSearch(const V &vec, const T &term, bool prefix)
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
     return (static_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(query.data(), query.size()),
+        getSearch(std::string_view(query.data(), query.size()),
                   SearchContextParams());
 }
 

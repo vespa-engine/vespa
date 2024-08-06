@@ -135,7 +135,7 @@ UrlFieldInverter::processUrlOldStyle(const vespalib::string &s, const Document& 
         size_t tokenLen = strlen(token);
         tokenLen = lowercaseToken(lowToken, token, tokenLen);
         token = lowToken.c_str();
-        vespalib::stringref tokenRef(token, tokenLen);
+        std::string_view tokenRef(token, tokenLen);
         switch (url_context) {
         case URL::URL_SCHEME:
             _scheme->addWord(tokenRef, doc);

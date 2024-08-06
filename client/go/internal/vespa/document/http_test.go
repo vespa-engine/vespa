@@ -34,7 +34,7 @@ type mockHTTPClient struct {
 func TestLeastBusyClient(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	var httpClients []httputil.Client
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		httpClients = append(httpClients, &mockHTTPClient{i, &httpClient})
 	}
 	client, _ := NewClient(ClientOptions{}, httpClients)

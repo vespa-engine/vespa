@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -54,7 +55,12 @@ class SignedIdentityDocumentEntityTypeResolver implements TypeIdResolver {
     @Override
     public JavaType typeFromId(DatabindContext databindContext, String s) throws IOException {
         try {
-            Class<? extends SignedIdentityDocumentEntity> cls = DefaultSignedIdentityDocumentEntity.class;
+            int version = Integer.parseInt(s);
+            Class<? extends SignedIdentityDocumentEntity> cls = switch (version) {
+                case SignedIdentityDocument.LEGACY_DOCUMENT_VERSION -> V4SignedIdentityDocumentEntity.class;
+                case SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION -> V5SignedIdentityDocumentEntity.class;
+                default -> throw new IllegalArgumentException("Unknown document version: " + version);
+            };
             return TypeFactory.defaultInstance().constructSpecializedType(javaType,cls);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Unable to deserialize document with version: \"%s\"".formatted(s));

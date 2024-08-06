@@ -27,7 +27,7 @@ struct IntegerKey : public LookupKey {
     int64_t _value;
     IntegerKey(int64_t value_in) : _value(value_in) {}
     IntegerKey(const vespalib::string&) : _value() { abort(); }
-    vespalib::stringref asString() const override { abort(); }
+    std::string_view asString() const override { abort(); }
     bool asInteger(int64_t& value) const override { value = _value; return true; }
 };
 
@@ -35,7 +35,7 @@ struct StringKey : public LookupKey {
     vespalib::string _value;
     StringKey(int64_t value_in) : _value(std::to_string(value_in)) {}
     StringKey(const vespalib::string& value_in) : _value(value_in) {}
-    vespalib::stringref asString() const override { return _value; }
+    std::string_view asString() const override { return _value; }
     bool asInteger(int64_t&) const override { abort(); }
 };
 

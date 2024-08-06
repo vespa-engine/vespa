@@ -112,7 +112,7 @@ TEST_F(HnswNodeidMappingTest, on_load_populates_mapping)
     nodes[7].levels_ref().store_relaxed(EntryRef(3));
     nodes[7].store_docid(4);
     nodes[7].store_subspace(1);
-    mapping.on_load(vespalib::ConstArrayRef(nodes.data(), 9));
+    mapping.on_load(vespalib::ConstArrayRef<HnswNode>(nodes.data(), 9));
     expect_get({1}, 7);
     expect_get({2, 7}, 4);
     // Drain free list when allocating nodeids.

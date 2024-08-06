@@ -44,7 +44,7 @@ void my_number_join_op(State &state, uint64_t param_in) {
     OCT number = state.peek(swap ? 1 : 0).as_double();
     auto src_cells = tensor.cells().typify<ICT>();
     auto dst_cells = make_dst_cells<ICT, OCT, inplace>(src_cells, state.stash);
-    apply_op2_vec_num(dst_cells.begin(), src_cells.begin(), number, dst_cells.size(), my_op);
+    apply_op2_vec_num(dst_cells.data(), src_cells.data(), number, dst_cells.size(), my_op);
     if (inplace) {
         state.pop_pop_push(tensor);
     } else {

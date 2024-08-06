@@ -106,9 +106,15 @@ struct ResolveCurrentIndex : vespalib::ObjectOperation, vespalib::ObjectPredicat
     const CurrentIndexSetup &setup;
     ResolveCurrentIndex(const CurrentIndexSetup &setup_in) noexcept : setup(setup_in) {}
     void execute(vespalib::Identifiable &obj) override {
-        auto &attr = static_cast<AttributeNode &>(obj);
-        if (attr.getCurrentIndex() == nullptr) {
-            attr.setCurrentIndex(setup.resolve(attr.getAttributeName()));
+        if (obj.getClass().equal(AttributeNode::classId)) {
+            // Only resolve current index for actual attributes.
+            // Pseudo-attributes are allowed to satisfy the check
+            // before being ignored here to avoid looking at their
+            // children.
+            auto &attr = static_cast<AttributeNode &>(obj);
+            if (attr.getCurrentIndex() == nullptr) {
+                attr.setCurrentIndex(setup.resolve(attr.getAttributeName()));
+            }
         }
     }
     bool check(const vespalib::Identifiable &obj) const override {

@@ -51,7 +51,7 @@ DocsumContext::initState()
     _docsumState._args.initFromDocsumRequest(req);
     auto [session, expectSession] = Matcher::lookupSearchSession(_sessionMgr, req);
     if (session) {
-        vespalib::stringref queryStack = session->getStackDump();
+        std::string_view queryStack = session->getStackDump();
         _docsumState._args.setStackDump(queryStack.size(), queryStack.data());
     }
     _docsumState._docsumbuf.clear();

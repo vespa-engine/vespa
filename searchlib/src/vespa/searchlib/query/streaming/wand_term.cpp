@@ -9,8 +9,8 @@ using search::fef::MatchData;
 
 namespace search::streaming {
 
-WandTerm::WandTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, uint32_t num_terms)
-    : DotProductTerm(std::move(result_base), index, num_terms),
+WandTerm::WandTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms)
+    : DotProductTerm(std::move(result_base), std::move(index), num_terms),
       _score_threshold(0.0)
 {
 }

@@ -68,7 +68,7 @@ JSONWriter::quote(const char * str, size_t len)
 }
 
 JSONWriter::JSONWriter() :
-    _os(NULL),
+    _os(nullptr),
     _stack(),
     _comma(false),
     _pretty(false),
@@ -88,7 +88,7 @@ JSONWriter::JSONWriter(vespalib::asciistream & output) :
     (*_os) << vespalib::asciistream::Precision(16) << vespalib::forcedot;
 }
 
-JSONWriter::~JSONWriter() {}
+JSONWriter::~JSONWriter() = default;
 
 JSONWriter&
 JSONWriter::setOutputStream(vespalib::asciistream & output) {
@@ -173,7 +173,7 @@ JSONWriter::appendNull()
 }
 
 JSONWriter &
-JSONWriter::appendKey(stringref str)
+JSONWriter::appendKey(std::string_view str)
 {
     considerComma();
     indent();
@@ -243,7 +243,7 @@ JSONWriter::appendUInt64(uint64_t v)
 }
 
 JSONWriter &
-JSONWriter::appendString(stringref str)
+JSONWriter::appendString(std::string_view str)
 {
     considerComma();
     quote(str.data(), str.size());
@@ -252,7 +252,7 @@ JSONWriter::appendString(stringref str)
 }
 
 JSONWriter &
-JSONWriter::appendJSON(stringref json)
+JSONWriter::appendJSON(std::string_view json)
 {
     considerComma();
     (*_os) << json;
@@ -276,10 +276,15 @@ JSONStringer::clear()
     return *this;
 }
 
-JSONStringer::~JSONStringer() { }
+JSONStringer::~JSONStringer() = default;
 
-stringref
-JSONStringer::toString() const {
+std::string_view
+JSONStringer::view() const {
+    return _oss->view();
+}
+
+std::string
+JSONStringer::str() const {
     return _oss->str();
 }
 

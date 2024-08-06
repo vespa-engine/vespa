@@ -29,6 +29,7 @@ com.google.inject:guice:${guice.vespa.version}
 com.google.j2objc:j2objc-annotations:${j2objc-annotations.vespa.version}
 com.google.jimfs:jimfs:${jimfs.vespa.version}
 com.google.protobuf:protobuf-java:${protobuf.vespa.version}
+com.huaban:jieba-analysis:${jieba.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
 com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}
@@ -174,7 +175,6 @@ org.glassfish.jaxb:txw2:${jaxb.runtime.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}
-org.iq80.snappy:snappy:0.4
 org.json:json:${org.json.vespa.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}

@@ -4,6 +4,7 @@
 #include "spantreevisitor.h"
 #include "alternatespanlist.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace document {
 
@@ -13,7 +14,7 @@ class ToStringVisitor : public SpanTreeVisitor {
 public:
     ToStringVisitor();
     ~ToStringVisitor();
-    vespalib::stringref str() const { return _os.str(); }
+    std::string str() const { return _os.str(); }
 private:
     vespalib::asciistream _os;
     vespalib::string _indent;
@@ -81,7 +82,7 @@ private:
 };
 
 ToStringVisitor::ToStringVisitor() : _os(), _indent() { }
-ToStringVisitor::~ToStringVisitor() { }
+ToStringVisitor::~ToStringVisitor() = default;
 
 }
 

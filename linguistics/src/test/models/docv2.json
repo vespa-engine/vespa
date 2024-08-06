@@ -26,6 +26,19 @@
         "ja": 12,
         "nei": 3
       }
+    },
+    "fr,un": {
+      "description" : "french / unknown model",
+      "document-count" : 20,
+      "document-frequencies" : {
+        "usa" : 2,
+        "bonjour": 6,
+        "monde": 5,
+        "test": 2,
+        "france": 11,
+        "oui": 12,
+        "no": 3
+      }
     }
   }
 }

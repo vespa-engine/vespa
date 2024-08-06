@@ -35,7 +35,7 @@ NodeState::NodeState()
 }
 
 NodeState::NodeState(const NodeType& type, const State& state,
-                     vespalib::stringref description, double capacity)
+                     std::string_view description, double capacity)
     : _type(&type),
       _state(nullptr),
       _description(description),
@@ -50,7 +50,7 @@ NodeState::NodeState(const NodeType& type, const State& state,
     }
 }
 
-NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
+NodeState::NodeState(std::string_view serialized, const NodeType* type)
     : _type(type),
       _state(&State::UP),
       _description(),
@@ -67,8 +67,8 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
         if (index == std::string::npos) {
             throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);
         }
-        std::string key = token.substr(0, index);
-        std::string value = token.substr(index + 1);
+        std::string_view key = token.substr(0, index);
+        std::string_view value = token.substr(index + 1);
         if (!key.empty()) switch (key[0]) {
             case 'b':
                 if (_type != nullptr && *type != NodeType::STORAGE) break;
@@ -121,7 +121,7 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
         }
         LOG(debug, "Unknown key %s in nodestate. Ignoring it, assuming it's a "
                    "new feature from a newer version than ourself: %s",
-            key.c_str(), vespalib::string(serialized).c_str());
+            std::string(key).c_str(), vespalib::string(serialized).c_str());
     }
 }
 
@@ -148,7 +148,7 @@ namespace {
 }
 
 void
-NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
+NodeState::serialize(vespalib::asciistream & out, std::string_view prefix,
                      bool includeDescription) const
 {
     SeparatorPrinter sep;
@@ -240,7 +240,7 @@ NodeState::print(std::ostream& out, bool verbose, const std::string& indent) con
     if (!verbose) {
         vespalib::asciistream tmp;
         serialize(tmp);
-        out << tmp.str();
+        out << tmp.view();
         return;
     }
     _state->print(out, verbose, indent);

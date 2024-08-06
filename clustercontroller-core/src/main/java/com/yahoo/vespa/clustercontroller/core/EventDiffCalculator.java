@@ -11,6 +11,7 @@ import com.yahoo.vdslib.state.State;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -65,6 +66,8 @@ public class EventDiffCalculator {
         final AnnotatedClusterState toState;
         final ClusterStateBundle.FeedBlock feedBlockFrom;
         final ClusterStateBundle.FeedBlock feedBlockTo;
+        final DistributionConfigBundle distributionConfigFrom;
+        final DistributionConfigBundle distributionConfigTo;
         final long currentTime;
         final long maxMaintenanceGracePeriodTimeMs;
 
@@ -74,6 +77,8 @@ public class EventDiffCalculator {
                        AnnotatedClusterState toState,
                        ClusterStateBundle.FeedBlock feedBlockFrom,
                        ClusterStateBundle.FeedBlock feedBlockTo,
+                       DistributionConfigBundle distributionConfigFrom,
+                       DistributionConfigBundle distributionConfigTo,
                        long currentTime,
                        long maxMaintenanceGracePeriodTimeMs) {
             this.cluster = cluster;
@@ -82,6 +87,8 @@ public class EventDiffCalculator {
             this.toState = toState;
             this.feedBlockFrom = feedBlockFrom;
             this.feedBlockTo = feedBlockTo;
+            this.distributionConfigFrom = distributionConfigFrom;
+            this.distributionConfigTo = distributionConfigTo;
             this.currentTime = currentTime;
             this.maxMaintenanceGracePeriodTimeMs = maxMaintenanceGracePeriodTimeMs;
         }
@@ -103,13 +110,53 @@ public class EventDiffCalculator {
                 params.toState.getBaselineAnnotatedState(),
                 params.fromState.getFeedBlockOrNull(),
                 params.toState.getFeedBlockOrNull(),
+                params.fromState.distributionConfig().orElse(null),
+                params.toState.distributionConfig().orElse(null),
                 params.currentTime,
                 params.maxMaintenanceGracePeriodTimeMs);
     }
 
     private static void emitWholeClusterDiffEvent(final PerStateParams params, final List<Event> events) {
-        final ClusterState fromState = params.fromState.getClusterState();
-        final ClusterState toState = params.toState.getClusterState();
+        emitClusterAvailabilityDiffEvent(params, events);
+        emitClusterFeedBlockDiffEvent(params, events);
+        emitDistributionConfigDiffEvent(params, events);
+    }
+
+    private static void emitDistributionConfigDiffEvent(PerStateParams params, List<Event> events) {
+        if (distributionConfigHasChanged(params)) {
+            if (params.distributionConfigFrom == null) {
+                // distributionConfigTo must be non-null
+                events.add(createClusterEvent(
+                        "Cluster controller is now the authoritative source for distribution config. " +
+                        "Active config: %s".formatted(params.distributionConfigTo.highLevelDescription()), params));
+            } else if (params.distributionConfigTo == null) {
+                events.add(createClusterEvent(
+                        "Cluster controller is no longer the authoritative source for distribution config", params));
+            } else {
+                // Distribution config was present in both old and new; emit a human-readable diff.
+                String configDiff = DistributionDiffCalculator.computeDiff(params.distributionConfigFrom, params.distributionConfigTo).toString();
+                if (!configDiff.isEmpty()) {
+                    events.add(createClusterEvent("Distribution config changed: %s".formatted(configDiff), params));
+                }
+            }
+        }
+    }
+
+    private static void emitClusterFeedBlockDiffEvent(PerStateParams params, List<Event> events) {
+        // TODO should we emit any events when description changes?
+        if (feedBlockStateHasChanged(params)) {
+            if (params.feedBlockTo != null) {
+                events.add(createClusterEvent(String.format("Cluster feed blocked due to resource exhaustion: %s",
+                        params.feedBlockTo.getDescription()), params));
+            } else {
+                events.add(createClusterEvent("Cluster feed no longer blocked", params));
+            }
+        }
+    }
+
+    private static void emitClusterAvailabilityDiffEvent(PerStateParams params, List<Event> events) {
+        ClusterState fromState = params.fromState.getClusterState();
+        ClusterState toState = params.toState.getClusterState();
 
         if (clusterHasTransitionedToUpState(fromState, toState)) {
             events.add(createClusterEvent("Enough nodes available for system to become up", params));
@@ -126,15 +173,10 @@ public class EventDiffCalculator {
                 events.add(createClusterEvent("Cluster is down", params));
             }
         }
-        // TODO should we emit any events when description changes?
-        if (feedBlockStateHasChanged(params)) {
-            if (params.feedBlockTo != null) {
-                events.add(createClusterEvent(String.format("Cluster feed blocked due to resource exhaustion: %s",
-                        params.feedBlockTo.getDescription()), params));
-            } else {
-                events.add(createClusterEvent("Cluster feed no longer blocked", params));
-            }
-        }
+    }
+
+    private static boolean distributionConfigHasChanged(PerStateParams params) {
+        return ! Objects.equals(params.distributionConfigFrom, params.distributionConfigTo);
     }
 
     private static boolean feedBlockStateHasChanged(PerStateParams params) {
@@ -275,6 +317,8 @@ public class EventDiffCalculator {
                 toDerivedState,
                 null, // Not used in per-space event derivation
                 null, // Ditto
+                null, // etc.
+                null, // etc.
                 params.currentTime,
                 params.maxMaintenanceGracePeriodTimeMs);
     }

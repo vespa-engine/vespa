@@ -26,11 +26,11 @@ func TestSuite(t *testing.T) {
 	mockServiceStatus(client, "container")
 	client.NextStatus(200)
 	client.NextStatus(200)
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		client.NextResponseString(200, string(searchResponse))
 	}
 	mockServiceStatus(client, "container") // Some tests do not specify cluster, which is fine since we only have one, but this causes a cache miss
-	for i := 0; i < 9; i++ {
+	for range 9 {
 		client.NextResponseString(200, string(searchResponse))
 	}
 	expectedBytes, _ := os.ReadFile("testdata/tests/expected-suite.out")
@@ -45,7 +45,7 @@ func TestSuite(t *testing.T) {
 	requests = append(requests, discoveryRequest)
 	requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	requests = append(requests, createSearchRequest(baseUrl+"/search/?foo=%2F"))
-	for i := 0; i < 7; i++ {
+	for range 7 {
 		requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	}
 	assertRequests(requests, client, t)

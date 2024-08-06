@@ -85,8 +85,8 @@ public:
      **/
     virtual const vespalib::string & getName() const = 0;
 
-    vespalib::stringref getNamePrefix() const {
-        vespalib::stringref name = getName();
+    std::string_view getNamePrefix() const {
+        std::string_view name = getName();
         return name.substr(0, name.find('.'));
     }
 

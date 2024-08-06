@@ -130,7 +130,7 @@ TopLevelBucketDBUpdater::remove_superfluous_buckets(
             && db_pruning_may_be_elided(old_cluster_state, *new_cluster_state, up_states))
         {
             LOG(debug, "[bucket space '%s']: eliding DB pruning for state transition '%s' -> '%s'",
-                document::FixedBucketSpaces::to_string(elem.first).data(),
+                document::FixedBucketSpaces::to_string(elem.first).c_str(),
                 old_cluster_state.toString().c_str(), new_cluster_state->toString().c_str());
             continue;
         }

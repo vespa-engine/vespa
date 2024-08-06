@@ -30,7 +30,7 @@ class asciistream
 {
 public:
     asciistream();
-    asciistream(stringref buf);
+    asciistream(std::string_view buf);
     ~asciistream();
     asciistream(const asciistream & rhs);
     asciistream & operator = (const asciistream & rhs);
@@ -43,8 +43,7 @@ public:
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
     asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (stringref v)           { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.data(), v.size()); return *this; }
+    asciistream & operator << (std::string_view v)    { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (short v)    { return *this << static_cast<long long>(v); }
     asciistream & operator << (unsigned short v)   { return *this << static_cast<unsigned long long>(v); }
     asciistream & operator << (int v)    { return *this << static_cast<long long>(v); }
@@ -60,13 +59,12 @@ public:
     asciistream & operator >> (Base v)                { _base = v; return *this; }
     asciistream & operator << (FloatSpec v)           { _floatSpec = v; return *this; }
     asciistream & operator >> (FloatSpec v)           { _floatSpec = v; return *this; }
-    asciistream & operator << (FloatModifier v)           { _floatModifier = v; return *this; }
-    asciistream & operator >> (FloatModifier v)           { _floatModifier = v; return *this; }
+    asciistream & operator << (FloatModifier v)       { _floatModifier = v; return *this; }
+    asciistream & operator >> (FloatModifier v)       { _floatModifier = v; return *this; }
     asciistream & operator >> (bool & v);
     asciistream & operator >> (char & v);
     asciistream & operator >> (signed char & v);
     asciistream & operator >> (unsigned char & v);
-    asciistream & operator >> (std::string & v);
     asciistream & operator >> (string & v);
     asciistream & operator >> (short & v);
     asciistream & operator >> (unsigned short & v);
@@ -78,7 +76,8 @@ public:
     asciistream & operator >> (unsigned long long & v);
     asciistream & operator >> (float & v);
     asciistream & operator >> (double & v);
-    stringref str() const { return stringref(c_str(), size()); }
+    vespalib::string  str() const { return vespalib::string(c_str(), size()); }
+    std::string_view view() const { return std::string_view(c_str(), size()); }
     const char * c_str() const { return _rbuf.data() + _rPos; }
     size_t        size() const { return length() - _rPos; }
     bool         empty() const { return size() == 0; }
@@ -116,14 +115,14 @@ public:
         StateSaver(const StateSaver&) = delete;
         StateSaver& operator=(const StateSaver&) = delete;
 
-        explicit StateSaver(asciistream& as) noexcept :
-                _as(as),
-                _base(as._base),
-                _floatSpec(as._floatSpec),
-                _floatModifier(as._floatModifier),
-                _width(as._width),
-                _fill(as._fill),
-                _precision(as._precision) {}
+        explicit StateSaver(asciistream& as) noexcept
+            : _as(as),
+              _base(as._base),
+              _floatSpec(as._floatSpec),
+              _floatModifier(as._floatModifier),
+              _width(as._width),
+              _fill(as._fill),
+              _precision(as._precision) {}
         ~StateSaver() noexcept {
             _as._base = _base;
             _as._floatSpec = _floatSpec;
@@ -149,8 +148,8 @@ public:
     asciistream & operator << (Precision v);
     asciistream & operator >> (Precision v);
     void eatWhite();
-    static asciistream createFromFile(stringref fileName);
-    static asciistream createFromDevice(stringref fileName);
+    static asciistream createFromFile(std::string_view fileName);
+    static asciistream createFromDevice(std::string_view fileName);
     string getline(char delim='\n');
     char getFill() const noexcept { return _fill; }
     size_t getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
@@ -170,15 +169,15 @@ private:
     }
     void write(const void * buf, size_t len);
     size_t length() const { return _rbuf.size(); }
-    size_t        _rPos;
-    string        _wbuf;
-    stringref     _rbuf;
-    Base          _base;
-    FloatSpec     _floatSpec;
-    FloatModifier _floatModifier;
-    uint32_t      _width;
-    char          _fill;
-    uint8_t       _precision;
+    size_t           _rPos;
+    string           _wbuf;
+    std::string_view _rbuf;
+    Base             _base;
+    FloatSpec        _floatSpec;
+    FloatModifier    _floatModifier;
+    uint32_t         _width;
+    char             _fill;
+    uint8_t          _precision;
 };
 
 ssize_t getline(asciistream & is, vespalib::string & line, char delim='\n');

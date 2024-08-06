@@ -290,7 +290,7 @@ FastS_SortSpec::initSortData(const VectorRef & vec, const RankedHit & hit, size_
     return written;
 }
 
-FastS_SortSpec::FastS_SortSpec(vespalib::stringref documentmetastore, uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory)
+FastS_SortSpec::FastS_SortSpec(std::string_view documentmetastore, uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory)
     : _documentmetastore(documentmetastore),
       _partitionId(partitionId),
       _doom(doom),

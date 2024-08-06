@@ -61,9 +61,9 @@ as_feature(const vespalib::string& str)
     double val = vespalib::locale::c::strtod(str.c_str(), &end);
     if (errno != 0 || *end != '\0') { // not happy
         if ( ! str.empty() && str[0] == '\'') {
-            val = features::util::getAsFeature(vespalib::stringref(str.substr(1)));
+            val = features::util::getAsFeature(std::string_view(str.substr(1)));
         } else {
-            val = features::util::getAsFeature(vespalib::stringref(str));
+            val = features::util::getAsFeature(std::string_view(str));
         }
     }
     return val;

@@ -43,4 +43,3 @@ ConfigDefinition::asString() const
 }
 
 }
-

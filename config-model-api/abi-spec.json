@@ -46,6 +46,7 @@
       "public abstract java.io.InputStream createInputStream()",
       "public abstract com.yahoo.config.application.api.ApplicationFile createDirectory()",
       "public abstract com.yahoo.config.application.api.ApplicationFile writeFile(java.io.Reader)",
+      "public abstract com.yahoo.config.application.api.ApplicationFile writeFile(java.io.InputStream)",
       "public abstract com.yahoo.config.application.api.ApplicationFile appendFile(java.lang.String)",
       "public java.util.List listFiles()",
       "public abstract java.util.List listFiles(com.yahoo.config.application.api.ApplicationFile$PathFilter)",
@@ -325,10 +326,9 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.config.provision.Environment)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional)",
+      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional)",
       "public com.yahoo.config.provision.Environment environment()",
       "public java.util.Optional region()",
-      "public java.util.Optional testerFlavor()",
       "public java.util.Optional testerNodes()",
       "public java.util.List zones()",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
@@ -367,6 +367,22 @@
       "public java.lang.String toString()"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.config.application.api.DeploymentSpec$DevSpec" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, java.util.Map)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [
+      "public static final com.yahoo.config.application.api.DeploymentSpec$DevSpec empty"
+    ]
   },
   "com.yahoo.config.application.api.DeploymentSpec$ParallelSteps" : {
     "superClass" : "com.yahoo.config.application.api.DeploymentSpec$Steps",
@@ -500,7 +516,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, java.util.List, java.lang.String, java.util.List)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
       "public boolean isEmpty()",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
@@ -509,9 +525,9 @@
       "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.CloudAccount cloudAccount(com.yahoo.config.provision.CloudName, com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId)",
       "public java.util.Map cloudAccounts()",
+      "public com.yahoo.config.provision.Tags tags(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment)",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id)",
-      "public com.yahoo.config.application.api.Bcp bcp()",
       "public java.lang.String xmlForm()",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
@@ -1330,7 +1346,9 @@
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public boolean symmetricPutAndActivateReplicaSelection()",
-      "public boolean enforceStrictlyIncreasingClusterStateVersions()"
+      "public boolean enforceStrictlyIncreasingClusterStateVersions()",
+      "public boolean distributionConfigFromClusterController()",
+      "public boolean useLegacyWandQueryParsing()"
     ],
     "fields" : [ ]
   },

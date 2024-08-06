@@ -33,7 +33,7 @@ public class ModelFactoryRegistry {
         }
     }
 
-    public Set<Version> allVersions() { return factories.keySet(); }
+    public Set<Version> allVersions() { return Set.copyOf(factories.keySet()); }
 
     /**
      * Returns the factory for the given version

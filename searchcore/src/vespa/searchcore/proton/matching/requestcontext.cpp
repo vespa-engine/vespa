@@ -35,19 +35,19 @@ RequestContext::RequestContext(const Doom & doom,
 { }
 
 const search::attribute::IAttributeVector *
-RequestContext::getAttribute(const vespalib::string &name) const
+RequestContext::getAttribute(std::string_view name) const
 {
     return _attributeContext.getAttribute(name);
 }
 
 const search::attribute::IAttributeVector *
-RequestContext::getAttributeStableEnum(const vespalib::string &name) const
+RequestContext::getAttributeStableEnum(std::string_view name) const
 {
     return _attributeContext.getAttributeStableEnum(name);
 }
 
 void
-RequestContext::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const
+RequestContext::asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const
 {
     _attributeContext.asyncForAttribute(name, std::move(func));
 }

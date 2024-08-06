@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 using namespace vespalib::net::tls;

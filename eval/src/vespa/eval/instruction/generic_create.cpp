@@ -77,7 +77,7 @@ void my_generic_create_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<CreateParam>(param_in);
     auto spec = param.my_spec.get_raw_cells();
     auto cells = state.stash.create_uninitialized_array<CT>(spec.size());
-    CT *dst = cells.begin();
+    CT *dst = cells.data();
     for (uint32_t stack_idx: spec) {
         *dst++ = ((stack_idx != CreateParam::npos)
                   ? (CT) state.peek(stack_idx).as_double()

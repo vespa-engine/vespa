@@ -55,7 +55,7 @@ class LazyTraceInserter
 {
 private:
     Trace &_parent;
-    vespalib::stringref _name;
+    std::string_view _name;
     vespalib::slime::Cursor *_entry;
     std::unique_ptr<vespalib::slime::Inserter> _thread_inserter;
     vespalib::slime::Cursor &get_entry();
@@ -92,14 +92,14 @@ public:
      * @param name
      * @return a Cursor to use for further tracing.
      */
-    Cursor & createCursor(vespalib::stringref name);
-    Cursor * maybeCreateCursor(uint32_t level, vespalib::stringref name);
+    Cursor & createCursor(std::string_view name);
+    Cursor * maybeCreateCursor(uint32_t level, std::string_view name);
     /**
      * Will add a simple 'event' string. It will also add a timestamp relative to the creation of the trace.
      * @param level require for actually add the trace.
      * @param event
      */
-    void addEvent(uint32_t level, vespalib::stringref event);
+    void addEvent(uint32_t level, std::string_view event);
 
     /**
      * Will compute and and a final duration timing.

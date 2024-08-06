@@ -4,11 +4,16 @@ import java.util.List;
 
 import org.eclipse.lsp4j.Position;
 
+import ai.vespa.schemals.tree.SchemaNode;
+
 /**
  * StringUtils
  * For dealing with specific problems related to Strings that represent text documents.
  */
 public class StringUtils {
+    // TODO: ideally this is configurable and 
+    // possible to indent using tabs and not spaces.
+    public static final int TAB_SIZE = 4;
     /*
      * If necessary, the following methods can be sped up by
      * selecting an appropriate data structure.
@@ -49,6 +54,20 @@ public class StringUtils {
     public static Position positionAddOffset(String content, Position pos, int offset) {
         int totalOffset = positionToOffset(content, pos) + offset;
         return offsetToPosition(content, totalOffset);
+    }
+
+    public static String getIndentString(String content, SchemaNode node) {
+        int offset = node.getOriginalBeginOffset();
+        int nl = content.lastIndexOf('\n', offset) + 1;
+        return content.substring(nl, offset);
+    }
+
+    public static int countSpaceIndents(String indentString) {
+        if (indentString.isEmpty()) return 0;
+        if (indentString.charAt(0) == '\t') {
+            return indentString.length() * TAB_SIZE;
+        }
+        return indentString.length();
     }
 
     public static String spaceIndent(int indent) {

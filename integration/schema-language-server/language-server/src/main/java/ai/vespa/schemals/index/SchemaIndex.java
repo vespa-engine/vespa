@@ -48,7 +48,6 @@ public class SchemaIndex {
     }};
 
     private PrintStream logger;
-    private String workspaceRootURI;
     private FieldIndex fieldIndex;
 
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
@@ -81,15 +80,6 @@ public class SchemaIndex {
         }
 
         this.fieldIndex = new FieldIndex(logger, this);
-    }
-
-    public void setWorkspaceURI(String workspaceRootURI) {
-        this.workspaceRootURI = workspaceRootURI;
-    }
-
-
-    public String getWorkspaceURI() {
-        return this.workspaceRootURI;
     }
 
     public FieldIndex fieldIndex() {
@@ -157,8 +147,6 @@ public class SchemaIndex {
                     documentReferenceGraph.clearInheritsList(symbol);
 
                     list.remove(i);
-                } else {
-                    logger.println(symbol.getFileURI() + " NOT EQUALS " + fileURI);
                 }
             }
         }

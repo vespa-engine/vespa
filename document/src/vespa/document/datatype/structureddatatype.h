@@ -16,25 +16,25 @@
 namespace document {
 
 class StructuredDataType : public DataType {
-    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const override;
 protected:
-    StructuredDataType(vespalib::stringref name);
-    StructuredDataType(vespalib::stringref name, int32_t dataTypeId);
+    StructuredDataType(std::string_view name);
+    StructuredDataType(std::string_view name, int32_t dataTypeId);
 
 public:
     virtual uint32_t getFieldCount() const noexcept = 0;
 
     /** @throws FieldNotFoundException if field does not exist. */
-    virtual const Field& getField(vespalib::stringref name) const = 0;
+    virtual const Field& getField(std::string_view name) const = 0;
 
-    virtual bool hasField(vespalib::stringref name) const noexcept = 0;
+    virtual bool hasField(std::string_view name) const noexcept = 0;
     virtual bool hasField(int32_t fieldId) const noexcept = 0;
 
     virtual Field::Set getFieldSet() const = 0;
     bool isStructured() const noexcept override { return true; }
     bool equals(const DataType& type) const noexcept override;
 
-    static int32_t createId(vespalib::stringref name);
+    static int32_t createId(std::string_view name);
 };
 
 }

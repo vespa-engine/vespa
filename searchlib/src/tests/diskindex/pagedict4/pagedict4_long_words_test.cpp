@@ -37,7 +37,7 @@ make_word(int i)
     vespalib::asciistream os;
     vespalib::string word(5_Ki, 'a');
     os << vespalib::setfill('0') << vespalib::setw(8) << i;
-    word.append(os.str());
+    word.append(os.view());
     return word;
 }
 

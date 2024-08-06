@@ -120,6 +120,11 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
         return value;
     }
 
+    @Override
+    public String resolveBinding(String argument) {
+        return null;
+    }
+
     /**
      * Creates a clone of this context suitable for evaluating against the same ranking expression
      * in a different thread (i.e, name name to index map, different value set.

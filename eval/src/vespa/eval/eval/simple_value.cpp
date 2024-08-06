@@ -176,7 +176,7 @@ SimpleValue::SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_
 SimpleValue::~SimpleValue() = default;
 
 void
-SimpleValue::add_mapping(ConstArrayRef<vespalib::stringref> addr)
+SimpleValue::add_mapping(ConstArrayRef<std::string_view> addr)
 {
     Labels my_addr;
     for(const auto &label: addr) {
@@ -253,7 +253,7 @@ SimpleValueT<T>::~SimpleValueT() = default;
 
 template <typename T>
 ArrayRef<T>
-SimpleValueT<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr)
+SimpleValueT<T>::add_subspace(ConstArrayRef<std::string_view> addr)
 {
     size_t old_size = _cells.size();
     add_mapping(addr);

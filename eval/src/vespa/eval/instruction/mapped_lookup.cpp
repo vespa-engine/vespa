@@ -89,8 +89,8 @@ void my_mapped_lookup_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &res_type = unwrap_param<ValueType>(param);
     const auto &key_idx = state.peek(1).index();
     const auto &map_idx = state.peek(0).index();
-    const CT *key_cells = state.peek(1).cells().typify<CT>().cbegin();
-    const CT *map_cells = state.peek(0).cells().typify<CT>().cbegin();
+    const CT *key_cells = state.peek(1).cells().typify<CT>().data();
+    const CT *map_cells = state.peek(0).cells().typify<CT>().data();
     auto result = __builtin_expect(are_fast(key_idx, map_idx), true)
         ? my_fast_mapped_lookup<CT>(as_fast(key_idx).map, as_fast(map_idx).map, key_cells, map_cells, res_type.dense_subspace_size(), state.stash)
         : my_mapped_lookup_fallback<CT>(key_idx, map_idx, key_cells, map_cells, res_type.dense_subspace_size(), state.stash);

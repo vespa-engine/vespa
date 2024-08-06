@@ -17,7 +17,7 @@ private:
     std::vector<Map::const_iterator> _names_by_id;
 public:
     const vespalib::string &lookup(size_t id) const;
-    size_t resolve(const vespalib::string& name);
+    size_t resolve(std::string_view name);
     size_t size() const;
 
     NameCollection();

@@ -4,11 +4,11 @@
 
 #include <vespa/searchlib/util/comprfile.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace vespalib {
 
 class GenericHeader;
-template <typename T> class ConstArrayRef;
 
 }
 
@@ -1579,7 +1579,7 @@ public:
 
     void writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
     void writeBytes(vespalib::ConstArrayRef<char> buf);
-    void writeString(vespalib::stringref buf);
+    void writeString(std::string_view buf);
     virtual void writeHeader(const vespalib::GenericHeader &header);
 
     void writeComprBufferIfNeeded() {

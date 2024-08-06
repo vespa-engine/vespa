@@ -127,32 +127,32 @@ TEST_FF("require that setup fails for unknown field",
 
 TEST_F("require that not searching a field will give it 0 subqueries",
        RankFixture(0, 3)) {
-    EXPECT_EQUAL(0, f1.getSubqueries(10));
+    EXPECT_EQUAL(0.0, f1.getSubqueries(10));
 }
 
 TEST_F("require that subqueries can be obtained", RankFixture(1, 0)) {
     f1.setFooSubqueries(0, 10, 0x1234);
-    EXPECT_EQUAL(0x1234, f1.getSubqueries(10));
+    EXPECT_EQUAL(static_cast<double>(0x1234), f1.getSubqueries(10));
 }
 
 TEST_F("require that msb subqueries can be obtained",
        RankFixture(1, 0, "subqueries(foo).msb")) {
     f1.setFooSubqueries(0, 10, 0x123412345678ULL);
-    EXPECT_EQUAL(0x1234, f1.getSubqueries(10));
+    EXPECT_EQUAL(static_cast<double>(0x1234), f1.getSubqueries(10));
 }
 
 TEST_F("require that multiple subqueries are accumulated", RankFixture(3, 0)) {
     f1.setFooSubqueries(0, 10, 1);
     f1.setFooSubqueries(1, 10, 2);
     f1.setFooSubqueries(2, 10, 4);
-    EXPECT_EQUAL(7, f1.getSubqueries(10));
+    EXPECT_EQUAL(7.0, f1.getSubqueries(10));
 }
 
 TEST_F("require that stale subqueries are ignored", RankFixture(3, 0)) {
     f1.setFooSubqueries(0, 10, 1);
     f1.setFooSubqueries(1, 9, 2);
     f1.setFooSubqueries(2, 10, 4);
-    EXPECT_EQUAL(5, f1.getSubqueries(10));
+    EXPECT_EQUAL(5.0, f1.getSubqueries(10));
 }
 
 TEST_F("require that subqueries from other fields are ignored",
@@ -161,7 +161,7 @@ TEST_F("require that subqueries from other fields are ignored",
     f1.setFooSubqueries(1, 10, 2);
     f1.setBarSubqueries(0, 10, 4);
     f1.setBarSubqueries(1, 10, 8);
-    EXPECT_EQUAL(3, f1.getSubqueries(10));
+    EXPECT_EQUAL(3.0, f1.getSubqueries(10));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

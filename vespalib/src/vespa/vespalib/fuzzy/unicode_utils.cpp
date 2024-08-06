@@ -11,7 +11,7 @@ namespace {
 
 template <bool ToLowercase>
 std::vector<uint32_t> utf8_string_to_utf32_impl(std::string_view str) {
-    stringref ch_str(str.data(), str.size());
+    std::string_view ch_str(str.data(), str.size());
     Utf8Reader utf8_reader(ch_str); // TODO consider integrating simdutf library
     std::vector<uint32_t> u32ret;
     u32ret.reserve(str.size()); // Will over-allocate for all non-ASCII

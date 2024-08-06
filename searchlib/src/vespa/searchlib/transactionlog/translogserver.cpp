@@ -24,7 +24,6 @@ using std::runtime_error;
 using vespalib::CpuUsage;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
-using vespalib::stringref;
 using namespace std::chrono_literals;
 
 namespace search::transactionlog {
@@ -238,14 +237,14 @@ TransLogServer::getDomainNames()
 }
 
 Domain::SP
-TransLogServer::findDomain(stringref domainName) const
+TransLogServer::findDomain(std::string_view domainName) const
 {
     ReadGuard domainGuard(_domainMutex);
-    auto found(_domains.find(domainName));
+    auto found(_domains.find(vespalib::string(domainName)));
     if (found != _domains.end()) {
         return found->second;
     }
-    return DomainSP();
+    return {};
 }
 
 void

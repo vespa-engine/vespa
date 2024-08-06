@@ -13,7 +13,8 @@ class DocTypeName
     vespalib::string _name;
 
 public:
-    explicit DocTypeName(const vespalib::string &name) noexcept : _name(name) { }
+    DocTypeName() noexcept : _name() { }
+    explicit DocTypeName(std::string_view name) noexcept : _name(name) { }
     explicit DocTypeName(const search::engine::Request &request) noexcept;
     explicit DocTypeName(const document::DocumentType &docType) noexcept;
 
@@ -23,7 +24,7 @@ public:
         return _name < rhs._name;
     }
 
-    vespalib::string toString() const { return _name; }
+    const vespalib::string & toString() const { return _name; }
 };
 
 

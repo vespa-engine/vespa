@@ -52,6 +52,9 @@ public:
     template <typename Func>
     void for_each(Func func) const { _ht.for_each(func); }
 
+    template< typename AltKey>
+    bool contains(const AltKey key) const       { return _ht.find(key) != end(); }
+    
     template< typename AltKey >
     const_iterator find(const AltKey & key) const { return _ht.template find<AltKey>(key); }
 

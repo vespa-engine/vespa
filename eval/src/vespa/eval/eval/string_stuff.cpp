@@ -2,6 +2,7 @@
 
 #include "string_stuff.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cctype>
 
 namespace vespalib::eval {
 
@@ -46,8 +47,8 @@ vespalib::string as_quoted_string(const vespalib::string &str) {
 }
 
 bool is_number(const vespalib::string &str) {
-    for (char c: str) {
-        if (!isdigit(c)) {
+    for (char c : str) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
             return false;
         }
     }

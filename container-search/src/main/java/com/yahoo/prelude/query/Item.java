@@ -124,6 +124,8 @@ public abstract class Item implements Cloneable {
     protected double significance = 0;
     protected boolean explicitSignificance = false;
 
+    protected DocumentFrequency documentFrequency = null;
+
     /** Whether this item is eligible for change by query rewriters (false) or should be kept as-is (true) */
     private boolean isProtected;
 
@@ -420,6 +422,7 @@ public abstract class Item implements Cloneable {
         if ( ! Objects.equals(this.connectedItem, other.connectedItem)) return false;
         if (this.connectivity != other.connectivity) return false;
         if (this.significance != other.significance) return false;
+        if (! Objects.equals(this.documentFrequency, other.documentFrequency)) return false;
         if (this.language != other.language) return false;
         return true;
     }
@@ -427,7 +430,7 @@ public abstract class Item implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(weight, fromSpecialToken, creator, annotations, isRanked, usePositionData, label,
-                            uniqueID, connectedItem, connectivity, significance, language);
+                            uniqueID, connectedItem, connectivity, significance, documentFrequency, language);
     }
 
     protected boolean hasUniqueID() {
@@ -495,6 +498,8 @@ public abstract class Item implements Cloneable {
             discloser.addProperty("usePositionData", usePositionData);
         if (explicitSignificance)
             discloser.addProperty("significance", significance);
+        if (documentFrequency != null)
+            discloser.addProperty("documentFrequency", documentFrequency);
         if (weight != 100)
             discloser.addProperty("weight", weight);
         if (label != null)

@@ -116,7 +116,7 @@ BmNodeStatsReporter::report()
     } else {
         s << Width(8) << "-";
     }
-    vespalib::string ss(s.str());
+    vespalib::string ss(s.view());
     LOG(info, "%s", ss.c_str());
     if (_report_merge_stats) {
         s.clear();
@@ -127,12 +127,12 @@ BmNodeStatsReporter::report()
             if (merges.has_value()) {
                 ns.clear();
                 ns << merges.value().get_active() << "/" << merges.value().get_queued();
-                s << Width(10) << ns.str();
+                s << Width(10) << ns.view();
             } else {
                 s << Width(10) << "-";
             }
         }
-        ss = s.str();
+        ss = s.view();
         LOG(info, "%s", ss.c_str());
     }
     if (!(node_stats == _prev_node_stats) || !steady_buckets_stats(total_buckets)) {

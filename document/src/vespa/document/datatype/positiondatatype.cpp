@@ -36,14 +36,14 @@ PositionDataType::getZCurveFieldName(const vespalib::string & fieldName)
     return fieldName + ZCURVE;
 }
 
-vespalib::stringref
-PositionDataType::cutZCurveFieldName(vespalib::stringref name)
+std::string_view
+PositionDataType::cutZCurveFieldName(std::string_view name)
 {
     return name.substr(0, name.size() - 7);
 }
 
 bool
-PositionDataType::isZCurveFieldName(vespalib::stringref name)
+PositionDataType::isZCurveFieldName(std::string_view name)
 {
     if (name.size() > ZCURVE.size()) {
         return ZCURVE == name.substr(name.size() - ZCURVE.size());

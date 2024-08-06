@@ -75,6 +75,14 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract ApplicationFile writeFile(Reader input);
 
     /**
+     * Writes the contents of the supplied input stream to this file. Any existing content will be overwritten!
+     *
+     * @param input An input stream with the content that should be written.
+     * @return this
+     */
+    public abstract ApplicationFile writeFile(InputStream input);
+
+    /**
      * Appends the given string to this text file.
      *
      * @return this

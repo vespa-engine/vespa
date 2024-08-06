@@ -548,10 +548,10 @@ StoreOnlyDocSubDB::getSearchableStats() const
     return {};
 }
 
-IDocumentRetriever::UP
+std::shared_ptr<IDocumentRetriever>
 StoreOnlyDocSubDB::getDocumentRetriever()
 {
-    return std::make_unique<MinimalDocumentRetriever>(_docTypeName, _iFeedView.get()->getDocumentTypeRepo(),
+    return std::make_shared<MinimalDocumentRetriever>(_docTypeName, _iFeedView.get()->getDocumentTypeRepo(),
                                                       *_metaStoreCtx, _iSummaryMgr->getBackingStore(),
                                                       _subDbType != SubDbType::REMOVED);
 }

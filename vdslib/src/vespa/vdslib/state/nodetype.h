@@ -28,7 +28,7 @@ public:
     static const NodeType STORAGE;
 
     /** Throws vespalib::IllegalArgumentException if invalid state given. */
-    static const NodeType& get(vespalib::stringref serialized);
+    static const NodeType& get(std::string_view serialized);
     static const NodeType& get(Type type) noexcept;
     const vespalib::string& serialize() const noexcept { return _name; }
 
@@ -46,7 +46,7 @@ private:
     Type             _type;
     vespalib::string _name;
 
-    NodeType(vespalib::stringref name, Type type) noexcept;
+    NodeType(std::string_view name, Type type) noexcept;
 };
 
 std::ostream & operator << (std::ostream & os, const NodeType & n);

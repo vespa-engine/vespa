@@ -25,7 +25,7 @@ ConstBufferRef
 LowercaseConverter::onConvert(const ConstBufferRef & src) const
 {
     _buffer.clear();
-    vespalib::stringref input((const char *)src.data(), src.size());
+    std::string_view input((const char *)src.data(), src.size());
     vespalib::Utf8Reader r(input);
     vespalib::Utf8Writer w(_buffer);
     while (r.hasMore()) {
@@ -33,10 +33,10 @@ LowercaseConverter::onConvert(const ConstBufferRef & src) const
         c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
         w.putChar(c);
     }
-    return {_buffer.begin(), _buffer.size()};
+    return {_buffer.data(), _buffer.size()};
 }
 
-SortInfo::SortInfo(vespalib::stringref field, bool ascending, BlobConverter::SP converter) noexcept
+SortInfo::SortInfo(std::string_view field, bool ascending, BlobConverter::SP converter) noexcept
     : _field(field), _ascending(ascending), _converter(std::move(converter))
 { }
 SortInfo::~SortInfo() = default;

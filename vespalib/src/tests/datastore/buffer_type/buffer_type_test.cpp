@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/datastore/buffer_type.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <cassert>
 
 using namespace vespalib::datastore;
 

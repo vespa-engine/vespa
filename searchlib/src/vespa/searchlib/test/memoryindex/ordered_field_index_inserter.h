@@ -18,7 +18,7 @@ class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
 public:
     OrderedFieldIndexInserter(OrderedFieldIndexInserterBackend& backend, uint32_t field_id);
     ~OrderedFieldIndexInserter() override;
-    void setNextWord(const vespalib::stringref word) override;
+    void setNextWord(const std::string_view word) override;
     void add(uint32_t docId, const index::DocIdAndFeatures &features) override;
     vespalib::datastore::EntryRef getWordRef() const override;
     void remove(uint32_t docId) override;

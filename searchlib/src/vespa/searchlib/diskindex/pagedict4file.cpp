@@ -30,7 +30,7 @@ assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
 }
 
 int64_t
-getBitSizeAndAssertHeaders(const vespalib::FileHeader & header, vespalib::stringref id) {
+getBitSizeAndAssertHeaders(const vespalib::FileHeader & header, std::string_view id) {
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
     assert(header.hasTag("format.0"));
@@ -51,7 +51,7 @@ using vespalib::getLastErrorString;
 namespace search::diskindex {
 
 struct PageDict4FileSeqRead::DictFileReadContext {
-    DictFileReadContext(vespalib::stringref id, const vespalib::string & name, const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront);
+    DictFileReadContext(std::string_view id, const vespalib::string & name, const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront);
     ~DictFileReadContext();
     vespalib::FileHeader readHeader();
     void readExtendedHeader();
@@ -65,7 +65,7 @@ struct PageDict4FileSeqRead::DictFileReadContext {
     FastOS_File            _file;
 };
 
-PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringref id, const vespalib::string & name,
+PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(std::string_view id, const vespalib::string & name,
                                                                const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront)
     : _id(id),
       _fileBitSize(0u),
@@ -245,7 +245,7 @@ PageDict4FileSeqRead::getParams(PostingListParams &params)
 }
 
 struct PageDict4FileSeqWrite::DictFileContext {
-    DictFileContext(bool extended, vespalib::stringref id, vespalib::stringref desc,
+    DictFileContext(bool extended, std::string_view id, std::string_view desc,
                     const vespalib::string &name, const TuneFileSeqWrite &tune);
     ~DictFileContext();
     void makeHeader(const FileHeaderContext &fileHeaderContext);
@@ -262,7 +262,7 @@ struct PageDict4FileSeqWrite::DictFileContext {
     FastOS_File            _file;
 };
 
-PageDict4FileSeqWrite::DictFileContext::DictFileContext(bool extended, vespalib::stringref id, vespalib::stringref desc,
+PageDict4FileSeqWrite::DictFileContext::DictFileContext(bool extended, std::string_view id, std::string_view desc,
                                                         const vespalib::string & name, const TuneFileSeqWrite &tune)
     : _id(id),
       _desc(desc),
@@ -321,7 +321,7 @@ PageDict4FileSeqWrite::PageDict4FileSeqWrite()
 PageDict4FileSeqWrite::~PageDict4FileSeqWrite() = default;
 
 void
-PageDict4FileSeqWrite::writeWord(vespalib::stringref word, const PostingListCounts &counts)
+PageDict4FileSeqWrite::writeWord(std::string_view word, const PostingListCounts &counts)
 {
     _pWriter->addCounts(word, counts);
 }

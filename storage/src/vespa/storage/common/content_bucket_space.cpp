@@ -10,6 +10,7 @@ ClusterStateAndDistribution::ClusterStateAndDistribution(
     : _cluster_state(std::move(cluster_state)),
       _distribution(std::move(distribution))
 {
+    assert(_cluster_state && _distribution);
 }
 
 ClusterStateAndDistribution::~ClusterStateAndDistribution() = default;
@@ -46,34 +47,6 @@ std::shared_ptr<const ClusterStateAndDistribution>
 ContentBucketSpace::state_and_distribution() const noexcept {
     std::lock_guard guard(_lock);
     return _state_and_distribution;
-}
-
-void
-ContentBucketSpace::setClusterState(std::shared_ptr<const lib::ClusterState> clusterState)
-{
-    std::lock_guard guard(_lock);
-    _state_and_distribution = _state_and_distribution->with_new_state(std::move(clusterState));
-}
-
-std::shared_ptr<const lib::ClusterState>
-ContentBucketSpace::getClusterState() const
-{
-    std::lock_guard guard(_lock);
-    return _state_and_distribution->_cluster_state;
-}
-
-void
-ContentBucketSpace::setDistribution(std::shared_ptr<const lib::Distribution> distribution)
-{
-    std::lock_guard guard(_lock);
-    _state_and_distribution = _state_and_distribution->with_new_distribution(std::move(distribution));
-}
-
-std::shared_ptr<const lib::Distribution>
-ContentBucketSpace::getDistribution() const
-{
-    std::lock_guard guard(_lock);
-    return _state_and_distribution->_distribution;
 }
 
 bool

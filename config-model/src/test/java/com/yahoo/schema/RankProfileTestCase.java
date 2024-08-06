@@ -8,6 +8,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
+import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -415,6 +416,69 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         assertQueryFeatureTypeSettings(registry.get(schema, "unranked"), schema);
         assertQueryFeatureTypeSettings(registry.get(schema, "p1"), schema);
         assertQueryFeatureTypeSettings(registry.get(schema, "p2"), schema);
+    }
+
+    @Test
+    void dimensionArgumentResolution() throws ParseException{
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+schema test {
+document test {
+    field embeddings type tensor(d1[384]) {
+        indexing: attribute
+    }
+}
+rank-profile feature_logging {
+    inputs {
+        query(query_embedding_int8) tensor<int8>(d0[384])
+        query(query_embedding) tensor<bfloat16>(d0{}, d1[384])
+    }
+    first-phase {
+        expression: fakeRankResult
+    }
+    function query_field_cosine_similarity(field_name, query_tensor, dimension) {
+        expression: cosine_similarity(attribute(field_name), query_tensor, dimension)
+    }
+    function query_field_cos_distances(field_name, query_tensor, dimension){
+        expression: max(1 - query_field_cosine_similarity(field_name, query_tensor, dimension), 0.0)
+    }
+    function query_field_acos_distances(field_name, query_tensor, dimension) {
+        expression: acos(query_field_cosine_similarity(field_name, query_tensor, dimension))
+    }
+    function query_field_closeness(field_name, query_tensor, dimension) {
+        expression: reduce(1/(1+query_field_acos_distances(field_name, query_tensor, dimension)), max)
+    }
+    summary-features {
+        query_field_closeness(embeddings, query(query_embedding), d1)
+    }
+}
+}""");
+        Application application = builder.build(true);
+        RankProfile profile = application.rankProfileRegistry().get("test", "feature_logging");
+
+        // Rank profile content is unbound, as written:
+        assertEquals("join(reduce(join(attribute(field_name), query_tensor, f(a,b)(a * b)), sum, dimension), " +
+                     "map(join(reduce(join(attribute(field_name), attribute(field_name), f(a,b)(a * b)), sum, dimension), " +
+                     "reduce(join(query_tensor, query_tensor, f(a,b)(a * b)), sum, dimension), " +
+                     "f(a,b)(a * b)), f(a)(sqrt(a))), f(a,b)(a / b))",
+                     profile.findFunction("query_field_cosine_similarity").function().getBody().getRoot().toString());
+
+        // Derived rank profile content is bound: attribute(field_name) -> attribute(embeddings), dimension -> d1
+        assertEquals("join(reduce(join(attribute(embeddings), query(query_embedding), f(a,b)(a * b)), sum, d1), " +
+                     "map(join(reduce(join(attribute(embeddings), attribute(embeddings), f(a,b)(a * b)), sum, d1), " +
+                     "reduce(join(query(query_embedding), query(query_embedding), f(a,b)(a * b)), sum, d1), " +
+                     "f(a,b)(a * b)), f(a)(sqrt(a))), f(a,b)(a / b))",
+                     findDerivedFunction(application, "feature_logging", "query_field_cosine_similarity"));
+    }
+
+    private String findDerivedFunction(Application application, String rankProfileName, String functionName) {
+        var derived = new DerivedConfiguration(application.schemas().get("test"), application.rankProfileRegistry());
+        for (var line : derived.getRankProfileList().getRankProfiles().get("feature_logging").configProperties()) {
+            if (line.getFirst().startsWith("rankingExpression(query_field_cosine_similarity@"))
+                return line.getSecond();
+        }
+        return null;
     }
 
     private static QueryProfileRegistry setupQueryProfileTypes() {

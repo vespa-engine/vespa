@@ -1,0 +1,16 @@
+name: Factory Reporter
+description: Reports build pipeline status to Vespa Factory
+author: https://github.com/vespa-engine
+requirements: []
+configuration:
+  properties:
+    pipeline-id:
+      type: integer
+      description: "The Vespa Factory pipeline ID to report status to"
+    first-step:
+      type: boolean
+      description: "Is this the first step? Yes: Create a build, No: Update the build"
+  additionalProperties: false
+  required:
+    - pipeline-id
+    - first-step

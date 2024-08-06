@@ -97,7 +97,7 @@ class AttributeOperationTask {
 public:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     AttributeOperationTask(const RequestContext & requestContext,
-                           vespalib::stringref attribute, vespalib::stringref operation);
+                           std::string_view attribute, std::string_view operation);
     template<typename Hits>
     void run(Hits hits) const;
 private:
@@ -136,7 +136,7 @@ private:
     FirstPhaseRankLookup*              _first_phase_rank_lookup;
 
     std::unique_ptr<AttributeOperationTask>
-    createTask(vespalib::stringref attribute, vespalib::stringref operation) const;
+    createTask(std::string_view attribute, std::string_view operation) const;
 public:
     using UP = std::unique_ptr<MatchToolsFactory>;
     using BasicType = search::attribute::BasicType;
@@ -147,7 +147,7 @@ public:
                       ISearchContext &searchContext,
                       IAttributeContext &attributeContext,
                       search::engine::Trace & root_trace,
-                      vespalib::stringref queryStack,
+                      std::string_view queryStack,
                       const vespalib::string &location,
                       const ViewResolver &viewResolver,
                       const search::IDocumentMetaStore &metaStore,

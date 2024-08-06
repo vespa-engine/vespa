@@ -210,6 +210,8 @@ public:
     void doEventValue(const char *name, double value);
     void doEventState(const char *name, const char *value);
 
+    [[nodiscard]] const Timer& timer() const noexcept { return *_timer; }
+
     // Only for unit testing
     void setTimer(std::unique_ptr<Timer> timer);
 

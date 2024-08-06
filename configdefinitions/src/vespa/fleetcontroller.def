@@ -204,3 +204,10 @@ cluster_feed_block_noise_level double default=0.0
 # For apps that have several groups this controls how many groups are allowed to
 # be down simultaneously in this cluster.
 max_number_of_groups_allowed_to_be_down int default=-1
+
+## Iff true, cluster state bundles sent from the cluster controller to distributors
+## and content nodes will include the current distribution config. The CC-provided
+## distribution config takes precedence over the node-local config. When enabled,
+## a given versioned state corresponds directly to a particular bucket ownership
+## and replica placement mapping for the ideal state algorithm.
+include_distribution_config_in_cluster_state_bundle bool default=false

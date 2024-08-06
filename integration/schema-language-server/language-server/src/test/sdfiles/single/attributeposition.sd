@@ -8,9 +8,18 @@ schema attributeposition {
     field pos2d type string {
       indexing: summary | index | attribute | to_pos
     }
-    
-    field something type string {
+    # ejfoijfeaoijae
+    field something type weightedset<string> {
+
     }
+
+
+  }
+
+  rank-profile name {
+  	function foo() {
+  		expression: foo()
+  	}
   }
 }
 

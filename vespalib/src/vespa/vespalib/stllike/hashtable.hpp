@@ -99,6 +99,21 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) const noexcept {
+    next_t h = hash(key);
+    if (__builtin_expect(_nodes[h].valid(), true)) {
+        do {
+            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
+                return const_iterator(this, h);
+            }
+            h = _nodes[h].getNext();
+        } while (h != Node::npos);
+    }
+    return end();
+}
+
+template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 void
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key & key) {
     const_iterator found(find(key));

@@ -508,6 +508,7 @@ fi
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/search
 %{_prefix}/man
 %{_prefix}/sbin
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/secure
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/crash
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db

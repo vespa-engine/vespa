@@ -60,9 +60,9 @@ findInMemInfo(const char * wanted)
 const char *
 getToken(const char * & s, const char * e)
 {
-    for (; (s < e) && isspace(s[0]); s++) { }
+    for (; (s < e) && std::isspace(static_cast<unsigned char>(s[0])); s++) { }
     const char * c = s;
-    for (; (s < e) && ! isspace(s[0]); s++) { }
+    for (; (s < e) && ! std::isspace(static_cast<unsigned char>(s[0])); s++) { }
     return c;
 }
 

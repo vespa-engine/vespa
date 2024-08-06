@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <array>
+#include <ostream>
 
 namespace vespalib::net::tls {
 
@@ -55,8 +56,7 @@ std::string_view Capability::name() const noexcept {
 
 string Capability::to_string() const {
     asciistream os;
-    // TODO asciistream should be made std::string_view-aware
-    os << "Capability(" << stringref(name().data(), name().length()) << ')';
+    os << "Capability(" << name() << ')';
     return os.str();
 }
 

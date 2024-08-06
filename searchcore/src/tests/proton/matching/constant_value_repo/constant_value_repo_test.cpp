@@ -63,7 +63,7 @@ struct Fixture {
 
 TEST_F("require that constant value can be retrieved from repo", Fixture)
 {
-    EXPECT_EQUAL(3, f.repo.getConstant("foo")->value().as_double());
+    EXPECT_EQUAL(3.0, f.repo.getConstant("foo")->value().as_double());
 }
 
 TEST_F("require that non-existing constant value in repo returns nullptr", Fixture)

@@ -22,8 +22,8 @@ public:
     AssignFieldPathUpdate & operator =(AssignFieldPathUpdate &&) noexcept = default;
     AssignFieldPathUpdate(const AssignFieldPathUpdate &) = delete;
     AssignFieldPathUpdate & operator =(const AssignFieldPathUpdate &) = delete;
-    AssignFieldPathUpdate(const DataType& type, stringref fieldPath, stringref whereClause, std::unique_ptr<FieldValue> newValue);
-    AssignFieldPathUpdate(stringref fieldPath, stringref whereClause, stringref expression);
+    AssignFieldPathUpdate(const DataType& type, string_view fieldPath, string_view whereClause, std::unique_ptr<FieldValue> newValue);
+    AssignFieldPathUpdate(string_view fieldPath, string_view whereClause, string_view expression);
     ~AssignFieldPathUpdate();
 
     void setRemoveIfZero(bool removeIfZero) {

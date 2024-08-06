@@ -317,10 +317,10 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
         return "reduce_join(" + argumentA.toString(context) + ", " +
-                                argumentB.toString(context) + ", " +
-                                combinator + ", " +
-                                aggregator +
-                                Reduce.commaSeparated(dimensions) + ")";
+               argumentB.toString(context) + ", " +
+               combinator + ", " +
+               aggregator +
+               Reduce.commaSeparatedNames(dimensions, context) + ")";
     }
 
     @Override

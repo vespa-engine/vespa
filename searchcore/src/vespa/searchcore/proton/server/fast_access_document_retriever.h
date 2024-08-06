@@ -20,7 +20,7 @@ private:
     IAttributeManager::SP    _attrMgr;
 
 public:
-    FastAccessDocumentRetriever(FastAccessFeedView::SP feedView, IAttributeManager::SP attrMgr);
+    FastAccessDocumentRetriever(FastAccessFeedView::SP feedView, IAttributeManager::SP attrMgr) noexcept;
     ~FastAccessDocumentRetriever() override;
     uint32_t getDocIdLimit() const override { return _feedView->getDocIdLimit().get(); }
 };

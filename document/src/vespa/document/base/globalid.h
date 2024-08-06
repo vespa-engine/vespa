@@ -182,7 +182,7 @@ public:
      * @param str The string to parse.
      * @throws vespalib::IllegalArgumentException Thrown if input is not in GID format.
      */
-    static GlobalId parse(vespalib::stringref str);
+    static GlobalId parse(std::string_view str);
 
     /**
      * Returns the most specified bucket id to which this global id belongs.

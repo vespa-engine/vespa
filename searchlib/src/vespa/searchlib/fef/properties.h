@@ -184,7 +184,7 @@ public:
      * @param key the key
      * @param value the value
      **/
-    Properties &add(vespalib::stringref key, vespalib::stringref value);
+    Properties &add(std::string_view key, std::string_view value);
 
     /**
      * Obtain the number of values for a given key.
@@ -192,7 +192,7 @@ public:
      * @return number of values for the given key
      * @param key the key
      **/
-    uint32_t count(vespalib::stringref key) const noexcept;
+    uint32_t count(std::string_view key) const noexcept;
 
     /**
      * Remove all values for the given key.
@@ -200,7 +200,7 @@ public:
      * @return this object, for chaining
      * @param key the key
      **/
-    Properties &remove(vespalib::stringref key);
+    Properties &remove(std::string_view key);
 
     /**
      * Import all key/value pairs from src into this object. All
@@ -265,7 +265,7 @@ public:
      * @param ns the namespace to visit
      * @param visitor the object being notified of key/value pairs inside the namespace
      **/
-    void visitNamespace(vespalib::stringref ns,
+    void visitNamespace(std::string_view ns,
                         IPropertiesVisitor &visitor) const;
 
     /**
@@ -275,7 +275,7 @@ public:
      * @return object encapsulating lookup result
      * @param key the key to look up
      **/
-    Property lookup(vespalib::stringref key) const noexcept;
+    Property lookup(std::string_view key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -288,8 +288,8 @@ public:
      * @param namespace1 the namespace
      * @param key the key to look up
      **/
-    Property lookup(vespalib::stringref namespace1,
-                    vespalib::stringref key) const noexcept;
+    Property lookup(std::string_view namespace1,
+                    std::string_view key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -303,9 +303,9 @@ public:
      * @param namespace the second namespace
      * @param key the key to look up
      **/
-    Property lookup(vespalib::stringref namespace1,
-                    vespalib::stringref namespace2,
-                    vespalib::stringref key) const noexcept;
+    Property lookup(std::string_view namespace1,
+                    std::string_view namespace2,
+                    std::string_view key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -320,10 +320,10 @@ public:
      * @param namespace the third namespace
      * @param key the key to look up
      **/
-    Property lookup(vespalib::stringref namespace1,
-                    vespalib::stringref namespace2,
-                    vespalib::stringref namespace3,
-                    vespalib::stringref key) const noexcept;
+    Property lookup(std::string_view namespace1,
+                    std::string_view namespace2,
+                    std::string_view namespace3,
+                    std::string_view key) const noexcept;
 
     void swap(Properties & rhs) noexcept ;
 };

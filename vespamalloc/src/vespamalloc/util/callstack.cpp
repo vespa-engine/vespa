@@ -43,7 +43,7 @@ verifyAndCopy(const void *addr, char *v, size_t sz) {
     std::string sym = dlAddr(addr);
     for (; (pos < sym.size()) && (pos < sz - 1); pos++) {
         char c(sym[pos]);
-        v[pos] = isprint(c) ? c : '.';
+        v[pos] = std::isprint(static_cast<unsigned char>(c)) ? c : '.';
     }
     v[pos] = '\0';
 }

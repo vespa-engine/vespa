@@ -7,7 +7,7 @@ namespace storage::api {
 
 ReturnCode & ReturnCode::operator = (ReturnCode &&) noexcept = default;
 
-ReturnCode::ReturnCode(Result result, vespalib::stringref msg)
+ReturnCode::ReturnCode(Result result, std::string_view msg)
     : _result(result),
       _message()
 {
@@ -165,5 +165,12 @@ ReturnCode::operator==(const ReturnCode& code) const {
 bool
 ReturnCode::operator!=(const ReturnCode& code) const {
     return (_result != code._result) || (getMessage() != code.getMessage());
+}
+
+std::string_view
+ReturnCode::getMessage() const noexcept {
+    return _message
+           ? _message->operator std::string_view()
+           : std::string_view();
 }
 }

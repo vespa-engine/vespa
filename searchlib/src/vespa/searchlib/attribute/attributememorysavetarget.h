@@ -23,8 +23,13 @@ private:
     struct WriterEntry {
         FileWriterUP writer;
         vespalib::string desc;
-        WriterEntry(FileWriterUP writer_in, const vespalib::string& desc_in)
-            : writer(std::move(writer_in)), desc(desc_in) {}
+        WriterEntry(FileWriterUP writer_in, vespalib::string desc_in)
+            : writer(std::move(writer_in)),
+              desc(std::move(desc_in))
+        {}
+        WriterEntry(WriterEntry &&) noexcept = default;
+        WriterEntry & operator=(WriterEntry &&) noexcept = default;
+        ~WriterEntry();
     };
     using WriterMap = std::unordered_map<vespalib::string, WriterEntry, vespalib::hash<vespalib::string>>;
 

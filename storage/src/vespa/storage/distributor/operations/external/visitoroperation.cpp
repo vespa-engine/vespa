@@ -51,7 +51,7 @@ VisitorOperation::SuperBucketInfo::~SuperBucketInfo() = default;
 namespace {
 
 [[nodiscard]] bool
-matches_visitor_library(vespalib::stringref input, vespalib::stringref expected)
+matches_visitor_library(std::string_view input, std::string_view expected)
 {
     if (input.size() != expected.size()) {
         return false;
@@ -233,7 +233,7 @@ namespace {
 class VisitorVerificationException {
 public:
     VisitorVerificationException(api::ReturnCode::Result result,
-                                 vespalib::stringref message)
+                                 std::string_view message)
         : _code(result, message)
     {}
 
@@ -813,7 +813,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
     os << _msg->getInstanceId() << '-'
        << _node_ctx.node_index() << '-' << cmd->getMsgId();
 
-    vespalib::string storageInstanceId(os.str());
+    vespalib::string storageInstanceId(os.view());
     cmd->setInstanceId(storageInstanceId);
     cmd->setAddress(api::StorageMessageAddress::create(_node_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, node));
     cmd->setMaximumPendingReplyCount(pending);

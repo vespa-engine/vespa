@@ -27,10 +27,10 @@ class TokenExtractor {
 public:
     struct SpanTerm {
         document::Span      span;
-        vespalib::stringref word;
+        std::string_view word;
         bool                altered;
 
-        SpanTerm(const document::Span& span_, vespalib::stringref word_, bool altered_) noexcept
+        SpanTerm(const document::Span& span_, std::string_view word_, bool altered_) noexcept
             : span(span_),
               word(word_),
               altered(altered_)
@@ -51,13 +51,13 @@ public:
     };
 
 private:
-    void consider_word(std::vector<SpanTerm>& terms, vespalib::stringref text, const document::Span& span, const document::FieldValue* fv, const document::Document* doc) const;
+    void consider_word(std::vector<SpanTerm>& terms, std::string_view text, const document::Span& span, const document::FieldValue* fv, const document::Document* doc) const;
 
 public:
     TokenExtractor(const vespalib::string& field_name, size_t max_word_len);
     ~TokenExtractor();
-    void extract(std::vector<SpanTerm>& terms, const document::StringFieldValue::SpanTrees& trees, vespalib::stringref text, const document::Document* doc) const;
-    vespalib::stringref sanitize_word(vespalib::stringref word, const document::Document* doc) const;
+    void extract(std::vector<SpanTerm>& terms, const document::StringFieldValue::SpanTrees& trees, std::string_view text, const document::Document* doc) const;
+    std::string_view sanitize_word(std::string_view word, const document::Document* doc) const;
 };
 
 }

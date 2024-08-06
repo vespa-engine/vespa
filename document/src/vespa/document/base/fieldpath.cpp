@@ -5,6 +5,7 @@
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <cctype>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
@@ -13,51 +14,50 @@ namespace document {
 
 FieldPathEntry::~FieldPathEntry() = default;
 
-FieldPathEntry::FieldPathEntry() :
-    _type(NONE),
-    _name(""),
-    _field(),
-    _dataType(0),
-    _lookupIndex(0),
-    _lookupKey(),
-    _variableName(),
-    _fillInVal()
+FieldPathEntry::FieldPathEntry()
+    : _type(NONE),
+      _name(""),
+      _field(),
+      _dataType(nullptr),
+      _lookupIndex(0),
+      _lookupKey(),
+      _variableName(),
+      _fillInVal()
 { }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex) :
-    _type(ARRAY_INDEX),
-    _name(""),
-    _field(),
-    _dataType(&dataType),
-    _lookupIndex(arrayIndex),
-    _lookupKey(),
-    _variableName(),
-    _fillInVal()
+FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex)
+    : _type(ARRAY_INDEX),
+      _name(""),
+      _field(),
+      _dataType(&dataType),
+      _lookupIndex(arrayIndex),
+      _lookupKey(),
+      _variableName(),
+      _fillInVal()
 {
     setFillValue(*_dataType);
 }
 
-FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
-    _type(STRUCT_FIELD),
-    _name(fieldRef.getName()),
-    _field(fieldRef),
-    _dataType(&fieldRef.getDataType()),
-    _lookupIndex(0),
-    _lookupKey(),
-    _variableName(),
-    _fillInVal(fieldRef.createValue())
+FieldPathEntry::FieldPathEntry(const Field &fieldRef)
+    : _type(STRUCT_FIELD),
+      _name(fieldRef.getName()),
+      _field(fieldRef),
+      _dataType(&fieldRef.getDataType()),
+      _lookupIndex(0),
+      _lookupKey(),
+      _variableName(),
+      _fillInVal(fieldRef.createValue())
 { }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType,
-                               FieldValue::UP lookupKey) :
-    _type(MAP_KEY),
-    _name("value"),
-    _field(),
-    _dataType(&dataType),
-    _lookupIndex(0),
-    _lookupKey(std::move(lookupKey)),
-    _variableName(),
-    _fillInVal()
+FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType, FieldValue::UP lookupKey)
+    : _type(MAP_KEY),
+      _name("value"),
+      _field(),
+      _dataType(&dataType),
+      _lookupIndex(0),
+      _lookupKey(std::move(lookupKey)),
+      _variableName(),
+      _fillInVal()
 {
     setFillValue(fillType);
 }
@@ -111,7 +111,7 @@ FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
     setFillValue(*_dataType);
 }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, vespalib::stringref variableName) :
+FieldPathEntry::FieldPathEntry(const DataType & dataType, std::string_view variableName) :
     _type(VARIABLE),
     _name(""),
     _field(),
@@ -137,14 +137,14 @@ FieldPathEntry::stealFieldValueToSet() const
 }
 
 vespalib::string
-FieldPathEntry::parseKey(vespalib::stringref & key)
+FieldPathEntry::parseKey(std::string_view & key)
 {
     vespalib::string v;
     const char *c = key.data();
     const char *e = c + key.size();
-    for(;(c < e) && isspace(c[0]); c++);
+    for(;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
     if ((c < e) && (c[0] == '{')) {
-        for(c++;(c < e) && isspace(c[0]); c++);
+        for(c++;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
         if ((c < e) && (c[0] == '"')) {
             const char * start = ++c;
             for (; (c < e) && (c[0] != '"'); c++) {
@@ -167,9 +167,9 @@ FieldPathEntry::parseKey(vespalib::stringref & key)
             }
             v.append(start, c-start);
         }
-        for(;(c < e) && isspace(c[0]); c++);
+        for(;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
         if ((c < e) && (c[0] == '}')) {
-            key = c+1;
+            key = std::string_view(c + 1, e - (c + 1));
         } else {
             throw IllegalArgumentException(make_string("Key '%s' is incomplete. No matching '}'",
                                                        vespalib::string(key).c_str()), VESPA_STRLOC);

@@ -24,7 +24,7 @@ public:
     SlimeExplorer(const slime::Inspector &self) : _self(self) {}
     virtual void get_state(const slime::Inserter &inserter, bool full) const override;
     virtual std::vector<vespalib::string> get_children_names() const override;
-    virtual std::unique_ptr<StateExplorer> get_child(vespalib::stringref name) const override;
+    virtual std::unique_ptr<StateExplorer> get_child(std::string_view name) const override;
 };
 
 } // namespace vespalib

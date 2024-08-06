@@ -6,6 +6,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
@@ -57,6 +58,12 @@ public class ClusterStateBundleTest {
     private static ClusterStateBundle createTestBundleWithFeedBlock(String description, Set<NodeResourceExhaustion> concreteExhaustions) {
         return createTestBundleBuilder(false)
                 .feedBlock(ClusterStateBundle.FeedBlock.blockedWith(description, concreteExhaustions))
+                .deriveAndBuild();
+    }
+
+    private static ClusterStateBundle createTestBundleWithDistributionConfig(StorDistributionConfig config) {
+        return createTestBundleBuilder(false)
+                .distributionConfig(config)
                 .deriveAndBuild();
     }
 
@@ -130,6 +137,20 @@ public class ClusterStateBundleTest {
     }
 
     @Test
+    void similarity_test_considers_distribution_config() {
+        var bundle5Nodes  = createTestBundleWithDistributionConfig(DistributionBuilder.configForFlatCluster(5));
+        var bundle5Nodes2 = createTestBundleWithDistributionConfig(DistributionBuilder.configForFlatCluster(5));
+        var bundle6Nodes  = createTestBundleWithDistributionConfig(DistributionBuilder.configForFlatCluster(6));
+        var bundle2x3Grouped = createTestBundleWithDistributionConfig(DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3)));
+        assertTrue(bundle5Nodes.similarTo(bundle5Nodes));
+        assertTrue(bundle5Nodes.similarTo(bundle5Nodes2));
+        assertTrue(bundle5Nodes2.similarTo(bundle5Nodes));
+        assertFalse(bundle5Nodes.similarTo(bundle6Nodes));
+        assertFalse(bundle6Nodes.similarTo(bundle2x3Grouped));
+    }
+
+    @Test
     void feed_block_state_is_available() {
         var nonBlockingBundle = createTestBundle(false);
         var blockingBundle = createTestBundleWithFeedBlock("foo");
@@ -168,6 +189,17 @@ public class ClusterStateBundleTest {
                 "global 'distributor:2 storage:2', " +
                 "narnia 'distributor:2 .0.s:d storage:2', " +
                 "feed blocked: 'bear sleeping on server rack')"));
+    }
+
+    @Test
+    void toString_with_distribution_config_includes_high_level_information() {
+        var bundle = createTestBundleWithDistributionConfig(DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3)));
+        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
+                "default 'distributor:2 storage:2', " +
+                "global 'distributor:2 storage:2', " +
+                "narnia 'distributor:2 .0.s:d storage:2', " +
+                "distribution config: 6 nodes; 2 groups; redundancy 2; searchable-copies 0)"));
     }
 
     @Test
@@ -244,6 +276,13 @@ public class ClusterStateBundleTest {
     @Test
     void cloning_preserves_feed_block_state() {
         var bundle = createTestBundleWithFeedBlock("foo");
+        var derived = bundle.cloneWithMapper(Function.identity());
+        assertEquals(bundle, derived);
+    }
+
+    @Test
+    void cloning_preserves_distribution_config() {
+        var bundle = createTestBundleWithDistributionConfig(DistributionBuilder.configForFlatCluster(5));
         var derived = bundle.cloneWithMapper(Function.identity());
         assertEquals(bundle, derived);
     }

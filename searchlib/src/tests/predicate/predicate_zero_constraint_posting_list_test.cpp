@@ -6,9 +6,6 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_zero_constraint_posting_list_test");
-
 using namespace search;
 using namespace search::predicate;
 
@@ -54,5 +51,3 @@ TEST("require that posting list can iterate.") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

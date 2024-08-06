@@ -192,4 +192,11 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
         return Objects.hash(super.hashCode(), rawWord, value, isFromQuery, isFromUser, stemmed, segmentingRule, origin);
     }
 
+    private boolean foldIntoWand = false;
+
+    /** whether this item should be folded into a parent WeakAndItem */
+    public boolean shouldFoldIntoWand() { return foldIntoWand; }
+
+    /** set the flag for folding into a parent WeakAndItem */
+    public void shouldFoldIntoWand(boolean value) { this.foldIntoWand = value; }
 }

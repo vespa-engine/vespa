@@ -119,6 +119,7 @@ public class InfrastructureMetricSet {
 
         addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max, average));
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_SUCCESS_FACTOR_DEVIATION.max());
+        addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DURATION.max());
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_FAILURE.count());
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE.count());
         addMetric(metrics, ConfigServerMetrics.OVERCOMMITTED_HOSTS.max());
@@ -189,11 +190,12 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE.max());
         addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
         addMetric(metrics, ControllerMetrics.AUTH0_EXCEPTIONS.count());
+        addMetric(metrics, ControllerMetrics.BILLING_CREDITS.last());
+        addMetric(metrics, ControllerMetrics.BILLING_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.BILLING_WEBHOOK_FAILURES.count());
         addMetric(metrics, ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.max());
         addMetric(metrics, ControllerMetrics.CERTIFICATE_COUNT.max());
         addMetric(metrics, ControllerMetrics.CERTIFICATE_NAME_COUNT.max());
-        addMetric(metrics, ControllerMetrics.BILLING_EXCEPTIONS.count());
 
         addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS.min());
         addMetric(metrics, ControllerMetrics.METERING_LAST_REPORTED.max());
@@ -201,6 +203,9 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.MAIL_SENT.count());
         addMetric(metrics, ControllerMetrics.MAIL_FAILED.count());
         addMetric(metrics, ControllerMetrics.MAIL_THROTTLED.count());
+
+        addMetric(metrics, ControllerMetrics.HUBSPOT_EXCEPTIONS.count());
+        addMetric(metrics, ControllerMetrics.HUBSPOT_LAST_SUCCESS.last());
 
         return metrics;
     }

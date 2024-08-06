@@ -13,7 +13,7 @@ schema slack_message {
             indexing: summary | attribute | index
             match: word
         }
-
+        
         field text type string {
             indexing: summary | index
             stemming: best

@@ -203,7 +203,7 @@ public class Cluster {
     }
 
     /** The predicted time it will take to rescale this cluster. */
-    public Duration scalingDuration(ClusterSpec clusterSpec) {
+    public Duration scalingDuration() {
         int completedEventCount = 0;
         Duration totalDuration = Duration.ZERO;
         for (ScalingEvent event : scalingEvents()) {
@@ -214,8 +214,8 @@ public class Cluster {
             completedEventCount++;
             totalDuration = totalDuration.plus(event.duration().get());
         }
-        if (completedEventCount == 0) return ClusterModel.minScalingDuration(clusterSpec);
-        return minimum(ClusterModel.minScalingDuration(clusterSpec), totalDuration.dividedBy(completedEventCount));
+        if (completedEventCount == 0) return ClusterModel.minScalingDuration();
+        return minimum(ClusterModel.minScalingDuration(), totalDuration.dividedBy(completedEventCount));
     }
 
     /** The predicted time this cluster will stay in each resource configuration (including the scaling duration). */

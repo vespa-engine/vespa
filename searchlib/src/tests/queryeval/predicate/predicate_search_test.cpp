@@ -367,8 +367,7 @@ TEST("require that subquery bitmap is unpacked to subqueries.") {
     search.initFullRange();
     EXPECT_TRUE(search.seek(2));
     search.unpack(2);
-    EXPECT_EQUAL(0xffffffffffffffffULL,
-                 static_cast<unsigned long long>(data.getSubqueries()));
+    EXPECT_EQUAL(0xffffffffffffffffUL, data.getSubqueries());
 }
 
 

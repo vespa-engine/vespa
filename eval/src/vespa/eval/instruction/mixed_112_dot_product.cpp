@@ -78,9 +78,9 @@ template <typename CT>
 void my_mixed_112_dot_product_op(InterpretedFunction::State &state, uint64_t dense_size) {
     const auto &a_idx = state.peek(2).index();
     const auto &c_idx = state.peek(0).index();
-    const CT *a_cells = state.peek(2).cells().unsafe_typify<CT>().cbegin();
-    const CT *b_cells = state.peek(1).cells().unsafe_typify<CT>().cbegin();
-    const CT *c_cells = state.peek(0).cells().unsafe_typify<CT>().cbegin();
+    const CT *a_cells = state.peek(2).cells().unsafe_typify<CT>().data();
+    const CT *b_cells = state.peek(1).cells().unsafe_typify<CT>().data();
+    const CT *c_cells = state.peek(0).cells().unsafe_typify<CT>().data();
     double result = __builtin_expect(are_fast(a_idx, c_idx), true)
         ? my_fast_mixed_112_dot_product<CT>(&as_fast(a_idx).map, &as_fast(c_idx).map,
                                             a_cells, b_cells, c_cells, dense_size)

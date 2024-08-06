@@ -283,7 +283,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private static RequestConfig createRequestConfig(Duration timeout) {
         return RequestConfig.custom()
-                .setConnectionRequestTimeout(Timeout.ofSeconds(1))
+                .setConnectionRequestTimeout(Timeout.ofSeconds(10))
                 .setResponseTimeout(Timeout.ofMilliseconds(timeout.toMillis()))
                 .build();
     }
@@ -296,7 +296,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                 .setMaxConnPerRoute(10)
                                 .setDefaultConnectionConfig(ConnectionConfig.custom()
                                         .setTimeToLive(TimeValue.ofMilliseconds(1))
-                                        .setConnectTimeout(Timeout.ofSeconds(1))
+                                        .setConnectTimeout(Timeout.ofSeconds(10)) // Times out at 1s over wireguard with 500+ services.
                                         .build())
                                 .setTlsStrategy(tlsStrategy)
                                 .build())

@@ -30,18 +30,8 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     mutable TransportAndExecutorService _service;
     PendingLidTracker           _pendingLidTracker;
 
-    DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, uint32_t subDbId)
-        : _subDbId(subDbId),
-          _metaStoreCtx(std::move(bucketDB)),
-          _summaryManager(),
-          _indexManager(),
-          _summaryAdapter(),
-          _indexWriter(),
-          _service(1),
-          _pendingLidTracker()
-    {
-    }
-    ~DummyDocumentSubDb() override { }
+    DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, uint32_t subDbId);
+    ~DummyDocumentSubDb() override;
     void close() override { }
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return "dummysubdb"; }
@@ -59,11 +49,11 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     IReprocessingTask::List applyConfig(const DocumentDBConfig &, const DocumentDBConfig &,
                                         SerialNum, const ReconfigParams &, IDocumentDBReferenceResolver &, const DocumentSubDBReconfig&) override
     {
-        return IReprocessingTask::List();
+        return {};
     }
     void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &, OnDone) override { }
-    ISearchHandler::SP getSearchView() const override { return ISearchHandler::SP(); }
-    IFeedView::SP getFeedView() const override { return IFeedView::SP(); }
+    ISearchHandler::SP getSearchView() const override { return {}; }
+    IFeedView::SP getFeedView() const override { return {}; }
     void clearViews() override {}
     const ISummaryManager::SP &getSummaryManager() const override { return _summaryManager; }
     std::shared_ptr<IAttributeWriter> get_attribute_writer() const override { return {}; }
@@ -74,7 +64,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     const IIndexWriter::SP &getIndexWriter() const override { return _indexWriter; }
     IDocumentMetaStoreContext &getDocumentMetaStoreContext() override { return _metaStoreCtx; }
     const IDocumentMetaStoreContext &getDocumentMetaStoreContext() const override { return _metaStoreCtx; }
-    IFlushTargetList getFlushTargets() override { return IFlushTargetList(); }
+    IFlushTargetList getFlushTargets() override { return {}; }
     size_t getNumDocs() const override { return 0; }
     size_t getNumActiveDocs() const override { return 0; }
     bool hasDocument(const document::DocumentId &) override { return false; }
@@ -85,16 +75,16 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     void pruneRemovedFields(SerialNum) override { }
     void setIndexSchema(const Schema::SP &, SerialNum) override { }
     search::SearchableStats getSearchableStats() const override {
-        return search::SearchableStats();
+        return {};
     }
-    IDocumentRetriever::UP getDocumentRetriever() override {
-        return IDocumentRetriever::UP();
+    std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override {
+        return {};
     }
     matching::MatchingStats getMatcherStats(const vespalib::string &) const override {
-        return matching::MatchingStats();
+        return {};
     }
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override {
-        return std::shared_ptr<IDocumentDBReference>();
+        return {};
     }
 
     PendingLidTrackerBase &getUncommittedLidsTracker() override {

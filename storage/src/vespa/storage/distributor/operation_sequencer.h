@@ -31,7 +31,7 @@ public:
         vespalib::string lock_token;
 
         BlockedByLockedBucket() = default;
-        explicit BlockedByLockedBucket(vespalib::stringref token) : lock_token(token) {}
+        explicit BlockedByLockedBucket(std::string_view token) : lock_token(token) {}
     };
 private:
     OperationSequencer* _sequencer;
@@ -103,7 +103,7 @@ public:
     [[nodiscard]] bool is_blocked_by_bucket() const noexcept {
         return std::holds_alternative<BlockedByLockedBucket>(_handle);
     }
-    [[nodiscard]] bool is_bucket_blocked_with_token(vespalib::stringref token) const noexcept {
+    [[nodiscard]] bool is_bucket_blocked_with_token(std::string_view token) const noexcept {
         return (std::holds_alternative<BlockedByLockedBucket>(_handle) &&
                 (std::get<BlockedByLockedBucket>(_handle).lock_token == token));
     }

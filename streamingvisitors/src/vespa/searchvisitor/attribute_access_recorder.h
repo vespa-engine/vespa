@@ -19,9 +19,9 @@ class AttributeAccessRecorder : public search::attribute::IAttributeContext
 public:
     AttributeAccessRecorder(std::unique_ptr<IAttributeContext> ctx);
     ~AttributeAccessRecorder() override;
-    void asyncForAttribute(const vespalib::string& name, std::unique_ptr<search::attribute::IAttributeFunctor> func) const override;
-    const search::attribute::IAttributeVector* getAttribute(const string& name) const override;
-    const search::attribute::IAttributeVector * getAttributeStableEnum(const string& name) const override;
+    void asyncForAttribute(std::string_view name, std::unique_ptr<search::attribute::IAttributeFunctor> func) const override;
+    const search::attribute::IAttributeVector* getAttribute(std::string_view name) const override;
+    const search::attribute::IAttributeVector * getAttributeStableEnum(std::string_view name) const override;
     void getAttributeList(std::vector<const search::attribute::IAttributeVector *>& list) const override;
     void releaseEnumGuards() override;
     std::vector<vespalib::string> get_accessed_attributes() const;

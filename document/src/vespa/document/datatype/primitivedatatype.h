@@ -20,7 +20,7 @@
 namespace document {
 
 class PrimitiveDataType : public DataType {
-    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const override;
 public:
     PrimitiveDataType(Type _type);
 

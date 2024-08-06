@@ -33,14 +33,14 @@ requireFold(TermType type, Normalizing normalizing) {
 }
 
 vespalib::string
-fold(vespalib::stringref s) {
+fold(std::string_view s) {
     const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
     const unsigned char * end = curr + s.size();
     vespalib::string folded;
     for (; curr < end;) {
         uint32_t c_ucs4 = *curr;
         if (c_ucs4 < 0x80) {
-            folded.append(Fast_NormalizeWordFolder::lowercase_and_fold_ascii(*curr++));
+            folded += Fast_NormalizeWordFolder::lowercase_and_fold_ascii(*curr++);
         } else {
             c_ucs4 = Fast_UnicodeUtil::GetUTF8CharNonAscii(curr);
             const char *repl = Fast_NormalizeWordFolder::ReplacementString(c_ucs4);
@@ -59,14 +59,14 @@ fold(vespalib::stringref s) {
 }
 
 vespalib::string
-lowercase(vespalib::stringref s) {
+lowercase(std::string_view s) {
     const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
     const unsigned char * end = curr + s.size();
     vespalib::string folded;
     for (; curr < end;) {
         uint32_t c_ucs4 = *curr;
         if (c_ucs4 < 0x80) {
-            folded.append(static_cast<char>(Fast_NormalizeWordFolder::lowercase_ascii(*curr++)));
+            folded += static_cast<char>(Fast_NormalizeWordFolder::lowercase_ascii(*curr++));
         } else {
             c_ucs4 = Fast_NormalizeWordFolder::lowercase(Fast_UnicodeUtil::GetUTF8CharNonAscii(curr));
             char tmp[6];
@@ -86,13 +86,13 @@ operator<<(std::ostream &os, Normalizing n) {
 }
 
 vespalib::string
-QueryNormalization::optional_fold(vespalib::stringref s, TermType type, Normalizing normalizing) {
+QueryNormalization::optional_fold(std::string_view s, TermType type, Normalizing normalizing) {
     switch ( requireFold(type, normalizing)) {
-        case Normalizing::NONE: return s;
+        case Normalizing::NONE: return vespalib::string(s);
         case Normalizing::LOWERCASE: return lowercase(s);
         case Normalizing::LOWERCASE_AND_FOLD: return fold(s);
     }
-    return s;
+    return vespalib::string(s);
 }
 
 }

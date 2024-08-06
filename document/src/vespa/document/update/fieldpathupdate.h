@@ -21,7 +21,7 @@ class FieldPathUpdate
 {
 public:
     using nbostream = vespalib::nbostream;
-    using stringref = vespalib::stringref;
+    using string_view = std::string_view;
 
     enum FieldPathUpdateType {
         Add    = IDENTIFIABLE_CLASSID(AddFieldPathUpdate),
@@ -61,12 +61,12 @@ public:
 
 protected:
     /** To be used for deserialization */
-    FieldPathUpdate(FieldPathUpdateType type) noexcept;
+    explicit FieldPathUpdate(FieldPathUpdateType type) noexcept;
     FieldPathUpdate(const FieldPathUpdate &);
     FieldPathUpdate & operator =(const FieldPathUpdate &);
 
-    static stringref getString(nbostream & stream);
-    FieldPathUpdate(FieldPathUpdateType type, stringref fieldPath, stringref whereClause = stringref());
+    static string_view getString(nbostream & stream);
+    FieldPathUpdate(FieldPathUpdateType type, string_view fieldPath, string_view whereClause = string_view());
 
     virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream);
 

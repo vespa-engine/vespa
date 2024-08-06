@@ -525,11 +525,11 @@ testVisitOverGeneratedDomain(const vespalib::string & testDir) {
     createDomainTest(tls, name);
     auto s1 = openDomainTest(tls, name);
     fillDomainTest(s1.get(), name);
-    EXPECT_EQUAL(0, getMaxSessionRunTime(tlss.tls, "test1"));
+    EXPECT_EQUAL(0.0, getMaxSessionRunTime(tlss.tls, "test1"));
     visitDomainTest(tls, s1.get(), name);
     double maxSessionRunTime = getMaxSessionRunTime(tlss.tls, "test1");
     LOG(info, "testVisitOverGeneratedDomain(): maxSessionRunTime=%f", maxSessionRunTime);
-    EXPECT_GREATER(maxSessionRunTime, 0);
+    EXPECT_GREATER(maxSessionRunTime, 0.0);
 }
 
 void

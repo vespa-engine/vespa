@@ -3,6 +3,7 @@
 #include "literalfieldvalue.hpp"
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 using namespace vespalib::xml;
 
@@ -26,7 +27,7 @@ LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     _value = _backing;
 }
 
-LiteralFieldValueB::LiteralFieldValueB(Type type, const stringref & value)
+LiteralFieldValueB::LiteralFieldValueB(Type type, const string_view & value)
     : FieldValue(type),
       _value(),
       _backing(value)
@@ -84,7 +85,7 @@ print(std::ostream& out, bool, const std::string&) const
 }
 
 FieldValue&
-LiteralFieldValueB::operator=(vespalib::stringref value)
+LiteralFieldValueB::operator=(std::string_view value)
 {
     setValue(value);
     return *this;

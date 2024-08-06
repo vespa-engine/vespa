@@ -17,7 +17,7 @@ private:
     uint16_t _node_index;
 
 public:
-    NodeIdentity(vespalib::stringref cluster_name_in,
+    NodeIdentity(std::string_view cluster_name_in,
                  const lib::NodeType& node_type_in,
                  uint16_t node_index_in);
     const vespalib::string& cluster_name() const { return _cluster_name; }

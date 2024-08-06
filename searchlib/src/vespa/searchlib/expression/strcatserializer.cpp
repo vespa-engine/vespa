@@ -8,7 +8,6 @@ namespace search::expression {
 
 using vespalib::Serializer;
 using vespalib::string;
-using vespalib::stringref;
 
 StrCatSerializer &  StrCatSerializer::put(const vespalib::Identifiable & value)
 {
@@ -32,7 +31,7 @@ ResultSerializer &  StrCatSerializer::putResult(const ResultNodeVector & value)
 ResultSerializer &  StrCatSerializer::putResult(const RawResultNode & value)
 {
     vespalib::ConstBufferRef buf(value.get());
-    getStream() << stringref(buf.c_str(), buf.size());
+    getStream() << std::string_view(buf.c_str(), buf.size());
     return *this;
 }
 

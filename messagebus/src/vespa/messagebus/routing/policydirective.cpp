@@ -6,7 +6,7 @@ using vespalib::make_string;
 
 namespace mbus {
 
-PolicyDirective::PolicyDirective(vespalib::stringref name, vespalib::stringref param) :
+PolicyDirective::PolicyDirective(std::string_view name, std::string_view param) :
     _name(name),
     _param(param)
 { }

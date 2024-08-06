@@ -86,7 +86,7 @@ SchemaBuilder::SchemaBuilder(const DocBuilder& doc_builder)
 SchemaBuilder::~SchemaBuilder() = default;
 
 void
-SchemaBuilder::add_index(vespalib::stringref field_name, std::optional<bool> interleaved_features)
+SchemaBuilder::add_index(std::string_view field_name, std::optional<bool> interleaved_features)
 {
     auto& field = _doc_builder.get_document_type().getField(field_name);
     auto ct = get_collection_type(field.getDataType());
@@ -105,7 +105,7 @@ SchemaBuilder::add_index(vespalib::stringref field_name, std::optional<bool> int
 }
 
 SchemaBuilder&
-SchemaBuilder::add_indexes(std::vector<vespalib::stringref> field_names, std::optional<bool> interleaved_features)
+SchemaBuilder::add_indexes(std::vector<std::string_view> field_names, std::optional<bool> interleaved_features)
 {
     for (auto& field_name : field_names) {
         add_index(field_name, interleaved_features);
@@ -128,7 +128,7 @@ SchemaBuilder::add_all_indexes(std::optional<bool> interleaved_features)
 }
 
 void
-SchemaBuilder::add_attribute(vespalib::stringref field_name)
+SchemaBuilder::add_attribute(std::string_view field_name)
 {
     auto& field = _doc_builder.get_document_type().getField(field_name);
     auto ct = get_collection_type(field.getDataType());
@@ -145,7 +145,7 @@ SchemaBuilder::add_attribute(vespalib::stringref field_name)
 }
 
 SchemaBuilder&
-SchemaBuilder::add_attributes(std::vector<vespalib::stringref> field_names)
+SchemaBuilder::add_attributes(std::vector<std::string_view> field_names)
 {
     for (auto& field_name : field_names) {
         add_attribute(field_name);

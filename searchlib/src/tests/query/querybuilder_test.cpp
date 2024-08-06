@@ -15,7 +15,8 @@
 LOG_SETUP("querybuilder_test");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
-using std::string;
+using std::string_view;
+using vespalib::string;
 using search::SimpleQueryStackDumpIterator;
 using namespace search::query;
 
@@ -376,37 +377,37 @@ struct MyAndNot : AndNot {};
 struct MyEquiv : Equiv {
     MyEquiv(int32_t i, Weight w) : Equiv(i, w) {}
 };
-struct MyNear : Near { MyNear(size_t dist) : Near(dist) {} };
-struct MyONear : ONear { MyONear(size_t dist) : ONear(dist) {} };
-struct MyWeakAnd : WeakAnd { MyWeakAnd(uint32_t minHits, const vespalib::string & v) : WeakAnd(minHits, v) {} };
+struct MyNear : Near { explicit MyNear(size_t dist) : Near(dist) {} };
+struct MyONear : ONear { explicit MyONear(size_t dist) : ONear(dist) {} };
+struct MyWeakAnd : WeakAnd { MyWeakAnd(uint32_t minHits, const string & v) : WeakAnd(minHits, v) {} };
 struct MyOr : Or {};
-struct MyPhrase : Phrase { MyPhrase(const string &f, int32_t i, Weight w) : Phrase(f, i, w) {}};
-struct MySameElement : SameElement { MySameElement(const string &f, int32_t i, Weight w) : SameElement(f, i, w) {}};
+struct MyPhrase : Phrase { MyPhrase(const string & f, int32_t i, Weight w) : Phrase(f, i, w) {}};
+struct MySameElement : SameElement { MySameElement(const string & f, int32_t i, Weight w) : SameElement(f, i, w) {}};
 
 struct MyWeightedSetTerm : WeightedSetTerm {
-    MyWeightedSetTerm(uint32_t n, const string &f, int32_t i, Weight w) : WeightedSetTerm(n, f, i, w) {}
+    MyWeightedSetTerm(uint32_t n, const string & f, int32_t i, Weight w) : WeightedSetTerm(n, f, i, w) {}
 };
 struct MyDotProduct : DotProduct {
-    MyDotProduct(uint32_t n, const string &f, int32_t i, Weight w) : DotProduct(n, f, i, w) {}
+    MyDotProduct(uint32_t n, const string & f, int32_t i, Weight w) : DotProduct(n, f, i, w) {}
 };
 struct MyWandTerm : WandTerm {
-    MyWandTerm(uint32_t n, const string &f, int32_t i, Weight w, uint32_t targetNumHits,
+    MyWandTerm(uint32_t n, const string & f, int32_t i, Weight w, uint32_t targetNumHits,
                int64_t scoreThreshold, double thresholdBoostFactor)
         : WandTerm(n, f, i, w, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
 };
 struct MyRank : Rank {};
 struct MyNumberTerm : NumberTerm {
-    MyNumberTerm(Type t, const string &f, int32_t i, Weight w)
+    MyNumberTerm(Type t, const string & f, int32_t i, Weight w)
         : NumberTerm(t, f, i, w) {
     }
 };
 struct MyLocationTerm : LocationTerm {
-    MyLocationTerm(const Type &t, const string &f, int32_t i, Weight w)
+    MyLocationTerm(const Type &t, const string & f, int32_t i, Weight w)
         : LocationTerm(t, f, i, w) {
     }
 };
 struct MyPrefixTerm : PrefixTerm {
-    MyPrefixTerm(const Type &t, const string &f, int32_t i, Weight w)
+    MyPrefixTerm(const Type &t, const string & f, int32_t i, Weight w)
         : PrefixTerm(t, f, i, w) {
     }
 };
@@ -416,32 +417,32 @@ struct MyRangeTerm : RangeTerm {
     }
 };
 struct MyStringTerm : StringTerm {
-    MyStringTerm(const Type &t, const string &f, int32_t i, Weight w)
+    MyStringTerm(const Type &t, const string & f, int32_t i, Weight w)
         : StringTerm(t, f, i, w) {
     }
 };
 struct MySubstringTerm : SubstringTerm {
-    MySubstringTerm(const Type &t, const string &f, int32_t i, Weight w)
+    MySubstringTerm(const Type &t, const string & f, int32_t i, Weight w)
         : SubstringTerm(t, f, i, w) {
     }
 };
 struct MySuffixTerm : SuffixTerm {
-    MySuffixTerm(const Type &t, const string &f, int32_t i, Weight w)
+    MySuffixTerm(const Type &t, const string & f, int32_t i, Weight w)
         : SuffixTerm(t, f, i, w) {
     }
 };
 struct MyPredicateQuery : PredicateQuery {
-    MyPredicateQuery(Type &&t, const string &f, int32_t i, Weight w)
+    MyPredicateQuery(Type &&t, const string & f, int32_t i, Weight w)
         : PredicateQuery(std::move(t), f, i, w) {
     }
 };
 struct MyRegExpTerm : RegExpTerm {
-    MyRegExpTerm(const Type &t, const string &f, int32_t i, Weight w)
+    MyRegExpTerm(const Type &t, const string & f, int32_t i, Weight w)
         : RegExpTerm(t, f, i, w) {
     }
 };
 struct MyNearestNeighborTerm : NearestNeighborTerm {
-    MyNearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
+    MyNearestNeighborTerm(std::string_view query_tensor_name, const string & field_name,
                           int32_t i, Weight w, uint32_t target_num_hits,
                           bool allow_approximate, uint32_t explore_additional_hits,
                           double distance_threshold)
@@ -750,7 +751,7 @@ verify_multiterm_get(const MultiTerm & mt) {
         auto v = mt.getAsString(i);
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
-        EXPECT_EQUAL(v.first, vespalib::stringref(buf, res.ptr - buf));
+        EXPECT_EQUAL(v.first, std::string_view(buf, res.ptr - buf));
         EXPECT_EQUAL(v.second.percent(), i-4);
     }
 }
@@ -769,7 +770,7 @@ TEST("add and get of string MultiTerm") {
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
-        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+        mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
     EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
     verify_multiterm_get(mt);
@@ -792,7 +793,7 @@ TEST("first integer then string MultiTerm") {
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
-        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+        mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
     EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
     verify_multiterm_get(mt);

@@ -278,9 +278,9 @@ TEST(PrimitiveFieldValueTest, testBool)
     v.setValue(true);
     EXPECT_TRUE(v.getValue());
 
-    v = vespalib::stringref("true");
+    v = std::string_view("true");
     EXPECT_TRUE(v.getValue());
-    v = vespalib::stringref("something not true");
+    v = std::string_view("something not true");
     EXPECT_FALSE(v.getValue());
 }
 

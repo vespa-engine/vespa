@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
@@ -55,7 +56,9 @@ public class SessionContentReadResponse extends HttpResponse {
         Pattern whitespace = Pattern.compile("\\s");
         Map<String, String> map = new HashMap<>();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(classLoader.getResourceAsStream("mime.types")))) {
+        InputStream resources = Objects.requireNonNull(classLoader.getResourceAsStream("mime.types"),
+                                                       "Failed to load resource 'mime.types'");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resources))) {
             while (reader.ready()) {
                 String line = reader.readLine();
                 if (line.isEmpty() || line.charAt(0) == '#') continue;

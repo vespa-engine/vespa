@@ -8,9 +8,13 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.DistributionConfigBundle;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +32,7 @@ import java.util.Map;
  */
 public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, EnvelopedClusterStateBundleCodec {
 
+    // TODO zstd instead. Compression type already encoded on wire
     private static final Compressor compressor = new Compressor(CompressionType.LZ4, 3, 0.90, 1024);
 
     @Override
@@ -49,6 +54,10 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
             feedBlock.setBool("block-feed-in-cluster", true);
             feedBlock.setString("description", stateBundle.getFeedBlock().get().getDescription());
         }
+
+        stateBundle.distributionConfig().ifPresent(cfg -> {
+            SlimeUtils.copyObject(cfg.precomputedSlimeRepr().get(), root.setObject("distribution-config"));
+        });
 
         Compressor.Compression compression = BinaryFormat.encode_and_compress(slime, compressor);
         return EncodedClusterStateBundle.fromCompressionBuffer(compression);
@@ -75,8 +84,21 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
             feedBlock = ClusterStateBundle.FeedBlock.blockedWithDescription(fb.field("description").asString());
         }
 
+        DistributionConfigBundle distributionConfig = null;
+        Inspector dc = root.field("distribution-config");
+        if (dc.valid()) {
+            // ConfigPayload works on full Slime objects and not Inspectors, so we have to copy out
+            // the subtree prior to decode. This is not code used in a hot path, so this should be fine.
+            Slime cfgSlime = new Slime();
+            SlimeUtils.copyObject(dc, cfgSlime.setObject());
+            // TODO toInstance transitively invokes reflection which _mutates_ field access attributes,
+            //  toggling `accessible` on and off. Sounds like an inherent latent race condition...
+            distributionConfig = DistributionConfigBundle.of(
+                    new ConfigPayload(cfgSlime).toInstance(StorDistributionConfig.class, null));
+        }
+
         return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(baseline), derivedStates,
-                                     feedBlock, deferredActivation);
+                                     feedBlock, distributionConfig, deferredActivation);
     }
 
     // Technically the Slime enveloping could be its own class that is bundle codec independent, but

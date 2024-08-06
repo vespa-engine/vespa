@@ -76,7 +76,7 @@ NumericFieldValue<Number>::print(std::ostream& out, bool, const std::string&) co
 
 template<typename Number>
 FieldValue&
-NumericFieldValue<Number>::operator=(vespalib::stringref value)
+NumericFieldValue<Number>::operator=(std::string_view value)
 {
         // Lexical cast doesn't allow hex syntax we use in XML,
         // so detect these in front.

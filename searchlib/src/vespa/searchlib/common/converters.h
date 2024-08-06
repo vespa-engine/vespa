@@ -24,10 +24,10 @@ private:
 
 class ConverterFactory {
 protected:
-    using stringref = vespalib::stringref;
+    using string_view = std::string_view;
 public:
     virtual ~ConverterFactory() = default;
-    virtual BlobConverter::UP create(stringref local, stringref strength) const = 0;
+    virtual BlobConverter::UP create(string_view local, string_view strength) const = 0;
 };
 
 }

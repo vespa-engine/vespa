@@ -21,7 +21,7 @@ StringDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::Lo
 StringDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::
 lookup(const LookupKey& key, vespalib::datastore::EntryRef dictionary_snapshot) const
 {
-    vespalib::stringref keyAsString = key.asString();
+    std::string_view keyAsString = key.asString();
     // Assert the unfortunate assumption of the comparators.
     // Should be lifted once they take the length too.
     assert(keyAsString.data()[keyAsString.size()] == '\0');

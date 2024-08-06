@@ -6,13 +6,13 @@ import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
 import ai.vespa.http.HttpURL.Scheme;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
@@ -70,6 +70,7 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
@@ -101,6 +102,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +113,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -809,8 +810,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Logs ----------------------------------------------------------------
 
     public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, Query apiParams) {
-        HttpURL logServerURI = getLogServerURI(applicationId, hostname).withQuery(apiParams);
-        return logRetriever.getLogs(logServerURI, activationTime(applicationId));
+        Exception exception = null;
+        for (var uri : getLogServerUris(applicationId, hostname)) {
+            try {
+                return logRetriever.getLogs(uri.withQuery(apiParams), activationTime(applicationId));
+            } catch (RuntimeException e) {
+                exception = e;
+                log.log(Level.INFO, e.getMessage());
+            }
+        }
+        return HttpErrorResponse.internalServerError(Exceptions.toMessageString(exception));
     }
 
     // ---------------- Methods to do call against tester containers in hosted ------------------------------
@@ -1169,33 +1178,41 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private HttpURL getLogServerURI(ApplicationId applicationId, Optional<DomainName> hostname) {
+    private List<HttpURL> getLogServerUris(ApplicationId applicationId, Optional<DomainName> hostname) {
         // Allow to get logs from a given hostname if the application is under the hosted-vespa tenant.
         // We make no validation that the hostname is actually allocated to the given application since
         // most applications under hosted-vespa are not known to the model, and it's OK for a user to get
         // logs for any host if they are authorized for the hosted-vespa tenant.
         if (hostname.isPresent() && HOSTED_VESPA_TENANT.equals(applicationId.tenant())) {
             int port = List.of(InfrastructureApplication.CONFIG_SERVER.id(), InfrastructureApplication.CONTROLLER.id()).contains(applicationId) ? 19071 : 8080;
-            return HttpURL.create(Scheme.http, hostname.get(), port).withPath(HttpURL.Path.parse("logs"));
+            return List.of(HttpURL.create(Scheme.http, hostname.get(), port).withPath(HttpURL.Path.parse("logs")));
         }
 
-        Application application = getApplication(applicationId);
-        Collection<HostInfo> hostInfos = application.getModel().getHosts();
+        ApplicationVersions applicationVersions = getActiveApplicationVersions(applicationId)
+                .orElseThrow(() -> new NotFoundException("Unable to get logs for for " + applicationId + " (application not found)"));
+        List<Pair<String, Integer>> hostInfo = logserverHostInfo(applicationVersions);
+        return hostInfo.stream()
+                .map(h -> HttpURL.create(Scheme.http, DomainName.of(h.getFirst()), h.getSecond(), HttpURL.Path.parse("logs")))
+                .toList();
+    }
 
-        HostInfo logServerHostInfo = hostInfos.stream()
-                .filter(host -> host.getServices().stream()
+    // Returns a list with hostname and port pairs for logserver container for all models/versions
+    private List<Pair<String, Integer>> logserverHostInfo(ApplicationVersions applicationVersions) {
+        return applicationVersions.applications().stream()
+                .peek(app -> log.log(Level.FINE, "Finding logserver host and port for version " + app.getVespaVersion()))
+                .map(Application::getModel)
+                .flatMap(model -> model.getHosts().stream())
+                .filter(hostInfo -> hostInfo.getServices().stream()
                         .anyMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find host info for logserver"));
-
-        ServiceInfo logService = logServerHostInfo.getServices().stream()
-                                                  .filter(service -> LOGSERVER_CONTAINER.serviceName.equals(service.getServiceType()))
-                                                  .findFirst()
-                                                  .or(() -> logServerHostInfo.getServices().stream()
-                                                                             .filter(service -> CONTAINER.serviceName.equals(service.getServiceType()))
-                                                                             .findFirst())
-                                                  .orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
-        int port = servicePort(logService);
-        return HttpURL.create(Scheme.http, DomainName.of(logServerHostInfo.getHostname()), port, HttpURL.Path.parse("logs"));
+                .map(hostInfo -> hostInfo.getServices().stream()
+                        .filter(service -> LOGSERVER_CONTAINER.serviceName.equals(service.getServiceType()))
+                        .findFirst()
+                        .or(() -> hostInfo.getServices().stream()
+                                .filter(service -> CONTAINER.serviceName.equals(service.getServiceType()))
+                                .findFirst())
+                        .orElseThrow(() -> new IllegalArgumentException("No container running on logserver host")))
+                .map(s -> new Pair<>(s.getHostName(), servicePort(s)))
+                .toList();
     }
 
     private int servicePort(ServiceInfo serviceInfo) {

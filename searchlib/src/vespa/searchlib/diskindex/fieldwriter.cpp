@@ -17,7 +17,7 @@ namespace search::diskindex {
 using vespalib::getLastErrorString;
 using common::FileHeaderContext;
 
-FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref prefix)
+FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, std::string_view prefix)
     : _dictFile(),
       _posoccfile(),
       _bvc(docIdLimit),
@@ -114,7 +114,7 @@ FieldWriter::flush()
 }
 
 void
-FieldWriter::newWord(uint64_t wordNum, vespalib::stringref word)
+FieldWriter::newWord(uint64_t wordNum, std::string_view word)
 {
     assert(wordNum <= _numWordIds);
     assert(wordNum != noWordNum());
@@ -127,7 +127,7 @@ FieldWriter::newWord(uint64_t wordNum, vespalib::stringref word)
 }
 
 void
-FieldWriter::newWord(vespalib::stringref word)
+FieldWriter::newWord(std::string_view word)
 {
     newWord(_wordNum + 1, word);
 }

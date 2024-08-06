@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 #include <filesystem>
 #include <iostream>
 #include <vector>
@@ -195,7 +196,7 @@ TEST("require that we can read all data written to file")
 
     vespalib::string chunk;
     for (offset = 0; offset < 10000; offset += text.size()) {
-        chunk.assign(content.begin() + offset, text.size());
+        chunk.assign(content.data() + offset, text.size());
         ASSERT_EQUAL(text, chunk);
     }
 }
@@ -210,7 +211,7 @@ TEST("require that vespalib::dirname works")
 
 TEST("require that vespalib::getOpenErrorString works")
 {
-    stringref dirName = "mydir";
+    std::string_view dirName = "mydir";
     std::filesystem::remove_all(std::filesystem::path(dirName));
     std::filesystem::create_directory(std::filesystem::path(dirName));
     {

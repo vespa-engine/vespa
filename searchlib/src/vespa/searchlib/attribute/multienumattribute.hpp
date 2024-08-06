@@ -217,7 +217,7 @@ MultiValueEnumAttribute<B, M>::before_inc_generation(generation_t current_gen)
 
 template <typename B, typename M>
 std::unique_ptr<AttributeSaver>
-MultiValueEnumAttribute<B, M>::onInitSave(vespalib::stringref fileName)
+MultiValueEnumAttribute<B, M>::onInitSave(std::string_view fileName)
 {
     auto guard = this->getGenerationHandler().takeGuard();
     return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>

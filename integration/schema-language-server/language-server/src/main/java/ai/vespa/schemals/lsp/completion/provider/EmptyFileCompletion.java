@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
+import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -25,8 +26,11 @@ public class EmptyFileCompletion implements CompletionProvider {
 
         if (rootNode == null) return true;
 
-        if (rootNode.size() == 0) return true;
-        return false;
+        for (SchemaNode child : rootNode) {
+            if (!child.isASTInstance(NL.class)) return false;
+        }
+
+        return true;
 	}
 
 	@Override

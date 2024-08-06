@@ -204,7 +204,7 @@ TEST_F(MetricsTest, filestor_metrics) {
     } else { \
         std::ostringstream valueost; \
         valueost << metric << " count=" << count; \
-        ASSERT_TRUE(s.find(valueost.str()) != std::string::npos) \
+        ASSERT_TRUE(s.find(valueost.view()) != std::string::npos) \
                 << "Did not find value " + valueost.str() + " in metric dump " + s; \
     } \
 }

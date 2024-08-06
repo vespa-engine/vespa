@@ -34,7 +34,7 @@ public:
     DECLARE_EXPRESSIONNODE(DocumentFieldNode);
     DocumentFieldNode() : _fieldPath(), _value(), _fieldName(), _doc(nullptr) { }
     ~DocumentFieldNode() override;
-    DocumentFieldNode(vespalib::stringref name) : _fieldPath(), _value(), _fieldName(name), _doc(nullptr) { }
+    DocumentFieldNode(std::string_view name) : _fieldPath(), _value(), _fieldName(name), _doc(nullptr) { }
     DocumentFieldNode(const DocumentFieldNode & rhs);
     DocumentFieldNode & operator = (const DocumentFieldNode & rhs);
     DocumentFieldNode(DocumentFieldNode && rhs) noexcept = default;

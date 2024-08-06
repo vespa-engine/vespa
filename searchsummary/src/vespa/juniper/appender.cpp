@@ -4,6 +4,7 @@
 #include "juniperdebug.h"
 #define _NEED_SUMMARY_CONFIG_IMPL
 #include "SummaryConfig.h"
+#include <cctype>
 
 namespace juniper {
 
@@ -19,7 +20,7 @@ Appender::append(std::vector<char> & s, char c)
 
     // eliminate multiple space characters
     if (!_preserve_white_space) {
-        if (c > 0 && isspace(c)) {
+        if (c > 0 && std::isspace(static_cast<unsigned char>(c))) {
             if (_last_was_space) {
                 return;
             } else {

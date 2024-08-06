@@ -23,7 +23,7 @@ public:
     {
     }
 
-    void tryWriteWord(vespalib::stringref word) {
+    void tryWriteWord(std::string_view word) {
         if (word != _word || _wordNum == 0) {
             ++_wordNum;
             _word = word;

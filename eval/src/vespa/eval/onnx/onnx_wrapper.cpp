@@ -475,7 +475,7 @@ Onnx::EvalContext::adapt_param(EvalContext &self, size_t idx, const Value &param
     const auto &cells_ref = param.cells();
     auto cells = unconstify(cells_ref.typify<T>());
     const auto &sizes = self._wire_info.onnx_inputs[idx].dimensions;
-    self._param_values[idx] = Ort::Value::CreateTensor<T>(self._cpu_memory, cells.begin(), cells.size(), sizes.data(), sizes.size());
+    self._param_values[idx] = Ort::Value::CreateTensor<T>(self._cpu_memory, cells.data(), cells.size(), sizes.data(), sizes.size());
 }
 
 template <typename SRC, typename DST>
@@ -484,7 +484,7 @@ Onnx::EvalContext::convert_param(EvalContext &self, size_t idx, const Value &par
 {
     auto cells = param.cells().typify<SRC>();
     size_t n = cells.size();
-    const SRC *src = cells.begin();
+    const SRC *src = cells.data();
     DST *dst = self._param_values[idx].GetTensorMutableData<DST>();
     for (size_t i = 0; i < n; ++i) {
         dst[i] = DST(src[i]);
@@ -498,7 +498,7 @@ Onnx::EvalContext::convert_result(EvalContext &self, size_t idx)
     const auto &cells_ref = (*self._results[idx]).cells();
     auto cells = unconstify(cells_ref.typify<DST>());
     size_t n = cells.size();
-    DST *dst = cells.begin();
+    DST *dst = cells.data();
     const SRC *src = self._result_values[idx].GetTensorMutableData<SRC>();
     for (size_t i = 0; i < n; ++i) {
         dst[i] = DST(src[i]);

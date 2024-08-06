@@ -82,7 +82,7 @@ generic_rename(const Value &a,
     view->lookup({});
     size_t subspace;
     while (view->next_result(input_address, subspace)) {
-        CT *dst = builder->add_subspace(output_address).begin();
+        CT *dst = builder->add_subspace(output_address).data();
         size_t input_offset = dense_plan.subspace_size * subspace;
         auto copy_cells = [&](size_t input_idx) { *dst++ = cells[input_idx]; };
         dense_plan.execute(input_offset, copy_cells);
@@ -110,15 +110,15 @@ void my_mixed_rename_dense_only_op(State &state, uint64_t param_in) {
     size_t num_subspaces = index.size();
     size_t num_out_cells = dense_plan.subspace_size * num_subspaces;
     ArrayRef<CT> out_cells = state.stash.create_uninitialized_array<CT>(num_out_cells);
-    CT *dst = out_cells.begin();
-    const CT *lhs = lhs_cells.begin();
+    CT *dst = out_cells.data();
+    const CT *lhs = lhs_cells.data();
     auto copy_cells = [&](size_t input_idx) { *dst++ = lhs[input_idx]; };
     for (size_t i = 0; i < num_subspaces; ++i) {
         dense_plan.execute(0, copy_cells);
         lhs += dense_plan.subspace_size;
     }
-    assert(lhs == lhs_cells.end());
-    assert(dst == out_cells.end());
+    assert(lhs == lhs_cells.data() + lhs_cells.size());
+    assert(dst == out_cells.data() + out_cells.size());
     state.pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
 

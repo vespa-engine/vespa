@@ -4,33 +4,39 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.TextDocumentItem;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaDocumentScheduler {
 
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
+    private SchemaMessageHandler messageHandler;
     private Map<String, DocumentManager> workspaceFiles = new HashMap<>();
     private boolean reparseDescendants = true;
+    private URI workspaceURI = null;
 
-    public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex) {
+    public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaMessageHandler messageHandler) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
+        this.messageHandler = messageHandler;
     }
 
     public void updateFile(String fileURI, String content) {
@@ -87,8 +93,24 @@ public class SchemaDocumentScheduler {
         workspaceFiles.get(fileURI).reparseContent();
     }
 
+    public String getWorkspaceURI() {
+        return this.workspaceURI.toString();
+    }
+
     public void openDocument(TextDocumentItem document) {
         logger.println("Opening document: " + document.getUri());
+
+        if (workspaceURI == null) {
+            Optional<URI> workspaceURI = FileUtils.findSchemaDirectory(URI.create(document.getUri()));
+            if (workspaceURI.isEmpty()) {
+                messageHandler.sendMessage(MessageType.Warning, 
+                    "The file " + document.getUri() + 
+                    " does not appear to be inside a 'schemas' directory. " + 
+                    "Language support will be limited.");
+            } else {
+                setupWorkspace(workspaceURI.get());
+            }
+        }
 
         updateFile(document.getUri(), document.getText(), document.getVersion());
         workspaceFiles.get(document.getUri()).setIsOpen(true);
@@ -166,4 +188,26 @@ public class SchemaDocumentScheduler {
         this.reparseDescendants = reparseDescendants;
     }
 
+
+    public void setupWorkspace(URI workspaceURI) {
+        this.workspaceURI = workspaceURI;
+
+        //messageHandler.messageTrace("Scanning workspace: " + workspaceURI.toString());
+        messageHandler.logMessage(MessageType.Info, "Scanning workspace: " + workspaceURI.toString());
+
+        setReparseDescendants(false);
+        for (String fileURI : FileUtils.findSchemaFiles(workspaceURI.toString(), this.logger)) {
+            //messageHandler.messageTrace("Parsing file: " + fileURI);
+            messageHandler.logMessage(MessageType.Info, "Parsing file: " + fileURI);
+            addDocument(fileURI);
+        }
+
+        for (String fileURI : FileUtils.findRankProfileFiles(workspaceURI.toString(), this.logger)) {
+            //messageHandler.messageTrace("Parsing file: " + fileURI);
+            messageHandler.logMessage(MessageType.Info, "Parsing file: " + fileURI);
+            addDocument(fileURI);
+        }
+        reparseInInheritanceOrder();
+        setReparseDescendants(true);
+    }
 }

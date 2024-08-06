@@ -8,6 +8,7 @@ namespace search {
     struct RankedHit;
     class BitVector;
 }
+namespace document { class DocumentType; }
 
 namespace search::grouping {
 
@@ -43,7 +44,7 @@ public:
      *
      * @param attrCtx attribute context
      **/
-    void init(const attribute::IAttributeContext &attrCtx);
+    void init(const attribute::IAttributeContext &attrCtx, const document::DocumentType * documentType);
 
     /**
      * Perform actual grouping on the given results.

@@ -12,7 +12,7 @@
 namespace search::docsummary {
 
 JuniperQueryAdapter::JuniperQueryAdapter(const QueryNormalization * normalization, const IQueryTermFilter *query_term_filter,
-                                         vespalib::stringref buf, const search::fef::Properties & highlightTerms)
+                                         std::string_view buf, const search::fef::Properties & highlightTerms)
     : _query_normalization(normalization),
       _query_term_filter(query_term_filter),
       _buf(buf),
@@ -78,9 +78,9 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
         case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
             {
-                vespalib::string term = iterator.getTerm();
+                std::string_view term(iterator.getTerm());
                 if (_query_normalization) {
-                    vespalib::string index = iterator.getIndexName();
+                    std::string_view index = iterator.index_as_view();
                     if (index.empty()) {
                         index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
                     }
@@ -95,7 +95,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             break;
         case search::ParseItem::ITEM_NUMTERM:
             {
-                vespalib::string term = iterator.getTerm();
+                std::string_view term = iterator.getTerm();
                 queryeval::SplitFloat splitter(term);
                 if (splitter.parts() > 1) {
                     if (v->VisitPHRASE(&item, splitter.parts())) {

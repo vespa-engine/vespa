@@ -12,13 +12,13 @@ namespace document::select {
 
 namespace {
     bool documentTypeEqualsName(const DocumentType& type,
-                                vespalib::stringref name)
+                                std::string_view name)
     {
         return (type.getName() == name);
     }
 }
 
-DocType::DocType(vespalib::stringref doctype)
+DocType::DocType(std::string_view doctype)
     : Node("DocType"),
       _doctype(doctype)
 {

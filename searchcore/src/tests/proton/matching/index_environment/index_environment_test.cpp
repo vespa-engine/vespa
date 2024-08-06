@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
-
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
 #include <vespa/searchlib/fef/onnx_models.h>
 #include <vespa/searchlib/fef/ranking_expressions.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace proton::matching;
 using search::fef::FieldInfo;

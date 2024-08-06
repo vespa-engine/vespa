@@ -20,7 +20,7 @@ LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");
 namespace search::docsummary {
 
 DynamicTeaserDFW::~DynamicTeaserDFW() = default;
-DynamicTeaserDFW::DynamicTeaserDFW(const juniper::Juniper * juniper, const char * fieldName, vespalib::stringref inputField,
+DynamicTeaserDFW::DynamicTeaserDFW(const juniper::Juniper * juniper, const char * fieldName, std::string_view inputField,
                                    const IQueryTermFilterFactory& query_term_filter_factory)
     : _juniper(juniper),
       _input_field_name(inputField),
@@ -33,7 +33,7 @@ DynamicTeaserDFW::DynamicTeaserDFW(const juniper::Juniper * juniper, const char 
 }
 
 void
-DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input, GetDocsumsState& state, vespalib::slime::Inserter& inserter) const
+DynamicTeaserDFW::insert_juniper_field(uint32_t docid, std::string_view input, GetDocsumsState& state, vespalib::slime::Inserter& inserter) const
 {
     auto& query = state._dynteaser.get_query(_input_field_name);
     if (!query) {
@@ -92,7 +92,7 @@ class JuniperConverter : public IJuniperConverter
 public:
     JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_id, GetDocsumsState& state);
     ~JuniperConverter() override;
-    void convert(vespalib::stringref input, vespalib::slime::Inserter& inserter) override;
+    void convert(std::string_view input, vespalib::slime::Inserter& inserter) override;
 };
 
 JuniperConverter::JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_id, GetDocsumsState& state)
@@ -106,7 +106,7 @@ JuniperConverter::JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_
 JuniperConverter::~JuniperConverter() = default;
 
 void
-JuniperConverter::convert(vespalib::stringref input, vespalib::slime::Inserter& inserter)
+JuniperConverter::convert(std::string_view input, vespalib::slime::Inserter& inserter)
 {
     _writer.insert_juniper_field(_doc_id, input, _state, inserter);
 }

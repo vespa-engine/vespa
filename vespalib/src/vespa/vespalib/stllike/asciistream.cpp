@@ -9,6 +9,7 @@
 #include <vespa/fastos/file.h>
 #include <limits>
 #include <cassert>
+#include <cctype>
 #include <charconv>
 #include <vector>
 
@@ -63,7 +64,7 @@ asciistream::asciistream() :
     _precision(6)
 { }
 
-asciistream::asciistream(stringref buf) :
+asciistream::asciistream(std::string_view buf) :
     _rPos(0),
     _wbuf(),
     _rbuf(buf),
@@ -84,7 +85,7 @@ asciistream::~asciistream() = default;
 
 asciistream::asciistream(const asciistream & rhs) :
     _rPos(0),
-    _wbuf(rhs.str()),
+    _wbuf(rhs.view()),
     _rbuf(_wbuf.c_str(), _wbuf.size()),
     _base(rhs._base),
     _floatSpec(rhs._floatSpec),
@@ -215,7 +216,7 @@ T
 strToInt(T & v, const char *begin, const char *end)
 {
     const char * curr = begin;
-    for (;(curr < end) && std::isspace(*curr); curr++);
+    for (;(curr < end) && std::isspace(static_cast<unsigned char>(*curr)); curr++);
 
     std::from_chars_result err;
     if (((end - curr) > 2) && (curr[0] == '0') && ((curr[1] | 0x20) == 'x')) {
@@ -240,7 +241,7 @@ strToInt(T & v, const char *begin, const char *end)
 asciistream &
 asciistream::operator >> (bool & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = (_rbuf[_rPos++] != '0');
     } else {
@@ -252,7 +253,7 @@ asciistream::operator >> (bool & v)
 asciistream &
 asciistream::operator >> (char & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -264,7 +265,7 @@ asciistream::operator >> (char & v)
 asciistream &
 asciistream::operator >> (signed char & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -276,7 +277,7 @@ asciistream::operator >> (signed char & v)
 asciistream &
 asciistream::operator >> (unsigned char & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -362,22 +363,12 @@ asciistream::operator >> (float & v)
 void
 asciistream::eatWhite()
 {
-    for (;(_rPos < length()) && isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
 }
 
 void asciistream::eatNonWhite()
 {
-    for (;(_rPos < length()) && !isspace(_rbuf[_rPos]); _rPos++);
-}
-
-asciistream &
-asciistream::operator >> (std::string & v)
-{
-    eatWhite();
-    size_t start(_rPos);
-    eatNonWhite();
-    v.assign(&_rbuf[start], _rPos-start);
-    return *this;
+    for (;(_rPos < length()) && !std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
 }
 
 asciistream &
@@ -389,7 +380,6 @@ asciistream::operator >> (string & v)
     v.assign(&_rbuf[start], _rPos-start);
     return *this;
 }
-
 
 namespace {
 const char * _C_char = "0123456789abcdefg";
@@ -608,7 +598,7 @@ asciistream::write(const void * buf, size_t len)
             LOG_ABORT("should not be reached");  // Impossible
         }
     }
-    _wbuf.append(buf, len);
+    _wbuf.append(static_cast<const char *>(buf), len);
     _rbuf = _wbuf;
 }
 
@@ -629,7 +619,7 @@ asciistream::getline(char delim)
 }
 
 asciistream
-asciistream::createFromFile(stringref fileName)
+asciistream::createFromFile(std::string_view fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
@@ -646,15 +636,15 @@ asciistream::createFromFile(stringref fileName)
         if (actual != sz) {
             asciistream e;
             e << "Failed reading " << sz << " bytes from file " << fileName;
-            throw IoException(e.str() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
+            throw IoException(e.view() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
-        is << stringref(static_cast<const char *>(buf.get()), sz);
+        is << std::string_view(static_cast<const char *>(buf.get()), sz);
     }
     return is;
 }
 
 asciistream
-asciistream::createFromDevice(stringref fileName)
+asciistream::createFromDevice(std::string_view fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
@@ -662,7 +652,7 @@ asciistream::createFromDevice(stringref fileName)
         constexpr size_t SZ = 64_Ki;
         auto buf = std::make_unique<char []>(SZ);
         for (ssize_t actual = file.Read(buf.get(), SZ); actual > 0; actual = file.Read(buf.get(), SZ)) {
-            is << stringref(buf.get(), actual);
+            is << std::string_view(buf.get(), actual);
         }
     }
     return is;

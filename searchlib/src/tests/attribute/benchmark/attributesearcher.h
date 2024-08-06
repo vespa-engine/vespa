@@ -133,11 +133,11 @@ AttributeFindSearcher<T>::doRun()
         // build simple term query
         vespalib::asciistream ss;
         ss << _values[i % _values.size()].getValue();
-        this->buildTermQuery(_query, _attrPtr->getName(), ss.str().data());
+        this->buildTermQuery(_query, _attrPtr->getName(), ss.view().data());
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =
-            _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
+            _attrPtr->getSearch(std::string_view(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);
@@ -211,11 +211,11 @@ AttributeRangeSearcher::doRun()
         // build simple range term query
         vespalib::asciistream ss;
         ss << "[" << iter.a() << ";" << iter.b() << "]";
-        buildTermQuery(_query, _attrPtr->getName(), ss.str().data());
+        buildTermQuery(_query, _attrPtr->getName(), ss.view().data());
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =
-            _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
+            _attrPtr->getSearch(std::string_view(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);
@@ -254,7 +254,7 @@ AttributePrefixSearcher::doRun()
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =
-            _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
+            _attrPtr->getSearch(std::string_view(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);

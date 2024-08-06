@@ -18,8 +18,8 @@ TEST("simpleprotocol_test") {
     SimpleProtocol protocol;
     EXPECT_TRUE(protocol.getName() == "Simple");
 
-    EXPECT_EQUAL(152u, sizeof(Result));
-    EXPECT_EQUAL(136u, sizeof(Error));
+    EXPECT_EQUAL(24u + 2 *sizeof(vespalib::string), sizeof(Result));
+    EXPECT_EQUAL(8u + 2 *sizeof(vespalib::string), sizeof(Error));
     EXPECT_EQUAL(56u, sizeof(Routable));
     {
         // test protocol
@@ -30,7 +30,7 @@ TEST("simpleprotocol_test") {
     {
         // test SimpleMessage
         EXPECT_EQUAL(104u, sizeof(Message));
-        EXPECT_EQUAL(184u, sizeof(SimpleMessage));
+        EXPECT_EQUAL(120u + sizeof(vespalib::string), sizeof(SimpleMessage));
         auto msg = std::make_unique<SimpleMessage>("test");
         EXPECT_TRUE(!msg->isReply());
         EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);
@@ -49,7 +49,7 @@ TEST("simpleprotocol_test") {
     {
         // test SimpleReply
         EXPECT_EQUAL(96u, sizeof(Reply));
-        EXPECT_EQUAL(160u, sizeof(SimpleReply));
+        EXPECT_EQUAL(96u + sizeof(vespalib::string), sizeof(SimpleReply));
         auto reply = std::make_unique<SimpleReply>("reply");
         EXPECT_TRUE(reply->isReply());
         EXPECT_TRUE(reply->getProtocol() == SimpleProtocol::NAME);

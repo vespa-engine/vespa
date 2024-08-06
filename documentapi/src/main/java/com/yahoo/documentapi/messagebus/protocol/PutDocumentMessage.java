@@ -16,6 +16,7 @@ public class PutDocumentMessage extends TestAndSetMessage {
 
     private DocumentPut put = null;
     private long time = 0;
+    private long persistedTimestamp = 0;
     // TODO Vespa 9: remove. Inherently tied to legacy protocol version.
     private DocumentDeserializer buffer = null;
     private LazyDecoder decoder = null;
@@ -68,17 +69,60 @@ public class PutDocumentMessage extends TestAndSetMessage {
         this.put = put;
     }
 
-    /** Returns the timestamp of the document to put */
+    /**
+     * <p>Returns the timestamp of the document to put.</p>
+     *
+     * <p>Only used by the feed pipeline; use {@link #getPersistedTimestamp()} to get the
+     * persisted backend timestamp of the document as observed by the client of a running
+     * visitor operation.</p>
+     */
     public long getTimestamp() {
         deserialize();
         return time;
     }
 
-    /** Sets the timestamp of the document to put */
+    /**
+     * <p>Sets the timestamp of the document to put.</p>
+     *
+     * <p>Timestamp assignment should normally always be left to the content cluster, i.e.
+     * this method should <em>not</em> be called.</p>
+     *
+     * <p>Only use this if you have a very specific use case and are aware of the downsides
+     * of side-stepping the internal timestamp mechanisms.</p>
+     */
     public void setTimestamp(long time) {
         buffer = null;
         decoder = null;
         this.time = time;
+    }
+
+    /**
+     * <p>Set the timestamp of the last known mutating operation to this document.</p>
+     *
+     * <p>This is normally only invoked by the backends as part of visiting.</p>
+     */
+    @Beta
+    public void setPersistedTimestamp(long time) {
+        this.persistedTimestamp = time;
+    }
+
+    /**
+     * <p>When a visitor client receives a Put as part of the visiting operation, this
+     * timestamp represents the wall clock time in microseconds(*) of the last known mutating
+     * operation to the document.</p>
+     *
+     * <p>If zero, the sending content node is too old to support this feature.</p>
+     *
+     * <p>This value is not guaranteed to be linearizable. During e.g. network partitions this
+     * value might not represent the latest acknowledged operation for the document.</p>
+     *
+     * <p>Unsupported (and ignored) for Puts sent by the client during feeding.</p>
+     *
+     * <p>(*) (wall clock seconds since UTC epoch * 1M) + synthetic intra-second microsecond counter.</p>
+     */
+    @Beta
+    public long getPersistedTimestamp() {
+        return this.persistedTimestamp;
     }
 
     /**

@@ -15,7 +15,7 @@ IntegerTermVector::IntegerTermVector(uint32_t sz)
 IntegerTermVector::~IntegerTermVector() = default;
 
 void
-IntegerTermVector::addTerm(vespalib::stringref, Weight)
+IntegerTermVector::addTerm(std::string_view, Weight)
 {
     // Will/should never happen
     assert(false);
@@ -40,7 +40,7 @@ IntegerTermVector::getAsString(uint32_t index) const
     const auto & v = _terms[index];
     auto res = std::to_chars(_scratchPad, _scratchPad + sizeof(_scratchPad) - 1, v, 10);
     res.ptr[0] = '\0';
-    return {vespalib::stringref(_scratchPad, res.ptr - _scratchPad), Weight(1)};
+    return {std::string_view(_scratchPad, res.ptr - _scratchPad), Weight(1)};
 }
 
 TermVector::IntegerAndWeight

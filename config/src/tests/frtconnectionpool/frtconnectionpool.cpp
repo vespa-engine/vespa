@@ -80,7 +80,7 @@ TEST_F(FRTConnectionPoolTest, test_basic_hash_based_selection)
     hostnames.push_back("sutter-01.example.yahoo.com");
     hostnames.push_back("stroustrup-02.example.yahoo.com");
     hostnames.push_back("alexandrescu-03.example.yahoo.com");
-    const ServerSpec spec2(hostnames);
+    const ServerSpec spec2(std::move(hostnames));
     FRTConnectionPool sourcePool2(_transport, spec2, timingValues);
     sourcePool2.setHostname("sutter-01.example.yahoo.com");
     EXPECT_EQ("stroustrup-02.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());

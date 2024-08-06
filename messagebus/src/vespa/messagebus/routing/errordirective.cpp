@@ -6,7 +6,7 @@ using vespalib::make_string;
 
 namespace mbus {
 
-ErrorDirective::ErrorDirective(vespalib::stringref msg) :
+ErrorDirective::ErrorDirective(std::string_view msg) :
     _msg(msg)
 { }
 

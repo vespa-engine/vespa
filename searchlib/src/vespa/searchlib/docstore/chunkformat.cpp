@@ -13,7 +13,7 @@ using vespalib::compression::decompress;
 using vespalib::compression::computeMaxCompressedsize;
 using vespalib::compression::CompressionConfig;
 
-ChunkException::ChunkException(const vespalib::string & msg, vespalib::stringref location) :
+ChunkException::ChunkException(const vespalib::string & msg, std::string_view location) :
     Exception(make_string("Illegal chunk: %s", msg.c_str()), location)
 {
 }

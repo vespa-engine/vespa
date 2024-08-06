@@ -498,7 +498,7 @@ StorageNode::waitUntilInitialized(vespalib::duration timeout) {
 }
 
 void
-StorageNode::requestShutdown(vespalib::stringref reason)
+StorageNode::requestShutdown(std::string_view reason)
 {
     bool was_stopped = false;
     const bool stop_now = _attemptedStopped.compare_exchange_strong(was_stopped, true,

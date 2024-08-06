@@ -69,17 +69,13 @@ public:
         : _result(result),
           _message()
     {}
-    ReturnCode(Result result, vespalib::stringref msg);
+    ReturnCode(Result result, std::string_view msg);
     ReturnCode(const ReturnCode &);
     ReturnCode & operator = (const ReturnCode &);
     ReturnCode(ReturnCode &&) noexcept = default;
     ReturnCode & operator = (ReturnCode &&) noexcept;
 
-    vespalib::stringref getMessage() const {
-        return _message
-               ? _message->operator vespalib::stringref()
-               : vespalib::stringref();
-    }
+    std::string_view getMessage() const noexcept;
 
     Result getResult() const { return _result; }
 

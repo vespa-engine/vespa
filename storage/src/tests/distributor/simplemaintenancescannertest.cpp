@@ -28,7 +28,7 @@ struct SimpleMaintenanceScannerTest : Test {
 
     void addBucketToDb(document::BucketSpace bucketSpace, int bucketNum);
     void addBucketToDb(int bucketNum);
-    bool scanEntireDatabase(int expected);
+    bool scanEntireDatabase(int expected) const;
     std::string stringifyGlobalPendingStats(const PendingStats& stats) const;
 
     void SetUp() override;
@@ -58,8 +58,7 @@ SimpleMaintenanceScannerTest::addBucketToDb(int bucketNum)
 }
 
 std::string
-SimpleMaintenanceScannerTest::stringifyGlobalPendingStats(
-        const PendingStats& stats) const
+SimpleMaintenanceScannerTest::stringifyGlobalPendingStats(const PendingStats& stats) const
 {
     std::ostringstream ss;
     ss << stats.global;
@@ -99,8 +98,11 @@ namespace {
 
 std::string sortLines(const std::string& source) {
     vespalib::StringTokenizer st(source,"\n","");
-    std::vector<std::string> lines;
-    std::copy(st.begin(), st.end(), std::back_inserter(lines));
+    std::vector<vespalib::string> lines;
+    lines.reserve(st.size());
+    for (const auto & token : st) {
+        lines.emplace_back(token);
+    }
     std::sort(lines.begin(), lines.end());
     std::ostringstream ost;
     for (auto& line : lines) {
@@ -125,7 +127,7 @@ TEST_F(SimpleMaintenanceScannerTest, prioritize_multiple_buckets) {
 }
 
 bool
-SimpleMaintenanceScannerTest::scanEntireDatabase(int expected)
+SimpleMaintenanceScannerTest::scanEntireDatabase(int expected) const
 {
     for (int i = 0; i < expected; ++i) {
         if (_scanner->scanNext().isDone()) {

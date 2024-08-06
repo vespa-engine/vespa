@@ -10,6 +10,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,6 +34,42 @@ import static org.junit.Assert.assertTrue;
 public class QuestMetricsDbTest {
 
     private static final double delta = 0.0000001;
+
+    /**
+     * Print query rate from a real database.
+     *
+     * How to use:
+     *
+     * 1. Download data from a production config server: rsync -az --progress cfgN.example.com:/data/vespa/storage/cfgN/opt/vespa/var/db/vespa/autoscaling /tmp/cfgN-questdb
+     * 2. Set application ID and cluster ID
+     * 3. Adjust start and end instant as necessary
+     * 4. Run test to print data
+     * 5. Output from test can be used as test input in {@link ClusterTimeseriesTest}
+     *
+     */
+    @Ignore
+    @Test
+    public void testPrintProductionQueryRate() {
+        Instant now = Instant.now();
+        printQueryRate("cfg1", "/tmp/cfg1-questdb", ApplicationId.from("t", "a", "i"),
+                       ClusterSpec.Id.from("c"), now.minus(Duration.ofDays(1)), now);
+    }
+
+    private void printQueryRate(String node, String path, ApplicationId application, ClusterSpec.Id cluster, Instant start, Instant end) {
+        Clock realClock = Clock.systemUTC();
+        ManualClock clock = new ManualClock(realClock.instant());
+        try (QuestMetricsDb db = new QuestMetricsDb(path, clock)) {
+            ClusterTimeseries series = db.getClusterTimeseries(application, cluster);
+            int count = 0;
+            for (var snapshot : series.asList()) {
+                if (!snapshot.at().isBefore(start) && !snapshot.at().isAfter(end)) {
+                    System.out.printf("%s: at=%s queryRate=%s\n", node, snapshot.at(), snapshot.queryRate());
+                    count++;
+                }
+            }
+            System.out.printf("%s: found %d snapshots\n", node, count);
+        }
+    }
 
     @Test
     public void testNodeMetricsReadWrite() {

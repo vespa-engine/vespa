@@ -21,8 +21,8 @@ class ClusterStateBundleCodec {
 public:
     virtual ~ClusterStateBundleCodec() = default;
 
-    virtual EncodedClusterStateBundle encode(const lib::ClusterStateBundle&) const = 0;
-    virtual std::shared_ptr<const lib::ClusterStateBundle> decode(const EncodedClusterStateBundle&) const = 0;
+    [[nodiscard]] virtual EncodedClusterStateBundle encode(const lib::ClusterStateBundle&) const = 0;
+    [[nodiscard]] virtual std::shared_ptr<const lib::ClusterStateBundle> decode(const EncodedClusterStateBundle&) const = 0;
 };
 
 }

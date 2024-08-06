@@ -6,7 +6,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
@@ -123,7 +122,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         byCluster.forEach((clusterId, clusterNodes) -> {
             Metric.Context context = getContext(dimensions(clusterId.application(), clusterId.cluster()));
             updateExclusiveSwitchMetrics(clusterNodes, nodes, context);
-            updateClusterCostMetrics(clusterId, clusterNodes, context);
+            updateClusterMetrics(clusterId, clusterNodes, context);
         });
     }
 
@@ -134,8 +133,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         metric.set(ConfigServerMetrics.NODES_EXCLUSIVE_SWITCH_FRACTION.baseName(), exclusiveSwitchRatio,context);
     }
 
-    private void updateClusterCostMetrics(ClusterId clusterId,
-                                          List<Node>  clusterNodes, Metric.Context context) {
+    private void updateClusterMetrics(ClusterId clusterId, List<Node>  clusterNodes, Metric.Context context) {
         var cluster = nodeRepository().applications().get(clusterId.application())
                                       .flatMap(application -> application.cluster(clusterId.cluster()));
         if (cluster.isEmpty()) return;

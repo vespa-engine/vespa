@@ -38,7 +38,6 @@ using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
-using vespalib::stringref;
 using vespalib::string;
 namespace fs = std::filesystem;
 
@@ -55,6 +54,8 @@ constexpr size_t sizeof_large_string_entry = sizeof(vespalib::datastore::UniqueS
 namespace search {
 
 namespace {
+
+size_t sizeof_initial_string_change_vector = vespalib::roundUp2inN<ChangeTemplate<StringChangeData>>(4) * sizeof(ChangeTemplate<StringChangeData>);
 
 string empty;
 
@@ -139,7 +140,7 @@ baseFileName(const string &attrName)
 }
 
 AttributeVector::SP
-createAttribute(stringref attrName, const search::attribute::Config &cfg)
+createAttribute(vespalib::string attrName, const search::attribute::Config &cfg)
 {
     return search::AttributeFactory::createAttribute(baseFileName(attrName), cfg);
 }
@@ -758,7 +759,7 @@ AttributeTest::fillString(std::vector<string> & values, uint32_t numValues)
     for (uint32_t i = 0; i < numValues; ++i) {
         vespalib::asciistream ss;
         ss << "string" << (i < 10 ? "0" : "") << i;
-        values.emplace_back(ss.str());
+        values.emplace_back(ss.view());
     }
 }
 
@@ -941,7 +942,7 @@ AttributeTest::testSingle()
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             ptr->updateStat(true);
-            EXPECT_EQ(116528u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(116048u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(52684u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
@@ -951,7 +952,7 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(344848u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(344368u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(104300u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
@@ -1134,7 +1135,7 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(406160u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(405680u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(306352u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
@@ -1144,7 +1145,7 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(656368u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(655888u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(357988u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
@@ -2220,7 +2221,7 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
         config.collectionType().asString() <<
         (fs ? "-fs" : "") <<
         (compact ? "-compact" : "");
-    string name(ss.str());
+    string name(ss.view());
     Config cfg = config;
     cfg.setFastSearch(fs);
     cfg.setGrowStrategy(GrowStrategy::make(100, 0.5, 0));

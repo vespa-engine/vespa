@@ -35,7 +35,7 @@ TokensConverter::handle_alternative_index_terms(ForwardIt it, ForwardIt last, In
 }
 
 void
-TokensConverter::handle_index_term(vespalib::stringref word, Inserter& inserter)
+TokensConverter::handle_index_term(std::string_view word, Inserter& inserter)
 {
     inserter.insertString(Memory(word));
 }

@@ -166,8 +166,8 @@ public class StorageContentTest extends ContentBaseTest {
             fail("no exception thrown for doc type in local selection");
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().contains("Selection for document type 'type2" +
-                    "' can not contain references to other " +
-                    "document types (found reference to type 'type1')"));
+                                               "' can not contain references to other " +
+                                               "document types, but references type1"));
         }
 
         try {

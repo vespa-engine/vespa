@@ -86,8 +86,7 @@ public class Zone {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Zone)) return false;
-        Zone zone = (Zone) o;
+        if (!(o instanceof Zone zone)) return false;
         return environment == zone.environment &&
                Objects.equals(region, zone.region);
     }
@@ -97,10 +96,5 @@ public class Zone {
         return Objects.hash(environment, region);
     }
 
-    // TODO(mpolden): For compatibility with older config models. Remove when versions < 8.327 are gone
-    @Deprecated(forRemoval = true)
-    public Cloud getCloud() {
-        return cloud();
-    }
 }
 

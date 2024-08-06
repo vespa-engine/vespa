@@ -3,6 +3,7 @@
 #include "matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
@@ -14,6 +15,8 @@ using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::streaming::AndNotQueryNode;
 using search::streaming::HitList;
+using search::streaming::InTerm;
+using search::streaming::MultiTerm;
 using search::streaming::Query;
 using search::streaming::QueryConnector;
 using search::streaming::QueryNode;
@@ -50,6 +53,7 @@ class Matcher
     HitList _hit_list;
     std::vector<uint32_t> _elements;
 
+    void select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term);
     void select_query_nodes(const MatchingElementsFields& fields, const QueryNode& query_node);
     void add_matching_elements(const vespalib::string& field_name, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements);
     void find_matching_elements(const SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements);
@@ -76,6 +80,24 @@ Matcher::Matcher(FieldIdTSearcherMap& field_searcher_map, const MatchingElements
 Matcher::~Matcher() = default;
 
 void
+Matcher::select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term)
+{
+    const vespalib::string* field = nullptr;
+    auto &multi_term_index = multi_term.getIndex();
+    if (fields.has_struct_field(multi_term_index)) {
+        field = &fields.get_enclosing_field(multi_term_index);
+    } else if (fields.has_field(multi_term_index)) {
+        field = &multi_term_index;
+    }
+    if (field != nullptr) {
+        auto &terms = multi_term.get_terms();
+        for (auto& term : terms) {
+            _sub_field_terms.emplace_back(*field, term.get());
+        }
+    }
+}
+
+void
 Matcher::select_query_nodes(const MatchingElementsFields& fields, const QueryNode& query_node)
 {
     if (auto same_element = as<SameElementQueryNode>(query_node)) {
@@ -83,12 +105,9 @@ Matcher::select_query_nodes(const MatchingElementsFields& fields, const QueryNod
             _same_element_nodes.emplace_back(same_element);
         }
     } else if (auto weighted_set_term = as<WeightedSetTerm>(query_node)) {
-        if (fields.has_field(weighted_set_term->getIndex())) {
-            auto &terms = weighted_set_term->get_terms();
-            for (auto& term : terms) {
-                _sub_field_terms.emplace_back(weighted_set_term->getIndex(), term.get());
-            }
-        }
+        select_multiterm_children(fields, *weighted_set_term);
+    } else if (auto in_term = as<InTerm>(query_node)) {
+        select_multiterm_children(fields, *in_term);
     } else if (auto query_term = as<QueryTerm>(query_node)) {
         if (fields.has_struct_field(query_term->getIndex())) {
             _sub_field_terms.emplace_back(fields.get_enclosing_field(query_term->getIndex()), query_term);

@@ -165,15 +165,15 @@ public:
           _array_weight(AttributeFactory::createAttribute("array.weight", Config(BasicType::INT32, CollectionType::ARRAY)))
     {}
     ~AttributeContext() override;
-    const IAttributeVector* getAttribute(const string&) const override { abort(); }
-    const IAttributeVector* getAttributeStableEnum(const string&) const override { abort(); }
+    const IAttributeVector* getAttribute(std::string_view) const override { abort(); }
+    const IAttributeVector* getAttributeStableEnum(std::string_view) const override { abort(); }
     void getAttributeList(std::vector<const IAttributeVector*>& list) const override {
         list.push_back(_map_value_name.get());
         list.push_back(_map2_key.get());
         list.push_back(_array_weight.get());
     }
     void releaseEnumGuards() override { abort(); }
-    void asyncForAttribute(const vespalib::string&, std::unique_ptr<search::attribute::IAttributeFunctor>) const override { abort(); }
+    void asyncForAttribute(std::string_view, std::unique_ptr<search::attribute::IAttributeFunctor>) const override { abort(); }
 };
 
 AttributeContext::~AttributeContext() = default;

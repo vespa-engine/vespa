@@ -305,7 +305,7 @@ TEST(FieldCollectionTest, testHash ) {
 }
 
 TEST(FieldTest, testSizeOf) {
-    EXPECT_EQ(sizeof(Field), 88);
+    EXPECT_EQ(sizeof(Field), 24u + sizeof(vespalib::string));
 }
 
 } // document

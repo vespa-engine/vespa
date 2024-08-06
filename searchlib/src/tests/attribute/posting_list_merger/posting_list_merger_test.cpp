@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using vespalib::btree::BTreeNoLeafData;
 using search::attribute::PostingListMerger;

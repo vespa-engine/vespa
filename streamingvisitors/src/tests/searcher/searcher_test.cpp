@@ -132,7 +132,7 @@ private:
                 qtv.push_back(std::make_unique<RegexpTerm>(eqnr.create(), pt.first, effective_index, TermType::REGEXP, normalizing));
             } else if (pt.second == TermType::FUZZYTERM) {
                 auto [max_edits, prefix_lock_length, prefix_match, actual_term] = parse_fuzzy_params(pt.first);
-                qtv.push_back(std::make_unique<FuzzyTerm>(eqnr.create(), vespalib::stringref(actual_term.data(), actual_term.size()),
+                qtv.push_back(std::make_unique<FuzzyTerm>(eqnr.create(), std::string_view(actual_term.data(), actual_term.size()),
                                                           effective_index, TermType::FUZZYTERM, normalizing, max_edits,
                                                           prefix_lock_length, prefix_match));
             } else {

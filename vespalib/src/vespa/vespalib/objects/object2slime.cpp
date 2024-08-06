@@ -17,7 +17,7 @@ Object2Slime::~Object2Slime() = default;
 //-----------------------------------------------------------------------------
 
 void
-Object2Slime::openStruct(const vespalib::string &name, const vespalib::string &type)
+Object2Slime::openStruct(std::string_view name, std::string_view type)
 {
     if (name.empty()) {
         _cursor.get().setString("[type]", type);
@@ -38,31 +38,31 @@ Object2Slime::closeStruct()
 }
 
 void
-Object2Slime::visitBool(const vespalib::string &name, bool value)
+Object2Slime::visitBool(std::string_view name, bool value)
 {
     _cursor.get().setBool(name, value);
 }
 
 void
-Object2Slime::visitInt(const vespalib::string &name, int64_t value)
+Object2Slime::visitInt(std::string_view name, int64_t value)
 {
     _cursor.get().setLong(name, value);
 }
 
 void
-Object2Slime::visitFloat(const vespalib::string &name, double value)
+Object2Slime::visitFloat(std::string_view name, double value)
 {
     _cursor.get().setDouble(name, value);
 }
 
 void
-Object2Slime::visitString(const vespalib::string &name, const vespalib::string &value)
+Object2Slime::visitString(std::string_view name, std::string_view value)
 {
     _cursor.get().setString(name, value);
 }
 
 void
-Object2Slime::visitNull(const vespalib::string &name)
+Object2Slime::visitNull(std::string_view name)
 {
     _cursor.get().setNix(name);
 }

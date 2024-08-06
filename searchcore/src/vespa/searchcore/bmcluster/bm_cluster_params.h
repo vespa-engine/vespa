@@ -75,7 +75,7 @@ public:
     void set_enable_distributor(bool value) { _enable_distributor = value; }
     void set_enable_service_layer(bool value) { _enable_service_layer = value; }
     void set_groups(uint32_t value);
-    void set_indexing_sequencer(vespalib::stringref sequencer) { _indexing_sequencer = sequencer; }
+    void set_indexing_sequencer(std::string_view sequencer) { _indexing_sequencer = sequencer; }
     void set_max_merges_per_node(uint32_t value) { _max_merges_per_node = value; }
     void set_max_merge_queue_size(uint32_t value) { _max_merge_queue_size = value; }
     void set_mbus_distributor_node_max_pending_count(int32_t value) { _mbus_distributor_node_max_pending_count = value; }

@@ -38,7 +38,7 @@ func (a *ApplicationContainer) getQrStartCfg() *QrStartConfig {
 	var parsedJson QrStartConfig
 	args := []string{
 		"-j",
-		"-w", "10",
+		"-w", "30",
 		"-n", "search.config.qr-start",
 		"-i", a.ConfigId(),
 	}

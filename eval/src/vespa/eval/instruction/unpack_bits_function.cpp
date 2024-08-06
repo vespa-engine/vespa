@@ -29,7 +29,7 @@ void my_unpack_bits_op(InterpretedFunction::State &state, uint64_t param) {
     const ValueType &res_type = unwrap_param<ValueType>(param);
     auto packed_cells = state.peek(0).cells().typify<Int8Float>();
     auto unpacked_cells = state.stash.create_uninitialized_array<OCT>(packed_cells.size() * 8);
-    OCT *dst = unpacked_cells.begin();
+    OCT *dst = unpacked_cells.data();
     for (Int8Float cell: packed_cells) {
         if constexpr (big) {
             for (int n = 7; n >= 0; --n) {

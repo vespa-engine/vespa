@@ -22,7 +22,6 @@ using document::Document;
 using document::DocumentId;
 using document::GlobalId;
 using storage::spi::DocumentMetaEnum;
-using vespalib::stringref;
 
 namespace proton {
 
@@ -34,7 +33,7 @@ createDocEntry(Timestamp timestamp, bool removed) {
 }
 
 std::unique_ptr<DocEntry>
-createDocEntry(Timestamp timestamp, bool removed, stringref doc_type, const GlobalId &gid) {
+createDocEntry(Timestamp timestamp, bool removed, std::string_view doc_type, const GlobalId &gid) {
     return DocEntry::create(timestamp, (removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE), doc_type, gid);
 }
 
@@ -109,7 +108,7 @@ DocumentIterator::add(const DocTypeName &doc_type_name, IDocumentRetriever::SP r
 void
 DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    add(DocTypeName(""), std::move(retriever));
+    add(DocTypeName(), std::move(retriever));
 }
 
 IterateResult

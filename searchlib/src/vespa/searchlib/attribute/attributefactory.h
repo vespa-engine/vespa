@@ -15,20 +15,20 @@ class AttributeVector;
  **/
 class AttributeFactory {
 private:
-    using stringref = vespalib::stringref;
+    using string_view = std::string_view;
     using Config = attribute::Config;
     using AttributeSP = std::shared_ptr<AttributeVector>;
-    static AttributeSP createArrayStd(stringref name, const Config & cfg);
-    static AttributeSP createArrayFastSearch(stringref name, const Config & cfg);
-    static AttributeSP createSetStd(stringref name, const Config & cfg);
-    static AttributeSP createSetFastSearch(stringref name, const Config & cfg);
-    static AttributeSP createSingleStd(stringref name, const Config & cfg);
-    static AttributeSP createSingleFastSearch(stringref name, const Config & cfg);
+    static AttributeSP createArrayStd(vespalib::string name, const Config & cfg);
+    static AttributeSP createArrayFastSearch(vespalib::string name, const Config & cfg);
+    static AttributeSP createSetStd(vespalib::string name, const Config & cfg);
+    static AttributeSP createSetFastSearch(vespalib::string name, const Config & cfg);
+    static AttributeSP createSingleStd(vespalib::string name, const Config & cfg);
+    static AttributeSP createSingleFastSearch(vespalib::string name, const Config & cfg);
 public:
     /**
      * Create an attribute vector with the given name based on the given config.
      **/
-    static AttributeSP createAttribute(stringref name, const Config & cfg);
+    static AttributeSP createAttribute(string_view name, const Config & cfg);
 };
 
 }

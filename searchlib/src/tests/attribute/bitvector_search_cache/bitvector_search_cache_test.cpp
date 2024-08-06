@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search;
 using namespace search::attribute;

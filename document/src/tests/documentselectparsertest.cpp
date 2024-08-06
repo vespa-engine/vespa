@@ -46,12 +46,12 @@ protected:
 
     ~DocumentSelectParserTest() override;
 
-    Document::SP createDoc(
-            vespalib::stringref doctype, vespalib::stringref id, uint32_t hint,
-            double hfloat, vespalib::stringref hstr, vespalib::stringref cstr,
+    static Document::SP createDoc(
+            std::string_view doctype, std::string_view id, uint32_t hint,
+            double hfloat, std::string_view hstr, std::string_view cstr,
             uint64_t hlong = 0);
 
-    DocumentUpdate::SP createUpdate(
+    static DocumentUpdate::SP createUpdate(
             const std::string& doctype, const std::string& id, uint32_t hint,
             const std::string& hstr);
 
@@ -59,8 +59,7 @@ protected:
     parseFieldValue(const std::string& expression);
 
     template <typename ContainsType>
-    select::ResultList doParse(vespalib::stringref expr,
-                               const ContainsType& t);
+    select::ResultList doParse(std::string_view expr, const ContainsType& t);
 
     std::string parse_to_tree(const std::string& str);
 
@@ -114,10 +113,9 @@ void DocumentSelectParserTest::SetUp()
     _parser = std::make_unique<select::Parser>(*_repo, _bucketIdFactory);
 }
 
-Document::SP DocumentSelectParserTest::createDoc(
-        vespalib::stringref doctype, vespalib::stringref id, uint32_t hint,
-        double hfloat, vespalib::stringref hstr, vespalib::stringref cstr,
-        uint64_t hlong)
+Document::SP
+DocumentSelectParserTest::createDoc(std::string_view doctype, std::string_view id, uint32_t hint, double hfloat,
+                                    std::string_view hstr, std::string_view cstr, uint64_t hlong)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
     auto doc = std::make_shared<Document>(*_repo, *type, DocumentId(id));
@@ -132,9 +130,8 @@ Document::SP DocumentSelectParserTest::createDoc(
     return doc;
 }
 
-DocumentUpdate::SP DocumentSelectParserTest::createUpdate(
-        const std::string& doctype, const std::string& id, uint32_t hint,
-        const std::string& hstr)
+DocumentUpdate::SP
+DocumentSelectParserTest::createUpdate(const std::string& doctype, const std::string& id, uint32_t hint, const std::string& hstr)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
     auto doc = std::make_shared<DocumentUpdate>(*_repo, *type, DocumentId(id));
@@ -271,7 +268,7 @@ void doVerifyParse(select::Node *node, const std::string &query, const char *exp
     EXPECT_EQ(exp, clonedStr.str());
 }
 
-void verifySimpleParse(const std::string& query, const char* expected = 0) {
+void verifySimpleParse(const std::string& query, const char* expected = nullptr) {
     BucketIdFactory factory;
     select::simple::SelectionParser parser(factory);
     std::string message("Query "+query+" failed to parse.");
@@ -280,29 +277,30 @@ void verifySimpleParse(const std::string& query, const char* expected = 0) {
     doVerifyParse(node.get(), query, expected);
 }
 
-void verifyParse(const std::string& query, const char* expected = 0) {
+void verifyParse(const std::string& query, const char* expected = nullptr) {
     BucketIdFactory factory;
     select::Parser parser(*_repo, factory);
     std::unique_ptr<select::Node> node(parser.parse(query));
     doVerifyParse(node.get(), query, expected);
 }
 
-    void verifyFailedParse(const std::string& query, const std::string& error) {
-        try{
-            BucketIdFactory factory;
-            TestDocRepo test_repo;
-            select::Parser parser(test_repo.getTypeRepo(), factory);
-            std::unique_ptr<select::Node> node(parser.parse(query));
-            FAIL() << "Expected exception parsing query '" << query << "'";
-        } catch (select::ParsingFailedException& e) {
-            std::string message(e.what());
-            if (message.size() > error.size())
-                message = message.substr(0, error.size());
-            std::string failure("Expected: " + error + "\n- Actual  : "
-                                + std::string(e.what()));
-            EXPECT_EQ(error, message) << failure;
-        }
+void verifyFailedParse(const std::string& query, const std::string& error) {
+    try {
+        BucketIdFactory factory;
+        TestDocRepo test_repo;
+        select::Parser parser(test_repo.getTypeRepo(), factory);
+        std::unique_ptr<select::Node> node(parser.parse(query));
+        FAIL() << "Expected exception parsing query '" << query << "'";
+    } catch (select::ParsingFailedException& e) {
+        std::string message(e.what());
+        if (message.size() > error.size())
+            message = message.substr(0, error.size());
+        std::string failure("Expected: " + error + "\n- Actual  : "
+                            + std::string(e.what()));
+        EXPECT_EQ(error, message) << failure;
     }
+}
+
 }
 
 TEST_F(DocumentSelectParserTest, test_syntax_error_reporting)
@@ -356,14 +354,10 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
 
     // Test string value
     verifyParse("testdoctype1.headerval == \"test\"");
-    std::unique_ptr<select::Node> node(
-            _parser->parse("testdoctype1.headerval == \"test\""));
-    const select::Compare& compnode(
-            dynamic_cast<const select::Compare&>(*node));
-    const select::FieldValueNode& fnode(
-            dynamic_cast<const select::FieldValueNode&>(compnode.getLeft()));
-    const select::StringValueNode& vnode(
-            dynamic_cast<const select::StringValueNode&>(compnode.getRight()));
+    std::unique_ptr<select::Node> node = _parser->parse("testdoctype1.headerval == \"test\"");
+    const auto & compnode = dynamic_cast<const select::Compare&>(*node);
+    const auto & fnode = dynamic_cast<const select::FieldValueNode&>(compnode.getLeft());
+    const auto & vnode = dynamic_cast<const select::StringValueNode&>(compnode.getRight());
 
     EXPECT_EQ(vespalib::string("headerval"), fnode.getFieldName());
     EXPECT_EQ(vespalib::string("test"), vnode.getValue());
@@ -371,6 +365,7 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
     verifyParse("testdoctype1.headerval == \"te st \"");
     verifyParse(" \t testdoctype1.headerval\t==  \t \"test\"\t",
                 "testdoctype1.headerval == \"test\"");
+
     // Test escaping
     verifyParse("testdoctype1.headerval == \"tab\\ttest\"");
     verifyParse("testdoctype1.headerval == \"tab\\x09test\"",
@@ -378,8 +373,7 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
     verifyParse("testdoctype1.headerval == \"tab\\x055test\"");
     node = _parser->parse("testdoctype1.headerval == \"\\tt\\x48 \\n\"");
     select::Compare& escapednode(dynamic_cast<select::Compare&>(*node));
-    const select::StringValueNode& escval(
-        dynamic_cast<const select::StringValueNode&>(escapednode.getRight()));
+    const auto & escval = dynamic_cast<const select::StringValueNode&>(escapednode.getRight());
     EXPECT_EQ(vespalib::string("\ttH \n"), escval.getValue());
     // Test <= <, > >=
     verifyParse("testdoctype1.headerval >= 123");
@@ -492,16 +486,16 @@ TEST_F(DocumentSelectParserTest, testParseBranches)
 
 template <typename ContainsType>
 select::ResultList
-DocumentSelectParserTest::doParse(vespalib::stringref expr,
+DocumentSelectParserTest::doParse(std::string_view expr,
                                   const ContainsType& t)
 {
-    std::unique_ptr<select::Node> root(_parser->parse(expr));
+    std::unique_ptr<select::Node> root(_parser->parse(std::string(expr)));
     select::ResultList result(root->contains(t));
 
     std::unique_ptr<select::Node> cloned(root->clone());
     select::ResultList clonedResult(cloned->contains(t));
 
-    std::unique_ptr<select::Node> traced(_parser->parse(expr));
+    std::unique_ptr<select::Node> traced(_parser->parse(std::string(expr)));
     std::ostringstream oss;
     oss << "for expr: " << expr << "\n";
     select::ResultList tracedResult(root->trace(t, oss));
@@ -958,7 +952,7 @@ namespace {
         std::ostringstream data;
 
     public:
-        ~TestVisitor() {}
+        ~TestVisitor() override {}
 
         void visitConstant(const select::Constant& node) override {
             data << "CONSTANT(" << node << ")";
@@ -1589,7 +1583,7 @@ TEST_F(DocumentSelectParserTest, test_function_call_on_doctype_throws_exception)
 
 namespace {
 
-void check_parse_i64(vespalib::stringref str, bool expect_ok, int64_t expected_output) {
+void check_parse_i64(std::string_view str, bool expect_ok, int64_t expected_output) {
     int64_t out = 0;
     bool ok = select::util::parse_i64(str.data(), str.size(), out);
     EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for i64 input " << str;
@@ -1598,7 +1592,7 @@ void check_parse_i64(vespalib::stringref str, bool expect_ok, int64_t expected_o
     }
 }
 
-void check_parse_hex_i64(vespalib::stringref str, bool expect_ok, int64_t expected_output) {
+void check_parse_hex_i64(std::string_view str, bool expect_ok, int64_t expected_output) {
     int64_t out = 0;
     bool ok = select::util::parse_hex_i64(str.data(), str.size(), out);
     EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for hex i64 input " << str;
@@ -1607,7 +1601,7 @@ void check_parse_hex_i64(vespalib::stringref str, bool expect_ok, int64_t expect
     }
 }
 
-void check_parse_double(vespalib::stringref str, bool expect_ok, double expected_output) {
+void check_parse_double(std::string_view str, bool expect_ok, double expected_output) {
     double out = 0;
     bool ok = select::util::parse_double(str.data(), str.size(), out);
     EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for hex i64 input " << str;

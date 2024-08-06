@@ -27,11 +27,11 @@ public:
         size_t index;
         vespalib::string name;
         static constexpr size_t npos = -1;
-        Label(size_t index_in) : index(index_in), name() {}
-        Label(const vespalib::string &name_in) : index(npos), name(name_in) {}
+        Label(size_t index_in) noexcept : index(index_in), name() {}
+        Label(vespalib::string name_in) noexcept : index(npos), name(std::move(name_in)) {}
         Label(const char *name_in) : index(npos), name(name_in) {}
-        bool is_mapped() const { return (index == npos); }
-        bool is_indexed() const { return (index != npos); }
+        bool is_mapped() const noexcept { return (index == npos); }
+        bool is_indexed() const noexcept { return (index != npos); }
         bool operator==(const Label &rhs) const noexcept {
             return ((index == rhs.index) &&
                     (name == rhs.name));
@@ -45,12 +45,12 @@ public:
     };
     struct Value {
         double value;
-        Value(double value_in) : value(value_in) {}
-        operator double() const { return value; }
-        static bool both_nan(double a, double b) {
+        explicit Value(double value_in) noexcept : value(value_in) {}
+        operator double() const noexcept { return value; }
+        static bool both_nan(double a, double b) noexcept {
             return (std::isnan(a) && std::isnan(b));
         }
-        bool operator==(const Value &rhs) const {
+        bool operator==(const Value &rhs) const noexcept {
             return (both_nan(value, rhs.value) || approx_equal(value, rhs.value));
         }
     };
@@ -60,7 +60,7 @@ private:
     vespalib::string _type;
     Cells _cells;
 public:
-    TensorSpec(const vespalib::string &type_spec);
+    TensorSpec(vespalib::string type_spec) noexcept;
     TensorSpec(const TensorSpec &);
     TensorSpec & operator = (const TensorSpec &);
     ~TensorSpec();

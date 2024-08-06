@@ -9,7 +9,7 @@ LOG_SETUP(".node.errorlistener");
 
 namespace storage {
 
-void ServiceLayerErrorListener::on_fatal_error(vespalib::stringref message) {
+void ServiceLayerErrorListener::on_fatal_error(std::string_view message) {
     bool expected = false;
     if (_shutdown_initiated.compare_exchange_strong(expected, true)) {
         LOG(info,
@@ -26,7 +26,7 @@ void ServiceLayerErrorListener::on_fatal_error(vespalib::stringref message) {
     }
 }
 
-void ServiceLayerErrorListener::on_resource_exhaustion_error(vespalib::stringref message) {
+void ServiceLayerErrorListener::on_resource_exhaustion_error(std::string_view message) {
     LOG(debug, "SPI reports resource exhaustion ('%s'). "
                 "Applying back-pressure to merge throttler",
         vespalib::string(message).c_str());

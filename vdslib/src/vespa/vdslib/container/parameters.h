@@ -24,17 +24,17 @@ namespace vdslib {
 
 class Parameters : public vespalib::xml::XmlSerializable {
 public:
-    using KeyT = vespalib::stringref;
+    using KeyT = std::string_view;
     class Value : public vespalib::string
     {
     public:
       Value() = default;
-      explicit Value(vespalib::stringref s) noexcept : vespalib::string(s) { }
+      explicit Value(std::string_view s) noexcept : vespalib::string(s) { }
       explicit Value(const vespalib::string & s) noexcept : vespalib::string(s) { }
-      Value(const void *v, size_t sz) noexcept : vespalib::string(v, sz) { }
+      Value(const void *v, size_t sz) noexcept : vespalib::string(static_cast<const char *>(v), sz) { }
       size_t length() const noexcept { return size() - 1; }
     };
-    using ValueRef = vespalib::stringref;
+    using ValueRef = std::string_view;
     using ParametersMap = vespalib::hash_map<vespalib::string, Value>;
 private:
     ParametersMap _parameters;
@@ -59,7 +59,7 @@ public:
     unsigned int size()                    const { return _parameters.size(); }
     bool lookup(KeyT id, ValueRef & v) const;
     void set(KeyT id, const void * v, size_t sz) {
-        _parameters[id] = Value(v, sz);
+        _parameters[vespalib::string(id)] = Value(v, sz);
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
@@ -70,14 +70,14 @@ public:
     ParametersMap::const_iterator begin() const { return _parameters.begin(); }
     ParametersMap::const_iterator end() const { return _parameters.end(); }
     /// Convenience from earlier use.
-    void set(KeyT id, vespalib::stringref value) {
-        _parameters[id] = Value(value.data(), value.size());
+    void set(KeyT id, std::string_view value) {
+        _parameters[vespalib::string(id)] = Value(value.data(), value.size());
     }
     void set(KeyT id, int32_t value);
     void set(KeyT id, int64_t value);
     void set(KeyT id, uint64_t value);
     void set(KeyT id, double value);
-    vespalib::stringref get(KeyT id, vespalib::stringref def = "") const;
+    std::string_view get(KeyT id, std::string_view def = "") const;
 
 
     /**

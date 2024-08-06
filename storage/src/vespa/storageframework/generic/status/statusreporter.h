@@ -25,7 +25,7 @@ struct StatusReporter {
     using Capability    = vespalib::net::tls::Capability;
     using CapabilitySet = vespalib::net::tls::CapabilitySet;
 
-    StatusReporter(vespalib::stringref id, vespalib::stringref name);
+    StatusReporter(std::string_view id, std::string_view name);
     virtual ~StatusReporter();
 
     /**

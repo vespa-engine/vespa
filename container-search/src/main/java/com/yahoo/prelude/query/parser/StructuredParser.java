@@ -13,6 +13,7 @@ import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
@@ -72,32 +73,30 @@ abstract class StructuredParser extends AbstractParser {
     /**
      * Returns an item and whether it had an explicit index ('indexname:' prefix).
      *
+     * @param indexPath the index name prefix this is in the context of, only non-empty if this is
+     *                  inside a sameElement. The path includes the index name and the trailing dot.
      * @return an item and whether it has an explicit index, or a Pair with the first element null if none
      */
-    protected Pair<Item, Boolean> indexableItem() {
+    protected Pair<Item, Boolean> indexableItem(String indexPath) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
             boolean explicitIndex = false;
-            String indexName = indexPrefix();
+            String indexName = indexPrefix(indexPath);
             if (indexName != null)
                 explicitIndex = true;
             else
                 indexName = this.defaultIndex;
-            setSubmodeFromIndex(indexName, indexFacts);
+            setSubmodeFromIndex(indexName == null ? null : indexPath + indexName, indexFacts);
 
             item = number();
-
-            if (item == null) {
+            if (item == null)
+                item = phrase(indexName == null ? null : indexPath + indexName);
+            if (item == null && indexName != null && tokens.skip(LCURLYBRACKET))
+                item = sameElement(indexPath + indexName);
+            if (item == null && indexName != null && wordsAhead())
                 item = phrase(indexName);
-            }
-
-            if (item == null && indexName != null) {
-                if (wordsAhead()) {
-                    item = phrase(indexName);
-                }
-            }
 
             submodes.reset();
 
@@ -164,9 +163,9 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    private String indexPrefix() {
+    private String indexPrefix(String indexPath) {
         int position = tokens.getPosition();
-        String item = null;
+        String index = null;
 
         try {
             List<Token> firstWord = new ArrayList<>();
@@ -203,25 +202,33 @@ abstract class StructuredParser extends AbstractParser {
             if ( ! tokens.skipNoIgnore(COLON))
                 return null;
 
-            item = concatenate(firstWord) + concatenate(secondWord);
+            index = concatenate(firstWord) + concatenate(secondWord);
 
-            item = indexFacts.getCanonicName(item);
+            String fullIndex = indexFacts.getCanonicName(indexPath + index);
+            if (indexPath.isEmpty()) {
+                index = fullIndex;
+            }
+            else { // replace index (the last path element) by the dealiased value
+                int lastDot = fullIndex.lastIndexOf('.');
+                if (lastDot > 0)
+                    index = fullIndex.substring(lastDot + 1);
+            }
 
-            if ( ! indexFacts.isIndex(item)) { // Only if this really is an index
-                // Marker for the finally block
-                item = null;
+            if ( ! indexFacts.isIndex(fullIndex)) { // Only if this really is an index
+                // Marker for the "finally" block
+                index = null;
                 return null;
             } else {
                 if (nothingAhead(false)) {
                     // correct index syntax, correct name, but followed by noise. Let's skip this.
                     nothingAhead(true);
                     position = tokens.getPosition();
-                    item = indexPrefix();
+                    index = indexPrefix(indexPath);
                 }
             }
-            return item;
+            return index;
         } finally {
-            if (item == null) {
+            if (index == null) {
                 tokens.setPosition(position);
             }
         }
@@ -511,11 +518,9 @@ abstract class StructuredParser extends AbstractParser {
 
     private StringBuilder getStringContents(Item item) {
         if (item instanceof TermItem) {
-            return new StringBuilder(
-                    ((TermItem) item).stringValue());
+            return new StringBuilder(((TermItem) item).stringValue());
         } else if (item instanceof SegmentItem) {
-            return new StringBuilder(
-                    ((SegmentItem) item).getRawWord());
+            return new StringBuilder(((SegmentItem) item).getRawWord());
         } else {
             throw new RuntimeException("Parser bug. Unexpected item type, send stack trace in a bug ticket to the Vespa team.");
         }
@@ -523,7 +528,7 @@ abstract class StructuredParser extends AbstractParser {
 
 
     /**
-     * An phrase or word, either marked by quotes or by non-spaces between
+     * A phrase or word, either marked by quotes or by non-spaces between
      * words or by a combination.
      *
      * @param indexName the index name which preceeded this phrase, or null if none
@@ -542,6 +547,21 @@ abstract class StructuredParser extends AbstractParser {
                 tokens.setPosition(position);
             }
         }
+    }
+
+    private Item sameElement(String indexName) {
+        var same = new SameElementItem(indexName);
+
+        while (tokens.hasNext() && ! tokens.currentIs(RCURLYBRACKET)) {
+            Pair<Item, Boolean> item = indexableItem(indexName + ".");
+            if (item != null && item.getSecond()) // Only if the field has an explicit index
+                same.addItem(item.getFirst());
+            else
+                tokens.skip();
+        }
+        if (same.getItemCount() == 0)
+            return null;
+        return same;
     }
 
     /** Returns a word, a phrase, or another composite */
@@ -605,8 +625,7 @@ abstract class StructuredParser extends AbstractParser {
                 if (addStartOfHostMarker) {
                     composite.addItem(MarkerWordItem.createStartOfHost());
                 }
-                if (firstWord instanceof IntItem) {
-                    IntItem asInt = (IntItem) firstWord;
+                if (firstWord instanceof IntItem asInt) {
                     firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(),
                                              true, asInt.getOrigin());
                 }
@@ -655,8 +674,7 @@ abstract class StructuredParser extends AbstractParser {
                 if (addStartOfHostMarker) {
                     composite.addItem(MarkerWordItem.createStartOfHost());
                 }
-                if (firstWord instanceof IntItem) {
-                    IntItem asInt = (IntItem) firstWord;
+                if (firstWord instanceof IntItem asInt) {
                     firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(), true, asInt.getOrigin());
                 }
                 composite.addItem(firstWord);
@@ -666,9 +684,8 @@ abstract class StructuredParser extends AbstractParser {
                 return composite;
             }
         } else {
-            if (firstWord != null && firstWord instanceof TermItem && (starAfterFirst || starBeforeFirst)) {
+            if (firstWord != null && firstWord instanceof TermItem firstTerm && (starAfterFirst || starBeforeFirst)) {
                 // prefix, suffix or substring
-                TermItem firstTerm = (TermItem) firstWord;
                 if (starAfterFirst) {
                     if (starBeforeFirst) {
                         return new SubstringItem(firstTerm.stringValue(), true);
@@ -726,8 +743,7 @@ abstract class StructuredParser extends AbstractParser {
     /**
      * Skips one or multiple phrase separators
      *
-     * @return true if the item we land at after skipping zero or more is
-     *         a phrase word
+     * @return true if the item we land at after skipping zero or more is a phrase word
      */
     private boolean skipToNextPhraseWord(boolean quoted) {
         boolean skipped = false;
@@ -776,11 +792,16 @@ abstract class StructuredParser extends AbstractParser {
                 if (tokens.skipMultipleNoIgnore(DOLLAR)) {
                     skipped = true;
                 }
-                ;
                 if (tokens.skipMultipleNoIgnore(STAR)) {
                     skipped = true;
                 }
                 if (tokens.skipMultipleNoIgnore(COLON)) {
+                    skipped = true;
+                }
+                if (tokens.skipMultipleNoIgnore(LCURLYBRACKET)) {
+                    skipped = true;
+                }
+                if (tokens.skipMultipleNoIgnore(RCURLYBRACKET)) {
                     skipped = true;
                 }
                 if (quoted) {
@@ -795,28 +816,19 @@ abstract class StructuredParser extends AbstractParser {
                     skipped = true;
                 }
             }
-        } while (skipped && !tokens.currentIsNoIgnore(WORD)
-                && !tokens.currentIsNoIgnore(NUMBER) && !URLModeWordChar());
+        } while (skipped && !tokens.currentIsNoIgnore(WORD) && !tokens.currentIsNoIgnore(NUMBER) && !URLModeWordChar());
 
-        return tokens.currentIsNoIgnore(WORD)
-                || tokens.currentIsNoIgnore(NUMBER) || URLModePhraseChar();
+        return tokens.currentIsNoIgnore(WORD) || tokens.currentIsNoIgnore(NUMBER) || URLModePhraseChar();
     }
 
     private boolean URLModeWordChar() {
-        if (!submodes.url) {
-            return false;
-        }
-        return tokens.currentIsNoIgnore(UNDERSCORE)
-                || tokens.currentIsNoIgnore(MINUS);
+        if (!submodes.url) return false;
+        return tokens.currentIsNoIgnore(UNDERSCORE) || tokens.currentIsNoIgnore(MINUS);
     }
 
     private boolean URLModePhraseChar() {
-        if (!submodes.url) {
-            return false;
-        }
-        return !(tokens.currentIsNoIgnore(RBRACE)
-                || tokens.currentIsNoIgnore(SPACE));
+        if (!submodes.url) return false;
+        return !(tokens.currentIsNoIgnore(RBRACE) || tokens.currentIsNoIgnore(SPACE));
     }
-
 
 }

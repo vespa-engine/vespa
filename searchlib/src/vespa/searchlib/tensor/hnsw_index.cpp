@@ -42,7 +42,7 @@ constexpr float alloc_grow_factor = 0.3;
 // TODO: Adjust these numbers to what we accept as max in config.
 constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 193;
-constexpr vespalib::duration MAX_COUNT_DURATION(100ms);
+constexpr vespalib::duration MAX_COUNT_DURATION(1000ms);
 
 const vespalib::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
 

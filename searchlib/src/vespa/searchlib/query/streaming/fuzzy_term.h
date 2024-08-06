@@ -21,7 +21,7 @@ class FuzzyTerm : public QueryTerm {
     std::unique_ptr<attribute::DfaFuzzyMatcher> _dfa_matcher;
     std::unique_ptr<vespalib::FuzzyMatcher>     _fallback_matcher;
 public:
-    FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, stringref term,
+    FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term,
               const string& index, Type type, Normalizing normalizing,
               uint8_t max_edits, uint32_t prefix_lock_length, bool prefix_match);
     ~FuzzyTerm() override;

@@ -51,7 +51,7 @@ class ThreadImpl final : public Thread
     void run();
 
 public:
-    ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, vespalib::duration waitTime,
+    ThreadImpl(ThreadPoolImpl&, Runnable&, std::string_view id, vespalib::duration waitTime,
                vespalib::duration maxProcessTime, int ticksBeforeWait,
                std::optional<vespalib::CpuUsage::Category> cpu_category);
     ~ThreadImpl() override;

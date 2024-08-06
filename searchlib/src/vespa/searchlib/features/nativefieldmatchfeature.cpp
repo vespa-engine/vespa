@@ -189,7 +189,7 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
         }
     }
     shared_state_key_builder << "]";
-    _shared_state_key = shared_state_key_builder.str();
+    _shared_state_key = shared_state_key_builder.view();
     _params.minFieldLength = util::strToNum<uint32_t>(env.getProperties().lookup
                                                       (getBaseName(), "minFieldLength").get("6"));
 

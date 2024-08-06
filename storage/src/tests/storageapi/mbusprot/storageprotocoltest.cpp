@@ -893,6 +893,7 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
 TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     constexpr size_t msg_baseline   = 80u;
     constexpr size_t reply_baseline = 96;
+    constexpr size_t doc_reply_baseline = reply_baseline + sizeof(vespalib::string);
 
     EXPECT_EQ(sizeof(StorageMessage),    msg_baseline);
     EXPECT_EQ(sizeof(StorageReply),      reply_baseline);
@@ -901,18 +902,18 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(sizeof(Bucket),            16);
     EXPECT_EQ(sizeof(BucketInfo),        32);
     EXPECT_EQ(sizeof(BucketInfoReply),   reply_baseline + 56);
-    EXPECT_EQ(sizeof(PutReply),          reply_baseline + 200);
-    EXPECT_EQ(sizeof(UpdateReply),       reply_baseline + 184);
-    EXPECT_EQ(sizeof(RemoveReply),       reply_baseline + 176);
-    EXPECT_EQ(sizeof(GetReply),          reply_baseline + 264);
+    EXPECT_EQ(sizeof(PutReply),          doc_reply_baseline + 136);
+    EXPECT_EQ(sizeof(UpdateReply),       doc_reply_baseline + 120);
+    EXPECT_EQ(sizeof(RemoveReply),       doc_reply_baseline + 112);
+    EXPECT_EQ(sizeof(GetReply),          doc_reply_baseline + 136 + sizeof(vespalib::string));
     EXPECT_EQ(sizeof(StorageCommand),    msg_baseline   + 16);
     EXPECT_EQ(sizeof(BucketCommand),     sizeof(StorageCommand) + 24);
     EXPECT_EQ(sizeof(BucketInfoCommand), sizeof(BucketCommand));
     EXPECT_EQ(sizeof(TestAndSetCommand), sizeof(BucketInfoCommand) + sizeof(vespalib::string));
     EXPECT_EQ(sizeof(PutCommand),        sizeof(TestAndSetCommand) + 40);
     EXPECT_EQ(sizeof(UpdateCommand),     sizeof(TestAndSetCommand) + 40);
-    EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 112);
-    EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + 184);
+    EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 48 + sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + 56 + 2 * sizeof(vespalib::string));
 }
 
 } // storage::api

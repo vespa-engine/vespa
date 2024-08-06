@@ -11,11 +11,11 @@ namespace vespalib::net::tls {
 
 struct CredentialMatchPattern {
     virtual ~CredentialMatchPattern() = default;
-    [[nodiscard]] virtual bool matches(vespalib::stringref str) const noexcept = 0;
+    [[nodiscard]] virtual bool matches(std::string_view str) const noexcept = 0;
 
-    static std::shared_ptr<const CredentialMatchPattern> create_from_dns_glob(vespalib::stringref glob_pattern);
-    static std::shared_ptr<const CredentialMatchPattern> create_from_uri_glob(vespalib::stringref glob_pattern);
-    static std::shared_ptr<const CredentialMatchPattern> create_exact_match(vespalib::stringref pattern);
+    static std::shared_ptr<const CredentialMatchPattern> create_from_dns_glob(std::string_view glob_pattern);
+    static std::shared_ptr<const CredentialMatchPattern> create_from_uri_glob(std::string_view glob_pattern);
+    static std::shared_ptr<const CredentialMatchPattern> create_exact_match(std::string_view pattern);
 };
 
 class RequiredPeerCredential {
@@ -29,7 +29,7 @@ private:
     std::shared_ptr<const CredentialMatchPattern> _match_pattern;
 public:
     RequiredPeerCredential() = default;
-    RequiredPeerCredential(Field field, vespalib::string must_match_pattern);
+    RequiredPeerCredential(Field field, std::string_view must_match_pattern);
     RequiredPeerCredential(const RequiredPeerCredential &) noexcept;
     RequiredPeerCredential & operator=(const RequiredPeerCredential &) = delete;
     RequiredPeerCredential(RequiredPeerCredential &&) noexcept;
@@ -43,7 +43,7 @@ public:
                 && (_original_pattern == rhs._original_pattern));
     }
 
-    [[nodiscard]] bool matches(vespalib::stringref str) const noexcept {
+    [[nodiscard]] bool matches(std::string_view str) const noexcept {
         return (_match_pattern && _match_pattern->matches(str));
     }
 
