@@ -15,7 +15,9 @@ import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
-/*
+/**
+ * IdentifyNamedDocument verifies that a document has the same name as the schema the document is part of.
+ * 
  * Should run after symbol definition identifiers
  */
 public class IdentifyNamedDocument extends Identifier {

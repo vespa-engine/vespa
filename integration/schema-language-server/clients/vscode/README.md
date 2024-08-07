@@ -12,7 +12,6 @@ Features:
 - Documentation on hover
 - Semantic token highlighting
 - Renaming/refactoring
-- Find references
 - List document symbols
 
 ## Requirements

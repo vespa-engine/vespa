@@ -24,6 +24,9 @@ import ai.vespa.schemals.parser.ast.valueType;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * IdentifyType identifies types in the schema document
+ */
 public class IdentifyType extends Identifier {
     public IdentifyType(ParseContext context) {
 		super(context);

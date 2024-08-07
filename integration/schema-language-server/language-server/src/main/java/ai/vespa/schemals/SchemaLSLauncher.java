@@ -15,6 +15,10 @@ import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageClient;
 
+/**
+ * SchemaLSLauncher starts the language server, depeninging on the command line arguments the server can attach to different streams.
+ * Default is to attach to standard in / out stream for communication
+ */
 public class SchemaLSLauncher {
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {

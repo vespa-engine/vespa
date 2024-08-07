@@ -8,6 +8,9 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.services.LanguageClient;
 
+/**
+ * SchemaDiagnosticHandler is a wrapper for publishing diagnostics to the client
+ */
 public class SchemaDiagnosticsHandler {
 
     private PrintStream logger;

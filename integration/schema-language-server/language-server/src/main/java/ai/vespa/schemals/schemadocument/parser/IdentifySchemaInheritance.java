@@ -10,6 +10,9 @@ import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * IdentifySchemaInheritance identifies if a schema inherits from another schema, and add it to the context to resolve the inheritance later
+ */
 public class IdentifySchemaInheritance extends Identifier {
 
 	public IdentifySchemaInheritance(ParseContext context) {

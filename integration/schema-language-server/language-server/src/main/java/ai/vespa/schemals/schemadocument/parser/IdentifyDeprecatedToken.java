@@ -16,6 +16,9 @@ import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Identifies deprecated tokens or simple deprecated patterns and sends a warning to the client
+ */
 public class IdentifyDeprecatedToken extends Identifier {
     public IdentifyDeprecatedToken(ParseContext context) {
 		super(context);

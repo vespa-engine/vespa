@@ -11,6 +11,9 @@ import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * IdentifyStructInheritance identifies if a struct inherits from another struct and adds it to a list to resolve later
+ */
 public class IdentifyStructInheritance extends Identifier {
 
 	public IdentifyStructInheritance(ParseContext context) {
@@ -30,7 +33,6 @@ public class IdentifyStructInheritance extends Identifier {
                 .setMessage("Should be reference")
                 .setSeverity(DiagnosticSeverity.Warning)
                 .build());
-
         }
 
         context.addUnresolvedInheritanceNode(node);

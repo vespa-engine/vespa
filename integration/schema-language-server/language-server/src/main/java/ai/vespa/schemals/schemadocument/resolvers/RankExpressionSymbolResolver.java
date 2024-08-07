@@ -21,6 +21,10 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.RankNodeType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
 
+/**
+ * RankExpressionSymbolResolver goes through unresolved symbols in rank expression, to check if they are calling built in functions and tries
+ * to figure out which symbolType the symbol referes to.
+ */
 public class RankExpressionSymbolResolver { 
 
     /**

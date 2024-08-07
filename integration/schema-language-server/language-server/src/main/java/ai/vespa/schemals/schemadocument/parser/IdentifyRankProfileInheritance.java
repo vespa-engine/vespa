@@ -9,6 +9,9 @@ import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * IdentifyRankProfileInheritance indentifies inheritance of a rank-profile and adds it to a list to resolve later.
+ */
 public class IdentifyRankProfileInheritance extends Identifier {
 
 	public IdentifyRankProfileInheritance(ParseContext context) {

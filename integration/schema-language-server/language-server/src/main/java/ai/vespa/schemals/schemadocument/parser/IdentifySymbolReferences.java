@@ -23,12 +23,14 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.COLON;
 import ai.vespa.schemals.parser.ast.FIELD;
+import ai.vespa.schemals.parser.ast.annotationRefDataType;
 import ai.vespa.schemals.parser.ast.fieldRankFilter;
 import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.importField;
+import ai.vespa.schemals.parser.ast.inheritsAnnotation;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
@@ -48,6 +50,9 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
+/**
+ * IdentifySymbolReferences identifies symbols that are not definitions and sets the SchemaNode to contain an unresolved reference symbol
+ */
 public class IdentifySymbolReferences extends Identifier {
 
     public IdentifySymbolReferences(ParseContext context) {
@@ -59,6 +64,8 @@ public class IdentifySymbolReferences extends Identifier {
         put(rootSchema.class, SymbolType.SCHEMA);
         put(inheritsStruct.class, SymbolType.STRUCT);
         put(referenceType.class, SymbolType.DOCUMENT);
+        put(inheritsAnnotation.class, SymbolType.ANNOTATION);
+        put(annotationRefDataType.class, SymbolType.ANNOTATION);
     }};
 
     private static final HashMap<Class<?>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<?>, SymbolType>() {{

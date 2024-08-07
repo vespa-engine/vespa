@@ -145,7 +145,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
 
         RankNode rankNode = featureNode.getRankNode().get();
 
-        Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
+        Optional<SpecificFunction> functionSignature = rankNode.getFunctionSignature();
         if (functionSignature.isEmpty()) {
             return List.of();
         }

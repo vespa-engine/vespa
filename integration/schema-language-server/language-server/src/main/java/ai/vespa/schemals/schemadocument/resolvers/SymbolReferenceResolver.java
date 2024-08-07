@@ -30,6 +30,12 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunction
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
+/**
+ * SymbolReferenceResolver goes through the unresolved symbol references and searches for their definition and marks the symbols as reference.
+ * If no definition was found a error is sent to the client
+ * 
+ * Must run after RankExpressionSymbolResolver
+ */
 public class SymbolReferenceResolver {
     public static void resolveSymbolReference(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         Optional<Symbol> referencedSymbol = Optional.empty();

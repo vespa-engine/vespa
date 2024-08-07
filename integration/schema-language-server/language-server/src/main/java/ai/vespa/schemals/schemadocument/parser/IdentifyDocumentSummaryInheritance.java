@@ -12,7 +12,7 @@ import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
- * IdentifyDocumentSummaryInheritance
+ * IdentifyDocumentSummaryInheritance identifies a document-summary inheritance and adds it to a list to resolve later
  */
 public class IdentifyDocumentSummaryInheritance extends Identifier {
 

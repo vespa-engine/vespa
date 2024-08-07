@@ -30,7 +30,6 @@ import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
-import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
@@ -41,6 +40,9 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 
+/**
+ * SchemaDocument parses and represents .sd files
+ */
 public class SchemaDocument implements DocumentManager {
     public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
         public static ParseResult parsingFailed(ArrayList<Diagnostic> diagnostics) {
@@ -251,13 +253,6 @@ public class SchemaDocument implements DocumentManager {
         }
         
         context.clearUnresolvedTypeNodes();
-
-        for (SchemaNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
-            AnnotationReferenceResolver.resolveAnnotationReference(context, annotationReferenceNode.getSymbol());
-        }
-
-        context.clearUnresolvedAnnotationReferenceNodes();
-
         
         if (tolerantResult.CST().isPresent()) {
             //diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));

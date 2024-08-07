@@ -25,6 +25,10 @@ import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
+/**
+ * SchemaNode represents a node in the AST of a file the language server parses.
+ * The node exposes a general interface to handle different AST from different parsers.
+ */
 public class SchemaNode implements Iterable<SchemaNode> {
 
     public enum LanguageType {
@@ -34,7 +38,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         CUSTOM
     }
 
-    private LanguageType language;
+    private LanguageType language; // Language specifies which parser the node comes from
     private String identifierString;
     private Range range;
     private boolean isDirty = false;
@@ -53,13 +57,12 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private String contentString;
     private Class<? extends Node> simulatedSchemaClass;
 
-    // Special features for nodes in the Schema language
+    // The tokenType for leaf nodes for different languages
     private TokenType schemaType;
     private ai.vespa.schemals.parser.rankingexpression.Token.TokenType rankExpressionType;
     private ai.vespa.schemals.parser.indexinglanguage.Token.TokenType indexinglanguageType;
 
     private Optional<RankNode> rankNode = Optional.empty();
-
 
     private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
         this.language = language;
@@ -418,6 +421,12 @@ public class SchemaNode implements Iterable<SchemaNode> {
         child.setParent(this);
     }
 
+    /**
+     * Returns the previous SchemaNode of the sibilings of the node.
+     * If there is no previous node, it moves upwards to the parent and tries to get the previous node.
+     *
+     * @return the previous SchemaNode, or null if there is no previous node
+     */
     public SchemaNode getPrevious() {
         if (parent == null)return null;
 
@@ -429,6 +438,12 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return parent.get(parentIndex - 1);
     }
 
+    /**
+     * Returns the next SchemaNode of the sibilings of the node.
+     * If there is no next node, it returns the next node of the parent node.
+     *
+     * @return the next SchemaNode or null if there is no next node
+     */
     public SchemaNode getNext() {
         if (parent == null) return null;
 
@@ -441,6 +456,13 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return parent.get(parentIndex + 1);
     }
 
+    /**
+     * Returns the sibling node at the specified relative index.
+     * A sibling node is a node that shares the same parent node.
+     *
+     * @param relativeIndex the relative index of the sibling node
+     * @return the sibling node at the specified relative index, or null if the sibling node does not exist
+     */
     private SchemaNode getSibling(int relativeIndex) {
         if (parent == null)return null;
 
@@ -454,10 +476,22 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return parent.get(siblingIndex);
     }
 
+    /**
+     * Returns the previous sibling of this schema node.
+     * A sibling node is a node that shares the same parent node. 
+     *
+     * @return the previous sibling of this schema node, or null if there is no previous sibling
+     */
     public SchemaNode getPreviousSibling() {
         return getSibling(-1);
     }
 
+    /**
+     * Returns the next sibling of this schema node.
+     * A sibling node is a node that shares the same parent node.
+     *
+     * @return the next sibling of this schema node, or null if there is no previous sibling
+     */
     public SchemaNode getNextSibling() {
         return getSibling(1);
     }

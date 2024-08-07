@@ -33,6 +33,9 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
+/**
+ * SchemaRankExpressionParser is a parser for rank epxressions, which is small part in other files
+ */
 public class SchemaRankExpressionParser {
 
     private static final HashSet<TokenType> multilineTokens = new HashSet<>() {{
