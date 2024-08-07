@@ -205,20 +205,20 @@ public class RankingExpressionCompletion implements CompletionProvider {
             .append(name)
             .append("(");
 
+        int startIndex = 0;
         if (group.size() > 1) {
             snippet.append("${1|")
                    .append(String.join(",", group.stream().map(signature -> 
                            ((KeywordArgument)(signature.getArgumentList().get(0))).getArgument()).toList()))
                    .append("|}");
-        } else if (group.get(0).getArgumentList().size() > 0) {
-            snippet.append("(${1:")
-                   .append(group.get(0).getArgumentList().get(0).displayString())
-                   .append("}");
+            startIndex = 1;
         }
 
-        for (int i = 1; i < group.get(0).getArgumentList().size(); ++i) {
+        for (int i = startIndex; i < group.get(0).getArgumentList().size(); ++i) {
+            if (i > 0)snippet.append(", ");
+
             Argument current = group.get(0).getArgumentList().get(i);
-            snippet.append(", ${")
+            snippet.append("${")
                    .append(i+1);
 
             if (current instanceof EnumArgument) {

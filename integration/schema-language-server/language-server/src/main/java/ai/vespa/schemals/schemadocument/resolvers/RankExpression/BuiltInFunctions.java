@@ -196,9 +196,10 @@ public class BuiltInFunctions {
         
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
+
         put("nativeRank", new GenericFunction("nativeRank", List.of(
             new FunctionSignature(),
-            new FunctionSignature(new FieldArgument("field")) // TODO: support unlimited number of fields
+            new FunctionSignature(new FieldArgument("field"), true)
         )));
 
         put("nativeDotProduct", new GenericFunction("nativeDotProduct"));
@@ -206,6 +207,33 @@ public class BuiltInFunctions {
         put("secondPhase", new GenericFunction("secondPhase"));
         put("firstPhaseRank", new GenericFunction("firstPhaseRank"));
 
+        put("nativeFieldMatch", new GenericFunction("nativeFieldMatch", List.of(
+            new FunctionSignature(),
+            new FunctionSignature(new FieldArgument(), true)
+        )));
+        put("nativeAttributeMatch", new GenericFunction("nativeAttributeMatch", List.of(
+            new FunctionSignature(),
+            new FunctionSignature(new FieldArgument(), true)
+        )));
+
+        // ==== Utility features ====
+        put("tokenInputIds", new GenericFunction("tokenInputIds", new FunctionSignature(List.of(
+            new IntegerArgument("length"),
+            new ExpressionArgument("input")
+        ), true)));
+        put("customTokenInputIds", new GenericFunction("customTokenInputIds", new FunctionSignature(List.of(
+            new IntegerArgument("start_sequence_id"),
+            new IntegerArgument("sep_sequence_idlength"),
+            new ExpressionArgument("input")
+        ), true)));
+        put("tokenTypeIds", new GenericFunction("tokenTypeIds", new FunctionSignature(List.of(
+            new IntegerArgument("length"),
+            new ExpressionArgument("input")
+        ), true)));
+        put("tokenAttentionMask", new GenericFunction("tokenAttentionMask", new FunctionSignature(List.of(
+            new IntegerArgument("length"),
+            new ExpressionArgument("input")
+        ), true)));
 
         // ==== Global features ====
         put("globalSequence", new GenericFunction("globalSequence"));
@@ -288,56 +316,13 @@ public class BuiltInFunctions {
         )));
     }};
 
+    // Some features that have not gotten a signature for various reasons
     public static final Set<String> simpleBuiltInFunctionsSet = new HashSet<>() {{
-        // add("age");
-        // add("attribute");
-        // add("attributeMatch");
-        // add("bm25");
-        // add("closeness");
-        // add("closest");
-        // add("constant");
-        add("customTokenInputIds");
-        // add("distance");
-        // add("distanceToPath");
-        // add("dotProduct");
-        // add("elementCompleteness");
-        // add("elementSimilarity");
-        // add("fieldLength");
-        // add("fieldMatch");
-        // add("fieldTermMatch");
-        // add("firstPhase");
-        // add("firstPhaseRank");
-        // add("foreach");
-        // add("freshness");
-        // add("globalSequence");
-        // add("itemRawScore");
         add("match");
-        // add("matchCount");
-        // add("matches");
-        add("nativeAttributeMatch");
-        // add("nativeDotProduct");
-        add("nativeFieldMatch");
         add("nativeProximity");
-        // add("nativeRank");
-        // add("now");
-        // add("query");
-        // add("queryTermCount");
-        // add("random");
         add("randomNormal");
         add("randomNormalStable");
         add("rankingExpression"); // TODO: deprecated (?)
-        // add("rawScore");
-        // add("secondPhase");
-
-        // add("tensorFromLabels");
-        // add("tensorFromWeightedSet");
-        // add("term");
-        // add("termDistance");
-        // add("textSimilarity");
-        add("tokenAttentionMask");
-        add("tokenInputIds");
-        add("tokenTypeIds");
-        
 
         // TODO: these are only allowed in global-phase
         add("normalize_linear");
