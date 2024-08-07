@@ -24,159 +24,155 @@ public class BuiltInFunctions {
     public static final Map<String, GenericFunction> rankExpressionBuiltInFunctions = new HashMap<>() {{
         // ==== Query features ====
         put("query", new GenericFunction("query", new FunctionSignature(new SymbolArgument(SymbolType.QUERY_INPUT, "value"))));
-        put("term", new GenericFunction("term", new IntegerArgument(), new HashSet<>() {{
-            add("significance");
-            add("weight");
-            add("connectedness");
-        }}));
+        put("term", new GenericFunction("term", new IntegerArgument(), Set.of(
+            "significance",
+            "weight",
+            "connectedness"
+        )));
         put("queryTermCount", new GenericFunction("queryTermCount"));
         
         // ==== Document features ====
         put("fieldLength", new GenericFunction("fieldLength", new FunctionSignature(new FieldArgument())));
-        put("attribute", new GenericFunction("attribute", new ArrayList<>() {{
-            add(new FunctionSignature(new FieldArgument(FieldArgument.NumericOrTensorFieldType, IndexingType.ATTRIBUTE)));
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument(FieldType.NUMERIC_ARRAY, IndexingType.ATTRIBUTE));
-                add(new IntegerArgument());
-            }}));
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE));
-                add(new StringArgument("key"));
-            }}, new HashSet<>() {{
-                add("weight");
-                add("contains");
-            }}));
-            add(new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, IndexingType.ATTRIBUTE), "count"));
-        }}));
+        put("attribute", new GenericFunction("attribute", List.of( 
+            new FunctionSignature(new FieldArgument(FieldArgument.NumericOrTensorFieldType, IndexingType.ATTRIBUTE), Set.of(
+                "",
+                "count"
+            )),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldType.NUMERIC_ARRAY, IndexingType.ATTRIBUTE),
+                new IntegerArgument()
+            )),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE),
+                new StringArgument("key")
+            ), Set.of("weight", "contains"))
+        )));
 
         // TODO: requires you to write attribute(name)
-        put("tensorFromWeightedSet", new GenericFunction("tensorFromWeightedSet", new ArrayList<>() {{
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source"));
-            }}));
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source"));
-                add(new StringArgument("dimension"));
-            }}));
-        }})); 
+        put("tensorFromWeightedSet", new GenericFunction("tensorFromWeightedSet", List.of(
+            new FunctionSignature(
+                new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source")
+            ),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source"),
+                new StringArgument("dimension")
+            ))
+        ))); 
         
         // TODO: requires you to write attribute(name)
-        put("tensorFromLabels", new GenericFunction("tensorFromLabels", new ArrayList<>() {{
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute"));
-            }}));
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute"));
-                add(new StringArgument("dimension"));
-            }}));
-        }}));
+        put("tensorFromLabels", new GenericFunction("tensorFromLabels", List.of(
+            new FunctionSignature(
+                new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute")
+            ),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute"),
+                new StringArgument("dimension")
+            ))
+        )));
 
         // ==== Field match features - normalized ====
-        put("fieldMatch", new GenericFunction("fieldMatch", new FieldArgument(FieldType.STRING), new HashSet<>() {{
-            add("");
-            add("proximity");
-            add("completeness");
-            add("queryCompleteness");
-            add("fieldCompleteness");
-            add("orderness");
-            add("relatedness");
-            add("earliness");
-            add("longestSequenceRatio");
-            add("seqmentProximity");
-            add("unweightedProximity");
-            add("absoluteProximity");
-            add("occurrence");
-            add("absoluteOccurrence");
-            add("weightedOccureence");
-            add("weightedAbsoluteOccurence");
-            add("significantOccurence");
+        put("fieldMatch", new GenericFunction("fieldMatch", new FieldArgument(FieldType.STRING), Set.of(
+            "",
+            "proximity",
+            "completeness",
+            "queryCompleteness",
+            "fieldCompleteness",
+            "orderness",
+            "relatedness",
+            "earliness",
+            "longestSequenceRatio",
+            "seqmentProximity",
+            "unweightedProximity",
+            "absoluteProximity",
+            "occurrence",
+            "absoluteOccurrence",
+            "weightedOccureence",
+            "weightedAbsoluteOccurence",
+            "significantOccurence",
         
         // ==== Feild match features - normalized and relative to the whole query ====
-            add("weight");
-            add("significance");
-            add("importance");
+            "weight",
+            "significance",
+            "importance",
         
         // ==== Field match features - not normalized ====
-            add("segments");
-            add("matches");
-            add("degradedMatches");
-            add("outOfOrder");
-            add("gaps");
-            add("gapLength");
-            add("longestSequence");
-            add("head");
-            add("tail");
-            add("segmentDistance");
-        }}));
+            "segments",
+            "matches",
+            "degradedMatches",
+            "outOfOrder",
+            "gaps",
+            "gapLength",
+            "longestSequence",
+            "head",
+            "tail",
+            "segmentDistance"
+        )));
 
         // ==== Query and field similarity ====
-        put("textSimilarity", new GenericFunction("textSimilarity", new FieldArgument(FieldType.STRING), new HashSet<>() {{
-            add("");
-            add("proximity");
-            add("order");
-            add("queryCoverage");
-            add("fieldCoverage");
-        }}));
+        put("textSimilarity", new GenericFunction("textSimilarity", new FieldArgument(FieldType.STRING), Set.of(
+            "",
+            "proximity",
+            "order",
+            "queryCoverage",
+            "fieldCoverage"
+        )));
 
         // ==== Query term and field match features ====
-        put("fieldTermMatch", new GenericFunction("fieldTermMatch", new FunctionSignature(new ArrayList<>() {{
-            add(new FieldArgument(FieldType.STRING));
-            add(new IntegerArgument());
-        }}, new HashSet<>() {{
-            add("firstPosition");
-            add("occurences");
-        }})));
+        put("fieldTermMatch", new GenericFunction("fieldTermMatch", new FunctionSignature(List.of(
+            new FieldArgument(FieldType.STRING),
+            new IntegerArgument()
+        ), Set.of("firstPosition", "occurences"))));
 
         put("matchCount", new GenericFunction("mathCount", new FunctionSignature(new FieldArgument(FieldType.STRING, FieldArgument.IndexAttributeType))));
 
-        put("matches", new GenericFunction("matches", new ArrayList<>() {{
-            add(new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType)));
-            add(new FunctionSignature(new ArrayList<>() {{
-                add(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType));
-                add(new IntegerArgument());
-            }}));
-        }}));
-        put("termDistance", new GenericFunction("termDistance", new FunctionSignature(new ArrayList<>() {{
-            add(new FieldArgument());
-            add(new ExpressionArgument("x"));
-            add(new ExpressionArgument("y"));
-        }}, new HashSet<>() {{
-            add("forward");
-            add("forwardTermPosition");
-            add("reverse");
-            add("reverseTermPosition");
-        }})));
+        put("matches", new GenericFunction("matches", List.of(
+            new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType)),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType),
+                new IntegerArgument()
+            ))
+        )));
+        put("termDistance", new GenericFunction("termDistance", new FunctionSignature(List.of(
+            new FieldArgument(),
+            new ExpressionArgument("x"),
+            new ExpressionArgument("y")
+        ), Set.of( 
+            "forward",
+            "forwardTermPosition",
+            "reverse",
+            "reverseTermPosition"
+        ))));
 
         // ==== Features for idexed multivalue string fields ====
-        put("elementCompleteness", new GenericFunction("elementCompleteness", new FunctionSignature(new FieldArgument(), new HashSet<>() {{
-            add("completeness");
-            add("fieldCompleteness");
-            add("queryCompleteness");
-            add("elementWeight");
-        }})));
+        put("elementCompleteness", new GenericFunction("elementCompleteness", new FunctionSignature(new FieldArgument(), Set.of(
+            "completeness",
+            "fieldCompleteness",
+            "queryCompleteness",
+            "elementWeight"
+        ))));
         put("elementSimilarity", new GenericFunction("elementSimilarity", new FunctionSignature(new FieldArgument())));
 
         // === Attribute match features  ===
-        put("attributeMatch", new GenericFunction("attributeMatch", new FunctionSignature(new FieldArgument(), new HashSet<>() {{
+        put("attributeMatch", new GenericFunction("attributeMatch", new FunctionSignature(new FieldArgument(), Set.of(
             // normalized
-            add("");
-            add("completeness");
-            add("queryCompleteness");
-            add("fieldCompleteness");
-            add("normalizedWeight");
-            add("normalizedWeightedWeight");
+            "",
+            "completeness",
+            "queryCompleteness",
+            "fieldCompleteness",
+            "normalizedWeight",
+            "normalizedWeightedWeight",
 
             // normalized and relative to the whole query
-            add("weight");
-            add("significance");
-            add("importance");
+            "weight",
+            "significance",
+            "importance",
 
             // not normalized
-            add("matches");
-            add("totalWeight");
-            add("averageWeight");
-            add("maxWeight");
-        }})));
+            "matches",
+            "totalWeight",
+            "averageWeight",
+            "maxWeight"
+        ))));
 
         put("closeness", new GenericFunction("closeness", List.of( 
             new FunctionSignature(List.of(new KeywordArgument("field", "dimension"), new FieldArgument(
@@ -200,10 +196,10 @@ public class BuiltInFunctions {
         
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
-        put("nativeRank", new GenericFunction("nativeRank", new ArrayList<>() {{
-            add(new FunctionSignature());
-            add(new FunctionSignature(new FieldArgument("field"))); // TODO: support unlimited number of fields
-        }}));
+        put("nativeRank", new GenericFunction("nativeRank", List.of(
+            new FunctionSignature(),
+            new FunctionSignature(new FieldArgument("field")) // TODO: support unlimited number of fields
+        )));
 
         put("nativeDotProduct", new GenericFunction("nativeDotProduct"));
         put("firstPhase", new GenericFunction("firstPhase"));

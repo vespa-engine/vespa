@@ -8,8 +8,6 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.CompletionItem;
 
-import com.ibm.icu.impl.ICUService.Key;
-
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -23,6 +21,8 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunction
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionSignature;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -31,9 +31,54 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
  * RankingExpressionCompletion
- * We only perform very simple function name completion.
+ * Somewhat basic completion of user defined function names and builtin ranking features and their properties
  */
 public class RankingExpressionCompletion implements CompletionProvider {
+    /**
+     * Compute completion snippets for all the builtin ranking features using the signatures
+     * in {@link BuiltInFunctions}.
+     */
+    private final static List<CompletionItem> builtinFunctionCompletions = new ArrayList<>() {{
+        Set<String> addedNames = new HashSet<>();
+        for (var entry : BuiltInFunctions.rankExpressionBuiltInFunctions.entrySet()) {
+            if (!(entry.getValue() instanceof GenericFunction)) continue;
+
+            GenericFunction function = (GenericFunction)entry.getValue();
+            String name = entry.getKey();
+
+            for (List<FunctionSignature> group : groupSignatures(function.getSignatures())) {
+                StringBuilder signatureStr = new StringBuilder("(");
+                signatureStr.append(String.join(", ", group.get(0).getArgumentList().stream().map(arg -> arg.displayString()).toList()));
+                signatureStr.append(")");
+                CompletionItem item = CompletionUtils.constructFunction(name, signatureStr.toString(), "builtin");
+                item.setInsertText(buildGroupInsertText(name, group));
+                this.add(item);
+            }
+            addedNames.add(name);
+        }
+
+        for (String function : BuiltInFunctions.simpleBuiltInFunctionsSet) {
+            if (addedNames.contains(function))continue;
+            this.add(CompletionUtils.constructFunction(function, "()", "builtin"));
+        }
+    }};
+
+	@Override
+	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
+        SchemaNode clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
+
+        List<CompletionItem> result = new ArrayList<>();
+        if (matchFunctionCompletion(context,clean)) {
+
+            result.addAll(getUserDefinedFunctions(context, clean));
+            result.addAll(builtinFunctionCompletions);
+
+        } else {
+            result.addAll(getFunctionPropertyCompletion(context, CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.startOfWord())));
+        }
+        return result;
+	}
+
 
     private boolean matchFunctionCompletion(EventCompletionContext context, SchemaNode clean) {
         if (context.triggerCharacter.equals('.')) return false;
@@ -88,7 +133,41 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return ret;
     }
 
-    List<List<FunctionSignature>> groupSignatures(List<FunctionSignature> functionSignatures) {
+    List<CompletionItem> getFunctionPropertyCompletion(EventCompletionContext context, SchemaNode startOfWordNode) {
+        if (context.triggerCharacter != '.') return List.of();
+        SchemaNode featureNode = CSTUtils.findASTClassAncestor(startOfWordNode, feature.class);
+        if (featureNode == null || featureNode.size() == 0) {
+            return List.of();
+        }
+        if (featureNode.getRankNode().isEmpty()) {
+            return List.of();
+        }
+
+        RankNode rankNode = featureNode.getRankNode().get();
+
+        Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
+        if (functionSignature.isEmpty()) {
+            return List.of();
+        }
+
+        FunctionSignature signature = functionSignature.get().getSignature();
+
+        List<CompletionItem> result = new ArrayList<>();
+
+        for (String prop : signature.getProperties()) {
+            if (prop.isBlank()) continue;
+            result.add(CompletionUtils.constructBasic(prop));
+        }
+        return result;
+    }
+
+
+    /**
+     * Some signatures are identical except differing in the first KeywordArgument,
+     * for example closeness(field, name) and closeness(label, name).
+     * This function makes groups based on that.
+     */
+    private static List<List<FunctionSignature>> groupSignatures(List<FunctionSignature> functionSignatures) {
         List<List<FunctionSignature>> ret = new ArrayList<>();
         Set<Integer> skip = new HashSet<>();
 
@@ -120,92 +199,40 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return ret;
     }
 
-    List<CompletionItem> getBuiltinFunctions(EventCompletionContext context, SchemaNode node) {
-        List<CompletionItem> ret = new ArrayList<>();
-        Set<String> addedNames = new HashSet<>();
-        for (var entry : BuiltInFunctions.rankExpressionBuiltInFunctions.entrySet()) {
-            if (!(entry.getValue() instanceof GenericFunction)) continue;
-            GenericFunction function = (GenericFunction)entry.getValue();
-            String name = entry.getKey();
+    private static String buildGroupInsertText(String name, List<FunctionSignature> group) {
+        // first argument keyword
+        StringBuilder snippet = new StringBuilder()
+            .append(name)
+            .append("(");
 
-            for (List<FunctionSignature> group : groupSignatures(function.getSignatures())) {
-                StringBuilder signatureStr = new StringBuilder("(");
-                signatureStr.append(String.join(", ", group.get(0).getArgumentList().stream().map(arg -> arg.displayString()).toList()));
-                signatureStr.append(")");
-                CompletionItem item = CompletionUtils.constructFunction(name, signatureStr.toString(), "builtin");
-                if (group.size() > 1) {
-                    // first argument keyword
-                    signatureStr = new StringBuilder()
-                        .append(name)
-                        .append("(${1|")
-                        .append(String.join(",", group.stream().map(signature -> 
-                                ((KeywordArgument)(signature.getArgumentList().get(0))).getArgument()).toList()))
-                        .append("|}");
+        if (group.size() > 1) {
+            snippet.append("${1|")
+                   .append(String.join(",", group.stream().map(signature -> 
+                           ((KeywordArgument)(signature.getArgumentList().get(0))).getArgument()).toList()))
+                   .append("|}");
+        } else if (group.get(0).getArgumentList().size() > 0) {
+            snippet.append("(${1:")
+                   .append(group.get(0).getArgumentList().get(0).displayString())
+                   .append("}");
+        }
 
-                    for (int i = 1; i < group.get(0).getArgumentList().size(); ++i) {
-                        signatureStr.append(", ${")
-                                    .append(i+1)
-                                    .append(":")
-                                    .append(group.get(0).getArgumentList().get(i).displayString())
-                                    .append("}");
-                    }
-                    signatureStr.append(")");
-                    item.setInsertText(signatureStr.toString());
-                }
-                ret.add(item);
+        for (int i = 1; i < group.get(0).getArgumentList().size(); ++i) {
+            Argument current = group.get(0).getArgumentList().get(i);
+            snippet.append(", ${")
+                   .append(i+1);
+
+            if (current instanceof EnumArgument) {
+                snippet.append("|")
+                       .append(String.join(",",((EnumArgument)current).getValidArguments()))
+                       .append("|}");
+            } else {
+                snippet.append(":")
+                       .append(current.displayString())
+                       .append("}");
             }
-            addedNames.add(name);
         }
-
-        for (String function : BuiltInFunctions.simpleBuiltInFunctionsSet) {
-            if (addedNames.contains(function))continue;
-            ret.add(CompletionUtils.constructFunction(function, "()", "builtin"));
-        }
-
-        return ret;
+        snippet.append(")");
+        return snippet.toString();
     }
 
-    List<CompletionItem> getFunctionPropertyCompletion(EventCompletionContext context, SchemaNode startOfWordNode) {
-        if (context.triggerCharacter != '.') return List.of();
-        SchemaNode featureNode = CSTUtils.findASTClassAncestor(startOfWordNode, feature.class);
-        if (featureNode == null || featureNode.size() == 0) {
-            return List.of();
-        }
-        if (featureNode.getRankNode().isEmpty()) {
-            return List.of();
-        }
-
-        RankNode rankNode = featureNode.getRankNode().get();
-
-        Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
-        if (functionSignature.isEmpty()) {
-            return List.of();
-        }
-
-        FunctionSignature signature = functionSignature.get().getSignature();
-
-        List<CompletionItem> result = new ArrayList<>();
-
-        for (String prop : signature.getProperties()) {
-            if (prop.isBlank()) continue;
-            result.add(CompletionUtils.constructBasic(prop));
-        }
-        return result;
-    }
-
-	@Override
-	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
-        SchemaNode clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
-
-        List<CompletionItem> result = new ArrayList<>();
-        if (matchFunctionCompletion(context,clean)) {
-
-            result.addAll(getUserDefinedFunctions(context, clean));
-            result.addAll(getBuiltinFunctions(context, clean));
-
-        } else {
-            result.addAll(getFunctionPropertyCompletion(context, CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.startOfWord())));
-        }
-        return result;
-	}
 }
