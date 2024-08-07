@@ -1,5 +1,6 @@
 package ai.vespa.schemals;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.PrepareRenameDefaultBehavior;
 import org.eclipse.lsp4j.PrepareRenameParams;
 import org.eclipse.lsp4j.PrepareRenameResult;
@@ -82,12 +84,19 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
 
-                return Either.forLeft(SchemaCompletion.getCompletionItems(eventContextCreator.createContext(completionParams)));
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                PrintStream errorLogger = new PrintStream(outputStream);
+                Either<List<CompletionItem>, CompletionList> result =
+                    Either.forLeft(SchemaCompletion.getCompletionItems(eventContextCreator.createContext(completionParams), errorLogger));
 
+                if (outputStream.size() > 0) {
+                    schemaMessageHandler.logMessage(MessageType.Error, 
+                        "Completion failed with errors: " + outputStream.toString() 
+                    );
+                }
+                return result;
             } catch(CancellationException ignore) {
                 // Ignore
-            } catch (Throwable e) {
-                logger.println(e);
             }
 
             // Return the list of completion items.
@@ -201,7 +210,18 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
         var contentChanges = params.getContentChanges();
         for (int i = 0; i < contentChanges.size(); i++) {
-            scheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
+            try {
+                scheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
+            } catch(Exception e) {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                PrintStream logger = new PrintStream(outputStream);
+
+                e.printStackTrace(logger);
+
+                schemaMessageHandler.logMessage(MessageType.Error, 
+                    "Updating file " + document.getUri() + " failed with error: " + outputStream.toString() 
+                );
+            }
         }
     }
 

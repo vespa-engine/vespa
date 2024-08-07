@@ -32,4 +32,6 @@ public class SpecificFunction {
     public String getSignatureString() {
         return getSignatureString(false);
     }
+
+    public FunctionSignature getSignature() { return this.signature; }
 };

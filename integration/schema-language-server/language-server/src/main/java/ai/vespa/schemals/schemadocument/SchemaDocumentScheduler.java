@@ -22,6 +22,11 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
+/**
+ * Class responsible for maintaining the set of open documents and reparsing them.
+ * When {@link SchemaDocumentScheduler#updateFile} is called, it will call {@link DocumentManager#updateFileContent} on the appropriate file 
+ * and also other files that may have dependencies on the contents of the file.
+ */
 public class SchemaDocumentScheduler {
 
     private PrintStream logger;

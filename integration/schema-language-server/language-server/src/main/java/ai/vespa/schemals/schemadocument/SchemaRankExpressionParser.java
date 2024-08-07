@@ -4,12 +4,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
@@ -17,7 +15,6 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
-import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
@@ -35,7 +32,6 @@ import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
-import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaRankExpressionParser {
 
@@ -160,45 +156,37 @@ public class SchemaRankExpressionParser {
         if (expressionString == null)return null;
         CharSequence sequence = expressionString;
 
-        RankingExpressionParser parser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
-        parser.setParserTolerant(false);
+        //RankingExpressionParser parser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
+        //parser.setParserTolerant(false);
 
-        List<ExpressionNode> nodes = new ArrayList<>();
+        //try {
+        //    if (node.containsExpressionData()) {
+        //        parser.expression();
+        //    } else {
+        //        parser.featureList();
+        //    }
 
-        try {
-            if (node.containsExpressionData()) {
-                nodes.add(parser.expression());
-            } else {
-                nodes.addAll(parser.featureList());
-            }
+        //    return new SchemaNode(parser.rootNode(), expressionStart);
+        //} catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
 
+        //    Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
+        //    
+        //    range = CSTUtils.addPositionToRange(expressionStart, range);
 
-            //for (var enode : nodes) {
-            //    context.logger().println("FOUND NODE:");
-            //    printExpressionTree(context.logger(), enode, 1);
-            //}
+        //    diagnostics.add(new SchemaDiagnostic.Builder()
+        //            .setRange(range)
+        //            .setMessage(pe.getMessage())
+        //            .setSeverity(DiagnosticSeverity.Error)
+        //            .build());
 
-            return new SchemaNode(parser.rootNode(), expressionStart);
-        } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
-
-            Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
-            
-            range = CSTUtils.addPositionToRange(expressionStart, range);
-
-            diagnostics.add(new SchemaDiagnostic.Builder()
-                    .setRange(range)
-                    .setMessage(pe.getMessage())
-                    .setSeverity(DiagnosticSeverity.Error)
-                    .build());
-
-        } catch(IllegalArgumentException ex) {
-            // TODO: test this
-            diagnostics.add(new SchemaDiagnostic.Builder()
-                    .setRange(node.getRange())
-                    .setMessage(ex.getMessage())
-                    .setSeverity(DiagnosticSeverity.Error)
-                    .build());
-        }
+        //} catch(IllegalArgumentException ex) {
+        //    // TODO: test this
+        //    diagnostics.add(new SchemaDiagnostic.Builder()
+        //            .setRange(node.getRange())
+        //            .setMessage(ex.getMessage())
+        //            .setSeverity(DiagnosticSeverity.Error)
+        //            .build());
+        //}
 
         RankingExpressionParser tolerantParser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
         tolerantParser.setParserTolerant(true);
@@ -210,14 +198,17 @@ public class SchemaRankExpressionParser {
                 tolerantParser.featureList();
             }
 
-            return new SchemaNode(tolerantParser.rootNode(), expressionStart);
+            //return new SchemaNode(tolerantParser.rootNode(), expressionStart);
         } catch (ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
             // Ignore
+            context.logger().println("Parse Exception: " + pe.getMessage());
         } catch (IllegalArgumentException ex) {
             // Ignore
+            context.logger().println("Illegal Argument: " + ex.getMessage());
         }
 
-        return null;
+        if (tolerantParser.rootNode() == null) return null;
+        return new SchemaNode(tolerantParser.rootNode(), expressionStart);
     }
 
     private static SchemaNode tokenFromRawText(ParseContext context, SchemaNode node, TokenType type, String text, int start, int end) {

@@ -12,8 +12,18 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class LabelArgument implements Argument {
 
+    private String displayString;
+
     public String displayString() {
-        return "label";
+        return displayString;
+    }
+
+    public LabelArgument() {
+        this.displayString = "label";
+    }
+
+    public LabelArgument(String displayString) {
+        this.displayString = displayString;
     }
 
     public int getStrictness() {

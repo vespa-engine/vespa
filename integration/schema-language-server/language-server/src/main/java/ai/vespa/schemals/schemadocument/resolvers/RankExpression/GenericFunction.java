@@ -60,6 +60,10 @@ public class GenericFunction {
         this(name, new FunctionSignature());
     }
 
+    public List<FunctionSignature> getSignatures() {
+        return List.copyOf(signatures);
+    }
+
     public String getName() { return name; }
 
     public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node) {

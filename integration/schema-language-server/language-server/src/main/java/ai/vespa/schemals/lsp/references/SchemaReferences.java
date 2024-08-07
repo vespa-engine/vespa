@@ -12,12 +12,15 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Responsible for LSP textDocument/references requests.
+ */
 public class SchemaReferences {
     
 
     public static List<? extends Location> getReferences(EventPositionContext context) {
 
-        ArrayList<Location> ret = new ArrayList<>();
+        List<Location> ret = new ArrayList<>();
 
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 

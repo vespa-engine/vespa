@@ -30,7 +30,7 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
- * Handles LSP hover requests.
+ * Responsible for LSP textDocument/hover requests.
  *
  * As a TODO it would have been nice with some highlighting on the generated Markdown.
  */
@@ -259,21 +259,19 @@ public class SchemaHover {
         }
 
         RankNode rankNode = currentNode.getRankNode().get();
-        logger.println(rankNode);
         Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
 
         if (functionSignature.isEmpty()) {
             return Optional.empty();
         }
 
-        logger.println("LOOKING FOR: " + functionSignature.get().getSignatureString());
         Optional<Hover> result = getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(), node.getRange());
 
         if (result.isPresent()) {
             return result;
         }
 
-        logger.println("NEW LOOKUP: " + functionSignature.get().getSignatureString(true));
+        logger.println("LOOKUP: " + functionSignature.get().getSignatureString(true));
         
         return getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(true), node.getRange());
     }

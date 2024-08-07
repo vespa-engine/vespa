@@ -63,7 +63,7 @@ public class RankNode implements Iterable<RankNode>  {
 
     private List<RankNode> children; // parameters for features, children for expressions
 
-    private Optional<SchemaNode> proptery;
+    private Optional<SchemaNode> property;
 
     private Optional<SpecificFunction> builtInFunctionSignature = Optional.empty();
 
@@ -88,9 +88,9 @@ public class RankNode implements Iterable<RankNode>  {
                 this.children = new ArrayList<>();
             }
 
-            this.proptery = findProperty(node);
-            if (this.proptery.isPresent()) {
-                this.proptery.get().setRankNode(this);
+            this.property = findProperty(node);
+            if (this.property.isPresent()) {
+                this.property.get().setRankNode(this);
             }
 
         } else if (this.type == RankNodeType.BUILT_IN_FUNCTION) {
@@ -165,7 +165,9 @@ public class RankNode implements Iterable<RankNode>  {
             }
         }
 
-        if (propertyNode == null || propertyNode.size() == 0) {
+        if (propertyNode == null 
+            || propertyNode.size() == 0 
+            || propertyNode.getRange().getStart().equals(propertyNode.getRange().getEnd())) {
             return Optional.empty();
         }
 
@@ -194,7 +196,7 @@ public class RankNode implements Iterable<RankNode>  {
     }
 
     public Optional<SchemaNode> getProperty() {
-        return proptery;
+        return property;
     }
 
     public RankNodeType getType() {

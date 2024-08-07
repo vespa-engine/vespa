@@ -18,11 +18,12 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
 /**
- * SchemaDocumentSymbols
+ * Responsible for LSP textDocument/documentSymbol requests.
+ *
  * Yields a hierarchical list of symbols for a given file. A symbol is a "child" of another symbol if it is enclosed in its definition (child in AST).
  * In our index structure, we only store the parent of a symbol, which we refer to as "scope".
  *
- * Document Symbols request is used to display UI elements like 
+ * The document symbols request is used to display UI elements like 
  *     grandparent > parent > child based on the current cursor position,
  * as well as handling explicit "list symbols in file" command.
  */

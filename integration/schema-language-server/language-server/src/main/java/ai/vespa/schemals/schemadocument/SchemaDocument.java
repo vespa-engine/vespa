@@ -109,7 +109,7 @@ public class SchemaDocument implements DocumentManager {
 
             logger.println("======== CST for file: " + fileURI + " ========");
      
-            //CSTUtils.printTree(logger, CST);
+            CSTUtils.printTree(logger, CST);
         }
 
 
@@ -242,6 +242,8 @@ public class SchemaDocument implements DocumentManager {
 
         var tolerantResult = parseCST(node, context);
 
+        context.logger().println("After parseCST, present: " + tolerantResult.CST().isPresent());
+
         diagnostics.addAll(InheritanceResolver.resolveInheritances(context));
 
         for (SchemaNode typeNode : context.unresolvedTypeNodes()) {
@@ -308,7 +310,12 @@ public class SchemaDocument implements DocumentManager {
             return ParseResult.parsingFailed(new ArrayList<>());
         }
         SchemaNode CST = new SchemaNode(node);
-        var errors = traverseCST(CST, context);
+        ArrayList<Diagnostic> errors = new ArrayList<>();
+        try {
+            errors = traverseCST(CST, context);
+        } catch(Exception ex) {
+            ex.printStackTrace(context.logger());
+        }
         return new ParseResult(errors, Optional.of(CST));
     }
 

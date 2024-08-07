@@ -1,10 +1,10 @@
 package ai.vespa.schemals.lsp.semantictokens;
 
 import java.io.PrintStream;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,20 +17,15 @@ import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
-import ai.vespa.schemals.tree.CSTUtils;
-import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.Visitor;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.FILTER;
 import ai.vespa.schemals.parser.ast.RANK_TYPE;
 import ai.vespa.schemals.parser.ast.bool;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.integerElm;
 import ai.vespa.schemals.parser.ast.matchItem;
@@ -40,7 +35,14 @@ import ai.vespa.schemals.parser.ast.rankSettingElm;
 import ai.vespa.schemals.parser.ast.rankTypeElm;
 import ai.vespa.schemals.parser.ast.summaryItem;
 import ai.vespa.schemals.parser.ast.valueType;
+import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Visitor;
 
+/**
+ * Responsible for LSP textDocument/semanticTokens/full requests.
+ */
 public class SchemaSemanticTokens implements Visitor {
 
     private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{

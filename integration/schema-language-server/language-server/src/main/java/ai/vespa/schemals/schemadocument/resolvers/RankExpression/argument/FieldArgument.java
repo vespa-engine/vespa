@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 
+
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -18,9 +19,12 @@ public class FieldArgument extends SymbolArgument {
     public static enum FieldType {
         TENSOR,
         WSET,
+        INTEGER,
         NUMERIC,
         NUMERIC_ARRAY,
-        STRING
+        STRING,
+        STRING_ARRAY,
+        POSITION
     };
 
     public static final Set<FieldType> AnyFieldType = EnumSet.allOf(FieldType.class);
@@ -28,6 +32,14 @@ public class FieldArgument extends SymbolArgument {
         add(FieldType.TENSOR);
         add(FieldType.NUMERIC);
     }};
+
+    public static final Set<FieldType> SingleValueOrArrayType = new HashSet<>() {{
+        add(FieldType.NUMERIC);
+        add(FieldType.STRING);
+        add(FieldType.NUMERIC_ARRAY);
+        add(FieldType.STRING_ARRAY);
+    }};
+
     public static final Set<IndexingType> IndexAttributeType = new HashSet<>() {{
         add(IndexingType.ATTRIBUTE);
         add(IndexingType.INDEX);
@@ -69,10 +81,23 @@ public class FieldArgument extends SymbolArgument {
         }}, indexingType);
     }
 
+    public FieldArgument(FieldType fieldType, IndexingType indexingType, String displayStr) {
+        this(new HashSet<>() {{
+            add(fieldType);
+        }}, indexingType, displayStr);
+    }
+
+
     public FieldArgument(Set<FieldType> fieldTypes, IndexingType indexingType) {
         this(fieldTypes, new HashSet<>() {{
             add(indexingType);
         }});
+    }
+
+    public FieldArgument(Set<FieldType> fieldTypes, IndexingType indexingType, String displayStr) {
+        this(fieldTypes, new HashSet<>() {{
+            add(indexingType);
+        }}, displayStr);
     }
 
     public FieldArgument(FieldType fieldType, Set<IndexingType> indexingTypes) {

@@ -360,6 +360,7 @@ public class SymbolReferenceResolver {
      * TODO: refactor. Not everything here should be label
      */
     private static boolean didExpectLabel(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (node.getIsDirty()) return false;
         SchemaNode argsNode = node.getParent();
         SchemaNode argsChild = node;
 
@@ -375,7 +376,11 @@ public class SymbolReferenceResolver {
 
         // we can be certain that this is a ReferenceNode
         ReferenceNode functionExpressionNode = (ReferenceNode)((BaseNode)containingFeature.getOriginalRankExpressionNode()).expressionNode;
+        if (functionExpressionNode == null) return false;
+
         ExpressionNode myArg = ((BaseNode)argsChild.getOriginalRankExpressionNode()).expressionNode;
+        if (myArg == null) return false;
+
         int myArgIndex = functionExpressionNode.children().indexOf(myArg);
 
         if (!identifierNode.hasSymbol() || identifierNode.getSymbol().getStatus() != SymbolStatus.BUILTIN_REFERENCE) return false;

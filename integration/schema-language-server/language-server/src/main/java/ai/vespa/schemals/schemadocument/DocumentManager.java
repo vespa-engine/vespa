@@ -5,9 +5,8 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
- * FileManager
- * For each file the language server is responsible for there will be 
- * a corresponding class implementing FileManager which is responsible for parsing the file and getting diagnostics
+ * DocumentManager
+ * For each file the language server is responsible for there will be a corresponding class implementing DocumentManager which is responsible for parsing the file and getting diagnostics.
  */
 public interface DocumentManager {
 

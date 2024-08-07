@@ -6,7 +6,7 @@ import ai.vespa.schemals.context.EventExecuteCommandContext;
 import ai.vespa.schemals.lsp.command.commandtypes.SchemaCommand;
 
 /**
- * ExecuteCommand
+ * Responsible for LSP workspace/executeCommand requests.
  */
 public class ExecuteCommand {
     public static Object executeCommand(EventExecuteCommandContext context) {
