@@ -3,7 +3,7 @@
   "extends": [
     "config:base"
   ],
-  "dependencyDashboardApproval": false,
+  "dependencyDashboardApproval": true,
   "transitiveRemediation": true,
   "prHourlyLimit": 20,
   "prConcurrentLimit": 20,
