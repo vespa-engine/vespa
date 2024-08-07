@@ -260,7 +260,7 @@ public class SchemaHover {
 
         RankNode rankNode = currentNode.getRankNode().get();
         logger.println(rankNode);
-        Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
+        Optional<SpecificFunction> functionSignature = rankNode.getFunctionSignature();
 
         if (functionSignature.isEmpty()) {
             return Optional.empty();

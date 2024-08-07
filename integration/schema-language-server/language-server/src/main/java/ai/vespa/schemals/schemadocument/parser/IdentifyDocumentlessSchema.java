@@ -13,6 +13,9 @@ import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Identify a schema without a document, and sends an error if no document was found inside the schema
+ */
 public class IdentifyDocumentlessSchema extends Identifier {
 
 	public IdentifyDocumentlessSchema(ParseContext context) {

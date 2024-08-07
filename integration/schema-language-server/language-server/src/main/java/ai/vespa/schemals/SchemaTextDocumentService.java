@@ -64,6 +64,9 @@ import ai.vespa.schemals.lsp.rename.SchemaRename;
 import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
+/**
+ * SchemaTextDocumentService handles incomming requests from the client.
+ */
 public class SchemaTextDocumentService implements TextDocumentService {
 
     private PrintStream logger;

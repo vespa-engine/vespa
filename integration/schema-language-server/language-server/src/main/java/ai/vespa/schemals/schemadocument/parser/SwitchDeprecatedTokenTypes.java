@@ -9,6 +9,9 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * SwhitchDeprecatedTokenTypes replaces deprecated token with the new tokens to make internal logic easier
+ */
 public class SwitchDeprecatedTokenTypes extends Identifier {
 
     public SwitchDeprecatedTokenTypes(ParseContext context) {

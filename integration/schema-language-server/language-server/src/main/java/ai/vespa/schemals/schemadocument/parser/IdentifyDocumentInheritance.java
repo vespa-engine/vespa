@@ -11,6 +11,9 @@ import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Identify document inherance and add it to a list to resolve later
+ */
 public class IdentifyDocumentInheritance extends Identifier {
 
 	public IdentifyDocumentInheritance(ParseContext context) {

@@ -42,6 +42,9 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
+/**
+ * IdentifySymbolDefinition identifies symbol definitions, and mark the SchemaNode as a symbol and adds it to the index
+ */
 public class IdentifySymbolDefinition extends Identifier {
 
     public IdentifySymbolDefinition(ParseContext context) {

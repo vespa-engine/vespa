@@ -12,6 +12,9 @@ import ai.vespa.schemals.parser.ast.annotationRefDataType;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Identifies anntocation references and adds it to a list to resolve later
+ */
 public class IdentifyAnnotationReference extends Identifier {
 
 	public IdentifyAnnotationReference(ParseContext context) {

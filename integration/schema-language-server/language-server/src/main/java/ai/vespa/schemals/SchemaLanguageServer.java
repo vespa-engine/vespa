@@ -29,6 +29,10 @@ import ai.vespa.schemals.lsp.command.CommandRegistry;
 import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
+/**
+ * SchemaLanguageServer represents the languageserver.
+ * It handles start and shutdown, and initializes the server's capabilities
+ */
 public class SchemaLanguageServer implements LanguageServer, LanguageClientAware {
 
     private WorkspaceService workspaceService;

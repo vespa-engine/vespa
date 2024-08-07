@@ -22,6 +22,13 @@ import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * RankNode represents a node in the Rank pexression AST.
+ * The node can either represent an expression, a feature or a built-in-function
+ * 
+ * An expression is a rank expression.
+ * A feature is a function with parameters, and an optional property. All parameters must be expressions.
+ */
 public class RankNode implements Iterable<RankNode>  {
 
     public static enum RankNodeType {
@@ -61,11 +68,14 @@ public class RankNode implements Iterable<RankNode>  {
     private boolean insideLambdaFunction = false;
     private boolean arugmentListExists = false;
 
-    private List<RankNode> children; // parameters for features, children for expressions
+    // parameters for features, child nodes for expressions
+    private List<RankNode> children;
 
+    // For features, this represents the text after the .
     private Optional<SchemaNode> proptery;
 
-    private Optional<SpecificFunction> builtInFunctionSignature = Optional.empty();
+    // For feature nodes, this specifies the function signature
+    private Optional<SpecificFunction> functionSignature = Optional.empty();
 
     private RankNode(SchemaNode node) {
         this.schemaNode = node;
@@ -201,12 +211,12 @@ public class RankNode implements Iterable<RankNode>  {
         return type;
     }
 
-    public Optional<SpecificFunction> getBuiltInFunctionSignature() {
-        return builtInFunctionSignature;
+    public Optional<SpecificFunction> getFunctionSignature() {
+        return functionSignature;
     }
 
-    public void setBuiltInFunctionSignature(SpecificFunction signature) {
-        builtInFunctionSignature = Optional.of(signature);
+    public void setFunctionSignature(SpecificFunction signature) {
+        functionSignature = Optional.of(signature);
     }
 
     public SchemaNode getSymbolNode() {

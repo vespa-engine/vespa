@@ -14,6 +14,9 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Mark all dirty nodes as Syntax error
+ */
 public class IdentifyDirtyNodes extends Identifier {
 
     public IdentifyDirtyNodes(ParseContext context) {

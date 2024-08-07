@@ -7,6 +7,9 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
+/**
+ * TypeNodeResolved resolved types, and tries create references to the correct symbol definitions
+ */
 public class TypeNodeResolver {
     public static boolean resolveType(ParseContext context, Symbol symbol) {
         // Probably a struct

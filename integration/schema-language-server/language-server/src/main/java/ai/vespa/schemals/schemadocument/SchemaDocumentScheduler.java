@@ -22,6 +22,9 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
+/**
+ * SchemaDocumentScheduler hanldes changes to the workspace, such as opening, closing and changes to files.
+ */
 public class SchemaDocumentScheduler {
 
     private PrintStream logger;

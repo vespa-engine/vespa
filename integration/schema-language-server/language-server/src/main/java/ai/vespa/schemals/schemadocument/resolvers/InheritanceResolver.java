@@ -21,6 +21,9 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * InheritanceResolver resolves all inheritance, and creates an inheritance graph
+ */
 public class InheritanceResolver {
     
 

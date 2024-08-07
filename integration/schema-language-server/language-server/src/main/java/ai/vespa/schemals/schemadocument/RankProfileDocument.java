@@ -18,7 +18,7 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
- * RankProfileParser
+ * RankProfileDocumnet parses and represents .profile files
  */
 public class RankProfileDocument implements DocumentManager {
     private PrintStream logger;

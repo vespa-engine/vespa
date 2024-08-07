@@ -46,6 +46,9 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
+/**
+ * IdentifySymbolReferences identifies symbols that are not definitions and sets the SchemaNode to contain an unresolved reference symbol
+ */
 public class IdentifySymbolReferences extends Identifier {
 
     public IdentifySymbolReferences(ParseContext context) {
