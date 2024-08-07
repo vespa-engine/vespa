@@ -21,7 +21,7 @@
     "type": "git",
     "url": "https://github.com/vespa-engine/vespa"
   },
-  "icon": "icons/icon.png",
+  "icon": "images/icon.png",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -65,12 +65,13 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run langserver-install && npm run compile",
+    "vscode:prepublish": "npm run langserver-install && npm run copy-images && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "vscode-test",
+    "copy-images": "cp ../../resources/* ./images",
     "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/"
   },
   "devDependencies": {

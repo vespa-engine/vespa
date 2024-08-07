@@ -52,7 +52,6 @@ to determine semantic correctness of the schema. It allows all constructs to be 
 
 ## LSP
 A brief description of the types of requests we support:
-
 - initialize: Capabilities are exchanged. If we want to support a new type of LSP request we must register it as a capability in this phase.
 - textDocument/didOpen: First time the client opens a specific document (or reopens after a textDocument/didClose). If it is the first document the server has seen during
 the execution, the server will also look for a /schemas directory among the files ancestors. If found, the server scans the contents of /schemas recursively and processes all .sd- and .profile-files it can find.

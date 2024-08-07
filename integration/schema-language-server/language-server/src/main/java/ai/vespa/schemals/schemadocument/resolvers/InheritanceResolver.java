@@ -23,7 +23,7 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
- * InheritanceResolver resolves all inheritance, and creates an inheritance graph
+ * InheritanceResolver resolves all inheritance, and registers them in inheritance graphs
  */
 public class InheritanceResolver {
     
@@ -114,7 +114,6 @@ public class InheritanceResolver {
         }
 
         if (!context.schemaIndex().tryRegisterStructInheritance(myStructDefinitionNode.getSymbol(), parentSymbol.get())) {
-            // TODO: get the chain?
             diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange( inheritanceNode.getRange())
                     .setMessage( "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this struct.")
@@ -157,8 +156,6 @@ public class InheritanceResolver {
         if (!myRankProfileDefinitionNode.hasSymbol() || myRankProfileDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;
 
         if (inheritedIdentifier.equals("default")) {
-            // TODO: mechanism for inheriting default rank profile. 
-            // Workaround now: 
             inheritanceNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
             return;
         }
@@ -216,7 +213,6 @@ public class InheritanceResolver {
         boolean success = true;
         for (Symbol parentFunction : newInheritedFunctions) {
             if (functionDefinitionsBeforeInheritance.containsKey(parentFunction.getShortIdentifier())) {
-                // TODO: quickfix and show the chain of inheritance
                 diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange(inheritanceNode.getRange())
                     .setMessage(
@@ -244,7 +240,6 @@ public class InheritanceResolver {
 
         if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), symbol.get().getFileURI())) {
             // Inheritance cycle
-            // TODO: quickfix, get the chain?
             diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange( inheritanceNode.getRange())
                     .setMessage( "Cannot inherit from " + schemaDocumentName + " because " + schemaDocumentName + " inherits from this document.")
@@ -276,7 +271,6 @@ public class InheritanceResolver {
         }
 
         if (!context.schemaIndex().tryRegisterDocumentSummaryInheritance(myDocSummaryDefinitionNode.getSymbol(), parentSymbol.get())) {
-            // TODO: get the chain?
             diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange( inheritanceNode.getRange())
                     .setMessage( "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this document summary.")

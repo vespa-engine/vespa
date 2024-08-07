@@ -116,13 +116,13 @@ public class FieldArgument extends SymbolArgument {
 
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
-        Optional<Diagnostic> diagnositc = super.parseArgument(context, node);
+        Optional<Diagnostic> diagnostic = super.parseArgument(context, node);
 
-        if (diagnositc.isPresent()) {
+        if (diagnostic.isPresent()) {
             SchemaNode unresolvedFieldArgument = super.findSymbolNode(node);
             context.addUnresolvedFieldArgument(new UnresolvedFieldArgument(unresolvedFieldArgument, fieldTypes, indexingTypes));
         }
 
-        return diagnositc;
+        return diagnostic;
     }
 }
