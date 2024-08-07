@@ -18,11 +18,15 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 public class ResolverTraversal {
     public static List<Diagnostic> traverse(ParseContext context, SchemaNode CST) {
         List<Diagnostic> diagnostics = new ArrayList<>();
-        traverse(context, CST, diagnostics);
+        traverse(context, CST, diagnostics, false);
         return diagnostics;
     }
 
-    private static void traverse(ParseContext context, SchemaNode currentNode, List<Diagnostic> diagnostics) {
+    private static void traverse(ParseContext context, SchemaNode currentNode, List<Diagnostic> diagnostics, boolean insideRankExpression) {
+
+        if (currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION && !insideRankExpression) {
+            RankExpressionSymbolResolver.resolveRankExpression(currentNode, context);
+        }
 
         if (currentNode.hasSymbol() && currentNode.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
             SymbolReferenceResolver.resolveSymbolReference(currentNode, context, diagnostics);
@@ -33,7 +37,7 @@ public class ResolverTraversal {
         }
 
         for (SchemaNode child : currentNode) {
-            traverse(context, child, diagnostics);
+            traverse(context, child, diagnostics, insideRankExpression || currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION);
         }
 
         // Some things need run after the children has run.

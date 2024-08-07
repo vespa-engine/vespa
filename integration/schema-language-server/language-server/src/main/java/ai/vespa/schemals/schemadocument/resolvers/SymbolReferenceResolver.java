@@ -28,6 +28,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 public class SymbolReferenceResolver {
     public static void resolveSymbolReference(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
@@ -50,7 +51,7 @@ public class SymbolReferenceResolver {
                 referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context, diagnostics);
             }
         } else if (referencedType == SymbolType.FUNCTION) {
-            referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol().getScope(), SymbolType.FUNCTION, node.getSymbol().getShortIdentifier().toLowerCase());
+            referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol().getScope(), SymbolType.FUNCTION, node.getSymbol().getShortIdentifier());
 
             if (referencedSymbol.isEmpty()) {
                 // could be built in
@@ -81,7 +82,7 @@ public class SymbolReferenceResolver {
             SymbolType[] possibleTypes = new SymbolType[] { SymbolType.PARAMETER, SymbolType.FUNCTION, SymbolType.RANK_CONSTANT, SymbolType.FIELD };
 
             for (SymbolType type : possibleTypes) {
-                referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol().getScope(), type, node.getSymbol().getShortIdentifier().toLowerCase());
+                referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol().getScope(), type, node.getSymbol().getShortIdentifier());
                 if (referencedSymbol.isPresent()) {
                     node.setSymbolType(type);
                     break;
@@ -143,14 +144,20 @@ public class SymbolReferenceResolver {
             referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
         }
 
+        if (node.getLanguageType() == LanguageType.RANK_EXPRESSION && referencedSymbol.isEmpty()) {
+            referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol(), SymbolType.PARAMETER, node.getSymbol().getShortIdentifier());
+        }
+
         if (referencedSymbol.isPresent()) {
             node.setSymbolStatus(SymbolStatus.REFERENCE);
             context.schemaIndex().insertSymbolReference(referencedSymbol.get(), node.getSymbol());
-        } else {
+
+        } else if (referencedType != SymbolType.QUERY_INPUT)  {
+
             diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange( node.getRange())
                     .setMessage( "Undefined symbol " + node.getText())
-                    .setSeverity( DiagnosticSeverity.Error)
+                    .setSeverity(DiagnosticSeverity.Error)
                     .build() );
         }
     }
@@ -182,7 +189,7 @@ public class SymbolReferenceResolver {
 
         // First check for struct-field definitions
         if (fieldDefinition.getType() == SymbolType.FIELD) {
-            Optional<Symbol> structFieldDefinition = context.schemaIndex().findSymbolInScope(fieldDefinition, SymbolType.FIELD, node.getText().toLowerCase());
+            Optional<Symbol> structFieldDefinition = context.schemaIndex().findSymbolInScope(fieldDefinition, SymbolType.FIELD, node.getText());
             if (structFieldDefinition.isPresent()) {
                 node.setSymbolType(SymbolType.FIELD);
                 return structFieldDefinition;
@@ -220,7 +227,7 @@ public class SymbolReferenceResolver {
 
                 if (documentDefinition.isEmpty()) return Optional.empty();
 
-                referencedSymbol = context.schemaIndex().findSymbol(documentDefinition.get(), SymbolType.FIELD, node.getText().toLowerCase());
+                referencedSymbol = context.schemaIndex().findSymbol(documentDefinition.get(), SymbolType.FIELD, node.getText());
 
                 if (referencedSymbol.isPresent()) {
                     node.setSymbolType(referencedSymbol.get().getType());
@@ -287,7 +294,7 @@ public class SymbolReferenceResolver {
     }
 
     private static Optional<Symbol> resolveFieldInStructReference(SchemaNode node, Symbol structDefinition, ParseContext context) {
-        Optional<Symbol> referencedSymbol = context.schemaIndex().findSymbol(structDefinition, SymbolType.FIELD, node.getText().toLowerCase());
+        Optional<Symbol> referencedSymbol = context.schemaIndex().findSymbol(structDefinition, SymbolType.FIELD, node.getText());
 
         if (referencedSymbol.isPresent()) {
             // TODO: maybe we could have a findSymbol that doesn't allow going up in scope

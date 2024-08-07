@@ -3,6 +3,7 @@ package ai.vespa.schemals.tree;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -19,6 +20,7 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
@@ -55,6 +57,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private TokenType schemaType;
     private ai.vespa.schemals.parser.rankingexpression.Token.TokenType rankExpressionType;
     private ai.vespa.schemals.parser.indexinglanguage.Token.TokenType indexinglanguageType;
+
+    private Optional<RankNode> rankNode = Optional.empty();
 
 
     private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
@@ -539,6 +543,12 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public LanguageType getLanguageType() { return language; }
+
+    public void setRankNode(RankNode node) {
+        rankNode = Optional.of(node);
+    }
+
+    public Optional<RankNode> getRankNode() { return rankNode; }
 
     public String toString() {
         Position pos = getRange().getStart();
