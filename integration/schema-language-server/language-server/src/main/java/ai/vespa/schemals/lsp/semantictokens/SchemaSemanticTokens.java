@@ -330,6 +330,7 @@ public class SchemaSemanticTokens {
         put(SymbolType.PROPERTY, "property");
         put(SymbolType.LAMBDA_FUNCTION, "keyword");
         put(SymbolType.DIMENSION, "keyword");
+        put(SymbolType.ANNOTATION, "variable");
     }};
 
     private static ArrayList<String> tokenTypes;

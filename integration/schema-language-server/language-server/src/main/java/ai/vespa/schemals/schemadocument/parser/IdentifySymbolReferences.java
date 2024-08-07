@@ -29,6 +29,7 @@ import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.importField;
+import ai.vespa.schemals.parser.ast.inheritsAnnotation;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
@@ -60,6 +61,7 @@ public class IdentifySymbolReferences extends Identifier {
         put(rootSchema.class, SymbolType.SCHEMA);
         put(inheritsStruct.class, SymbolType.STRUCT);
         put(referenceType.class, SymbolType.DOCUMENT);
+        put(inheritsAnnotation.class, SymbolType.ANNOTATION);
     }};
 
     private static final HashMap<Class<?>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<?>, SymbolType>() {{

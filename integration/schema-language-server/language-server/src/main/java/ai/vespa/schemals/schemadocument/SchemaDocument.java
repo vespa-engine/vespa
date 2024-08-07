@@ -30,7 +30,6 @@ import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
-import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
@@ -252,13 +251,6 @@ public class SchemaDocument implements DocumentManager {
         }
         
         context.clearUnresolvedTypeNodes();
-
-        // for (SchemaNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
-        //     AnnotationReferenceResolver.resolveAnnotationReference(context, annotationReferenceNode.getSymbol());
-        // }
-
-        context.clearUnresolvedAnnotationReferenceNodes();
-
         
         if (tolerantResult.CST().isPresent()) {
             //diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
