@@ -15,6 +15,16 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class IntegerArgument implements Argument {
 
+    private String displayStr;
+
+    public IntegerArgument(String displayStr) {
+        this.displayStr = displayStr;
+    }
+
+    public IntegerArgument() {
+        this("n");
+    }
+
     @Override
     public int getStrictness() {
         return 6;
@@ -56,6 +66,6 @@ public class IntegerArgument implements Argument {
 
     @Override
     public String displayString() {
-        return "n";
+        return displayStr;
     }
 }

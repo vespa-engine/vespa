@@ -14,7 +14,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionHandler;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
@@ -119,7 +119,7 @@ public class RankExpressionSymbolResolver {
 
         String identifier = node.getSymbol().getShortIdentifier();
 
-        FunctionHandler functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
+        GenericFunction functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
         if (functionHandler == null) return;
         
         node.setReturnType(ReturnType.DOUBLE);

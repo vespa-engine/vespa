@@ -15,17 +15,7 @@ public class Symbol {
     private URI fileURIimpl; // for comparing with other symbols file URIs
     private SymbolType type;
     private SymbolStatus status;
-    private String shortIdentifier;
-
-    private void autoSetShortIdentifier() {
-        if (this.shortIdentifier != null) return;
-
-        if (type == SymbolType.DOCUMENT || type == SymbolType.SCHEMA) {
-            this.shortIdentifier = identifierNode.getText();
-        } else {
-            this.shortIdentifier = identifierNode.getText().toLowerCase();
-        }
-    }
+    private String overrideShortIdentifier = null;
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
         this.identifierNode = identifierNode;
@@ -33,11 +23,7 @@ public class Symbol {
         this.type = type;
         this.status = SymbolStatus.UNRESOLVED;
         this.scope = scope;
-        this.shortIdentifier = shortIdentifier;
-
-        if (this.shortIdentifier == null) {
-            autoSetShortIdentifier();
-        }
+        this.overrideShortIdentifier = shortIdentifier;
     }
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
@@ -90,7 +76,11 @@ public class Symbol {
 
     public SchemaNode getNode() { return identifierNode; }
 
-    public String getShortIdentifier() { return shortIdentifier; }
+    public String getShortIdentifier() {
+        if (overrideShortIdentifier != null) return overrideShortIdentifier;
+
+        return identifierNode.getText();
+    }
 
     public String getLongIdentifier() {
         if (scope == null) {
@@ -179,6 +169,7 @@ public class Symbol {
         TENSOR_DIMENSION_INDEXED,
         TENSOR_DIMENSION_MAPPED,
         TYPE_UNKNOWN,
+        DIMENSION,
     }
 
     public String toString() {

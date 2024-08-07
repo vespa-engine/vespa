@@ -3,6 +3,7 @@ package ai.vespa.schemals.lsp.hover;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,18 +14,20 @@ import java.util.stream.Collectors;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
+import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
  * Handles LSP hover requests.
@@ -34,7 +37,7 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
 
-    private static Map<String, Hover> markdownContentCache = new HashMap<>();
+    private static Map<String, Optional<MarkupContent>> markdownContentCache = new HashMap<>();
 
     /**
      * Helper to check if a comment exists and extract it from a line
@@ -242,10 +245,60 @@ public class SchemaHover {
         return null;
     }
 
+    private static Optional<Hover> rankFeatureHover(PrintStream logger, SchemaNode node) {
+
+        // Search for rankNode connection
+        SchemaNode currentNode = node;
+        while (currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION && currentNode.getRankNode().isEmpty()) {
+            currentNode = currentNode.getParent();
+            logger.println(currentNode);
+        }
+
+        if (currentNode.getRankNode().isEmpty()) {
+            return Optional.empty();
+        }
+
+        RankNode rankNode = currentNode.getRankNode().get();
+        logger.println(rankNode);
+        Optional<SpecificFunction> functionSignature = rankNode.getBuiltInFunctionSignature();
+
+        if (functionSignature.isEmpty()) {
+            return Optional.empty();
+        }
+
+        logger.println("LOOKING FOR: " + functionSignature.get().getSignatureString());
+        Optional<Hover> result = getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(), node.getRange());
+
+        if (result.isPresent()) {
+            return result;
+        }
+
+        logger.println("NEW LOOKUP: " + functionSignature.get().getSignatureString(true));
+        
+        return getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(true), node.getRange());
+    }
+
     public static Hover getHover(EventPositionContext context) {
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+
         if (node != null) {
-            return getSymbolHover(node, context);
+            Hover symbolHover = getSymbolHover(node, context);
+
+            if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+                var content = symbolHover.getContents();
+                if (content.isRight()) {
+                    MarkupContent markupContent = content.getRight();
+                    if (markupContent.getValue() == "builtin") {
+
+                        Optional<Hover> builtinHover = rankFeatureHover(context.logger, node);
+                        if (builtinHover.isPresent()) {
+                            return builtinHover.get();
+                        }
+                    }
+                }
+            }
+
+            return symbolHover;
         }
 
         node = CSTUtils.getLeafNodeAtPosition(context.document.getRootNode(), context.position);
@@ -255,24 +308,38 @@ public class SchemaHover {
             return getIndexingHover(node, context);
         }
 
-        String markdownKey = node.getClassLeafIdentifierString();
+        Optional<Hover> hoverInfo = getFileHoverInformation("schema/" + node.getClassLeafIdentifierString(), node.getRange());
+        if (hoverInfo.isEmpty()) {
+            return null;
+        }
+        return hoverInfo.get();
+    }
 
+    private static Optional<Hover> getFileHoverInformation(String markdownKey, Range range) {
         // avoid doing unnecessary IO operations
         if (markdownContentCache.containsKey(markdownKey)) {
-            return markdownContentCache.get(markdownKey);
+            Optional<MarkupContent> mdContent = markdownContentCache.get(markdownKey);
+            if (mdContent != null) {
+                if (mdContent.isEmpty()) {
+                    return Optional.empty();
+                }
+                return Optional.of(new Hover(mdContent.get(), range));
+            }
         }
 
         String fileName = markdownPathRoot + markdownKey + ".md";
         InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
 
         if (inputStream == null) {
-            return null;
+            markdownContentCache.put(markdownKey, Optional.empty());
+            return Optional.empty();
         }
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String markdown = reader.lines().collect(Collectors.joining(System.lineSeparator()));
 
-        Hover hover = new Hover(new MarkupContent(MarkupKind.MARKDOWN, markdown), node.getRange());
-		markdownContentCache.put(markdownKey, hover);
-        return hover;
+        MarkupContent mdContent = new MarkupContent(MarkupKind.MARKDOWN, markdown);
+        Hover hover = new Hover(mdContent, range);
+		markdownContentCache.put(markdownKey, Optional.of(mdContent));
+        return Optional.of(hover);
     }
 }

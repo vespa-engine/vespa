@@ -19,6 +19,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class RankNode implements Iterable<RankNode>  {
@@ -64,10 +65,14 @@ public class RankNode implements Iterable<RankNode>  {
 
     private Optional<SchemaNode> proptery;
 
+    private Optional<SpecificFunction> builtInFunctionSignature = Optional.empty();
+
     private RankNode(SchemaNode node) {
         this.schemaNode = node;
         this.type = rankNodeTypeMap.get(node.getASTClass());
         this.returnType = ReturnType.UNKNOWN;
+
+        node.setRankNode(this);
 
         if (this.type == RankNodeType.EXPRESSION) {
 
@@ -82,7 +87,11 @@ public class RankNode implements Iterable<RankNode>  {
             } else {
                 this.children = new ArrayList<>();
             }
+
             this.proptery = findProperty(node);
+            if (this.proptery.isPresent()) {
+                this.proptery.get().setRankNode(this);
+            }
 
         } else if (this.type == RankNodeType.BUILT_IN_FUNCTION) {
 
@@ -192,6 +201,14 @@ public class RankNode implements Iterable<RankNode>  {
         return type;
     }
 
+    public Optional<SpecificFunction> getBuiltInFunctionSignature() {
+        return builtInFunctionSignature;
+    }
+
+    public void setBuiltInFunctionSignature(SpecificFunction signature) {
+        builtInFunctionSignature = Optional.of(signature);
+    }
+
     public SchemaNode getSymbolNode() {
         if (type == RankNodeType.EXPRESSION  || schemaNode.size() == 0) {
             return null;
@@ -253,7 +270,7 @@ public class RankNode implements Iterable<RankNode>  {
     }
 
     public String toString() {
-        return "[RANK: " + type + "] " + schemaNode.toString();
+        return "[RANK: " + type + "] " + schemaNode.toString() + (hasSymbol() ? " Symbol: " + getSymbol().toString() : "");
     }
 
     @Override
