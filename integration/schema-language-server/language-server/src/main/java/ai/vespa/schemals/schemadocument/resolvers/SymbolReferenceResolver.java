@@ -32,7 +32,7 @@ import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 /**
  * SymbolReferenceResolver goes through the unresolved symbol references and searches for their definition and marks the symbols as reference.
- * If no definition was found a error is sent to the client
+ * If no definition was found a error is sent to the client.
  * 
  * Must run after RankExpressionSymbolResolver
  */
@@ -44,15 +44,37 @@ public class SymbolReferenceResolver {
 
         // Some symbol types require special handling
         if (referencedType == SymbolType.SUBFIELD) {
-            SchemaNode parentField = node.getPreviousSibling();
-            if (parentField.isASTInstance(DOT.class))parentField = parentField.getPreviousSibling();
             Optional<Symbol> parentFieldDefinition = Optional.empty();
 
-            // Two cases for where the parent field is defined. Either inside a struct or "global". 
+            // Two cases for where the parent field is defined. Either inside a struct or "global".
+            if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+                SchemaNode outNode = node.getParent();
+                SchemaNode parentNode = outNode.getParent();
 
-            if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
+                int outNodeIndex = parentNode.indexOf(outNode);
+                if (outNodeIndex == 0) {
+                    SchemaNode fieldDefinitionNode = parentNode.getSibling(-2);
+                    if (fieldDefinitionNode != null && fieldDefinitionNode.hasSymbol()) {
+                        parentFieldDefinition = context.schemaIndex().getSymbolDefinition(fieldDefinitionNode.getSymbol());
+                    }
+                } else {
+                    SchemaNode previousOutNode = parentNode.get(outNodeIndex - 2);
+                    if (previousOutNode != null && previousOutNode.size() > 0 && previousOutNode.get(0).hasSymbol()) {
+                        parentFieldDefinition = context.schemaIndex().getSymbolDefinition(previousOutNode.get(0).getSymbol());
+                    }
+                }
+
+            } else {
+
+                SchemaNode parentField = node.getPreviousSibling();
+                if (parentField.isASTInstance(DOT.class))parentField = parentField.getPreviousSibling();
+
+                if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                    parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
+                }
             }
+            
+
             if (parentFieldDefinition.isPresent()) {
                 referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context, diagnostics);
             }
@@ -366,7 +388,6 @@ public class SymbolReferenceResolver {
      * TODO: refactor. Not everything here should be label
      */
     private static boolean didExpectLabel(SchemaNode node, List<Diagnostic> diagnostics) {
-        if (node.getIsDirty()) return false;
         SchemaNode argsNode = node.getParent();
         SchemaNode argsChild = node;
 
@@ -382,11 +403,7 @@ public class SymbolReferenceResolver {
 
         // we can be certain that this is a ReferenceNode
         ReferenceNode functionExpressionNode = (ReferenceNode)((BaseNode)containingFeature.getOriginalRankExpressionNode()).expressionNode;
-        if (functionExpressionNode == null) return false;
-
         ExpressionNode myArg = ((BaseNode)argsChild.getOriginalRankExpressionNode()).expressionNode;
-        if (myArg == null) return false;
-
         int myArgIndex = functionExpressionNode.children().indexOf(myArg);
 
         if (!identifierNode.hasSymbol() || identifierNode.getSymbol().getStatus() != SymbolStatus.BUILTIN_REFERENCE) return false;

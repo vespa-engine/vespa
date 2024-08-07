@@ -217,6 +217,14 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.symbolAtNode = new Symbol(this, type, fileURI, scope);
     }
 
+    public void setSymbol(SymbolType type, String fileURI, Optional<Symbol> scope) {
+        if (scope.isPresent()) {
+            setSymbol(type, fileURI, scope.get());
+        } else {
+            setSymbol(type, fileURI);
+        }
+    }
+
     public void setSymbol(SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
         if (this.hasSymbol()) {
             throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
@@ -463,7 +471,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
      * @param relativeIndex the relative index of the sibling node
      * @return the sibling node at the specified relative index, or null if the sibling node does not exist
      */
-    private SchemaNode getSibling(int relativeIndex) {
+    public SchemaNode getSibling(int relativeIndex) {
         if (parent == null)return null;
 
         int parentIndex = parent.indexOf(this);

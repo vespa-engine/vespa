@@ -9,8 +9,11 @@ import org.eclipse.lsp4j.Diagnostic;
 
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.rankingexpression.ast.out;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
@@ -117,6 +120,21 @@ public class FieldArgument extends SymbolArgument {
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
         Optional<Diagnostic> diagnositc = super.parseArgument(context, node);
+
+        // node is an expression node
+        // field is a feature
+        if (node.getChildren().size() > 0) {
+            RankNode featureNode = node.getChildren().get(0);
+            Optional<SchemaNode> firstProperty = featureNode.getProperty();
+            if (firstProperty.isPresent()) {
+                SchemaNode parentNode = firstProperty.get().getParent();
+                Optional<Symbol> scope = CSTUtils.findScope(parentNode);
+
+                for (int i = 0; i < parentNode.size(); i += 2) {
+                    parentNode.get(i).get(0).setSymbol(SymbolType.SUBFIELD, context.fileURI(), scope);
+                }
+            }
+        }
 
         if (diagnositc.isPresent()) {
             SchemaNode unresolvedFieldArgument = super.findSymbolNode(node);
