@@ -72,11 +72,6 @@ public class Symbol {
         return this.scope.equals(scope);
     }
 
-    public String getScopeIdentifier() {
-        if (this.scope == null) return "";
-        return this.scope.getLongIdentifier();
-    }
-
     public SchemaNode getNode() { return identifierNode; }
 
     public String getShortIdentifier() {

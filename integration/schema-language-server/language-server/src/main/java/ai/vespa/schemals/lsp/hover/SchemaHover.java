@@ -98,7 +98,7 @@ public class SchemaHover {
                 fieldDef.getNode().getNextSibling().getNextSibling().getText();
 
             if (!fieldDef.isInScope(structDefinitionSymbol.get())) {
-                result += " (inherited from " + fieldDef.getScopeIdentifier() + ")";
+                result += " (inherited from " + fieldDef.getScope().getPrettyIdentifier() + ")";
             }
 
             result += "\n";

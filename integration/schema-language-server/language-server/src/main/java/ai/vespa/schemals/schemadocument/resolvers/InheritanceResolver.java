@@ -18,6 +18,7 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.COMMA;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -88,6 +89,14 @@ public class InheritanceResolver {
     }
 
     private static void resolveStructInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
+        if (inheritanceNode.getPreviousSibling() != null && inheritanceNode.getPreviousSibling().isASTInstance(COMMA.class)) {
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                             .setRange(inheritanceNode.getRange())
+                             .setMessage("Inheriting multiple structs is not supported.")
+                             .setSeverity(DiagnosticSeverity.Error)
+                             .build());
+            return;
+        }
         SchemaNode myStructDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
 
         if (myStructDefinitionNode == null) {
@@ -118,25 +127,25 @@ public class InheritanceResolver {
 
         Symbol structDefinitionSymbol = myStructDefinitionNode.getSymbol();
 
-        Set<String> inheritedFields = new HashSet<>();
+        Map<String, Symbol> inheritedFields = new HashMap<>();
         List<Symbol> myFields = new ArrayList<>();
 
         for (Symbol fieldSymbol : context.schemaIndex().listSymbolsInScope(structDefinitionSymbol, SymbolType.FIELD)) {
             if (fieldSymbol.getScope().equals(structDefinitionSymbol)) {
                 myFields.add(fieldSymbol);
             } else {
-                inheritedFields.add(fieldSymbol.getShortIdentifier());
+                inheritedFields.put(fieldSymbol.getShortIdentifier(), fieldSymbol);
             }
         }
 
         for (Symbol fieldSymbol : myFields) {
-            if (!inheritedFields.contains(fieldSymbol.getShortIdentifier())) continue;
+            if (!inheritedFields.containsKey(fieldSymbol.getShortIdentifier())) continue;
             diagnostics.add(new SchemaDiagnostic.Builder()
-                    .setRange( fieldSymbol.getNode().getRange())
-                    .setMessage( "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier())
-                    .setSeverity( DiagnosticSeverity.Error)
+                    .setRange(fieldSymbol.getNode().getRange())
+                    .setMessage("struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier())
+                    .setSeverity(DiagnosticSeverity.Error)
                     .setCode(DiagnosticCode.INHERITS_STRUCT_FIELD_REDECLARED)
-                    .build() );
+                    .build());
         }
     }
 
