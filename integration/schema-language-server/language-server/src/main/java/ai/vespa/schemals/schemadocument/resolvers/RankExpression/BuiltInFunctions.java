@@ -155,7 +155,7 @@ public class BuiltInFunctions {
         ), true)));
         put("customTokenInputIds", new GenericFunction("customTokenInputIds", new FunctionSignature(List.of(
             new IntegerArgument("start_sequence_id"),
-            new IntegerArgument("sep_sequence_idlenght"),
+            new IntegerArgument("sep_sequence_idlength"),
             new ExpressionArgument("input")
         ), true)));
         put("tokenTypeIds", new GenericFunction("tokenTypeIds", new FunctionSignature(List.of(

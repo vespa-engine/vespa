@@ -8,6 +8,9 @@ import java.net.URI;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 
+/**
+ * Symbol represents a symbol in a document.
+ */
 public class Symbol {
     private SchemaNode identifierNode;
     private Symbol scope = null;

@@ -9,6 +9,9 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Hanldes a prepare rename request, and verifyes that the text at the cursor can be renamed
+ */
 public class SchemaPrepareRename {
 
     public static Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior> prepareRename(EventPositionContext context) {

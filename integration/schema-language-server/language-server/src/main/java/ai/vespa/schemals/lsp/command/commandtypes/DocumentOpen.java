@@ -14,27 +14,29 @@ import ai.vespa.schemals.context.EventExecuteCommandContext;
 public class DocumentOpen implements SchemaCommand {
     private String fileURI;
 
-	@Override
-	public void execute(EventExecuteCommandContext context) {
-        if (fileURI == null) return;
+    @Override
+    public void execute(EventExecuteCommandContext context) {
+        if (fileURI == null)
+            return;
         context.logger.println("Show document: " + fileURI);
         ShowDocumentResult result = context.messageHandler.showDocument(fileURI).join();
         context.logger.println("Result: " + result.toString());
-	}
+    }
 
-	@Override
-	public boolean setArguments(List<Object> arguments) {
+    @Override
+    public boolean setArguments(List<Object> arguments) {
         assert arguments.size() == getArity();
 
-        if (!(arguments.get(0) instanceof JsonPrimitive)) return false;
+        if (!(arguments.get(0) instanceof JsonPrimitive))
+            return false;
 
-        JsonPrimitive arg = (JsonPrimitive)arguments.get(0);
+        JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
         fileURI = arg.getAsString();
         return true;
-	}
+    }
 
-	@Override
-	public int getArity() {
+    @Override
+    public int getArity() {
         return 1;
-	}
+    }
 }

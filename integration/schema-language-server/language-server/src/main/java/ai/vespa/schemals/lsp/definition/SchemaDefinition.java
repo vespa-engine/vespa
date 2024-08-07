@@ -12,6 +12,9 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Handles a go to deinfition requests
+ */
 public class SchemaDefinition {
     public static ArrayList<Location> getDefinition(EventPositionContext context) {
 

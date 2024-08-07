@@ -12,6 +12,9 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Handles a find references request
+ */
 public class SchemaReferences {
     
 

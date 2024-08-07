@@ -19,6 +19,9 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * Handles a rename requests
+ */
 public class SchemaRename {
 
     private static WorkspaceEditBuilder addTextEditsFromSymbols(WorkspaceEditBuilder builder, EventContext context, List<Symbol> symbols, String newName) {
