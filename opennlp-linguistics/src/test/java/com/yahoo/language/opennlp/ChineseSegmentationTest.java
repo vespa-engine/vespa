@@ -24,12 +24,12 @@ public class ChineseSegmentationTest {
         List<String> tokens;
 
         tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true));
-        assertEquals(9, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
+        assertEquals(11, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
 
         tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_TRADITIONAL, StemMode.ALL, true));
-        assertEquals(9, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
+        assertEquals(11, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
 
         tokens = tester.segmenter().segment(text, Language.CHINESE_SIMPLIFIED);
         assertEquals(7, tokens.size());
@@ -41,17 +41,17 @@ public class ChineseSegmentationTest {
     }
 
     @Test
-    public void testChineseSegmentationWithGrams() {
-        var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).createCjkGrams(true).build());
+    public void testChineseSegmentationWithoutGrams() {
+        var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).createCjkGrams(false).build());
         List<String> tokens;
 
         tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true));
-        assertEquals(11, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
+        assertEquals(9, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
 
         tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_TRADITIONAL, StemMode.ALL, true));
-        assertEquals(11, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
+        assertEquals(9, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
 
         tokens = tester.segmenter().segment(text, Language.CHINESE_SIMPLIFIED);
         assertEquals(7, tokens.size());
