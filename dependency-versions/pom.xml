@@ -115,8 +115,8 @@
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.14.0</jna.vespa.version>
         <joda-time.vespa.version>2.12.7</joda-time.vespa.version>
-        <junit.vespa.version>5.10.2</junit.vespa.version>
-        <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
+        <junit.vespa.version>5.10.3</junit.vespa.version>
+        <junit.platform.vespa.version>1.10.3</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <kherud.llama.vespa.version>3.2.1</kherud.llama.vespa.version>
         <luben.zstd.vespa.version>1.5.6-3</luben.zstd.vespa.version>
@@ -161,8 +161,8 @@
         <!-- CAUTION: upgrading junit for tenants poms may break testing frameworks -->
         <!-- CAUTION 2: this version must match the exported packages from the tenant-cd-api module -->
         <!-- CAUTION 3: this is probably not a good idea to change too ofter; consider a major version next time -->
-        <junit.vespa.tenant.version>5.10.1</junit.vespa.tenant.version>
-        <junit.platform.vespa.tenant.version>1.10.1</junit.platform.vespa.tenant.version>
+        <junit.vespa.tenant.version>5.10.3</junit.vespa.tenant.version>
+        <junit.platform.vespa.tenant.version>1.10.3</junit.platform.vespa.tenant.version>
         <surefire.vespa.tenant.version>${surefire.vespa.version}</surefire.vespa.tenant.version>
 
         <!-- Maven plugins -->
