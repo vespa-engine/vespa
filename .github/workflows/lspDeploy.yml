@@ -51,14 +51,14 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
       
-      - name: Publish Intellij plugin
-        run: gradle publishPlugin
-        working-directory: ./integration/schema-language-server/clients/intellij
-        env:
-          CERTIFICATE_CHAIN: ${{ secrets.INTELLIJ_CERTIFICATE_CHAIN }}
-          PRIVATE_KEY: ${{ secrets.INTELLIJ_PRIVATE_KEY }}
-          PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
-          PUBLISH_TOKEN: ${{ secrets.INTELLIJ_PUBLISH_TOKEN }}
+      # - name: Publish Intellij plugin
+      #   run: gradle publishPlugin
+      #   working-directory: ./integration/schema-language-server/clients/intellij
+      #   env:
+      #     CERTIFICATE_CHAIN: ${{ secrets.INTELLIJ_CERTIFICATE_CHAIN }}
+      #     PRIVATE_KEY: ${{ secrets.INTELLIJ_PRIVATE_KEY }}
+      #     PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
+      #     PUBLISH_TOKEN: ${{ secrets.INTELLIJ_PUBLISH_TOKEN }}
       
       - name: Create PR to bump version
         uses: peter-evans/create-pull-request@v6
