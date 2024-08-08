@@ -7,3 +7,4 @@ src/**
 **/.eslintrc.json
 **/*.map
 **/*.ts
+out/publish.js

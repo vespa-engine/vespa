@@ -4,7 +4,7 @@
   "description": "Support for Vespa schema files.",
   "author": "Vespa",
   "publisher": "Vespa",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.72.0"
   },
@@ -72,13 +72,16 @@
     "lint": "eslint src --ext ts",
     "test": "vscode-test",
     "copy-images": "cp ../../resources/* ./images",
-    "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/"
+    "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/",
+    "publish": "npm run compile && node out/publish.js"
   },
   "devDependencies": {
     "@types/hasbin": "^1.2.2",
     "@types/mocha": "^10.0.6",
     "@types/node": "20.x",
     "@types/vscode": "^1.72.0",
+    "@vscode/vsce": "^2.31.1",
+    "@actions/core": "^1.10.0",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
     "@vscode/test-cli": "^0.0.9",
