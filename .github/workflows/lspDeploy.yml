@@ -18,10 +18,9 @@ on:
 jobs:
 
   lspDeploy:
+    name: Vespa Schema LSP Deployment Job
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./integration/schema-language-server/clients/vscode
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -44,6 +43,30 @@ jobs:
         
       - name: Download node dependencies
         run: npm ci
+        working-directory: ./integration/schema-language-server/clients/vscode
 
-      - name: Publish
+      - name: Publish VScode extension
         run: npm run publish
+        working-directory: ./integration/schema-language-server/clients/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      
+      # - name: Publish Intellij plugin
+      #   run: gradle publishPlugin
+      #   working-directory: ./integration/schema-language-server/clients/intellij
+      #   env:
+      #     CERTIFICATE_CHAIN: ${{ secrets.INTELLIJ_CERTIFICATE_CHAIN }}
+      #     PRIVATE_KEY: ${{ secrets.INTELLIJ_PRIVATE_KEY }}
+      #     PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
+      #     PUBLISH_TOKEN: ${{ secrets.INTELLIJ_PUBLISH_TOKEN }}
+      
+      - name: Create PR to bump version
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update Vespa Language Server VSCode extension version"
+          title: "Bump Vespa Language Server version"
+          body: "This PR updates the Vespa Language Server VSCode extension"
+          branch: "interns/languageserver-bump-version"
+          base: "master"
+          labels: "Language server"
