@@ -102,7 +102,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
     }
 
     public Language resolveLanguage(Linguistics linguistics) {
-        if (language != null && language != Language.UNKNOWN) return language;
+        if (language != Language.UNKNOWN) return language;
         if (linguistics == null) return Language.ENGLISH;
 
         Detection detection = linguistics.getDetector().detect(String.valueOf(value), null);
