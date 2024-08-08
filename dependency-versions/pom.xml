@@ -105,7 +105,7 @@
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
         <huggingface.vespa.version>0.28.0</huggingface.vespa.version>
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
-        <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
+        <java-jjwt.vespa.version>0.12.6</java-jjwt.vespa.version>
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
