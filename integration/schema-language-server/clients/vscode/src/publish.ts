@@ -3,7 +3,12 @@ import { publishVSIX, createVSIX } from '@vscode/vsce';
 import * as actions from '@actions/core';
 
 async function publish(): Promise<void> {
-    const version = actions.getInput("version", { required: true });
+    let version = actions.getInput("version", { required: false, trimWhitespace: true });
+
+    if (version == "") {
+        version = "patch"
+    }
+
 
     await createVSIX({
         version: version
