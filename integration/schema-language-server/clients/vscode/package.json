@@ -4,7 +4,7 @@
   "description": "Support for Vespa schema files.",
   "author": "Vespa",
   "publisher": "Vespa",
-  "version": "0.0.2",
+  "version": "0.0.0",
   "engines": {
     "vscode": "^1.72.0"
   },
@@ -65,7 +65,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run langserver-install && npm run copy-images && npm run compile",
+    "vscode:prepublish": "npm run langserver-install && npm run copy-images && npm run compile && cp ../../../../LICENSE .",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
