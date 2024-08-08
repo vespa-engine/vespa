@@ -17,7 +17,6 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
-import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -193,30 +192,15 @@ public class SchemaDocument implements DocumentManager {
     public static ParseResult parseContent(ParseContext context) {
         CharSequence sequence = context.content();
 
-        SchemaParser parserStrict = new SchemaParser(context.logger(), context.fileURI(), sequence);
-        parserStrict.setParserTolerant(false);
-
         ArrayList<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
+        SchemaParser parserFaultTolerant = new SchemaParser(context.fileURI(), sequence);
 
         try {
-            parserStrict.Root();
+            parserFaultTolerant.Root();
         } catch (ParseException e) {
-
-            Node.TerminalNode node = e.getToken();
-
-            Range range = CSTUtils.getNodeRange(node);
-            String message = e.getMessage();
-
-            diagnostics.add(new SchemaDiagnostic.Builder()
-                .setRange(range)
-                .setMessage(message)
-                .setSeverity(DiagnosticSeverity.Error)
-                .build());
-
-
+            // Ignore, marked by "Dirty Node"
         } catch (IllegalArgumentException e) {
-            // Complex error, invalidate the whole document
-
+            // Some internal error from config-model Parsed*, invalidate whole document.
             diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(
                     new Range(
@@ -226,25 +210,12 @@ public class SchemaDocument implements DocumentManager {
                 )
                 .setMessage(e.getMessage())
                 .setSeverity(DiagnosticSeverity.Error)
-                .build()
-            );
-            return ParseResult.parsingFailed(diagnostics);
-        }
-
-        SchemaParser parserFaultTolerant = new SchemaParser(context.fileURI(), sequence);
-        try {
-            parserFaultTolerant.Root();
-        } catch (ParseException e) {
-            // Ignore
-        } catch (IllegalArgumentException e) {
-            // Ignore
+                .build());
         }
 
         Node node = parserFaultTolerant.rootNode();
 
         var tolerantResult = parseCST(node, context);
-
-        context.logger().println("After parseCST, present: " + tolerantResult.CST().isPresent());
 
         diagnostics.addAll(InheritanceResolver.resolveInheritances(context));
 
@@ -269,13 +240,9 @@ public class SchemaDocument implements DocumentManager {
         return new ParseResult(diagnostics, tolerantResult.CST());
     }
 
-    private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {
-
-
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
+    private static void traverseCST(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
-            SchemaNode indexingNode = parseIndexingScript(node, context, ret);
+            SchemaNode indexingNode = parseIndexingScript(node, context, diagnostics);
             if (indexingNode != null) {
                 node.addChild(indexingNode);
             }
@@ -286,18 +253,16 @@ public class SchemaDocument implements DocumentManager {
             // String nodeString = node.get(0).get(0).getText();
             // Position rankExpressionStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
 
-            SchemaRankExpressionParser.embedCST(context, node, ret);
+            SchemaRankExpressionParser.embedCST(context, node, diagnostics);
         }
 
         for (Identifier identifier : context.identifiers()) {
-            ret.addAll(identifier.identify(node));
+            diagnostics.addAll(identifier.identify(node));
         }
 
         for (int i = 0; i < node.size(); ++i) {
-            ret.addAll(traverseCST(node.get(i), context));
+            traverseCST(node.get(i), context, diagnostics);
         }
-
-        return ret;
     }
 
     public static ParseResult parseCST(Node node, ParseContext context) {
@@ -307,14 +272,14 @@ public class SchemaDocument implements DocumentManager {
         SchemaNode CST = new SchemaNode(node);
         ArrayList<Diagnostic> errors = new ArrayList<>();
         try {
-            errors = traverseCST(CST, context);
+            traverseCST(CST, context, errors);
         } catch(Exception ex) {
             ex.printStackTrace(context.logger());
         }
         return new ParseResult(errors, Optional.of(CST));
     }
 
-    private static SchemaNode parseIndexingScript(SchemaNode indexingElmNode, ParseContext context, ArrayList<Diagnostic> diagnostics) {
+    private static SchemaNode parseIndexingScript(SchemaNode indexingElmNode, ParseContext context, List<Diagnostic> diagnostics) {
         SubLanguageData script = indexingElmNode.getILScript();
         if (script == null) return null;
 
@@ -323,7 +288,7 @@ public class SchemaDocument implements DocumentManager {
         IndexingParser parser = new IndexingParser(context.logger(), context.fileURI(), sequence);
         parser.setParserTolerant(false);
 
-        Position scriptStart = StringUtils.positionAddOffset(context.content(), indexingStart, script.leadingStripped());
+        Position scriptStart = new Position(indexingStart.getLine(), indexingStart.getCharacter() + script.leadingStripped());
 
         try {
             var expression = parser.root();

@@ -241,12 +241,12 @@ public class SchemaIndex {
      * Will not search inheritance graphs.
      */
     private Optional<Symbol> findSymbolInConcreteScope(Symbol scope, SymbolType type, String shortIdentifier) {
-        List<Symbol> match = symbolDefinitions.get(type)
-                       .stream()
-                       .filter(symbolDefinition -> scope.equals(symbolDefinition.getScope()) && symbolDefinition.getShortIdentifier().equals(shortIdentifier))
-                       .toList();
-        if (match.isEmpty()) return Optional.empty();
-        return Optional.of(match.get(0));
+        for (Symbol symbolDefinition : symbolDefinitions.get(type)) {
+            if (!symbolDefinition.getShortIdentifier().equals(shortIdentifier)) continue;
+            if (!scope.equals(symbolDefinition.getScope())) continue;
+            return Optional.of(symbolDefinition);
+        }
+        return Optional.empty();
     }
 
 

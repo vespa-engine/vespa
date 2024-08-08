@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -107,21 +108,19 @@ public class SchemaRankExpressionParser {
 
         String preString = node.getText().substring(0, offset);
 
-        long numberOfNewLines = preString.chars().filter(ch -> ch == '\n').count();
+        int numberOfNewLines = (int)preString.chars().filter(ch -> ch == '\n').count();
 
-        if (numberOfNewLines > 0) {
-            offset = preString.length() - preString.lastIndexOf('\n');
-        }
+        offset = preString.length() - preString.lastIndexOf('\n') - 1;
 
-        Position expressionOfffset = new Position(
-            (int)numberOfNewLines,
+        Position expressionOffset = new Position(
+            numberOfNewLines,
             offset
         );
 
         return new ExpressionMetaData(
             isMultiline,
             inherits,
-            expressionOfffset,
+            expressionOffset,
             preString
         );
     }
@@ -151,45 +150,13 @@ public class SchemaRankExpressionParser {
         }
     }
 
-    static SchemaNode parseRankingExpression(ParseContext context, SchemaNode node, Position expressionOffset, ArrayList<Diagnostic> diagnostics) {
+    static SchemaNode parseRankingExpression(ParseContext context, SchemaNode node, Position expressionOffset, List<Diagnostic> diagnostics) {
         String expressionString = node.getRankExpressionString();
 
         Position expressionStart = CSTUtils.addPositions(node.getRange().getStart(), expressionOffset);
         
         if (expressionString == null)return null;
         CharSequence sequence = expressionString;
-
-        //RankingExpressionParser parser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
-        //parser.setParserTolerant(false);
-
-        //try {
-        //    if (node.containsExpressionData()) {
-        //        parser.expression();
-        //    } else {
-        //        parser.featureList();
-        //    }
-
-        //    return new SchemaNode(parser.rootNode(), expressionStart);
-        //} catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
-
-        //    Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
-        //    
-        //    range = CSTUtils.addPositionToRange(expressionStart, range);
-
-        //    diagnostics.add(new SchemaDiagnostic.Builder()
-        //            .setRange(range)
-        //            .setMessage(pe.getMessage())
-        //            .setSeverity(DiagnosticSeverity.Error)
-        //            .build());
-
-        //} catch(IllegalArgumentException ex) {
-        //    // TODO: test this
-        //    diagnostics.add(new SchemaDiagnostic.Builder()
-        //            .setRange(node.getRange())
-        //            .setMessage(ex.getMessage())
-        //            .setSeverity(DiagnosticSeverity.Error)
-        //            .build());
-        //}
 
         RankingExpressionParser tolerantParser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
         tolerantParser.setParserTolerant(true);
@@ -200,29 +167,20 @@ public class SchemaRankExpressionParser {
             } else {
                 tolerantParser.featureList();
             }
-
-            //return new SchemaNode(tolerantParser.rootNode(), expressionStart);
         } catch (ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
             // Ignore
-            context.logger().println("Parse Exception: " + pe.getMessage());
         } catch (IllegalArgumentException ex) {
             // Ignore
-            context.logger().println("Illegal Argument: " + ex.getMessage());
         }
 
         if (tolerantParser.rootNode() == null) return null;
         return new SchemaNode(tolerantParser.rootNode(), expressionStart);
     }
 
-    private static SchemaNode tokenFromRawText(ParseContext context, SchemaNode node, TokenType type, String text, int start, int end) {
+    private static SchemaNode tokenFromRawText(ParseContext context, SchemaNode node, TokenType type, String text, Range nodeRange) {
 
-        Position startPos = StringUtils.positionAddOffset(context.content(), node.getRange().getStart(), start);
-        Position endPos = StringUtils.positionAddOffset(context.content(), node.getRange().getStart(), end);
-
-        Range range = new Range(startPos, endPos);
-        
         SchemaNode ret = new SchemaNode(
-            range,
+            nodeRange,
             text,
             type.toString().toUpperCase() + " [CUSTOM LANGUAGE]"
         );
@@ -247,33 +205,36 @@ public class SchemaRankExpressionParser {
         String subString = text.substring(startSearch, endSearch);
         int leadingSplitPos = 0;
         while (
-            skipCharacters.contains(subString.charAt(leadingSplitPos)) &&
-            leadingSplitPos < subString.length() - 1
+            leadingSplitPos < subString.length() - 1 &&
+            skipCharacters.contains(subString.charAt(leadingSplitPos))
         ) {
             leadingSplitPos++;
         }
 
         int trailingSplitPos = subString.length() - 1;
         while (
-            skipCharacters.contains(subString.charAt(trailingSplitPos - 1)) &&
-            trailingSplitPos > 0
+            trailingSplitPos > 0 &&
+            skipCharacters.contains(subString.charAt(trailingSplitPos - 1))
         ) {
             trailingSplitPos--;
         }
 
-        subString = subString.substring(leadingSplitPos, trailingSplitPos);
-        Position subStringBeginPos = StringUtils.positionAddOffset(context.content(), node.getRange().getStart(), startSearch);
+        // if no whitespace after identifier
+        if (!skipCharacters.contains(subString.charAt(trailingSplitPos)))++trailingSplitPos;
 
+        subString = subString.substring(leadingSplitPos, trailingSplitPos);
+
+        int line = node.getRange().getStart().getLine();
+        int character = node.getRange().getStart().getCharacter();
         Range range = new Range(
-            StringUtils.positionAddOffset(context.content(), subStringBeginPos, leadingSplitPos),
-            StringUtils.positionAddOffset(context.content(), subStringBeginPos, trailingSplitPos)
+            new Position(line, character + startSearch + leadingSplitPos),
+            new Position(line, character + startSearch + trailingSplitPos)
         );
 
         String identifierString = TokenType.IDENTIFIER_WITH_DASH.toString().toUpperCase() + " [CUSTOM LANGUAGE]";
 
         SchemaNode child = new SchemaNode(range, subString, identifierString);
         SchemaNode parent = new SchemaNode(range, subString, "identifierWithDashStr [CUSTOM LANGUAGE]");
-
         
         child.setSimulatedASTClass(IDENTIFIER_WITH_DASH.class);
         parent.setSimulatedASTClass(identifierWithDashStr.class);
@@ -301,25 +262,30 @@ public class SchemaRankExpressionParser {
         int charPosition = metaData.preText().indexOf(searchChar, firstTokenString.length());
 
         if (!metaData.inherits()) {
-            children.add(tokenFromRawText(context, node, simplifiedType, firstTokenString, 0, firstTokenString.length()));
+            Position startPosition = node.getRange().getStart();
+            Position endPosition = new Position(startPosition.getLine(), startPosition.getCharacter() + firstTokenString.length());
+            children.add(tokenFromRawText(context, node, simplifiedType, firstTokenString, new Range(startPosition, endPosition)));
 
         } else {
             int spacePos = firstTokenString.indexOf(' ');
+            Position startPosition = node.getRange().getStart();
+            Position endPosition = new Position(startPosition.getLine(), startPosition.getCharacter() + spacePos);
             children.add(tokenFromRawText(
                 context,
                 node,
                 simplifiedType,
                 firstTokenString.substring(0, spacePos),
-                0,
-                spacePos
+                new Range(startPosition, endPosition)
             ));
             children.add(tokenFromRawText(
                 context,
                 node,
                 TokenType.INHERITS,
                 firstTokenString.substring(spacePos + 1, firstTokenString.length()),
-                spacePos + 1,
-                firstTokenString.length()
+                new Range(
+                    new Position(endPosition.getLine(), endPosition.getCharacter() + 1), 
+                    new Position(endPosition.getLine(), endPosition.getCharacter() + 1 + "inherits".length())
+                )
             ));
 
             // We know at between the inherits and the charPosition it will be an IdentifierWithDashStr
@@ -334,12 +300,16 @@ public class SchemaRankExpressionParser {
             children.add(inheritsIdentifierNode);
         }
 
-        children.add(tokenFromRawText(context, node, charTokenType, "" + searchChar, charPosition, charPosition + 1));
+
+        Position startPos = CSTUtils.addPositions(node.getRange().getStart(), metaData.expressionOffset());
+        Position endPos = new Position(startPos.getLine(), startPos.getCharacter() + 1);
+
+        children.add(tokenFromRawText(context, node, charTokenType, "" + searchChar, new Range(startPos, endPos)));
 
         return children;
     }
 
-    static void embedCST(ParseContext context, SchemaNode node, ArrayList<Diagnostic> diagnostics) {
+    static void embedCST(ParseContext context, SchemaNode node, List<Diagnostic> diagnostics) {
         if (!node.containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) return;
 
 
@@ -355,7 +325,10 @@ public class SchemaRankExpressionParser {
         }
 
         if (metaData.multiline()) {
-            newChildren.add(tokenFromRawText(context, node, TokenType.RBRACE, "}", node.getText().length() - 1, node.getText().length()));
+            Position startPos = new Position(node.getRange().getEnd().getLine(), node.getRange().getEnd().getCharacter() - 1);
+            Position endPos = node.getRange().getEnd();
+            Range range = new Range(startPos, endPos);
+            newChildren.add(tokenFromRawText(context, node, TokenType.RBRACE, "}", range));
         }
 
         node.clearChildren();

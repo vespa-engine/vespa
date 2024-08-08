@@ -95,13 +95,9 @@ INJECT SchemaParser:
      * @param linguistics What to use for tokenizing.
      */
     private SubLanguageData newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
-        // Find the CharStream to and set input to this stream, by converting it to a SimpleCharStream - Theodor
-        // SimpleCharStream input = new SimpleCharStream("summary | index"); //lastConsumedToken.getTokenSource();
-
         TokenSource tokS = lastConsumedToken.getTokenSource();
         String inputString = tokS.toString();
         int startSplit = lastConsumedToken.getEndOffset();
-        int endSplit = startSplit;
         int leadingStripped = 0;
 
         if (multiline) {
@@ -136,7 +132,7 @@ INJECT SchemaParser:
             }
         }
         
-        endSplit = lastConsumedToken.getEndOffset();
+        int endSplit = lastConsumedToken.getEndOffset();
 
         inputString = inputString.substring(startSplit, endSplit);
 
