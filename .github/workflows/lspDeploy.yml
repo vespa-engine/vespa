@@ -14,8 +14,6 @@ on:
   push:
     branches:
       - interns/languageserver
-    inputs:
-      version: patch
 
 jobs:
 
