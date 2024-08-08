@@ -200,7 +200,6 @@ public class RankingExpressionCompletion implements CompletionProvider {
     }
 
     private static String buildGroupInsertText(String name, List<FunctionSignature> group) {
-        // first argument keyword
         StringBuilder snippet = new StringBuilder()
             .append(name)
             .append("(");

@@ -1,8 +1,6 @@
 # VSCode extension for Schema Language Server
 Language support for the Vespa Schema language using LSP.
 
-![Demo](https://github.com/vespa-engine/vespa/blob/interns/languageserver/integration/schema-language-server/resources/demo-small.gif)
-
 The extension acts as a client for the Schema Language Server, providing tools for developing Vespa Schema files.
 
 Features:
