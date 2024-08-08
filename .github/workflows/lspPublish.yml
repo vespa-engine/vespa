@@ -1,0 +1,44 @@
+name: Vespa Schema LSP - Deploy extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: choice
+        descirption: Which kind of release is this
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./integration/schema-language-server/clients/vscode
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - run: export MAVEN_OPTS="-Xms128m -Xmx1024m"
+      - run: ./bootstrap.sh java
+        working-directory: ./
+      - run: mvn install --threads 1C
+        working-directory: ./
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+        
+      - name: Download node dependencies
+        run: npm ci
+
+      - name: Publish
+        run: npm run publish
