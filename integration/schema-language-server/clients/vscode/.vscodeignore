@@ -7,4 +7,6 @@ src/**
 **/.eslintrc.json
 **/*.map
 **/*.ts
-out/publish.js
+out/
+node_modules
+esbuild.js
