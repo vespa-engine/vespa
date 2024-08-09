@@ -12,14 +12,13 @@ import com.yahoo.vespa.config.ConnectionPool;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,6 +46,7 @@ public class FileReferenceDownloader {
     private final Duration sleepBetweenRetries;
     private final Duration rpcTimeout;
     private final File downloadDirectory;
+    private final AtomicBoolean shutDown = new AtomicBoolean(false);
 
     FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
@@ -68,8 +68,11 @@ public class FileReferenceDownloader {
         int retryCount = 0;
         Connection connection = connectionPool.getCurrent();
         do {
-            backoff(retryCount, end);
+            if (retryCount > 0)
+                backoff(retryCount, end);
 
+            if (shutDown.get())
+                return;
             if (FileDownloader.fileReferenceExists(fileReference, downloadDirectory))
                 return;
             if (startDownloadRpc(fileReferenceDownload, retryCount, connection))
@@ -87,15 +90,18 @@ public class FileReferenceDownloader {
     }
 
     private void backoff(int retryCount, Instant end) {
-        if (retryCount > 0) {
-            try {
-                long sleepTime = Math.min(120_000,
-                                          Math.min((long) (Math.pow(2, retryCount)) * sleepBetweenRetries.toMillis(),
-                                                   Duration.between(Instant.now(), end).toMillis()));
-                if (sleepTime > 0) Thread.sleep(sleepTime);
-            } catch (InterruptedException e) {
-                /* ignored */
-            }
+        try {
+            long sleepTime = Math.min(120_000,
+                                      Math.min((long) (Math.pow(2, retryCount)) * sleepBetweenRetries.toMillis(),
+                                               Duration.between(Instant.now(), end).toMillis()));
+            if (sleepTime <= 0) return;
+
+            var endSleep = Instant.now().plusMillis(sleepTime);
+            do {
+                Thread.sleep(Math.min(100, sleepTime));
+            } while (Instant.now().isBefore(endSleep) && ! shutDown.get());
+        } catch (InterruptedException e) {
+            /* ignored */
         }
     }
 
@@ -158,7 +164,7 @@ public class FileReferenceDownloader {
             return false;
         } else if (request.returnValues().size() == 0) {
             return false;
-        } else if (!request.checkReturnTypes("is")) { // TODO: Do not hard-code return type
+        } else if (!request.checkReturnTypes("is")) {
             log.log(Level.WARNING, "Invalid return types for response: " + request.errorMessage());
             return false;
         }
@@ -166,17 +172,14 @@ public class FileReferenceDownloader {
     }
 
     public void close() {
+        shutDown.set(true);
         downloadExecutor.shutdown();
         try {
-            downloadExecutor.awaitTermination(30, TimeUnit.SECONDS);
+            if (!downloadExecutor.awaitTermination(30, TimeUnit.SECONDS))
+                log.log(Level.WARNING, "FileReferenceDownloader failed to shutdown within 30 seconds");
         } catch (InterruptedException e) {
             Thread.interrupted(); // Ignore and continue shutdown.
         }
-    }
-
-    private static Set<CompressionType> requireNonEmpty(Set<CompressionType> s) {
-        if (Objects.requireNonNull(s).isEmpty()) throw new IllegalArgumentException("set must be non-empty");
-        return s;
     }
 
 }

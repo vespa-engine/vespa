@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
 
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,9 +53,8 @@ public class FileDownloaderTest {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
             connection = new MockConnection();
             supervisor = new Supervisor(new Transport()).setDropEmptyBuffers(true);
-            fileDownloader = createDownloader(connection, Duration.ofSeconds(1));
+            fileDownloader = createDownloader(connection, Duration.ofMillis(500));
         } catch (IOException e) {
-            e.printStackTrace();
             fail(e.getMessage());
         }
     }
@@ -283,15 +283,13 @@ public class FileDownloaderTest {
                      0.0001);
     }
 
-    private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, String content) {
+    private void receiveFile(FileReference fileReference, String filename, Type type, String content) {
         receiveFile(fileReference, filename, type, Utf8.toBytes(content));
     }
 
-    private void receiveFile(FileReference fileReference, String filename,
-                             FileReferenceData.Type type, byte[] content) {
+    private void receiveFile(FileReference fileReference, String filename, Type type, byte[] content) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
-        FileReceiver.Session session =
-                new FileReceiver.Session(downloadDir, 1, fileReference, type, gzip, filename, content.length);
+        var session = new FileReceiver.Session(downloadDir, 1, fileReference, type, gzip, filename, content.length);
         session.addPart(0, content);
         File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
         fileDownloader.downloads().completedDownloading(fileReference, file);
