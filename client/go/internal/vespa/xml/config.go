@@ -75,14 +75,28 @@ type Services struct {
 }
 
 type Container struct {
-	Root  xml.Name `xml:"container"`
-	ID    string   `xml:"id,attr"`
-	Nodes Nodes    `xml:"nodes"`
+	Root    xml.Name `xml:"container"`
+	ID      string   `xml:"id,attr"`
+	Nodes   Nodes    `xml:"nodes"`
+	Clients Clients  `xml:"clients"`
 }
 
 type Content struct {
 	ID    string `xml:"id,attr"`
 	Nodes Nodes  `xml:"nodes"`
+}
+
+type Clients struct {
+	Client []Client `xml:"client"`
+}
+
+type Client struct {
+	Id          string      `xml:"id,attr"`
+	Certificate Certificate `xml:"certificate"`
+}
+
+type Certificate struct {
+	File string `xml:"file,attr"`
 }
 
 type Nodes struct {
@@ -97,6 +111,17 @@ type Resources struct {
 }
 
 func (s Services) String() string { return s.rawXML.String() }
+
+// Reads file paths from services.xml
+func (s Services) CertPaths() []string {
+	var certificates []string
+	for _, container := range s.Container {
+		for _, client := range container.Clients.Client {
+			certificates = append(certificates, client.Certificate.File)
+		}
+	}
+	return certificates
+}
 
 // Replace replaces any elements of name found under parentName with data.
 func (s *Services) Replace(parentName, name string, data interface{}) error {

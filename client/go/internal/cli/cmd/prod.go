@@ -165,7 +165,12 @@ $ vespa prod deploy`,
 				AuthorEmail: options.authorEmail,
 				SourceURL:   options.sourceURL,
 			}
-			build, err := vespa.Submit(deployment, submission)
+
+			servicesXML, err := readServicesXML(pkg)
+			if err != nil {
+				return fmt.Errorf("Error reading services.xml: %w", err)
+			}
+			build, err := vespa.Submit(deployment, submission, servicesXML.CertPaths())
 			if err != nil {
 				return fmt.Errorf("could not deploy application: %w", err)
 			} else {

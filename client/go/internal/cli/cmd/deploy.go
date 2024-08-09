@@ -81,8 +81,15 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				return err
 			}
 			var result vespa.PrepareResult
+			var certPaths []string
+			servicesXML, err := readServicesXML(pkg)
+			if err != nil {
+				certPaths = []string{}
+			} else {
+				certPaths = servicesXML.CertPaths()
+			}
 			err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
-				result, err = vespa.Deploy(opts)
+				result, err = vespa.Deploy(opts, certPaths)
 				return err
 			})
 			if err != nil {

@@ -334,13 +334,13 @@ func Deactivate(deployment DeploymentOptions) error {
 }
 
 // Deploy deploys an application.
-func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
+func Deploy(deployment DeploymentOptions, certPaths []string) (PrepareResult, error) {
 	var (
 		u   *url.URL
 		err error
 	)
 	if deployment.Target.IsCloud() {
-		if err := checkDeploymentOpts(deployment); err != nil {
+		if err := checkDeploymentOpts(deployment, certPaths); err != nil {
 			return PrepareResult{}, err
 		}
 		if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
@@ -373,11 +373,11 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 	return nil
 }
 
-func Submit(opts DeploymentOptions, submission Submission) (int64, error) {
+func Submit(opts DeploymentOptions, submission Submission, certPaths []string) (int64, error) {
 	if !opts.Target.IsCloud() {
 		return 0, fmt.Errorf("%s: deploy is unsupported by %s target", opts, opts.Target.Type())
 	}
-	if err := checkDeploymentOpts(opts); err != nil {
+	if err := checkDeploymentOpts(opts, certPaths); err != nil {
 		return 0, err
 	}
 	submitURL := opts.Target.Deployment().System.SubmitURL(opts.Target.Deployment())
@@ -449,8 +449,8 @@ func deployServiceDo(request *http.Request, timeout time.Duration, opts Deployme
 	return s.Do(request, timeout)
 }
 
-func checkDeploymentOpts(opts DeploymentOptions) error {
-	if opts.Target.Type() == TargetCloud && !opts.ApplicationPackage.HasCertificate() {
+func checkDeploymentOpts(opts DeploymentOptions, certPaths []string) error {
+	if opts.Target.Type() == TargetCloud && !opts.ApplicationPackage.HasCertificate(certPaths) {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
 	if !opts.Target.IsCloud() && !opts.Version.IsZero() {
