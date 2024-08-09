@@ -17,6 +17,10 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
+/**
+ * For completing types for a field, as well as type parameters in tensor types. 
+ * Field types include user defined structs.
+ */
 public class TypeCompletion implements CompletionProvider {
 
     private TokenType[] compoundTypes = {

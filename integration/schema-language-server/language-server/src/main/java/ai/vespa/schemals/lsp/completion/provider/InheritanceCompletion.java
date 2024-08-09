@@ -20,7 +20,7 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
- * InheritanceCompletionProvider
+ * For completing user defined identifiers after "inherits".
  */
 public class InheritanceCompletion implements CompletionProvider {
     private Optional<SchemaNode> match(EventCompletionContext context) {

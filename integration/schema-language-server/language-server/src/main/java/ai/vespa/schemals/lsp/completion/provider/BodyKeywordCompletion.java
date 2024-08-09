@@ -3,12 +3,17 @@ package ai.vespa.schemals.lsp.completion.provider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
+import ai.vespa.schemals.lsp.hover.SchemaHover;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RootRankProfile;
 import ai.vespa.schemals.parser.ast.annotationBody;
@@ -28,13 +33,16 @@ import ai.vespa.schemals.parser.ast.sortingElm;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
-import ai.vespa.schemals.parser.ast.summaryInField;
 import ai.vespa.schemals.parser.ast.summaryInFieldLong;
 import ai.vespa.schemals.parser.ast.weightedsetElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class BodyKeywordCompletion implements CompletionProvider {
+    private static MarkupContent extractFirstParagraph(MarkupContent content) {
+        return content;
+    }
+
     // Currently key is the classLeafIdentifierString of a node with a body
     private static Map<Class<?>, List<CompletionItem>> bodyKeywordSnippets = new HashMap<>() {{
         put(rootSchema.class, List.of(
@@ -174,7 +182,16 @@ public class BodyKeywordCompletion implements CompletionProvider {
         put(indexInsideField.class, FixedKeywordBodies.INDEX.completionItems());
         put(indexOutsideDoc.class, FixedKeywordBodies.INDEX.completionItems());
 
-
+        // compute docs
+        for (var entry : this.entrySet()) {
+            for (CompletionItem item : entry.getValue()) {
+                String markdownKey = "schema/" + item.getLabel().toUpperCase().replaceAll("-", "_");
+                Optional<Hover> hover = SchemaHover.getFileHoverInformation(markdownKey, new Range());
+                if (hover.isPresent() && hover.get().getContents().isRight()) {
+                    item.setDocumentation(hover.get().getContents().getRight());
+                }
+            }
+        }
     }};
 
     @Override

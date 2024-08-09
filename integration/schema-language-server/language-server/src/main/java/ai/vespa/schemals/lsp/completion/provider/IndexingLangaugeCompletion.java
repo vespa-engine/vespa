@@ -32,10 +32,11 @@ public class IndexingLangaugeCompletion implements CompletionProvider {
 	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         if (matchCommon(context)) {
             return List.of(
+                // The sorting prefix tells the client how to prioritize the different suggestions
                 CompletionUtils.withSortingPrefix("a", CompletionUtils.constructBasic("attribute")),
                 CompletionUtils.withSortingPrefix("a", CompletionUtils.constructBasic("index")),
                 CompletionUtils.withSortingPrefix("a", CompletionUtils.constructBasic("summary")),
-                CompletionUtils.withSortingPrefix("a", CompletionUtils.constructBasic("input")),
+                CompletionUtils.withSortingPrefix("b", CompletionUtils.constructBasic("input")),
                 CompletionUtils.withSortingPrefix("b", CompletionUtils.constructBasic("set_language")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("embed")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("hash")),

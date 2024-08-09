@@ -20,7 +20,9 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 
 /**
  * InheritsCompletionProvider 
- * Completion of the text " inherits " with choice on what to inherit
+ * Completion of the text " inherits " with <b>choice</b> on what to inherit. Note that choice is different from 
+ * completion, choices are embedded in a snippet, while {@link InheritanceCompletion} takes care of standalone 
+ * completion of these same items.
  */
 public class InheritsCompletion implements CompletionProvider {
 	private Optional<SchemaNode> match(EventCompletionContext context) {

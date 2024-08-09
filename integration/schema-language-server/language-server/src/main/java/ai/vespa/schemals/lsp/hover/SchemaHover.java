@@ -324,7 +324,7 @@ public class SchemaHover {
         return hoverInfo.get();
     }
 
-    private static Optional<Hover> getFileHoverInformation(String markdownKey, Range range) {
+    public static Optional<Hover> getFileHoverInformation(String markdownKey, Range range) {
         // avoid doing unnecessary IO operations
         if (markdownContentCache.containsKey(markdownKey)) {
             Optional<MarkupContent> mdContent = markdownContentCache.get(markdownKey);

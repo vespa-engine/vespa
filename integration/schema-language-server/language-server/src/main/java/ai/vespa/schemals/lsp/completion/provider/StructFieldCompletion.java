@@ -22,7 +22,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  * StructFieldProvider
  * Responsible for providing the "struct-field" suggestion itself 
  * (not necessarily stuff inside struct-field"). A bit confusing because struct-fields can be nested.
- * The rest of the suggestions for struct-field body is in {@link BodyKeywordCompletion} because they are static.
+ * The rest of the suggestions for struct-field body are in {@link BodyKeywordCompletion} because they are static.
  */
 public class StructFieldCompletion implements CompletionProvider {
 

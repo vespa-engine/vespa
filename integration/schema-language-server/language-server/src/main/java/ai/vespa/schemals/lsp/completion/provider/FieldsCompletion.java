@@ -23,6 +23,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * FieldsCompletionProvider
+ * For completing user defined fields in a fieldset.
  */
 public class FieldsCompletion implements CompletionProvider {
 

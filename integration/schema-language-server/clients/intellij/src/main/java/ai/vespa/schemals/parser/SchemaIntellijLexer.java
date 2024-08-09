@@ -62,6 +62,8 @@ public class SchemaIntellijLexer extends LexerBase {
             case DIVERSITY:
             case DOCUMENT:
             case DOCUMENT_SUMMARY:
+            case EXPRESSION_ML:
+            case EXPRESSION_SL:
             case FIELD:
             case FIELDS:
             case FIELDSET:

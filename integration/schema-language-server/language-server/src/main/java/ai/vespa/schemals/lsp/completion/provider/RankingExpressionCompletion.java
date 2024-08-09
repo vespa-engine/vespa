@@ -33,7 +33,8 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
  * RankingExpressionCompletion
- * Somewhat basic completion of user defined function names and builtin ranking features and their properties
+ * Completion of user defined function names and builtin ranking features and their properties.
+ * TODO: more context aware completion, per now the completions are the same everywhere in a ranking expression or feature list.
  */
 public class RankingExpressionCompletion implements CompletionProvider {
     /**
