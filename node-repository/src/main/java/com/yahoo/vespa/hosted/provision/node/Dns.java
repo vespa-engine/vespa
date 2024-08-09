@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -24,16 +25,22 @@ public class Dns {
     public enum RecordType { FORWARD, PUBLIC_FORWARD, REVERSE }
 
     /** Returns the set of DNS record types for a host and its children and the given version (ipv6), host type, etc. */
-    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave) {
+    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave, boolean allowReverse) {
         if (cloudName == CloudName.AWS || cloudName == CloudName.GCP) {
             if (enclave) {
                 return ipVersion.is6() ?
                        EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
                        EnumSet.noneOf(RecordType.class);
             } else {
-                return hostType == confighost && ipVersion.is6() ?
-                       EnumSet.of(RecordType.FORWARD, RecordType.REVERSE, RecordType.PUBLIC_FORWARD) :
-                       EnumSet.of(RecordType.FORWARD, RecordType.REVERSE);
+                Set<RecordType> types = new HashSet<>();
+                types.add(RecordType.FORWARD);
+                if (hostType == confighost && ipVersion.is6()) {
+                    types.add(RecordType.PUBLIC_FORWARD);
+                }
+                if (allowReverse) {
+                    types.add(RecordType.REVERSE);
+                }
+                return types;
             }
         }
 
@@ -53,7 +60,8 @@ public class Dns {
     public static void verify(String hostname, String ipAddress, NodeType nodeType, NameResolver resolver,
                                  CloudAccount cloudAccount, Zone zone) {
         IP.Version version = IP.Version.fromIpAddress(ipAddress);
-        Set<RecordType> recordTypes = recordTypesFor(version, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone));
+        boolean allowReverse = !hostname.endsWith(".vespa-cloud.net");
+        Set<RecordType> recordTypes = recordTypesFor(version, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone), allowReverse);
 
         if (recordTypes.contains(RecordType.FORWARD)) {
             NameResolver.RecordType recordType = version.is6() ? NameResolver.RecordType.AAAA : NameResolver.RecordType.A;
