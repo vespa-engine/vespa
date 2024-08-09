@@ -7,6 +7,48 @@ https://microsoft.github.io/language-server-protocol/
 
 This means that the bulk of the functionality lies inside /language-server. The clients are merely small bootstrapping wrappers for creating an extension/plugin and launching the language-server.
 
+## File Structure
+
+### ./clients
+Holds our client implementations. Currently IntelliJ and VSCode. They contain the code for building, running and packaging the plugins.
+
+### ./language-server
+Maven Project containing the language server implementation. 
+
+- [./ccc](./language-server/src/main/ccc/): CongoCC parsers. These include the Schema, Indexing language and Ranking expressions parsers, ported from JavaCC to CongoCC.
+The CongoCC Maven plugin generates Java classes from the parsers and places them in [./target/generated-sources/ccc](./language-server/target/generated-sources/ccc/).
+
+- [./python](./language-server/src/main/python/): Python code from fetching documentation from the Vespa documentation GitHub repo and placing Markdown files in
+[./target/generated-resources](./language-server/target/generated-resources/)
+
+- [./java/ai/vespa/schemals](./language-server/src/main/java/ai/vespa/schemals/): The actual language server logic.
+    Files in the root of this directory contains the code for setting up the language server. It is launched by SchemaLSLauncher, 
+    while SchemaLanguageServer handles initialize and setting up capabilities. The other files are wrappers for handling incoming and
+    outgoing requests by implementing some interfaces from LSP.
+
+    - [/common](./language-server/src/main/java/ai/vespa/schemals/common/): Utilities for working with files, Strings, building
+    diagnostics, and creating workspace edits.
+    - [/context](./language-server/src/main/java/ai/vespa/schemals/context/): Context classes for different LSP events. 
+    When an LSP request is handled, an object inheriting EventContext is created. The object contains references to the global 
+    data structures providing the state of the application. The context object may also contain information from the LSP request parameters.
+    - [/index](./language-server/src/main/java/ai/vespa/schemals/index/): Code related to storing and looking up symbols. 
+    The SchemaIndex is mainly responsible for this, but outsources some implementations to FieldIndex (for field symbols only) and InheritanceGraph. 
+    The SchemaIndex is a workspace-wide object, meaning that it stores symbols across different files. This directory also contains the Symbol class, 
+    a model of a user defined symbol.
+    - [/lsp](./language-server/src/main/java/ai/vespa/schemals/lsp/): Code providing LSP-specific functionality to be handled after a document is parsed. 
+    That is, virtually all requests except textDocument/didChange and textDocument/didOpen.
+    The subdirectories gets their names from the LSP specification. The class inside with the same name, but with a "Schema" prefix provides the entry
+    point for handling each request in the form of a static method receiving a context object and returning a result.
+    - [/parser](./language-server/src/main/java/ai/vespa/schemals/parser/): Package name matching the package of the CongoCC generated parser. 
+    Currently only holds a record that is used by the Schema Parser to capture the Indexing and Ranking expression sublanguages.
+    - [/schemadocument](./language-server/src/main/java/ai/vespa/schemals/schemadocument/): Code doing the heavy lifting related to parsing, identification of and resolving symbols.
+    The entry points for these are in SchemaDocument (for .sd-files) and RankProfileDocument (for .profile-files). 
+    When a text document is changes, these classes will create parser objects from the CongoCC parsers, parse the content, 
+    and traverse the resulting CST to identify, register and resolve symbols and other situations. 
+    Before each parsing, they will call SchemaIndex to clear symbols belonging to the relevant document, and during the traversal process they will re-register symbols.
+    - [/tree](./language-server/src/main/java/ai/vespa/schemals/tree/): Code containing utils for working with the CST, such as finding nodes at a 
+    given position and checking different properties. Also contains the SchemaNode class, which represents a node in the CST.
+
 ## Basic Principles
 The server is launched as an executable by the client that wants to use it. It will then run as a separate process, and they will communicate using standard input/output.
 Upon initialization, the server and client will exchange 'capabilities'. The server defines the subset of the LSP specification it supports, and the client does the same.
