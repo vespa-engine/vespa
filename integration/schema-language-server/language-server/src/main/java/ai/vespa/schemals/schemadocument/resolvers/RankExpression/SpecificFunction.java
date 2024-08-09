@@ -34,4 +34,8 @@ public class SpecificFunction {
     }
 
     public FunctionSignature getSignature() { return this.signature; }
+
+    public void setProperty(String property) {
+        this.property = Optional.of(property);
+    }
 };

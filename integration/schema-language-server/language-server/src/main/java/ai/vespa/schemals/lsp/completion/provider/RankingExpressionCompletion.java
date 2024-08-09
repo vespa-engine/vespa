@@ -7,11 +7,13 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.Hover;
 
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.completion.utils.CompletionUtils;
+import ai.vespa.schemals.lsp.hover.SchemaHover;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
@@ -52,6 +54,14 @@ public class RankingExpressionCompletion implements CompletionProvider {
                 signatureStr.append(")");
                 CompletionItem item = CompletionUtils.constructFunction(name, signatureStr.toString(), "builtin");
                 item.setInsertText(buildGroupInsertText(name, group));
+
+                SpecificFunction specificFunction = new SpecificFunction((GenericFunction)entry.getValue(), group.get(0));
+                Optional<Hover> hover = SchemaHover.getRankFeatureHover(specificFunction);
+
+                if (hover.isPresent() && hover.get().getContents().isRight()) {
+                    item.setDocumentation(hover.get().getContents().getRight());
+                }
+
                 this.add(item);
             }
             addedNames.add(name);
@@ -150,13 +160,25 @@ public class RankingExpressionCompletion implements CompletionProvider {
             return List.of();
         }
 
+        SpecificFunction specificFunction = functionSignature.get();
         FunctionSignature signature = functionSignature.get().getSignature();
 
         List<CompletionItem> result = new ArrayList<>();
 
         for (String prop : signature.getProperties()) {
             if (prop.isBlank()) continue;
-            result.add(CompletionUtils.constructBasic(prop));
+            CompletionItem item = CompletionUtils.constructBasic(prop);
+
+            specificFunction.setProperty(prop);
+
+            Optional<Hover> documentationHover = SchemaHover.getRankFeatureHover(specificFunction);
+
+            if (documentationHover.isPresent() && documentationHover.get().getContents().isRight()) {
+                item.setDocumentation(documentationHover.get().getContents().getRight());
+            }
+
+            result.add(item);
+
         }
         return result;
     }

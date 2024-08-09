@@ -20,6 +20,7 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.lsp.completion.SchemaCompletion;
 import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
@@ -265,16 +266,25 @@ public class SchemaHover {
         if (functionSignature.isEmpty()) {
             return Optional.empty();
         }
+        Optional<Hover> result = getRankFeatureHover(functionSignature.get());
+        result.ifPresent(hover -> hover.setRange(node.getRange()));
+        return result;
+    }
 
-        Optional<Hover> result = getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(), node.getRange());
+    /**
+     * Public interface to be used by {@link SchemaCompletion}
+     * @param function
+     * @return Hover with empty range
+     * TODO: refactor
+     */
+    public static Optional<Hover> getRankFeatureHover(SpecificFunction function) {
+        Optional<Hover> result = getFileHoverInformation("rankExpression/" + function.getSignatureString(), new Range());
 
         if (result.isPresent()) {
             return result;
         }
 
-        logger.println("LOOKUP: " + functionSignature.get().getSignatureString(true));
-        
-        return getFileHoverInformation("rankExpression/" + functionSignature.get().getSignatureString(true), node.getRange());
+        return getFileHoverInformation("rankExpression/" + function.getSignatureString(true), new Range());
     }
 
     public static Hover getHover(EventPositionContext context) {

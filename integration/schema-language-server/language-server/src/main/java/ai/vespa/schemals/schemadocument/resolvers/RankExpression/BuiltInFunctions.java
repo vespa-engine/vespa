@@ -25,6 +25,7 @@ public class BuiltInFunctions {
         // ==== Query features ====
         put("query", new GenericFunction("query", new FunctionSignature(new SymbolArgument(SymbolType.QUERY_INPUT, "value"))));
         put("term", new GenericFunction("term", new IntegerArgument(), Set.of(
+            "", // empty is not actually allowed, but here for completion
             "significance",
             "weight",
             "connectedness"
@@ -45,7 +46,10 @@ public class BuiltInFunctions {
             new FunctionSignature(List.of(
                 new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE),
                 new StringArgument("key")
-            ), Set.of("weight", "contains"))
+            ), Set.of(
+                "",  // empty not actually allowed but here for completion
+                "weight", 
+                "contains"))
         )));
 
         // TODO: requires you to write attribute(name)
@@ -121,7 +125,11 @@ public class BuiltInFunctions {
         put("fieldTermMatch", new GenericFunction("fieldTermMatch", new FunctionSignature(List.of(
             new FieldArgument(FieldType.STRING),
             new IntegerArgument()
-        ), Set.of("firstPosition", "occurences"))));
+        ), Set.of(
+            "", // empty not actually allowed, but here for completion
+            "firstPosition", 
+            "occurences"
+        ))));
 
         put("matchCount", new GenericFunction("mathCount", new FunctionSignature(new FieldArgument(FieldType.STRING, FieldArgument.IndexAttributeType))));
 
@@ -137,6 +145,7 @@ public class BuiltInFunctions {
             new ExpressionArgument("x"),
             new ExpressionArgument("y")
         ), Set.of( 
+            "", // empty not actually allowed, but here for completion
             "forward",
             "forwardTermPosition",
             "reverse",
@@ -145,6 +154,7 @@ public class BuiltInFunctions {
 
         // ==== Features for idexed multivalue string fields ====
         put("elementCompleteness", new GenericFunction("elementCompleteness", new FunctionSignature(new FieldArgument(), Set.of(
+            "", // empty not actually allowed, but here for completion
             "completeness",
             "fieldCompleteness",
             "queryCompleteness",
@@ -181,7 +191,7 @@ public class BuiltInFunctions {
                 "name"
             ))),
             new FunctionSignature(List.of(new KeywordArgument("label", "dimension"), new LabelArgument("name"))),
-            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "position"), Set.of(
+            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "name"), Set.of(
                 "",
                 "logscale"
             ))
@@ -261,7 +271,7 @@ public class BuiltInFunctions {
                 new KeywordArgument("label", "dimension"),
                 new LabelArgument("name")
             )),
-            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "position"), Set.of(
+            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "name"), Set.of(
                 "",
                 "km",
                 "index",
@@ -279,7 +289,12 @@ public class BuiltInFunctions {
 
         put("distanceToPath", new GenericFunction("distanceToPath", new FunctionSignature(
             new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE),
-            Set.of("distance", "traveled", "product")
+            Set.of(
+                "", // empty not actually allowed, but here for completion
+                "distance", 
+                "traveled", 
+                "product"
+            )
         )));
 
         put("dotProduct", new GenericFunction("dotProduct", new FunctionSignature(List.of(
