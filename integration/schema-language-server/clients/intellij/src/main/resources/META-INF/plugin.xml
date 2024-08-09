@@ -1,0 +1,20 @@
+<idea-plugin>
+  <id>ai.vespa</id>
+  <name>Vespa Schema Language Support</name>
+
+  <vendor>vespa.ai</vendor>
+
+  <description><![CDATA[
+    Language support for Vespa Schema files<br>
+    Using Language Server Protocol
+  ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.ultimate</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="Schema" extensions="sd;profile" implementationClass="ai.vespa.schemals.intellij.SchemaFileType" language="Schema" fieldName="INSTANCE"/>
+
+    <platform.lsp.serverSupportProvider implementation="ai.vespa.schemals.intellij.SchemaLspServerSupportProvider"/>
+    <lang.syntaxHighlighter language="Schema" implementationClass="ai.vespa.schemals.intellij.SchemaSyntaxHighlighter" />
+  </extensions>
+</idea-plugin>

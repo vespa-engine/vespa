@@ -39,13 +39,13 @@ public class ParsedStruct extends ParsedBlock {
         return List.copyOf(resolvedInherits);
     }
 
-    void addField(ParsedField field) {
+    public void addField(ParsedField field) {
         String fieldName = field.name();
         verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
         fields.put(fieldName, field);
     }
 
-    void inherit(String other) {
+    public void inherit(String other) {
         verifyThat(! name().equals(other), "cannot inherit from itself");
         inherited.add(other);
     }

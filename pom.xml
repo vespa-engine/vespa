@@ -142,6 +142,7 @@
         <module>zookeeper-command-line-client</module>
         <module>zookeeper-common</module>
         <module>zookeeper-server</module>
+        <module>integration/schema-language-server/language-server</module>
     </modules>
 
     <properties>

@@ -1,0 +1,85 @@
+schema slack_message {
+    field language type string {
+        indexing: "en" | set_language
+    }
+
+    document slack_message {
+        field message_id type string {
+            indexing: summary | attribute | index
+            match: word
+        }
+
+        field thread_id type string {
+            indexing: summary | attribute | index
+            match: word
+        }
+        
+        field text type string {
+            indexing: summary | index
+            stemming: best
+        }
+
+        field feedback_positive type int {
+            indexing: summary | attribute
+        }
+
+        field feedback_negative type int {
+            indexing: summary | attribute
+        }
+
+    }
+
+    field text_embedding type tensor<float>(x[384]) {
+        indexing: input text | embed embedder | attribute | index
+        attribute {
+            distance-metric: angular
+        }
+    }
+
+    fieldset default {
+        fields: text, thread_id
+    }
+
+    document-summary short-summary {
+        summary text {}
+        summary thread_id {}
+    }
+
+    rank-profile hybrid2 {
+        inputs {
+            query(q) tensor<float>(x[384])
+            query(semantic_weight) double: 0.7
+        }
+
+        function scale(val) {
+            expression: 2 * atan(val / 4) / 3.14159
+        }
+
+       function semantic_text() {
+           expression: cos(distance(field, text_embedding))
+       }
+
+        function scaled_bm25_text() {
+            expression: scale(bm25(text))
+        }
+
+        function normalized_difference(p,n) {
+            expression: if(p==0&&n==0, 0, (p-n)/(p+n))
+        }
+
+        function normalized_difference_feedback() {
+            expression: normalized_difference(attribute(feedback_positive), attribute(feedback_negative))
+        }
+
+        first-phase {
+            expression: (query(semantic_weight) * semantic_text + (1 - query(semantic_weight)) * scaled_bm25_text) * 0.9 + 0.1 * normalized_difference_feedback
+            rank-score-drop-limit: 0.0
+        }
+
+        match-features {
+            scaled_bm25_text
+            semantic_text
+            normalized_difference_feedback
+        }
+    }
+}

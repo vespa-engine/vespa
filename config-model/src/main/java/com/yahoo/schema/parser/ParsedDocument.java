@@ -57,23 +57,23 @@ public class ParsedDocument extends ParsedBlock {
         return result;
     }
 
-    void inherit(String other) { inherited.add(other); }
+    public void inherit(String other) { inherited.add(other); }
 
-    void addField(ParsedField field) {
+    public void addField(ParsedField field) {
         String fieldName = field.name().toLowerCase();
         verifyThat(! docFields.containsKey(fieldName),
                    "Duplicate (case insensitively) " + field + " in document type '" + this.name() + "'");
         docFields.put(fieldName, field);
     }
 
-    void addStruct(ParsedStruct struct) {
+    public void addStruct(ParsedStruct struct) {
         String sName = struct.name();
         verifyThat(! docStructs.containsKey(sName), "already has struct", sName);
         docStructs.put(sName, struct);
         struct.tagOwner(this);
     }
 
-    void addAnnotation(ParsedAnnotation annotation) {
+    public void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
         verifyThat(! docAnnotations.containsKey(annName), "already has annotation", annName);
         docAnnotations.put(annName, annotation);

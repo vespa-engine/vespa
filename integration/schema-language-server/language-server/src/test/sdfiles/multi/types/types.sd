@@ -1,0 +1,149 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search types {
+
+  document types {
+
+    field abyte type byte {
+      indexing: summary | attribute
+    }
+
+    field along type long {
+      indexing: summary | attribute
+    }
+
+    field arrayfield type array<int> {
+      indexing: attribute
+    }
+
+    field setfield type weightedset<string> {
+      indexing: attribute
+      match {
+        token
+      }
+    }
+    field pos type position {
+    }
+
+    field setfield2 type weightedset<string> {
+      indexing: attribute
+      weightedset: remove-if-zero
+      weightedset: create-if-nonexistent
+      rank-type: identity
+      #match {
+      #  token
+      #}
+    }
+
+    field setfield3 type weightedset<string> {
+      weightedset: remove-if-zero
+      indexing: attribute
+      rank-type: identity
+      match {
+        token
+      }
+    }
+
+    field setfield4 type weightedset<string> {
+      weightedset: create-if-nonexistent
+      indexing: attribute
+      match {
+        token
+      }
+    }
+
+    field tagfield type tag {
+      indexing: attribute | summary
+      match {
+        token
+      }
+    }
+    struct sct {
+      field s1 type string {}
+      field s2 type string {}
+    }
+    field structfield type sct {
+    }
+    field structarrayfield type array<sct> {
+    }
+    field stringmapfield type map<string, string> {
+        indexing: index | summary
+    }
+    field intmapfield type map<string, int> {
+
+    }
+    field floatmapfield type map<string, float> {
+
+    }
+    field longmapfield type map<int, long> {
+
+    }
+    field doublemapfield type map<int, double> {
+
+    }
+    field arraymapfield type map<string,array<int>> {
+
+    }
+    #field complexfield type map<array<sct>, map<int,array<float>>> {
+    #}
+    #field wildcardfield type map<int,?> {
+    #}
+    #field wildcardfield2 type map<?,?> {
+    #}
+
+    field arrarr type array<array<array<string>>> {}
+    field maparr type array<map<string, string>> {}
+    field complexarray type array< map<int, array<array<string>>> > {}
+
+    struct mystruct {
+      field bytearr type array<byte>{}
+      field mymap type map<string, string>{}
+      field title type string {}
+      field structfield type string {}
+    }
+
+    field mystructfield type mystruct {}
+    field mystructmap type map<int, mystruct> {}
+    field mystructarr type array<mystruct> {}
+
+    struct folder {
+      field Version                   type int {}
+      field Name                      type string {}
+      field FlagsCounter              type map<string,long> {}
+      field anotherfolder             type folder {}
+    }
+
+
+    field Folders                   type map<int,folder> {}
+
+    field juletre type long {
+      indexing: attribute
+      attribute {
+        fast-search
+      }
+    }
+
+    # Field defined same way as tag
+    field album0 type weightedset<string> {
+      indexing: summary 
+      # This is pointless, but
+      weightedset {
+        create-if-nonexistent
+        remove-if-zero
+      }
+    }
+
+    # Field defined same way as tag    
+    field album1 type weightedset<string> {
+      indexing: attribute | summary 
+      weightedset {
+        create-if-nonexistent
+        remove-if-zero
+      }
+    }
+
+  }
+
+  field other type long {
+    indexing: input along | attribute 
+  }
+}

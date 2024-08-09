@@ -78,13 +78,13 @@ public class ParsedSchema extends ParsedBlock {
     List<ParsedSchema> getAllResolvedInherits() { return List.copyOf(allResolvedInherits.values()); }
     List<RankProfile.Constant> getConstants() { return List.copyOf(constants.values()); }
 
-    void addAnnotation(ParsedAnnotation annotation) {
+    public void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
         verifyThat(! extraAnnotations.containsKey(annName), "already has annotation", annName);
         extraAnnotations.put(annName, annotation);
     }
 
-    void addDocument(ParsedDocument document) {
+    public void addDocument(ParsedDocument document) {
         verifyThat(myDocument == null,
                    "already has", myDocument, "so cannot add", document);
         // TODO - disallow?
@@ -93,65 +93,65 @@ public class ParsedSchema extends ParsedBlock {
         this.myDocument = document;
     }
 
-    void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
+    public void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
 
-    void addDocumentSummary(ParsedDocumentSummary docsum) {
+    public void addDocumentSummary(ParsedDocumentSummary docsum) {
         String dsName = docsum.name();
         verifyThat(! docSums.containsKey(dsName), "already has document-summary", dsName);
         docSums.put(dsName, docsum);
     }
 
-    void addField(ParsedField field) {
+    public void addField(ParsedField field) {
         String fieldName = field.name();
         verifyThat(! extraFields.containsKey(fieldName), "already has field", fieldName);
         extraFields.put(fieldName, field);
     }
 
-    void addFieldSet(ParsedFieldSet fieldSet) {
+    public void addFieldSet(ParsedFieldSet fieldSet) {
         String fsName = fieldSet.name();
         verifyThat(! fieldSets.containsKey(fsName), "already has fieldset", fsName);
         fieldSets.put(fsName, fieldSet);
     }
 
-    void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {
+    public void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {
         importedFields.add(new ImportedField(asFieldName, refFieldName, foregnFieldName));
     }
 
-    void addIndex(ParsedIndex index) {
+    public void addIndex(ParsedIndex index) {
         String idxName = index.name();
         verifyThat(! extraIndexes.containsKey(idxName), "already has index", idxName);
         extraIndexes.put(idxName, index);
     }
 
-    void add(OnnxModel model) {
+    public void add(OnnxModel model) {
         onnxModels.add(model);
     }
 
-    void addRankProfile(ParsedRankProfile profile) {
+    public void addRankProfile(ParsedRankProfile profile) {
         String rpName = profile.name();
         verifyThat(! rankProfiles.containsKey(rpName), "already has rank-profile", rpName);
         rankProfiles.put(rpName, profile);
     }
 
-    void add(RankProfile.Constant constant) {
+    public void add(RankProfile.Constant constant) {
         constants.put(constant.name(), constant);
     }
 
-    void addStruct(ParsedStruct struct) {
+    public void addStruct(ParsedStruct struct) {
         String sName = struct.name();
         verifyThat(! extraStructs.containsKey(sName), "already has struct", sName);
         extraStructs.put(sName, struct);
     }
 
-    void enableRawAsBase64(boolean value) {
+    public void enableRawAsBase64(boolean value) {
         this.rawAsBase64 = value;
     }
 
-    void inherit(String other) { inherited.add(other); }
+    public void inherit(String other) { inherited.add(other); }
 
     void inheritByDocument(String other) { inheritedByDocument.add(other); }
 
-    void setStemming(Stemming value) {
+    public void setStemming(Stemming value) {
         verifyThat((defaultStemming == null) || (defaultStemming == value),
                    "already has stemming", defaultStemming, "cannot also set", value);
         defaultStemming = value;

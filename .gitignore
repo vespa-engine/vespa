@@ -55,3 +55,4 @@ install_manifest.txt
 *.cbp
 !/.copr/Makefile
 !/.buildkite/Makefile
+.vscode
