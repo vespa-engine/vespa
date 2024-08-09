@@ -17,6 +17,7 @@ Features:
 ## Requirements
 The extension requires Java 17 or greater. Upon activation, the extension will look in the following locations in this order for a Java executable:
 
+- PATH environment variable
 - Workspace setting: vespaSchemaLS.javaHome
 - User setting: vespaSchemaLS.javaHome
 - JDK_HOME environment variable
