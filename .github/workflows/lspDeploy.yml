@@ -47,6 +47,8 @@ jobs:
         working-directory: ./integration/schema-language-server/clients/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          VERSION_TYPE: ${{ github.event.inputs.version }}
+        
 
       - name: Publish IntelliJ plugin
         run: |

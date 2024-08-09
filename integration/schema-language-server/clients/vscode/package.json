@@ -69,7 +69,6 @@
     "publish": "npm run compile && node out/publish.js"
   },
   "devDependencies": {
-    "@actions/core": "^1.10.0",
     "@types/hasbin": "^1.2.2",
     "@types/mocha": "^10.0.6",
     "@types/node": "20.x",
