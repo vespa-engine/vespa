@@ -61,16 +61,9 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
         return null;
     }
 
-    console.log("Using java executable: " + javaExecutable);
-
-	const config = vscode.workspace.getConfiguration();
-	const logFile = config.get('vespaSchemaLS.logFile');
-
-	const logArgs = typeof(logFile) === "string" ? ['-t', logFile] : [];
-
 	const serverOptions: ServerOptions = {
 		command: javaExecutable,
-		args: ['-jar', serverPath, ...logArgs],
+		args: ['-jar', serverPath],
 		options: {}
 	};
 
@@ -125,8 +118,6 @@ function showJavaErrorMessage() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Vespa Language Support is active.');
-
 	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
 
     client = createAndStartClient(jarPath);
@@ -144,8 +135,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 export function deactivate() { 
-	console.log('Vespa Language Support is deactivated!');
-
 	if (!client) {
 		return undefined;
 	}

@@ -41,14 +41,6 @@
     "configuration": {
       "title": "Vespa Schema Language Support",
       "properties": {
-        "vespaSchemaLS.logFile": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null,
-          "description": "A file to log to from the language server."
-        },
         "vespaSchemaLS.javaHome": {
           "type": "string",
           "default": "",

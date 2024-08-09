@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "ai.vespa.schemals"
-version = "2.0.0"
+version = File("VERSION").inputStream().readBytes().toString().trim()
 
 repositories {
   mavenCentral()
