@@ -103,7 +103,7 @@
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
         <hamcrest.vespa.version>2.2</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
-        <huggingface.vespa.version>0.28.0</huggingface.vespa.version>
+        <huggingface.vespa.version>0.29.0</huggingface.vespa.version>
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
         <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
