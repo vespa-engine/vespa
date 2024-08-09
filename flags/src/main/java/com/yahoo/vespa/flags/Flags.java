@@ -57,6 +57,14 @@ public class Flags {
             "Takes immediate effect wherever possible.",
             NODE_TYPE);
 
+    public static final UnboundBooleanFlag ASSUME_ROLE_IN_VESPA_ATHENZ = defineFeatureFlag(
+            "assume-role-in-vespa-athenz", false,
+            List.of("hakonhall"), "2024-08-09", "2024-10-09",
+            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public AWS systems, when trying assuming AWS roles. " +
+            "node-type is config in config server, controller in controller.",
+            "Takes effect on start of config server/controller.",
+            NODE_TYPE);
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
