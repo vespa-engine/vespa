@@ -7,6 +7,28 @@ https://microsoft.github.io/language-server-protocol/
 
 This means that the bulk of the functionality lies inside /language-server. The clients are merely small bootstrapping wrappers for creating an extension/plugin and launching the language-server.
 
+## Development & Testing
+
+The language server needs a client to start it. Therefore running and testing the language server happens through an editor with an extension or a plugin. The language server is primary developed for VSCode, but it can run on other editors as well. This guide is for running the extension in a development environment. In the `clients` folder are the different extensions and plugins for the supported editors.
+
+### Build the langauge server
+- Make sure Vespa java classes are built. Run `mvn install` in the root of this repository to build Vespa
+- If there have been changes outside the `clients` folder, these needs to be rebuilt.
+    - Use the command `mvn -pl :schema-language-server install` from the root of this repository to build the language server
+
+### Visual Studio Code (VSCode)
+- Open the folder `./clients/vscode` in a new VSCode window.
+- Make sure `npm` is downloaded and run `npm install` to install the necessary dependencies.
+- Go to `Run and Debug` tab on the left of the window.
+- Click on `Run Extension`, alternatively hit `F5` to run and test the extension.
+- A new window will appear with the extension running.
+
+### IntelliJ
+- Open the folder `./clients/intellij` in an IntelliJ window.
+- Wait for the build to finish, then run the gradle task `Tasks/intellij platform/runIde`.
+    - The Gradle tasks can be found by clicking on the Gradle icon on the right hand side of the editor.
+- A new window will appear with the plugin running.
+
 ## Basic Principles
 The server is launched as an executable by the client that wants to use it. It will then run as a separate process, and they will communicate using standard input/output.
 Upon initialization, the server and client will exchange 'capabilities'. The server defines the subset of the LSP specification it supports, and the client does the same.
