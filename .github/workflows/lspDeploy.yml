@@ -11,9 +11,6 @@ on:
           - major
           - minor
           - patch
-  push:
-    branches:
-      - interns/languageserver
 
 jobs:
 
