@@ -47,15 +47,15 @@ jobs:
         working-directory: ./integration/schema-language-server/clients/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      
-      # - name: Publish Intellij plugin
-      #   run: gradle publishPlugin
-      #   working-directory: ./integration/schema-language-server/clients/intellij
+
+      # - name: Publish IntelliJ plugin
+      #   run: |
+      #     gradle buildPlugin
+      #     curl -i --header "Authorization: Bearer perm:$INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-1.0-SNAPSHOT.zip https://plugins.jetbrains.com/plugin/uploadPlugin
+      #   wokring-directory: ./integration/schema-language-server/clients/intellij
       #   env:
-      #     CERTIFICATE_CHAIN: ${{ secrets.INTELLIJ_CERTIFICATE_CHAIN }}
-      #     PRIVATE_KEY: ${{ secrets.INTELLIJ_PRIVATE_KEY }}
-      #     PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
-      #     PUBLISH_TOKEN: ${{ secrets.INTELLIJ_PUBLISH_TOKEN }}
+      #     INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
+      #     PLUGIN_ID: 18074
       
       - name: Create PR to bump version
         uses: peter-evans/create-pull-request@v6

@@ -23,7 +23,9 @@ async function publish(): Promise<void> {
 
     actions.info(`Publishing VSIX file: ${vsixFile}`);
 
-    await publishVSIX(vsixFile);
+    await publishVSIX(vsixFile, {
+        pat: process.env.VSCE_PAT
+    });
 }
 
 publish();

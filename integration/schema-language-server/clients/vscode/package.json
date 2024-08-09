@@ -1,9 +1,9 @@
 {
   "name": "vespa-language-support",
-  "displayName": "Vespa Language Support",
+  "displayName": "Vespa Schema Language Support",
   "description": "Support for Vespa schema files.",
   "author": "Vespa",
-  "publisher": "Vespa",
+  "publisher": "vespaai",
   "version": "0.0.0",
   "engines": {
     "vscode": "^1.72.0"
