@@ -974,6 +974,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .sum();
     }
 
+    public void deleteExpiredSessions() {
+        tenantRepository.getAllTenants()
+                .forEach(tenant -> tenant.getSessionRepository().deleteExpiredRemoteAndLocalSessions(clock, session -> sessionIsActiveForItsApplication(tenant, session)));
+    }
+
     private boolean sessionIsActiveForItsApplication(Tenant tenant, Session session) {
         Optional<ApplicationId> owner = session.getOptionalApplicationId();
         if (owner.isEmpty()) return true; // Chicken out ~(˘▾˘)~
