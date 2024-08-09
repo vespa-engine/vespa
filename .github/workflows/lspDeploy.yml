@@ -5,7 +5,7 @@ on:
     inputs:
       version:
         type: choice
-        descirption: Which kind of release is this
+        description: Which kind of release is this
         required: true
         options:
           - major
@@ -48,14 +48,15 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
-      # - name: Publish IntelliJ plugin
-      #   run: |
-      #     gradle buildPlugin
-      #     curl -i --header "Authorization: Bearer perm:$INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-1.0-SNAPSHOT.zip https://plugins.jetbrains.com/plugin/uploadPlugin
-      #   wokring-directory: ./integration/schema-language-server/clients/intellij
-      #   env:
-      #     INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
-      #     PLUGIN_ID: 18074
+      - name: Publish IntelliJ plugin
+        run: |
+          python3 bumpVersion.py
+          gradle buildPlugin
+          curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$(cat VERSION).zip https://plugins.jetbrains.com/plugin/uploadPlugin
+        working-directory: ./integration/schema-language-server/clients/intellij
+        env:
+          INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
+          PLUGIN_ID: 18074
       
       - name: Create PR to bump version
         uses: peter-evans/create-pull-request@v6
