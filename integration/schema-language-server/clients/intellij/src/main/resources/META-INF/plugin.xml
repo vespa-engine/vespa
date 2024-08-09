@@ -1,5 +1,5 @@
 <idea-plugin>
-  <id>ai.vespa.schemals.intellij</id>
+  <id>ai.vespa</id>
   <name>Vespa Schema Language Support</name>
 
   <vendor>vespa.ai</vendor>
