@@ -14,7 +14,7 @@ public class FileReferenceDownload {
     private final FileReference fileReference;
     private final CompletableFuture<Optional<File>> future;
     // If a config server wants to download from another config server (because it does not have the
-    // file itself) we set this flag to false to avoid an eternal loop
+    // file itself) this flag should be false to avoid an eternal loop
     private final boolean downloadFromOtherSourceIfNotFound;
     private final String client;
 
@@ -23,8 +23,7 @@ public class FileReferenceDownload {
     }
 
     public FileReferenceDownload(FileReference fileReference, String client, boolean downloadFromOtherSourceIfNotFound) {
-        Objects.requireNonNull(fileReference, "file reference cannot be null");
-        this.fileReference = fileReference;
+        this.fileReference = Objects.requireNonNull(fileReference, "file reference cannot be null");
         this.future = new CompletableFuture<>();
         this.downloadFromOtherSourceIfNotFound = downloadFromOtherSourceIfNotFound;
         this.client = client;

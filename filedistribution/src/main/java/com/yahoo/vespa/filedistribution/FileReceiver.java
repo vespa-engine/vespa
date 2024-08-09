@@ -216,8 +216,7 @@ public class FileReceiver {
     }
 
     private static void deletePath(File path) {
-        if (path == null) return;
-        if ( ! path.exists()) return;
+        if (path == null || ! path.exists()) return;
 
         try {
             if (path.isDirectory())
