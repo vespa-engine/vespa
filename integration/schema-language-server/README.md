@@ -63,6 +63,7 @@ The language server needs a client to start it. Therefore running and testing th
 - Go to `Run and Debug` tab on the left of the window.
 - Click on `Run Extension`, alternatively hit `F5` to run and test the extension.
 - A new window will appear with the extension running.
+- View logging output in "OUTPUT"-panel, select "Vespa Schema Language Server" as the source.
 
 ### IntelliJ
 - Open the folder `./clients/intellij` in an IntelliJ window.
