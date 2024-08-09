@@ -9,6 +9,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -26,6 +27,7 @@ import java.util.Map;
  */
 public class EmbedExpression extends Expression  {
 
+    private final Linguistics linguistics;
     private final Embedder embedder;
     private final String embedderId;
     private final List<String> embedderArguments;
@@ -36,14 +38,15 @@ public class EmbedExpression extends Expression  {
     /** The target type we are embedding into. */
     private TensorType targetType;
 
-    public EmbedExpression(Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
+    public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
         super(null);
+        this.linguistics = linguistics;
         this.embedderId = embedderId;
         this.embedderArguments = List.copyOf(embedderArguments);
 
         boolean embedderIdProvided = embedderId != null && !embedderId.isEmpty();
 
-        if (embedders.size() == 0) {
+        if (embedders.isEmpty()) {
             throw new IllegalStateException("No embedders provided");  // should never happen
         }
         else if (embedders.size() == 1 && ! embedderIdProvided) {
@@ -169,7 +172,7 @@ public class EmbedExpression extends Expression  {
 
     private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
         return embedder.embed(input,
-                              new Embedder.Context(destination, context.getCache()).setLanguage(context.getLanguage())
+                              new Embedder.Context(destination, context.getCache()).setLanguage(context.resolveLanguage(linguistics))
                                                                                    .setEmbedderId(embedderId),
                               targetType);
     }

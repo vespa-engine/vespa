@@ -32,7 +32,7 @@ import java.util.Optional;
  */
 public class OpenNlpTokenizer implements Tokenizer {
 
-    enum Mode { index, query }
+    public enum Mode { index, query }
 
     private final Mode mode;
 
