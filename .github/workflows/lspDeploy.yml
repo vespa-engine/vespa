@@ -52,7 +52,7 @@ jobs:
         run: |
           python3 bumpVersion.py
           gradle buildPlugin
-          curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=./build/distributions/vespa-$(cat VERSION).zip https://plugins.jetbrains.com/plugin/uploadPlugin
+          curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$(cat VERSION).zip https://plugins.jetbrains.com/plugin/uploadPlugin
         working-directory: ./integration/schema-language-server/clients/intellij
         env:
           INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
