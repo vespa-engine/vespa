@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +13,7 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
@@ -49,7 +49,7 @@ public class SchemaDocument implements DocumentManager {
         }
     }
 
-    private PrintStream logger;
+    private ClientLogger logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
     private SchemaDocumentScheduler scheduler;
@@ -64,7 +64,7 @@ public class SchemaDocument implements DocumentManager {
 
     private SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
-    public SchemaDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler, String fileURI) {
+    public SchemaDocument(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler, String fileURI) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
@@ -96,7 +96,7 @@ public class SchemaDocument implements DocumentManager {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
 
-        logger.println("Parsing: " + fileURI);
+        logger.info("Parsing: " + fileURI);
         ParseContext context = getParseContext(content);
         var parsingResult = parseContent(context);
 
@@ -108,7 +108,7 @@ public class SchemaDocument implements DocumentManager {
             this.CST = parsingResult.CST().get();
             lexer.setCST(CST);
 
-            logger.println("======== CST for file: " + fileURI + " ========");
+            // logger.info("======== CST for file: " + fileURI + " ========");
      
             //CSTUtils.printTree(logger, CST);
         }
@@ -274,7 +274,7 @@ public class SchemaDocument implements DocumentManager {
         try {
             traverseCST(CST, context, errors);
         } catch(Exception ex) {
-            ex.printStackTrace(context.logger());
+            context.logger().error(ex.getMessage());
         }
         return new ParseResult(errors, Optional.of(CST));
     }
@@ -285,7 +285,7 @@ public class SchemaDocument implements DocumentManager {
 
         Position indexingStart = indexingElmNode.getRange().getStart();
         CharSequence sequence = script.content();
-        IndexingParser parser = new IndexingParser(context.logger(), context.fileURI(), sequence);
+        IndexingParser parser = new IndexingParser(context.fileURI(), sequence);
         parser.setParserTolerant(false);
 
         Position scriptStart = new Position(indexingStart.getLine(), indexingStart.getCharacter() + script.leadingStripped());

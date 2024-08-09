@@ -52,6 +52,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.SchemaIndex;
@@ -71,14 +72,14 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
  */
 public class SchemaTextDocumentService implements TextDocumentService {
 
-    private PrintStream logger;
+    private ClientLogger logger;
     private EventContextCreator eventContextCreator;
     private SchemaMessageHandler schemaMessageHandler;
 
-    public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler, SchemaIndex schemaIndex, SchemaMessageHandler schemaMessageHandler) {
+    public SchemaTextDocumentService(ClientLogger logger, SchemaDocumentScheduler schemaDocumentScheduler, SchemaIndex schemaIndex, SchemaMessageHandler schemaMessageHandler) {
         this.logger = logger;
         this.schemaMessageHandler = schemaMessageHandler;
-        eventContextCreator = new EventContextCreator(logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
+        eventContextCreator = new EventContextCreator(schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
     }
 
     @Override
@@ -119,7 +120,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
             try {
                 return SchemaCodeAction.provideActions(eventContextCreator.createContext(params));
             } catch(Exception e) {
-                logger.println("Error during code action handling: " + e.getMessage());
+                logger.error("Error during code action handling: " + e.getMessage());
             }
 
             return new ArrayList<>();
@@ -149,7 +150,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 EventDocumentContext context = eventContextCreator.createContext(params);
                 return SchemaDocumentSymbols.documentSymbols(context);
             } catch(Exception e) {
-                logger.println("Error during document symbol handling: " + e.getMessage());
+                logger.error("Error during document symbol handling: " + e.getMessage());
             }
             return List.of();
         });
@@ -259,8 +260,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
                  
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
-            } catch (Throwable e) {
-                handleThrowableException(e);
+            } catch (Exception e) {
+                logger.error(e.getMessage());;
             }
 
             return new SemanticTokens(new ArrayList<>());
@@ -281,8 +282,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
             } catch (CancellationException ignore) {
                 // Ignore
-            } catch (Throwable e) {
-                logger.println(e);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
             }
 
             return null; 
@@ -299,16 +300,11 @@ public class SchemaTextDocumentService implements TextDocumentService {
     
             } catch (CancellationException ignore) {
                 // Ignore
-            } catch (Throwable e) {
-                logger.println(e);
+            } catch (Exception e) {
+                logger.error(e);
             }
     
             return Either.forLeft(new ArrayList<Location>());
         });
-    }
-
-    private void handleThrowableException(Throwable e) {
-        logger.println(e.getCause());
-        e.printStackTrace(logger);
     }
 }

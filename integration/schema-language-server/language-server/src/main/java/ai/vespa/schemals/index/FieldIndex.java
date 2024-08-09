@@ -1,6 +1,5 @@
 package ai.vespa.schemals.index;
 
-import java.io.PrintStream;
 import java.net.URI;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -12,6 +11,7 @@ import java.util.Set;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
@@ -53,10 +53,10 @@ public class FieldIndex {
 
     // Key is a field definition symbol.
     private Map<Symbol, FieldIndexEntry> database = new HashMap<>();
-    private PrintStream logger;
+    private ClientLogger logger;
     private SchemaIndex schemaIndex;
 
-    public FieldIndex(PrintStream logger, SchemaIndex schemaIndex) {
+    public FieldIndex(ClientLogger logger, SchemaIndex schemaIndex) {
         this.logger = logger;
         this.schemaIndex = schemaIndex;
     }
@@ -198,7 +198,7 @@ public class FieldIndex {
 
     public void dumpIndex() {
         for (var entry : database.entrySet()) {
-            logger.println(entry.getKey().toString() + " -> " + entry.getValue().toString());
+            logger.info(entry.getKey().toString() + " -> " + entry.getValue().toString());
         }
     }
 }

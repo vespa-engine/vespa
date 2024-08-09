@@ -1,6 +1,5 @@
 package ai.vespa.schemals.index;
 
-import java.io.PrintStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -9,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationElm;
@@ -47,7 +47,7 @@ public class SchemaIndex {
         put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
     }};
 
-    private PrintStream logger;
+    private ClientLogger logger;
     private FieldIndex fieldIndex;
 
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
@@ -63,7 +63,7 @@ public class SchemaIndex {
     // This is an inheritance graph, even though it doesn't model *inheritance* per se.
     private InheritanceGraph<Symbol> documentReferenceGraph;
     
-    public SchemaIndex(PrintStream logger) {
+    public SchemaIndex(ClientLogger logger) {
         this.logger = logger;
         this.documentInheritanceGraph        = new InheritanceGraph<>();
         this.structInheritanceGraph          = new InheritanceGraph<>();
@@ -539,43 +539,43 @@ public class SchemaIndex {
      */
     public void dumpIndex() {
 
-        logger.println(" === SYMBOL DEFINITIONS === ");
+        logger.info(" === SYMBOL DEFINITIONS === ");
         for (var entry : symbolDefinitions.entrySet()) {
-            logger.println("TYPE: " + entry.getKey());
+            logger.info("TYPE: " + entry.getKey());
 
             for (var symbol : entry.getValue()) {
-                logger.println("    " + symbol);
+                logger.info("    " + symbol);
             }
         }
 
-        logger.println("\n === SYMBOL DEFINITION REFERENCES === ");
+        logger.info("\n === SYMBOL DEFINITION REFERENCES === ");
         for (var entry : symbolReferences.entrySet()) {
-            logger.println(entry.getKey());
+            logger.info(entry.getKey());
 
             for (var symbol : entry.getValue()) {
-                logger.println("    " + symbol);
+                logger.info("    " + symbol);
             }
         }
 
-        logger.println("\n === REFERENCES TO DEFINITIONS ===");
+        logger.info("\n === REFERENCES TO DEFINITIONS ===");
         for (var entry : definitionOfReference.entrySet()) {
             String toPrint = String.format("%-50s -> %s", entry.getKey(), entry.getValue());
-            logger.println(toPrint);
+            logger.info(toPrint);
         }
 
-        logger.println("\n === DOCUMENT INHERITANCE === ");
+        logger.info("\n === DOCUMENT INHERITANCE === ");
         documentInheritanceGraph.dumpAllEdges(logger);
 
-        logger.println(" === STRUCT INHERITANCE === ");
+        logger.info(" === STRUCT INHERITANCE === ");
         structInheritanceGraph.dumpAllEdges(logger);
 
-        logger.println(" === RANK PROFILE INHERITANCE === ");
+        logger.info(" === RANK PROFILE INHERITANCE === ");
         rankProfileInheritanceGraph.dumpAllEdges(logger);
 
-        logger.println(" === DOCUMENT REFERENCES === ");
+        logger.info(" === DOCUMENT REFERENCES === ");
         documentReferenceGraph.dumpAllEdges(logger);
 
-        logger.println(" === FIELD INDEX === ");
+        logger.info(" === FIELD INDEX === ");
         fieldIndex.dumpIndex();
     }
 }

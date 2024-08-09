@@ -15,13 +15,12 @@ public class EventDocumentContext extends EventContext {
     public final TextDocumentIdentifier documentIdentifier;
 
     public EventDocumentContext(
-        PrintStream logger,
         SchemaDocumentScheduler scheduler,
         SchemaIndex schemaIndex,
         SchemaMessageHandler messageHandler,
         TextDocumentIdentifier documentIdentifier
     ) {
-        super(logger, scheduler, schemaIndex, messageHandler);
+        super(scheduler, schemaIndex, messageHandler);
         this.documentIdentifier = documentIdentifier;
         this.document = scheduler.getDocument(documentIdentifier.getUri());
     }

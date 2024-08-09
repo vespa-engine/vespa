@@ -1,12 +1,12 @@
 package ai.vespa.schemals.schemadocument;
 
-import java.io.PrintStream;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.Node;
@@ -14,14 +14,13 @@ import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
-import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * RankProfileDocumnet parses and represents .profile files
  */
 public class RankProfileDocument implements DocumentManager {
-    private PrintStream logger;
+    private ClientLogger logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
     private SchemaDocumentScheduler scheduler;
@@ -33,7 +32,7 @@ public class RankProfileDocument implements DocumentManager {
     private boolean isOpen = false;
     private SchemaNode CST = null;
 
-    public RankProfileDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler, String fileURI) {
+    public RankProfileDocument(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler, String fileURI) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
@@ -58,11 +57,10 @@ public class RankProfileDocument implements DocumentManager {
         var result = parseContent(context);
 
         diagnosticsHandler.publishDiagnostics(this.fileURI, result.diagnostics());
-        logger.println("CST FOR RANK PROFILE " + this.fileURI);
+        logger.info("CST FOR RANK PROFILE " + this.fileURI);
         if (result.CST().isPresent()) {
             this.CST = result.CST().get();
             lexer.setCST(CST);
-            CSTUtils.printTree(logger, result.CST().get());
         }
     }
 

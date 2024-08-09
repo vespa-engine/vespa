@@ -1,6 +1,5 @@
 package ai.vespa.schemals;
 
-import java.io.PrintStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -12,9 +11,6 @@ import org.eclipse.lsp4j.ShowDocumentResult;
  * TestSchemaMessageHandler
  */
 public class TestSchemaMessageHandler extends SchemaMessageHandler {
-    public TestSchemaMessageHandler(PrintStream logger) {
-        super(logger);
-    }
 
     @Override
     public void sendMessage(MessageType messageType, String message) { }

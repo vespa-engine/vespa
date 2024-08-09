@@ -55,8 +55,6 @@ public class RankExpressionSymbolResolver {
         List<RankNode> rankNodes = RankNode.createTree(schemaNode);
 
         for (RankNode node : rankNodes) {
-            //RankingExpressionUtils.printTree(context.logger(), node);
-
             diagnostics.addAll(traverseRankExpressionTree(node, context));
         }
 

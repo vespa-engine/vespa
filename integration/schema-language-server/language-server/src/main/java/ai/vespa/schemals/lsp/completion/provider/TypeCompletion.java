@@ -60,7 +60,6 @@ public class TypeCompletion implements CompletionProvider {
 
         String content = context.document.getCurrentContent();
         int offset = StringUtils.positionToOffset(content, context.position) - 1;
-        context.logger.println("Char: " + content.charAt(offset));
         for (int i = offset; i >= offset - 20; --i) {
             if (content.charAt(i) == '>') return false;
             if (content.charAt(i) == '<') return true;

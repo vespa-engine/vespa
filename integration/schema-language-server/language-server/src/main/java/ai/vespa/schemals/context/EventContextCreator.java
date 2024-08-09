@@ -14,18 +14,15 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventContextCreator {
-    public final PrintStream logger;
     public final SchemaDocumentScheduler scheduler;
     public final SchemaIndex schemaIndex;
     public final SchemaMessageHandler messageHandler;
 
     public EventContextCreator(
-        PrintStream logger,
         SchemaDocumentScheduler scheduler,
         SchemaIndex schemaIndex,
         SchemaMessageHandler messageHandler
     ) {
-        this.logger = logger;
         this.scheduler = scheduler;
         this.schemaIndex = schemaIndex;
         this.messageHandler = messageHandler;
@@ -33,7 +30,6 @@ public class EventContextCreator {
 
     public EventPositionContext createContext(TextDocumentPositionParams params) {
         return new EventPositionContext(
-            logger,
             scheduler,
             schemaIndex,
             messageHandler,
@@ -44,7 +40,6 @@ public class EventContextCreator {
 
     public EventCompletionContext createContext(CompletionParams params) {
         return new EventCompletionContext(
-            logger, 
             scheduler, 
             schemaIndex, 
             messageHandler, 
@@ -54,11 +49,11 @@ public class EventContextCreator {
     }
 
     public EventDocumentContext createContext(SemanticTokensParams params) {
-        return new EventDocumentContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument());
+        return new EventDocumentContext(scheduler, schemaIndex, messageHandler, params.getTextDocument());
     }
 
     public EventDocumentContext createContext(DocumentSymbolParams params) {
-        return new EventDocumentContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument());
+        return new EventDocumentContext(scheduler, schemaIndex, messageHandler, params.getTextDocument());
     }
 
     public EventCodeActionContext createContext(CodeActionParams params) {
@@ -68,7 +63,6 @@ public class EventContextCreator {
         if (params.getTextDocument().getUri() == null) return null;
 
         return new EventCodeActionContext(
-            logger, 
             scheduler, 
             schemaIndex, 
             messageHandler, 
@@ -80,7 +74,7 @@ public class EventContextCreator {
     }
 
     public EventExecuteCommandContext createContext(ExecuteCommandParams params) {
-        return new EventExecuteCommandContext(logger, scheduler, schemaIndex, messageHandler, params);
+        return new EventExecuteCommandContext(scheduler, schemaIndex, messageHandler, params);
     }
 
 }

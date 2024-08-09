@@ -15,9 +15,9 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 public class EventCompletionContext extends EventPositionContext {
     public final Character triggerCharacter;
 
-	public EventCompletionContext(PrintStream logger, SchemaDocumentScheduler scheduler, SchemaIndex schemaIndex,
+	public EventCompletionContext(SchemaDocumentScheduler scheduler, SchemaIndex schemaIndex,
 			SchemaMessageHandler messageHandler, TextDocumentIdentifier documentIdentifier, Position position, String triggerCharacter) {
-		super(logger, scheduler, schemaIndex, messageHandler, documentIdentifier, position);
+		super(scheduler, schemaIndex, messageHandler, documentIdentifier, position);
 
         if (triggerCharacter == null || triggerCharacter.length() == 0) {
             this.triggerCharacter = Character.valueOf('\0');

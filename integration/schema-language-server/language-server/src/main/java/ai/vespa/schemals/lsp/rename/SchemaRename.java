@@ -41,7 +41,7 @@ public class SchemaRename {
 
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (node == null || !node.hasSymbol()) {
-            context.logger.println("Could not find symbol");
+            context.logger.error("Could not find symbol");
             return null;
         }
 
@@ -65,7 +65,7 @@ public class SchemaRename {
 
         SchemaDocument document = context.scheduler.getSchemaDocument(symbol.get().getFileURI());
         if (document == null) {
-            context.logger.println("Symbol has a fileURI to a file not in index!");
+            context.logger.error("Symbol has a fileURI to a file not in index!");
             return null;
         }
         
@@ -91,12 +91,6 @@ public class SchemaRename {
             List<Symbol> documentReferences = context.schemaIndex.getSymbolReferences(documentSymbol.get());
             symbolOccurances.addAll(documentReferences);
         }
-        // TODO: Fix this
-        // else {
-        //     List<Symbol> documentReferences = context.schemaIndex.findDocumentSymbolReferences(symbol);
-        //     symbolOccurances.addAll(documentReferences);
-        // }
-
 
         String newFileURI = document.getFilePath() + newName + ".sd";
 

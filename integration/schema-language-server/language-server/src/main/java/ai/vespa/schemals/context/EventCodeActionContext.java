@@ -22,9 +22,9 @@ public class EventCodeActionContext extends EventPositionContext {
     public final List<Diagnostic> diagnostics;
     public final List<String> codeActionKinds;
 
-	public EventCodeActionContext(PrintStream logger, SchemaDocumentScheduler scheduler, SchemaIndex schemaIndex,
+	public EventCodeActionContext(SchemaDocumentScheduler scheduler, SchemaIndex schemaIndex,
 			SchemaMessageHandler messageHandler, TextDocumentIdentifier documentIdentifier, Range range, List<Diagnostic> quickfixDiagnostics, List<String> onlyKinds) {
-		super(logger, scheduler, schemaIndex, messageHandler, documentIdentifier, range.getStart());
+		super(scheduler, schemaIndex, messageHandler, documentIdentifier, range.getStart());
         this.range = range;
         this.diagnostics = quickfixDiagnostics;
         this.codeActionKinds = new ArrayList<>();

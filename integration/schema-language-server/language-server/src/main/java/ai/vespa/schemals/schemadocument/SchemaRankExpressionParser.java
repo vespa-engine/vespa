@@ -16,7 +16,6 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
-import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -158,7 +157,7 @@ public class SchemaRankExpressionParser {
         if (expressionString == null)return null;
         CharSequence sequence = expressionString;
 
-        RankingExpressionParser tolerantParser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
+        RankingExpressionParser tolerantParser = new RankingExpressionParser(context.fileURI(), sequence);
         tolerantParser.setParserTolerant(true);
 
         try {

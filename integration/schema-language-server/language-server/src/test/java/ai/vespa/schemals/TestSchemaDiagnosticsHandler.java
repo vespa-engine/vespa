@@ -1,6 +1,5 @@
 package ai.vespa.schemals;
 
-import java.io.PrintStream;
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -12,8 +11,7 @@ public class TestSchemaDiagnosticsHandler extends SchemaDiagnosticsHandler {
 
     private List<Diagnostic> diagnosticsStore;
 
-	public TestSchemaDiagnosticsHandler(PrintStream logger, List<Diagnostic> diagnosticsStore) {
-		super(logger);
+	public TestSchemaDiagnosticsHandler(List<Diagnostic> diagnosticsStore) {
         this.diagnosticsStore = diagnosticsStore;
 	}
 

@@ -1,6 +1,5 @@
 package ai.vespa.schemals;
 
-import java.io.PrintStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -16,16 +15,15 @@ import org.eclipse.lsp4j.services.LanguageClient;
 
 
 public class SchemaMessageHandler {
-    private PrintStream logger;
     private LanguageClient client;
     private String traceValue = TraceValue.Off;
 
-    SchemaMessageHandler(PrintStream logger) {
-        this.logger = logger;
-    }
-
     void connectClient(LanguageClient client) {
         this.client = client;
+    }
+
+    public boolean connected() {
+        return client != null;
     }
 
     public void sendMessage(MessageType messageType, String message) {

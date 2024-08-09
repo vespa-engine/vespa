@@ -1,6 +1,5 @@
 package ai.vespa.schemals.index;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import ai.vespa.schemals.common.ClientLogger;
 
 
 /**
@@ -218,22 +219,20 @@ public class InheritanceGraph<NodeType> {
                                .collect(Collectors.toList());
     }
 
-    public void dumpAllEdges(PrintStream logger) {
+    public void dumpAllEdges(ClientLogger logger) {
         for (Map.Entry<NodeType, List<NodeType>> entry : parentsOfNode.entrySet()) {
             NodeType node = entry.getKey();
-            logger.println(node.toString() + " inherits from:");
+            logger.info(node.toString() + " inherits from:");
             for (NodeType parent : entry.getValue()) {
-                logger.println("    " + parent.toString());
+                logger.info("    " + parent.toString());
             }
         }
 
         for (NodeType parentURI : childrenOfNode.keySet()) {
-            logger.println(parentURI.toString() + " has children:");
+            logger.info(parentURI.toString() + " has children:");
             for (NodeType childURI : getValidChildren(parentURI)) {
-                logger.println("    " + childURI.toString());
+                logger.info("    " + childURI.toString());
             }
         }
-        logger.println();
-
     }
 }

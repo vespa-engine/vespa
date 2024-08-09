@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -75,7 +74,7 @@ public class GenericFunction {
             propertyString = Optional.of(property.get().getText());
         }
 
-        Optional<FunctionSignature> signature = findFunctionSignature(node.getChildren(), propertyString, context.logger());
+        Optional<FunctionSignature> signature = findFunctionSignature(node.getChildren(), propertyString);
 
         if (signature.isEmpty()) {
             List<String> signatureStrings = signatures.stream()
@@ -159,7 +158,7 @@ public class GenericFunction {
         return propertiySet.contains(string.get());
     }
 
-    private Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments, Optional<String> property, PrintStream logger) {
+    private Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments, Optional<String> property) {
 
         List<FunctionSignature> bestMatches = new ArrayList<>();
         int maxScore = 0;

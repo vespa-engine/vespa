@@ -1,10 +1,10 @@
 package ai.vespa.schemals.context;
 
-import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
 
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.FieldIndex;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
@@ -26,8 +26,8 @@ import ai.vespa.schemals.schemadocument.parser.IdentifyNamedDocument;
 
 public class ParseContext { 
     private String content;
-    private PrintStream logger;
     private String fileURI;
+    private ClientLogger logger;
     private List<Identifier> identifiers;
     private List<SchemaNode> unresolvedInheritanceNodes;
     private List<SchemaNode> unresolvedTypeNodes;
@@ -37,7 +37,7 @@ public class ParseContext {
     private SchemaNode inheritsSchemaNode;
     private SchemaDocumentScheduler scheduler;
 
-    public ParseContext(String content, PrintStream logger, String fileURI, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler) {
+    public ParseContext(String content, ClientLogger logger, String fileURI, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler) {
         this.content = content;
         this.logger = logger;
         this.fileURI = fileURI;
@@ -93,7 +93,7 @@ public class ParseContext {
         return this.content;
     }
 
-    public PrintStream logger() {
+    public ClientLogger logger() {
         return this.logger;
     }
 

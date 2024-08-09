@@ -18,9 +18,9 @@ public class DocumentOpen implements SchemaCommand {
     public void execute(EventExecuteCommandContext context) {
         if (fileURI == null)
             return;
-        context.logger.println("Show document: " + fileURI);
+        context.logger.info("Show document: " + fileURI);
         ShowDocumentResult result = context.messageHandler.showDocument(fileURI).join();
-        context.logger.println("Result: " + result.toString());
+        context.logger.info("Result: " + result.toString());
     }
 
     @Override

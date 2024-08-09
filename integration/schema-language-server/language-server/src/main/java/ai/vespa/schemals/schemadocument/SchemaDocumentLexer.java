@@ -1,11 +1,11 @@
 package ai.vespa.schemals.schemadocument;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Position;
 
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -30,11 +30,11 @@ public class SchemaDocumentLexer {
         collectAllTokens(CST);
     }
 
-    public void dumpTokens(PrintStream logger) {
+    public void dumpTokens(ClientLogger logger) {
         for (var node : tokens) {
             Position start = node.getRange().getStart();
             Position end = node.getRange().getEnd();
-            logger.println(
+            logger.info(
                 node.getDirtyType().toString() + 
                 (node.getIsDirty() ? " [DIRTY]" : "") +
                 ", (" + start.getLine() + ", " + start.getCharacter() + ") - (" + end.getLine() + ", " + end.getCharacter() + ")");

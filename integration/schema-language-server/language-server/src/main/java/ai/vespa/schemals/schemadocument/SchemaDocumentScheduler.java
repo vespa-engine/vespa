@@ -2,7 +2,6 @@ package ai.vespa.schemals.schemadocument;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,7 +14,9 @@ import org.eclipse.lsp4j.TextDocumentItem;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.SchemaMessageHandler;
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -27,7 +28,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
  */
 public class SchemaDocumentScheduler {
 
-    private PrintStream logger;
+    private ClientLogger logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
     private SchemaMessageHandler messageHandler;
@@ -35,7 +36,7 @@ public class SchemaDocumentScheduler {
     private boolean reparseDescendants = true;
     private URI workspaceURI = null;
 
-    public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaMessageHandler messageHandler) {
+    public SchemaDocumentScheduler(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaMessageHandler messageHandler) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
@@ -58,10 +59,13 @@ public class SchemaDocumentScheduler {
 
         // TODO: a lot of parsing going on. It mostly should be reference resolving, not necessarily reparsing of entire contents.
         workspaceFiles.get(fileURI).updateFileContent(content, version);
+        boolean needsReparse = false;
 
         if (isSchemaFile && reparseDescendants) {
-            Set<String> parsedURIs = new HashSet<>();
+            Set<String> parsedURIs = new HashSet<>() {{ add(fileURI); }};
             for (String descendantURI : schemaIndex.getDocumentInheritanceGraph().getAllDescendants(fileURI)) {
+                if (descendantURI.equals(fileURI)) continue;
+
                 if (workspaceFiles.containsKey(descendantURI)) {
                     workspaceFiles.get(descendantURI).reparseContent();
                     parsedURIs.add(descendantURI);
@@ -88,12 +92,15 @@ public class SchemaDocumentScheduler {
                     RankProfileDocument document  = (RankProfileDocument)entry.getValue();
                     if (document.schemaSymbol().isPresent() && document.schemaSymbol().get().fileURIEquals(fileURI)) {
                         entry.getValue().reparseContent();
+                        needsReparse = true;
                     }
                 }
             }
         }
 
-        workspaceFiles.get(fileURI).reparseContent();
+        if (needsReparse) {
+            workspaceFiles.get(fileURI).reparseContent();
+        }
     }
 
     public String getWorkspaceURI() {
@@ -101,7 +108,7 @@ public class SchemaDocumentScheduler {
     }
 
     public void openDocument(TextDocumentItem document) {
-        logger.println("Opening document: " + document.getUri());
+        logger.info("Opening document: " + document.getUri());
 
         if (workspaceURI == null) {
             Optional<URI> workspaceURI = FileUtils.findSchemaDirectory(URI.create(document.getUri()));
@@ -127,16 +134,16 @@ public class SchemaDocumentScheduler {
         if (workspaceFiles.containsKey(fileURI)) return;
 
         try {
-            logger.println("Adding document: " + fileURI);
+            logger.info("Adding document: " + fileURI);
             String content = FileUtils.readFromURI(fileURI);
             updateFile(fileURI, content);
         } catch(IOException ex) {
-            this.logger.println("Failed to read file: " + fileURI);
+            this.logger.error("Failed to read file: " + fileURI);
         }
     }
 
     public void closeDocument(String fileURI) {
-        logger.println("Closing document: " + fileURI);
+        logger.info("Closing document: " + fileURI);
         workspaceFiles.get(fileURI).setIsOpen(false);
 
         File file = new File(URI.create(fileURI));
@@ -146,7 +153,7 @@ public class SchemaDocumentScheduler {
     }
 
     private void cleanUpDocument(String fileURI) {
-        logger.println("Removing document: "+ fileURI);
+        logger.info("Removing document: "+ fileURI);
 
         schemaIndex.clearDocument(fileURI);
         workspaceFiles.remove(fileURI);

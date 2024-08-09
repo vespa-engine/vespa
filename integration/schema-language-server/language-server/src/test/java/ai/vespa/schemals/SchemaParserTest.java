@@ -19,6 +19,7 @@ import org.junit.jupiter.api.TestFactory;
 
 import com.yahoo.io.IOUtils;
 
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
@@ -49,10 +50,10 @@ public class SchemaParserTest {
     }
 
     ParseResult parseString(String input, String fileName) throws Exception {
-        PrintStream logger = System.out;
+        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        ClientLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
-        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, new ArrayList<>());
-        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
         schemaIndex.clearDocument(fileName);
         ParseContext context = new ParseContext(input, logger, fileName, schemaIndex, scheduler);
@@ -88,15 +89,12 @@ public class SchemaParserTest {
     void checkDirectoryParses(String directoryPath) throws Exception {
         String directoryURI = new File(directoryPath).toURI().toString();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream logger = new PrintStream(outputStream);
-
-        //PrintStream logger = System.err;
+        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        ClientLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
 
         List<Diagnostic> diagnostics = new ArrayList<>();
-        SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
-        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler(logger);
+        SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(diagnostics);
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
 
         scheduler.setupWorkspace(URI.create(directoryURI));
@@ -105,10 +103,6 @@ public class SchemaParserTest {
         List<String> rankProfileFiles = FileUtils.findRankProfileFiles(directoryURI, logger);
 
         diagnostics.clear();
-
-        logger.flush();
-        outputStream.flush();
-        outputStream.reset();
 
         String testMessage = "\nFor directory: " + directoryPath;
         int numErrors = 0;
@@ -129,11 +123,6 @@ public class SchemaParserTest {
 
             numErrors += countErrors(diagnostics);
         }
-
-
-        //testMessage += "\n\n\n FULL DUMP:\n";
-        //testMessage += outputStream.toString();
-        //testMessage += "\n\n\n\n";
 
         assertEquals(0, numErrors, testMessage);
     }

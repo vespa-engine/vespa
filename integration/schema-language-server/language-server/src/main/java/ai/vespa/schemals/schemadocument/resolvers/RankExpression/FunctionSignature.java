@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

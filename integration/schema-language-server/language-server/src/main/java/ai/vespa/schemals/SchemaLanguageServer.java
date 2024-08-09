@@ -1,6 +1,5 @@
 package ai.vespa.schemals;
 
-import java.io.PrintStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,6 +23,7 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.command.CommandRegistry;
 import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
@@ -42,33 +42,24 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
     private SchemaMessageHandler schemaMessageHandler;
 
-    private PrintStream logger;
-
     // Error code starts at 1 and turns into 0 if we receive shutdown request.
     private int errorCode = 1;
 
     private LanguageClient client;
+    private ClientLogger logger;
 
     public static void main(String[] args) {
         System.out.println("This function may be useful at one point");
     }
 
+    /**
+     * Note: Everything happening here, before connect, should not log. All logging here goes nowhere.
+     */
     public SchemaLanguageServer() {
-        this(null);
-    }
-
-    public SchemaLanguageServer(PrintStream logger) {
-        if (logger == null) {
-            this.logger = System.out;
-        } else {
-            this.logger = logger;
-        }
-
-        this.logger.println("Starting language server...");
-
+        this.schemaMessageHandler = new SchemaMessageHandler();
+        this.logger = new ClientLogger(schemaMessageHandler);
         this.schemaIndex = new SchemaIndex(logger);
-        this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler(logger);
-        this.schemaMessageHandler = new SchemaMessageHandler(logger);
+        this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler();
         this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex, schemaMessageHandler);
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
@@ -124,7 +115,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     public CompletableFuture<Object> shutdown() {
         errorCode = 0;
         return CompletableFutures.computeAsync(tmp -> {
-            logger.println("Shutdown request received.");
+            logger.info("Shutdown request received.");
             return null;
         });
     }

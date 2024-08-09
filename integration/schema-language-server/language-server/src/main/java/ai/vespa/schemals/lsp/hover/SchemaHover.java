@@ -3,7 +3,6 @@ package ai.vespa.schemals.lsp.hover;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -246,13 +245,12 @@ public class SchemaHover {
         return null;
     }
 
-    private static Optional<Hover> rankFeatureHover(PrintStream logger, SchemaNode node) {
+    private static Optional<Hover> rankFeatureHover(SchemaNode node) {
 
         // Search for rankNode connection
         SchemaNode currentNode = node;
         while (currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION && currentNode.getRankNode().isEmpty()) {
             currentNode = currentNode.getParent();
-            logger.println(currentNode);
         }
 
         if (currentNode.getRankNode().isEmpty()) {
@@ -299,7 +297,7 @@ public class SchemaHover {
                     MarkupContent markupContent = content.getRight();
                     if (markupContent.getValue() == "builtin") {
 
-                        Optional<Hover> builtinHover = rankFeatureHover(context.logger, node);
+                        Optional<Hover> builtinHover = rankFeatureHover(node);
                         if (builtinHover.isPresent()) {
                             return builtinHover.get();
                         }

@@ -1,6 +1,5 @@
 package ai.vespa.schemals;
 
-import java.io.PrintStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -14,6 +13,7 @@ import org.eclipse.lsp4j.RenameFilesParams;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.command.ExecuteCommand;
@@ -21,16 +21,14 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class SchemaWorkspaceService implements WorkspaceService {
 
-    private PrintStream logger;
+    private ClientLogger logger;
     private SchemaDocumentScheduler scheduler;
-    private SchemaMessageHandler schemaMessageHandler;
     private EventContextCreator eventContextCreator;
 
-    public SchemaWorkspaceService(PrintStream logger, SchemaDocumentScheduler scheduler, SchemaIndex schemaIndex, SchemaMessageHandler schemaMessageHandler) {
+    public SchemaWorkspaceService(ClientLogger logger, SchemaDocumentScheduler scheduler, SchemaIndex schemaIndex, SchemaMessageHandler schemaMessageHandler) {
         this.logger = logger;
         this.scheduler = scheduler;
-        this.schemaMessageHandler = schemaMessageHandler;
-        eventContextCreator = new EventContextCreator(logger, scheduler, schemaIndex, schemaMessageHandler);
+        eventContextCreator = new EventContextCreator(scheduler, schemaIndex, schemaMessageHandler);
     }
 
     @Override

@@ -1,6 +1,5 @@
 package ai.vespa.schemals.lsp.semantictokens;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +19,7 @@ import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -180,7 +180,7 @@ public class SchemaSemanticTokens {
         }
     }
 
-    private static ArrayList<SemanticTokenMarker> traverseCST(SchemaNode node, PrintStream logger) {
+    private static ArrayList<SemanticTokenMarker> traverseCST(SchemaNode node, ClientLogger logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
         TokenType schemaType = node.getSchemaType();

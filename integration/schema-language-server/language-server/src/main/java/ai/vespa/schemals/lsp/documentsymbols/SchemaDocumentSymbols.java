@@ -12,7 +12,6 @@ import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
-import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
