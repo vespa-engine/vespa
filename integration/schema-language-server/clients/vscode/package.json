@@ -1,6 +1,6 @@
 {
   "name": "vespa-language-support",
-  "displayName": "Vespa Language Support",
+  "displayName": "Vespa Schema Language Support",
   "description": "Support for Vespa schema files.",
   "author": "Vespa",
   "publisher": "vespaai",
