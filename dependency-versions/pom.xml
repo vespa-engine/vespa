@@ -141,7 +141,7 @@
         <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.4</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.8.0</plexus-classworlds.vespa.version>
-        <protobuf.vespa.version>3.25.3</protobuf.vespa.version>
+        <protobuf.vespa.version>3.25.4</protobuf.vespa.version>
         <questdb.vespa.version>7.4.2</questdb.vespa.version>
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
         <snappy.vespa.version>1.1.10.5</snappy.vespa.version>
