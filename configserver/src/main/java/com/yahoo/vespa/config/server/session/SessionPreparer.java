@@ -11,7 +11,6 @@ import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -49,6 +48,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -56,6 +56,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.model.application.validation.BundleValidator;
 import org.xml.sax.SAXException;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
@@ -347,6 +348,11 @@ public class SessionPreparer {
 
         void writeStateZK(FileReference filereference) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
+
+            // TODO: this can be removed when all existing tenant secret stores have externalId in zk
+            var tenantSecretStores = SecretStoreExternalIdRetriever
+                    .populateExternalId(secretStore, applicationId.tenant(), zone.system(), params.tenantSecretStores());
+
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
@@ -359,7 +365,7 @@ public class SessionPreparer {
                                   prepareResult.allocatedHosts(),
                                   athenzDomain,
                                   params.quota(),
-                                  params.tenantSecretStores(),
+                                  tenantSecretStores,
                                   params.operatorCertificates(),
                                   params.cloudAccount(),
                                   params.dataplaneTokens(),
@@ -497,5 +503,5 @@ public class SessionPreparer {
         }
 
     }
-    
+
 }
