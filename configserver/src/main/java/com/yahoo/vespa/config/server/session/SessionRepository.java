@@ -702,43 +702,43 @@ public class SessionRepository {
                 if (session == null)
                     session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
 
-                Session.Status status = session.getStatus();
-                boolean activeForApplication = sessionIsActiveForApplication.test(session);
-                if (status == ACTIVATE && activeForApplication) continue;
+                var applicationId = session.getApplicationId();
+                try (var ignored = applicationRepo.lock(applicationId)) {
+                    Session.Status status = session.getStatus();
+                    boolean activeForApplication = sessionIsActiveForApplication.test(session);
+                    if (status == ACTIVATE && activeForApplication) continue;
 
-                Instant createTime = session.getCreateTime();
-                boolean hasExpired = hasExpired(createTime);
-                if ( ! hasExpired) continue;
+                    Instant createTime = session.getCreateTime();
+                    boolean hasExpired = hasExpired(createTime);
+                    if (! hasExpired) continue;
 
-                log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
-                deleteRemoteSessionFromZooKeeper(session);
-                deleted++;
-
-                log.log(Level.FINE, () -> "Expired local session is candidate for deletion: " + sessionId +
-                        ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status));
-                // Need to check if it can be deleted, as we might have a (local) session in UNKNOWN
-                // state that we should not delete
-                if (canBeDeleted(sessionId, status)) {
-                    deleteLocalSession(sessionId);
+                    log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
+                    deleteRemoteSessionFromZooKeeper(session);
                     deleted++;
-                // This might happen if remote session is gone, but local session is not
-                } else if (isOldAndCanBeDeleted(sessionId, createTime)) {
-                    var localSession = getOptionalSessionFromFileSystem(sessionId);
-                    if (localSession.isEmpty()) continue;
 
-                    var applicationId = localSession.get().getOptionalApplicationId();
-                    if (applicationId.isEmpty()) continue;
-
-                    // Defensive/paranoid: Check if session is active before deleting
-                    if ( ! activeForApplication) {
-                        log.log(Level.FINE, () -> "Will delete expired session " + sessionId + " created " +
-                                createTime + " for '" + applicationId + "'");
+                    log.log(Level.FINE, () -> "Expired local session is candidate for deletion: " + sessionId +
+                            ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status));
+                    // Need to check if it can be deleted, as we might have a (local) session in UNKNOWN
+                    // state that we should not delete
+                    if (canBeDeleted(sessionId, status)) {
                         deleteLocalSession(sessionId);
                         deleted++;
+                        // This might happen if remote session is gone, but local session is not
+                    } else if (isOldAndCanBeDeleted(sessionId, createTime)) {
+                        var localSession = getOptionalSessionFromFileSystem(sessionId);
+                        if (localSession.isEmpty()) continue;
+
+                        // Defensive/paranoid: Check if session is active before deleting
+                        if (! activeForApplication) {
+                            log.log(Level.FINE, () -> "Will delete expired session " + sessionId + " created " +
+                                    createTime + " for '" + applicationId + "'");
+                            deleteLocalSession(sessionId);
+                            deleted++;
+                        }
                     }
+                    if (deleted >= deleteMax)
+                        return;
                 }
-                if (deleted >= deleteMax)
-                    return;
             } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
                 log.log(Level.WARNING, "Error when deleting expired sessions ", e);
             }
