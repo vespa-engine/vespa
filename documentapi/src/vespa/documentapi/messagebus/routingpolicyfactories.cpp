@@ -50,8 +50,7 @@ RoutingPolicyFactories::LoadBalancerPolicyFactory::createPolicy(const string &pa
 }
 
 RoutingPolicyFactories::DocumentRouteSelectorPolicyFactory::
-DocumentRouteSelectorPolicyFactory(const document::DocumentTypeRepo &repo,
-                                   const string &configId) :
+DocumentRouteSelectorPolicyFactory(const document::IDocumentTypeRepo &repo, const string &configId) :
     _repo(repo),
     _configId(configId)
 {

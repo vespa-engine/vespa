@@ -10,16 +10,14 @@
 
 namespace document {
 
-DocumentCalculator::DocumentCalculator(
-        const DocumentTypeRepo& repo,
-        const vespalib::string & expression)
+DocumentCalculator::DocumentCalculator(const IDocumentTypeRepo& repo, const vespalib::string & expression)
 {
     BucketIdFactory factory;
     select::Parser parser(repo, factory);
     _selectionNode = parser.parse(expression + " == 0");
 }
 
-DocumentCalculator::~DocumentCalculator() { }
+DocumentCalculator::~DocumentCalculator() = default;
 
 double
 DocumentCalculator::evaluate(const Document& doc, std::unique_ptr<select::VariableMap> variables)

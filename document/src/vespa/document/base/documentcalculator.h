@@ -7,11 +7,11 @@ namespace document {
 
 namespace select { class VariableMap; }
 
-class DocumentTypeRepo;
+class IDocumentTypeRepo;
 
 class DocumentCalculator {
 public:
-    DocumentCalculator(const DocumentTypeRepo& repo, const vespalib::string& expression);
+    DocumentCalculator(const IDocumentTypeRepo& repo, const vespalib::string& expression);
     ~DocumentCalculator();
     double evaluate(const Document& doc, std::unique_ptr<select::VariableMap> variables);
 

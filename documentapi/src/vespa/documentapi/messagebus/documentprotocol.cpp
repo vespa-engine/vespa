@@ -7,6 +7,7 @@
 #include "routingpolicyfactories.h"
 #include "routingpolicyrepository.h"
 #include <vespa/document/util/stringutil.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/exceptions.h>

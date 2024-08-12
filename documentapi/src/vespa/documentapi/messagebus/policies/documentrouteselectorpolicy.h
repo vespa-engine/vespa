@@ -9,7 +9,7 @@
 #include <vespa/config/helper/ifetchercallback.h>
 #include <mutex>
 
-namespace document { class DocumentTypeRepo; }
+namespace document { class IDocumentTypeRepo; }
 
 namespace mbus {
     class Route;
@@ -36,7 +36,7 @@ private:
     using SelectorPtr = std::shared_ptr<document::select::Node>;
     using ConfigMap = std::map<string, SelectorPtr>;
 
-    const document::DocumentTypeRepo      &_repo;
+    const document::IDocumentTypeRepo      &_repo;
     mutable std::mutex                     _lock;
     ConfigMap                              _config;
     string                                 _error;
@@ -59,7 +59,7 @@ public:
      *
      * @param configUri The configuration uri to subscribe with.
      */
-    DocumentRouteSelectorPolicy(const document::DocumentTypeRepo &repo,
+    DocumentRouteSelectorPolicy(const document::IDocumentTypeRepo &repo,
                                 const config::ConfigUri &configUri);
     ~DocumentRouteSelectorPolicy() override;
 

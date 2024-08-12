@@ -9,7 +9,7 @@
 
 namespace search { class IAttributeManager; }
 
-namespace document { class DocumentTypeRepo; }
+namespace document { class IDocumentTypeRepo; }
 
 namespace proton {
 
@@ -19,7 +19,7 @@ protected:
     const vespalib::string &_docType;
     const search::IAttributeManager *_amgr;
     const document::Document &_emptyDoc;
-    const document::DocumentTypeRepo &_repo;
+    const document::IDocumentTypeRepo &_repo;
     bool _hasFields;
     bool _hasDocuments;
 
@@ -27,7 +27,7 @@ public:
     SelectPrunerBase(const vespalib::string &docType,
                      const search::IAttributeManager *amgr,
                      const document::Document &emptyDoc,
-                     const document::DocumentTypeRepo &repo,
+                     const document::IDocumentTypeRepo &repo,
                      bool hasFields,
                      bool hasDocuments);
 
@@ -49,7 +49,7 @@ public:
     SelectPruner(const vespalib::string &docType,
                  const search::IAttributeManager *amgr,
                  const document::Document &emptyDoc,
-                 const document::DocumentTypeRepo &repo,
+                 const document::IDocumentTypeRepo &repo,
                  bool hasFields,
                  bool hasDocuments);
 

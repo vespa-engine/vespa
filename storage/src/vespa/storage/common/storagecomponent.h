@@ -35,6 +35,7 @@
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdslib/state/node.h>
 #include <mutex>
 

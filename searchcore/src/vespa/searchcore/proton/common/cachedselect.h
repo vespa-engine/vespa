@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace document {
-    class DocumentTypeRepo;
+    class IDocumentTypeRepo;
     class Document;
     namespace select { class Node; }
 }
@@ -100,12 +100,12 @@ public:
     const std::unique_ptr<document::select::Node> &preDocSelect() const { return _preDocSelect; }
 
     void set(const vespalib::string &selection,
-             const document::DocumentTypeRepo &repo);
+             const document::IDocumentTypeRepo &repo);
                   
     void set(const vespalib::string &selection,
              const vespalib::string &docTypeName,
              const document::Document &emptyDoc,
-             const document::DocumentTypeRepo &repo,
+             const document::IDocumentTypeRepo &repo,
              const search::IAttributeManager *amgr,
              bool hasFields);
 
