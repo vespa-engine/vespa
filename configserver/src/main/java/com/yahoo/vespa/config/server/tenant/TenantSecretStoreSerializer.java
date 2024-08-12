@@ -10,6 +10,7 @@ import com.yahoo.slime.Type;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author olaa
@@ -26,6 +27,7 @@ public class TenantSecretStoreSerializer {
     private final static String awsIdField = "awsId";
     private final static String roleField = "role";
     private final static String nameField = "name";
+    private static final String externalIdField = "externalId";
 
     public static Slime toSlime(List<TenantSecretStore> tenantSecretStores) {
         Slime slime = new Slime();
@@ -42,6 +44,8 @@ public class TenantSecretStoreSerializer {
         object.setString(awsIdField, tenantSecretStore.getAwsId());
         object.setString(nameField, tenantSecretStore.getName());
         object.setString(roleField, tenantSecretStore.getRole());
+        tenantSecretStore.getExternalId().ifPresent(
+                externalId -> object.setString(externalIdField, externalId));
     }
 
     public static TenantSecretStore fromSlime(Inspector inspector) {
@@ -49,7 +53,8 @@ public class TenantSecretStoreSerializer {
             return new TenantSecretStore(
                     inspector.field(nameField).asString(),
                     inspector.field(awsIdField).asString(),
-                    inspector.field(roleField).asString()
+                    inspector.field(roleField).asString(),
+                    optionalString(inspector.field(externalIdField))
             );
         }
         throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
@@ -59,6 +64,11 @@ public class TenantSecretStoreSerializer {
         List<TenantSecretStore> tenantSecretStores = new ArrayList<>();
         inspector.traverse(((ArrayTraverser)(idx, store) -> tenantSecretStores.add(fromSlime(store))));
         return tenantSecretStores;
+    }
+
+    private static Optional<String> optionalString(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        return Optional.of(object.asString());
     }
 
 }
