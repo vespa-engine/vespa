@@ -538,7 +538,8 @@ public class Flags {
             List.of("mpolden"), "2024-08-07", "2024-12-01",
             "The hostname scheme to use when provisioning hosts. Must be 'legacy' or 'standard",
             "Takes effect immediately",
-            (value) -> "legacy".equals(value) || "standard".equals(value));
+            (value) -> "legacy".equals(value) || "standard".equals(value),
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
