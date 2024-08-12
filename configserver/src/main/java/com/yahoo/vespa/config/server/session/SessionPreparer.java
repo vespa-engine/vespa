@@ -350,8 +350,13 @@ public class SessionPreparer {
             log.log(Level.FINE, "Writing application package state to zookeeper");
 
             // TODO: this can be removed when all existing tenant secret stores have externalId in zk
-            var tenantSecretStores = SecretStoreExternalIdRetriever
-                    .populateExternalId(secretStore, applicationId.tenant(), zone.system(), params.tenantSecretStores());
+            var tenantSecretStores = params.tenantSecretStores();
+            try {
+                tenantSecretStores = SecretStoreExternalIdRetriever
+                        .populateExternalId(secretStore, applicationId.tenant(), zone.system(), params.tenantSecretStores());
+            } catch (InvalidApplicationException e) {
+                log.warning(e.getMessage() + " Secret store was probably deleted.");
+            }
 
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
