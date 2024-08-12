@@ -6,6 +6,7 @@
 #include "predicate_index_saver.h"
 #include "simple_index_saver.h"
 #include <vespa/searchlib/util/data_buffer_writer.h>
+#include <utility>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
@@ -51,7 +52,7 @@ template <typename IntervalT>
 class IntervalSaver : public PostingSaver<EntryRef> {
     const PredicateIntervalStore &_store;
 public:
-    IntervalSaver(const PredicateIntervalStore &store) : _store(store) {}
+    explicit IntervalSaver(const PredicateIntervalStore &store) : _store(store) {}
     void save(const EntryRef &ref, BufferWriter& writer) const override {
         uint32_t size;
         IntervalT single_buf;
@@ -69,7 +70,7 @@ template <typename IntervalT>
 class IntervalDeserializer : public PostingDeserializer<EntryRef> {
     PredicateIntervalStore &_store;
 public:
-    IntervalDeserializer(PredicateIntervalStore &store) : _store(store) {}
+    explicit IntervalDeserializer(PredicateIntervalStore &store) : _store(store) {}
     EntryRef deserialize(DataBuffer &buffer) override {
         std::vector<IntervalT> intervals;
         size_t size = buffer.readInt16();
@@ -174,7 +175,7 @@ class DocIdIterator : public PopulateInterface::Iterator {
 public:
     using BTreeIterator = SimpleIndex<EntryRef>::BTreeIterator;
 
-    DocIdIterator(BTreeIterator it) : _it(it) { }
+    explicit DocIdIterator(BTreeIterator it) : _it(std::move(it)) { }
     int32_t getNext() override {
         if (_it.valid()) {
             uint32_t docId = _it.getKey();
@@ -252,7 +253,7 @@ PredicateIndex::lookup(uint64_t key) const
             return std::make_unique<DocIdIterator>(it);
         }
     }
-    return PopulateInterface::Iterator::UP();
+    return {};
 }
 
 void

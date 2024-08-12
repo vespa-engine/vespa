@@ -37,7 +37,13 @@ BitVectorCache::computeCountVector(KeySet & keys, CountVector & v) const
             auto found = _keys.find(k);
             if (found != end) {
                 const KeyMeta & m = found->second;
-                keySets[m.chunkId()].insert(m.chunkIndex());
+                if (m.isCached()) {
+                    keySets[m.chunkId()].insert(m.chunkIndex());
+                } else {
+                    notFound.push_back(k);
+                }
+            } else {
+                notFound.push_back(k);
             }
         }
         chunks = _chunks;

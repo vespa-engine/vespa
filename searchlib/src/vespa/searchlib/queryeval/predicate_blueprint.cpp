@@ -207,7 +207,7 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
         });
 
 
-    if ((zero_constraints_docs.size() == 0) &&
+    if ((zero_constraints_docs.empty()) &&
         _interval_dict_entries.empty() && _bounds_dict_entries.empty() &&
         !_zstar_dict_entry.valid())
     {
@@ -256,7 +256,7 @@ PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
         if (_zstar_dict_entry.valid()) {
             auto vector_iterator = interval_index.getVectorPostingList(Constants::z_star_compressed_hash);
             if (vector_iterator) {
-                _zstar_vector_iterator.emplace(std::move(*vector_iterator));
+                _zstar_vector_iterator.emplace(*vector_iterator);
             } else {
                 _zstar_btree_iterator.emplace(interval_index.getBTreePostingList(_zstar_dict_entry));
             }
