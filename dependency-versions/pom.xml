@@ -101,7 +101,7 @@
         <felix.vespa.version>7.0.5</felix.vespa.version>
         <felix.log.vespa.version>1.3.0</felix.log.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
-        <hamcrest.vespa.version>2.2</hamcrest.vespa.version>
+        <hamcrest.vespa.version>3.0</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
         <huggingface.vespa.version>0.29.0</huggingface.vespa.version>
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
