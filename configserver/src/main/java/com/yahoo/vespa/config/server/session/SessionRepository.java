@@ -605,9 +605,13 @@ public class SessionRepository {
     private void write(Session existingSession, LocalSession session, ApplicationId applicationId, Instant created) {
 
         // TODO: this can be removed when all existing tenant secret stores have externalId in zk
-        var tenantSecretStores = SecretStoreExternalIdRetriever
-                .populateExternalId(secretStore, applicationId.tenant(), zone.system(), existingSession.getTenantSecretStores());
-
+        var tenantSecretStores = existingSession.getTenantSecretStores();
+        try {
+            tenantSecretStores = SecretStoreExternalIdRetriever
+                    .populateExternalId(secretStore, applicationId.tenant(), zone.system(), existingSession.getTenantSecretStores());
+        } catch (InvalidApplicationException e) {
+            log.warning(e.getMessage() + " Secret store was probably deleted.");
+        }
 
         SessionSerializer sessionSerializer = new SessionSerializer();
         sessionSerializer.write(session.getSessionZooKeeperClient(),
