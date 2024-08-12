@@ -55,7 +55,7 @@
 
         <!-- Dependencies used internally in Vespa, not visible for users, or only visible in test classpath -->
 
-        <aircompressor.vespa.version>0.27</aircompressor.vespa.version>
+        <aircompressor.vespa.version>2.0</aircompressor.vespa.version>
         <airline.vespa.version>0.9</airline.vespa.version>
         <antlr.vespa.version>3.5.3</antlr.vespa.version>
         <antlr4.vespa.version>4.13.2</antlr4.vespa.version>
