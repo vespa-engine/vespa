@@ -1,5 +1,6 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+dnf install -y 'dnf-command(config-manager)' jq
 
 set -euo pipefail
 MAX_NUMBER_OF_RELEASES=40
@@ -7,7 +8,6 @@ MAX_NUMBER_OF_RELEASES=40
 # Cloudsmith repo
 rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
 curl -1sLf 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=8' > /tmp/vespa-open-source-rpms.repo
-dnf install -y 'dnf-command(config-manager)'
 dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
 rm -f /tmp/vespa-open-source-rpms.repo
 
