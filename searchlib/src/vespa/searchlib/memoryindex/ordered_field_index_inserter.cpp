@@ -24,8 +24,6 @@ namespace search::memoryindex {
 
 namespace {
 
-const vespalib::string emptyWord = "";
-
 uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())); }
 
 }
