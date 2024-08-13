@@ -172,7 +172,7 @@ public class PrepareParamsTest {
 
     @Test
     public void testSecretStores() throws  IOException {
-        List<TenantSecretStore> secretStores = List.of(new TenantSecretStore("name", "awsId", "role", "extId"));
+        List<TenantSecretStore> secretStores = List.of(new TenantSecretStore("name", "awsId", "role"));
         Slime secretStoreSlime = TenantSecretStoreSerializer.toSlime(secretStores);
         String secretStoreParam = new String(SlimeUtils.toJsonBytes(secretStoreSlime), StandardCharsets.UTF_8);
 
@@ -182,7 +182,6 @@ public class PrepareParamsTest {
         assertEquals("name", tenantSecretStore.getName());
         assertEquals("awsId", tenantSecretStore.getAwsId());
         assertEquals("role", tenantSecretStore.getRole());
-        assertEquals("extId", tenantSecretStore.getExternalId().get());
 
         // Verify using json object
         var root = SlimeUtils.jsonToSlime(json);
