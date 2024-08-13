@@ -23,13 +23,11 @@ jobs:
   publish-cli-release:
     runs-on: ubuntu-latest
     steps:
-      - name: now-epoch
+      - name: error-if-current-release-too-old
         run: |
           now_epoch=`date "+%s"`
           echo "Now epoch: " $now_epoch
 
-      - name: error-if-current-release-too-old
-        run: |
           current_release_date=$(curl -sLf https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
           grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
           echo "Current release date: " $current_release_date
@@ -45,6 +43,9 @@ jobs:
 
       - name: error-if-docker-image-too-old
         run: |
+          now_epoch=`date "+%s"`
+          echo "Now epoch: " $now_epoch
+
           image_date=$(curl -sLf https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated')
           echo "Docker image last_updated: " $image_date
           image_epoch=`date -d "$image_date" "+%s"`
