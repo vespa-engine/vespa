@@ -36,7 +36,7 @@ jobs:
       - name: Run script in Fedora Docker container
         run: |
           docker run --rm \
-            -e SCREWDRIVER=1 \
+            -e GITHUB=1 \
             -e SD_PULL_REQUEST=$([[ "${{ github.event_name }}" == "pull_request" ]] && echo 1 || echo "") \
             -e CLOUDSMITH_API_CREDS=${{ secrets.CLOUDSMITH_API_CREDS }} \
             -v ${{ github.workspace }}:/workspace -w /workspace \

@@ -30,9 +30,7 @@ done
 echo "Deleting the following RPMs:"
 cat $RPMS_TO_DELETE
 
-echo $CLOUDSMITH_API_CREDS
-
-if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
+if [[ -n $GITHUB ]] && [[ -z $SD_PULL_REQUEST ]]; then
     for RPMID in $(cat $RPMS_TO_DELETE); do
       curl -sLf -u "$CLOUDSMITH_API_CREDS" -X DELETE \
         --header 'accept: application/json' \
