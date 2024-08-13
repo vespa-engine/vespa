@@ -1,0 +1,31 @@
+name: delete-old-versions-in-archive
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - .github/workflows/delete-old-versions-in-archive.yml
+      - .github/scripts/delete-old-cloudsmith-artifacts.sh
+    branches:
+      - master
+
+  push:
+    paths:
+      - .github/workflows/delete-old-versions-in-archive.yml
+      - .github/scripts/delete-old-cloudsmith-artifacts.sh
+    branches:
+      - master
+      - glebashink/gh-action-delete-old-versions-in-archive
+
+  schedule:
+   - cron: '0 6 * * *'
+
+jobs:
+  delete-old-versions-in-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: cleanup
+        run: bash .github/scripts/delete-old-cloudsmith-artifacts.sh
