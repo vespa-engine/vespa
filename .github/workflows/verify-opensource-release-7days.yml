@@ -20,7 +20,7 @@ on:
    - cron: '0 0 * * *'
 
 jobs:
-  publish-cli-release:
+  error-if-current-release-too-old:
     runs-on: ubuntu-latest
     steps:
       - name: error-if-current-release-too-old
@@ -41,6 +41,9 @@ jobs:
             exit 1
           fi
 
+  error-if-docker-image-too-old:
+    runs-on: ubuntu-latest
+    steps:
       - name: error-if-docker-image-too-old
         run: |
           now_epoch=`date "+%s"`
