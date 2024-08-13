@@ -25,7 +25,11 @@ jobs:
   delete-old-versions-in-archive:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Install DNF
+        run: sudo apt-get install -y dnf
 
-      - name: cleanup
-        run: bash .github/scripts/delete-old-cloudsmith-artifacts.sh
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run cleanup script
+        run: sudo bash .github/scripts/delete-old-cloudsmith-artifacts.sh
