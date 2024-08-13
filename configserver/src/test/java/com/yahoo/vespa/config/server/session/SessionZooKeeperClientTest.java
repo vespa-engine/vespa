@@ -150,11 +150,12 @@ public class SessionZooKeeperClientTest {
     public void require_tenant_secret_stores_written_and_parsed() {
         var secretStores = List.of(
                 new TenantSecretStore("name1", "awsId1", "role1"),
-                new TenantSecretStore("name2", "awsId2", "role2")
+                new TenantSecretStore("name2", "awsId2", "role2", "extId2")
         );
         var zkc = createSessionZKClient(4);
         zkc.writeTenantSecretStores(secretStores);
-        assertEquals(secretStores, zkc.readTenantSecretStores());
+        List<TenantSecretStore> actual = zkc.readTenantSecretStores();
+        assertEquals(secretStores, actual);
     }
 
     @Test
