@@ -28,7 +28,7 @@ jobs:
           now_epoch=`date "+%s"`
           echo "Now epoch: " $now_epoch
 
-      - name: calculate-current-release-age
+      - name: error-if-current-release-too-old
         run: |
           current_release_date=$(curl -sLf https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
           grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
@@ -38,14 +38,12 @@ jobs:
           release_age_days=$((($now_epoch-$current_release_epoch)/86400))
           echo "Release age days: " $release_age_days
 
-      - name: error-if-current-release-too-old
-        run: |
           if [ "$release_age_days" -gt 7 ]; then
             echo "Current open source release is older than 7 days"
             exit 1
           fi
 
-      - name: calculate-docker-image-age
+      - name: error-if-docker-image-too-old
         run: |
           image_date=$(curl -sLf https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated')
           echo "Docker image last_updated: " $image_date
@@ -54,8 +52,6 @@ jobs:
           docker_image_age_days=$((($now_epoch-$image_epoch)/86400))
           echo "Docker image age days: " $docker_image_age_days
 
-      - name: error-if-docker-image-too-old
-        run: |
           if [ "$docker_image_age_days" -gt 7 ]; then
             echo "Current Docker image is older than 7 days"
             exit 1
