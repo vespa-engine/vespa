@@ -1,0 +1,64 @@
+name: verify-opensource-release-7days
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - .github/workflows/verify-opensource-release-7days.yml
+    branches:
+      - master
+
+  push:
+    paths:
+      - .github/workflows/verify-opensource-release-7days.yml
+    branches:
+      - master
+      - glebashnik/gh-action-verify-opensource-release-7days
+
+  schedule:
+   - cron: '0 0 * * *'
+
+jobs:
+  publish-cli-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: now-epoch
+        run: |
+          now_epoch=`date "+%s"`
+          echo "Now epoch: " $now_epoch
+
+      - name: calculate-current-release-age
+        run: |
+          current_release_date=$(curl -sLf https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
+          grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
+          echo "Current release date: " $current_release_date
+          current_release_epoch=`date -d "$current_release_date" "+%s"`
+          echo "Current release epoch: " $current_release_epoch
+          release_age_days=$((($now_epoch-$current_release_epoch)/86400))
+          echo "Release age days: " $release_age_days
+
+      - name: error-if-current-release-too-old
+        run: |
+          if [ "$release_age_days" -gt 7 ]; then
+            echo "Current open source release is older than 7 days"
+            exit 1
+          fi
+
+      - name: calculate-docker-image-age
+        run: |
+          image_date=$(curl -sLf https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated')
+          echo "Docker image last_updated: " $image_date
+          image_epoch=`date -d "$image_date" "+%s"`
+          echo "Docker image epoch: " $image_epoch
+          docker_image_age_days=$((($now_epoch-$image_epoch)/86400))
+          echo "Docker image age days: " $docker_image_age_days
+
+      - name: error-if-docker-image-too-old
+        run: |
+          if [ "$docker_image_age_days" -gt 7 ]; then
+            echo "Current Docker image is older than 7 days"
+            exit 1
+          fi
+
+
