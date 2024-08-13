@@ -1,0 +1,45 @@
+name: mirror-copr-rpms-to-archive
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - .github/workflows/mirror-copr-rpms-to-archive.yml
+      - .github/scripts/publish-unpublished-rpms-to-archive.sh
+    branches:
+      - master
+
+  push:
+    paths:
+      - .github/workflows/mirror-copr-rpms-to-archive.yml
+      - .github/scripts/publish-unpublished-rpms-to-archive.sh
+    branches:
+      - master
+      - glebashnik/gh-action-mirror-copr-rpms-to-archive
+
+  schedule:
+   - cron: '0 6 * * *'
+
+jobs:
+  mirror-copr-rpms-to-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull docker image
+        run: docker pull docker.io/almalinux:8
+
+      - name: Run scripts in docker
+        run: |
+          docker run --rm \
+            -e GITHUB=1 \
+            -e SD_PULL_REQUEST=$([[ "${{ github.event_name }}" == "pull_request" ]] && echo 1 || echo "") \
+            -e CLOUDSMITH_API_CREDS=${{ secrets.CLOUDSMITH_API_CREDS }} \
+            -v ${{ github.workspace }}:/workspace -w /workspace \
+            docker.io/almalinux:8 bash -c "
+              sudo dnf install -y dnf-plugins-core jq
+              bash .github/scripts/publish-unpublished-rpms-to-archive.sh x86_64
+              bash .github/scripts/publish-unpublished-rpms-to-archive.sh aarch64
+            "
