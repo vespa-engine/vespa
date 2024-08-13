@@ -19,10 +19,10 @@ public:
         : _repo(&repo), _doc_type(&doc_type) {}
     FixedTypeRepo(const DocumentTypeRepo *repo, const DocumentType *doc_type) noexcept
         : _repo(repo), _doc_type(doc_type) {}
-    FixedTypeRepo(const DocumentTypeRepo &repo, const vespalib::string &type) noexcept;
+    FixedTypeRepo(const DocumentTypeRepo &repo, std::string_view type) noexcept;
 
     const DataType *getDataType(int32_t id) const { return _repo->getDataType(*_doc_type, id); }
-    const DataType *getDataType(const vespalib::string &name) const { return _repo->getDataType(*_doc_type, name); }
+    const DataType *getDataType(std::string_view name) const { return _repo->getDataType(*_doc_type, name); }
     const AnnotationType *getAnnotationType(int32_t id) const { return _repo->getAnnotationType(*_doc_type, id); }
     const DocumentTypeRepo &getDocumentTypeRepo() const { return *_repo; }
     const DocumentType &getDocumentType() const noexcept { return *_doc_type; }

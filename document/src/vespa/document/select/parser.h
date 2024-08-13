@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-namespace document { class DocumentTypeRepo; }
+namespace document { class IDocumentTypeRepo; }
 
 namespace document::select {
 
@@ -18,10 +18,10 @@ namespace document::select {
  * Thread safety: same as a std::vector
  */
 class Parser {
-    const DocumentTypeRepo&_doc_type_repo;
+    const IDocumentTypeRepo&_doc_type_repo;
     const BucketIdFactory& _bucket_id_factory;
 public:
-    Parser(const DocumentTypeRepo& repo, const BucketIdFactory& bucket_id_factory)
+    Parser(const IDocumentTypeRepo& repo, const BucketIdFactory& bucket_id_factory)
         : _doc_type_repo(repo),
           _bucket_id_factory(bucket_id_factory)
     {}

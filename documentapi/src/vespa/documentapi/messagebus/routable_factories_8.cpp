@@ -5,6 +5,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/docapi_common.pb.h>
 #include <vespa/documentapi/messagebus/docapi_feed.pb.h>

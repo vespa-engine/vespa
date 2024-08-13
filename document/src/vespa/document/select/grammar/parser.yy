@@ -92,7 +92,7 @@
 
 %parse-param {DocSelScanner& scanner}
 %parse-param {const BucketIdFactory& bucket_id_factory}
-%parse-param {const DocumentTypeRepo& doc_type_repo}
+%parse-param {const IDocumentTypeRepo& doc_type_repo}
 %parse-param {std::unique_ptr<Node>& recv_expr}
 
  /* Generated parser header file verbatim */
@@ -108,7 +108,7 @@
 
 namespace document {
 class BucketIdFactory;
-class DocumentTypeRepo;
+class IDocumentTypeRepo;
 }
 
 namespace document::select {
@@ -128,7 +128,7 @@ class ValueNode;
 #pragma GCC diagnostic ignored "-Winline"
 
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/i_documenttype_repo.h>
 #include <vespa/document/select/scanner.h>
 #include <vespa/document/select/constant.h>
 #include <vespa/document/select/branch.h>

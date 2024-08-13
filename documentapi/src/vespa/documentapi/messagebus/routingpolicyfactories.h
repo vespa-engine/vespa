@@ -3,7 +3,7 @@
 
 #include "iroutingpolicyfactory.h"
 
-namespace document { class DocumentTypeRepo; }
+namespace document { class IDocumentTypeRepo; }
 
 namespace documentapi {
 
@@ -30,10 +30,10 @@ public:
     };
     class DocumentRouteSelectorPolicyFactory : public IRoutingPolicyFactory {
     private:
-        const document::DocumentTypeRepo &_repo;
+        const document::IDocumentTypeRepo &_repo;
         string _configId;
     public:
-        DocumentRouteSelectorPolicyFactory(const document::DocumentTypeRepo &repo, const string &configId);
+        DocumentRouteSelectorPolicyFactory(const document::IDocumentTypeRepo &repo, const string &configId);
         mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
     };
     class ExternPolicyFactory : public IRoutingPolicyFactory {

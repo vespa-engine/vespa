@@ -7,6 +7,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/parsing_failed_exception.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <ostream>
 
@@ -24,7 +25,7 @@ using namespace fieldvalue;
 namespace {
 
 std::unique_ptr<select::Node>
-parseDocumentSelection(std::string_view query, const DocumentTypeRepo& repo)
+parseDocumentSelection(std::string_view query, const IDocumentTypeRepo& repo)
 {
     BucketIdFactory factory;
     try {

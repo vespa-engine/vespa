@@ -220,7 +220,7 @@ CachedSelect::~CachedSelect() = default;
 
 void
 CachedSelect::set(const vespalib::string &selection,
-                  const document::DocumentTypeRepo &repo)
+                  const document::IDocumentTypeRepo &repo)
 {
     try {
         document::select::Parser parser(repo, document::BucketIdFactory());
@@ -238,7 +238,7 @@ void
 CachedSelect::set(const vespalib::string &selection,
                   const vespalib::string &docTypeName,
                   const document::Document &emptyDoc,
-                  const document::DocumentTypeRepo &repo,
+                  const document::IDocumentTypeRepo &repo,
                   const search::IAttributeManager *amgr,
                   bool hasFields)
 {                  
@@ -247,24 +247,14 @@ CachedSelect::set(const vespalib::string &selection,
     if (!parsed) {
         return;
     }
-    SelectPruner docsPruner(docTypeName,
-                            amgr,
-                            emptyDoc,
-                            repo,
-                            hasFields,
-                            true);
+    SelectPruner docsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, true);
     docsPruner.process(*parsed);
     setDocumentSelect(docsPruner);
     if (amgr == nullptr || _attrFieldNodes == 0u) {
         return;
     }
 
-    SelectPruner noDocsPruner(docTypeName,
-                              amgr,
-                              emptyDoc,
-                              repo,
-                              hasFields,
-                              false);
+    SelectPruner noDocsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, false);
     noDocsPruner.process(*parsed);
     setPreDocumentSelect(*amgr, noDocsPruner);
 }

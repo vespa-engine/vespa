@@ -4,7 +4,7 @@
 #include "select_utils.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/i_documenttype_repo.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/constant.h>
@@ -52,7 +52,7 @@ namespace proton {
 SelectPrunerBase::SelectPrunerBase(const vespalib::string &docType,
                                    const search::IAttributeManager *amgr,
                                    const document::Document &emptyDoc,
-                                   const document::DocumentTypeRepo &repo,
+                                   const document::IDocumentTypeRepo &repo,
                                    bool hasFields,
                                    bool hasDocuments)
     : _docType(docType),
@@ -77,7 +77,7 @@ SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase &rhs)
 SelectPruner::SelectPruner(const vespalib::string &docType,
                            const search::IAttributeManager *amgr,
                            const document::Document &emptyDoc,
-                           const document::DocumentTypeRepo &repo,
+                           const document::IDocumentTypeRepo &repo,
                            bool hasFields,
                            bool hasDocuments)
     : CloningVisitor(),
