@@ -23,13 +23,14 @@ on:
 
 jobs:
   delete-old-versions-in-archive:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Install DNF
-        run: sudo apt-get install -y dnf dnf-plugins-core
+      - name: Pull Fedora Docker image
+        run: docker pull fedora:latest
 
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run cleanup script
-        run: sudo bash .github/scripts/delete-old-cloudsmith-artifacts.sh
+      - name: Run script in Fedora Docker container
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace fedora:latest bash .github/scripts/delete-old-cloudsmith-artifacts.sh
