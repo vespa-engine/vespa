@@ -3,7 +3,6 @@ module github.com/vespa-engine/vespa/client/go
 go 1.22.4
 
 require (
-	github.com/alessio/shellescape v1.4.2
 	github.com/briandowns/spinner v1.23.1
 	github.com/fatih/color v1.17.0
 	github.com/go-json-experiment/json v0.0.0-20240524174822-2d9f40f7385b
@@ -21,6 +20,7 @@ require (
 )
 
 require (
+	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/danieljoos/wincred v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

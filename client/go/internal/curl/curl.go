@@ -5,13 +5,15 @@ import (
 	"io"
 	"net/url"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
-
-	"github.com/alessio/shellescape"
 )
+
+var escapeSymbols = regexp.MustCompile(`[^\w@%+=:,./-]`)
 
 type header struct {
 	key   string
@@ -84,7 +86,7 @@ func (c *Command) Args() []string {
 func (c *Command) String() string {
 	args := []string{c.Path}
 	args = append(args, c.Args()...)
-	return shellescape.QuoteCommand(args)
+	return quoteAll(args)
 }
 
 func (c *Command) Header(key, value string) {
@@ -135,4 +137,22 @@ func curl(method, rawurl string) (*Command, error) {
 		Method: method,
 		url:    realURL,
 	}, nil
+}
+
+func quote(s string) string {
+	if len(s) == 0 {
+		return "''"
+	}
+	if escapeSymbols.MatchString(s) {
+		return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
+	}
+	return s
+}
+
+func quoteAll(args []string) string {
+	result := make([]string, len(args))
+	for i, s := range args {
+		result[i] = quote(s)
+	}
+	return strings.Join(result, " ")
 }

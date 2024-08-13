@@ -12,13 +12,13 @@ import (
 func TestPost(t *testing.T) {
 	c, err := Post("https://example.com")
 	require.Nil(t, err)
-	c.PrivateKey = "key.pem"
-	c.Certificate = "cert.pem"
+	c.PrivateKey = "/home/my path/key#.pem"
+	c.Certificate = "/home/my path/cert!.pem"
 	c.Timeout = time.Minute
 	c.WithBodyFile("file.json")
 	c.Header("Content-Type", "application/json")
 
-	assert.Equal(t, "curl --key key.pem --cert cert.pem -X POST -m 60 -H 'Content-Type: application/json' --data-binary @file.json https://example.com", c.String())
+	assert.Equal(t, "curl --key '/home/my path/key#.pem' --cert '/home/my path/cert!.pem' -X POST -m 60 -H 'Content-Type: application/json' --data-binary @file.json https://example.com", c.String())
 }
 
 func TestGet(t *testing.T) {
