@@ -14,11 +14,11 @@ on:
 
 jobs:
   error-if-current-release-too-old:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Install tools
+      - name: Setup xq
         run: |
-          pip install yq
+          sudo apt-get install -y xq
 
       - name: Error if current release is too old
         run: |
