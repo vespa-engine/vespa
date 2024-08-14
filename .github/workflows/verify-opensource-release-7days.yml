@@ -1,4 +1,4 @@
-name: verify-opensource-release-7days
+name: Check OSS release age
 
 on:
   workflow_dispatch:
@@ -9,13 +9,6 @@ on:
     branches:
       - master
 
-  push:
-    paths:
-      - .github/workflows/verify-opensource-release-7days.yml
-    branches:
-      - master
-      - glebashnik/gh-action-verify-opensource-release-7days
-
   schedule:
    - cron: '0 0 * * *'
 
@@ -23,13 +16,13 @@ jobs:
   error-if-current-release-too-old:
     runs-on: ubuntu-latest
     steps:
-      - name: error-if-current-release-too-old
+      - name: Error if current release is too old
         run: |
           now_epoch=`date "+%s"`
           echo "Now epoch: " $now_epoch
 
           current_release_date=$(curl -sLf https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
-          grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
+          xq -x 'metadata/versioning/lastUpdated' | cut -c 1-8)
           echo "Current release date: " $current_release_date
           current_release_epoch=`date -d "$current_release_date" "+%s"`
           echo "Current release epoch: " $current_release_epoch
@@ -44,7 +37,7 @@ jobs:
   error-if-docker-image-too-old:
     runs-on: ubuntu-latest
     steps:
-      - name: error-if-docker-image-too-old
+      - name: Error if docker image is too old
         run: |
           now_epoch=`date "+%s"`
           echo "Now epoch: " $now_epoch
