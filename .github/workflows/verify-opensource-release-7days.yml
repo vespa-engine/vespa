@@ -18,8 +18,7 @@ jobs:
     steps:
       - name: Install xq
         run: |
-          sudo apt update -y
-          sudo apt install -y xq
+          sudo apt-get install -y xq
 
       - name: Error if current release is too old
         run: |
