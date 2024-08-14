@@ -16,9 +16,9 @@ jobs:
   error-if-current-release-too-old:
     runs-on: ubuntu-latest
     steps:
-      - name: Install xq
+      - name: Install tools
         run: |
-          sudo apt-get install -y xq
+          pip install yq
 
       - name: Error if current release is too old
         run: |
