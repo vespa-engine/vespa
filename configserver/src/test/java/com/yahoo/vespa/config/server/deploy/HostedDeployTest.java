@@ -16,7 +16,9 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -126,7 +128,7 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeployWithTenantSecretStores() {
-        var publicCdZone = new Zone(SystemName.PublicCd, Environment.prod, RegionName.defaultName());
+        var publicCdZone = new Zone(Cloud.builder().name(CloudName.AWS).build(), SystemName.PublicCd, Environment.prod, RegionName.defaultName());
         var secretStore = new MockSecretStore();
         secretStore.put("vespa.external.cd.tenant.secrets.external.id.deploytester.foo", "extId");
 
@@ -141,6 +143,7 @@ public class HostedDeployTest {
 
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
+                .cloudAccount(CloudAccount.from("aws:123456789012"))
                 .tenantSecretStores(tenantSecretStores));
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());

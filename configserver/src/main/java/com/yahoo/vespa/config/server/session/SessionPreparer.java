@@ -25,6 +25,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
@@ -351,13 +352,16 @@ public class SessionPreparer {
 
             // TODO: this can be removed when all existing tenant secret stores have externalId in zk
             var tenantSecretStores = params.tenantSecretStores();
-            try {
-                tenantSecretStores = SecretStoreExternalIdRetriever
-                        .populateExternalId(secretStore, applicationId.tenant(), zone.system(), params.tenantSecretStores());
-            } catch (InvalidApplicationException e) {
-                log.warning(e.getMessage() + " Secret store was probably deleted.");
-            }
 
+            if (! tenantSecretStores.isEmpty() && params.cloudAccount().isPresent()
+                    && params.cloudAccount().get().cloudName().equals(CloudName.AWS)) {
+                try {
+                    tenantSecretStores = SecretStoreExternalIdRetriever
+                            .populateExternalId(secretStore, applicationId.tenant(), zone.system(), params.tenantSecretStores());
+                } catch (InvalidApplicationException e) {
+                    log.warning(e.getMessage() + " Secret store was probably deleted.");
+                }
+            }
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,

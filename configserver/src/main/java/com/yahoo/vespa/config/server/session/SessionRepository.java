@@ -14,6 +14,8 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -606,13 +608,16 @@ public class SessionRepository {
 
         // TODO: this can be removed when all existing tenant secret stores have externalId in zk
         var tenantSecretStores = existingSession.getTenantSecretStores();
-        try {
-            tenantSecretStores = SecretStoreExternalIdRetriever
-                    .populateExternalId(secretStore, applicationId.tenant(), zone.system(), existingSession.getTenantSecretStores());
-        } catch (InvalidApplicationException e) {
-            log.warning(e.getMessage() + " Secret store was probably deleted.");
-        }
+        var cloudName = existingSession.getCloudAccount().map(CloudAccount::cloudName);
 
+        if (! tenantSecretStores.isEmpty() && cloudName.isPresent() && cloudName.get().equals(CloudName.AWS)) {
+            try {
+                tenantSecretStores = SecretStoreExternalIdRetriever
+                        .populateExternalId(secretStore, applicationId.tenant(), zone.system(), existingSession.getTenantSecretStores());
+            } catch (InvalidApplicationException e) {
+                log.warning(e.getMessage() + " Secret store was probably deleted.");
+            }
+        }
         SessionSerializer sessionSerializer = new SessionSerializer();
         sessionSerializer.write(session.getSessionZooKeeperClient(),
                                 applicationId,
