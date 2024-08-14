@@ -1,4 +1,4 @@
-name: link-check
+name: Link check
 
 on:
   workflow_dispatch:
@@ -27,22 +27,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: install
+      - name: Install tools
         run: |
           gem update --system 3.3.3
           gem install bundler
           export LANG=C.UTF-8
           bundle install
-      - name: add-front-matter-for-processing
+
+      - name: Add front matter for processing
         run: |
           find . -not -path './_site/*' -name \*.md | \
             while read f; do (echo -e "---\nrender_with_liquid: false\n---\n"; cat ${f})>${f}.new; mv ${f}.new ${f}; done
 
-      - name: build-site
+      - name: Build site
         run: |
           bundle exec jekyll build
 
-      - name: check-links
+      - name: Check links
         run: |
           bundle exec htmlproofer \
           --assume-extension --check-html --no-check-external-hash --no-enforce-http \
