@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: ruby:3.1
+      image: ruby:3.3
 
     steps:
       - name: Checkout code
