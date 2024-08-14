@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/mirror-copr-rpms-to-archive.yml
       - .github/scripts/publish-unpublished-rpms-to-archive.sh
+      - .github/scripts/upload-rpm-to-cloudsmith.sh
     branches:
       - master
 
@@ -14,6 +15,7 @@ on:
     paths:
       - .github/workflows/mirror-copr-rpms-to-archive.yml
       - .github/scripts/publish-unpublished-rpms-to-archive.sh
+      - .github/scripts/upload-rpm-to-cloudsmith.sh
     branches:
       - master
       - glebashnik/gh-action-mirror-copr-rpms-to-archive
@@ -24,22 +26,31 @@ on:
 jobs:
   mirror-copr-rpms-to-archive:
     runs-on: ubuntu-latest
+
+    container:
+        image: almalinux:8
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          CLOUDSMITH_API_TOKEN: ${{ secrets.CLOUDSMITH_API_TOKEN }}
+        volumes:
+          - ${{ github.workspace }}:/workspace
+
+    defaults:
+      run:
+        working-directory: /workspace
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Pull docker image
-        run: docker pull docker.io/almalinux:8
-
-      - name: Run scripts in docker
+      - name: install
         run: |
-          docker run --rm \
-            -e GITHUB=1 \
-            -e SD_PULL_REQUEST=$([[ "${{ github.event_name }}" == "pull_request" ]] && echo 1 || echo "") \
-            -e CLOUDSMITH_API_CREDS=${{ secrets.CLOUDSMITH_API_CREDS }} \
-            -v ${{ github.workspace }}:/workspace -w /workspace \
-            docker.io/almalinux:8 bash -c "
-              sudo dnf install -y dnf-plugins-core jq
-              bash .github/scripts/publish-unpublished-rpms-to-archive.sh x86_64
-              bash .github/scripts/publish-unpublished-rpms-to-archive.sh aarch64
-            "
+          dnf install -y dnf-plugins-core jq
+
+      - name: mirror-x86-64
+        run: |
+          .github/scripts/publish-unpublished-rpms-to-archive.sh x86_64
+
+      - name: mirror-aarch64
+        run: |
+          .github/scripts/publish-unpublished-rpms-to-archive.sh aarch64

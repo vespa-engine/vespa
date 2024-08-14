@@ -66,7 +66,7 @@ ls -lh  *.rpm
 echo
 
 UPLOAD_FAILED=false
-if [[ -n $GITHUB ]] && [[ -z $SD_PULL_REQUEST ]]; then
+if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
   for rpm in $(ls *.rpm); do
     echo "Uploading $rpm ..."
     if ! $MYDIR/upload-rpm-to-cloudsmith.sh $rpm ; then
