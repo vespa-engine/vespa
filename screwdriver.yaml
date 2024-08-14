@@ -332,28 +332,3 @@ jobs:
     steps:
       - cleanup: |
           screwdriver/delete-old-cloudsmith-artifacts.sh
-
-  link-check:
-    image: ruby:3.1
-    annotations:
-      screwdriver.cd/buildPeriodically: H H(0-5) * * 1-5 # some time between 12:00 AM UTC (midnight) to 5:59 AM UTC Mon-Fri
-    steps:
-      - install: |
-          gem update --system 3.3.3
-          gem install bundler
-          export LANG=C.UTF-8
-          bundle install
-      - add-front-matter-for-processing: |
-          find . -not -path './_site/*' -name \*.md | \
-            while read f; do (echo -e "---\nrender_with_liquid: false\n---\n"; cat ${f})>${f}.new; mv ${f}.new ${f}; done
-      - build-site: |
-          bundle exec jekyll build
-      - check-links: |
-          bundle exec htmlproofer \
-          --assume-extension --check-html --no-check-external-hash --no-enforce-http \
-          --typhoeus '{"connecttimeout": 10, "timeout": 30, "followlocation": false}' \
-          --hydra '{"max_concurrency": 1}' \
-          --ignore-urls '/slack.vespa.ai/,/localhost:8080/,/127.0.0.1:3000/,/favicon.svg/,/main.jsx/' \
-          --ignore-files '/fnet/index.html/,/client/js/app/node_modules/' \
-          --swap-urls '(.*).md:\1.html' \
-          _site
