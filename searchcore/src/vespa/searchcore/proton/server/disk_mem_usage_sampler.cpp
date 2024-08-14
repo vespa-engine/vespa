@@ -139,7 +139,7 @@ DiskMemUsageSampler::sampleDiskUsage()
 vespalib::ProcessMemoryStats
 DiskMemUsageSampler::sampleMemoryUsage()
 {
-    return vespalib::ProcessMemoryStats::create();
+    return vespalib::ProcessMemoryStats::create(0.01);
 }
 
 TransientResourceUsage
