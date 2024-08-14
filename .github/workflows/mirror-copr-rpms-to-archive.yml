@@ -30,6 +30,12 @@ jobs:
       run:
         working-directory: /workspace
 
+    strategy:
+      matrix:
+        arch:
+          - x86_64
+          - aarch64
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,10 +44,6 @@ jobs:
         run: |
           dnf install -y dnf-plugins-core jq
 
-      - name: Publish to x86-64 mirror
+      - name: Publish to ${{ matrix.arch }} mirror
         run: |
-          .github/scripts/publish-unpublished-rpms-to-archive.sh x86_64
-
-      - name: Publish to aarch64 mirror
-        run: |
-          .github/scripts/publish-unpublished-rpms-to-archive.sh aarch64
+          .github/scripts/publish-unpublished-rpms-to-archive.sh ${{ matrix.arch }}
