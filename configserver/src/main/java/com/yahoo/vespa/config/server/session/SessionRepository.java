@@ -14,7 +14,6 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -608,9 +607,7 @@ public class SessionRepository {
 
         // TODO: this can be removed when all existing tenant secret stores have externalId in zk
         var tenantSecretStores = existingSession.getTenantSecretStores();
-        var cloudName = existingSession.getCloudAccount().map(CloudAccount::cloudName);
-
-        if (! tenantSecretStores.isEmpty() && cloudName.isPresent() && cloudName.get().equals(CloudName.AWS)) {
+        if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
             try {
                 tenantSecretStores = SecretStoreExternalIdRetriever
                         .populateExternalId(secretStore, applicationId.tenant(), zone.system(), existingSession.getTenantSecretStores());

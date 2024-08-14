@@ -353,8 +353,7 @@ public class SessionPreparer {
             // TODO: this can be removed when all existing tenant secret stores have externalId in zk
             var tenantSecretStores = params.tenantSecretStores();
 
-            if (! tenantSecretStores.isEmpty() && params.cloudAccount().isPresent()
-                    && params.cloudAccount().get().cloudName().equals(CloudName.AWS)) {
+            if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
                 try {
                     tenantSecretStores = SecretStoreExternalIdRetriever
                             .populateExternalId(secretStore, applicationId.tenant(), zone.system(), params.tenantSecretStores());

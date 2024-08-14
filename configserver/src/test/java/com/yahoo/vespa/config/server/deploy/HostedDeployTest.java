@@ -143,7 +143,6 @@ public class HostedDeployTest {
 
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
-                .cloudAccount(CloudAccount.from("aws:123456789012"))
                 .tenantSecretStores(tenantSecretStores));
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
