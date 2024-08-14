@@ -69,7 +69,7 @@ echo
 UPLOAD_FAILED=false
 echo "GitHub event: $GITHUB_EVENT_NAME"
 
-if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+if [ "$GITHUB_EVENT_NAME" == "schedule" ]; then
   for rpm in $(ls *.rpm); do
     echo "Uploading $rpm ..."
     if ! $MYDIR/upload-rpm-to-cloudsmith.sh $rpm ; then

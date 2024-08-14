@@ -42,7 +42,7 @@ $DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_ve
 
 echo "Packages on Copr:"
 cat $COPR_PACKAGES
-echo 
+echo
 
 for pv in $(cat $COPR_PACKAGES); do
   if ! $DNF list --disablerepo='*' --enablerepo=vespa-open-source-rpms $pv &> /dev/null; then
