@@ -16,15 +16,19 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -124,11 +128,19 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeployWithTenantSecretStores() {
-        List<TenantSecretStore> tenantSecretStores = List.of(new TenantSecretStore("foo", "123", "role"));
+        var publicCdZone = new Zone(Cloud.builder().name(CloudName.AWS).build(), SystemName.PublicCd, Environment.prod, RegionName.defaultName());
+        var secretStore = new MockSecretStore();
+        secretStore.put("vespa.external.cd.tenant.secrets.external.id.deploytester.foo", "extId");
+
+        TenantSecretStore tenantSecretStore = new TenantSecretStore("foo", "extId", "role");
+        var tenantSecretStores = List.of(tenantSecretStore);
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
-                .hostedConfigserverConfig(Zone.defaultZone())
+                .hostedConfigserverConfig(publicCdZone)
+                .zone(publicCdZone)
+                .secretStore(secretStore)
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
                 .build();
+
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
                 .tenantSecretStores(tenantSecretStores));
@@ -136,7 +148,9 @@ public class HostedDeployTest {
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
         assertTrue(deployment.isPresent());
         deployment.get().activate();
-        assertEquals(tenantSecretStores, ((Deployment) deployment.get()).session().getTenantSecretStores());
+
+        var expected = List.of(tenantSecretStore.withExternalId("extId"));
+        assertEquals(expected, ((Deployment) deployment.get()).session().getTenantSecretStores());
     }
 
     @Test

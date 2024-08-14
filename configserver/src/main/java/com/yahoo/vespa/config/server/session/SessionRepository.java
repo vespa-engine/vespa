@@ -14,6 +14,7 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -37,6 +38,7 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
@@ -53,6 +55,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.KeeperException;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -601,6 +604,17 @@ public class SessionRepository {
     // ---------------- Serialization ----------------------------------------------------------------
 
     private void write(Session existingSession, LocalSession session, ApplicationId applicationId, Instant created) {
+
+        // TODO: this can be removed when all existing tenant secret stores have externalId in zk
+        var tenantSecretStores = existingSession.getTenantSecretStores();
+        if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
+            try {
+                tenantSecretStores = SecretStoreExternalIdRetriever
+                        .populateExternalId(secretStore, applicationId.tenant(), zone.system(), existingSession.getTenantSecretStores());
+            } catch (InvalidApplicationException e) {
+                log.warning(e.getMessage() + " Secret store was probably deleted.");
+            }
+        }
         SessionSerializer sessionSerializer = new SessionSerializer();
         sessionSerializer.write(session.getSessionZooKeeperClient(),
                                 applicationId,
@@ -610,7 +624,7 @@ public class SessionRepository {
                                 existingSession.getVespaVersion(),
                                 existingSession.getAthenzDomain(),
                                 existingSession.getQuota(),
-                                existingSession.getTenantSecretStores(),
+                                tenantSecretStores,
                                 existingSession.getOperatorCertificates(),
                                 existingSession.getCloudAccount(),
                                 existingSession.getDataplaneTokens(),
