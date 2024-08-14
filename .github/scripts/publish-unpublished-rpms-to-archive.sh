@@ -65,7 +65,10 @@ echo "RPMs missing in archive:"
 ls -lh  *.rpm
 echo
 
+
 UPLOAD_FAILED=false
+echo "GitHub event: $GITHUB_EVENT_NAME"
+
 if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
   for rpm in $(ls *.rpm); do
     echo "Uploading $rpm ..."
