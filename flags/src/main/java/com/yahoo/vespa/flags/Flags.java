@@ -541,6 +541,12 @@ public class Flags {
             (value) -> "legacy".equals(value) || "standard".equals(value),
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
+            "tcp-shrink-window", false,
+            List.of("hmusum"), "2024-08-14", "2024-09-14",
+            "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default false",
+            "Takes effect on next host-admin run");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
