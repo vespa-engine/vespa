@@ -1,4 +1,4 @@
-name: mirror-copr-rpms-to-archive
+name: Mirror Copr RPMs to archive
 
 on:
   workflow_dispatch:
@@ -43,14 +43,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: install
+      - name: Install tools
         run: |
           dnf install -y dnf-plugins-core jq
 
-      - name: mirror-x86-64
+      - name: Publish to x86-64 mirror
         run: |
           .github/scripts/publish-unpublished-rpms-to-archive.sh x86_64
 
-      - name: mirror-aarch64
+      - name: Publish to aarch64 mirror
         run: |
           .github/scripts/publish-unpublished-rpms-to-archive.sh aarch64
