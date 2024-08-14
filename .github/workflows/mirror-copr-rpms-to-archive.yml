@@ -11,15 +11,6 @@ on:
     branches:
       - master
 
-  push:
-    paths:
-      - .github/workflows/mirror-copr-rpms-to-archive.yml
-      - .github/scripts/publish-unpublished-rpms-to-archive.sh
-      - .github/scripts/upload-rpm-to-cloudsmith.sh
-    branches:
-      - master
-      - glebashnik/gh-action-mirror-copr-rpms-to-archive
-
   schedule:
    - cron: '0 6 * * *'
 
