@@ -682,6 +682,97 @@ public class SessionRepository {
         return created.plus(sessionLifetime).isBefore(clock.instant());
     }
 
+    public void deleteExpiredRemoteAndLocalSessions(Clock clock, Predicate<Session> sessionIsActiveForApplication) {
+        // All known sessions, both local (file) and remote (zookeeper)
+        Set<Long> sessions = getLocalSessionsIdsFromFileSystem();
+        sessions.addAll(getRemoteSessionsFromZooKeeper());
+        log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sessions);
+
+        // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
+        // we will exclude these)
+        Set<Long> newSessions = findNewSessionsInFileSystem();
+        sessions.removeAll(newSessions);
+
+        // Avoid deleting too many in one run
+        int deleteMax = (int) Math.min(1000, Math.max(50, sessions.size() * 0.05));
+        int deleted = 0;
+        for (Long sessionId : sessions) {
+            try {
+                Session session = remoteSessionCache.get(sessionId);
+                if (session == null)
+                    session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
+
+                var applicationId = session.getApplicationId();
+                try (var ignored = applicationRepo.lock(applicationId)) {
+                    Session.Status status = session.getStatus();
+                    boolean activeForApplication = sessionIsActiveForApplication.test(session);
+                    if (status == ACTIVATE && activeForApplication) continue;
+
+                    Instant createTime = session.getCreateTime();
+                    boolean hasExpired = hasExpired(createTime);
+                    if (! hasExpired) continue;
+
+                    log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
+                    deleteRemoteSessionFromZooKeeper(session);
+                    deleted++;
+
+                    log.log(Level.FINE, () -> "Expired local session is candidate for deletion: " + sessionId +
+                            ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status));
+                    // Need to check if it can be deleted, as we might have a (local) session in UNKNOWN
+                    // state that we should not delete
+                    if (canBeDeleted(sessionId, status)) {
+                        deleteLocalSession(sessionId);
+                        deleted++;
+                        // This might happen if remote session is gone, but local session is not
+                    } else if (isOldAndCanBeDeleted(sessionId, createTime)) {
+                        var localSession = getOptionalSessionFromFileSystem(sessionId);
+                        if (localSession.isEmpty()) continue;
+
+                        // Defensive/paranoid: Check if session is active before deleting
+                        if (! activeForApplication) {
+                            log.log(Level.FINE, () -> "Will delete expired session " + sessionId + " created " +
+                                    createTime + " for '" + applicationId + "'");
+                            deleteLocalSession(sessionId);
+                            deleted++;
+                        }
+                    }
+                    if (deleted >= deleteMax)
+                        return;
+                }
+            } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
+                log.log(Level.WARNING, "Error when deleting expired sessions ", e);
+            }
+        }
+        log.log(Level.FINE, () -> "Done deleting expired sessions");
+    }
+
+    private Optional<LocalSession> getOptionalSessionFromFileSystem(long sessionId) {
+        try {
+            return Optional.of(getSessionFromFile(sessionId));
+        } catch (Exception e) {
+            log.log(Level.FINE, () -> "could not get session from file: " + sessionId + ": " + e.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    private boolean isOldAndCanBeDeleted(long sessionId, Instant createTime) {
+        Duration oneDay = Duration.ofDays(1);
+        Duration expiry = Duration.ofSeconds(expiryTimeFlag.value()).compareTo(oneDay) >= 0
+                ? Duration.ofSeconds(expiryTimeFlag.value())
+                : oneDay;
+        if (createTime.plus(expiry).isBefore(clock.instant())) {
+            log.log(Level.FINE, () -> "more than 1 day old: " + sessionId);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean hasExpired(Instant created) {
+        Duration expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
+        return created.plus(expiryTime).isBefore(clock.instant());
+    }
+
     // Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
     private boolean canBeDeleted(long sessionId, Session.Status status) {
         return ( ! List.of(UNKNOWN, ACTIVATE).contains(status))
