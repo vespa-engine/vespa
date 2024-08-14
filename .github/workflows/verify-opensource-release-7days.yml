@@ -16,6 +16,11 @@ jobs:
   error-if-current-release-too-old:
     runs-on: ubuntu-latest
     steps:
+      - name: Install xq
+        run: |
+          sudo apt update -y
+          sudo apt install -y xq
+
       - name: Error if current release is too old
         run: |
           now_epoch=`date "+%s"`
