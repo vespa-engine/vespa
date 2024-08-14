@@ -4,17 +4,8 @@ on:
   workflow_dispatch:
 
   pull_request:
-    paths:
-      - .github/workflows/link-check.yml
     branches:
       - master
-
-  push:
-    paths:
-      - .github/workflows/link-check.yml
-    branches:
-      - master
-      - glebashink/gh-action-link-check
 
   schedule:
     - cron: '0 2 * * 1-5'
@@ -25,6 +16,12 @@ jobs:
 
     container:
       image: ruby:3.3
+      volumes:
+        - ${{ github.workspace }}:/workspace
+
+    defaults:
+      run:
+        working-directory: /workspace
 
     steps:
       - name: Checkout code
