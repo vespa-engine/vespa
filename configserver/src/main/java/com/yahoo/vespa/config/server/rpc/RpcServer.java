@@ -574,14 +574,19 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     private void setFileReferencesToDownload(Request req) {
         req.detach();
         rpcAuthorizer.authorizeFileRequest(req)
-                .thenRun(() -> { // okay to do in authorizer thread as downloadIfNeeded is async
+                .thenRun(() -> { // okay to do in authorizer thread as downloadFromSource is async
                     String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
+
+                    // Download directly from the source that has the file reference, which
+                    // is the client that sent the request
+                    var client = req.target();
+                    var peerSpec = client.peerSpec();
                     Stream.of(fileReferenceStrings)
                             .map(FileReference::new)
-                            .forEach(fileReference -> downloader.downloadIfNeeded(
-                                    new FileReferenceDownload(fileReference,
-                                                              req.target().toString(),
-                                                              false /* downloadFromOtherSourceIfNotFound */)));
+                            .forEach(fileReference -> {
+                                log.log(FINE, "Downloading file reference " + fileReference.value() + " from " + peerSpec);
+                                downloader.downloadFromSource(new FileReferenceDownload(fileReference, client.toString()), peerSpec);
+                            });
                     req.returnValues().add(new Int32Value(0));
                 });
     }

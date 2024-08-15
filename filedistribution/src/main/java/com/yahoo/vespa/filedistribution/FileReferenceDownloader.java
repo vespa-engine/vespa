@@ -5,10 +5,13 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.config.JRTConnectionPool;
+
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
@@ -114,6 +117,26 @@ public class FileReferenceDownloader {
         downloads.add(fileReferenceDownload);
         downloadExecutor.submit(() -> waitUntilDownloadStarted(fileReferenceDownload));
         return fileReferenceDownload.future();
+    }
+
+    void startDownloadFromSource(FileReferenceDownload fileReferenceDownload, Spec spec) {
+        FileReference fileReference = fileReferenceDownload.fileReference();
+        if (downloads.get(fileReference).isPresent()) return;
+
+        // Return early when testing (using mock connection pool)
+        if (! (connectionPool instanceof JRTConnectionPool)) {
+            log.log(Level.INFO, () -> "Cannot download using " + connectionPool.getClass().getName());
+            return;
+        }
+
+        log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout);
+        for (var source : ((JRTConnectionPool) connectionPool).getSources()) {
+            if (source.getTarget().peerSpec().equals(spec))
+                downloadExecutor.submit(() -> {
+                    startDownloadRpc(fileReferenceDownload, 1, source);
+                    downloads.remove(fileReference);
+                });
+        }
     }
 
     void failedDownloading(FileReference fileReference) {

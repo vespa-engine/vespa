@@ -99,7 +99,7 @@ public class JRTConnectionPool implements ConnectionPool {
         return sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
     }
 
-    protected List<JRTConnection> getSources() {
+    public List<JRTConnection> getSources() {
         List<JRTConnection> ret;
         synchronized (connections) {
             ret = new ArrayList<>(connections.values());
