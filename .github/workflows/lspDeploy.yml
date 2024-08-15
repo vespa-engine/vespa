@@ -81,7 +81,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./integration/schema-language-server/langauge-server/target/schema-language-server-jar-with-dependencies.jar
+          asset_path: ./integration/schema-language-server/language-server/target/schema-language-server-jar-with-dependencies.jar
           asset_name: vespa-langauge-server_${{ steps.retrieve_version.outputs.VERSION }}.jar
           asset_content_type: application/java-archive
   
