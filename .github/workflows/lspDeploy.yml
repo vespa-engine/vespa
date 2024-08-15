@@ -64,32 +64,25 @@ jobs:
       #     VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
       #     INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
       #     PLUGIN_ID: 18074
-        
-      - name: Create Draft Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.retrieve_version.outputs.VERSION }}
-          release_name: Vespa Langauge Server ${{ steps.retrieve_version.outputs.VERSION }}
-          draft: true
-          prerelease: false
 
-      - uses: actions/upload-release-asset@v1.0.1
+      - name: Prepare Github Release
+        working-directory: ./integration/schema-language-server
+        run: |
+          mkdir -p ./clients/github-release/target
+          cp ./language-server/target/schema-language-server-jar-with-dependencies.jar ./clients/github-release/target/vespa-language-server_$VERSION.jar
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
+
+      - name: Create Github Release
+        uses: ncipollo/release-action@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./integration/schema-language-server/language-server/target/schema-language-server-jar-with-dependencies.jar
-          asset_name: vespa-langauge-server_${{ steps.retrieve_version.outputs.VERSION }}.jar
-          asset_content_type: application/java-archive
-  
-      # - uses: eregon/publish-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     release_id: ${{ steps.create_release.outputs.id }}
+          draft: true
+          tag: v${{ steps.retrieve_version.outputs.VERSION }}
+          name: Vespa Langauge Server ${{ steps.retrieve_version.outputs.VERSION }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          bodyFile: ./integration/schema-language-server/clients/github-release/README.md
+          artifacts: ./integration/schema-language-server/clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar
+          artifactContentType: application/java-archive
 
       # Disabling as it is disallowed by org for now
       # - name: Create PR to bump version
