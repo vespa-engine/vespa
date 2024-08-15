@@ -1,0 +1,141 @@
+schema hover {
+    document hover {
+        field name type weightedset<int> {
+            alias: title
+            attribute: fast-access
+            bolding: on
+            attribute {
+                distance-metric: dotproduct
+                fast-access
+                fast-rank
+                fast-search
+                mutable
+                paged
+                sorting {
+                    function: raw
+                    locale: ar-BH
+                    strength: tertiary
+                }
+            }
+            dictionary { }
+            id: 2
+            index {
+                arity: 2
+                hnsw {
+                    max-links-per-node: 2
+                }
+                lower-bound: 2
+                stemming: shortest
+                upper-bound: 2
+            }
+            indexing: index
+            match: exact
+            normalizing: none
+            
+            query-command: foo
+            rank: literal
+            rank-type: tags
+            sorting: descending
+            stemming: shortest
+            summary {
+                bolding: off
+            }
+            weight: 2
+            weightedset { }
+        }
+
+        struct str {
+            field a type int {}
+        }
+
+        field strfield type str {
+            struct-field a {
+                attribute: fast-rank
+                indexing: index
+                match: exact
+                rank: literal
+            }
+        }
+    }
+
+    annotation name {}
+    document-summary name {
+        summary name {
+            source: name
+        }
+    }
+    fieldset default {
+        fields: name, strfield
+    }
+    index test {
+        lower-bound: 2
+    }
+    onnx-model name {
+        file: a
+        input "input": a
+        output "output": b
+        gpu-device: 0
+        intraop-threads: 1
+        interop-threads: 2
+        execution-mode: parallel
+    }
+    rank-profile prof {
+        constants { 
+            a: 0 
+        }
+        diversity {
+            attribute: name
+            min-groups: 2
+        }
+        first-phase {
+            keep-rank-count: 1
+            rank-score-drop-limit: 1.0
+            expression: 2
+        }
+        second-phase {
+            rank-score-drop-limit: 1.0
+            rerank-count: 1
+            expression: 1
+        }
+        match-phase {
+            attribute: name
+            order: descending
+            max-hits: 2
+        }
+        global-phase {
+            expression: 1
+            rerank-count: 1
+        }
+        strict: false
+        summary-features {
+            
+        }
+        rank-features {
+            
+        }
+        match-features {
+            
+        }
+        onnx-model model {
+            file: modelfile
+        }
+        mutate {
+            on-match { name = 2 }
+        }
+        mutate {
+            on-first-phase { name = 2 }
+        }
+        mutate {
+            on-second-phase { name = 2 }
+        }
+        mutate {
+            on-summary { name = 2 }
+        }
+    }
+    raw-as-base64-in-summary
+    constant name {
+        file: abc.json.lz4
+        type: tensor<bfloat16>()
+    }
+    stemming: multiple
+}
