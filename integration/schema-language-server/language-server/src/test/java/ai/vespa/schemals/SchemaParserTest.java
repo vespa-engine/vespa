@@ -27,6 +27,8 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
+import ai.vespa.schemals.testutils.*;
+
 public class SchemaParserTest {
     static long countErrors(List<Diagnostic> diagnostics) {
         return diagnostics.stream()

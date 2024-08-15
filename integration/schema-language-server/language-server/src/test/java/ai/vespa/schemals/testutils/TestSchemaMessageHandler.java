@@ -1,4 +1,4 @@
-package ai.vespa.schemals;
+package ai.vespa.schemals.testutils;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -6,6 +6,8 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.MessageActionItem;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.ShowDocumentResult;
+
+import ai.vespa.schemals.SchemaMessageHandler;
 
 /**
  * TestSchemaMessageHandler

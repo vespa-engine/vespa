@@ -1,8 +1,10 @@
-package ai.vespa.schemals;
+package ai.vespa.schemals.testutils;
 
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
+
+import ai.vespa.schemals.SchemaDiagnosticsHandler;
 
 /*
  * Convenience class for testing without having to construct a language client

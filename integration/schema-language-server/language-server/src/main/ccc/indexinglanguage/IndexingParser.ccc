@@ -122,6 +122,13 @@ INJECT statement:
     public StatementExpression expression;
 }
 
+INJECT IndexingParserLexer:
+{
+    public static EnumSet<TokenType> getRegularTokens() {
+        return EnumSet.copyOf(regularTokens);
+    }
+}
+
 SKIP :
     " " | "\t" | "\r" | "\f"
 ;

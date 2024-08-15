@@ -166,6 +166,13 @@ INJECT SchemaParser:
 
 }
 
+INJECT SchemaParserLexer:
+{
+    public static EnumSet<TokenType> getRegularTokens() {
+        return EnumSet.copyOf(regularTokens);
+    }
+}
+
 /**
  * The following stores the indexinglanguage script at the AST node 
  * for parsing later.

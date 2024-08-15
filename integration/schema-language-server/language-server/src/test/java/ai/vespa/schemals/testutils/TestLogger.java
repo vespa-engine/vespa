@@ -1,8 +1,9 @@
-package ai.vespa.schemals;
+package ai.vespa.schemals.testutils;
 
 import org.eclipse.lsp4j.MessageType;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.SchemaMessageHandler;
 
 /**
  * TestLogger

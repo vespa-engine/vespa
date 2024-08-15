@@ -48,6 +48,13 @@ INJECT RankingExpressionParser :
     }
 }
 
+INJECT RankingExpressionParserLexer:
+{
+    public static EnumSet<TokenType> getRegularTokens() {
+        return EnumSet.copyOf(regularTokens);
+    }
+}
+
 INJECT BaseNode :
     import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 {
