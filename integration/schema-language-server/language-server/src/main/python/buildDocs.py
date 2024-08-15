@@ -3,7 +3,8 @@ import os
 import requests
 import pathlib
 from Node import Node
-from HTMLParser import DocsHTMLParser
+from DocsHTMLParser import DocsHTMLParser
+import visitor
 
 BRANCH = "master"
 URL_PREFIX = f"https://raw.githubusercontent.com/vespa-engine/documentation/{BRANCH}/en"
@@ -37,7 +38,12 @@ def fetchFile(file_url: str) -> str:
 def parseRawHTML(rawData: str, fileName: str) -> Node:
     parser = DocsHTMLParser(fileName)
 
-    return parser.parse(rawData)
+    node = parser.parse(rawData)
+
+    urlVisitor = visitor.SwitchInternalURL(LINK_BASE_URL + fileName)
+    urlVisitor.traverse(node)
+
+    return node
 
 def main():
 
@@ -68,6 +74,8 @@ def main():
         data = file.read()
 
     results = parseRawHTML(data, SCHEMA_URL)
+
+    print(results.toHTML())
 
 if __name__ == "__main__":
     main()

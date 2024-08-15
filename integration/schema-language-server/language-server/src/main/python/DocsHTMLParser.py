@@ -17,7 +17,15 @@ class DocsHTMLParser(HTMLParser):
         self.parseStack = [Node()]
     
     def parse(self, input: str) -> Node:
-        super().feed(input)
+
+        preParseResults = self.findNoteNodes(input)
+
+        for results in preParseResults:
+            if isinstance(results, str):
+                super().feed(results)
+            else:
+                self.getTopNode().addChild(results)
+
         self.inputText = input
 
         while (len(self.parseStack) > 1):
@@ -50,3 +58,37 @@ class DocsHTMLParser(HTMLParser):
     def handle_data(self, data: str) -> None:
         textNode = Node.createTextNode(data)
         self.getTopNode().addChild(textNode)
+
+    def findNoteNodes(self, rawData: str) -> list[str | Node]:
+        splits = rawData.split("{%")
+
+        ret = [splits[0]]
+
+        for i in range(1, len(splits)):
+            index = splits[i].find("%}")
+            noteData = splits[i][0:index]
+            node = self.parseNoteData(noteData)
+            ret.append(node)
+            remainingText = splits[i][index + 2:]
+            ret.append(remainingText)
+        
+        return ret
+    
+    def parseNoteData(self, input: str) -> Node:
+
+        firstSplit = input.split("content=")
+
+        print(firstSplit)
+
+        name = firstSplit[0].strip()
+
+        node = Node.createNoteNode(name, "{%" + input + "%}")
+
+        if (len(firstSplit) > 1):
+            content = firstSplit[1][1:-1]
+
+            newParser = DocsHTMLParser(self.fileName)
+            newParser.parseStack = [node]
+            newParser.parse(content)
+
+        return node

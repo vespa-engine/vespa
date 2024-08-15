@@ -6,6 +6,7 @@ class NodeType(Enum):
     DOM = 1
     PLAIN_TEXT = 2
     ROOT = 3
+    NOTE = 4
 
 class Position:
 
@@ -63,6 +64,16 @@ class Node:
 
         return ret
 
+    @staticmethod
+    def createNoteNode(type: str, rawText: str):
+        ret = Node()
+        ret.tagName = type
+        ret.attrs = []
+        ret.type = NodeType.NOTE
+        ret.plainTextContent = rawText
+
+        return ret
+
     def __repr__(self) -> str:
         return f"Node({self.type}, {len(self.children)})"
     
@@ -78,6 +89,22 @@ class Node:
     
     def getChild(self, i: int) -> 'Node':
         return self.children[i]
+
+    def getAttr(self, attribute: str) -> str | None:
+        for attr in self.attrs:
+            if (attr[0] == attribute):
+                return attr[1]
+        
+        return None
+
+    def setAttr(self, attribute: str, value: str):
+        for i in range(len(self.attrs)):
+            if (self.attrs[i][0] == attribute):
+                self.attrs[i] = list(self.attrs[i])
+                self.attrs[i][1] = value
+                return
+        
+        self.attrs.append((attribute, value))
     
     def getStartPosition(self) -> Position:
         if (self.type == NodeType.ROOT):
@@ -105,7 +132,7 @@ class Node:
         return Position(line, col)
     
     def getRawSource(self) -> str:
-        if (self.type == NodeType.PLAIN_TEXT):
+        if (self.type == NodeType.PLAIN_TEXT or self.type == NodeType.NOTE):
             return self.plainTextContent
         
         ret = ""
@@ -144,6 +171,9 @@ class Node:
                     ret += f"=\"{attr[1]}\""
             
             ret += ">"
+        
+        if (self.type == NodeType.NOTE):
+            ret += f"(Note {self.tagName})"
         
         tabSize = 0 if self.type == NodeType.ROOT else 2
         tab = " " * tabSize
