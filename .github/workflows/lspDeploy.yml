@@ -41,12 +41,12 @@ jobs:
         run: npm ci
         working-directory: ./integration/schema-language-server/clients/vscode
 
-      # - name: Publish VScode extension
-      #   run: npm run publish
-      #   working-directory: ./integration/schema-language-server/clients/vscode
-      #   env:
-      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      #     VERSION_TYPE: ${{ github.event.inputs.version }}
+      - name: Publish VScode extension
+        run: npm run publish
+        working-directory: ./integration/schema-language-server/clients/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          VERSION_TYPE: ${{ github.event.inputs.version }}
 
       - name: Retrieve version
         id: retrieve_version
@@ -55,15 +55,15 @@ jobs:
           echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
         working-directory: ./integration/schema-language-server/clients/intellij
 
-      # - name: Publish IntelliJ plugin
-      #   run: |
-      #     gradle buildPlugin
-      #     curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$VERSION.zip https://plugins.jetbrains.com/plugin/uploadPlugin
-      #   working-directory: ./integration/schema-language-server/clients/intellij
-      #   env:
-      #     VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
-      #     INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
-      #     PLUGIN_ID: 18074
+      - name: Publish IntelliJ plugin
+        run: |
+          gradle buildPlugin
+          curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$VERSION.zip https://plugins.jetbrains.com/plugin/uploadPlugin
+        working-directory: ./integration/schema-language-server/clients/intellij
+        env:
+          VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
+          INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
+          PLUGIN_ID: 18074
 
       - name: Prepare Github Release
         working-directory: ./integration/schema-language-server
@@ -72,17 +72,18 @@ jobs:
           cp ./language-server/target/schema-language-server-jar-with-dependencies.jar ./clients/github-release/target/vespa-language-server_$VERSION.jar
         env:
           VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
-
-      - name: Create Github Release
-        uses: ncipollo/release-action@v1
-        with:
-          draft: true
-          tag: v${{ steps.retrieve_version.outputs.VERSION }}
-          name: Vespa Langauge Server ${{ steps.retrieve_version.outputs.VERSION }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          bodyFile: ./integration/schema-language-server/clients/github-release/README.md
-          artifacts: ./integration/schema-language-server/clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar
-          artifactContentType: application/java-archive
+        
+      # Diasbling as it is disallowed by org for now
+      # - name: Create Github Release
+      #   uses: ncipollo/release-action@v1
+      #   with:
+      #     draft: true
+      #     tag: v${{ steps.retrieve_version.outputs.VERSION }}
+      #     name: Vespa Langauge Server ${{ steps.retrieve_version.outputs.VERSION }}
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     bodyFile: ./integration/schema-language-server/clients/github-release/README.md
+      #     artifacts: ./integration/schema-language-server/clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar
+      #     artifactContentType: application/java-archive
 
       # Disabling as it is disallowed by org for now
       # - name: Create PR to bump version
