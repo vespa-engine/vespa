@@ -19,3 +19,10 @@ The following features will become available as soon as JetBrains implements it 
 - Renaming/refactoring (textDocument/rename)
 - Find references (textDocument/references)
 - List of document symbols (textDocument/documentSymbol)
+
+## Building and running
+
+To build the plugin and package into a zip: `gradle buildPlugin`. 
+Plugin zip will be placed in `build/distributions/`.
+
+To build the plugin and run in an IDE sandbox: `gradle runIde`. Requires IntelliJ IDEA Ultimate.

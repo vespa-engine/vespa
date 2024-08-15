@@ -15,35 +15,18 @@
     <li>Code actions, including Quick fixes</li>
     <li>Code completion</li>
     <li>Go-to-definition</li>
-    <li>Find references</li>
     <li>Documentation on hover</li>
-    <li>Semantic token highlighting</li>
-    <li>Renaming/refactoring</li>
-    <li>List document symbols</li>
+    <li>Syntax highlighting</li>
 </ul>
 
-<h2>Requirements</h2>
-<p>The plugin requires Java 17 or greater. Upon activation, the plugin will look in the following locations in this order for a Java executable:</p>
-<ul>
-    <li>PATH environment variable</li>
-    <li>Workspace setting: vespaSchemaLS.javaHome</li>
-    <li>User setting: vespaSchemaLS.javaHome</li>
-    <li>JDK_HOME environment variable</li>
-    <li>JAVA_HOME environment variable</li>
-</ul>
   ]]></description>
   <change-notes><![CDATA[
-<h2>Rewritten from scratch to include full LSP support</h2>
+<h2>Rewritten from scratch to include LSP support</h2>
 <ul>
-  <li>Error and warning highlighting</li>
+    <li>Error and warning highlighting</li>
     <li>Code actions, including Quick fixes</li>
     <li>Code completion</li>
-    <li>Go-to-definition</li>
-    <li>Find references</li>
     <li>Documentation on hover</li>
-    <li>Semantic token highlighting</li>
-    <li>Renaming/refactoring</li>
-    <li>List document symbols</li>
 </ul>
 ]]></change-notes>
   <depends>com.intellij.modules.platform</depends>
