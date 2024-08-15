@@ -1,0 +1,30 @@
+name: Verify open source RPM installable
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - .github/workflows/verify-opensource-rpm-installable.yml
+    branches:
+      - master
+
+  schedule:
+   - cron: '0 0 * * *'
+
+jobs:
+  verify-opensource-rpm-installable:
+    runs-on: ubuntu-latest
+
+    container:
+      image: almalinux:8
+
+    steps:
+      - name: Install Vespa
+        run: |
+          dnf list llvm-libs --showduplicates
+          dnf install -y dnf-plugins-core
+          dnf config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-8/group_vespa-vespa-epel-8.repo
+          dnf config-manager --enable powertools
+          dnf install -y epel-release
+          dnf install -y vespa
