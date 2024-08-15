@@ -209,7 +209,6 @@ public class SchemaTextDocumentService implements TextDocumentService {
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
         var document = params.getTextDocument();
-
         SchemaDocumentScheduler scheduler = eventContextCreator.scheduler;
 
         var contentChanges = params.getContentChanges();

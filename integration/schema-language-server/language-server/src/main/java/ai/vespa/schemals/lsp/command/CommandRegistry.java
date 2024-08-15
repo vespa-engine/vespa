@@ -8,6 +8,8 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
 import ai.vespa.schemals.lsp.command.commandtypes.DocumentOpen;
+import ai.vespa.schemals.lsp.command.commandtypes.DocumentParse;
+import ai.vespa.schemals.lsp.command.commandtypes.CommandList;
 import ai.vespa.schemals.lsp.command.commandtypes.SchemaCommand;
 
 /**
@@ -22,6 +24,14 @@ public class CommandRegistry {
         DOCUMENT_OPEN { 
             public String title() { return "Open document"; } 
             public SchemaCommand construct() { return new DocumentOpen(); }
+        },
+        DOCUMENT_PARSE {
+            public String title() { return "Parse document"; }
+            public SchemaCommand construct() { return new DocumentParse(); }
+        },
+        COMMAND_LIST {
+            public String title() { return "Command list"; }
+            public SchemaCommand construct() { return new CommandList(); }
         }
     }
 
@@ -34,7 +44,7 @@ public class CommandRegistry {
             CommandType commandType = CommandType.valueOf(params.getCommand());
             SchemaCommand command = commandType.construct();
 
-            if (command.getArity() != params.getArguments().size()) return Optional.empty();
+            if (command.getArity() != -1 && command.getArity() != params.getArguments().size()) return Optional.empty();
             if (!command.setArguments(params.getArguments())) return Optional.empty();
             return Optional.of(command);
         } catch(Exception e) {

@@ -10,6 +10,8 @@ import ai.vespa.schemals.context.EventExecuteCommandContext;
 
 /**
  * OpenDocument
+ * Kind of a reflection: client sends "Open document with fileURI", and server responds by telling the client to open it.
+ * Reason for this: Used in Code Actions to make file automatically open with new edit. 
  */
 public class DocumentOpen implements SchemaCommand {
     private String fileURI;
@@ -18,9 +20,7 @@ public class DocumentOpen implements SchemaCommand {
     public void execute(EventExecuteCommandContext context) {
         if (fileURI == null)
             return;
-        context.logger.info("Show document: " + fileURI);
         ShowDocumentResult result = context.messageHandler.showDocument(fileURI).join();
-        context.logger.info("Result: " + result.toString());
     }
 
     @Override

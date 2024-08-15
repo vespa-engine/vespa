@@ -57,7 +57,6 @@ public class RankProfileDocument implements DocumentManager {
         var result = parseContent(context);
 
         diagnosticsHandler.publishDiagnostics(this.fileURI, result.diagnostics());
-        logger.info("CST FOR RANK PROFILE " + this.fileURI);
         if (result.CST().isPresent()) {
             this.CST = result.CST().get();
             lexer.setCST(CST);
