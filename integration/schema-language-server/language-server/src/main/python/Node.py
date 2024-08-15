@@ -1,209 +1,157 @@
-from urllib.parse import urljoin
+from typing import Optional
+from enum import Enum
 
-class Node:
-    tag: str
-    attrs: list = []
-    children: list = []
-    link: str = ""
+class NodeType(Enum):
 
-    def __init__(self, tag: str, linkPrefix: str = "", attrs = []):
-        self.tag = tag
-        self.children = []
-        
-        self.attrs = []
+    DOM = 1
+    PLAIN_TEXT = 2
+    ROOT = 3
 
-        for attrTuple in attrs:
-            attr = list(attrTuple)
-            if attr[0] == "href":
-                attr[1] = urljoin(linkPrefix, attr[1])
-            
-            self.attrs.append(attr)
-        
-        self.link = linkPrefix
-    
-    def addChild(self, child):
-        self.children.append(child)
+class Position:
 
-        if type(child) == Node:
-            child.close()
-    
-    def closeNoteNode(self):
+    line: int = 0
+    col: int = 0
 
-        singleQuote = False
-
-        for i, child in enumerate(self.children):
-            if type(child) == str:
-
-
-                childSplitted = child.split("content=\"")
-                if (len(childSplitted) == 1):
-                    childSplitted = child.split("content='")
-                    singleQuote = True
-
-                includeSplit = childSplitted[0].split("include")
-                if len(includeSplit) <= 1:
-                    return
-                includeFile = includeSplit[1].strip().split(".")[0]
-                
-                self.children[i] = f"*{includeFile.upper()}:* " + "".join(childSplitted[1:])
-
-                break
-        
-        for i, child in reversed(list(enumerate(self.children))):
-            if type(child) == str:
-
-                splitChar = "'" if singleQuote else "\""
-                
-                self.children[i] = "".join(child.split(splitChar)[:-1])
-
-                break
-    
-    def close(self):
-
-        if (self.tag == "note"):
-            return self.closeNoteNode()
-
-        noteNode = None
-
-        newChildren = []
-        
-        for child in self.children:
-
-            if noteNode is None:
-                newChildren.append(child)
-            else:
-                noteNode.addChild(child)
-
-
-            if type(child) == str:
-                
-                if "{%" in child and noteNode is None:
-                    newChildren.pop()
-                    noteNode = Node("note")
-                    childSplitted = child.split("{%")
-
-                    if len(childSplitted[0]) > 0:
-                        newChildren.append(childSplitted[0])
-                    
-                    if len(childSplitted[1]) > 0:
-
-                        toNoteNode = childSplitted[1]
-
-                        if "%}" in childSplitted[1]:
-                            toNoteNode = childSplitted[1].split("%}")[0]
-                        
-                        if len(toNoteNode) > 0:
-                            noteNode.addChild(toNoteNode)
-                    
-                if "%}" in child and noteNode is not None:
-                    childSplitted = child.split("%}")
-                    noteNode.children.pop()
-
-                    if len(childSplitted[0]) > 0:
-                        toNoteNode = childSplitted[0] 
-                        if "{%" in childSplitted[0]:
-                            toNoteNode = childSplitted[0].split("{%")[1]
-                        
-                        if len(toNoteNode) > 0:
-                            noteNode.addChild(toNoteNode)
-
-                    newChildren.append(noteNode)
-                    noteNode.close()
-
-                    noteNode = None
-
-                    if len(childSplitted[1]) > 0:
-                        newChildren.append(childSplitted[1])
-        
-        if noteNode is not None:
-            newChildren.append(noteNode)
-            noteNode.close()
-        
-        self.children = newChildren
+    def __init__(self, line: int, col: int):
+        self.line = line
+        self.col = col
     
     def __str__(self) -> str:
-        ret = f"<{self.tag}>"
+        return f"{self.line + 1}:{self.col + 1}"
+    
+    def __add__(self, other):
+        ret = Position(self.line, self.col)
 
-        # for child in self.children:
-        #     ret += "\n\t" + str(child).replace('\n', '\n\t')
+        if (other.line == 0):
+            ret.col += other.col
+        else:
+            ret.line += other.line
+            ret.col = other.col
+        
+        return ret
+
+class Node:
+
+    parent: 'Optional[Node]' = None
+    children: 'list[Node]' = []
+
+    tagName: str = ""
+    attrs: list[tuple[str, str | None]] = []
+
+    type: NodeType = NodeType.ROOT
+    plainTextContent: str = ""
+
+    def __init__(self):
+        self.children = []
+    
+    @staticmethod
+    def createHTMLNode(tagName: str, attrs: list[tuple[str, str | None]]):
+        ret = Node()
+        ret.tagName = tagName
+        ret.attrs = attrs
+        ret.type = NodeType.DOM
+
+        return ret
+    
+    @staticmethod
+    def createTextNode(content: str):
+        ret = Node()
+        ret.tagName = ""
+        ret.attrs = []
+        ret.type = NodeType.PLAIN_TEXT
+        ret.plainTextContent = content
 
         return ret
 
     def __repr__(self) -> str:
-        return f"Node({self.tag}, {len(self.children)})"
-
-    def toHTML(self) -> str:
-        attrsStr = ""
-        for a in self.attrs:
-            attrsStr += f" {a[0]}=\"{a[1]}\""
-
-        ret = f"\n<{self.tag}{attrsStr}>\n"
-
-        for child in self.children:
-            data = ""
-            if (type(child) == Node):
-                data = child.toHTML()
-            else:
-                data = child
-            
-            ret += "\t" + data.replace('\n', '\n\t')
-
-        ret += f"\n</{self.tag}>\n"
-
-        return ret
-
-    def getContentStr(self) -> str:
-        ret = ""
-
-        for child in self.children:
-            ret += child.__str__()
-        
-        return ret
-
-    def getAttr(self, type: str) -> str:
-        for attr in self.attrs:
-            if (attr[0] == type):
-                return attr[1]
-        
-        return ""
+        return f"Node({self.type}, {len(self.children)})"
     
-    def toMarkdown(self, readMoreLink = False) -> str:
-        ret = ""
+    def addChild(self, node: 'Node'):
+        self.children.append(node)
+        node.setParent(self)
+    
+    def setParent(self, node: 'Node'):
+        self.parent = node
+    
+    def getTag(self) -> str:
+        return self.tagName
+    
+    def getChild(self, i: int) -> 'Node':
+        return self.children[i]
+    
+    def getStartPosition(self) -> Position:
+        if (self.type == NodeType.ROOT):
+            return Position(0, 0)
+        
+        if (self.parent is None):
+            raise Exception("Cannot find the position before a parent is set")
 
-        if (self.tag == "h2"):
-            return "## " + self.getContentStr() + "\n"
+        startPosition = self.parent.getStartPosition()
+
+        for child in self.parent.children:
+            if (child == self):
+                break
+            
+            startPosition += child.getCharLength()
+
+        return startPosition
+
+
+    def getCharLength(self) -> Position:
+        source = self.getRawSource()
+        line = source.count("\n")
+        lastSegmentStart = source.rfind("\n")
+        col = len(source) - lastSegmentStart
+        return Position(line, col)
+    
+    def getRawSource(self) -> str:
+        if (self.type == NodeType.PLAIN_TEXT):
+            return self.plainTextContent
         
-        if (self.tag == "a"):
-            return f"[{self.getContentStr()}]({self.getAttr('href')})"
+        ret = ""
         
-        if (self.tag == "pre"):
-            ret += "```"
-        
-        if (self.tag == "code"):
-            ret += "`"
+        if (self.type == NodeType.DOM):
+            ret += f"<{self.tagName}"
+
+            for attr in self.attrs:
+                ret += f" {attr[0]}"
+                if (attr[1] is not Node):
+                    ret += f"=\"{attr[1]}\""
+            
+            ret += ">"
 
         for child in self.children:
-            if (type(child) == Node):
-                ret += child.toMarkdown(readMoreLink)
-            else:
-                ret += child
+            ret += f"{child.getRawSource()}"
         
-        if (self.tag == "pre"):
-            ret += "``` \n"
-        
-        if (self.tag == "code"):
-            ret += "`"
+        if (self.type == NodeType.DOM):
+            ret += f"</{self.tagName}>"
 
-        if (self.tag == "parent" and len(self.link) > 0 and readMoreLink):
-            ret += f"\n[Read more]({self.link})"
-        
-        if self.tag == "note":
-            return "\n> " + ret.replace("\n", "\n> ") + "\n"
-        
         return ret
+    
+    def toHTML(self) -> str:
 
-    def getName(self):
-        if (self.tag != "parent"):
-            raise Exception("The getFilename method should only be called on the parent Node")
+        if (self.type == NodeType.PLAIN_TEXT):
+            return self.plainTextContent.strip()
+        
+        ret = ""
+        
+        if (self.type == NodeType.DOM):
+            ret += f"<{self.tagName}"
 
-        return self.children[0].getContentStr()
+            for attr in self.attrs:
+                ret += f" {attr[0]}"
+                if (attr[1] is not Node):
+                    ret += f"=\"{attr[1]}\""
+            
+            ret += ">"
+        
+        tabSize = 0 if self.type == NodeType.ROOT else 2
+        tab = " " * tabSize
+
+        for child in self.children:
+            ret += f"\n{tab}{child.toHTML().replace("\n", f"\n{tab}")}"
+        
+        if (self.type == NodeType.DOM):
+            ret += f"\n</{self.tagName}>"
+
+        return ret

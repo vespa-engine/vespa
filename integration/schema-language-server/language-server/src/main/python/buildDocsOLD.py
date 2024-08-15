@@ -2,11 +2,10 @@ import sys
 import os
 import requests
 import pathlib
-from Node import Node
-from HTMLParser import DocsHTMLParser
+from VespaDocHTMLParser import VespaDocHTMLParser
+from RankExpressionHTMLParser import RankExpressionHTMLParser
 
-BRANCH = "master"
-URL_PREFIX = f"https://raw.githubusercontent.com/vespa-engine/documentation/{BRANCH}/en"
+URL_PREFIX: str = "https://raw.githubusercontent.com/vespa-engine/documentation/master/en"
 
 SCHEMA_URL = "/reference/schema-reference.html"
 RANK_EXPRESSION_URL = "/reference/rank-features.html"
@@ -25,21 +24,14 @@ REPLACE_FILENAME_MAP = {
 # TODO: fix dictionary and attribute and index
 
 def fetchFile(file_url: str) -> str:
-    URL = f"{URL_PREFIX}{file_url}"
-
-    print(f"Downloading docs from: {URL}")
-    data = requests.get(URL)
+    data = requests.get(f"{URL_PREFIX}{file_url}")
     if data.status_code != 200:
         raise Exception("Could not fetch the news documentation! Has the url paths changed?")
 
     return data.text
 
-def parseRawHTML(rawData: str, fileName: str) -> Node:
-    parser = DocsHTMLParser(fileName)
-
-    return parser.parse(rawData)
-
 def main():
+    print("Downloading docs...")
 
     targetPath: pathlib.Path = pathlib.Path()
     subPaths = ["schema", "rankExpression"]
@@ -61,13 +53,44 @@ def main():
         if not os.path.exists(absoluteSubPath):
             os.makedirs(absoluteSubPath)
 
-    rawData = fetchFile(SCHEMA_URL)
+    shcemaDocData: str = fetchFile(SCHEMA_URL)
 
-    data = ""
-    with open("/Users/theodorkl/Documents/github.com/vespa-engine/documentation/en/reference/schema-reference.html") as file:
-        data = file.read()
+    parser = VespaDocHTMLParser(LINK_BASE_URL + SCHEMA_URL)
+    parser.feed(shcemaDocData)
 
-    results = parseRawHTML(data, SCHEMA_URL)
+    tags = parser.getTags()
+
+    for tag in tags:
+
+        filename = convertToToken(tag.AST.getName())
+        shcemaDocData = tag.AST.toMarkdown(True)
+
+        if filename in REPLACE_FILENAME_MAP:
+            for fn in REPLACE_FILENAME_MAP[filename]:
+                 writeToFile(f"{targetPath}/schema/{fn}.md", shcemaDocData)
+        else:
+            writeToFile(f"{targetPath}/schema/{filename}.md", shcemaDocData)
+    
+    rankExpressionDocData: str = fetchFile(RANK_EXPRESSION_URL)
+
+    # print(rankExpressionDocData)
+
+    parser = RankExpressionHTMLParser(LINK_BASE_URL + RANK_EXPRESSION_URL)
+    parser.feed(rankExpressionDocData)
+
+    rows = parser.getRows()
+
+    for row in rows:
+        filename = row.getFunctionIdentifier()
+
+        writeToFile(f"{targetPath}/rankExpression/{filename}.md", row.getMarkdownContent())
+
+def writeToFile(filepath: str, data: str):
+    with open(filepath, "w") as file:
+        file.write(data)
+
+def convertToToken(name):
+    return name.upper().replace("-", "_")
 
 if __name__ == "__main__":
     main()
