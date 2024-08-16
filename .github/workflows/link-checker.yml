@@ -1,0 +1,28 @@
+name: Link checker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: "0 2 * * 1-5"
+
+jobs:
+  test:
+    uses: vespa-engine/gh-actions/.github/workflows/jekyll-link-checker.yml@main
+    with:
+      ignore-urls: |-
+        /slack.vespa.ai/
+        /localhost:8080/
+        /127.0.0.1:3000/
+        /favicon.svg/
+        /main.jsx/
+      ignore-files: |-
+        /fnet/index.html/
+        /client/js/app/node_modules/
+      swap-urls: |-
+        (.*).md:\1.html
