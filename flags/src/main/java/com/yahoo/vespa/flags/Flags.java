@@ -65,6 +65,12 @@ public class Flags {
             "Takes effect on start of config server/controller.",
             NODE_TYPE);
 
+    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_ZMS = defineFeatureFlag(
+            "use-vespa-athenz-zms", false,
+            List.of("hakonhall"), "2024-08-16", "2024-10-16",
+            "Whether to communicate with Vespa Athenz ZMS instead of Yahoo Athenz ZMS in public systems.",
+            "Typically takes effect on start of config server/controller, or immediately for hosts (host-admin).");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
