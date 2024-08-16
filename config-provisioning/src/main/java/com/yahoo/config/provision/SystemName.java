@@ -42,25 +42,24 @@ public enum SystemName {
     }
 
     public static SystemName from(String value) {
-        switch (value.toLowerCase()) {
-            case "dev": return dev;
-            case "cd": return cd;
-            case "main": return main;
-            case "public": return Public;
-            case "publiccd": return PublicCd;
-            default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
-        }
+        return switch (value.toLowerCase()) {
+            case "dev" -> dev;
+            case "cd" -> cd;
+            case "main" -> main;
+            case "public" -> Public;
+            case "publiccd" -> PublicCd;
+            default -> throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
+        };
     }
 
     public String value() {
-        switch (this) {
-            case dev: return "dev";
-            case cd: return "cd";
-            case main: return "main";
-            case Public: return "public";
-            case PublicCd: return "publiccd";
-            default : throw new IllegalStateException();
-        }
+        return switch (this) {
+            case dev -> "dev";
+            case cd -> "cd";
+            case main -> "main";
+            case Public -> "public";
+            case PublicCd -> "publiccd";
+        };
     }
 
     /** Whether the system is similar to Public, e.g. PublicCd. */

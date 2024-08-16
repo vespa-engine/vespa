@@ -6,6 +6,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -243,13 +244,13 @@ public class FileDownloaderTest {
         FileDownloader fileDownloader = createDownloader(connectionPool, timeout);
         FileReference xyzzy = new FileReference("xyzzy");
         // Should download since we do not have the file on disk
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy, "test"));
-        assertTrue(fileDownloader.isDownloading(xyzzy));
+        Spec spec = new Spec("localhost", 1234);
+        assertTrue(fileDownloader.downloadFromSource(new FileReferenceDownload(xyzzy, "test"), spec));
         assertFalse(getFile(xyzzy).isPresent());
         // Receive files to simulate download
         receiveFile(xyzzy, "xyzzy.jar", FileReferenceData.Type.file, "content");
         // Should not download, since file has already been downloaded
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy, "test"));
+        assertFalse(fileDownloader.downloadFromSource(new FileReferenceDownload(xyzzy, "test"), spec));
         // and file should be available
         assertTrue(getFile(xyzzy).isPresent());
     }

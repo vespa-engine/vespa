@@ -63,7 +63,7 @@ public class QueryContext implements Cloneable {
      * @param name the name of the property
      * @param value the value of the property, or null to set this property to null
      */
-    public void setProperty(String name,Object value) {
+    public void setProperty(String name, Object value) {
         owner.getModel().getExecution().trace().setProperty(name,value);
     }
 

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <cinttypes>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 
@@ -152,21 +153,22 @@ ProcessMemoryStats::ProcessMemoryStats(uint64_t mapped_virt,
 namespace {
 
 bool
-similar(uint64_t lhs, uint64_t rhs, uint64_t epsilon)
+similar(uint64_t lhs, uint64_t rhs, double epsilon)
 {
-    return (lhs < rhs) ? ((rhs - lhs) <= epsilon) : ((lhs - rhs) <= epsilon);
+    uint64_t maxDiff = std::max(1_Mi, uint64_t(epsilon * (lhs+rhs)/2.0));
+    return (lhs < rhs) ? ((rhs - lhs) <= maxDiff) : ((lhs - rhs) <= maxDiff);
 }
 
 }
 
 bool
-ProcessMemoryStats::similarTo(const ProcessMemoryStats &rhs, uint64_t sizeEpsilon) const
+ProcessMemoryStats::similarTo(const ProcessMemoryStats &rhs, double epsilon) const
 {
-    return similar(_mapped_virt, rhs._mapped_virt, sizeEpsilon) &&
-            similar(_mapped_rss, rhs._mapped_rss, sizeEpsilon) &&
-            similar(_anonymous_virt, rhs._anonymous_virt, sizeEpsilon) &&
-            similar(_anonymous_rss, rhs._anonymous_rss, sizeEpsilon) &&
-            (_mappings_count == rhs._mappings_count);
+    return similar(_mapped_virt, rhs._mapped_virt, epsilon) &&
+           similar(_mapped_rss, rhs._mapped_rss, epsilon) &&
+           similar(_anonymous_virt, rhs._anonymous_virt, epsilon) &&
+           similar(_anonymous_rss, rhs._anonymous_rss, epsilon) &&
+           (_mappings_count == rhs._mappings_count);
 }
 
 vespalib::string
@@ -182,23 +184,23 @@ ProcessMemoryStats::toString() const
 }
 
 ProcessMemoryStats
-ProcessMemoryStats::create(uint64_t sizeEpsilon)
+ProcessMemoryStats::create(double epsilon)
 {
     constexpr size_t NUM_TRIES = 3;
     std::vector<ProcessMemoryStats> samples;
-    samples.reserve(NUM_TRIES);
+    samples.reserve(NUM_TRIES + 1);
     samples.push_back(createStatsFromSmaps());
     for (size_t i = 0; i < NUM_TRIES; ++i) {
         samples.push_back(createStatsFromSmaps());
-        if (samples.back().similarTo(*(samples.rbegin()+1), sizeEpsilon)) {
+        if (samples.back().similarTo(*(samples.rbegin()+1), epsilon)) {
             return samples.back();
         }
         LOG(debug, "create(): Memory stats have changed, trying to read smaps file again: i=%zu, prevStats={%s}, currStats={%s}",
             i, (samples.rbegin()+1)->toString().c_str(), samples.back().toString().c_str());
     }
     std::sort(samples.begin(), samples.end());
-    LOG(debug, "We failed to find 2 consecutive samples that where similar with epsilon of %" PRIu64 ".\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
-                 sizeEpsilon, samples.front().toString().c_str(), samples[samples.size()/2].toString().c_str(), samples.back().toString().c_str());
+    LOG(debug, "We failed to find 2 consecutive samples that where similar with epsilon of %d%%.\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
+        int(epsilon*1000), samples.front().toString().c_str(), samples[samples.size()/2].toString().c_str(), samples.back().toString().c_str());
     return samples[samples.size()/2];
 }
 

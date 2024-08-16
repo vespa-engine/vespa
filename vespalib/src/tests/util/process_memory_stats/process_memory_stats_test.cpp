@@ -7,14 +7,12 @@
 #include <fstream>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <unistd.h>
-
 
 using namespace vespalib;
 
 namespace {
 
-constexpr uint64_t SIZE_EPSILON = 4095;
+constexpr double SIZE_EPSILON = 0.01;
 
 std::string toString(const ProcessMemoryStats &stats)
 {
@@ -46,7 +44,7 @@ TEST("grow anonymous memory")
     void *mapAddr = mmap(nullptr, mapLen, PROT_READ | PROT_WRITE,
                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     EXPECT_NOT_EQUAL(reinterpret_cast<void *>(-1), mapAddr);
-    ProcessMemoryStats stats2(ProcessMemoryStats::create());
+    ProcessMemoryStats stats2(ProcessMemoryStats::create(0.01));
     std::cout << toString(stats2) << std::endl;
     EXPECT_LESS_EQUAL(stats1.getAnonymousVirt() + mapLen,
                       stats2.getAnonymousVirt());

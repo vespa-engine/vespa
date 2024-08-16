@@ -2,6 +2,7 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
@@ -137,11 +138,14 @@ public class FileDownloader implements AutoCloseable {
         return downloads.get(fileReference).isPresent();
     }
 
-    /** Start a download if needed, don't wait for result */
-    public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        if (fileReferenceExists(fileReferenceDownload.fileReference(), downloadDirectory)) return;
+    /** Start a download from the specified source, don't wait for result
+     *  @return true if download was started, false if file reference already exists
+     */
+    public boolean downloadFromSource(FileReferenceDownload fileReferenceDownload, Spec source) {
+        if (fileReferenceExists(fileReferenceDownload.fileReference(), downloadDirectory)) return false;
 
-        startDownload(fileReferenceDownload);
+        fileReferenceDownloader.startDownloadFromSource(fileReferenceDownload, source);
+        return true;
     }
 
     /** Start downloading, the future returned will be complete()d by receiving method in {@link FileReceiver} */

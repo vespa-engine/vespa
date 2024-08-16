@@ -510,7 +510,7 @@ public class Flags {
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2025-12-31",
-            "If true, force leagy mode for weakAnd query parsing",
+            "If true, force legacy mode for weakAnd query parsing",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
@@ -540,6 +540,12 @@ public class Flags {
             "Takes effect immediately",
             (value) -> "legacy".equals(value) || "standard".equals(value),
             TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
+            "tcp-shrink-window", false,
+            List.of("hmusum"), "2024-08-14", "2024-09-14",
+            "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default false",
+            "Takes effect on next host-admin run");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

@@ -21,8 +21,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
@@ -276,6 +278,7 @@ public class DeployTester {
         private ConfigserverConfig configserverConfig;
         private Zone zone;
         private Curator curator = new MockCurator();
+        private SecretStore secretStore = new MockSecretStore();
         private Metrics metrics;
         private List<ModelFactory> modelFactories;
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
@@ -302,6 +305,7 @@ public class DeployTester {
                     .withClock(clock)
                     .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
+                    .withSecretStore(secretStore)
                     .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
                     .withModelFactoryRegistry((new ModelFactoryRegistry(modelFactories)))
@@ -352,6 +356,11 @@ public class DeployTester {
 
         public Builder curator(Curator curator) {
             this.curator = curator;
+            return this;
+        }
+
+        public Builder secretStore(SecretStore secretStore) {
+            this.secretStore = secretStore;
             return this;
         }
 

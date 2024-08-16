@@ -91,7 +91,7 @@
         <commons-logging.vespa.version>1.3.3</commons-logging.vespa.version>  <!-- Bindings exported by jdisc through jcl-over-slf4j. -->
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
         <commons-compress.vespa.version>1.27.0</commons-compress.vespa.version>
-        <commons-cli.vespa.version>1.8.0</commons-cli.vespa.version>
+        <commons-cli.vespa.version>1.9.0</commons-cli.vespa.version>
         <curator.vespa.version>5.7.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
         <eclipse-angus.vespa.version>2.0.2</eclipse-angus.vespa.version>
@@ -183,7 +183,7 @@
         <maven-plugin-api.vespa.version>${maven-core.vespa.version}</maven-plugin-api.vespa.version>
         <maven-plugin-tools.vespa.version>3.13.1</maven-plugin-tools.vespa.version>
         <maven-resources-plugin.vespa.version>3.3.1</maven-resources-plugin.vespa.version>
-        <maven-resolver.vespa.version>2.0.0</maven-resolver.vespa.version>
+        <maven-resolver.vespa.version>2.0.1</maven-resolver.vespa.version>
         <maven-shade-plugin.vespa.version>3.5.3</maven-shade-plugin.vespa.version>
         <maven-shared-utils.vespa.version>3.4.2</maven-shared-utils.vespa.version>
         <maven-dependency-tree.vespa.version>3.3.0</maven-dependency-tree.vespa.version>
