@@ -27,9 +27,11 @@ import java.util.logging.Logger;
 public class FileDownloader implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(FileDownloader.class.getName());
-    private static final Duration defaultSleepBetweenRetries = Duration.ofSeconds(5);
-    public static final File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
-    private static final boolean forceDownload = Boolean.parseBoolean(System.getenv("VESPA_CONFIG_PROXY_FORCE_DOWNLOAD_OF_FILE_REFERENCES"));
+    private static final Duration backoffInitialTime;
+    public static final File defaultDownloadDirectory =
+            new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
+    // Undocumented on purpose, might change or be removed at any time
+    private static final boolean forceDownload = Boolean.parseBoolean(System.getenv("VESPA_FORCE_DOWNLOAD_OF_FILE_REFERENCES"));
 
     private final ConnectionPool connectionPool;
     private final Supervisor supervisor;
@@ -38,19 +40,25 @@ public class FileDownloader implements AutoCloseable {
     private final FileReferenceDownloader fileReferenceDownloader;
     private final Downloads downloads = new Downloads();
 
+    static {
+        // Undocumented on purpose, might change or be removed at any time
+        var backOff = System.getenv("VESPA_FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS");
+        backoffInitialTime = Duration.ofMillis(backOff == null ? 1000 : Long.parseLong(backOff));
+    }
+
     public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, Duration timeout) {
-        this(connectionPool, supervisor, defaultDownloadDirectory, timeout, defaultSleepBetweenRetries);
+        this(connectionPool, supervisor, defaultDownloadDirectory, timeout, backoffInitialTime);
     }
 
     public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Duration timeout) {
-        this(connectionPool, supervisor, downloadDirectory, timeout, defaultSleepBetweenRetries);
+        this(connectionPool, supervisor, downloadDirectory, timeout, backoffInitialTime);
     }
 
     public FileDownloader(ConnectionPool connectionPool,
                           Supervisor supervisor,
                           File downloadDirectory,
                           Duration timeout,
-                          Duration sleepBetweenRetries) {
+                          Duration backoffInitialTime) {
         this.connectionPool = connectionPool;
         this.supervisor = supervisor;
         this.downloadDirectory = downloadDirectory;
@@ -60,7 +68,7 @@ public class FileDownloader implements AutoCloseable {
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool,
                                                                    downloads,
                                                                    timeout,
-                                                                   sleepBetweenRetries,
+                                                                   backoffInitialTime,
                                                                    downloadDirectory);
         if (forceDownload)
             log.log(Level.INFO, "Force download of file references (download even if file reference exists on disk)");

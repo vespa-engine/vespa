@@ -46,7 +46,7 @@ public class FileReferenceDownloader {
     private final ConnectionPool connectionPool;
     private final Downloads downloads;
     private final Duration downloadTimeout;
-    private final Duration sleepBetweenRetries;
+    private final Duration backoffInitialTime;
     private final Duration rpcTimeout;
     private final File downloadDirectory;
     private final AtomicBoolean shutDown = new AtomicBoolean(false);
@@ -54,14 +54,15 @@ public class FileReferenceDownloader {
     FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
                             Duration timeout,
-                            Duration sleepBetweenRetries,
+                            Duration backoffInitialTime,
                             File downloadDirectory) {
         this.connectionPool = connectionPool;
         this.downloads = downloads;
         this.downloadTimeout = timeout;
-        this.sleepBetweenRetries = sleepBetweenRetries;
+        this.backoffInitialTime = backoffInitialTime;
         this.downloadDirectory = downloadDirectory;
-        String timeoutString = System.getenv("VESPA_CONFIGPROXY_FILEDOWNLOAD_RPC_TIMEOUT");
+        // Undocumented on purpose, might change or be removed at any time
+        String timeoutString = System.getenv("VESPA_FILE_DOWNLOAD_RPC_TIMEOUT");
         this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
     }
 
@@ -95,7 +96,7 @@ public class FileReferenceDownloader {
     private void backoff(int retryCount, Instant end) {
         try {
             long sleepTime = Math.min(120_000,
-                                      Math.min((long) (Math.pow(2, retryCount)) * sleepBetweenRetries.toMillis(),
+                                      Math.min((long) (Math.pow(2, retryCount)) * backoffInitialTime.toMillis(),
                                                Duration.between(Instant.now(), end).toMillis()));
             if (sleepTime <= 0) return;
 
