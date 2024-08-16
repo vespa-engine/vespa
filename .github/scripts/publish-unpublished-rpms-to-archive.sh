@@ -65,8 +65,11 @@ echo "RPMs missing in archive:"
 ls -lh  *.rpm
 echo
 
+
 UPLOAD_FAILED=false
-if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
+echo "GitHub event: $GITHUB_EVENT_NAME"
+
+if [ "$GITHUB_EVENT_NAME" == "schedule" ]; then
   for rpm in $(ls *.rpm); do
     echo "Uploading $rpm ..."
     if ! $MYDIR/upload-rpm-to-cloudsmith.sh $rpm ; then
