@@ -37,6 +37,7 @@
 %global _vespa_gtest_version 1.14.0
 %global _vespa_protobuf_version 5.26.1
 %global _vespa_openblas_version 0.3.27
+%global _vespa_llama_version 3.3.0
 %global _use_vespa_abseil_cpp 1
 %global _use_vespa_protobuf 1
 %global _use_vespa_openblas 1
@@ -201,7 +202,7 @@ Requires: vespa-protobuf = %{_vespa_protobuf_version}
 Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.18.0
-Requires: vespa-jllama = 3.2.1
+Requires: vespa-jllama = %{_vespa_llama_version}
 Requires: vespa-openblas >= %{_vespa_openblas_version}
 
 %description libs
