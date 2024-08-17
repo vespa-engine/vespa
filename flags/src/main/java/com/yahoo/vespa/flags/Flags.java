@@ -554,7 +554,7 @@ public class Flags {
             "Takes effect on next host-admin run");
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME = defineLongFlag(
-            "file-download-backoff-initial-time", 1000,
+            "file-download-backoff-initial-time", 5000,
             List.of("hmusum"), "2024-08-16", "2024-09-16",
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
