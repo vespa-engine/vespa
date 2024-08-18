@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import com.yahoo.container.di.componentgraph.Provider;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
+import com.yahoo.container.di.componentgraph.Provider;
 
 
 public class SecretsProvider implements Provider<Secrets> {
