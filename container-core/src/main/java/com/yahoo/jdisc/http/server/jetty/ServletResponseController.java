@@ -247,17 +247,31 @@ class ServletResponseController {
     private final ContentChannel responseContentChannel = new ContentChannel() {
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
-            commitResponseFromHandlerIfUncommitted(false);
-            out.writeBuffer(buf, handlerOrNoopHandler(handler));
+            var wrapped = handlerOrNoopHandler(handler);
+            try {
+                commitResponseFromHandlerIfUncommitted(false);
+                out.writeBuffer(buf, wrapped);
+            } catch (Throwable t) {
+                // In case any of the servlet API methods fails with exception
+                log.log(Level.FINE, "Failed to write buffer to output stream", t);
+                wrapped.failed(t);
+            }
         }
 
         @Override
         public void close(CompletionHandler handler) {
-            commitResponseFromHandlerIfUncommitted(true);
-            out.close(handlerOrNoopHandler(handler));
+            var wrapped = handlerOrNoopHandler(handler);
+            try {
+                commitResponseFromHandlerIfUncommitted(true);
+                out.close(wrapped);
+            } catch (Throwable t) {
+                // In case any of the servlet API methods fails with exception
+                log.log(Level.FINE, "Failed to close output stream", t);
+                wrapped.failed(t);
+            }
         }
 
-        private CompletionHandler handlerOrNoopHandler(CompletionHandler handler) {
+        private static CompletionHandler handlerOrNoopHandler(CompletionHandler handler) {
             return handler != null ? handler : NOOP_COMPLETION_HANDLER;
         }
     };
