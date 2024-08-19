@@ -559,6 +559,13 @@ public class Flags {
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
 
+    // TODO: Remove FILE_DOWNLOAD_BACKOFF_INITIAL_TIME when all usage is migrated to FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS
+    public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
+            "file-download-backoff-initial-time-ms", 5000,
+            List.of("hmusum"), "2024-08-16", "2024-09-16",
+            "Initial backoff time in milliseconds when failing to download a file reference",
+            "Takes effect on restart of Docker container");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
