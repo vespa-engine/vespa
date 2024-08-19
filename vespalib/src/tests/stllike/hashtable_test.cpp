@@ -6,8 +6,6 @@
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <memory>
-#include <vector>
 
 using vespalib::hashtable;
 using std::vector;
@@ -29,7 +27,7 @@ template<typename K> using up_hashtable =
 TEST("require that hashtable can store unique_ptrs") {
     up_hashtable<int> table(100);
     using UP = std::unique_ptr<int>;
-    table.insert(UP(new int(42)));
+    table.insert(std::make_unique<int>(42));
     auto it = table.find(42);
     EXPECT_EQUAL(42, **it);
 
@@ -43,12 +41,12 @@ TEST("require that hashtable can store unique_ptrs") {
 template <typename K, typename V> using Entry =
     std::pair<K, std::unique_ptr<V>>;
 typedef hashtable<int, Entry<int, int>,
-                  vespalib::hash<int>, std::equal_to<int>,
+                  vespalib::hash<int>, std::equal_to<>,
                   Select1st<Entry<int, int>>> PairHashtable;
 
 TEST("require that hashtable can store pairs of <key, unique_ptr to value>") {
     PairHashtable table(100);
-    table.insert(make_pair(42, std::unique_ptr<int>(new int(84))));
+    table.insert(make_pair(42, std::make_unique<int>(84)));
     PairHashtable::iterator it = table.find(42);
     EXPECT_EQUAL(84, *it->second);
     auto it2 = table.find(42);
@@ -69,9 +67,26 @@ TEST("require that hashtable<int> can be copied") {
     EXPECT_EQUAL(42, *table2.find(42));
 }
 
+TEST("require that getModuloStl always return a larger number in 32 bit integer range") {
+    for (size_t i=0; i < 32; i++) {
+        size_t num = 1ul << i;
+        size_t prime = hashtable_base::getModuloStl(num);
+        EXPECT_GREATER_EQUAL(prime, num);
+        EXPECT_EQUAL(prime, hashtable_base::getModuloStl(prime));
+        EXPECT_GREATER(hashtable_base::getModuloStl(prime+1), prime + 1);
+        printf("%lu <= %lu\n", num, prime);
+    }
+    for (size_t i=0; i < 32; i++) {
+        size_t num = (1ul << i) - 1;
+        size_t prime = hashtable_base::getModuloStl(num);
+        EXPECT_GREATER_EQUAL(prime, num);
+        printf("%lu <= %lu\n", num, prime);
+    }
+}
+
 TEST("require that you can insert duplicates") {
     using Pair = std::pair<int, vespalib::string>;
-    using Map = hashtable<int, Pair, vespalib::hash<int>, std::equal_to<int>, Select1st<Pair>>;
+    using Map = hashtable<int, Pair, vespalib::hash<int>, std::equal_to<>, Select1st<Pair>>;
 
     Map m(1);
     EXPECT_EQUAL(0u, m.size());
@@ -126,7 +141,7 @@ struct FirstInVector {
 
 TEST("require that hashtable<vector<int>> can be copied") {
     typedef hashtable<int, vector<int>, vespalib::hash<int>,
-        std::equal_to<int>, FirstInVector<int, vector<int>>> VectorHashtable;
+        std::equal_to<>, FirstInVector<int, vector<int>>> VectorHashtable;
     VectorHashtable table(100);
     table.insert(std::vector<int>{2, 4, 6});
     VectorHashtable table2(table);
