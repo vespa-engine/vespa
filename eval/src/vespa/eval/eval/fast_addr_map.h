@@ -3,10 +3,10 @@
 #pragma once
 
 #include "memory_usage_stuff.h"
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/string_id.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/hashtable.h>
+#include <span>
 
 namespace vespalib::eval {
 
@@ -30,7 +30,7 @@ public:
         return ((full_hash * 31) + next_hash);
     }
     template <typename T>
-    static constexpr uint32_t hash_labels(ConstArrayRef<T> addr) {
+    static constexpr uint32_t hash_labels(std::span<const T> addr) {
         uint32_t hash = 0;
         for (const T &label: addr) {
             hash = combine_label_hash(hash, hash_label(label));
@@ -54,7 +54,7 @@ public:
 
     // alternative key(s) used for lookup in sparse hash set
     template <typename T> struct AltKey {
-        ConstArrayRef<T> key;
+        std::span<const T> key;
         uint32_t hash;
     };
 
@@ -64,7 +64,7 @@ public:
         const StringIdVector &labels;
         LabelView(size_t num_mapped_dims, const StringIdVector &labels_in) noexcept
             : addr_size(num_mapped_dims), labels(labels_in) {}
-        ConstArrayRef<string_id> get_addr(size_t idx) const noexcept {
+        std::span<const string_id> get_addr(size_t idx) const noexcept {
             return {labels.data() + (idx * addr_size), addr_size};
         }
     };
@@ -111,12 +111,12 @@ public:
     FastAddrMap(FastAddrMap &&) = delete;
     FastAddrMap &operator=(FastAddrMap &&) = delete;
     static constexpr size_t npos() noexcept { return -1; }
-    ConstArrayRef<string_id> get_addr(size_t idx) const noexcept { return _labels.get_addr(idx); }
+    std::span<const string_id> get_addr(size_t idx) const noexcept { return _labels.get_addr(idx); }
     size_t size() const noexcept { return _map.size(); }
     constexpr size_t addr_size() const noexcept { return _labels.addr_size; }
     const StringIdVector &labels() const noexcept { return _labels.labels; }
     template <typename T>
-    size_t lookup(ConstArrayRef<T> addr, uint32_t hash) const noexcept {
+    size_t lookup(std::span<const T> addr, uint32_t hash) const noexcept {
         // assert(addr_size() == addr.size());
         AltKey<T> key{addr, hash};
         auto pos = _map.find(key);
@@ -128,7 +128,7 @@ public:
         return (pos == _map.end()) ? npos() : pos->tag.idx;
     }
     template <typename T>
-    size_t lookup(ConstArrayRef<T> addr) const noexcept {
+    size_t lookup(std::span<const T> addr) const noexcept {
         return (addr.size() == 1)
             ? lookup_singledim(self(addr[0]))
             : lookup(addr, hash_labels(addr));

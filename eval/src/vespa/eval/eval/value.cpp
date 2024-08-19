@@ -9,14 +9,14 @@ namespace vespalib::eval {
 namespace {
 
 struct EmptyView : Value::Index::View {
-    void lookup(ConstArrayRef<const string_id*> ) override {}
-    bool next_result(ConstArrayRef<string_id*> , size_t &) override { return false; }
+    void lookup(std::span<const string_id* const> ) override {}
+    bool next_result(std::span<string_id* const> , size_t &) override { return false; }
 };
 
 struct TrivialView : Value::Index::View {
     bool first = false;
-    void lookup(ConstArrayRef<const string_id*> ) override { first = true; }
-    bool next_result(ConstArrayRef<string_id*> , size_t &idx_out) override {
+    void lookup(std::span<const string_id* const> ) override { first = true; }
+    bool next_result(std::span<string_id* const> , size_t &idx_out) override {
         if (first) {
             idx_out = 0;
             first = false;
@@ -49,7 +49,7 @@ EmptyIndex::size() const
 }
 
 std::unique_ptr<Value::Index::View>
-EmptyIndex::create_view(ConstArrayRef<size_t>) const
+EmptyIndex::create_view(std::span<const size_t>) const
 {
     return std::make_unique<EmptyView>();
 }
@@ -64,7 +64,7 @@ TrivialIndex::size() const
 }
 
 std::unique_ptr<Value::Index::View>
-TrivialIndex::create_view(ConstArrayRef<size_t>) const
+TrivialIndex::create_view(std::span<const size_t>) const
 {
     return std::make_unique<TrivialView>();
 }

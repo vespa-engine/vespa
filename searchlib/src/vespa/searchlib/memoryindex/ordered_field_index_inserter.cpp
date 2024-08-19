@@ -75,8 +75,8 @@ OrderedFieldIndexInserter<interleaved_features>::flush()
     size_t removes_offset = 0;
     for (const auto& word_entry : _word_entries) {
         auto word = std::get<0>(word_entry);
-        vespalib::ConstArrayRef<PostingListKeyDataType> adds(_adds.data() + adds_offset, std::get<1>(word_entry));
-        vespalib::ConstArrayRef<uint32_t> removes(_removes.data() + removes_offset, std::get<2>(word_entry));
+        std::span<const PostingListKeyDataType> adds(_adds.data() + adds_offset, std::get<1>(word_entry));
+        std::span<const uint32_t> removes(_removes.data() + removes_offset, std::get<2>(word_entry));
         KeyComp cmp(wordStore, word);
         WordKey key;
         if (_dItr.valid() && cmp(_dItr.getKey(), key)) {

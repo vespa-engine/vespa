@@ -114,10 +114,10 @@ struct ProfiledExecutor : FeatureExecutor {
     void handle_bind_match_data(const MatchData &md) override {
         executor.bind_match_data(md);
     }
-    void handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs) override {
+    void handle_bind_inputs(std::span<const LazyValue> inputs) override {
         executor.bind_inputs(inputs);
     }
-    void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs) override {
+    void handle_bind_outputs(std::span<NumberOrObject> outputs) override {
         executor.bind_outputs(outputs);
     }
     bool isPure() override {
@@ -179,12 +179,12 @@ RankProgram::unbox(BlueprintResolver::FeatureRef seed, const MatchData &md)
 {
     FeatureExecutor *input_executor = _executors[seed.executor];
     const NumberOrObject *input_value = input_executor->outputs().get_raw(seed.output);
-    vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(1);
+    std::span<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(1);
     if (check_const(input_value)) {
         outputs[0].as_number = input_value->as_object.get().as_double();
         _unboxed_seeds.emplace(input_value, LazyValue(&outputs[0]));
     } else {
-        vespalib::ArrayRef<LazyValue> inputs = _hot_stash.create_array<LazyValue>(1, input_value, input_executor);
+        std::span<LazyValue> inputs = _hot_stash.create_array<LazyValue>(1, input_value, input_executor);
         FeatureExecutor &unboxer = _hot_stash.create<UnboxingExecutor>();        
         unboxer.bind_inputs(inputs);
         unboxer.bind_outputs(outputs);
@@ -244,7 +244,7 @@ RankProgram::setup(const MatchData &md,
     _executors.reserve(specs.size());
     _is_const.resize(specs.size()*2); // Reserve space in hashmap for executors to be const
     for (uint32_t i = 0; i < specs.size(); ++i) {
-        vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
+        std::span<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
         StashSelector stash(_hot_stash, _cold_stash);
         FeatureExecutor *executor = &(specs[i].blueprint->createExecutor(queryEnv, stash.get()));
         bool is_const = check_const(executor, specs[i].inputs);
@@ -254,7 +254,7 @@ RankProgram::setup(const MatchData &md,
             is_const = executor->isPure();
         }
         size_t num_inputs = specs[i].inputs.size();
-        vespalib::ArrayRef<LazyValue> inputs = stash.get().create_array<LazyValue>(num_inputs, nullptr);
+        std::span<LazyValue> inputs = stash.get().create_array<LazyValue>(num_inputs, nullptr);
         for (size_t input_idx = 0; input_idx < num_inputs; ++input_idx) {
             auto ref = specs[i].inputs[input_idx];
             FeatureExecutor *input_executor = _executors[ref.executor];

@@ -30,7 +30,7 @@ class WriteField : public AttributeFieldWriter
 {
 protected:
     const IArrayReadView<BasicType>*   _array_read_view;
-    vespalib::ConstArrayRef<BasicType> _content;
+    std::span<const BasicType> _content;
 
     WriteField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash &stash);
     ~WriteField() override;

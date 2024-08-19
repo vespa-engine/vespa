@@ -6,8 +6,8 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <iostream>
-#include <span>
 #include <queue>
+#include <span>
 
 namespace vespalib::fuzzy {
 

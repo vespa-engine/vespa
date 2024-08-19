@@ -14,7 +14,7 @@ using TlsReplayCost = FlushTargetCandidates::TlsReplayCost;
 namespace {
 
 SerialNum
-calculateReplayStartSerial(vespalib::ConstArrayRef<FlushTargetCandidate> candidates,
+calculateReplayStartSerial(std::span<const FlushTargetCandidate> candidates,
                            size_t num_candidates,
                            const flushengine::TlsStats &tlsStats)
 {
@@ -45,7 +45,7 @@ calculateTlsReplayCost(const flushengine::TlsStats &tlsStats,
 }
 
 double
-calculateFlushTargetsWriteCost(vespalib::ConstArrayRef<FlushTargetCandidate> candidates,
+calculateFlushTargetsWriteCost(std::span<const FlushTargetCandidate> candidates,
                                size_t num_candidates)
 {
     double result = 0;
@@ -57,7 +57,7 @@ calculateFlushTargetsWriteCost(vespalib::ConstArrayRef<FlushTargetCandidate> can
 
 }
 
-FlushTargetCandidates::FlushTargetCandidates(vespalib::ConstArrayRef<FlushTargetCandidate> candidates,
+FlushTargetCandidates::FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates,
                                              size_t num_candidates,
                                              const flushengine::TlsStats &tlsStats,
                                              const Config &cfg)

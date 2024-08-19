@@ -17,12 +17,12 @@ using namespace instruction;
 namespace {
 
 template <typename T, size_t N>
-ConstArrayRef<const T *> as_ccar(std::array<T *, N> &array) {
+std::span<const T* const> as_ccar(std::array<T *, N> &array) {
     return {array.data(), array.size()};
 }
 
 template <typename T>
-ConstArrayRef<T> as_car(T &value) {
+std::span<const T> as_car(T &value) {
     return {&value, 1};
 }
 

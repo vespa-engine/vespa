@@ -35,7 +35,6 @@ using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
 using search::queryeval::FakeResult;
 using search::queryeval::SearchIterator;
-using vespalib::ArrayRef;
 using vespalib::MemoryUsage;
 
 namespace {

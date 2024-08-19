@@ -22,7 +22,7 @@ private:
 public:
     CompactionContext(ICompactable& store, std::unique_ptr<CompactingBuffers> compacting_buffers);
     ~CompactionContext() override;
-    void compact(vespalib::ArrayRef<AtomicEntryRef> refs) override;
+    void compact(std::span<AtomicEntryRef> refs) override;
 };
 
 }

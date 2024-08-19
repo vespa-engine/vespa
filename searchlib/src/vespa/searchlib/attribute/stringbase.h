@@ -52,7 +52,7 @@ public:
     virtual const char *get(DocId doc) const = 0;
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), nullptr, 0); }
     double getFloat(DocId doc)    const override;
-    vespalib::ConstArrayRef<char> get_raw(DocId) const override;
+    std::span<const char> get_raw(DocId) const override;
     static const char * defaultValue() { return ""; }
 protected:
     StringAttribute(const vespalib::string & name);

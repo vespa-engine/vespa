@@ -62,7 +62,7 @@ SingleRawAttribute::onCommit()
     if (_raw_store.consider_compact()) {
         auto context = _raw_store.start_compact(getConfig().getCompactionStrategy());
         if (context) {
-            context->compact(vespalib::ArrayRef<AtomicEntryRef>(&_ref_vector[0], _ref_vector.size()));
+            context->compact(std::span<AtomicEntryRef>(&_ref_vector[0], _ref_vector.size()));
         }
         incGeneration();
         updateStat(true);
@@ -90,7 +90,7 @@ SingleRawAttribute::update_stat()
     return result;
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 SingleRawAttribute::get_raw(DocId docid) const
 {
     EntryRef ref;
@@ -104,7 +104,7 @@ SingleRawAttribute::get_raw(DocId docid) const
 }
 
 void
-SingleRawAttribute::set_raw(DocId docid, vespalib::ConstArrayRef<char> raw)
+SingleRawAttribute::set_raw(DocId docid, std::span<const char> raw)
 {
     auto ref = _raw_store.set(raw);
     assert(docid < _ref_vector.size());

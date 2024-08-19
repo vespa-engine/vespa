@@ -17,12 +17,12 @@ template <class MultiValueType, typename BaseType>
 ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::~ExtendableNumericArrayMultiValueReadView() = default;
 
 template <class MultiValueType, typename BaseType>
-vespalib::ConstArrayRef<MultiValueType>
+std::span<const MultiValueType>
 ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::get_values(uint32_t doc_id) const
 {
     auto offset = _idx[doc_id];
     auto next_offset = _idx[doc_id + 1];
-    vespalib::ConstArrayRef<BaseType> raw(_data.data() + offset, next_offset - offset);
+    std::span<const BaseType> raw(_data.data() + offset, next_offset - offset);
     if (_copy.size() < raw.size()) {
         _copy.resize(raw.size());
     }
@@ -31,7 +31,7 @@ ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::get_values(u
         *dst = multivalue::ValueBuilder<MultiValueType>::build(src, 1);
         ++dst;
     }
-    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
+    return std::span<const MultiValueType>(_copy.data(), raw.size());
 }
 
 template class ExtendableNumericArrayMultiValueReadView<int8_t, int8_t>;

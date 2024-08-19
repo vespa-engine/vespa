@@ -55,7 +55,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
     uint32_t preve = 0;
     uint32_t refCount = 0;
 
-    vespalib::ConstArrayRef<EnumIndex> enum_indexes(loader.get_enum_indexes());
+    std::span<const EnumIndex> enum_indexes(loader.get_enum_indexes());
     assert(!enum_indexes.empty());
     auto posting_indexes = loader.initialize_empty_posting_indexes();
     uint32_t posting_enum = preve;

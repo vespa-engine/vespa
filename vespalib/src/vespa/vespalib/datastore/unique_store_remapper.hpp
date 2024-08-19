@@ -28,7 +28,7 @@ UniqueStoreRemapper<RefT>::remap(EntryRef ref) const {
 
 template <typename RefT>
 void
-UniqueStoreRemapper<RefT>::remap(vespalib::ArrayRef<AtomicEntryRef> refs) const {
+UniqueStoreRemapper<RefT>::remap(std::span<AtomicEntryRef> refs) const {
     for (auto &atomic_ref : refs) {
         auto ref = atomic_ref.load_relaxed();
         if (ref.valid() && _filter.has(ref)) {

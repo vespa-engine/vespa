@@ -20,7 +20,7 @@ CompactionContext::~CompactionContext()
 }
 
 void
-CompactionContext::compact(vespalib::ArrayRef<AtomicEntryRef> refs)
+CompactionContext::compact(std::span<AtomicEntryRef> refs)
 {
     for (auto &atomic_entry_ref : refs) {
         auto ref = atomic_entry_ref.load_relaxed();

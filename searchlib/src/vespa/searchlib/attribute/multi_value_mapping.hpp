@@ -47,7 +47,7 @@ MultiValueMapping<ElemT,RefT>::compact_worst(const CompactionStrategy& compactio
 {
     vespalib::datastore::ICompactionContext::UP compactionContext(_store.compact_worst(compaction_strategy));
     if (compactionContext) {
-        compactionContext->compact(vespalib::ArrayRef<AtomicEntryRef>(&_indices[0], _indices.size()));
+        compactionContext->compact(std::span<AtomicEntryRef>(&_indices[0], _indices.size()));
     }
 }
 

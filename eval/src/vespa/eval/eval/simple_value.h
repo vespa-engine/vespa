@@ -36,8 +36,8 @@ private:
 protected:
     size_t num_mapped_dims() const { return _num_mapped_dims; }
     size_t subspace_size() const { return _subspace_size; }
-    void add_mapping(ConstArrayRef<std::string_view> addr);
-    void add_mapping(ConstArrayRef<string_id> addr);
+    void add_mapping(std::span<const std::string_view> addr);
+    void add_mapping(std::span<const string_id> addr);
     MemoryUsage estimate_extra_memory_usage() const;
 public:
     SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
@@ -45,7 +45,7 @@ public:
     const ValueType &type() const override { return _type; }
     const Value::Index &index() const override { return *this; }
     size_t size() const override { return _index.size(); }
-    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
+    std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
     static Value::UP from_spec(const TensorSpec &spec);
     static Value::UP from_value(const Value &value);
     static Value::UP from_stream(nbostream &stream);
@@ -62,9 +62,9 @@ private:
 public:
     SimpleValueT(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
     ~SimpleValueT() override;
-    TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
-    ArrayRef<T> add_subspace(ConstArrayRef<std::string_view> addr) override;
-    ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) override;
+    TypedCells cells() const override { return TypedCells(std::span<const T>(_cells)); }
+    std::span<T> add_subspace(std::span<const std::string_view> addr) override;
+    std::span<T> add_subspace(std::span<const string_id> addr) override;
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (num_mapped_dims() == 0) {
             assert(size() == 1);

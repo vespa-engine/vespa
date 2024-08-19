@@ -97,7 +97,7 @@ long
 NumericDirectAttrVector<F, B>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
 {
     search::attribute::NumericSortBlobWriter<BaseType, asc> writer;
-    vespalib::ConstArrayRef<BaseType> values(this->_data.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
+    std::span<const BaseType> values(this->_data.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
     for (auto& v : values) {
         writer.candidate(v);
     }
@@ -151,7 +151,7 @@ long
 StringDirectAttrVector<F>::on_serialize_for_sort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc, bool asc) const
 {
     search::attribute::StringSortBlobWriter writer(serTo, available, bc, asc);
-    vespalib::ConstArrayRef<uint32_t> offsets(this->_offsets.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
+    std::span<const uint32_t> offsets(this->_offsets.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
     for (auto& offset : offsets) {
         if (!writer.candidate(&this->_buffer[offset])) {
             return -1;

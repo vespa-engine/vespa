@@ -56,7 +56,7 @@ uint32_t IntegerAttribute::get(DocId doc, WeightedConstChar * v, uint32_t sz) co
     return 0;
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 IntegerAttribute::get_raw(DocId) const
 {
     return {};

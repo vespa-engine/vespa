@@ -83,7 +83,7 @@ public:
     OnnxFeatureExecutor(const Onnx &model, const Onnx::WireInfo &wire_info)
         : _eval_context(model, wire_info) {}
     bool isPure() override { return true; }
-    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject>) override {
+    void handle_bind_outputs(std::span<fef::NumberOrObject>) override {
         for (size_t i = 0; i < _eval_context.num_results(); ++i) {
             outputs().set_object(i, _eval_context.get_result(i));
         }

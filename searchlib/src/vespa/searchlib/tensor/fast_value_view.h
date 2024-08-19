@@ -14,7 +14,7 @@ struct FastValueView final : vespalib::eval::Value {
     vespalib::StringIdVector         _labels;
     vespalib::eval::FastValueIndex   _index;
     vespalib::eval::TypedCells       _cells;
-    FastValueView(const vespalib::eval::ValueType& type, vespalib::ConstArrayRef<vespalib::string_id> labels, vespalib::eval::TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces);
+    FastValueView(const vespalib::eval::ValueType& type, std::span<const vespalib::string_id> labels, vespalib::eval::TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces);
     const vespalib::eval::ValueType& type() const override { return _type; }
     const vespalib::eval::Value::Index& index() const override { return _index; }
     vespalib::eval::TypedCells cells() const override { return _cells; }

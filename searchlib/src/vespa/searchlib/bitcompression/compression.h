@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/util/comprfile.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace vespalib {
 
@@ -1578,7 +1578,7 @@ public:
     using ParentClass::writeBits;
 
     void writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
-    void writeBytes(vespalib::ConstArrayRef<char> buf);
+    void writeBytes(std::span<const char> buf);
     void writeString(std::string_view buf);
     virtual void writeHeader(const vespalib::GenericHeader &header);
 

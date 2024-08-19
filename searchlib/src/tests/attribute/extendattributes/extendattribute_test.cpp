@@ -29,11 +29,11 @@ std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
 }
 
-std::vector<char> as_vector(vespalib::ConstArrayRef<char> value) {
+std::vector<char> as_vector(std::span<const char> value) {
     return {value.data(), value.data() + value.size()};
 }
 
-std::vector<double> as_vector(vespalib::ConstArrayRef<double> value) {
+std::vector<double> as_vector(std::span<const double> value) {
     return {value.data(), value.data() + value.size()};
 }
 
@@ -202,7 +202,7 @@ void ExtendAttributeTest::testExtendRaw(AttributeVector& attr)
     ext_attr->add(as_vector("1.7"sv));
     auto buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("1.7"sv), as_vector(buf));
-    ext_attr->add(vespalib::ConstArrayRef<char>(as_vector("2.3"sv)));
+    ext_attr->add(std::span<const char>(as_vector("2.3"sv)));
     buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("2.3"sv), as_vector(buf));
     add_doc(attr, 1);

@@ -32,7 +32,6 @@ namespace storage {
 using Entry = BucketDatabase::Entry;
 using ConstEntryRef = BucketDatabase::ConstEntryRef;
 using vespalib::datastore::EntryRef;
-using vespalib::ConstArrayRef;
 using document::BucketId;
 
 template <typename ReplicaStore>
@@ -46,12 +45,12 @@ vespalib::datastore::ArrayStoreConfig make_default_array_store_config() {
 
 namespace {
 
-Entry entry_from_replica_array_ref(const BucketId& id, uint32_t gc_timestamp, ConstArrayRef<BucketCopy> replicas) {
+Entry entry_from_replica_array_ref(const BucketId& id, uint32_t gc_timestamp, std::span<const BucketCopy> replicas) {
     return Entry(id, BucketInfo(gc_timestamp, std::vector<BucketCopy>(replicas.begin(), replicas.end())));
 }
 
 ConstEntryRef const_entry_ref_from_replica_array_ref(const BucketId& id, uint32_t gc_timestamp,
-                                                     ConstArrayRef<BucketCopy> replicas)
+                                                     std::span<const BucketCopy> replicas)
 {
     return ConstEntryRef(id, ConstBucketInfoRef(gc_timestamp, replicas));
 }

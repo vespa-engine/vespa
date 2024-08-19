@@ -2,6 +2,7 @@
 
 #include "inplace_map_function.h"
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/inline_operation.h>

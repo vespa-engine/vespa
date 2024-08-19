@@ -191,8 +191,8 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_memory_us
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespalib::ConstArrayRef<EntryRef> refs,
-                                                   vespalib::ConstArrayRef<uint32_t> ref_counts,
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(std::span<const EntryRef> refs,
+                                                   std::span<const uint32_t> ref_counts,
                                                    std::function<void(EntryRef)> hold)
 {
     assert(refs.size() == ref_counts.size());
@@ -225,7 +225,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespali
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespalib::ConstArrayRef<EntryRef> refs)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(std::span<const EntryRef> refs)
 {
     if constexpr (has_btree_dictionary) {
         using DataType = typename BTreeDictionaryType::DataType;
@@ -246,8 +246,8 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespali
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_payload(vespalib::ConstArrayRef<EntryRef> refs,
-                                                                vespalib::ConstArrayRef<EntryRef> payloads)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_payload(std::span<const EntryRef> refs,
+                                                                std::span<const EntryRef> payloads)
 {
     assert(refs.size() == payloads.size());
     if constexpr (has_btree_dictionary) {

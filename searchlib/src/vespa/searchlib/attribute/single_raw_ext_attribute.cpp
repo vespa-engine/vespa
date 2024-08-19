@@ -41,7 +41,7 @@ SingleRawExtAttribute::addDoc(DocId& docId)
 }
 
 bool
-SingleRawExtAttribute::add(vespalib::ConstArrayRef<char> v, int32_t)
+SingleRawExtAttribute::add(std::span<const char> v, int32_t)
 {
     const size_t start(_offsets.back());
     const size_t sz(v.size());
@@ -50,7 +50,7 @@ SingleRawExtAttribute::add(vespalib::ConstArrayRef<char> v, int32_t)
     return true;
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 SingleRawExtAttribute::get_raw(DocId docid) const
 {
     if (docid >= _offsets.size()) {

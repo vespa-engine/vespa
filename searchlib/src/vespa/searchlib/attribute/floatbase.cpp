@@ -88,7 +88,7 @@ bool FloatingPointAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     return retval;
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 FloatingPointAttribute::get_raw(DocId) const
 {
     return {};

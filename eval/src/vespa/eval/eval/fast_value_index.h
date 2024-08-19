@@ -18,7 +18,7 @@ struct FastValueIndex final : Value::Index {
     FastValueIndex(size_t num_mapped_dims_in, const StringIdVector &labels, size_t expected_subspaces_in)
         : map(num_mapped_dims_in, labels, expected_subspaces_in) {}
     size_t size() const override { return map.size(); }
-    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
+    std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
 };
 
 }

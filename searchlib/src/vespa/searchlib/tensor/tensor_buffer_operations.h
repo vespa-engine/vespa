@@ -7,10 +7,10 @@
 #include "subspace_type.h"
 #include "vector_bundle.h"
 #include <vespa/vespalib/datastore/aligner.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/string_id.h>
 #include <cstddef>
 #include <memory>
+#include <span>
 
 namespace vespalib { class nbostream; }
 
@@ -69,15 +69,15 @@ class TensorBufferOperations
     size_t get_cells_offset(uint32_t num_subspaces, auto aligner) const noexcept {
         return aligner.align(get_labels_offset() + get_labels_mem_size(num_subspaces));
     }
-    uint32_t get_num_subspaces_and_flag(vespalib::ConstArrayRef<char> buf) const noexcept;
-    void set_skip_reclaim_labels(vespalib::ArrayRef<char> buf, uint32_t num_subspaces_and_flag) const noexcept;
+    uint32_t get_num_subspaces_and_flag(std::span<const char> buf) const noexcept;
+    void set_skip_reclaim_labels(std::span<char> buf, uint32_t num_subspaces_and_flag) const noexcept;
     static uint32_t get_num_subspaces(uint32_t num_subspaces_and_flag) noexcept {
         return num_subspaces_and_flag & num_subspaces_mask;
     }
     static bool get_skip_reclaim_labels(uint32_t num_subspaces_and_flag) noexcept {
         return (num_subspaces_and_flag & skip_reclaim_labels_mask) != 0;
     }
-    uint32_t get_num_subspaces(vespalib::ConstArrayRef<char> buf) const noexcept {
+    uint32_t get_num_subspaces(std::span<const char> buf) const noexcept {
         return get_num_subspaces(get_num_subspaces_and_flag(buf));
     }
 public:
@@ -93,29 +93,29 @@ public:
     TensorBufferOperations(TensorBufferOperations&&) = delete;
     TensorBufferOperations& operator=(const TensorBufferOperations&) = delete;
     TensorBufferOperations& operator=(TensorBufferOperations&&) = delete;
-    void store_tensor(vespalib::ArrayRef<char> buf, const vespalib::eval::Value& tensor);
-    std::unique_ptr<vespalib::eval::Value> make_fast_view(vespalib::ConstArrayRef<char> buf, const vespalib::eval::ValueType& tensor_type) const;
+    void store_tensor(std::span<char> buf, const vespalib::eval::Value& tensor);
+    std::unique_ptr<vespalib::eval::Value> make_fast_view(std::span<const char> buf, const vespalib::eval::ValueType& tensor_type) const;
 
     // Mark that reclaim_labels should be skipped for old buffer after copying tensor buffer
-    void copied_labels(vespalib::ArrayRef<char> buf) const;
+    void copied_labels(std::span<char> buf) const;
     // Decrease reference counts for labels and set skip flag unless skip flag is set.
-    void reclaim_labels(vespalib::ArrayRef<char> buf) const;
+    void reclaim_labels(std::span<char> buf) const;
     // Serialize stored tensor to target (used when saving attribute)
-    void encode_stored_tensor(vespalib::ConstArrayRef<char> buf, const vespalib::eval::ValueType& type, vespalib::nbostream& target) const;
+    void encode_stored_tensor(std::span<const char> buf, const vespalib::eval::ValueType& type, vespalib::nbostream& target) const;
     vespalib::eval::TypedCells get_empty_subspace() const noexcept {
         return _empty.cells();
     }
-    VectorBundle get_vectors(vespalib::ConstArrayRef<char> buf) const noexcept {
+    VectorBundle get_vectors(std::span<const char> buf) const noexcept {
         auto num_subspaces = get_num_subspaces(buf);
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
         auto aligner = select_aligner(cells_mem_size);
         return {buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type};
     }
-    SerializedTensorRef get_serialized_tensor_ref(vespalib::ConstArrayRef<char> buf) const noexcept {
+    SerializedTensorRef get_serialized_tensor_ref(std::span<const char> buf) const noexcept {
         auto num_subspaces = get_num_subspaces(buf);
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
         auto aligner = select_aligner(cells_mem_size);
-        vespalib::ConstArrayRef<vespalib::string_id> labels(reinterpret_cast<const vespalib::string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
+        std::span<const vespalib::string_id> labels(reinterpret_cast<const vespalib::string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
         return {VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type), _num_mapped_dimensions, labels};
     }
     bool is_dense() const noexcept { return _num_mapped_dimensions == 0; }

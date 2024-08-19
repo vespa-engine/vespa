@@ -4,17 +4,16 @@
 #include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/dense_cells_value.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/unconstify_span.h>
+#include <span>
 #include <type_traits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.onnx_wrapper");
 
-using vespalib::ArrayRef;
-using vespalib::ConstArrayRef;
 
 using vespalib::make_string_short::fmt;
 
@@ -89,7 +88,7 @@ CreateEmptyOnnxTensor create_empty_onnx_tensor;
 struct CreateVespaTensorRef {
     template <typename T> static Value::UP invoke(const ValueType &type_ref, Ort::Value &value) {
         size_t num_cells = type_ref.dense_subspace_size();
-        ConstArrayRef<T> cells(value.GetTensorMutableData<T>(), num_cells);
+        std::span<const T> cells(value.GetTensorMutableData<T>(), num_cells);
         return std::make_unique<DenseValueView>(type_ref, TypedCells(cells));
     }
     Value::UP operator()(const ValueType &type_ref, Ort::Value &value) {

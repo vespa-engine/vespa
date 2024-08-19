@@ -26,15 +26,15 @@ struct ValueBuilder : ValueBuilderBase {
     // returned subspaces will be invalidated when new subspaces are
     // added. Also note that adding the same subspace multiple times
     // is not allowed.
-    virtual ArrayRef<T> add_subspace(ConstArrayRef<std::string_view> addr) = 0;
+    virtual std::span<T> add_subspace(std::span<const std::string_view> addr) = 0;
 
     // add a dense subspace for the given address where labels are
     // specified by shared string repo ids. Note that the caller is
     // responsible for making sure the ids are valid 'long enough'.
-    virtual ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) = 0;
+    virtual std::span<T> add_subspace(std::span<const string_id> addr) = 0;
 
     // convenience function to add a subspace with an empty address
-    ArrayRef<T> add_subspace() { return add_subspace(ConstArrayRef<string_id>()); }
+    std::span<T> add_subspace() { return add_subspace(std::span<const string_id>()); }
 
     // Given the ownership of the builder itself, produce the newly
     // created value. This means that builders can only be used once,

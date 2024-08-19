@@ -102,7 +102,7 @@ struct SparseFun {
       : param(unwrap_param<UniversalDotProductParam>(param_in)),
         dense_fun(param.vector_size, lhs_in, rhs_in),
         result() {}
-    void operator()(size_t lhs_subspace, size_t rhs_subspace, ConstArrayRef<string_id> res_addr) const requires (!forward && !distinct) {
+    void operator()(size_t lhs_subspace, size_t rhs_subspace, std::span<const string_id> res_addr) const requires (!forward && !distinct) {
         auto [space, first] = result.fast->insert_subspace(res_addr);
         if (first) {
             std::fill(space.begin(), space.end(), OCT{});
@@ -112,7 +112,7 @@ struct SparseFun {
                                  rhs_subspace * param.dense_plan.rhs_size,
                                  0, dense_fun);
     };
-    void operator()(size_t lhs_subspace, size_t rhs_subspace, ConstArrayRef<string_id> res_addr) const requires (!forward && distinct) {
+    void operator()(size_t lhs_subspace, size_t rhs_subspace, std::span<const string_id> res_addr) const requires (!forward && distinct) {
         dense_fun.dst = result.fast->add_subspace(res_addr).data();
         param.dense_plan.execute_distinct(lhs_subspace * param.dense_plan.lhs_size,
                                           rhs_subspace * param.dense_plan.rhs_size,
@@ -134,7 +134,7 @@ struct SparseFun {
         result.fast = stored_result.get();
         param.sparse_plan.execute(lhs, rhs, *this);
         if (result.fast->my_index.map.size() == 0 && param.sparse_plan.res_dims() == 0) {
-            auto empty = result.fast->add_subspace(ConstArrayRef<string_id>());
+            auto empty = result.fast->add_subspace(std::span<const string_id>());
             std::fill(empty.begin(), empty.end(), OCT{});
         }
         return *(result.fast);

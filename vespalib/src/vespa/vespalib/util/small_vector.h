@@ -4,10 +4,10 @@
 
 #include "alloc.h"
 #include "traits.h"
-#include "arrayref.h"
-#include <cstring>
 #include <cassert>
+#include <cstring>
 #include <iterator>
+#include <span>
 
 namespace vespalib {
 
@@ -175,7 +175,7 @@ public:
             free(_data);
         }
     }
-    operator ConstArrayRef<T> () const { return ConstArrayRef<T>(data(), size()); }
+    operator std::span<const T> () const { return std::span<const T>(data(), size()); }
     bool empty() const noexcept { return (_size == 0); }
     uint32_t size() const noexcept { return _size; }
     uint32_t capacity() const noexcept { return _capacity; }

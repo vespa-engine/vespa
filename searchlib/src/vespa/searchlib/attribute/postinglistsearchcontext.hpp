@@ -216,7 +216,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             assert(_merger.hasArray());
             using DocIt = ArrayIterator<Posting>;
             DocIt postings;
-            vespalib::ConstArrayRef<Posting> array = _merger.getArray();
+            std::span<const Posting> array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);
             if (_posting_store.isFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);

@@ -95,7 +95,7 @@ template <typename BaseType>
 DotProductByWeightedSetReadViewExecutor<BaseType>::~DotProductByWeightedSetReadViewExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<typename DotProductByWeightedSetReadViewExecutor<BaseType>::AT>
+std::span<const typename DotProductByWeightedSetReadViewExecutor<BaseType>::AT>
 DotProductByWeightedSetReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
     return _weighted_set_read_view->get_values(docId);
@@ -240,7 +240,7 @@ template <typename BaseType>
 DotProductByArrayReadViewExecutor<BaseType>::~DotProductByArrayReadViewExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<BaseType>
+std::span<const BaseType>
 DotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
     return _array_read_view->get_values(docId);
@@ -278,7 +278,7 @@ template <typename BaseType>
 SparseDotProductByArrayReadViewExecutor<BaseType>::~SparseDotProductByArrayReadViewExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<BaseType>
+std::span<const BaseType>
 SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docid)
 {
     auto allValues = _array_read_view->get_values(docid);
@@ -286,7 +286,7 @@ SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t d
     for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < allValues.size()); i++) {
         _scratch[i] = allValues[_queryIndexes[i]];
     }
-    return vespalib::ConstArrayRef<BaseType>(_scratch.data(), i);
+    return std::span<const BaseType>(_scratch.data(), i);
 }
 
 }

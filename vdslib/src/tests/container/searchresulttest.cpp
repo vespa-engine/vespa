@@ -3,8 +3,8 @@
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <span>
 #include <variant>
 
 using vespalib::FeatureValues;
@@ -19,7 +19,7 @@ std::vector<char> doc1_mf_data{'H', 'i'};
 std::vector<char> doc2_mf_data{'T', 'h', 'e', 'r', 'e'};
 
 
-std::vector<ConvertedValue> convert(vespalib::ConstArrayRef<FeatureValue> v) {
+std::vector<ConvertedValue> convert(std::span<const FeatureValue> v) {
     std::vector<ConvertedValue> result;
     for (auto& iv : v) {
         if (iv.is_data()) {
@@ -39,7 +39,7 @@ std::vector<char> serialize(const SearchResult& sr) {
     return { buf.getBuffer(), buf.getBuffer() + buf.position() };
 }
 
-void deserialize(SearchResult& sr, vespalib::ConstArrayRef<char> buf)
+void deserialize(SearchResult& sr, std::span<const char> buf)
 {
     document::ByteBuffer dbuf(buf.data(), buf.size());
     sr.deserialize(dbuf);

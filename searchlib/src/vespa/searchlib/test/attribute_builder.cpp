@@ -179,9 +179,9 @@ AttributeBuilder::fill_wset(std::initializer_list<WeightedStringList> values)
 }
 
 AttributeBuilder&
-AttributeBuilder::fill(std::initializer_list<vespalib::ConstArrayRef<char>> values)
+AttributeBuilder::fill(std::initializer_list<std::span<const char>> values)
 {
-    fill_helper<SingleRawAttribute, vespalib::ConstArrayRef<char>>(_attr, values);
+    fill_helper<SingleRawAttribute, std::span<const char>>(_attr, values);
     return *this;
 }
 

@@ -43,7 +43,7 @@ NotImplementedAttribute::getFloat(DocId) const {
     notImplemented();
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 NotImplementedAttribute::get_raw(DocId) const
 {
     notImplemented();

@@ -16,7 +16,7 @@ template <typename MultiValueType>
 class ImportedMultiValueReadView : public IMultiValueReadView<MultiValueType>
 {
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
-    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
+    using TargetLids = std::span<const AtomicTargetLid>;
     TargetLids                                 _target_lids;
     const IMultiValueReadView<MultiValueType>* _target_read_view;
 
@@ -27,7 +27,7 @@ class ImportedMultiValueReadView : public IMultiValueReadView<MultiValueType>
 public:
     ImportedMultiValueReadView(TargetLids target_lids, const IMultiValueReadView<MultiValueType>* target_read_view);
     ~ImportedMultiValueReadView() override;
-    vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t docid) const override;
+    std::span<const MultiValueType> get_values(uint32_t docid) const override;
 };
 
 }

@@ -72,7 +72,7 @@ std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
 }
 
-std::vector<char> as_vector(vespalib::ConstArrayRef<char> value) {
+std::vector<char> as_vector(std::span<const char> value) {
     return {value.data(), value.data() + value.size()};
 }
 
@@ -249,7 +249,7 @@ TEST_F("require that single attributes are updated", Fixture)
     }
     {
         vespalib::string first_backing("first");
-        vespalib::ConstArrayRef<char> first(first_backing.data(), first_backing.size());
+        std::span<const char> first(first_backing.data(), first_backing.size());
         auto vec = AttributeBuilder("in1/raw", Config(BasicType::RAW)).fill({first, first, first, first}).get();
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<RawFieldValue>("second")));
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());

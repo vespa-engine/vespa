@@ -2,6 +2,7 @@
 
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 #include <memory>
 
 using namespace vespalib;
@@ -24,11 +25,11 @@ TEST("require that structures are of expected size") {
 
 struct CellwiseAdd {
     template <typename A, typename B, typename C>
-    static void call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, const ConstArrayRef<C> &c, size_t cnt) __attribute__ ((noinline));
+    static void call(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, size_t cnt) __attribute__ ((noinline));
 };
 
 template <typename A, typename B, typename C>
-void CellwiseAdd::call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, const ConstArrayRef<C> &c, size_t cnt) {
+void CellwiseAdd::call(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, size_t cnt) {
     auto dst = unconstify(c);
     for (size_t i = 0; i < cnt; ++i) {
         dst[i] = a[i] + b[i];
@@ -39,11 +40,11 @@ void CellwiseAdd::call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, con
 
 struct DotProduct {
     template <typename A, typename B>
-    static double call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, size_t cnt) __attribute__ ((noinline));
+    static double call(const std::span<const A> &a, const std::span<const B> &b, size_t cnt) __attribute__ ((noinline));
 };
 
 template <typename A, typename B>
-double DotProduct::call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, size_t cnt) {
+double DotProduct::call(const std::span<const A> &a, const std::span<const B> &b, size_t cnt) {
     double result = 0.0;
     for (size_t i = 0; i < cnt; ++i) {
         result += (a[i] * b[i]);
@@ -55,11 +56,11 @@ double DotProduct::call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, si
 
 struct Sum {
     template <typename A>
-    static double call(const ConstArrayRef<A> &a) __attribute__ ((noinline));    
+    static double call(const std::span<const A> &a) __attribute__ ((noinline));
 };
 
 template <typename A>
-double Sum::call(const ConstArrayRef<A> &a) {
+double Sum::call(const std::span<const A> &a) {
     double result = 0.0;
     for (const auto &value: a) {
         result += value;
@@ -104,19 +105,19 @@ template <typename Fun>
 struct Dispatch3 {
     using Self = Dispatch3<Fun>;
     template <typename A, typename B, typename C, typename... Args>
-    static auto call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, const ConstArrayRef<C> &c, Args &&...args) {
+    static auto call(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, Args &&...args) {
         return Fun::call(a, b, c, std::forward<Args>(args)...);
     }
     template <typename A, typename B, typename... Args>
-    static auto call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, const TypedCells &c, Args &&...args) {
+    static auto call(const std::span<const A> &a, const std::span<const B> &b, const TypedCells &c, Args &&...args) {
         return Typify<Self>::typify_3(a, b, c, std::forward<Args>(args)...);
     }
     template <typename A, typename... Args>
-    static auto call(const ConstArrayRef<A> &a, const TypedCells &b, const TypedCells &c, Args &&...args) {
+    static auto call(const std::span<const A> &a, const TypedCells &b, const TypedCells &c, Args &&...args) {
         return Typify<Self>::typify_2(a, b, c, std::forward<Args>(args)...);
     }
     template <typename A, typename C, typename... Args>
-    static auto call(const ConstArrayRef<A> &a, const TypedCells &b, const ConstArrayRef<C> &c, Args &&...args) {
+    static auto call(const std::span<const A> &a, const TypedCells &b, const std::span<const C> &c, Args &&...args) {
         return Typify<Self>::typify_2(a, b, c, std::forward<Args>(args)...);
     }
     template <typename... Args>
@@ -124,15 +125,15 @@ struct Dispatch3 {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
     template <typename B, typename... Args>
-    static auto call(const TypedCells &a, const ConstArrayRef<B> &b, const TypedCells &c, Args &&...args) {
+    static auto call(const TypedCells &a, const std::span<const B> &b, const TypedCells &c, Args &&...args) {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
     template <typename C, typename... Args>
-    static auto call(const TypedCells &a, const TypedCells &b, const ConstArrayRef<C> &c, Args &&...args) {
+    static auto call(const TypedCells &a, const TypedCells &b, const std::span<const C> &c, Args &&...args) {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
     template <typename B, typename C, typename... Args>
-    static auto call(const TypedCells &a, const ConstArrayRef<B> &b, const ConstArrayRef<C> &c, Args &&...args) {
+    static auto call(const TypedCells &a, const std::span<const B> &b, const std::span<const C> &c, Args &&...args) {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
 };
@@ -141,11 +142,11 @@ template <typename Fun>
 struct Dispatch2 {
     using Self = Dispatch2<Fun>;
     template <typename A, typename B, typename... Args>
-    static auto call(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, Args &&...args) {
+    static auto call(const std::span<const A> &a, const std::span<const B> &b, Args &&...args) {
         return Fun::call(a, b, std::forward<Args>(args)...);
     }
     template <typename A, typename... Args>
-    static auto call(const ConstArrayRef<A> &a, const TypedCells &b, Args &&...args) {
+    static auto call(const std::span<const A> &a, const TypedCells &b, Args &&...args) {
         return Typify<Self>::typify_2(a, b, std::forward<Args>(args)...);
     }
     template <typename... Args>
@@ -153,7 +154,7 @@ struct Dispatch2 {
         return Typify<Self>::typify_1(a, b, std::forward<Args>(args)...);
     }
     template <typename B, typename... Args>
-    static auto call(const TypedCells &a, const ConstArrayRef<B> &b, Args &&...args) {
+    static auto call(const TypedCells &a, const std::span<const B> &b, Args &&...args) {
         return Typify<Self>::typify_1(a, b, std::forward<Args>(args)...);
     }
 };
@@ -162,7 +163,7 @@ template <typename Fun>
 struct Dispatch1 {
     using Self = Dispatch1<Fun>;
     template <typename A, typename... Args>
-    static auto call(const ConstArrayRef<A> &a, Args &&...args) {
+    static auto call(const std::span<const A> &a, Args &&...args) {
         return Fun::call(a, std::forward<Args>(args)...);
     }
     template <typename... Args>
@@ -177,9 +178,9 @@ TEST("require that direct dispatch 'a op b -> c' works") {
     std::vector<Int8Float>   a({1,2,3});
     std::vector<float>       b({1.5,2.5,3.5});
     std::vector<double>      c(3, 0.0);
-    ConstArrayRef<Int8Float> a_ref(a);
-    ConstArrayRef<float>     b_ref(b);
-    ConstArrayRef<double>    c_ref(c);
+    std::span<const Int8Float> a_ref(a);
+    std::span<const float>     b_ref(b);
+    std::span<const double>    c_ref(c);
     TypedCells               a_cells(a);
     TypedCells               b_cells(b);
     TypedCells               c_cells(c);
@@ -201,8 +202,8 @@ TEST("require that direct dispatch 'a op b -> c' works") {
 TEST("require that direct dispatch 'dot product' with return value works") {
     std::vector<Int8Float>    a({1,2,3});
     std::vector<float>        b({1.5,2.5,3.5});
-    ConstArrayRef<Int8Float>  a_ref(a);
-    ConstArrayRef<float>      b_ref(b);
+    std::span<const Int8Float>  a_ref(a);
+    std::span<const float>      b_ref(b);
     TypedCells                a_cells(a);
     TypedCells                b_cells(b);
     double                    expect = 1.5 + (2 * 2.5) + (3 * 3.5);
@@ -215,7 +216,7 @@ TEST("require that direct dispatch 'dot product' with return value works") {
 
 TEST("require that direct dispatch 'sum' with return value works") {
     std::vector<Int8Float>    a({1,2,3});
-    ConstArrayRef<Int8Float>  a_ref(a);
+    std::span<const Int8Float>  a_ref(a);
     TypedCells                a_cells(a);
     double                    expect = (1 + 2 + 3);
 
@@ -238,7 +239,7 @@ struct CellwiseAdd2 {
 
 template <typename A, typename B, typename C>
 struct CellwiseAdd2Impl : CellwiseAdd2 {
-    void call_impl(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, const ConstArrayRef<C> &c, size_t cnt) const {
+    void call_impl(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, size_t cnt) const {
         auto dst = unconstify(c);
         for (size_t i = 0; i < cnt; ++i) {
             dst[i] = a[i] + b[i];
@@ -265,7 +266,7 @@ struct DotProduct2 {
 
 template <typename A, typename B>
 struct DotProduct2Impl : DotProduct2 {
-    double call_impl(const ConstArrayRef<A> &a, const ConstArrayRef<B> &b, size_t cnt) const {
+    double call_impl(const std::span<const A> &a, const std::span<const B> &b, size_t cnt) const {
         double result = 0.0;
         for (size_t i = 0; i < cnt; ++i) {
             result += (a[i] * b[i]);
@@ -293,7 +294,7 @@ struct Sum2 {
 
 template <typename A>
 struct Sum2Impl : Sum2 {
-    double call_impl(const ConstArrayRef<A> &a) const {
+    double call_impl(const std::span<const A> &a) const {
         double result = 0.0;
         for (const auto &value: a) {
             result += value;
@@ -597,10 +598,10 @@ TEST("require that non_existing_attribute_value can be controlled") {
     float values[3] = {0,1,2};
     EXPECT_FALSE(TypedCells().non_existing_attribute_value());
     EXPECT_FALSE(TypedCells(values, CellType::FLOAT, 3).non_existing_attribute_value());
-    EXPECT_FALSE(TypedCells(ConstArrayRef<double>()).non_existing_attribute_value());
-    EXPECT_FALSE(TypedCells(ConstArrayRef<float>()).non_existing_attribute_value());
-    EXPECT_FALSE(TypedCells(ConstArrayRef<Int8Float>()).non_existing_attribute_value());
-    EXPECT_FALSE(TypedCells(ConstArrayRef<BFloat16>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(std::span<const double>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(std::span<const float>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(std::span<const Int8Float>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(std::span<const BFloat16>()).non_existing_attribute_value());
     EXPECT_TRUE(TypedCells::create_non_existing_attribute_value(values, CellType::FLOAT, 3).non_existing_attribute_value());
 }
 

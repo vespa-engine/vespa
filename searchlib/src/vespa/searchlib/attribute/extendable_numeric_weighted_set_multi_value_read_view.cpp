@@ -18,12 +18,12 @@ template <class MultiValueType, typename BaseType>
 ExtendableNumericWeightedSetMultiValueReadView<MultiValueType, BaseType>::~ExtendableNumericWeightedSetMultiValueReadView() = default;
 
 template <class MultiValueType, typename BaseType>
-vespalib::ConstArrayRef<MultiValueType>
+std::span<const MultiValueType>
 ExtendableNumericWeightedSetMultiValueReadView<MultiValueType, BaseType>::get_values(uint32_t doc_id) const
 {
     auto offset = _idx[doc_id];
     auto next_offset = _idx[doc_id + 1];
-    vespalib::ConstArrayRef<BaseType> raw(_data.data() + offset, next_offset - offset);
+    std::span<const BaseType> raw(_data.data() + offset, next_offset - offset);
     if (_copy.size() < raw.size()) {
         _copy.resize(raw.size());
     }
@@ -34,7 +34,7 @@ ExtendableNumericWeightedSetMultiValueReadView<MultiValueType, BaseType>::get_va
         ++src_weight;
         ++dst;
     }
-    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
+    return std::span<const MultiValueType>(_copy.data(), raw.size());
 }
 
 template class ExtendableNumericWeightedSetMultiValueReadView<multivalue::WeightedValue<int64_t>, int64_t>;

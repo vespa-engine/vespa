@@ -92,7 +92,7 @@ HnswIndexSaver<type>::save(BufferWriter& writer) const
         for (; offset < next_offset; offset++) {
             auto links_ref = _meta_data.refs[offset];
             if (links_ref.valid()) {
-                vespalib::ConstArrayRef<uint32_t> link_array = _graph_links.get(links_ref);
+                std::span<const uint32_t> link_array = _graph_links.get(links_ref);
                 uint32_t num_links = link_array.size();
                 writer.write(&num_links, sizeof(uint32_t));
                 writer.write(link_array.data(), sizeof(uint32_t)*num_links);

@@ -67,7 +67,7 @@ void my_compiled_lambda_op(InterpretedFunction::State &state, uint64_t param) {
         *bind_next++ = state.params->resolve(binding, state.stash).as_double();
     }
     auto fun = params.token->get().get_function();
-    ArrayRef<CT> dst_cells = state.stash.create_uninitialized_array<CT>(params.num_cells);
+    std::span<CT> dst_cells = state.stash.create_uninitialized_array<CT>(params.num_cells);
     CT *dst = &dst_cells[0];
     do {
         *dst++ = fun(&args[0]);
@@ -103,7 +103,7 @@ void my_interpreted_lambda_op(InterpretedFunction::State &state, uint64_t param)
     SmallVector<double> labels(params.result_type.dimensions().size(), 0.0);
     ParamProxy param_proxy(labels, *state.params, params.bindings);
     InterpretedFunction::Context ctx(params.fun);
-    ArrayRef<CT> dst_cells = state.stash.create_uninitialized_array<CT>(params.num_cells);
+    std::span<CT> dst_cells = state.stash.create_uninitialized_array<CT>(params.num_cells);
     CT *dst = &dst_cells[0];
     do {
         *dst++ = params.fun.eval(ctx, param_proxy).as_double();

@@ -29,7 +29,7 @@ protected:
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
     using ValueType = multivalue::ValueType_t<MultiValueType>;
     using ValueVector = std::vector<MultiValueType>;
-    using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;
+    using MultiValueArrayRef = std::span<const MultiValueType>;
     using DocumentValues = std::vector<std::pair<DocId, ValueVector> >;
     using NonAtomicValueType = attribute::atomic_utils::NonAtomicValue_t<ValueType>;
 

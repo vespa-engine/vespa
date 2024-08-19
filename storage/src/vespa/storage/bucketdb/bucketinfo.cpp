@@ -7,7 +7,7 @@
 namespace storage {
 
 template class BucketInfoBase<std::vector<BucketCopy>>;
-template class BucketInfoBase<vespalib::ConstArrayRef<BucketCopy>>;
+template class BucketInfoBase<std::span<const BucketCopy>>;
 
 BucketInfo::BucketInfo() noexcept : BucketInfoBase() {}
 

@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
-#include <vespa/vespalib/util/arrayref.h>
 #include "doc_vector_access.h"
 #include "nns-l2.h"
 #include <memory>
+#include <span>
 
 struct SqDist {
     double distance;
@@ -73,7 +73,7 @@ public:
     virtual void addDoc(uint32_t docid) = 0;
     virtual void removeDoc(uint32_t docid) = 0;
 
-    using Vector = vespalib::ConstArrayRef<FltType>;
+    using Vector = std::span<const FltType>;
     virtual std::vector<NnsHit> topK(uint32_t k, Vector vector, uint32_t search_k) = 0;
     virtual std::vector<NnsHit> topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVector &skipDocIds) = 0;
     virtual ~NNS() {}

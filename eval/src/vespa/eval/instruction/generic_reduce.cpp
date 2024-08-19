@@ -77,7 +77,7 @@ generic_reduce(const Value &value, const ReduceParam &param) {
     SparseReduceState sparse(param.sparse_plan);
     auto full_view = value.index().create_view({});
     full_view->lookup({});
-    ConstArrayRef<string_id*> keep_addr(sparse.keep_address);
+    std::span<string_id* const> keep_addr(sparse.keep_address);
     while (full_view->next_result(sparse.fetch_address, sparse.subspace)) {
         auto [tag, ignore] = map.lookup_or_add_entry(keep_addr);
         AGGR *dst = map.get_values(tag).data();

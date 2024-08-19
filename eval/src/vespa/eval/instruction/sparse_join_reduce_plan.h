@@ -47,7 +47,7 @@ private:
         while (outer->next_result(state.a_addr, state.a_subspace)) {
             inner->lookup(state.overlap);
             while (inner->next_result(state.b_only, state.b_subspace)) {
-                f(state.a_subspace, state.b_subspace, ConstArrayRef<string_id>{state.addr_space.begin(), state.res_dims});
+                f(state.a_subspace, state.b_subspace, std::span<const string_id>{state.addr_space.begin(), state.res_dims});
             }
         }
     }
@@ -73,7 +73,7 @@ public:
     size_t estimate_result_size(const Value::Index &lhs, const Value::Index &rhs) const {
         return _estimate(lhs.size(), rhs.size());
     }
-    // f ~= std::function<void(size_t lhs_subspace, size_t rhs_subspace, ConstArrayRef<string_id> res_addr)>;
+    // f ~= std::function<void(size_t lhs_subspace, size_t rhs_subspace, std::span<const string_id> res_addr)>;
     void execute(const Value::Index &lhs, const Value::Index &rhs, auto &&f) const {
         if (rhs.size() < lhs.size()) {
             auto swap = [&f](auto a, auto b, auto addr) { f(b, a, addr); };

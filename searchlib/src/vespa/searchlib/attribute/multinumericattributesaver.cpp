@@ -27,7 +27,7 @@ public:
 
     template <typename MultiValueT>
     void
-    writeValues(vespalib::ConstArrayRef<MultiValueT> values) {
+    writeValues(std::span<const MultiValueT> values) {
         for (const MultiValueT &valueRef : values) {
             using ValueType = multivalue::ValueType_t<MultiValueT>;
             ValueType value(valueRef);
@@ -63,7 +63,7 @@ MultiValueNumericAttributeSaver<MultiValueT>::onSave(IAttributeSaveTarget &saveT
 
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
         vespalib::datastore::EntryRef idx = _frozenIndices[docId];
-        vespalib::ConstArrayRef<MultiValueType> values(_mvMapping.getDataForIdx(idx));
+        std::span<const MultiValueType> values(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(values.size());
         weightWriter.writeWeights(values);
         datWriter.writeValues(values);

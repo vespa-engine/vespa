@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 
 using namespace vespalib::eval::tensor_function;
 using namespace vespalib::eval::operation;
@@ -26,7 +27,7 @@ struct JoinWithNumberParam {
 };
 
 template <typename ICT, typename OCT, bool inplace>
-ArrayRef<OCT> make_dst_cells(ConstArrayRef<ICT> src_cells, Stash &stash) {
+std::span<OCT> make_dst_cells(std::span<const ICT> src_cells, Stash &stash) {
     if constexpr (inplace) {
         static_assert(std::is_same_v<ICT,OCT>);
         return unconstify(src_cells);

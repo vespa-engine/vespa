@@ -333,8 +333,8 @@ TEST("require that a stash only retains a single chunk when cleared") {
 TEST("require that array constructor parameters are passed correctly") {
     Stash stash;
     {
-        ArrayRef<Pair> pair_array_nodelete = stash.create_array<Pair>(3);
-        ArrayRef<PairD> pair_array = stash.create_array<PairD>(3);
+        std::span<Pair> pair_array_nodelete = stash.create_array<Pair>(3);
+        std::span<PairD> pair_array = stash.create_array<PairD>(3);
         ASSERT_EQUAL(pair_array_nodelete.size(), 3u);
         ASSERT_EQUAL(pair_array.size(), 3u);
         for (size_t i = 0; i < 3; ++i) {
@@ -345,8 +345,8 @@ TEST("require that array constructor parameters are passed correctly") {
         }
     }
     {
-        ArrayRef<Pair> pair_array_nodelete = stash.create_array<Pair>(3,50,100.5);
-        ArrayRef<PairD> pair_array = stash.create_array<PairD>(3,50,100.5);
+        std::span<Pair> pair_array_nodelete = stash.create_array<Pair>(3,50,100.5);
+        std::span<PairD> pair_array = stash.create_array<PairD>(3,50,100.5);
         ASSERT_EQUAL(pair_array_nodelete.size(), 3u);
         ASSERT_EQUAL(pair_array.size(), 3u);
         for (size_t i = 0; i < 3; ++i) {
@@ -362,8 +362,8 @@ TEST("require that arrays can be copied into the stash") {
     Stash stash;
     std::vector<Pair> pair_vector({Pair(1,1.5),Pair(2,2.5),Pair(3,3.5)});
     std::vector<PairD> paird_vector({PairD(1,1.5),PairD(2,2.5),PairD(3,3.5)});
-    ArrayRef<Pair> pair_array_nodelete = stash.copy_array<Pair>(ConstArrayRef<Pair>(pair_vector));
-    ArrayRef<PairD> pair_array = stash.copy_array<PairD>(ConstArrayRef<PairD>(paird_vector));
+    std::span<Pair> pair_array_nodelete = stash.copy_array<Pair>(std::span<const Pair>(pair_vector));
+    std::span<PairD> pair_array = stash.copy_array<PairD>(std::span<const PairD>(paird_vector));
     ASSERT_EQUAL(pair_array_nodelete.size(), 3u);
     ASSERT_EQUAL(pair_array.size(), 3u);
     for (int i = 0; i < 3; ++i) {
@@ -402,9 +402,9 @@ TEST("require that copied arrays are destructed (or not) correctly") {
         collateral_destruct_nodelete = destruct_nodelete;
         {
             Stash stash;
-            stash.copy_array<Small>(ConstArrayRef<Small>(small_vector));
+            stash.copy_array<Small>(std::span<const Small>(small_vector));
             EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small)}), stash.count_used());
-            stash.copy_array<Small_NoDelete>(ConstArrayRef<Small_NoDelete>(small_nodelete_vector));
+            stash.copy_array<Small_NoDelete>(std::span<const Small_NoDelete>(small_nodelete_vector));
             EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small), 7 * sizeof(Small_NoDelete)}), stash.count_used());
             EXPECT_EQUAL(collateral_destruct, destruct);
             EXPECT_EQUAL(collateral_destruct_nodelete, destruct_nodelete);
@@ -450,7 +450,7 @@ TEST("require that mark/revert works as expected") {
     EXPECT_EQUAL(stash.count_used(), 0u);
 }
 
-void check_array(ArrayRef<float> arr, size_t expect_size) {
+void check_array(std::span<float> arr, size_t expect_size) {
     EXPECT_EQUAL(arr.size(), expect_size);
     for (size_t i = 0; i < arr.size(); ++i) {
         arr[i] = float(i);
@@ -463,10 +463,10 @@ void check_array(ArrayRef<float> arr, size_t expect_size) {
 TEST("require that uninitialized arrays can be created") {
     Stash stash(4_Ki);
     EXPECT_EQUAL(0u, stash.count_used());
-    ArrayRef<float> small_arr = stash.create_uninitialized_array<float>(64);
+    std::span<float> small_arr = stash.create_uninitialized_array<float>(64);
     TEST_DO(check_array(small_arr, 64));
     EXPECT_EQUAL(sum({chunk_header_size(), sizeof(float) * 64}), stash.count_used());
-    ArrayRef<float> big_arr = stash.create_uninitialized_array<float>(2500);
+    std::span<float> big_arr = stash.create_uninitialized_array<float>(2500);
     TEST_DO(check_array(big_arr, 2500));
     EXPECT_EQUAL(sum({chunk_header_size(), sizeof(float) * 64}), stash.count_used());
 }

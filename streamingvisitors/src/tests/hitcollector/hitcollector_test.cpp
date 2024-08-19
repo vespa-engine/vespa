@@ -41,12 +41,12 @@ TensorSpec as_spec(const FeatureValue& v) {
     return spec_from_value(*SimpleValue::from_stream(buf));
 }
 
-ConstArrayRef<FeatureValue> as_value_slice(FeatureValues& mf, uint32_t index, uint32_t num_features)
+std::span<const FeatureValue> as_value_slice(FeatureValues& mf, uint32_t index, uint32_t num_features)
 {
     return { mf.values.data() + index * num_features, num_features };
 }
 
-void check_match_features(ConstArrayRef<FeatureValue> v, uint32_t docid)
+void check_match_features(std::span<const FeatureValue> v, uint32_t docid)
 {
     SCOPED_TRACE(fmt("Checking docid %u for expected match features", docid));
     // The following values should have been set by MyRankProgram::run()

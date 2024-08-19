@@ -5,13 +5,13 @@
 namespace search::fef {
 
 void
-FeatureOverrider::handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs)
+FeatureOverrider::handle_bind_inputs(std::span<const LazyValue> inputs)
 {
     _executor.bind_inputs(inputs);
 }
 
 void
-FeatureOverrider::handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs)
+FeatureOverrider::handle_bind_outputs(std::span<NumberOrObject> outputs)
 {
     _executor.bind_outputs(outputs);
 }

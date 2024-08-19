@@ -63,7 +63,7 @@ HnswNodeidMapping::~HnswNodeidMapping()
     _hold_list.reclaim_all();
 }
 
-vespalib::ConstArrayRef<uint32_t>
+std::span<const uint32_t>
 HnswNodeidMapping::allocate_ids(uint32_t docid, uint32_t subspaces)
 {
     ensure_refs_size(docid);
@@ -80,7 +80,7 @@ HnswNodeidMapping::allocate_ids(uint32_t docid, uint32_t subspaces)
     return nodeids;
 }
 
-vespalib::ConstArrayRef<uint32_t>
+std::span<const uint32_t>
 HnswNodeidMapping::get_ids(uint32_t docid) const
 {
     if (docid >= _refs.size()) {
@@ -126,7 +126,7 @@ HnswNodeidMapping::reclaim_memory(generation_t oldest_used_gen)
 namespace {
 
 uint32_t
-get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
+get_docid_limit(std::span<const HnswNode> nodes)
 {
     uint32_t max_docid = 0;
     for (auto& node : nodes) {
@@ -138,7 +138,7 @@ get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
 }
 
 std::vector<uint32_t>
-make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid_limit)
+make_subspaces_histogram(std::span<const HnswNode> nodes, uint32_t docid_limit)
 {
     // Make histogram
     std::vector<uint32_t> histogram(docid_limit);
@@ -175,7 +175,7 @@ HnswNodeidMapping::allocate_docid_to_nodeids_mapping(std::vector<uint32_t> histo
 }
 
 void
-HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(vespalib::ConstArrayRef<HnswNode> nodes)
+HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(std::span<const HnswNode> nodes)
 {
     uint32_t nodeid = 0;
     for (auto& node : nodes) {
@@ -210,7 +210,7 @@ HnswNodeidMapping::assert_all_subspaces_have_valid_nodeid(uint32_t docid_limit)
 }
 
 void
-HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
+HnswNodeidMapping::on_load(std::span<const HnswNode> nodes)
 {
     if (nodes.empty()) {
         return;
@@ -264,7 +264,7 @@ HnswNodeidMapping::compact_worst(const vespalib::datastore::CompactionStrategy& 
 {
     auto compacting_buffers = _nodeids.start_compact_worst_buffers(compaction_strategy);
     auto filter = compacting_buffers->make_entry_ref_filter();
-   vespalib::ArrayRef<EntryRef> refs(&_refs[0], _refs.size());
+   std::span<EntryRef> refs(&_refs[0], _refs.size());
    for (auto& ref : refs) {
        if (ref.valid() && filter.has(ref)) {
            ref = _nodeids.move_on_compact(ref);

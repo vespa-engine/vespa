@@ -97,7 +97,7 @@ void my_mixed_dense_concat_op(State &state, uint64_t param_in) {
     const auto &index = state.peek(forward_lhs ? 1 : 0).index();
     size_t num_subspaces = index.size();
     size_t num_out_cells = dense_plan.output_size * num_subspaces;
-    ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(num_out_cells);
+    std::span<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(num_out_cells);
     OCT *dst = out_cells.data();
     const LCT *lhs = lhs_cells.data();
     const RCT *rhs = rhs_cells.data();
@@ -129,7 +129,7 @@ void my_dense_simple_concat_op(State &state, uint64_t param_in) {
     const Value &rhs = state.peek(0);
     const auto a = lhs.cells().typify<LCT>();
     const auto b = rhs.cells().typify<RCT>();
-    ArrayRef<OCT> result = state.stash.create_uninitialized_array<OCT>(a.size() + b.size());
+    std::span<OCT> result = state.stash.create_uninitialized_array<OCT>(a.size() + b.size());
     auto pos = result.begin();
     for (size_t i = 0; i < a.size(); ++i) {
         *pos++ = a[i];

@@ -15,6 +15,7 @@
 #include "large_array_buffer_type.h"
 #include "small_array_buffer_type.h"
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 #include <type_traits>
 
 namespace vespalib::datastore {
@@ -47,8 +48,8 @@ class ArrayStore : public ICompactable
 {
 public:
     using AllocSpec = ArrayStoreConfig::AllocSpec;
-    using ArrayRef = vespalib::ArrayRef<ElemT>;
-    using ConstArrayRef = vespalib::ConstArrayRef<ElemT>;
+    using ArrayRef = std::span<ElemT>;
+    using ConstArrayRef = std::span<const ElemT>;
     using DataStoreType  = DataStoreT<RefT>;
     using ElemType = ElemT;
     using LargeArray = vespalib::Array<ElemT>;

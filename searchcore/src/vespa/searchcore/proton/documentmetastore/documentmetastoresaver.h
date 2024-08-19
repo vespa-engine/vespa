@@ -27,7 +27,7 @@ public:
         vespalib::btree::BTreeNoLeafData,
         vespalib::btree::NoAggregated,
         const KeyComp &>;
-    using MetaDataView = vespalib::ConstArrayRef<RawDocumentMetaData>;
+    using MetaDataView = std::span<const RawDocumentMetaData>;
 
 private:
     GidIterator _gidIterator; // iterator over frozen tree
