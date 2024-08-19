@@ -33,9 +33,7 @@ public class FileDistributionAndUrlDownload {
     private FileDownloader createDownloader(Supervisor supervisor, ConfigSourceSet source) {
         return new FileDownloader(new FileDistributionConnectionPool(source, supervisor),
                                   supervisor,
-                                  Duration.ofMinutes(5));
+                                  Duration.ofSeconds(55)); // Should be lower than the timeout in FileAcquirer
     }
-
-
 
 }
