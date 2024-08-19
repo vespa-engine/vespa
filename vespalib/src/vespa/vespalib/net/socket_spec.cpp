@@ -47,13 +47,13 @@ const SocketSpec SocketSpec::invalid;
 SocketSpec::SocketSpec(const vespalib::string &spec)
     : SocketSpec()
 {
-    if (starts_with(spec, ipc_path_prefix)) {
+    if (spec.starts_with(ipc_path_prefix)) {
         _node = spec.substr(ipc_path_prefix.size());
         _type = Type::PATH;
-    } else if (starts_with(spec, ipc_name_prefix)) {
+    } else if (spec.starts_with(ipc_name_prefix)) {
         _node = spec.substr(ipc_name_prefix.size());
         _type = Type::NAME;
-    } else if (starts_with(spec, tcp_prefix)) {
+    } else if (spec.starts_with(tcp_prefix)) {
         bool with_host = (spec.find(':') != spec.npos);
         const char *port_str = spec.c_str() + (with_host
                                                ? (spec.rfind(':') + 1)

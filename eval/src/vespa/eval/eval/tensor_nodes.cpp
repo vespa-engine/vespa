@@ -152,7 +152,7 @@ vespalib::string
 TensorLambda::dump(DumpContext &) const {
     vespalib::string str = _type.to_spec();
     vespalib::string expr = _lambda->dump();
-    if (starts_with(expr, "(")) {
+    if (expr.starts_with("(")) {
         str += expr;
     } else {
         str += "(";
@@ -173,7 +173,7 @@ TensorPeek::dump(DumpContext &ctx) const {
         str += ":";
         if (dim.second.is_expr()) {
             vespalib::string expr = dim.second.expr->dump(ctx);
-            if (starts_with(expr, "(")) {
+            if (expr.starts_with("(")) {
                 str += expr;
             } else {
                 str += "(";

@@ -128,7 +128,7 @@ Portal::lookup_get_handler(const vespalib::string &uri, GetHandler *&handler)
 {
     std::lock_guard guard(_lock);
     for (const auto &entry: _bind_list) {
-        if (starts_with(uri, entry.prefix)) {
+        if (uri.starts_with(entry.prefix)) {
             auto handle_guard = _handle_manager.lock(entry.handle);
             if (handle_guard.valid()) {
                 handler = entry.handler;

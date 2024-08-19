@@ -372,25 +372,23 @@ TEST("require that contains works") {
     EXPECT_FALSE(contains(s, "not in there"));
 }
 
-using vespalib::starts_with;
 TEST("require that starts_with works") {
     vespalib::string s("require that starts_with works");
-    EXPECT_TRUE(starts_with(s, "require"));
-    EXPECT_TRUE(starts_with(s, "require that starts_with work"));
-    EXPECT_TRUE(starts_with(s, "require that starts_with works"));
-    EXPECT_FALSE(starts_with(s, "equire"));
-    EXPECT_FALSE(starts_with(s, "not in there"));
+    EXPECT_TRUE(s.starts_with("require"));
+    EXPECT_TRUE(s.starts_with("require that starts_with work"));
+    EXPECT_TRUE(s.starts_with("require that starts_with works"));
+    EXPECT_FALSE(s.starts_with("equire"));
+    EXPECT_FALSE(s.starts_with("not in there"));
 }
 
-using vespalib::ends_with;
 TEST("require that ends_with works") {
     vespalib::string s("require that ends_with works");
-    EXPECT_FALSE(ends_with(s, "require"));
-    EXPECT_TRUE(ends_with(s, "works"));
-    EXPECT_TRUE(ends_with(s, "equire that ends_with works"));
-    EXPECT_TRUE(ends_with(s, "require that ends_with works"));
-    EXPECT_FALSE(ends_with(s, "work"));
-    EXPECT_FALSE(ends_with(s, "not in there"));
+    EXPECT_FALSE(s.ends_with("require"));
+    EXPECT_TRUE(s.ends_with("works"));
+    EXPECT_TRUE(s.ends_with("equire that ends_with works"));
+    EXPECT_TRUE(s.ends_with("require that ends_with works"));
+    EXPECT_FALSE(s.ends_with("work"));
+    EXPECT_FALSE(s.ends_with("not in there"));
 }
 
 TEST("test that small_string::pop_back works") {

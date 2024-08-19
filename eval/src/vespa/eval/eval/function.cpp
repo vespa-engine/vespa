@@ -1082,7 +1082,7 @@ Function::dump_as_lambda() const
     }
     lambda += ")";
     vespalib::string expr = dump();
-    if (starts_with(expr, "(")) {
+    if (expr.starts_with("(")) {
         lambda += expr;
     } else {
         lambda += "(";
