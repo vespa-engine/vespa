@@ -158,19 +158,19 @@ struct Sample {
     size_t count = 0;
     explicit Sample(const Inspector &sample) {
         auto name = sample["name"].asString().make_stringview();
-        if (ends_with(name, "/init")) {
+        if (name.ends_with("/init")) {
             type = Type::INIT;
         }
-        if (ends_with(name, "/seek")) {
+        if (name.ends_with("/seek")) {
             type = Type::SEEK;
         }
-        if (ends_with(name, "/unpack")) {
+        if (name.ends_with("/unpack")) {
             type = Type::UNPACK;
         }
-        if (ends_with(name, "/termwise")) {
+        if (name.ends_with("/termwise")) {
             type = Type::TERMWISE;
         }
-        if (starts_with(name, "/")) {
+        if (name.starts_with("/")) {
             size_t child = 0;
             for (size_t pos = 1; pos < name.size(); ++pos) {
                 char c = name[pos];

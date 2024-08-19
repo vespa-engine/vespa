@@ -253,7 +253,7 @@ void decode_json(const vespalib::string &path, Slime &slime) {
     if (!file.valid()) {
         LOG(warning, "could not read file: %s", path.c_str());
     } else {
-        if (ends_with(path, ".lz4")) {
+        if (path.ends_with(".lz4")) {
             size_t buffer_size = 64_Ki;
             Lz4InputDecoder lz4_decoder(file, buffer_size);
             decode_json(path, lz4_decoder, slime);
@@ -279,7 +279,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         LOG(warning, "invalid type specification: %s", type.c_str());
         return std::make_unique<BadConstantValue>();
     }
-    if (ends_with(path, ".tbf")) {
+    if (path.ends_with(".tbf")) {
         vespalib::MappedFileInput file(path);
         vespalib::Memory content = file.get();
         vespalib::nbostream stream(content.data, content.size);

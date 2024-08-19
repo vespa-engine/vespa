@@ -16,20 +16,6 @@ inline bool contains(std::string_view text, std::string_view key) noexcept {
     return text.find(key) != std::string_view::npos;
 }
 
-inline bool starts_with(std::string_view text, std::string_view key) noexcept {
-    if (text.size() >= key.size()) {
-        return memcmp(text.begin(), key.begin(), key.size()) == 0;
-    }
-    return false;
-}
-
-inline bool ends_with(std::string_view text, std::string_view key) noexcept {
-    if (text.size() >= key.size()) {
-        return memcmp(text.end()-key.size(), key.begin(), key.size()) == 0;
-    }
-    return false;
-}
-
 // returns a reference to a shared empty string
 const string &empty_string() noexcept;
 
