@@ -72,6 +72,8 @@ TEST("require that getModuloStl always return a larger number in 32 bit integer 
         size_t num = 1ul << i;
         size_t prime = hashtable_base::getModuloStl(num);
         EXPECT_GREATER_EQUAL(prime, num);
+        EXPECT_EQUAL(prime, hashtable_base::getModuloStl(prime));
+        EXPECT_GREATER(hashtable_base::getModuloStl(prime+1), prime + 1);
         printf("%lu <= %lu\n", num, prime);
     }
     for (size_t i=0; i < 32; i++) {
