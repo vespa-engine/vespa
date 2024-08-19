@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -39,7 +38,6 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.NOT_FOUND;
 import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.OK;
-import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.TIMEOUT;
 import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.TRANSFER_FAILED;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
@@ -160,12 +158,12 @@ public class FileServer {
     public void serveFile(FileReference fileReference,
                           boolean downloadFromOtherSourceIfNotFound,
                           Set<CompressionType> acceptedCompressionTypes,
-                          Request request, Receiver receiver) {
+                          Request request,
+                          Receiver receiver) {
         log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target());
-        Instant deadline = Instant.now().plus(timeout);
         String client = request.target().toString();
         executor.execute(() -> {
-            var result = serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, client, receiver, deadline, acceptedCompressionTypes);
+            var result = serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, client, receiver, acceptedCompressionTypes);
             request.returnValues()
                    .add(new Int32Value(result.getCode()))
                    .add(new StringValue(result.getDescription()));
@@ -177,13 +175,7 @@ public class FileServer {
                                                 boolean downloadFromOtherSourceIfNotFound,
                                                 String client,
                                                 Receiver receiver,
-                                                Instant deadline,
                                                 Set<CompressionType> acceptedCompressionTypes) {
-        if (Instant.now().isAfter(deadline)) {
-            log.log(Level.INFO, () -> "Deadline exceeded for request for file reference '" + fileReference + "' from " + client);
-            return TIMEOUT;
-        }
-
         try {
             var fileReferenceDownload = new FileReferenceDownload(fileReference, client, downloadFromOtherSourceIfNotFound);
             var file = getFileDownloadIfNeeded(fileReferenceDownload);
@@ -250,10 +242,9 @@ public class FileServer {
     }
 
     private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {
-        ConfigSourceSet configSourceSet = new ConfigSourceSet(configServers);
-        if (configServers.size() == 0) return FileDownloader.emptyConnectionPool();
+        if (configServers.isEmpty()) return FileDownloader.emptyConnectionPool();
 
-        return new FileDistributionConnectionPool(configSourceSet, supervisor);
+        return new FileDistributionConnectionPool(new ConfigSourceSet(configServers), supervisor);
     }
 
 }
