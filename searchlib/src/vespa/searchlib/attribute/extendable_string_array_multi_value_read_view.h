@@ -4,6 +4,7 @@
 
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
 #include <vespa/vespalib/stllike/allocator.h>
+#include <vector>
 
 namespace search::attribute {
 
