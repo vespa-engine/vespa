@@ -24,7 +24,7 @@ protected:
      *
      * @param children the search objects we are andnot'ing
      **/
-    AndNotSearch(MultiSearch::Children children) : MultiSearch(std::move(children)) { }
+    explicit AndNotSearch(MultiSearch::Children children) : MultiSearch(std::move(children)) { }
 
 public:
     static std::unique_ptr<SearchIterator> create(ChildrenIterators children, bool strict);
@@ -42,7 +42,7 @@ private:
 class AndNotSearchStrictBase : public AndNotSearch
 {
 protected:
-    AndNotSearchStrictBase(Children children) : AndNotSearch(std::move(children)) { }
+    explicit AndNotSearchStrictBase(Children children) : AndNotSearch(std::move(children)) { }
 private:
     Trinary is_strict() const override { return Trinary::True; }
     UP andWith(UP filter, uint32_t estimate) override;
