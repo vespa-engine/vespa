@@ -2,6 +2,7 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.FieldSet;
@@ -10,6 +11,9 @@ import com.yahoo.schema.document.Matching;
 import com.yahoo.schema.document.NormalizeLevel;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+
+import java.util.LinkedList;
+import java.util.logging.Level;
 
 /**
  * Computes the right "index commands" for each fieldset in a search definition.
@@ -21,6 +25,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 // That should be moved here, and done in the way the match setting is done below
 // (this requires adding normalizing and stemming settings to FieldSet).
 public class FieldSetSettings extends Processor {
+
+    private static String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schema-reference.html#fieldset";
 
     public FieldSetSettings(Schema schema,
                             DeployLogger deployLogger,
@@ -37,6 +43,7 @@ public class FieldSetSettings extends Processor {
             checkMatching(schema, fieldSet);
             checkNormalization(schema, fieldSet);
             checkStemming(schema, fieldSet);
+            checkTypes(schema, fieldSet);
         }
     }
 
@@ -104,4 +111,23 @@ public class FieldSetSettings extends Processor {
         }
     }
 
+    private void checkTypes(Schema schema, FieldSet fieldSet) {
+        var tensorFields = new LinkedList<String>();
+        var nonTensorFields = new LinkedList<String>();
+        for (String fieldName : fieldSet.getFieldNames()) {
+            ImmutableSDField field = schema.getField(fieldName);
+            if (field.getDataType() instanceof TensorDataType) {
+                tensorFields.add(field.getName());
+            } else {
+                nonTensorFields.add(field.getName());
+            }
+        }
+        if (!tensorFields.isEmpty() && !nonTensorFields.isEmpty()) {
+            var fullMsg = "For schema '" + schema.getName() + "', fieldset '" + fieldSet.getName() + "': " +
+                    "Tensor fields ['" + String.join("', '", tensorFields) + "'] " +
+                    "cannot be mixed with non-tensor fields ['" + String.join("', '", nonTensorFields) + "'] " +
+                    "in the same fieldset. See " + fieldSetDocUrl;
+            deployLogger.logApplicationPackage(Level.WARNING, fullMsg);
+        }
+    }
 }
