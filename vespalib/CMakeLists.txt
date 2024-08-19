@@ -31,7 +31,6 @@ vespa_define_module(
     src/tests/approx
     src/tests/array
     src/tests/arrayqueue
-    src/tests/arrayref
     src/tests/assert
     src/tests/barrier
     src/tests/benchmark

@@ -5,6 +5,7 @@
 #include <vespa/vespalib/btree/btree_key_data.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/arrayref.h>
+#include <vector>
 
 namespace search::attribute {
 
