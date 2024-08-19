@@ -51,7 +51,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
@@ -499,10 +498,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             request.parameters().add(new StringValue(fileData.filename()));
             request.parameters().add(new StringValue(fileData.type().name()));
             request.parameters().add(new Int64Value(fileData.size()));
-            // Only add parameter if not gzip, this is default and old clients will not handle the extra parameter
-            // TODO Always add parameter in Vespa 9
-            if (fileData.compressionType() != CompressionType.gzip)
-                request.parameters().add(new StringValue(fileData.compressionType().name()));
+            request.parameters().add(new StringValue(fileData.compressionType().name()));
             return request;
         }
 
@@ -555,18 +551,12 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         request.detach();
         rpcAuthorizer.authorizeFileRequest(request)
                 .thenRun(() -> { // okay to do in authorizer thread as serveFile is async
-                    FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
-
                     FileReference reference = new FileReference(request.parameters().get(0).asString());
                     boolean downloadFromOtherSourceIfNotFound = request.parameters().get(1).asInt32() == 0;
-                    Set<FileReferenceData.CompressionType> acceptedCompressionTypes = Set.of(CompressionType.gzip);
-                    // Newer clients specify accepted compression types in request
-                    // TODO Require acceptedCompressionTypes parameter in Vespa 9
-                    if (request.parameters().size() > 2)
-                        acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
-                                                         .map(CompressionType::valueOf)
-                                                         .collect(Collectors.toSet());
-
+                    var acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
+                            .map(CompressionType::valueOf)
+                            .collect(Collectors.toSet());
+                    var receiver = new ChunkedFileReceiver(request.target());
                     fileServer.serveFile(reference, downloadFromOtherSourceIfNotFound, acceptedCompressionTypes, request, receiver);
                 });
     }

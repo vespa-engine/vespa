@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -39,7 +38,6 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.NOT_FOUND;
 import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.OK;
-import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.TIMEOUT;
 import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.TRANSFER_FAILED;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
@@ -160,7 +158,8 @@ public class FileServer {
     public void serveFile(FileReference fileReference,
                           boolean downloadFromOtherSourceIfNotFound,
                           Set<CompressionType> acceptedCompressionTypes,
-                          Request request, Receiver receiver) {
+                          Request request,
+                          Receiver receiver) {
         log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target());
         String client = request.target().toString();
         executor.execute(() -> {
