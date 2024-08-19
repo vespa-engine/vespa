@@ -483,7 +483,6 @@ TopLevelBucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) con
 
 namespace {
 
-const vespalib::string ALL = "all";
 const vespalib::string BUCKETDB = "bucketdb";
 const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
 
