@@ -32,6 +32,32 @@ multiplyAdd(const T * a, const T * b, size_t sz) noexcept
     return sum;
 }
 
+template <typename T, size_t UNROLL>
+double
+squaredEuclideanDistanceT(const T * a, const T * b, size_t sz) noexcept
+{
+    T partial[UNROLL];
+    for (size_t i(0); i < UNROLL; i++) {
+        partial[i] = 0;
+    }
+    size_t i(0);
+    for (; i + UNROLL <= sz; i += UNROLL) {
+        for (size_t j(0); j < UNROLL; j++) {
+            T d = a[i+j] - b[i+j];
+            partial[j] += d * d;
+        }
+    }
+    for (;i < sz; i++) {
+        T d = a[i] - b[i];
+        partial[i%UNROLL] += d * d;
+    }
+    double sum(0);
+    for (size_t j(0); j < UNROLL; j++) {
+        sum += partial[j];
+    }
+    return sum;
+}
+
 template<size_t UNROLL, typename Operation>
 void
 bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) noexcept {
@@ -143,12 +169,12 @@ GenericAccelrator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, 
 
 double
 GenericAccelrator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
-    return helper::squared_euclidean_distance_unrolled<float, 16>(a, b, sz);
+    return squaredEuclideanDistanceT<float, 16>(a, b, sz);
 }
 
 double
 GenericAccelrator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
-    return helper::squared_euclidean_distance_unrolled<double, 16>(a, b, sz);
+    return squaredEuclideanDistanceT<double, 16>(a, b, sz);
 }
 
 void
