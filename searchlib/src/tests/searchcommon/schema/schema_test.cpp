@@ -3,6 +3,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_path.h>
 #include <fstream>
 #include <string>

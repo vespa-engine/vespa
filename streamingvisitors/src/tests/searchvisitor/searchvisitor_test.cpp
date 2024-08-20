@@ -15,6 +15,7 @@
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_path.h>
 
 #include <vespa/log/log.h>

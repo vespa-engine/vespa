@@ -24,6 +24,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <filesystem>
 #include <set>
 
