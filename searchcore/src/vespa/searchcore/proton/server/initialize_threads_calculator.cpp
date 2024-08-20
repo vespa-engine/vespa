@@ -12,7 +12,7 @@ using CpuCategory = vespalib::CpuUsage::Category;
 namespace {
 
 void
-write(const vespalib::string& path, uint32_t num_threads)
+write(const std::string& path, uint32_t num_threads)
 {
     std::ofstream file;
     file.open(path);
@@ -21,7 +21,7 @@ write(const vespalib::string& path, uint32_t num_threads)
 }
 
 uint32_t
-read(const vespalib::string& path)
+read(const std::string& path)
 {
     std::ifstream file;
     file.open(path);
@@ -33,14 +33,14 @@ read(const vespalib::string& path)
 
 VESPA_THREAD_STACK_TAG(proton_initialize_executor)
 
-const vespalib::string file_name = "initialize-threads.txt";
+const std::string file_name = "initialize-threads.txt";
 
 }
 
 namespace proton {
 
 InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::HwInfo::Cpu & cpu_info,
-                                                         const vespalib::string& base_dir,
+                                                         const std::string& base_dir,
                                                          uint32_t configured_num_threads)
     : _path(base_dir + "/" + file_name),
       _num_threads(std::min(cpu_info.cores(), configured_num_threads)),

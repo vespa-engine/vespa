@@ -5,10 +5,10 @@
 
 namespace proton {
 
-vespalib::string
+std::string
 SelectUtils::extractFieldName(const document::select::FieldValueNode &expr, bool &isComplex)
 {
-    vespalib::string result = expr.getFieldName();
+    std::string result = expr.getFieldName();
     isComplex = false;
     for (uint32_t i = 0; i < result.size(); ++i) {
         if (result[i] == '.' || result[i] == '{' || result[i] == '[') {

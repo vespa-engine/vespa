@@ -46,7 +46,7 @@ public:
     int64_t getAsLong() const override;
     float getAsFloat() const override;
     double getAsDouble() const override;
-    vespalib::string getAsString() const override;
+    std::string getAsString() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };

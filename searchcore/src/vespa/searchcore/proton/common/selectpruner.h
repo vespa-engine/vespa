@@ -16,7 +16,7 @@ namespace proton {
 class SelectPrunerBase
 {
 protected:
-    const vespalib::string &_docType;
+    const std::string &_docType;
     const search::IAttributeManager *_amgr;
     const document::Document &_emptyDoc;
     const document::IDocumentTypeRepo &_repo;
@@ -24,7 +24,7 @@ protected:
     bool _hasDocuments;
 
 public:
-    SelectPrunerBase(const vespalib::string &docType,
+    SelectPrunerBase(const std::string &docType,
                      const search::IAttributeManager *amgr,
                      const document::Document &emptyDoc,
                      const document::IDocumentTypeRepo &repo,
@@ -46,7 +46,7 @@ private:
     using ValueNodeUP = document::select::ValueNode::UP;
     uint32_t _attrFieldNodes;
 public:
-    SelectPruner(const vespalib::string &docType,
+    SelectPruner(const std::string &docType,
                  const search::IAttributeManager *amgr,
                  const document::Document &emptyDoc,
                  const document::IDocumentTypeRepo &repo,

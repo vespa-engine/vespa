@@ -50,7 +50,7 @@ TEST("measure do_work overhead for different cost inputs") {
 
 struct Work {
     using UP = std::unique_ptr<Work>;
-    virtual vespalib::string desc() const = 0;
+    virtual std::string desc() const = 0;
     virtual void perform(uint32_t docid) const = 0;
     virtual ~Work() {}
 };
@@ -58,14 +58,14 @@ struct Work {
 struct UniformWork : public Work {
     size_t cost;
     UniformWork(size_t cost_in) : cost(cost_in) {}
-    vespalib::string desc() const override { return make_string("uniform(%zu)", cost); }
+    std::string desc() const override { return make_string("uniform(%zu)", cost); }
     void perform(uint32_t) const override { (void) do_work(cost); }
 };
 
 struct TriangleWork : public Work {
     size_t div;
     TriangleWork(size_t div_in) : div(div_in) {}
-    vespalib::string desc() const override { return make_string("triangle(docid/%zu)", div); }
+    std::string desc() const override { return make_string("triangle(docid/%zu)", div); }
     void perform(uint32_t docid) const override { (void) do_work(docid/div); }
 };
 
@@ -75,7 +75,7 @@ struct SpikeWork : public Work {
     size_t cost;
     SpikeWork(uint32_t begin_in, uint32_t end_in, size_t cost_in)
         : begin(begin_in), end(end_in), cost(cost_in) {}
-    vespalib::string desc() const override { return make_string("spike(%u,%u,%zu)", begin, end, cost); }
+    std::string desc() const override { return make_string("spike(%u,%u,%zu)", begin, end, cost); }
     void perform(uint32_t docid) const override {
         if ((docid >= begin) && (docid < end)) {
             (void) do_work(cost);
@@ -103,7 +103,7 @@ struct WorkList {
 
 struct SchedulerFactory {
     using UP = std::unique_ptr<SchedulerFactory>;
-    virtual vespalib::string desc() const = 0;    
+    virtual std::string desc() const = 0;    
     virtual DocidRangeScheduler::UP create(uint32_t docid_limit) const = 0;
     virtual ~SchedulerFactory() {}
 };
@@ -111,7 +111,7 @@ struct SchedulerFactory {
 struct PartitionSchedulerFactory : public SchedulerFactory {
     size_t num_threads;
     PartitionSchedulerFactory(size_t num_threads_in) : num_threads(num_threads_in) {}
-    vespalib::string desc() const override { return make_string("partition(threads:%zu)", num_threads); }
+    std::string desc() const override { return make_string("partition(threads:%zu)", num_threads); }
     DocidRangeScheduler::UP create(uint32_t docid_limit) const override {
         return std::make_unique<PartitionDocidRangeScheduler>(num_threads, docid_limit);
     }
@@ -122,7 +122,7 @@ struct TaskSchedulerFactory : public SchedulerFactory {
     size_t num_tasks;
     TaskSchedulerFactory(size_t num_threads_in, size_t num_tasks_in)
         : num_threads(num_threads_in), num_tasks(num_tasks_in) {}
-    vespalib::string desc() const override { return make_string("task(threads:%zu,num_tasks:%zu)", num_threads, num_tasks); }
+    std::string desc() const override { return make_string("task(threads:%zu,num_tasks:%zu)", num_threads, num_tasks); }
     DocidRangeScheduler::UP create(uint32_t docid_limit) const override {
         return std::make_unique<TaskDocidRangeScheduler>(num_threads, num_tasks, docid_limit);
     }
@@ -133,7 +133,7 @@ struct AdaptiveSchedulerFactory : public SchedulerFactory {
     size_t min_task;
     AdaptiveSchedulerFactory(size_t num_threads_in, size_t min_task_in)
         : num_threads(num_threads_in), min_task(min_task_in) {}
-    vespalib::string desc() const override { return make_string("adaptive(threads:%zu,min_task:%zu)", num_threads, min_task); }
+    std::string desc() const override { return make_string("adaptive(threads:%zu,min_task:%zu)", num_threads, min_task); }
     DocidRangeScheduler::UP create(uint32_t docid_limit) const override {
         return std::make_unique<AdaptiveDocidRangeScheduler>(num_threads, min_task, docid_limit);
     }

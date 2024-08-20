@@ -36,7 +36,7 @@ int rel_diff(double a, double b, double e, double m) {
     return res;
 }
 
-void apply_diff(vespalib::string &str, int diff, char small, char big, int len) {
+void apply_diff(std::string &str, int diff, char small, char big, int len) {
     for (int i = 0; i < diff && i < len; ++i) {
         str += ((diff + i >= len * 2) ? big :small);
     }
@@ -82,7 +82,7 @@ struct Matcher : vespalib::slime::ObjectTraverser {
 };
 template <typename F> Matcher<F>::~Matcher() = default;
 
-std::vector<Path> find_field(const Inspector &root, const vespalib::string &name) {
+std::vector<Path> find_field(const Inspector &root, const std::string &name) {
     auto matcher = Matcher([&](const Path &path, const Inspector &){
                                return ((path.size() > 0) &&
                                        (std::holds_alternative<std::string_view>(path.back())) &&
@@ -92,7 +92,7 @@ std::vector<Path> find_field(const Inspector &root, const vespalib::string &name
     return matcher.result;
 }
 
-std::vector<Path> find_tag(const Inspector &root, const vespalib::string &name) {
+std::vector<Path> find_tag(const Inspector &root, const std::string &name) {
     auto matcher = Matcher([&](const Path &path, const Inspector &value){
                                return ((path.size() > 0) &&
                                        (std::holds_alternative<std::string_view>(path.back())) &&
@@ -103,9 +103,9 @@ std::vector<Path> find_tag(const Inspector &root, const vespalib::string &name) 
     return matcher.result;
 }
 
-vespalib::string path_to_str(const Path &path) {
+std::string path_to_str(const Path &path) {
     size_t cnt = 0;
-    vespalib::string str("[");
+    std::string str("[");
     for (const auto &item: path) {
         if (cnt++ > 0) {
             str.append(",");
@@ -118,11 +118,11 @@ vespalib::string path_to_str(const Path &path) {
     return str;
 }
 
-vespalib::string strip_name(std::string_view name) {
+std::string strip_name(std::string_view name) {
     auto end = name.find("<");
     auto ns = name.rfind("::", end);
     size_t begin = (ns > name.size()) ? 0 : ns + 2;
-    return vespalib::string(name.substr(begin, end - begin));
+    return std::string(name.substr(begin, end - begin));
 }
 
 const Inspector &apply_path(const Inspector &node, const Path &path, size_t max = -1) {
@@ -143,7 +143,7 @@ const Inspector &apply_path(const Inspector &node, const Path &path, size_t max 
     return *ptr;
 }
 
-void extract(vespalib::string &value, const Inspector &data) {
+void extract(std::string &value, const Inspector &data) {
     if (data.valid() && data.type() == STRING()) {
         value = data.asString().make_stringview();
     }
@@ -197,7 +197,7 @@ struct Sample {
             self_time_ms = total_time_ms;
         }
     }
-    static vespalib::string type_to_str(Type type) {
+    static std::string type_to_str(Type type) {
         switch(type) {
         case Type::INVALID: return "<invalid>";
         case Type::INIT: return "init";
@@ -207,14 +207,14 @@ struct Sample {
         }
         abort();
     }
-    static vespalib::string path_to_str(const std::vector<size_t> &path) {
-        vespalib::string result("/");
+    static std::string path_to_str(const std::vector<size_t> &path) {
+        std::string result("/");
         for (size_t elem: path) {
             result += fmt("%zu/", elem);
         }
         return result;
     }
-    vespalib::string to_string() const {
+    std::string to_string() const {
         return fmt("type: %s, path: %s, count: %zu, total_time_ms: %g\n",
                    type_to_str(type).c_str(), path_to_str(path).c_str(), count, total_time_ms);
     }
@@ -248,7 +248,7 @@ struct BlueprintMeta {
             self_cost_non_strict(self_cost_non_strict_in) {}
         ~MetaEntry();
     };
-    std::map<vespalib::string,MetaEntry> map;
+    std::map<std::string,MetaEntry> map;
     BlueprintMeta() {
         map["AndNotBlueprint"] = MetaEntry{
             [](InFlow in_flow)noexcept{ return AnyFlow::create<AndNotFlow>(in_flow); }
@@ -283,10 +283,10 @@ struct BlueprintMeta {
             [](double, size_t)noexcept{ return 1.0; }
         };
     }
-    bool is_known(const vespalib::string &type) {
+    bool is_known(const std::string &type) {
         return map.find(type) != map.end();
     }
-    const MetaEntry &lookup(const vespalib::string &type) {
+    const MetaEntry &lookup(const std::string &type) {
         return map.find(type)->second;
     }
 };
@@ -294,11 +294,11 @@ BlueprintMeta::MetaEntry::~MetaEntry() = default;
 BlueprintMeta blueprint_meta;
 
 struct Node {
-    vespalib::string  type = "unknown";
+    std::string  type = "unknown";
     uint32_t          id = 0;
     uint32_t          docid_limit = 0;
-    vespalib::string  field_name;
-    vespalib::string  query_term;
+    std::string  field_name;
+    std::string  query_term;
     bool              strict = false;
     FlowStats         flow_stats = FlowStats(0.0, 0.0, 0.0);
     size_t            count = 0;
@@ -352,8 +352,8 @@ struct Node {
     }
     Node(const Node &);
     ~Node();
-    vespalib::string name() const {
-        vespalib::string res = type;
+    std::string name() const {
+        std::string res = type;
         if (id > 0) {
             res.append(fmt("[%u]", id));
         }
@@ -479,8 +479,8 @@ struct Node {
                       node.ms_limit = time_limit;
                   });
     }
-    vespalib::string tingle() const {
-        vespalib::string res;
+    std::string tingle() const {
+        std::string res;
         if (total_time_ms > ms_limit) {
             apply_diff(res, rel_diff(est_seek, rel_count(), 1e-6, 0.50), 's', 'S', 3);
             apply_diff(res, rel_diff(ms_per_cost * est_cost, total_time_ms, 1e-3, 0.50), 't', 'T', 3);
@@ -522,7 +522,7 @@ struct Node {
         fprintf(stdout, "| ");
     }
     static constexpr const char *pads[4] = {" ├─ "," │  "," └─ ","    "};
-    void print_line(const vespalib::string &prefix, const char *pad_self, const char *pad_child) const {
+    void print_line(const std::string &prefix, const char *pad_self, const char *pad_child) const {
         print_stats();
         fprintf(stdout, "%s%s%s\n", prefix.c_str(), pad_self, name().c_str());
         for (size_t i = 0; i < children.size(); ++i) {
@@ -601,7 +601,7 @@ void usage(const char *self) {
 
 struct MyApp {
     Analyzer analyzer;
-    vespalib::string file_name;
+    std::string file_name;
     bool parse_params(int argc, char **argv);
     int main();
 };

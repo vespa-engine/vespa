@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace search::attribute {
 
@@ -31,7 +32,7 @@ class BasicType
     explicit BasicType(int t) noexcept : _type(Type(t)) { }
     explicit BasicType(unsigned int t) noexcept : _type(Type(t)) { }
     BasicType(Type t) noexcept : _type(t) { }
-    explicit BasicType(const vespalib::string & t) : _type(asType(t)) { }
+    explicit BasicType(const std::string & t) : _type(asType(t)) { }
 
     Type type() const noexcept { return _type; }
     const char * asString() const noexcept { return asString(_type); }
@@ -50,7 +51,7 @@ class BasicType
   private:
     static const char * asString(Type t) noexcept { return _typeTable[t]._name; }
     static size_t fixedSize(Type t) noexcept { return _typeTable[t]._fixedSize; }
-    static Type asType(const vespalib::string & t);
+    static Type asType(const std::string & t);
 
     Type _type;
 

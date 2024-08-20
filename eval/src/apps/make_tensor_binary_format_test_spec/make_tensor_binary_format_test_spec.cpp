@@ -15,7 +15,7 @@ using namespace vespalib::eval;
 using namespace vespalib::slime::convenience;
 
 using Options = std::initializer_list<std::reference_wrapper<const nbostream>>;
-using Dict = std::vector<vespalib::string>;
+using Dict = std::vector<std::string>;
 
 //-----------------------------------------------------------------------------
 
@@ -130,7 +130,7 @@ const std::map<std::string, double> val_map{
     {"bar",  2.0}};
 
 double val(size_t idx) { return double(idx + 1); }
-double val(const vespalib::string &label) {
+double val(const std::string &label) {
     auto res = val_map.find(label);
     if (res == val_map.end()) {
         fprintf(stderr, "unsupported label: '%s'\n", label.c_str());
@@ -249,7 +249,7 @@ void make_map_test(Cursor &test, const Dict &x_dict_in) {
             TensorSpec spec(vespalib::make_string("tensor%s(x{})", cell_type_str<T>()));
             nbostream sparse = sparse_base;
             nbostream mixed = mixed_base;
-            for (vespalib::string x: x_dict) {
+            for (std::string x: x_dict) {
                 double value = val(x);
                 spec.add({{"x", x}}, value);
                 sparse.writeSmallString(x);
@@ -269,7 +269,7 @@ void make_map_test(Cursor &test, const Dict &x_dict_in) {
 }
 
 template <typename T>
-void make_mesh_test(Cursor &test, const Dict &x_dict_in, const vespalib::string &y) {
+void make_mesh_test(Cursor &test, const Dict &x_dict_in, const std::string &y) {
     for (bool with_cell_type: with_cell_type_opts<T>()) {
         nbostream sparse_base = make_sparse<T>(with_cell_type);
         sparse_base.putInt1_4Bytes(2);
@@ -287,7 +287,7 @@ void make_mesh_test(Cursor &test, const Dict &x_dict_in, const vespalib::string 
             TensorSpec spec(vespalib::make_string("tensor%s(x{},y{})", cell_type_str<T>()));
             nbostream sparse = sparse_base;
             nbostream mixed = mixed_base;
-            for (vespalib::string x: x_dict) {
+            for (std::string x: x_dict) {
                 double value = mix({val(x), val(y)});
                 spec.add({{"x", x}, {"y", y}}, value);
                 sparse.writeSmallString(x);
@@ -312,8 +312,8 @@ void make_mesh_test(Cursor &test, const Dict &x_dict_in, const vespalib::string 
 
 template <typename T>
 void make_vector_map_test(Cursor &test,
-                          const vespalib::string &mapped_name, const Dict &mapped_dict,
-                          const vespalib::string &indexed_name, size_t indexed_size)
+                          const std::string &mapped_name, const Dict &mapped_dict,
+                          const std::string &indexed_name, size_t indexed_size)
 {
     for (bool with_cell_type: with_cell_type_opts<T>()) {
         auto type_str = vespalib::make_string("tensor%s(%s{},%s[%zu])", cell_type_str<T>(),
@@ -330,7 +330,7 @@ void make_vector_map_test(Cursor &test,
         for (const Dict &dict: mapped_perm) {
             TensorSpec spec(type.to_spec()); // ensures type string is normalized
             nbostream mixed = mixed_base;
-            for (vespalib::string label: dict) {
+            for (std::string label: dict) {
                 mixed.writeSmallString(label);
                 for (size_t idx = 0; idx < indexed_size; ++idx) {
                     double value = mix({val(label), val(idx)});

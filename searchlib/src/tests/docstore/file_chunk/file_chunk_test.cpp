@@ -23,7 +23,7 @@ using vespalib::CpuUsage;
 using vespalib::ThreadStackExecutor;
 
 struct MyFileHeaderContext : public FileHeaderContext {
-    void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override {
+    void addTags(vespalib::GenericHeader &header, const std::string &name) const override {
         (void) header;
         (void) name;
     }
@@ -50,7 +50,7 @@ struct BucketizerObserver : public IBucketizer {
     }
 };
 
-vespalib::string
+std::string
 getData(uint32_t lid)
 {
     std::ostringstream oss;
@@ -72,7 +72,7 @@ struct FixtureBase {
         return serialNum++;
     };
 
-    explicit FixtureBase(const vespalib::string &baseName, bool dirCleanup = true)
+    explicit FixtureBase(const std::string &baseName, bool dirCleanup = true)
         : dir(baseName),
           executor(1),
           serialNum(1),
@@ -98,7 +98,7 @@ FixtureBase::~FixtureBase() = default;
 struct ReadFixture : public FixtureBase {
     FileChunk chunk;
 
-    explicit ReadFixture(const vespalib::string &baseName, bool dirCleanup = true)
+    explicit ReadFixture(const std::string &baseName, bool dirCleanup = true)
         : FixtureBase(baseName, dirCleanup),
           chunk(FileChunk::FileId(0), FileChunk::NameId(1234), baseName, tuneFile, &bucketizer)
     {
@@ -114,7 +114,7 @@ struct WriteFixture : public FixtureBase {
     WriteableFileChunk chunk;
     using CompressionConfig = vespalib::compression::CompressionConfig;
 
-    WriteFixture(const vespalib::string &baseName,
+    WriteFixture(const std::string &baseName,
                  uint32_t docIdLimit,
                  bool dirCleanup = true)
         : FixtureBase(baseName, dirCleanup),
@@ -128,7 +128,7 @@ struct WriteFixture : public FixtureBase {
         chunk.flushPendingChunks(serialNum);
     }
     WriteFixture &append(uint32_t lid) {
-        vespalib::string data = getData(lid);
+        std::string data = getData(lid);
         chunk.append(nextSerialNum(), lid, {data.c_str(), data.size()}, CpuUsage::Category::WRITE);
         return *this;
     }

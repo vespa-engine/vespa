@@ -20,7 +20,7 @@ public:
     ~VdsHit() override;
     VdsHit *clone() const override { return new VdsHit(*this); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const vespalib::string &   getDocId() const noexcept { return _docId; }
+    const std::string &   getDocId() const noexcept { return _docId; }
     const Summary & getSummary() const noexcept { return _summary; }
     VdsHit & setDocId(std::string_view docId) noexcept { _docId = docId; return *this; }
     VdsHit & setSummary(const void * buf, size_t sz) noexcept {
@@ -32,7 +32,7 @@ public:
     bool operator < (const VdsHit &b) const noexcept { return cmp(b) < 0; }
 
 private:
-    vespalib::string  _docId;
+    std::string  _docId;
     Summary           _summary;
 };
 

@@ -26,13 +26,13 @@ public:
     using FileInterfaceUP = std::unique_ptr<FastOS_FileInterface>;
     using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
 
-    static FileInterfaceUP openFile(const AttributeVector& attr, const vespalib::string& suffix);
+    static FileInterfaceUP openFile(const AttributeVector& attr, const std::string& suffix);
     static FileInterfaceUP openDAT(const AttributeVector& attr);
     static FileInterfaceUP openIDX(const AttributeVector& attr);
     static FileInterfaceUP openWeight(const AttributeVector& attr);
 
-    static bool file_exists(const AttributeVector& attr, const vespalib::string& suffix);
-    static LoadedBufferUP loadFile(const AttributeVector& attr, const vespalib::string& suffix);
+    static bool file_exists(const AttributeVector& attr, const std::string& suffix);
+    static LoadedBufferUP loadFile(const AttributeVector& attr, const std::string& suffix);
 
     static LoadedBufferUP loadDAT(const AttributeVector& attr);
     static LoadedBufferUP loadIDX(const AttributeVector& attr);

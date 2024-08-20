@@ -71,7 +71,7 @@ struct Position {
             }
         }
     }
-    vespalib::string to_string() const { return fmt("%u#%u", index, edits); }
+    std::string to_string() const { return fmt("%u#%u", index, edits); }
 };
 
 // A State is a collection of different Positions that do not subsume
@@ -153,8 +153,8 @@ struct State {
         }
         return result;
     }
-    vespalib::string to_string() const {
-        vespalib::string result = "{";
+    std::string to_string() const {
+        std::string result = "{";
         for (size_t i = 0; i < list.size(); ++i) {
             if (i > 0) {
                 result.append(",");
@@ -275,8 +275,8 @@ std::unique_ptr<Tfa<N>> make_tfa() {
 }
 
 template <typename T>
-vespalib::string format_vector(const std::vector<T> &vector, bool compact = false) {
-    vespalib::string str = compact ? "" : "[";
+std::string format_vector(const std::vector<T> &vector, bool compact = false) {
+    std::string str = compact ? "" : "[";
     for (size_t i = 0; i < vector.size(); ++i) {
         if (i > 0 && !compact) {
             str.append(",");

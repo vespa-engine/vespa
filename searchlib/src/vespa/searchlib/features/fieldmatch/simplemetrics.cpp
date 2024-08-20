@@ -17,7 +17,7 @@ SimpleMetrics::SimpleMetrics(const Params & params) :
 {
 }
 
-vespalib::string SimpleMetrics::toString() const
+std::string SimpleMetrics::toString() const
 {
     vespalib::asciistream ss;
     ss << "matches(" << _matches << "), matchedWithPosOcc(" << _matchesWithPosOcc << "), ";

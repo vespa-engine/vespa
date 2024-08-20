@@ -31,28 +31,28 @@ class StructMapAttributeFieldWriterState : public DocsumFieldWriterState
     AttributeFieldWriter*              _keyWriter;
     // AttributeFieldWriter instances are owned by stash passed to constructor
     std::vector<AttributeFieldWriter*> _valueWriters;
-    const vespalib::string&            _field_name;
+    const std::string&            _field_name;
     const MatchingElements* const      _matching_elements;
 
 public:
-    StructMapAttributeFieldWriterState(const vespalib::string &keyAttributeName,
-                                       const std::vector<vespalib::string> &valueFieldNames,
-                                       const std::vector<vespalib::string> &valueAttributeNames,
+    StructMapAttributeFieldWriterState(const std::string &keyAttributeName,
+                                       const std::vector<std::string> &valueFieldNames,
+                                       const std::vector<std::string> &valueAttributeNames,
                                        IAttributeContext &context,
                                        vespalib::Stash& stash,
-                                       const vespalib::string &field_name,
+                                       const std::string &field_name,
                                        const MatchingElements* matching_elements);
     ~StructMapAttributeFieldWriterState() override;
     void insert_element(uint32_t element_index, Cursor &array);
     void insertField(uint32_t docId, vespalib::slime::Inserter &target) override;
 };
 
-StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const vespalib::string &keyAttributeName,
-                                                                       const std::vector<vespalib::string> &valueFieldNames,
-                                                                       const std::vector<vespalib::string> &valueAttributeNames,
+StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const std::string &keyAttributeName,
+                                                                       const std::vector<std::string> &valueFieldNames,
+                                                                       const std::vector<std::string> &valueAttributeNames,
                                                                        IAttributeContext &context,
                                                                        vespalib::Stash& stash,
-                                                                       const vespalib::string& field_name,
+                                                                       const std::string& field_name,
                                                                        const MatchingElements *matching_elements)
     : DocsumFieldWriterState(),
       _keyWriter(nullptr),
@@ -126,7 +126,7 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 
 }
 
-StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
+StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const std::string &fieldName,
                                                              const StructFieldsResolver& fields_resolver,
                                                              bool filter_elements,
                                                              std::shared_ptr<MatchingElementsFields> matching_elems_fields)

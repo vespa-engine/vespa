@@ -10,7 +10,7 @@
 
 namespace {
 
-vespalib::string base_dir("base");
+std::string base_dir("base");
 
 constexpr uint32_t block_size = 4_Ki;
 
@@ -26,7 +26,7 @@ protected:
     DiskIndexesTest();
     ~DiskIndexesTest();
 
-    static IndexDiskDir get_index_disk_dir(const vespalib::string& dir) {
+    static IndexDiskDir get_index_disk_dir(const std::string& dir) {
         return IndexDiskLayout::get_index_disk_dir(dir);
     }
 

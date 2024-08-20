@@ -34,7 +34,7 @@ TokensConverter::convert(const StringFieldValue &input, Inserter& inserter)
     Cursor& a = inserter.insertArray();
     ArrayInserter ai(a);
     vespalib::Array<ucs4_t> buf(_text.size() + 1, 0);
-    vespalib::string scratch;
+    std::string scratch;
     TokenizeReader reader(reinterpret_cast<const byte *> (_text.data()), _text.size(), buf.data());
     for (;;) {
         auto len = _exact_match ? reader.tokenize_exact_match(_normalize_mode) : reader.tokenize(_normalize_mode);

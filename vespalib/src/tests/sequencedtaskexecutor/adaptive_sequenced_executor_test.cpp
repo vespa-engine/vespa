@@ -155,7 +155,7 @@ int detectSerializeFailure(Fixture &f, std::string_view altComponentId, int tryL
     return tryCnt;
 }
 
-vespalib::string makeAltComponentId(Fixture &f)
+std::string makeAltComponentId(Fixture &f)
 {
     int tryCnt = 0;
     char altComponentId[20];
@@ -182,7 +182,7 @@ TEST_F("require that task with different string component ids are not serialized
 TEST_F("require that task with different string component ids mapping to the same executor id are serialized",
        Fixture)
 {
-    vespalib::string altComponentId = makeAltComponentId(f);
+    std::string altComponentId = makeAltComponentId(f);
     LOG(info, "second string component id is \"%s\"", altComponentId.c_str());
     int tryCnt = detectSerializeFailure(f, altComponentId, 100);
     EXPECT_TRUE(tryCnt == 100);

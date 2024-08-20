@@ -3,7 +3,7 @@
 
 #include "node.h"
 #include <vespa/searchlib/query/weight.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::query {
 
@@ -13,7 +13,7 @@ namespace search::query {
  */
 class Term
 {
-    vespalib::string _view;
+    std::string _view;
     int32_t          _id;
     Weight           _weight;
     bool             _ranked;
@@ -23,7 +23,7 @@ class Term
 public:
     virtual ~Term() = 0;
 
-    void setView(vespalib::string view) { _view = std::move(view); }
+    void setView(std::string view) { _view = std::move(view); }
     void setRanked(bool ranked) noexcept { _ranked = ranked; }
     void setPositionData(bool position_data) noexcept { _position_data = position_data; }
     // Used for fuzzy prefix matching. Not to be confused with distinct Prefix query term type
@@ -31,7 +31,7 @@ public:
 
     void setStateFrom(const Term& other);
 
-    const vespalib::string & getView() const noexcept { return _view; }
+    const std::string & getView() const noexcept { return _view; }
     Weight getWeight() const noexcept { return _weight; }
     int32_t getId() const noexcept { return _id; }
     [[nodiscard]] bool isRanked() const noexcept { return _ranked; }
@@ -42,12 +42,12 @@ public:
         return (term[0] == '[' || term[0] == '<' || term[0] == '>');
     }
 protected:
-    Term(const vespalib::string & view, int32_t id, Weight weight);
+    Term(const std::string & view, int32_t id, Weight weight);
 };
 
 class TermNode : public Node, public Term {
 protected:
-    TermNode(const vespalib::string & view, int32_t id, Weight weight) : Term(view, id, weight) {}
+    TermNode(const std::string & view, int32_t id, Weight weight) : Term(view, id, weight) {}
 };
 /**
  * Generic functionality for most of Term's derived classes.
@@ -63,12 +63,12 @@ public:
     const T &getTerm() const { return _term; }
 
 protected:
-    TermBase(T term, const vespalib::string & view, int32_t id, Weight weight);
+    TermBase(T term, const std::string & view, int32_t id, Weight weight);
 };
 
 
 template <typename T>
-TermBase<T>::TermBase(T term, const vespalib::string & view, int32_t id, Weight weight)
+TermBase<T>::TermBase(T term, const std::string & view, int32_t id, Weight weight)
     : TermNode(view, id, weight),
        _term(std::move(term))
 {}

@@ -51,7 +51,7 @@ using search::index::DummyFileHeaderContext;
 
 namespace {
 
-vespalib::string base_dir = "testdb";
+std::string base_dir = "testdb";
 constexpr int base_port = 9017;
 
 std::shared_ptr<DocumenttypesConfig> make_document_types() {
@@ -120,7 +120,7 @@ class Benchmark {
     std::unique_ptr<BmCluster>                 _cluster;
     BmFeed                                     _feed;
 
-    void benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, uint32_t passes, const vespalib::string &op_name);
+    void benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, uint32_t passes, const std::string &op_name);
 public:
     explicit Benchmark(const BMParams& params);
     ~Benchmark();
@@ -140,7 +140,7 @@ Benchmark::Benchmark(const BMParams& params)
 Benchmark::~Benchmark() = default;
 
 void
-Benchmark::benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, uint32_t passes, const vespalib::string &op_name)
+Benchmark::benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, uint32_t passes, const std::string &op_name)
 {
     if (passes == 0) {
         return;

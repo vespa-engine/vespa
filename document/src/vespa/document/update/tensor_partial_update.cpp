@@ -47,7 +47,7 @@ struct DenseCoords {
     ~DenseCoords();
     void clear() { offset = 0; current = 0; }
     void convert_label(string_id label_id) {
-        vespalib::string label = SharedStringRepo::Handle::string_from_id(label_id);
+        std::string label = SharedStringRepo::Handle::string_from_id(label_id);
         uint32_t coord = 0;
         for (char c : label) {
             if (c < '0' || c > '9') { // bad char

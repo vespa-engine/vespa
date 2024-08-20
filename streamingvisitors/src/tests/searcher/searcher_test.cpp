@@ -1187,7 +1187,7 @@ TEST("element lengths")
     EXPECT_EQUAL(2u, hl[2].element_length());
 }
 
-vespalib::string NormalizationInput = "test That Somehing happens with during NårmØlization";
+std::string NormalizationInput = "test That Somehing happens with during NårmØlization";
 
 void
 verifyNormalization(Normalizing normalizing, size_t expected_len, const char * expected) {

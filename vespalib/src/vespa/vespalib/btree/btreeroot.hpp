@@ -15,7 +15,7 @@ namespace vespalib::btree {
 //----------------------- BTreeRoot ------------------------------------------//
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-vespalib::string
+std::string
 BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 toString(BTreeNode::Ref node,
          const NodeAllocatorType &allocator) const
@@ -267,7 +267,7 @@ frozenSize(const NodeAllocatorType &allocator) const
 
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-vespalib::string
+std::string
 BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 toString(const NodeAllocatorType &allocator) const
 {

@@ -189,7 +189,7 @@ public:
         sort_sent_messages_by_index(_sender, size_before_state);
     }
 
-    void set_cluster_state(const vespalib::string& state_str) {
+    void set_cluster_state(const std::string& state_str) {
         set_cluster_state(lib::ClusterState(state_str));
     }
 
@@ -220,7 +220,7 @@ public:
     }
 
     static api::StorageMessageAddress storage_address(uint16_t node) {
-        static vespalib::string _storage("storage");
+        static std::string _storage("storage");
         return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, node);
     }
 
@@ -290,7 +290,7 @@ public:
     void initialize_nodes_and_buckets(uint32_t num_storage_nodes, uint32_t num_buckets) {
         ASSERT_NO_FATAL_FAILURE(set_storage_nodes(num_storage_nodes));
 
-        vespalib::string state(vespalib::make_string("distributor:1 storage:%d", num_storage_nodes));
+        std::string state(vespalib::make_string("distributor:1 storage:%d", num_storage_nodes));
         lib::ClusterState new_state(state);
 
         for (uint32_t i = 0; i < message_count(num_storage_nodes); ++i) {

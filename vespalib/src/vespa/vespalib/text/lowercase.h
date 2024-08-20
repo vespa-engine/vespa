@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 #include <vector>
 
 namespace vespalib {
@@ -97,7 +98,7 @@ public:
      * any bytes that aren't valid UTF-8 with the Unicode REPLACEMENT
      * CHARACTER (U+FFFD).
      **/
-    static vespalib::string convert(std::string_view input);
+    static std::string convert(std::string_view input);
 
     /**
      * Lowercase a string in UTF-8 format while converting it to UCS-4 codepoints.

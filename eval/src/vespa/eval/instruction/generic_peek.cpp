@@ -84,7 +84,7 @@ struct ExtractedSpecs {
         bool operator() (const Spec::value_type &a, const Dimension &b) { return a.first < b.name; }
     };
     std::vector<Dimension> dimensions;
-    std::map<vespalib::string, DimSpec> specs;
+    std::map<std::string, DimSpec> specs;
 
     ExtractedSpecs(bool indexed,
                    const std::vector<Dimension> &input_dims,

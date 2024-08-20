@@ -29,7 +29,7 @@ struct InplaceInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr, op1_t op1, bool inplace = false) {
+void verify_optimized(const std::string &expr, op1_t op1, bool inplace = false) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 1);
     if (inplace) {
@@ -44,7 +44,7 @@ void verify_optimized(const vespalib::string &expr, op1_t op1, bool inplace = fa
     EvalFixture::verify<MapInfo>(expr, {details}, unstable_types);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 1);
     EvalFixture::verify<MapInfo>(expr, {}, just_double);
@@ -71,7 +71,7 @@ TEST(PowAsMapTest, hypercubed_dense_tensor_is_not_optimized) {
 }
 
 TEST(PowAsMapTest, scalar_join_is_optimized) {
-    vespalib::string expr = "join(@$1,2.0,f(x,y)(pow(x,y)))";
+    std::string expr = "join(@$1,2.0,f(x,y)(pow(x,y)))";
     SCOPED_TRACE(expr.c_str());
     MapInfo details{Square::f};
     CellTypeSpace just_double({CellType::DOUBLE}, 1);

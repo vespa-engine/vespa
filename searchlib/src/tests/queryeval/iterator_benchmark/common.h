@@ -13,7 +13,7 @@ namespace search::queryeval::test {
 using search::attribute::Config;
 using search::index::Schema;
 
-vespalib::string to_string(const Config& attr_config);
+std::string to_string(const Config& attr_config);
 
 class FieldConfig {
 private:
@@ -29,7 +29,7 @@ public:
         res.addIndexField(std::get<1>(_cfg));
         return res;
     }
-    vespalib::string to_string() const {
+    std::string to_string() const {
         return is_attr() ? search::queryeval::test::to_string(attr_cfg()) : "diskindex";
     }
 };
@@ -45,7 +45,7 @@ enum class QueryOperator {
     ParallelWeakAnd
 };
 
-vespalib::string to_string(QueryOperator query_op);
+std::string to_string(QueryOperator query_op);
 
 struct HitSpec {
     uint32_t term_value;
@@ -79,7 +79,7 @@ public:
     auto end() const { return _specs.end(); }
 };
 
-vespalib::string get_class_name(const auto& obj);
+std::string get_class_name(const auto& obj);
 
 std::mt19937& get_gen();
 

@@ -57,7 +57,7 @@ using RemoveEntry = MockGidToLidChangeHandler::RemoveEntry;
 
 struct MyDocumentDBReference : public MockDocumentDBReference {
     using SP = std::shared_ptr<MyDocumentDBReference>;
-    using AttributesMap = std::map<vespalib::string, AttributeVector::SP>;
+    using AttributesMap = std::map<std::string, AttributeVector::SP>;
     MyGidToLidMapperFactory::SP factory;
     AttributesMap attributes;
     std::shared_ptr<MockGidToLidChangeHandler> _gidToLidChangeHandler;
@@ -72,7 +72,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
         return factory;
     }
     std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) override {
-        auto itr = attributes.find(vespalib::string(name));
+        auto itr = attributes.find(std::string(name));
         if (itr != attributes.end()) {
             return itr->second;
         } else {
@@ -80,9 +80,9 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
         }
     }
     void addIntAttribute(std::string_view name) {
-        attributes[vespalib::string(name)] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
+        attributes[std::string(name)] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
     }
-    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override {
+    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &docTypeName) override {
         return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
     }
 
@@ -90,20 +90,20 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
         return *_gidToLidChangeHandler;
     }
     void removeAttribute(std::string_view name) {
-        attributes.erase(vespalib::string(name));
+        attributes.erase(std::string(name));
     }
 };
 
 struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
-    using ReferenceMap = std::map<vespalib::string, IDocumentDBReference::SP>;
+    using ReferenceMap = std::map<std::string, IDocumentDBReference::SP>;
     ReferenceMap map;
     IDocumentDBReference::SP get(std::string_view name) const override {
-        auto itr = map.find(vespalib::string(name));
+        auto itr = map.find(std::string(name));
         ASSERT_TRUE(itr != map.end());
         return itr->second;
     }
     IDocumentDBReference::SP tryGet(std::string_view name) const override {
-        auto itr = map.find(vespalib::string(name));
+        auto itr = map.find(std::string(name));
         if (itr != map.end()) {
             return itr->second;
         } else {
@@ -111,19 +111,19 @@ struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
         }
     }
     void add(std::string_view name, IDocumentDBReference::SP reference) override {
-        map[vespalib::string(name)] = reference;
+        map[std::string(name)] = reference;
     }
     void remove(std::string_view) override {}
 };
 
 struct MyAttributeManager : public MockAttributeManager {
-    void addIntAttribute(const vespalib::string &name) {
+    void addIntAttribute(const std::string &name) {
         addAttribute(name, AttributeFactory::createAttribute(name, Config(BasicType::INT32)));
     }
-    void addReferenceAttribute(const vespalib::string &name) {
+    void addReferenceAttribute(const std::string &name) {
         addAttribute(name, std::make_shared<ReferenceAttribute>(name));
     }
-    const ReferenceAttribute *getReferenceAttribute(const vespalib::string &name) const {
+    const ReferenceAttribute *getReferenceAttribute(const std::string &name) const {
         AttributeGuard::UP guard = getAttribute(name);
         auto *result = dynamic_cast<const ReferenceAttribute *>(guard->get());
         ASSERT_TRUE(result != nullptr);
@@ -162,9 +162,9 @@ struct DocumentModel {
 DocumentModel::~DocumentModel() = default;
 
 void
-set(const vespalib::string &name,
-    const vespalib::string &referenceField,
-    const vespalib::string &targetField,
+set(const std::string &name,
+    const std::string &referenceField,
+    const std::string &targetField,
     ImportedFieldsConfigBuilder::Attribute &attr)
 {
     attr.name = name;
@@ -251,12 +251,12 @@ struct Fixture {
         DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, *_attributeFieldWriter, false);
         resolver.teardown(attrMgr);
     }
-    const IGidToLidMapperFactory *getMapperFactoryPtr(const vespalib::string &attrName) {
+    const IGidToLidMapperFactory *getMapperFactoryPtr(const std::string &attrName) {
         return attrMgr.getReferenceAttribute(attrName)->getGidToLidMapperFactory().get();
     }
-    void assertImportedAttribute(const vespalib::string &name,
-                                 const vespalib::string &referenceField,
-                                 const vespalib::string &targetField,
+    void assertImportedAttribute(const std::string &name,
+                                 const std::string &referenceField,
+                                 const std::string &targetField,
                                  bool useSearchCache,
                                  const ImportedAttributeVector::SP & attr) {
         ASSERT_TRUE(attr.get());
@@ -266,20 +266,20 @@ struct Fixture {
         EXPECT_EQUAL(useSearchCache, attr->getSearchCache().get() != nullptr);
     }
 
-    MockGidToLidChangeHandler &getGidToLidChangeHandler(const vespalib::string &referencedDocTypeName) {
+    MockGidToLidChangeHandler &getGidToLidChangeHandler(const std::string &referencedDocTypeName) {
         auto ireference = registry.get(referencedDocTypeName);
         auto reference = std::dynamic_pointer_cast<MyDocumentDBReference>(ireference);
         assert(reference);
         return reference->getGidToLidChangeHandler();
     }
 
-    void assertParentAdds(const vespalib::string &referencedDocTypeName, const std::vector<AddEntry> &expAdds)
+    void assertParentAdds(const std::string &referencedDocTypeName, const std::vector<AddEntry> &expAdds)
     {
         auto &handler = getGidToLidChangeHandler(referencedDocTypeName);
         handler.assertAdds(expAdds);
     }
 
-    void assertParentRemoves(const vespalib::string &referencedDocTypeName, const std::vector<RemoveEntry> &expRemoves)
+    void assertParentRemoves(const std::string &referencedDocTypeName, const std::vector<RemoveEntry> &expRemoves)
     {
         auto &handler = getGidToLidChangeHandler(referencedDocTypeName);
         handler.assertRemoves(expRemoves);

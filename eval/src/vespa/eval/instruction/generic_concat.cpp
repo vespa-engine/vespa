@@ -28,7 +28,7 @@ struct ConcatParam
 
     ConcatParam(const ValueType &res_type_in,
                 const ValueType &lhs_type, const ValueType &rhs_type,
-                const vespalib::string &dimension, const ValueBuilderFactory &factory_in)
+                const std::string &dimension, const ValueBuilderFactory &factory_in)
       : res_type(res_type_in),
         sparse_plan(lhs_type, rhs_type),
         dense_plan(lhs_type, rhs_type, dimension, res_type),
@@ -245,7 +245,7 @@ DenseConcatPlan::InOutLoop::~InOutLoop() = default;
 InterpretedFunction::Instruction
 GenericConcat::make_instruction(const ValueType &result_type,
                                 const ValueType &lhs_type, const ValueType &rhs_type,
-                                const vespalib::string &dimension,
+                                const std::string &dimension,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
     auto &param = stash.create<ConcatParam>(result_type, lhs_type, rhs_type, dimension, factory);

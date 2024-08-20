@@ -4,13 +4,13 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_path.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <fstream>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("schema_test");
 
-using vespalib::string;
+using std::string;
 
 namespace search::index {
 
@@ -19,7 +19,7 @@ using schema::CollectionType;
 using SIAF = Schema::ImportedAttributeField;
 using SIF = Schema::IndexField;
 
-vespalib::string src_path(std::string_view prefix, std::string_view path) {
+std::string src_path(std::string_view prefix, std::string_view path) {
     return prefix + TEST_PATH(std::string(path));
 }
 
@@ -297,7 +297,7 @@ TEST(SchemaTest, require_that_incompatible_fields_are_removed_from_intersection)
 
 TEST(SchemaTest, require_that_imported_attribute_fields_are_not_saved_to_disk)
 {
-    const vespalib::string fileName = "schema-no-imported-fields.txt";
+    const std::string fileName = "schema-no-imported-fields.txt";
     {
         Schema s;
         s.addImportedAttributeField(Schema::ImportedAttributeField("imported", DataType::INT32));
@@ -341,7 +341,7 @@ TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_pro
 
 TEST(SchemaTest, test_load_from_saved_schema_with_summary_fields)
 {
-    vespalib::string schema_name(TEST_PATH("old-schema-with-summary-fields.txt"));
+    std::string schema_name(TEST_PATH("old-schema-with-summary-fields.txt"));
     Schema s;
     s.addIndexField(Schema::IndexField("ifoo", DataType::STRING));
     s.addIndexField(Schema::IndexField("ibar", DataType::INT32));

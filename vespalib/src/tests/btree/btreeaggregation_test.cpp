@@ -226,11 +226,11 @@ protected:
 
     template <typename Tree>
     bool
-    assertAggregated(const MockTree &m, const Tree &t, const vespalib::string& label);
+    assertAggregated(const MockTree &m, const Tree &t, const std::string& label);
 
     template <typename TreeStore>
     bool
-    assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref, const vespalib::string& label);
+    assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref, const std::string& label);
 
     void
     buildSubTree(const std::vector<LeafPair> &sub,
@@ -255,7 +255,7 @@ BTreeAggregationTest::assertTree(const std::string &exp, const Tree &t)
 
 template <typename Tree>
 bool
-BTreeAggregationTest::assertAggregated(const MockTree &m, const Tree &t, const vespalib::string& label)
+BTreeAggregationTest::assertAggregated(const MockTree &m, const Tree &t, const std::string& label)
 {
     SCOPED_TRACE(label);
     const MinMaxAggregated &ta(t.getAggregated());
@@ -277,7 +277,7 @@ BTreeAggregationTest::assertAggregated(const MockTree &m, const Tree &t, const v
 
 template <typename TreeStore>
 bool
-BTreeAggregationTest::assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref, const vespalib::string& label)
+BTreeAggregationTest::assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref, const std::string& label)
 {
     SCOPED_TRACE(label);
     typename TreeStore::Iterator i(s.begin(ref));

@@ -33,7 +33,7 @@ private:
     }
 public:
     ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, uint32_t fieldId);
-    ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const vespalib::string &label);
+    ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const std::string &label);
     void execute(uint32_t docId) override;
 };
 
@@ -43,7 +43,7 @@ ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironmen
 {
 }
 
-ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const vespalib::string &label)
+ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const std::string &label)
   : _bundle(env, std::nullopt, label, "distance"),
     _md(nullptr)
 {
@@ -191,7 +191,7 @@ DistanceBlueprint::createInstance() const
 }
 
 bool
-DistanceBlueprint::setup_geopos(const vespalib::string &attr)
+DistanceBlueprint::setup_geopos(const std::string &attr)
 {
     _attr_name = attr;
     _use_geo_pos = true;
@@ -204,7 +204,7 @@ DistanceBlueprint::setup_geopos(const vespalib::string &attr)
 }
 
 bool
-DistanceBlueprint::setup_nns(const vespalib::string &attr)
+DistanceBlueprint::setup_nns(const std::string &attr)
 {
     _attr_name = attr;
     _use_nns_tensor = true;
@@ -217,7 +217,7 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
                          const ParameterList & params)
 {
     // params[0] = attribute name
-    vespalib::string arg = params[0].getValue();
+    std::string arg = params[0].getValue();
     if (params.size() == 2) {
         // params[0] = field / label
         // params[1] = attribute name / label value
@@ -234,7 +234,7 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
         }
     }
     _field_name = arg;
-    vespalib::string z = document::PositionDataType::getZCurveFieldName(arg);
+    std::string z = document::PositionDataType::getZCurveFieldName(arg);
     const FieldInfo *fi = env.getFieldByName(z);
     if (fi != nullptr && fi->hasAttribute()) {
         // can't check anything here because streaming has wrong information

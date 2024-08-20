@@ -26,25 +26,25 @@ class DocumentType final : public StructuredDataType {
 public:
     class FieldSet {
     public:
-        using Fields = std::set<vespalib::string>;
-        FieldSet(const vespalib::string & name, Fields fields, const DocumentType & doc_type);
+        using Fields = std::set<std::string>;
+        FieldSet(const std::string & name, Fields fields, const DocumentType & doc_type);
         ~FieldSet();
         FieldSet(const FieldSet&) = default;
         FieldSet(FieldSet&&) noexcept = default;
         FieldSet& operator=(const FieldSet&) = default;
         FieldSet& operator=(FieldSet&&) noexcept = default;
 
-        const vespalib::string & getName() const noexcept { return _name; }
+        const std::string & getName() const noexcept { return _name; }
         const Fields & getFields() const noexcept { return _fields; }
         const FieldCollection & asCollection() const { return _field_collection; }
     private:
-        vespalib::string _name;
+        std::string _name;
         Fields           _fields;
         FieldCollection  _field_collection;
     };
 private:
-    using FieldSetMap = std::map<vespalib::string, FieldSet>;
-    using ImportedFieldNames = vespalib::hash_set<vespalib::string>;
+    using FieldSetMap = std::map<std::string, FieldSet>;
+    using ImportedFieldNames = vespalib::hash_set<std::string>;
 
     std::vector<const DocumentType *> _inheritedTypes;
     StructDataType::SP                _ownedFields;
@@ -99,16 +99,16 @@ public:
     }
     Field::Set getFieldSet() const override;
 
-    DocumentType & addFieldSet(const vespalib::string & name, FieldSet::Fields fields);
-    const FieldSet * getFieldSet(const vespalib::string & name) const;
+    DocumentType & addFieldSet(const std::string & name, FieldSet::Fields fields);
+    const FieldSet * getFieldSet(const std::string & name) const;
     const FieldSetMap & getFieldSets() const { return _fieldSets; }
 
     const ImportedFieldNames& imported_field_names() const noexcept {
         return _imported_field_names;
     }
-    bool has_imported_field_name(const vespalib::string& name) const noexcept;
+    bool has_imported_field_name(const std::string& name) const noexcept;
     // Ideally the type would be immutable, but this is how it's built today.
-    void add_imported_field_name(const vespalib::string& name);
+    void add_imported_field_name(const std::string& name);
 };
 
 } // document

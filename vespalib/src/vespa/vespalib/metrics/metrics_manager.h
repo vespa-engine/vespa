@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <thread>
-#include <vespa/vespalib/stllike/string.h>
 #include "counter.h"
 #include "gauge.h"
 #include "current_samples.h"
@@ -12,6 +9,9 @@
 #include "point_builder.h"
 #include "dimension.h"
 #include "label.h"
+#include <memory>
+#include <string>
+#include <thread>
 
 namespace vespalib::metrics {
 
@@ -29,25 +29,25 @@ public:
      * Get or create a counter metric.
      * @param name the name of the metric.
      **/
-    virtual Counter counter(const vespalib::string &name, const vespalib::string &description) = 0;
+    virtual Counter counter(const std::string &name, const std::string &description) = 0;
 
     /**
      * Get or create a gauge metric.
      * @param name the name of the metric.
      **/
-    virtual Gauge gauge(const vespalib::string &name, const vespalib::string &description) = 0;
+    virtual Gauge gauge(const std::string &name, const std::string &description) = 0;
 
     /**
      * Get or create a dimension for labeling metrics.
      * @param name the name of the dimension.
      **/
-    virtual Dimension dimension(const vespalib::string &name) = 0; // get or create
+    virtual Dimension dimension(const std::string &name) = 0; // get or create
 
     /**
      * Get or create a label.
      * @param value the label value.
      **/
-    virtual Label label(const vespalib::string &value) = 0; // get or create
+    virtual Label label(const std::string &value) = 0; // get or create
 
     /**
      * Create a PointBuilder for labeling metrics.

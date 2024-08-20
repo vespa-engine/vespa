@@ -3,7 +3,7 @@
 #pragma once
 
 #include "cell_type.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace vespalib::eval {
@@ -19,11 +19,11 @@ public:
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
-        vespalib::string name;
+        std::string name;
         size_type size;
-        Dimension(vespalib::string name_in) noexcept
+        Dimension(std::string name_in) noexcept
             : name(std::move(name_in)), size(npos) {}
-        Dimension(vespalib::string name_in, size_type size_in) noexcept
+        Dimension(std::string name_in, size_type size_in) noexcept
             : name(std::move(name_in)), size(size_in) {}
         bool operator==(const Dimension &rhs) const noexcept {
             return ((name == rhs.name) && (size == rhs.size));
@@ -68,12 +68,12 @@ public:
     std::vector<Dimension> nontrivial_indexed_dimensions() const;
     std::vector<Dimension> indexed_dimensions() const;
     std::vector<Dimension> mapped_dimensions() const;
-    size_t dimension_index(const vespalib::string &name) const;
-    size_t stride_of(const vespalib::string &name) const;
-    bool has_dimension(const vespalib::string &name) const {
+    size_t dimension_index(const std::string &name) const;
+    size_t stride_of(const std::string &name) const;
+    bool has_dimension(const std::string &name) const {
         return (dimension_index(name) != Dimension::npos);
     }
-    std::vector<vespalib::string> dimension_names() const;
+    std::vector<std::string> dimension_names() const;
     bool operator==(const ValueType &rhs) const noexcept {
         return ((_error == rhs._error) &&
                 (_cell_type == rhs._cell_type) &&
@@ -85,21 +85,21 @@ public:
     ValueType strip_indexed_dimensions() const;
     ValueType wrap(const ValueType &inner);
     ValueType map() const;
-    ValueType reduce(const std::vector<vespalib::string> &dimensions_in) const;
-    ValueType peek(const std::vector<vespalib::string> &dimensions_in) const;
-    ValueType rename(const std::vector<vespalib::string> &from,
-                     const std::vector<vespalib::string> &to) const;
+    ValueType reduce(const std::vector<std::string> &dimensions_in) const;
+    ValueType peek(const std::vector<std::string> &dimensions_in) const;
+    ValueType rename(const std::vector<std::string> &from,
+                     const std::vector<std::string> &to) const;
     ValueType cell_cast(CellType to_cell_type) const;
 
     static ValueType error_type() { return {}; }
     static ValueType make_type(CellType cell_type, std::vector<Dimension> dimensions_in);
     static ValueType double_type() { return make_type(CellType::DOUBLE, {}); }
-    static ValueType from_spec(const vespalib::string &spec);
-    static ValueType from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted);
-    vespalib::string to_spec() const;
+    static ValueType from_spec(const std::string &spec);
+    static ValueType from_spec(const std::string &spec, std::vector<ValueType::Dimension> &unsorted);
+    std::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);
     static ValueType merge(const ValueType &lhs, const ValueType &rhs);
-    static ValueType concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension);
+    static ValueType concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension);
     static ValueType either(const ValueType &one, const ValueType &other);
 };
 

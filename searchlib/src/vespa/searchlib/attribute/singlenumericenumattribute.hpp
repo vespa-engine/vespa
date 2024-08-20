@@ -58,7 +58,7 @@ SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, 
 
 template <typename B>
 SingleValueNumericEnumAttribute<B>::
-SingleValueNumericEnumAttribute(const vespalib::string & baseFileName,
+SingleValueNumericEnumAttribute(const std::string & baseFileName,
                                 const AttributeVector::Config & c)
     : SingleValueEnumAttribute<B>(baseFileName, c),
       _currDocValues()

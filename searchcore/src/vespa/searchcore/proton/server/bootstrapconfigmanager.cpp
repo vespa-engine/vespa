@@ -26,7 +26,7 @@ using BucketspacesConfigSP = std::shared_ptr<BucketspacesConfig>;
 
 namespace proton {
 
-BootstrapConfigManager::BootstrapConfigManager(const vespalib::string & configId)
+BootstrapConfigManager::BootstrapConfigManager(const std::string & configId)
     : _pendingConfigSnapshot(),
       _configId(configId),
       _pendingConfigMutex()

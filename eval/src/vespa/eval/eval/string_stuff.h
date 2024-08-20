@@ -3,7 +3,7 @@
 #pragma once
 
 #include "tensor_spec.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib::eval {
 
@@ -16,7 +16,7 @@ struct CommaTracker {
     bool first;
     CommaTracker() noexcept : first(true) {}
     CommaTracker(bool first_in) noexcept : first(first_in) {}
-    bool maybe_add_comma(vespalib::string &dst) {
+    bool maybe_add_comma(std::string &dst) {
         if (first) {
             first = false;
             return false;
@@ -40,22 +40,22 @@ struct CommaTracker {
 /**
  * Convert the given string to a quoted string with escaped special characters.
  **/
-vespalib::string as_quoted_string(const vespalib::string &str);
+std::string as_quoted_string(const std::string &str);
 
 /**
  * Is this string a positive integer (dimension index)
  **/
-bool is_number(const vespalib::string &str);
+bool is_number(const std::string &str);
 
 /**
  * Convert this string to a positive integer (dimension index)
  **/
-size_t as_number(const vespalib::string &str);
+size_t as_number(const std::string &str);
 
 /**
  * Convert a tensor spec address into a string on the form:
  * '{dim1:label,dim2:index, ...}'
  **/
-vespalib::string as_string(const TensorSpec::Address &address);
+std::string as_string(const TensorSpec::Address &address);
 
 }

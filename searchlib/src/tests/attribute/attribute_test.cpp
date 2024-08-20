@@ -38,7 +38,7 @@ using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
-using vespalib::string;
+using std::string;
 namespace fs = std::filesystem;
 
 namespace {
@@ -109,7 +109,7 @@ statSize(const string &fileName)
 uint64_t
 statSize(const AttributeVector &a)
 {
-    vespalib::string baseFileName = a.getBaseFileName();
+    std::string baseFileName = a.getBaseFileName();
     uint64_t resultSize = statSize(baseFileName + ".dat");
     if (a.hasMultiValue()) {
         resultSize += statSize(baseFileName + ".idx");
@@ -140,15 +140,15 @@ baseFileName(const string &attrName)
 }
 
 AttributeVector::SP
-createAttribute(vespalib::string attrName, const search::attribute::Config &cfg)
+createAttribute(std::string attrName, const search::attribute::Config &cfg)
 {
     return search::AttributeFactory::createAttribute(baseFileName(attrName), cfg);
 }
 
-vespalib::string
-replace_suffix(AttributeVector &v, const vespalib::string &suffix)
+std::string
+replace_suffix(AttributeVector &v, const std::string &suffix)
 {
-    vespalib::string name = v.getName();
+    std::string name = v.getName();
     if (name.size() >= suffix.size()) {
         name.resize(name.size() - suffix.size());
     }
@@ -289,7 +289,7 @@ protected:
     void testPendingCompaction();
     void testConditionalCommit();
 
-    int test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg);
+    int test_paged_attribute(const std::string& name, const std::string& swapfile, const search::attribute::Config& cfg);
     void test_paged_attributes();
 
 public:
@@ -696,7 +696,7 @@ AttributeTest::testMemorySaver(const AttributePtr & a)
     auto b = createAttribute(replace_suffix(*a, "2ms"), a->getConfig());
     AttributeMemorySaveTarget saveTarget;
     EXPECT_TRUE(a->save(saveTarget, b->getBaseFileName()));
-    vespalib::string datFile = vespalib::make_string("%s.dat", b->getBaseFileName().c_str());
+    std::string datFile = vespalib::make_string("%s.dat", b->getBaseFileName().c_str());
     EXPECT_FALSE(fs::exists(fs::path(datFile)));
     EXPECT_TRUE(saveTarget.writeToFile(TuneFileAttributes(), DummyFileHeaderContext()));
     EXPECT_TRUE(fs::exists(fs::path(datFile)));
@@ -1977,13 +1977,13 @@ AttributeTest::testCompactLidSpace(const Config &config,
 {
     uint32_t highDocs = 100;
     uint32_t trimmedDocs = 30;
-    vespalib::string bts = config.basicType().asString();
-    vespalib::string cts = config.collectionType().asString();
-    vespalib::string fas = fast_search ? "-fs" : "";
+    std::string bts = config.basicType().asString();
+    std::string cts = config.collectionType().asString();
+    std::string fas = fast_search ? "-fs" : "";
     Config cfg = config;
     cfg.setFastSearch(fast_search);
     
-    vespalib::string name = clsDir + "/" + bts + "-" + cts + fas;
+    std::string name = clsDir + "/" + bts + "-" + cts + fas;
     LOG(info, "testCompactLidSpace(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
     auto &v = static_cast<VectorType &>(*attr.get());
@@ -2030,7 +2030,7 @@ AttributeTest::testCompactLidSpace(const Config &config)
 void
 AttributeTest::testCompactLidSpaceForPredicateAttribute(const Config &config)
 {
-    vespalib::string name = clsDir + "/predicate-single";
+    std::string name = clsDir + "/predicate-single";
     LOG(info, "testCompactLidSpace(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, config);
     attr->addDocs(10);
@@ -2135,7 +2135,7 @@ AttributeTest::test_default_value_ref_count_is_updated_after_shrink_lid_space()
 {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     cfg.setFastSearch(true);
-    vespalib::string name = "shrink";
+    std::string name = "shrink";
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
     const auto & iattr = dynamic_cast<const search::IntegerAttributeTemplate<int32_t> &>(*attr);
     attr->addReservedDoc();
@@ -2153,7 +2153,7 @@ void
 AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool fastSearch)
 {
     uint32_t numDocs = 10;
-    vespalib::string attrName = asuDir + "/" + config.basicType().asString() + "-" +
+    std::string attrName = asuDir + "/" + config.basicType().asString() + "-" +
             config.collectionType().asString() + (fastSearch ? "-fs" : "");
     Config cfg = config;
     cfg.setFastSearch(fastSearch);
@@ -2323,7 +2323,7 @@ AttributeTest::testConditionalCommit() {
 }
 
 int
-AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg)
+AttributeTest::test_paged_attribute(const std::string& name, const std::string& swapfile, const search::attribute::Config& cfg)
 {
     int result = 1;
     size_t rounded_size = std::max(vespalib::round_up_to_page_size(1), size_t(vespalib::alloc::MmapFileAllocator::default_small_limit));
@@ -2385,7 +2385,7 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
 void
 AttributeTest::test_paged_attributes()
 {
-    vespalib::string basedir("mmap-file-allocator-factory-dir");
+    std::string basedir("mmap-file-allocator-factory-dir");
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup(basedir);
     search::attribute::Config cfg1(BasicType::INT32, CollectionType::SINGLE);
     cfg1.setPaged(true);
@@ -2426,7 +2426,7 @@ void testNamePrefix() {
 
 class MyMultiValueAttribute : public ArrayStringAttribute {
 public:
-    MyMultiValueAttribute(const vespalib::string& name)
+    MyMultiValueAttribute(const std::string& name)
         : ArrayStringAttribute(name, Config(BasicType::STRING, CollectionType::ARRAY))
     {
     }

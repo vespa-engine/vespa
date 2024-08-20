@@ -72,7 +72,7 @@ FNET_ControlPacket::Decode(FNET_DataBuffer *, uint32_t)
     LOG_ABORT("should not be reached");
 }
 
-vespalib::string
+std::string
 FNET_ControlPacket::Print(uint32_t indent)
 {
     return vespalib::make_string("%*sFNET_ControlPacket { command = %d }\n",

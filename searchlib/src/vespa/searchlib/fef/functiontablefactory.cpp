@@ -9,7 +9,7 @@ LOG_SETUP(".fef.functiontablefactory");
 
 namespace {
 
-void logArgumentWarning(const vespalib::string & name, size_t exp, size_t act)
+void logArgumentWarning(const std::string & name, size_t exp, size_t act)
 {
     LOG(warning, "Cannot create table for function '%s'. Wrong number of arguments: expected %zu to %zu, but got %zu",
         name.c_str(), exp, exp + 1, act);
@@ -20,7 +20,7 @@ void logArgumentWarning(const vespalib::string & name, size_t exp, size_t act)
 namespace search::fef {
 
 bool
-FunctionTableFactory::checkArgs(const std::vector<vespalib::string> & args, size_t exp, size_t & tableSize) const
+FunctionTableFactory::checkArgs(const std::vector<std::string> & args, size_t exp, size_t & tableSize) const
 {
     if (exp <= args.size() && args.size() <= (exp + 1)) {
         if (args.size() == (exp + 1)) {
@@ -34,7 +34,7 @@ FunctionTableFactory::checkArgs(const std::vector<vespalib::string> & args, size
 }
 
 bool
-FunctionTableFactory::isSupported(const vespalib::string & type) const
+FunctionTableFactory::isSupported(const std::string & type) const
 {
     return (isExpDecay(type) || isLogGrowth(type) || isLinear(type));
 }
@@ -75,7 +75,7 @@ FunctionTableFactory::FunctionTableFactory(size_t defaultTableSize) :
 }
 
 Table::SP
-FunctionTableFactory::createTable(const vespalib::string & name) const
+FunctionTableFactory::createTable(const std::string & name) const
 {
     ParsedName p;
     if (parseFunctionName(name, p)) {
@@ -108,11 +108,11 @@ FunctionTableFactory::createTable(const vespalib::string & name) const
 }
 
 bool
-FunctionTableFactory::parseFunctionName(const vespalib::string & name, ParsedName & parsed)
+FunctionTableFactory::parseFunctionName(const std::string & name, ParsedName & parsed)
 {
     size_t ps = name.find('(');
     size_t pe = name.find(')');
-    if (ps == vespalib::string::npos || pe == vespalib::string::npos) {
+    if (ps == std::string::npos || pe == std::string::npos) {
         LOG(warning, "Parse error: Did not find '(' and ')' in function name '%s'", name.c_str());
         return false;
     }
@@ -121,7 +121,7 @@ FunctionTableFactory::parseFunctionName(const vespalib::string & name, ParsedNam
         return false;
     }
     parsed.type = name.substr(0, ps);
-    vespalib::string args = name.substr(ps + 1, pe - ps - 1);
+    std::string args = name.substr(ps + 1, pe - ps - 1);
     if (!args.empty()) {
         vespalib::StringTokenizer tokenizer(args);
         for (const auto & token : tokenizer) {

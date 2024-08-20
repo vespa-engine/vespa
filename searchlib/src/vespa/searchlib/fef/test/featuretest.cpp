@@ -14,7 +14,7 @@ FeatureTest::FeatureTest(BlueprintFactory &factory,
                          const IndexEnvironment &indexEnv,
                          QueryEnvironment &queryEnv,
                          MatchDataLayout &layout,
-                         const std::vector<vespalib::string> &features,
+                         const std::vector<std::string> &features,
                          const Properties &overrides) :
     _factory(factory),
     _indexEnv(indexEnv),
@@ -35,7 +35,7 @@ FeatureTest::FeatureTest(BlueprintFactory &factory,
                          const IndexEnvironment &indexEnv,
                          QueryEnvironment &queryEnv,
                          MatchDataLayout &layout,
-                         const vespalib::string &feature,
+                         const std::string &feature,
                          const Properties &overrides) :
     _factory(factory),
     _indexEnv(indexEnv),
@@ -123,7 +123,7 @@ FeatureTest::executeOnly(RankResult & result, uint32_t docId)
         LOG(error, "Setup not done.");
         return false;
     }
-    std::map<vespalib::string, feature_t> all = Utils::getAllFeatures(*_rankProgram, docId);
+    std::map<std::string, feature_t> all = Utils::getAllFeatures(*_rankProgram, docId);
     for (auto itr = all.begin(); itr != all.end(); ++itr) {
         result.addScore(itr->first, itr->second);
     }

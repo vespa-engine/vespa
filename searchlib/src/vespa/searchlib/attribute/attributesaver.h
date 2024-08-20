@@ -35,7 +35,7 @@ public:
 
     bool hasGenerationGuard() const;
 
-    const vespalib::string &get_file_name() const { return _header.getFileName(); }
+    const std::string &get_file_name() const { return _header.getFileName(); }
 };
 
 } // namespace search

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
     class Executor;
@@ -26,16 +26,16 @@ private:
 protected:
     using FeedOperationUP = std::unique_ptr<FeedOperation>;
     using PacketWrapperSP = std::shared_ptr<PacketWrapper>;
-    void throwExceptionInReceive(const vespalib::string &docType, uint64_t serialRangeFrom,
+    void throwExceptionInReceive(const std::string &docType, uint64_t serialRangeFrom,
                                  uint64_t serialRangeTo, size_t packetSize);
-    void throwExceptionInHandleOperation(const vespalib::string &docType, const FeedOperation &op);
+    void throwExceptionInHandleOperation(const std::string &docType, const FeedOperation &op);
 
 public:
     FeedState(Type type) : _type(type) {}
     virtual ~FeedState() = default;
 
     Type getType() const { return _type; }
-    vespalib::string getName() const;
+    std::string getName() const;
 
     virtual void handleOperation(FeedToken token, FeedOperationUP op) = 0;
     virtual void receive(const PacketWrapperSP &wrap, vespalib::Executor &executor) = 0;

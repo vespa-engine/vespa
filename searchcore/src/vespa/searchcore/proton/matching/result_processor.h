@@ -40,7 +40,7 @@ public:
         FastS_SortSpec       sortSpec;
         Sort(const Sort &) = delete;
         Sort & operator = (const Sort &) = delete;
-        Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss);
+        Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const std::string &ss);
         bool hasSortData() const noexcept {
             return (sorter == (const FastS_IResultSorter *) &sortSpec);
         }
@@ -86,7 +86,7 @@ private:
     SessionManager                        &_sessionMgr;
     GroupingContext                       &_groupingContext;
     std::unique_ptr<GroupingSession>       _groupingSession;
-    const vespalib::string                &_sortSpec;
+    const std::string                &_sortSpec;
     size_t                                 _offset;
     size_t                                 _hits;
     bool                                   _wasMerged;
@@ -96,8 +96,8 @@ public:
                     const search::IDocumentMetaStore & metaStore,
                     SessionManager & sessionMgr,
                     GroupingContext & groupingContext,
-                    const vespalib::string & sessionId,
-                    const vespalib::string & sortSpec,
+                    const std::string & sessionId,
+                    const std::string & sortSpec,
                     size_t offset, size_t hits);
     ~ResultProcessor();
 

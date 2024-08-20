@@ -5,11 +5,11 @@
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
 #include <condition_variable>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <unordered_map>
 
 namespace proton {
@@ -32,7 +32,7 @@ private:
     using SnapshotDiskSizes = std::unordered_map<SerialNum, std::optional<uint64_t>>;
 
     std::weak_ptr<AttributeDiskLayout> _diskLayout;
-    const vespalib::string  _name;
+    const std::string  _name;
     vespalib::system_time    _lastFlushTime;
     Writer                 *_writer; // current writer
     mutable std::mutex      _mutex;
@@ -41,7 +41,7 @@ private:
     SnapshotDiskSizes       _disk_sizes;
 
     void saveSnapInfo();
-    vespalib::string getSnapshotDir(SerialNum serialNum) const;
+    std::string getSnapshotDir(SerialNum serialNum) const;
     void setLastFlushTime(vespalib::system_time lastFlushTime);
     void createInvalidSnapshot(SerialNum serialNum);
     void markValidSnapshot(SerialNum serialNum);
@@ -50,14 +50,14 @@ private:
     void removeInvalidSnapshots();
     bool removeDiskDir();
     void detach();
-    vespalib::string getDirName() const;
+    std::string getDirName() const;
 
 public:
     AttributeDirectory(const std::shared_ptr<AttributeDiskLayout> &diskLayout,
-                       const vespalib::string &name);
+                       const std::string &name);
     ~AttributeDirectory();
 
-    const vespalib::string & getAttrName() const { return _name; }
+    const std::string & getAttrName() const { return _name; }
 
     /*
      * Class to make changes to an attribute directory in a
@@ -75,7 +75,7 @@ public:
         void setLastFlushTime(vespalib::system_time lastFlushTime) { _dir.setLastFlushTime(lastFlushTime); }
         void createInvalidSnapshot(SerialNum serialNum) { _dir.createInvalidSnapshot(serialNum); }
         void markValidSnapshot(SerialNum serialNum) { _dir.markValidSnapshot(serialNum); }
-        vespalib::string getSnapshotDir(SerialNum serialNum) { return _dir.getSnapshotDir(serialNum); }
+        std::string getSnapshotDir(SerialNum serialNum) { return _dir.getSnapshotDir(serialNum); }
 
         // methods called while pruning old snapshots or removing attribute
         void invalidateOldSnapshots(SerialNum serialNum) { _dir.invalidateOldSnapshots(serialNum); }
@@ -90,7 +90,7 @@ public:
     SerialNum getFlushedSerialNum() const;
     vespalib::system_time getLastFlushTime() const;
     bool empty() const;
-    vespalib::string getAttributeFileName(SerialNum serialNum);
+    std::string getAttributeFileName(SerialNum serialNum);
     TransientResourceUsage get_transient_resource_usage() const;
 };
 

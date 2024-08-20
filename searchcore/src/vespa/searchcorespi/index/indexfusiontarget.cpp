@@ -26,7 +26,7 @@ public:
     {}
 
     void run() override {
-        vespalib::string outputFusionDir = _indexMaintainer.doFusion(_serialNum, _flush_token);
+        std::string outputFusionDir = _indexMaintainer.doFusion(_serialNum, _flush_token);
         // the target must live until this task is done (handled by flush engine).
         _stats.setPath(outputFusionDir);
     }

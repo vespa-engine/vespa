@@ -4,7 +4,7 @@
 #include "postinglistcounts.h"
 #include "postinglisthandle.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 class FastOS_FileInterface;
 
@@ -39,7 +39,7 @@ public:
     /**
      * Open posting list file for sequential read.
      */
-    virtual bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
+    virtual bool open(const std::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
 
     /**
      * Close posting list file.
@@ -92,7 +92,7 @@ public:
      * Open posting list file for sequential write.
      */
     virtual bool
-    open(const vespalib::string &name,
+    open(const std::string &name,
          const TuneFileSeqWrite &tuneFileWrite,
          const common::FileHeaderContext &fileHeaderContext) = 0;
 
@@ -166,7 +166,7 @@ public:
     /**
      * Open posting list file for random read.
      */
-    virtual bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) = 0;
+    virtual bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) = 0;
 
     /**
      * Close posting list file.
@@ -203,7 +203,7 @@ public:
     void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
                          uint32_t numSegments, PostingListHandle &handle) override;
 
-    bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
+    bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
 };
 

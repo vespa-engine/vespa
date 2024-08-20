@@ -68,8 +68,8 @@ public:
     using PostingParent::get_posting_store;
     using Dictionary = EnumPostingTree;
 
-    MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
-    MultiValueStringPostingAttributeT(const vespalib::string & name);
+    MultiValueStringPostingAttributeT(const std::string & name, const AttributeVector::Config & c);
+    MultiValueStringPostingAttributeT(const std::string & name);
     ~MultiValueStringPostingAttributeT();
 
     void reclaim_memory(generation_t oldest_used_gen) override;

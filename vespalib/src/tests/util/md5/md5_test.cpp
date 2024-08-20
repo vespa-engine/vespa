@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/md5.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <string>
 
 namespace vespalib {
 
-string md5_hash_of(std::string_view buffer) {
+std::string md5_hash_of(std::string_view buffer) {
     unsigned char hash_out[16]; // Always 128 bits.
     fastc_md5sum(buffer.data(), buffer.size(), hash_out);
     asciistream os;
@@ -22,7 +22,7 @@ TEST("MD5 output matches NIST test vectors") {
     EXPECT_EQUAL("900150983cd24fb0d6963f7d28e17f72", md5_hash_of("abc"));
     EXPECT_EQUAL("8215ef0796a20bcaaae116d3876c664a",
                  md5_hash_of("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"));
-    EXPECT_EQUAL("7707d6ae4e027c70eea2a935c2296f21", md5_hash_of(string(1'000'000, 'a')));
+    EXPECT_EQUAL("7707d6ae4e027c70eea2a935c2296f21", md5_hash_of(std::string(1'000'000, 'a')));
 }
 
 // https://en.wikipedia.org/wiki/MD5#MD5_hashes

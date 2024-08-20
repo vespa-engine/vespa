@@ -47,8 +47,8 @@ protected:
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
     long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
 public:
-    MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
-    MultiValueStringAttributeT(const vespalib::string & name);
+    MultiValueStringAttributeT(const std::string & name, const AttributeVector::Config & c);
+    MultiValueStringAttributeT(const std::string & name);
     ~MultiValueStringAttributeT();
 
     void freezeEnumDictionary() override;
@@ -81,7 +81,7 @@ public:
         }
         return valueCount;
     }
-    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, std::string * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override {

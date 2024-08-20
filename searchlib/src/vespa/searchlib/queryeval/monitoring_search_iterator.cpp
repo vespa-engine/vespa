@@ -25,7 +25,7 @@ MonitoringSearchIterator::Dumper::addIndent()
     if (n < 0) {
         n = 0;
     }
-    _str.append(vespalib::string(n, ' '));
+    _str.append(std::string(n, ' '));
 }
 
 void
@@ -34,18 +34,18 @@ MonitoringSearchIterator::Dumper::addText(std::string_view value)
     addIndent();
     _str.append(value);
     uint32_t extraSpaces = value.size() < _textFormatWidth ? _textFormatWidth - value.size() : 0;
-    _str.append(make_string(":%s ", vespalib::string(extraSpaces, ' ').c_str()));
+    _str.append(make_string(":%s ", std::string(extraSpaces, ' ').c_str()));
 }
 
 void
-MonitoringSearchIterator::Dumper::addInt(int64_t value, const vespalib::string &desc)
+MonitoringSearchIterator::Dumper::addInt(int64_t value, const std::string &desc)
 {
     _str.append(make_string("%*" PRId64 " %s",
                             _intFormatWidth, value, desc.c_str()));
 }
 
 void
-MonitoringSearchIterator::Dumper::addFloat(double value, const vespalib::string &desc)
+MonitoringSearchIterator::Dumper::addFloat(double value, const std::string &desc)
 {
     _str.append(make_string("%*.*f %s",
                             _floatFormatWidth, _floatFormatPrecision, value, desc.c_str()));
@@ -177,7 +177,7 @@ MonitoringSearchIterator::countHitSkips(uint32_t docId)
     return numHitSkips;
 }
 
-MonitoringSearchIterator::MonitoringSearchIterator(const vespalib::string &name,
+MonitoringSearchIterator::MonitoringSearchIterator(const std::string &name,
                                                    SearchIterator::UP search,
                                                    bool collectHitSkipStats)
     : _name(name),

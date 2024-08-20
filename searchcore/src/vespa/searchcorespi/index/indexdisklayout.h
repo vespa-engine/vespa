@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace searchcorespi {
 namespace index {
@@ -14,22 +15,22 @@ class IndexDiskDir;
  */
 class IndexDiskLayout {
 public:
-    static const vespalib::string FlushDirPrefix;
-    static const vespalib::string FusionDirPrefix;
-    static const vespalib::string SerialNumTag;
+    static const std::string FlushDirPrefix;
+    static const std::string FusionDirPrefix;
+    static const std::string SerialNumTag;
 
 private:
-    vespalib::string _baseDir;
+    std::string _baseDir;
 
 public:
-    IndexDiskLayout(const vespalib::string &baseDir);
-    vespalib::string getFlushDir(uint32_t sourceId) const;
-    vespalib::string getFusionDir(uint32_t sourceId) const;
-    static IndexDiskDir get_index_disk_dir(const vespalib::string& dir);
+    IndexDiskLayout(const std::string &baseDir);
+    std::string getFlushDir(uint32_t sourceId) const;
+    std::string getFusionDir(uint32_t sourceId) const;
+    static IndexDiskDir get_index_disk_dir(const std::string& dir);
 
-    static vespalib::string getSerialNumFileName(const vespalib::string &dir);
-    static vespalib::string getSchemaFileName(const vespalib::string &dir);
-    static vespalib::string getSelectorFileName(const vespalib::string &dir);
+    static std::string getSerialNumFileName(const std::string &dir);
+    static std::string getSchemaFileName(const std::string &dir);
+    static std::string getSelectorFileName(const std::string &dir);
 };
 
 } // namespace index

@@ -58,7 +58,7 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
 void
 CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
 {
-    vespalib::string termStr = termAsString(n);
+    std::string termStr = termAsString(n);
     queryeval::SplitFloat splitter(termStr);
     if (splitter.parts() > 1) {
         query::SimplePhrase phraseNode(n.getView(), n.getId(), n.getWeight());
@@ -85,7 +85,7 @@ CreateBlueprintVisitorHelper::createWeightedSet(std::unique_ptr<WS> bp, NODE &n)
     FieldSpec childField(_field);
     for (size_t i = 0; i < n.getNumTerms(); ++i) {
         auto term = n.getAsString(i);
-        query::SimpleStringTerm node(vespalib::string(term.first), n.getView(), 0, term.second); // TODO Temporary
+        query::SimpleStringTerm node(std::string(term.first), n.getView(), 0, term.second); // TODO Temporary
         childField.setBase(bp->getNextChildField(_field));
         bp->addTerm(_searchable.createBlueprint(_requestContext, childField, node), term.second.percent(), estimate);
     }

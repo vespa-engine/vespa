@@ -226,13 +226,13 @@ Identifiable::create(Deserializer & is)
     return obj;
 }
 
-string
+std::string
 Identifiable::getNativeClassName() const
 {
     return vespalib::getClassName(*this);
 }
 
-string
+std::string
 Identifiable::asString() const
 {
     ObjectDumper dumper;

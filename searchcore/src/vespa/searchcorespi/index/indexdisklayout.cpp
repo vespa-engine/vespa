@@ -6,21 +6,21 @@
 
 namespace searchcorespi::index {
 
-const vespalib::string
-IndexDiskLayout::FlushDirPrefix = vespalib::string("index.flush.");
+const std::string
+IndexDiskLayout::FlushDirPrefix = std::string("index.flush.");
 
-const vespalib::string
-IndexDiskLayout::FusionDirPrefix = vespalib::string("index.fusion.");
+const std::string
+IndexDiskLayout::FusionDirPrefix = std::string("index.fusion.");
 
-const vespalib::string
-IndexDiskLayout::SerialNumTag = vespalib::string("Serial num");
+const std::string
+IndexDiskLayout::SerialNumTag = std::string("Serial num");
 
-IndexDiskLayout::IndexDiskLayout(const vespalib::string &baseDir)
+IndexDiskLayout::IndexDiskLayout(const std::string &baseDir)
     : _baseDir(baseDir)
 {
 }
 
-vespalib::string
+std::string
 IndexDiskLayout::getFlushDir(uint32_t sourceId) const
 {
     std::ostringstream ost;
@@ -28,7 +28,7 @@ IndexDiskLayout::getFlushDir(uint32_t sourceId) const
     return ost.str();
 }
 
-vespalib::string
+std::string
 IndexDiskLayout::getFusionDir(uint32_t sourceId) const
 {
     std::ostringstream ost;
@@ -36,29 +36,29 @@ IndexDiskLayout::getFusionDir(uint32_t sourceId) const
     return ost.str();
 }
 
-vespalib::string
-IndexDiskLayout::getSerialNumFileName(const vespalib::string &dir)
+std::string
+IndexDiskLayout::getSerialNumFileName(const std::string &dir)
 {
     return dir + "/serial.dat";
 }
 
-vespalib::string
-IndexDiskLayout::getSchemaFileName(const vespalib::string &dir)
+std::string
+IndexDiskLayout::getSchemaFileName(const std::string &dir)
 {
     return dir + "/schema.txt";
 }
 
-vespalib::string
-IndexDiskLayout::getSelectorFileName(const vespalib::string &dir)
+std::string
+IndexDiskLayout::getSelectorFileName(const std::string &dir)
 {
     return dir + "/selector";
 }
 
 IndexDiskDir
-IndexDiskLayout::get_index_disk_dir(const vespalib::string& dir)
+IndexDiskLayout::get_index_disk_dir(const std::string& dir)
 {
     auto name = dir.substr(dir.rfind('/') + 1);
-    const vespalib::string* prefix = nullptr;
+    const std::string* prefix = nullptr;
     bool fusion = false;
     if (name.find(FlushDirPrefix) == 0) {
         prefix = &FlushDirPrefix;

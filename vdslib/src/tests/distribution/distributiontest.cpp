@@ -174,11 +174,11 @@ struct ExpectedResult {
     ~ExpectedResult() { }
     document::BucketId bucket;
     IdealNodeList nodes;
-    vespalib::string failure;
+    std::string failure;
 };
 
 void
-verifyJavaDistribution(const vespalib::string& name, const ClusterState& state, const Distribution& distribution,
+verifyJavaDistribution(const std::string& name, const ClusterState& state, const Distribution& distribution,
                        const NodeType& nodeType, uint16_t redundancy, uint16_t nodeCount,
                        std::string_view upStates, const std::vector<ExpectedResult> results)
 {
@@ -200,9 +200,9 @@ verifyJavaDistribution(const vespalib::string& name, const ClusterState& state, 
             }// */
             EXPECT_EQ(results[i].nodes.toString(), nodes.toString()) << testId;
             if (results[i].nodes.size() > 0) {
-                EXPECT_EQ(vespalib::string("NONE"), results[i].failure) << testId;
+                EXPECT_EQ(std::string("NONE"), results[i].failure) << testId;
             } else {
-                EXPECT_EQ(vespalib::string("NO_DISTRIBUTORS_AVAILABLE"), results[i].failure) << testId;
+                EXPECT_EQ(std::string("NO_DISTRIBUTORS_AVAILABLE"), results[i].failure) << testId;
             }
         } catch (vespalib::Exception& e) {
             EXPECT_EQ(results[i].failure, e.getMessage()) << testId;
@@ -228,12 +228,12 @@ TEST_F(DistributionTest, test_verify_java_distributions_2)
     vespalib::DirectoryList files(vespalib::listDirectory(source_testdata()));
     for (uint32_t i=0, n=files.size(); i<n; ++i) {
         size_t pos = files[i].find(".java.results");
-        if (pos == vespalib::string::npos || pos + 13 != files[i].size()) {
+        if (pos == std::string::npos || pos + 13 != files[i].size()) {
             //std::cerr << "Skipping unmatched file '" << files[i] << "'.\n";
             continue;
         }
 
-        vespalib::string name(files[i].substr(0, pos));
+        std::string name(files[i].substr(0, pos));
         using namespace vespalib::slime;
         vespalib::Slime slime;
 
@@ -261,7 +261,7 @@ TEST_F(DistributionTest, test_verify_java_distributions_2)
         const NodeType& nt(NodeType::get(c["node-type"].asString().make_string()));
         uint32_t redundancy(c["redundancy"].asLong());
         uint32_t nodeCount(c["node-count"].asLong());
-        vespalib::string upStates(c["up-states"].asString().make_string());
+        std::string upStates(c["up-states"].asString().make_string());
         std::vector<ExpectedResult> results;
         for (uint32_t j=0, m=c["result"].entries(); j<m; ++j) {
             Cursor& e(c["result"][j]);
@@ -695,11 +695,11 @@ TEST_F(DistributionTest, test_hierarchical_distribution)
     ClusterState state("distributor:6 storage:6");
 
     for (uint32_t i = 0; i < 3; ++i) {
-        EXPECT_EQ(vespalib::string("rack0"),
+        EXPECT_EQ(std::string("rack0"),
                   distr.getNodeGraph().getGroupForNode(i)->getName());
     }
     for (uint32_t i = 3; i < 6; ++i) {
-        EXPECT_EQ(vespalib::string("rack1"),
+        EXPECT_EQ(std::string("rack1"),
                   distr.getNodeGraph().getGroupForNode(i)->getName());
     }
 

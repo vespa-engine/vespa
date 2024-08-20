@@ -3,8 +3,8 @@
 
 #include "fakeposting.h"
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace search::index { class Schema; }
 

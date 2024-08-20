@@ -25,7 +25,7 @@ DirSourceFactory::DirSourceFactory(const DirSpec & dirSpec)
 std::unique_ptr<Source>
 DirSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const
 {
-    vespalib::string fileId(key.getDefName());
+    std::string fileId(key.getDefName());
     if (!key.getConfigId().empty()) {
         fileId += "." + key.getConfigId();
     }
@@ -41,7 +41,7 @@ DirSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder, const Conf
     if ( !found ) {
         LOG(warning, "Filename '%s' was expected in the spec, but does not exist.", fileId.c_str());
     }
-    vespalib::string fName = _dirName;
+    std::string fName = _dirName;
     if (!fName.empty()) fName += "/";
     fName += fileId;
     return std::make_unique<FileSource>(std::move(holder), fName);

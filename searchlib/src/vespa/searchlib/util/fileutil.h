@@ -5,7 +5,7 @@
 #include <memory>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 using vespalib::GenericHeader;
 
@@ -42,7 +42,7 @@ class LoadedMmap : public LoadedBuffer
     void * _mapBuffer;
     size_t _mapSize;
 public:
-    explicit LoadedMmap(const vespalib::string &fileName);
+    explicit LoadedMmap(const std::string &fileName);
     ~LoadedMmap() override;
 };
 
@@ -60,13 +60,13 @@ public:
      * Opens and returns the file with the given name for reading.
      * Enables direct IO on the file.
      **/
-    static std::unique_ptr<FastOS_FileInterface> openFile(const vespalib::string &fileName);
+    static std::unique_ptr<FastOS_FileInterface> openFile(const std::string &fileName);
 
     /**
      * Loads and returns the file with the given name.
      * Mmaps the file into the returned buffer.
      **/
-    static fileutil::LoadedBuffer::UP loadFile(const vespalib::string &fileName);
+    static fileutil::LoadedBuffer::UP loadFile(const std::string &fileName);
 };
 
 class FileReaderBase

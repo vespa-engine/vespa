@@ -6,6 +6,7 @@
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
+#include <cstring>
 
 namespace search::memoryindex {
 

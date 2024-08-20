@@ -2,8 +2,8 @@
 #pragma once
 
 #include <mutex>
+#include <string>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
 namespace metrics {
@@ -20,7 +20,7 @@ public:
         INT_HISTOGRAM
     };
 
-    void check(size_t id, const vespalib::string& name, MetricType ty);
+    void check(size_t id, const std::string& name, MetricType ty);
 
     MetricTypes() = default;
     ~MetricTypes() {}

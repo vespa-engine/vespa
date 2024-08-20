@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/gencnt.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
-#include <map>
 #include "map_listener.h"
 #include "service_mapping.h"
 #include "map_diff.h"
+#include <map>
+#include <string>
 
 namespace slobrok {
 
@@ -40,14 +40,14 @@ private:
         static constexpr uint32_t keep_items = 1000;
         Generation startGeneration;
         Generation currentGeneration;
-        vespalib::ArrayQueue<vespalib::string> updates;
+        vespalib::ArrayQueue<std::string> updates;
         UpdateLog();
         ~UpdateLog();
-        void add(const vespalib::string &name);
+        void add(const std::string &name);
         bool isInRange(const Generation &gen) const;
-        std::vector<vespalib::string> updatedSince(const Generation &gen) const;
+        std::vector<std::string> updatedSince(const Generation &gen) const;
     };
-    using Map = std::map<vespalib::string, vespalib::string>;
+    using Map = std::map<std::string, std::string>;
     using Waiter = std::pair<DiffCompletionHandler *, Generation>;
     using WaitList = std::vector<Waiter>;
 

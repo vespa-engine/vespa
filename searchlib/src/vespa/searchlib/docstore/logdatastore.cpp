@@ -60,7 +60,7 @@ LogDataStore::Config::operator == (const Config & rhs) const {
             (_fileConfig == rhs._fileConfig);
 }
 
-LogDataStore::LogDataStore(vespalib::Executor &executor, const vespalib::string &dirName, const Config &config,
+LogDataStore::LogDataStore(vespalib::Executor &executor, const std::string &dirName, const Config &config,
                            const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                            const FileHeaderContext &fileHeaderContext, transactionlog::SyncProxy &tlSyncer,
                            IBucketizer::SP bucketizer, bool readOnly)
@@ -294,7 +294,7 @@ LogDataStore::remove(uint64_t serialNum, uint32_t lid)
 
 namespace {
 
-vespalib::string bloatMsg(size_t bloat, size_t usage) {
+std::string bloatMsg(size_t bloat, size_t usage) {
     return make_string("Disk bloat is now at %ld of %ld at %2.2f percent", bloat, usage, (bloat*100.0)/usage);
 }
 
@@ -620,16 +620,16 @@ LogDataStore::getDiskBloat() const
     return sz;
 }
 
-vespalib::string
+std::string
 LogDataStore::createFileName(NameId id) const {
     return id.createName(getBaseDir());
 }
-vespalib::string
+std::string
 LogDataStore::createDatFileName(NameId id) const {
     return FileChunk::createDatFileName(id.createName(getBaseDir()));
 }
 
-vespalib::string
+std::string
 LogDataStore::createIdxFileName(NameId id) const {
     return FileChunk::createIdxFileName(id.createName(getBaseDir()));
 }
@@ -668,8 +668,8 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum)
 
 namespace {
 
-vespalib::string
-lsSingleFile(const vespalib::string & fileName)
+std::string
+lsSingleFile(const std::string & fileName)
 {
     fs::path path(fileName);
     return make_string("%s  %20" PRIu64 "  %12" PRIdMAX, fileName.c_str(), vespalib::count_ns(fs::last_write_time(path).time_since_epoch()), fs::file_size(path));
@@ -677,10 +677,10 @@ lsSingleFile(const vespalib::string & fileName)
 
 }
 
-vespalib::string
+std::string
 LogDataStore::ls(const NameIdSet & partList)
 {
-    vespalib::string s;
+    std::string s;
     for (auto it(++partList.begin()), mt(partList.end()); it != mt; ++it) {
         s += lsSingleFile(createDatFileName(*it));
         s += "\n";
@@ -690,7 +690,7 @@ LogDataStore::ls(const NameIdSet & partList)
 }
 
 static bool
-hasNonHeaderData(const vespalib::string &name)
+hasNonHeaderData(const std::string &name)
 {
     FastOS_File file(name.c_str());
     if (!file.OpenReadOnly())
@@ -722,13 +722,13 @@ void
 LogDataStore::verifyModificationTime(const NameIdSet & partList)
 {
     NameId nameId(*partList.begin());
-    vespalib::string datName(createDatFileName(nameId));
-    vespalib::string idxName(createIdxFileName(nameId));
+    std::string datName(createDatFileName(nameId));
+    std::string idxName(createIdxFileName(nameId));
     vespalib::file_time prevDatTime = fs::last_write_time(fs::path(datName));
     vespalib::file_time prevIdxTime = fs::last_write_time(fs::path(idxName));
     for (auto it(++partList.begin()), mt(partList.end()); it != mt; ++it) {
-        vespalib::string prevDatNam(datName);
-        vespalib::string prevIdxNam(idxName);
+        std::string prevDatNam(datName);
+        std::string prevIdxNam(idxName);
         nameId = *it;
         datName = createDatFileName(nameId);
         idxName = createIdxFileName(nameId);
@@ -797,7 +797,7 @@ LogDataStore::eraseEmptyIdxFiles(NameIdSet partList)
 {
     NameIdSet nonEmptyIdxPartList;
     for (const auto & part : partList) {
-        vespalib::string name(createFileName(part));
+        std::string name(createFileName(part));
         if (FileChunk::isIdxFileEmpty(name)) {
             LOG(warning, "We detected an empty idx file for part '%s'. Erasing it.", name.c_str());
             FileChunk::eraseIdxFile(name);
@@ -845,7 +845,7 @@ LogDataStore::eraseIncompleteCompactedFiles(NameIdSet partList)
     NameIdSet toRemove = findIncompleteCompactedFiles(partList);
     for (NameId toBeRemoved : toRemove) {
         partList.erase(toBeRemoved);
-        vespalib::string name(createFileName(toBeRemoved));
+        std::string name(createFileName(toBeRemoved));
         LOG(warning, "'%s' has been detected as an incompletely compacted file. Erasing it.", name.c_str());
         FileChunk::eraseIdxFile(name);
         FileChunk::eraseDatFile(name);
@@ -876,11 +876,11 @@ LogDataStore::eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &
         NameId ibase(ii == iie ? endMarker : *ii);
         NameId dbase(di == die ? endMarker : *di);
         if (ibase < dbase) {
-            vespalib::string name(createFileName(ibase));
+            std::string name(createFileName(ibase));
             const char *s = name.c_str();
             throw runtime_error(make_string( "Missing file '%s.dat', found '%s.idx'", s, s));
         } else if (dbase < ibase) {
-            vespalib::string fileName = createFileName(dbase);
+            std::string fileName = createFileName(dbase);
             LOG(warning, "Removing dangling file '%s'", FileChunk::createDatFileName(fileName).c_str());
             FileChunk::eraseDatFile(fileName);
             ++di;
@@ -892,22 +892,22 @@ LogDataStore::eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &
 }
 
 LogDataStore::NameIdSet
-LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffix)
+LogDataStore::scanDir(const std::string &dir, const std::string &suffix)
 {
     NameIdSet baseFiles;
     std::filesystem::directory_iterator dir_scan{std::filesystem::path(dir)};
     for (auto& entry : dir_scan) {
         if (entry.is_regular_file()) {
-            vespalib::string file(entry.path().filename().string());
+            std::string file(entry.path().filename().string());
             if (file.size() > suffix.size() &&
                 file.find(suffix.c_str()) == file.size() - suffix.size()) {
-                vespalib::string base(file.substr(0, file.find(suffix.c_str())));
+                std::string base(file.substr(0, file.find(suffix.c_str())));
                 char *err(nullptr);
                 errno = 0;
                 NameId baseId(strtoul(base.c_str(), &err, 10));
                 if ((errno == 0) && (err[0] == '\0')) {
-                    vespalib::string tmpFull = createFileName(baseId);
-                    vespalib::string tmp = tmpFull.substr(tmpFull.rfind('/') + 1);
+                    std::string tmpFull = createFileName(baseId);
+                    std::string tmp = tmpFull.substr(tmpFull.rfind('/') + 1);
                     assert(tmp == base);
                     baseFiles.insert(baseId);
                 } else {

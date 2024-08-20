@@ -33,7 +33,7 @@ namespace {
 struct WeightedStringVector
 {
     std::vector<IAttributeVector::WeightedString> _data;
-    void insert(vespalib::string key, std::string_view weight) {
+    void insert(std::string key, std::string_view weight) {
         _data.emplace_back(std::move(key), util::strToNum<int32_t>(weight));
     }
 };
@@ -76,7 +76,7 @@ namespace {
 
 FeatureExecutor &
 createAttributeExecutor(const search::fef::IQueryEnvironment &env,
-                        const vespalib::string &attrName,
+                        const std::string &attrName,
                         const ValueType &valueType,
                         vespalib::Stash &stash)
 {
@@ -105,7 +105,7 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
 
 FeatureExecutor &
 createQueryExecutor(const search::fef::IQueryEnvironment &env,
-                    const vespalib::string &queryKey,
+                    const std::string &queryKey,
                     const ValueType &valueType,
                     vespalib::Stash &stash)
 {

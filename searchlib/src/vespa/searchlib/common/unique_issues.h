@@ -14,7 +14,7 @@ namespace search {
 class UniqueIssues : public vespalib::Issue::Handler
 {
 private:
-    std::set<vespalib::string> _messages;
+    std::set<std::string> _messages;
 public:
     using UP = std::unique_ptr<UniqueIssues>;
     void handle(const vespalib::Issue &issue) override;

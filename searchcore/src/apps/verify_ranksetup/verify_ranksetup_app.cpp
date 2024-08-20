@@ -2,6 +2,7 @@
 
 #include "verify_ranksetup.h"
 #include <vespa/vespalib/util/signalhandler.h>
+#include <cstring>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-verify-ranksetup");

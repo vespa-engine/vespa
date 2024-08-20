@@ -46,7 +46,7 @@ TEST("test illegal operations on float attribute") {
 }
 
 AttributeVector::SP
-createAttribute(BasicType basicType, const vespalib::string &fieldName, bool fastSearch = false, bool immutable = false)
+createAttribute(BasicType basicType, const std::string &fieldName, bool fastSearch = false, bool immutable = false)
 {
     constexpr size_t NUM_DOCS = 20;
     Config cfg(basicType, CollectionType::SINGLE);

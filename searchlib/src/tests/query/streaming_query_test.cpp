@@ -307,7 +307,7 @@ public:
     explicit AllowRewrite(std::string_view index) noexcept : _allowedIndex(index) {}
     bool allow_float_terms_rewrite(std::string_view index) const noexcept override { return index == _allowedIndex; }
 private:
-    vespalib::string _allowedIndex;
+    std::string _allowedIndex;
 };
 
 const char TERM_UNIQ = static_cast<char>(ParseItem::ITEM_TERM) | static_cast<char>(ParseItem::IF_UNIQUEID);
@@ -427,7 +427,7 @@ TEST(StreamingQueryTest, test_get_query_parts)
         }
     }
     Node::UP node = builder.build();
-    vespalib::string stackDump = StackDumpCreator::create(*node);
+    std::string stackDump = StackDumpCreator::create(*node);
 
     QueryNodeResultFactory empty;
     Query q(empty, stackDump);
@@ -822,7 +822,7 @@ constexpr double exp_wand_score_field_12 = 13 * 27 + 4 * 2;
 constexpr double exp_wand_score_field_11 = 17 * 27 + 9 * 2;
 
 void
-check_wand_term(double limit, const vespalib::string& label)
+check_wand_term(double limit, const std::string& label)
 {
     SCOPED_TRACE(label);
     search::streaming::WandTerm term({}, "index", 2);
@@ -924,9 +924,9 @@ TEST(StreamingQueryTest, weighted_set_term)
 
 TEST(StreamingQueryTest, control_the_size_of_query_terms)
 {
-    EXPECT_EQ(48u + sizeof(vespalib::string), sizeof(QueryTermSimple));
-    EXPECT_EQ(64u + sizeof(vespalib::string), sizeof(QueryTermUCS4));
-    EXPECT_EQ(144u + 2*sizeof(vespalib::string), sizeof(QueryTerm));
+    EXPECT_EQ(48u + sizeof(std::string), sizeof(QueryTermSimple));
+    EXPECT_EQ(64u + sizeof(std::string), sizeof(QueryTermUCS4));
+    EXPECT_EQ(144u + 2*sizeof(std::string), sizeof(QueryTerm));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

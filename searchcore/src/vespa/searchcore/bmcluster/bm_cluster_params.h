@@ -3,8 +3,8 @@
 #pragma once
 
 #include <cstdint>
-#include <vespa/vespalib/stllike/string.h>
 #include <optional>
+#include <string>
 
 namespace search::bmcluster {
 
@@ -21,7 +21,7 @@ class BmClusterParams
     bool     _enable_distributor;
     bool     _enable_service_layer;
     uint32_t _groups;
-    vespalib::string _indexing_sequencer;
+    std::string _indexing_sequencer;
     uint32_t _max_merges_per_node;
     uint32_t _max_merge_queue_size;
     std::optional<uint32_t> _mbus_distributor_node_max_pending_count;
@@ -48,7 +48,7 @@ public:
     uint32_t get_doc_store_chunk_maxbytes() const noexcept { return _doc_store_chunk_maxbytes; }
     bool get_enable_distributor() const { return _enable_distributor; }
     uint32_t get_groups() const noexcept { return _groups; }
-    const vespalib::string & get_indexing_sequencer() const { return _indexing_sequencer; }
+    const std::string & get_indexing_sequencer() const { return _indexing_sequencer; }
     uint32_t get_max_merges_per_node() const noexcept { return _max_merges_per_node; }
     uint32_t get_max_merge_queue_size() const noexcept { return _max_merge_queue_size; }
     const std::optional<uint32_t>& get_mbus_distributor_node_max_pending_count() const noexcept { return _mbus_distributor_node_max_pending_count; }

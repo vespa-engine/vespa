@@ -31,8 +31,8 @@ DummyGidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener>
 }
 
 void
-DummyGidToLidChangeHandler::removeListeners(const vespalib::string &,
-                                            const std::set<vespalib::string> &)
+DummyGidToLidChangeHandler::removeListeners(const std::string &,
+                                            const std::set<std::string> &)
 {
 }
 

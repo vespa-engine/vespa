@@ -41,7 +41,7 @@ namespace {
 using msg_ptr_vector = std::vector<api::StorageMessage::SP>;
 
 [[nodiscard]] const api::StorageMessageAddress& storage_address() {
-    static vespalib::string storage("storage");
+    static std::string storage("storage");
     static api::StorageMessageAddress address(&storage, lib::NodeType::STORAGE, 0);
     return address;
 }

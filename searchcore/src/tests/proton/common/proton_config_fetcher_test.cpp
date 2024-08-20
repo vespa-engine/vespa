@@ -215,7 +215,7 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
         auto snapshot = _config.get();
         return snapshot->getBootstrapConfig();
     }
-    DocumentDBConfig::SP getDocumentDBConfig(const vespalib::string &name) const
+    DocumentDBConfig::SP getDocumentDBConfig(const std::string &name) const
     {
         auto snapshot = _config.get();
         auto &dbcs = snapshot->getDocumentDBConfigs();

@@ -2,10 +2,10 @@
 
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/classname.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <execinfo.h>
 #include <csignal>
+#include <string>
 
 namespace {
 
@@ -20,19 +20,19 @@ namespace {
  * @param line A single line from backtrace_symbols
  * @return The demangled line or the original line if demangling fails
  */
-vespalib::string
-demangleBacktraceLine(const vespalib::string& line)
+std::string
+demangleBacktraceLine(const std::string& line)
 {
     size_t symBegin = line.find_first_of('(');
-    if (symBegin != vespalib::string::npos) {
+    if (symBegin != std::string::npos) {
         size_t symEnd = line.find_first_of('+', symBegin);
-        if (symEnd != vespalib::string::npos) {
-            vespalib::string mangled = line.substr(symBegin + 1, symEnd - symBegin - 1);
-            vespalib::string demangled = vespalib::demangle(mangled.c_str());
+        if (symEnd != std::string::npos) {
+            std::string mangled = line.substr(symBegin + 1, symEnd - symBegin - 1);
+            std::string demangled = vespalib::demangle(mangled.c_str());
             if ( ! demangled.empty()) {
                 // Create string matching original backtrace line format,
                 // except with demangled function signature
-                vespalib::string ret(line.c_str(), symBegin + 1);
+                std::string ret(line.c_str(), symBegin + 1);
                 ret.append(demangled);
                 ret.append(line.c_str() + symEnd);
                 return ret;
@@ -50,7 +50,7 @@ vespalib::getStackTraceFrames(void** framesOut, int maxFrames) {
     return backtrace(framesOut, maxFrames);
 }
 
-vespalib::string
+std::string
 vespalib::getStackTrace(int ignoreTop, void* const* stack, int size)
 {
     asciistream ost;
@@ -65,7 +65,7 @@ vespalib::getStackTrace(int ignoreTop, void* const* stack, int size)
     return ost.str();
 }
 
-vespalib::string
+std::string
 vespalib::getStackTrace(int ignoreTop) {
     ignoreTop += 1;
     void* stack[25];

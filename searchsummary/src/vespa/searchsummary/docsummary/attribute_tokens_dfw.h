@@ -14,13 +14,13 @@ namespace search::docsummary {
 class AttributeTokensDFW : public DocsumFieldWriter
 {
 private:
-    vespalib::string            _input_field_name;
+    std::string            _input_field_name;
     uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
 
 protected:
-    const vespalib::string & getAttributeName() const override;
+    const std::string & getAttributeName() const override;
 public:
-    AttributeTokensDFW(const vespalib::string& input_field_name);
+    AttributeTokensDFW(const std::string& input_field_name);
     ~AttributeTokensDFW() override;
     bool isGenerated() const override;
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;

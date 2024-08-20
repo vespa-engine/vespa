@@ -5,8 +5,8 @@
 using namespace vespalib;
 
 void verify(const SocketSpec &spec, bool valid,
-            const vespalib::string &path, const vespalib::string &name,
-            const vespalib::string &host, const vespalib::string &host_with_fallback,
+            const std::string &path, const std::string &name,
+            const std::string &host, const std::string &host_with_fallback,
             int port)
 {
     EXPECT_EQUAL(spec.valid(), valid);
@@ -17,15 +17,15 @@ void verify(const SocketSpec &spec, bool valid,
     EXPECT_EQUAL(spec.port(), port);
 }
 
-void verify_path(const SocketSpec &spec, const vespalib::string &path) {
+void verify_path(const SocketSpec &spec, const std::string &path) {
     TEST_DO(verify(spec, true, path, "", "", "", -1));
 }
 
-void verify_name(const SocketSpec &spec, const vespalib::string &name) {
+void verify_name(const SocketSpec &spec, const std::string &name) {
     TEST_DO(verify(spec, true, "", name, "", "", -1));
 }
 
-void verify_host_port(const SocketSpec &spec, const vespalib::string &host, int port) {
+void verify_host_port(const SocketSpec &spec, const std::string &host, int port) {
     TEST_DO(verify(spec, true, "", "", host, host, port));
 }
 
@@ -37,12 +37,12 @@ void verify_invalid(const SocketSpec &spec) {
     TEST_DO(verify(spec, false, "", "", "", "", -1));
 }
 
-void verify_spec(const vespalib::string &str, const vespalib::string &expect) {
-    vespalib::string actual = SocketSpec(str).spec();
+void verify_spec(const std::string &str, const std::string &expect) {
+    std::string actual = SocketSpec(str).spec();
     EXPECT_EQUAL(actual, expect);
 }
 
-void verify_spec(const vespalib::string &str) {
+void verify_spec(const std::string &str) {
     TEST_DO(verify_spec(str, str));
 }
 

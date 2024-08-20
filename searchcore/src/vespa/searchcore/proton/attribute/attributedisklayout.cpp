@@ -8,7 +8,7 @@
 
 namespace proton {
 
-AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, PrivateConstructorTag)
+AttributeDiskLayout::AttributeDiskLayout(const std::string &baseDir, PrivateConstructorTag)
     : _baseDir(baseDir),
       _mutex(),
       _dirs()
@@ -19,10 +19,10 @@ AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, Privat
 
 AttributeDiskLayout::~AttributeDiskLayout() = default;
 
-std::vector<vespalib::string>
+std::vector<std::string>
 AttributeDiskLayout::listAttributes()
 {
-    std::vector<vespalib::string> attributes;
+    std::vector<std::string> attributes;
     std::shared_lock<std::shared_mutex> guard(_mutex);
     for (const auto &dir : _dirs)  {
         attributes.emplace_back(dir.first);
@@ -42,7 +42,7 @@ AttributeDiskLayout::scanDir()
 }
 
 std::shared_ptr<AttributeDirectory>
-AttributeDiskLayout::getAttributeDir(const vespalib::string &name)
+AttributeDiskLayout::getAttributeDir(const std::string &name)
 {
     std::shared_lock<std::shared_mutex> guard(_mutex);
     auto itr = _dirs.find(name);
@@ -54,7 +54,7 @@ AttributeDiskLayout::getAttributeDir(const vespalib::string &name)
 }
 
 std::shared_ptr<AttributeDirectory>
-AttributeDiskLayout::createAttributeDir(const vespalib::string &name)
+AttributeDiskLayout::createAttributeDir(const std::string &name)
 {
     std::lock_guard<std::shared_mutex> guard(_mutex);
     auto itr = _dirs.find(name);
@@ -69,7 +69,7 @@ AttributeDiskLayout::createAttributeDir(const vespalib::string &name)
 }
 
 void
-AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::SerialNum serialNum)
+AttributeDiskLayout::removeAttributeDir(const std::string &name, search::SerialNum serialNum)
 {
     auto dir = getAttributeDir(name);
     if (dir) {
@@ -96,7 +96,7 @@ AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::Se
 }
 
 std::shared_ptr<AttributeDiskLayout>
-AttributeDiskLayout::create(const vespalib::string &baseDir)
+AttributeDiskLayout::create(const std::string &baseDir)
 {
     auto diskLayout = std::make_shared<AttributeDiskLayout>(baseDir, PrivateConstructorTag());
     diskLayout->scanDir();
@@ -104,7 +104,7 @@ AttributeDiskLayout::create(const vespalib::string &baseDir)
 }
 
 std::shared_ptr<AttributeDiskLayout>
-AttributeDiskLayout::createSimple(const vespalib::string &baseDir)
+AttributeDiskLayout::createSimple(const std::string &baseDir)
 {
     auto diskLayout = std::make_shared<AttributeDiskLayout>(baseDir, PrivateConstructorTag());
     return diskLayout;

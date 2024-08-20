@@ -18,13 +18,13 @@ namespace vespalib::net::tls {
 
 namespace {
 
-std::shared_ptr<TlsCryptoEngine> tls_engine_from_config_file(const vespalib::string& config_file_path,
+std::shared_ptr<TlsCryptoEngine> tls_engine_from_config_file(const std::string& config_file_path,
                                                              AuthorizationMode authz_mode) {
     auto tls_opts = net::tls::read_options_from_json_file(config_file_path);
     return std::make_shared<TlsCryptoEngine>(*tls_opts, authz_mode);
 }
 
-std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespalib::string& config_file_path,
+std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const std::string& config_file_path,
                                                                    AuthorizationMode authz_mode) {
     try {
         return tls_engine_from_config_file(config_file_path, authz_mode);
@@ -38,7 +38,7 @@ std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespali
 
 } // anonymous namespace
 
-AutoReloadingTlsCryptoEngine::AutoReloadingTlsCryptoEngine(vespalib::string config_file_path,
+AutoReloadingTlsCryptoEngine::AutoReloadingTlsCryptoEngine(std::string config_file_path,
                                                            AuthorizationMode mode,
                                                            TimeInterval reload_interval)
     : _authorization_mode(mode),

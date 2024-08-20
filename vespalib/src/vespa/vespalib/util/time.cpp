@@ -42,7 +42,7 @@ adjustTimeoutByDetectedHz(duration timeout) {
 
 namespace {
 
-string
+std::string
 to_string(duration dur) {
     time_t timeStamp = std::chrono::duration_cast<std::chrono::seconds>(dur).count();
     struct tm timeStruct;
@@ -57,12 +57,12 @@ to_string(duration dur) {
 
 }
 
-string
+std::string
 to_string(system_time time) {
     return to_string(time.time_since_epoch());
 }
 
-string
+std::string
 to_string(file_time time) {
     return to_string(time.time_since_epoch());
 }

@@ -30,7 +30,7 @@ public:
     bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;
     uint32_t clearDoc(DocId doc) override;
 protected:
-    FloatingPointAttribute(const vespalib::string & name, const Config & c);
+    FloatingPointAttribute(const std::string & name, const Config & c);
     using Change = ChangeTemplate<NumericChangeData<double>>;
     using ChangeVector = ChangeVectorT<Change>;
     ChangeVector _changes;
@@ -38,7 +38,7 @@ protected:
     vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     std::span<const char> get_raw(DocId) const override;
-    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, std::string * v, uint32_t sz) const override;
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override;
@@ -64,8 +64,8 @@ public:
         return attribute::isUndefined(get(doc));
     }
 protected:
-    explicit FloatingPointAttributeTemplate(const vespalib::string & name);
-    FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c);
+    explicit FloatingPointAttributeTemplate(const std::string & name);
+    FloatingPointAttributeTemplate(const std::string & name, const Config & c);
     ~FloatingPointAttributeTemplate() override;
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
     virtual void load_enum_store(LoadedVector&) {}

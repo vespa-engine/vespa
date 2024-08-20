@@ -30,23 +30,23 @@ public:
     };
 
     struct ParamRepo {
-        std::map<vespalib::string,Param> map;
+        std::map<std::string,Param> map;
         using gen_fun_t = std::function<double(size_t)>;
         static double gen_N(size_t seq) { return (seq + 1); }
         ParamRepo() : map() {}
 
-        ParamRepo &add(const vespalib::string &name, TensorSpec value);
-        ParamRepo &add_mutable(const vespalib::string &name, TensorSpec spec);
+        ParamRepo &add(const std::string &name, TensorSpec value);
+        ParamRepo &add_mutable(const std::string &name, TensorSpec spec);
 
         // produce 4 variants: float/double * mutable/const
-        ParamRepo &add_variants(const vespalib::string &name_base, const GenSpec &spec);
+        ParamRepo &add_variants(const std::string &name_base, const GenSpec &spec);
 
         // add a parameter that is generated based on a description.
         //
         // the description may start with '@' to indicate that the
         // parameter is mutable. The rest of the description must be a
         // valid parameter to the GenSpec::from_desc() function.
-        ParamRepo &add(const vespalib::string &name, const vespalib::string &desc,
+        ParamRepo &add(const std::string &name, const std::string &desc,
                        CellType cell_type, GenSpec::seq_t seq);
 
         // add a parameter that is generated based on a description,
@@ -58,7 +58,7 @@ public:
         // strip an optional suffix starting with '$' from the name
         // before using it as a descriprion. (to support multiple
         // parameters with the same description).
-        ParamRepo &add(const vespalib::string &name_desc, CellType cell_type, GenSpec::seq_t seq);
+        ParamRepo &add(const std::string &name_desc, CellType cell_type, GenSpec::seq_t seq);
 
         ~ParamRepo() {}
     };
@@ -109,7 +109,7 @@ private:
     }
 
 public:
-    EvalFixture(const ValueBuilderFactory &factory, const vespalib::string &expr, const ParamRepo &param_repo,
+    EvalFixture(const ValueBuilderFactory &factory, const std::string &expr, const ParamRepo &param_repo,
                 bool optimized = true, bool allow_mutable = false);
     ~EvalFixture() {}
     template <typename T>
@@ -122,8 +122,8 @@ public:
     const Value &param_value(size_t idx) const { return *(_param_values[idx]); }
     const TensorSpec &result() const { return _result; }
     size_t num_params() const;
-    static TensorSpec ref(const vespalib::string &expr, const ParamRepo &param_repo);
-    static TensorSpec prod(const vespalib::string &expr, const ParamRepo &param_repo) {
+    static TensorSpec ref(const std::string &expr, const ParamRepo &param_repo);
+    static TensorSpec prod(const std::string &expr, const ParamRepo &param_repo) {
         return EvalFixture(FastValueBuilderFactory::get(), expr, param_repo, true, false).result();
     }
 
@@ -136,7 +136,7 @@ public:
     // with '@'. Parameters must be given in automatic discovery order.
 
     template <typename FunInfo>
-    static void verify(const vespalib::string &expr, const std::vector<FunInfo> &fun_info, std::vector<GenSpec> param_specs) {
+    static void verify(const std::string &expr, const std::vector<FunInfo> &fun_info, std::vector<GenSpec> param_specs) {
         UNWIND_MSG("in verify(%s) with %zu FunInfo", expr.c_str(), fun_info.size());
         auto fun = Function::parse(expr);
         REQUIRE_EQ(fun->num_params(), param_specs.size());
@@ -171,7 +171,7 @@ public:
     // ('$this_is_a_scalar').
 
     template <typename FunInfo>
-    static void verify(const vespalib::string &expr, const std::vector<FunInfo> &fun_info, CellTypeSpace cell_type_space) {
+    static void verify(const std::string &expr, const std::vector<FunInfo> &fun_info, CellTypeSpace cell_type_space) {
         UNWIND_MSG("in verify(%s) with %zu FunInfo", expr.c_str(), fun_info.size());
         auto fun = Function::parse(expr);
         REQUIRE_EQ(fun->num_params(), cell_type_space.n());

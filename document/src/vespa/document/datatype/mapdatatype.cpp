@@ -14,7 +14,7 @@ namespace {
 constexpr auto key_keyword = "key"sv;
 constexpr auto value_keyword = "value"sv;
 
-vespalib::string createName(const DataType& keyType, const DataType& valueType)
+std::string createName(const DataType& keyType, const DataType& valueType)
 {
     vespalib::asciistream ost;
     ost << "Map<" << keyType.getName() << "," << valueType.getName() << ">";
@@ -67,7 +67,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
 {
     if (!remainFieldName.empty() && remainFieldName[0] == '{') {
         std::string_view rest = remainFieldName;
-        vespalib::string keyValue = FieldPathEntry::parseKey(rest);
+        std::string keyValue = FieldPathEntry::parseKey(rest);
 
         valueType.buildFieldPath(path, (!rest.empty() && rest[0] == '.') ? rest.substr(1) : rest);
 

@@ -155,7 +155,7 @@ fill(BitVector & bv, const std::vector<uint32_t> & bits, uint32_t offset, bool f
     }
 }
 
-vespalib::string
+std::string
 fill(const std::vector<uint32_t> & bits, uint32_t offset)
 {
     vespalib::asciistream os;

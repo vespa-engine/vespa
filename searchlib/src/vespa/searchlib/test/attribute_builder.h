@@ -3,11 +3,11 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <span>
+#include <string>
 #include <utility>
 #include <vector>
-#include <span>
 
 namespace search { class AttributeVector; }
 namespace search::attribute { class Config; }
@@ -25,15 +25,15 @@ private:
 public:
     using WeightedInt = std::pair<int32_t, int32_t>;
     using WeightedDouble = std::pair<double, int32_t>;
-    using WeightedString = std::pair<vespalib::string, int32_t>;
+    using WeightedString = std::pair<std::string, int32_t>;
     using IntList = std::initializer_list<int32_t>;
     using DoubleList = std::initializer_list<double>;
-    using StringList = std::initializer_list<vespalib::string>;
+    using StringList = std::initializer_list<std::string>;
     using WeightedIntList = std::initializer_list<WeightedInt>;
     using WeightedDoubleList = std::initializer_list<WeightedDouble>;
     using WeightedStringList = std::initializer_list<WeightedString>;
 
-    AttributeBuilder(const vespalib::string& name, const Config& cfg);
+    AttributeBuilder(const std::string& name, const Config& cfg);
 
     AttributeBuilder& docs(size_t num_docs);
 
@@ -50,7 +50,7 @@ public:
     AttributeBuilder& fill_wset(std::initializer_list<WeightedDoubleList> values);
 
     // Fill functions for string attributes
-    AttributeBuilder& fill(std::initializer_list<vespalib::string> values);
+    AttributeBuilder& fill(std::initializer_list<std::string> values);
     AttributeBuilder& fill_array(std::initializer_list<StringList> values);
     AttributeBuilder& fill_wset(std::initializer_list<WeightedStringList> values);
 
@@ -65,7 +65,7 @@ public:
      * E.g "[1, 2]" is expanded to "tensor(x[2]):[1, 2]".
      * If the string value is empty no tensor is set for that document.
      */
-    AttributeBuilder& fill_tensor(const std::vector<vespalib::string>& values);
+    AttributeBuilder& fill_tensor(const std::vector<std::string>& values);
 
     std::shared_ptr<AttributeVector> get() const { return _attr_ptr; }
 };

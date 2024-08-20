@@ -3,8 +3,8 @@
 #pragma once
 
 #include "snapshots.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <string>
 
 namespace vespalib::metrics {
 
@@ -27,7 +27,7 @@ private:
 public:
     explicit JsonFormatter(const Snapshot &snapshot);
 
-    [[nodiscard]] vespalib::string asString() const {
+    [[nodiscard]] std::string asString() const {
         return _data.toString();
     }
 };

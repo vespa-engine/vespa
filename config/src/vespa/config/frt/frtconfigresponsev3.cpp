@@ -37,14 +37,14 @@ private:
     Slime::UP _data;
 };
 
-const vespalib::string FRTConfigResponseV3::RESPONSE_TYPES = "sx";
+const std::string FRTConfigResponseV3::RESPONSE_TYPES = "sx";
 
 FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest * request)
     : SlimeConfigResponse(request)
 {
 }
 
-const vespalib::string &
+const std::string &
 FRTConfigResponseV3::getResponseTypes() const
 {
     return RESPONSE_TYPES;
@@ -53,7 +53,7 @@ FRTConfigResponseV3::getResponseTypes() const
 ConfigValue
 FRTConfigResponseV3::readConfigValue() const
 {
-    vespalib::string xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());
+    std::string xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());
     CompressionInfo info;
     info.deserialize(_data->get()[RESPONSE_COMPRESSION_INFO]);
     auto slime = std::make_unique<Slime>();

@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
 #include <sstream>
+#include <string>
 
 namespace search::index { class DocIdAndFeatures; }
 

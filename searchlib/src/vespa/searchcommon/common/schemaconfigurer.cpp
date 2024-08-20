@@ -155,7 +155,7 @@ SchemaConfigurer::configure(const AttributesConfig &cfg)
     SchemaBuilder::build(cfg, _schema);
 }
 
-SchemaConfigurer::SchemaConfigurer(Schema &schema, const vespalib::string &configId)
+SchemaConfigurer::SchemaConfigurer(Schema &schema, const std::string &configId)
     : _schema(schema)
 {
     search::SubscriptionProxyNg<SchemaConfigurer, IndexschemaConfig>

@@ -14,7 +14,7 @@ using namespace search;
 class VerifyLogDataStoreApp
 {
     void usage(const char *self);
-    int verify(const vespalib::string & directory);
+    int verify(const std::string & directory);
 public:
     int main(int argc, char **argv);
 };
@@ -32,7 +32,7 @@ int
 VerifyLogDataStoreApp::main(int argc, char **argv)
 {
     if (argc >= 2) {
-        vespalib::string directory(argv[1]);
+        std::string directory(argv[1]);
         return verify(directory);
     } else {
         fprintf(stderr, "Too few arguments\n");
@@ -43,7 +43,7 @@ VerifyLogDataStoreApp::main(int argc, char **argv)
 }
 
 int
-VerifyLogDataStoreApp::verify(const vespalib::string & dir)
+VerifyLogDataStoreApp::verify(const std::string & dir)
 {
     int retval(0);
 

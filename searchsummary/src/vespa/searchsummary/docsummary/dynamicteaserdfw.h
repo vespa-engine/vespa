@@ -32,7 +32,7 @@ public:
                               vespalib::slime::Inserter& inserter) const;
 private:
     const juniper::Juniper                 *_juniper;
-    vespalib::string                        _input_field_name;
+    std::string                        _input_field_name;
     std::unique_ptr<juniper::Config>        _juniperConfig;
     std::shared_ptr<const IQueryTermFilter> _query_term_filter;
 };

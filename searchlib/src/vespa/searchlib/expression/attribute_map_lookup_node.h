@@ -15,10 +15,10 @@ public:
     using IAttributeVector = search::attribute::IAttributeVector;
     class KeyHandler;
 private:
-    vespalib::string        _keyAttributeName;
-    vespalib::string        _valueAttributeName;
-    vespalib::string        _key;
-    vespalib::string        _keySourceAttributeName;
+    std::string        _keyAttributeName;
+    std::string        _valueAttributeName;
+    std::string        _key;
+    std::string        _keySourceAttributeName;
     const IAttributeVector *_keyAttribute;
     const IAttributeVector *_keySourceAttribute;
 

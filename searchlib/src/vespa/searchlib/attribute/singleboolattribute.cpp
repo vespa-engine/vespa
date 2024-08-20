@@ -21,7 +21,7 @@ using attribute::Config;
 using attribute::HitEstimate;
 
 SingleBoolAttribute::
-SingleBoolAttribute(const vespalib::string &baseFileName, const GrowStrategy & grow, bool paged)
+SingleBoolAttribute(const std::string &baseFileName, const GrowStrategy & grow, bool paged)
     : IntegerAttributeTemplate<int8_t>(baseFileName, Config(BasicType::BOOL, CollectionType::SINGLE).setGrowStrategy(grow).setPaged(paged), BasicType::BOOL),
       _init_alloc(get_initial_alloc()),
       _bv(0, 0, getGenerationHolder(), get_memory_allocator() ? &_init_alloc : nullptr)

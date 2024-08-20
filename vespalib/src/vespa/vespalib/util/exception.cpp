@@ -116,10 +116,10 @@ Exception::throwSelf() const
     throw Exception(*this);
 }
 
-string
+std::string
 Exception::toString() const
 {
-    string str;
+    std::string str;
     str.append(getName());
     str.append(": ");
     str.append(_msg);

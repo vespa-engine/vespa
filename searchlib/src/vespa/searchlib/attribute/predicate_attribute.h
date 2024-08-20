@@ -38,8 +38,8 @@ public:
     using IntervalRange = uint16_t;
     using IntervalRangeVector = vespalib::RcuVectorBase<IntervalRange>;
 
-    PredicateAttribute(const vespalib::string &base_file_name);
-    PredicateAttribute(const vespalib::string &base_file_name, const Config &config);
+    PredicateAttribute(const std::string &base_file_name);
+    PredicateAttribute(const std::string &base_file_name, const Config &config);
 
     ~PredicateAttribute() override;
 

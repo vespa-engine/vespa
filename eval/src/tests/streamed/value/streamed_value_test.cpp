@@ -21,7 +21,7 @@ using CPA = std::vector<const string_id *>;
 
 using Handle = SharedStringRepo::Handle;
 
-vespalib::string as_str(string_id label) { return Handle::string_from_id(label); }
+std::string as_str(string_id label) { return Handle::string_from_id(label); }
 
 GenSpec G() { return GenSpec(); }
 
@@ -96,8 +96,8 @@ TEST(StreamedValueTest, streamed_value_can_be_built_and_inspected) {
     const auto &factory = StreamedValueBuilderFactory::get();
     std::unique_ptr<ValueBuilder<float>> builder = factory.create_value_builder<float>(type);
     float seq = 0.0;
-    for (vespalib::string x: {"a", "b", "c"}) {
-        for (vespalib::string y: {"aa", "bb"}) {
+    for (std::string x: {"a", "b", "c"}) {
+        for (std::string y: {"aa", "bb"}) {
             std::vector<std::string_view> addr = {x, y};
             auto subspace = builder->add_subspace(addr);
             EXPECT_EQ(subspace.size(), 2);
@@ -115,7 +115,7 @@ TEST(StreamedValueTest, streamed_value_can_be_built_and_inspected) {
     string_id query = query_handle.id();
     string_id label;
     size_t subspace;
-    std::map<vespalib::string,size_t> result;
+    std::map<std::string,size_t> result;
     view->lookup(CPA{&query});
     while (view->next_result(PA{&label}, subspace)) {
         result[as_str(label)] = subspace;

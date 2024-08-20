@@ -184,7 +184,7 @@ SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSele
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::queryeval::SourceBlenderSearch::Child &obj)
 {
     self.openStruct(name, "search::queryeval::SourceBlenderSearch::Child");

@@ -46,7 +46,7 @@ class ProtonConfigurer : public IProtonConfigurer
                      InitializeThreads initializeThreads, bool initialConfig);
     void configureDocumentDB(const ProtonConfigSnapshot &configSnapshot,
                              const DocTypeName &docTypeName, document::BucketSpace bucketSpace,
-                             const vespalib::string &configId, InitializeThreads initializeThreads);
+                             const std::string &configId, InitializeThreads initializeThreads);
     void pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot);
     void pruneInitialDocumentDBDirs(const ProtonConfigSnapshot &configSnapshot);
 

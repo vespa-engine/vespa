@@ -21,7 +21,7 @@ struct DenseSingleReduceSpec {
  **/
 std::vector<DenseSingleReduceSpec>
 make_dense_single_reduce_list(const ValueType &type, Aggr aggr,
-                              const std::vector<vespalib::string> &reduce_dims);
+                              const std::vector<std::string> &reduce_dims);
 
 /**
  * Tensor function reducing a single dimension of a dense tensor where

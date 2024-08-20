@@ -6,14 +6,14 @@
 namespace proton::matching {
 
 ViewResolver &
-ViewResolver::add(const vespalib::string & view, std::string_view field)
+ViewResolver::add(const std::string & view, std::string_view field)
 {
     _map[view].emplace_back(field);
     return *this;
 }
 
 bool
-ViewResolver::resolve(std::string_view view, std::vector<vespalib::string> &fields) const
+ViewResolver::resolve(std::string_view view, std::vector<std::string> &fields) const
 {
     auto pos = _map.find(view);
     if (pos == _map.end()) {
@@ -30,8 +30,8 @@ ViewResolver::createFromSchema(const search::index::Schema &schema)
     ViewResolver resolver;
     for (uint32_t i = 0; i < schema.getNumFieldSets(); ++i) {
         const search::index::Schema::FieldSet &f = schema.getFieldSet(i);
-        const vespalib::string &view = f.getName();
-        const std::vector<vespalib::string> &fields = f.getFields();
+        const std::string &view = f.getName();
+        const std::vector<std::string> &fields = f.getFields();
         for (const auto & field : fields) {
             resolver.add(view, field);
         }

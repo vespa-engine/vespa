@@ -54,7 +54,7 @@ public:
     vespalib::nbostream make_update_feed(BmRange range, BucketSelector bucket_selector);
     vespalib::nbostream make_get_feed(BmRange range, BucketSelector bucket_selector);
     vespalib::nbostream make_remove_feed(BmRange range, BucketSelector bucket_selector);
-    std::vector<vespalib::nbostream> make_feed(vespalib::ThreadStackExecutor& executor, const BmFeedParams& bm_params, std::function<vespalib::nbostream(BmRange,BucketSelector)> func, uint32_t num_buckets, const vespalib::string& label);
+    std::vector<vespalib::nbostream> make_feed(vespalib::ThreadStackExecutor& executor, const BmFeedParams& bm_params, std::function<vespalib::nbostream(BmRange,BucketSelector)> func, uint32_t num_buckets, const std::string& label);
 };
 
 }

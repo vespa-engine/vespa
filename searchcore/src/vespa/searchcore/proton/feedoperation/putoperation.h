@@ -19,7 +19,7 @@ public:
     void serialize(vespalib::nbostream &os) const override;
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
     void deserializeDocument(const document::DocumentTypeRepo &repo);
-    vespalib::string toString() const override;
+    std::string toString() const override;
 };
 
 } // namespace proton

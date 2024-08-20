@@ -24,7 +24,7 @@ OnnxModels::operator==(const OnnxModels &rhs) const
 }
 
 const OnnxModels::Model *
-OnnxModels::getModel(const vespalib::string &name) const
+OnnxModels::getModel(const std::string &name) const
 {
     auto itr = _models.find(name);
     if (itr != _models.end()) {

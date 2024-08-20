@@ -47,10 +47,10 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(24u, sizeof(vespalib::alloc::Alloc));
     EXPECT_EQ(24u, sizeof(ByteBuffer));
     EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
-    EXPECT_EQ(24u + sizeof(vespalib::string), sizeof(IdString));
-    EXPECT_EQ(40ul + sizeof(vespalib::string), sizeof(DocumentId));
-    EXPECT_EQ(192ul + sizeof(vespalib::string), sizeof(Document));
-    EXPECT_EQ(16ul + sizeof(vespalib::string), sizeof(NumericDataType));
+    EXPECT_EQ(24u + sizeof(std::string), sizeof(IdString));
+    EXPECT_EQ(40ul + sizeof(std::string), sizeof(DocumentId));
+    EXPECT_EQ(192ul + sizeof(std::string), sizeof(Document));
+    EXPECT_EQ(16ul + sizeof(std::string), sizeof(NumericDataType));
     EXPECT_EQ(24ul, sizeof(LongFieldValue));
     EXPECT_EQ(104ul, sizeof(StructFieldValue));
     EXPECT_EQ(24ul, sizeof(StructuredFieldValue));
@@ -59,7 +59,7 @@ TEST(DocumentTest, testSizeOf)
 
 TEST(DocumentTest, testFieldPath)
 {
-    const vespalib::string testValues[] = { "{}", "", "",
+    const std::string testValues[] = { "{}", "", "",
                                        "{}r", "", "r",
                                        "{{}}", "{", "}",
                                        "{{}}r", "{", "}r",
@@ -75,9 +75,9 @@ TEST(DocumentTest, testFieldPath)
                                      };
     for (size_t i(0); i < sizeof(testValues)/sizeof(testValues[0]); i+=3) {
         std::string_view tmp = testValues[i];
-        vespalib::string key = FieldPathEntry::parseKey(tmp);
+        std::string key = FieldPathEntry::parseKey(tmp);
         EXPECT_EQ(testValues[i+1], key);
-        EXPECT_EQ(testValues[i+2], vespalib::string(tmp));
+        EXPECT_EQ(testValues[i+2], std::string(tmp));
     }
 }
 
@@ -441,7 +441,7 @@ TEST(DocumentTest, testSimpleUsage)
     EXPECT_EQ(value, value2);
     value2.setValue(strF, StringFieldValue("foo"));
     EXPECT_TRUE(value2.hasValue(strF));
-    EXPECT_EQ(vespalib::string("foo"),
+    EXPECT_EQ(std::string("foo"),
                          value2.getValue(strF)->getAsString());
     EXPECT_TRUE(value != value2);
     value2.assign(value);
@@ -534,7 +534,7 @@ void verifyJavaDocument(Document& doc)
 
     StringFieldValue stringVal("");
     EXPECT_TRUE(doc.getValue(doc.getField("stringfield"), stringVal));
-    EXPECT_EQ(vespalib::string("This is a string."),
+    EXPECT_EQ(std::string("This is a string."),
                          stringVal.getAsString());
 
     LongFieldValue longVal;
@@ -772,7 +772,7 @@ TEST(DocumentTest,testReadSerializedAllVersions)
 
         StringFieldValue stringVal("");
         EXPECT_TRUE(doc.getValue(doc.getField("stringfield"), stringVal));
-        EXPECT_EQ(vespalib::string("This is a string."),
+        EXPECT_EQ(std::string("This is a string."),
                              stringVal.getAsString());
 
         LongFieldValue longVal;
@@ -798,7 +798,7 @@ TEST(DocumentTest,testReadSerializedAllVersions)
 
             EXPECT_TRUE(docInDoc.getValue(
                         docInDoc.getField("stringindocfield"), stringVal));
-            EXPECT_EQ(vespalib::string("Elvis is dead"),
+            EXPECT_EQ(std::string("Elvis is dead"),
                                  stringVal.getAsString());
         }
 
@@ -1031,7 +1031,7 @@ TEST(DocumentTest, testAnnotationDeserialization)
     EXPECT_EQ(strVal.toString(), strVal2.toString());
     EXPECT_EQ(strVal.toString(true), strVal2.toString(true));
 
-    EXPECT_EQ(vespalib::string("help me help me i'm stuck inside a computer!"),
+    EXPECT_EQ(std::string("help me help me i'm stuck inside a computer!"),
                          strVal.getAsString());
     StringFieldValue::SpanTrees trees = strVal.getSpanTrees();
     const SpanTree *span_tree = StringFieldValue::findTree(trees, "fruits");

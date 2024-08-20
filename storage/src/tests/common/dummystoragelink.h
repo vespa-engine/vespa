@@ -5,10 +5,10 @@
 #include <list>
 #include <sstream>
 #include <vespa/storageapi/messageapi/storagecommand.h>
-#include <string>
-#include <vector>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/internal.h>
+#include <string>
+#include <vector>
 
 namespace storage {
 

@@ -95,7 +95,7 @@ void checkResult(ResultSet & rs, BitVector * exp)
     }
 }
 
-void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, const vespalib::string& label)
+void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, const std::string& label)
 {
 
     SCOPED_TRACE(label);

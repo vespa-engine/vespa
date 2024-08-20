@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <cstring>
 #include <stdexcept>
 
 namespace search::common {
@@ -41,7 +42,7 @@ SortInfo::SortInfo(std::string_view field, bool ascending, BlobConverter::SP con
 { }
 SortInfo::~SortInfo() = default;
 
-SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFactory) :
+SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory) :
     _spec(spec)
 {
     for (const char *pt(spec.c_str()), *mt(spec.c_str() + spec.size()); pt < mt;) {
@@ -50,7 +51,7 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
             bool ascending = (*pt++ == '+');
             const char *vectorName = pt;
             for (;pt < mt && *pt != ' '; pt++);
-            vespalib::string funcSpec(vectorName, pt - vectorName);
+            std::string funcSpec(vectorName, pt - vectorName);
             const char * func = funcSpec.c_str();
             const char *p = func;
             const char *e = func+funcSpec.size();
@@ -61,23 +62,23 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
                     const char * attrName = p;
                     for(; (p < e) && (*p != ','); p++);
                     if (*p == ',') {
-                        vespalib::string attr(attrName, p-attrName);
+                        std::string attr(attrName, p-attrName);
                         p++;
                         const char *localeName = p;
                         for(; (p < e) && (*p != ')') && (*p != ','); p++);
                         if (*p == ',') {
-                            vespalib::string locale(localeName, p-localeName);
+                            std::string locale(localeName, p-localeName);
                             p++;
                             const char *strengthName = p;
                             for(; (p < e) && (*p != ')'); p++);
                             if (*p == ')') {
-                                vespalib::string strength(strengthName, p - strengthName);
+                                std::string strength(strengthName, p - strengthName);
                                 emplace_back(attr, ascending, ucaFactory.create(locale, strength));
                             } else {
                                 throw std::runtime_error(make_string("Missing ')' at %s attr=%s locale=%s strength=%s", p, attr.c_str(), localeName, strengthName));
                             }
                         } else if (*p == ')') {
-                            vespalib::string locale(localeName, p-localeName);
+                            std::string locale(localeName, p-localeName);
                             emplace_back(attr, ascending, ucaFactory.create(locale, ""));
                         } else {
                             throw std::runtime_error(make_string("Missing ')' or ',' at %s attr=%s locale=%s", p, attr.c_str(), localeName));
@@ -90,13 +91,13 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
                     const char * attrName = p;
                     for(; (p < e) && (*p != ')'); p++);
                     if (*p == ')') {
-                        vespalib::string attr(attrName, p-attrName);
+                        std::string attr(attrName, p-attrName);
                         emplace_back(attr, ascending, std::make_shared<LowercaseConverter>());
                     } else {
                         throw std::runtime_error("Missing ')'");
                     }
                 } else {
-                    throw std::runtime_error("Unknown func " + vespalib::string(func, p-func));
+                    throw std::runtime_error("Unknown func " + std::string(func, p-func));
                 }
             } else {
                 emplace_back(funcSpec, ascending, std::shared_ptr<search::common::BlobConverter>());

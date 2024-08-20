@@ -201,7 +201,7 @@ MemoryUsage
 SimpleValue::estimate_extra_memory_usage() const
 {
     using Node = std::map<Labels,size_t>::value_type;
-    size_t key_extra_size = sizeof(vespalib::string) * _num_mapped_dims;
+    size_t key_extra_size = sizeof(std::string) * _num_mapped_dims;
     size_t node_extra_size = 2 * sizeof(Node *); // left/right child ptr
     size_t entry_size = sizeof(Node) + key_extra_size + node_extra_size;
     size_t size = entry_size * _index.size();

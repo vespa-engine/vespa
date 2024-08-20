@@ -7,6 +7,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/string.h>
 
 using vespalib::StringTokenizer;
 using vespalib::IllegalArgumentException;
@@ -46,7 +47,7 @@ parseFieldCollection(const DocumentTypeRepo& repo, std::string_view docType, std
     StringTokenizer tokenizer(fieldNames, ",");
     Field::Set::Builder builder;
     for (const auto & token : tokenizer) {
-        const DocumentType::FieldSet * fs = type.getFieldSet(vespalib::string(token));
+        const DocumentType::FieldSet * fs = type.getFieldSet(std::string(token));
         if (fs) {
             for (const auto & fieldName : fs->getFields()) {
                 builder.add(&type.getField(fieldName));
@@ -76,7 +77,7 @@ FieldSetRepo::parse(const DocumentTypeRepo& repo, std::string_view str)
     }
 }
 
-vespalib::string
+std::string
 FieldSetRepo::serialize(const FieldSet& fieldSet)
 {
     switch (fieldSet.getType()) {
@@ -126,7 +127,7 @@ FieldSetRepo::~FieldSetRepo() = default;
 void
 FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
     for (const auto & entry : documentType.getFieldSets()) {
-        vespalib::string fieldSetName(documentType.getName());
+        std::string fieldSetName(documentType.getName());
         fieldSetName.append(":").append(entry.first);
         try {
             auto fieldset = parse(_doumentTyperepo, fieldSetName);

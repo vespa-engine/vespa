@@ -67,7 +67,7 @@ public:
             : _schema(schema),
               _index(Schema::UNKNOWN_FIELD_ID)
         {
-            const vespalib::string &name = rhs.getName();
+            const std::string &name = rhs.getName();
             _index = schema.getIndexFieldId(name);
         }
 
@@ -79,7 +79,7 @@ public:
             return _index;
         }
 
-        const vespalib::string &getName() const {
+        const std::string &getName() const {
             return _schema.getIndexField(_index).getName();
         }
 

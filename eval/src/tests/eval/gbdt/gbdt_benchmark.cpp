@@ -103,7 +103,7 @@ struct Result {
 struct Segment {
     double min;
     Option option;
-    vespalib::string build() const {
+    std::string build() const {
         return vespalib::make_string("{%g, %zu}", min, option.id);
     }
 };
@@ -119,8 +119,8 @@ struct Plan {
             }
         }
     }
-    vespalib::string build() const {
-        vespalib::string plan;
+    std::string build() const {
+        std::string plan;
         plan.append("{");
         for (size_t i = 0; i < segments.size(); ++i) {
             if (i > 0) {

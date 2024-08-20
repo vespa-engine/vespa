@@ -13,7 +13,7 @@ namespace search::docsummary::test {
 struct SlimeValue {
     vespalib::Slime slime;
 
-    SlimeValue(const vespalib::string& json_input)
+    SlimeValue(const std::string& json_input)
         : slime()
     {
         size_t used = vespalib::slime::JsonFormat::decode(json_input, slime);

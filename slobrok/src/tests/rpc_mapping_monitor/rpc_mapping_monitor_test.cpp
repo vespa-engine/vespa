@@ -16,7 +16,7 @@ using vespalib::make_string_short::fmt;
 // simple rpc server implementing the required slobrok call-back API
 struct Server : FRT_Invokable {
     fnet::frt::StandaloneFRT frt;
-    std::vector<vespalib::string> names;
+    std::vector<std::string> names;
     size_t inject_fail_cnt;
     FNET_Connection *last_conn;
     void set_last_conn(FNET_Connection *conn) {
@@ -40,7 +40,7 @@ struct Server : FRT_Invokable {
         REQUIRE(frt.supervisor().Listen(0));
     }
     ~Server() { set_last_conn(nullptr); }
-    vespalib::string spec() const { return fmt("tcp/%d", frt.supervisor().GetListenPort()); }
+    std::string spec() const { return fmt("tcp/%d", frt.supervisor().GetListenPort()); }
     FNET_Transport &transport() { return *frt.supervisor().GetTransport(); }
     void rpc_listNamesServed(FRT_RPCRequest *req) {
         set_last_conn(req->GetConnection());

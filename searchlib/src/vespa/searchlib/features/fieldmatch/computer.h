@@ -204,7 +204,7 @@ public:
      *
      * @return A string representation.
      */
-    vespalib::string toString() const;
+    std::string toString() const;
 
     /**
      * Returns the simple metrics computed while traversing the list of query terms in the constructor.

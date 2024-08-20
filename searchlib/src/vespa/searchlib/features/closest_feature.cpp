@@ -232,7 +232,7 @@ ClosestBlueprint::setup(const fef::IIndexEnvironment & env, const fef::Parameter
     }
     auto fi = env.getFieldByName(_field_name);
     assert(fi != nullptr);
-    vespalib::string attr_type_spec = type::Attribute::lookup(env.getProperties(), _field_name);
+    std::string attr_type_spec = type::Attribute::lookup(env.getProperties(), _field_name);
     if (attr_type_spec.empty()) {
         LOG(error, "%s: Field %s lacks a type in index properties", getName().c_str(), _field_name.c_str());
         return false;

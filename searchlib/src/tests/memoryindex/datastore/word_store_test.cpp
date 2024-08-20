@@ -69,7 +69,7 @@ TEST(WordStoreTest, add_word_triggers_change_of_buffer)
 TEST(WordStoreTest, long_word_triggers_exception)
 {
     WordStore ws;
-    vespalib::string word(16_Mi + 1_Ki, 'z');
+    std::string word(16_Mi + 1_Ki, 'z');
     EXPECT_THROW(ws.addWord(word), vespalib::OverflowException);
 }
 

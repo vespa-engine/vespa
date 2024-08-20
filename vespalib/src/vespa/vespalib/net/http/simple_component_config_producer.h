@@ -12,13 +12,13 @@ class SimpleComponentConfigProducer : public ComponentConfigProducer
 {
 private:
     std::mutex _lock;
-    std::map<vespalib::string, Config> _state;
+    std::map<std::string, Config> _state;
 
 public:
     SimpleComponentConfigProducer();
     ~SimpleComponentConfigProducer() override;
     void addConfig(const Config &config);
-    void removeConfig(const vespalib::string &name);
+    void removeConfig(const std::string &name);
     void getComponentConfig(Consumer &consumer) override;
 };
 

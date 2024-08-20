@@ -116,7 +116,7 @@ BmNodeStatsReporter::report()
     } else {
         s << Width(8) << "-";
     }
-    vespalib::string ss(s.view());
+    std::string ss(s.view());
     LOG(info, "%s", ss.c_str());
     if (_report_merge_stats) {
         s.clear();

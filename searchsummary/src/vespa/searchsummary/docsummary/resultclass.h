@@ -5,7 +5,7 @@
 #include "res_config_entry.h"
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::docsummary {
 
@@ -36,10 +36,10 @@ public:
     };
 
 private:
-    using NameIdMap = vespalib::hash_map<vespalib::string, int>;
+    using NameIdMap = vespalib::hash_map<std::string, int>;
     using Configs = std::vector<ResConfigEntry>;
 
-    vespalib::string           _name;        // name of this class
+    std::string           _name;        // name of this class
     Configs                    _entries;     // config entries for this result class
     NameIdMap                  _nameMap;     // fieldname -> entry index
     DynamicInfo                _dynInfo;     // fields overridden and generated
@@ -118,7 +118,7 @@ public:
      *
      * If the given fields set is empty, check all fields defined in this result class.
      */
-    bool all_fields_generated(const vespalib::hash_set<vespalib::string>& fields) const;
+    bool all_fields_generated(const vespalib::hash_set<std::string>& fields) const;
 
     void set_omit_summary_features(bool value) {
         _omit_summary_features = value;

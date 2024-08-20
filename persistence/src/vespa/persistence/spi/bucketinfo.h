@@ -37,7 +37,7 @@ public:
 
     bool operator==(const BucketInfo& o) const;
 
-    vespalib::string toString() const;
+    std::string toString() const;
 
     /**
      * Get the checksum of the bucket. An empty bucket should have checksum of

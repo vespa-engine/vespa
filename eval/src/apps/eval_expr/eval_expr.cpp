@@ -90,12 +90,12 @@ int overflow(int cnt, int max) {
 class Context
 {
 private:
-    std::vector<vespalib::string> _param_names;
+    std::vector<std::string> _param_names;
     std::vector<ValueType>        _param_types;
     std::vector<Value::UP>        _param_values;
     std::vector<Value::CREF>      _param_refs;
     bool                          _verbose;
-    vespalib::string              _error;
+    std::string              _error;
     CTFMetaData                   _meta;
     CostProfile                   _cost;
 
@@ -113,10 +113,10 @@ public:
     bool verbose() const { return _verbose; }
 
     size_t size() const { return _param_names.size(); }
-    const vespalib::string &name(size_t idx) const { return _param_names[idx]; }
+    const std::string &name(size_t idx) const { return _param_names[idx]; }
     const ValueType &type(size_t idx) const { return _param_types[idx]; }
 
-    Value::UP eval(const vespalib::string &expr) {
+    Value::UP eval(const std::string &expr) {
         clear_state();
         SimpleObjectParams params(_param_refs);
         auto fun = Function::parse(_param_names, expr, FeatureNameExtractor());
@@ -152,11 +152,11 @@ public:
         return result;
     }
 
-    const vespalib::string &error() const { return _error; }
+    const std::string &error() const { return _error; }
     const CTFMetaData &meta() const { return _meta; }
     const CostProfile &cost() const { return _cost; }
 
-    void save(const vespalib::string &name, Value::UP value) {
+    void save(const std::string &name, Value::UP value) {
         REQUIRE(value);
         for (size_t i = 0; i < _param_names.size(); ++i) {
             if (_param_names[i] == name) {
@@ -172,7 +172,7 @@ public:
         _param_refs.emplace_back(*_param_values.back());
     }
 
-    bool remove(const vespalib::string &name) {
+    bool remove(const std::string &name) {
         for (size_t i = 0; i < _param_names.size(); ++i) {
             if (_param_names[i] == name) {
                 _param_names.erase(_param_names.begin() + i);
@@ -187,11 +187,11 @@ public:
 };
 Context::~Context() = default;
 
-void print_error(const vespalib::string &error) {
+void print_error(const std::string &error) {
     fprintf(stderr, "error: %s\n", error.c_str());
 }
 
-void print_value(const Value &value, const vespalib::string &name, const CTFMetaData &meta, const CostProfile &cost) {
+void print_value(const Value &value, const std::string &name, const CTFMetaData &meta, const CostProfile &cost) {
     bool with_name = !name.empty();
     bool with_meta = !meta.steps.empty();
     auto spec = spec_from_value(value);
@@ -220,8 +220,8 @@ void print_value(const Value &value, const vespalib::string &name, const CTFMeta
 }
 
 void handle_message(Context &ctx, const Inspector &req, Cursor &reply) {
-    vespalib::string expr = req["expr"].asString().make_string();
-    vespalib::string name = req["name"].asString().make_string();
+    std::string expr = req["expr"].asString().make_string();
+    std::string name = req["name"].asString().make_string();
     ctx.verbose(req["verbose"].asBool());
     if (expr.empty()) {
         reply.setString("error", "missing expression (field name: 'expr')");
@@ -246,7 +246,7 @@ void handle_message(Context &ctx, const Inspector &req, Cursor &reply) {
     }
 }
 
-bool is_only_whitespace(const vespalib::string &str) {
+bool is_only_whitespace(const std::string &str) {
     for (auto c : str) {
         if (!std::isspace(static_cast<unsigned char>(c))) {
             return false;
@@ -259,7 +259,7 @@ struct EditLineWrapper {
     EditLine *my_el;
     History *my_hist;
     HistEvent ignore;
-    static vespalib::string prompt;
+    static std::string prompt;
     static char *prompt_fun(EditLine *) { return &prompt[0]; }
     EditLineWrapper()
       : my_el(el_init("vespa-eval-expr", stdin, stdout, stderr)),
@@ -272,7 +272,7 @@ struct EditLineWrapper {
         el_set(my_el, EL_HIST, history, my_hist);
     }
     ~EditLineWrapper();
-    bool read_line(vespalib::string &line_out) {
+    bool read_line(std::string &line_out) {
         do {
             int line_len = 0;
             const char *line = el_gets(my_el, &line_len);
@@ -294,18 +294,18 @@ EditLineWrapper::~EditLineWrapper()
     history_end(my_hist);
     el_end(my_el);
 }
-vespalib::string EditLineWrapper::prompt("> ");
+std::string EditLineWrapper::prompt("> ");
 
-const vespalib::string exit_cmd("exit");
-const vespalib::string help_cmd("help");
-const vespalib::string list_cmd("list");
-const vespalib::string verbose_cmd("verbose ");
-const vespalib::string def_cmd("def ");
-const vespalib::string undef_cmd("undef ");
+const std::string exit_cmd("exit");
+const std::string help_cmd("help");
+const std::string list_cmd("list");
+const std::string verbose_cmd("verbose ");
+const std::string def_cmd("def ");
+const std::string undef_cmd("undef ");
 
 int interactive_mode(Context &ctx) {
     EditLineWrapper input;
-    vespalib::string line;
+    std::string line;
     while (input.read_line(line)) {
         if (line == exit_cmd) {
             return 0;
@@ -332,7 +332,7 @@ int interactive_mode(Context &ctx) {
             }
             continue;
         }
-        vespalib::string name;
+        std::string name;
         if (line.find(undef_cmd) == 0) {
             name = line.substr(undef_cmd.size());
             if (ctx.remove(name)) {
@@ -342,7 +342,7 @@ int interactive_mode(Context &ctx) {
             }
             continue;
         }
-        vespalib::string expr;
+        std::string expr;
         if (line.find(def_cmd) == 0) {
             auto name_size = (line.find(" ", def_cmd.size()) - def_cmd.size());
             name = line.substr(def_cmd.size(), name_size);
@@ -395,7 +395,7 @@ int json_repl_mode(Context &ctx) {
 }
 
 int main(int argc, char **argv) {
-    bool verbose = ((argc > 1) && (vespalib::string(argv[1]) == "--verbose"));
+    bool verbose = ((argc > 1) && (std::string(argv[1]) == "--verbose"));
     int expr_idx = verbose ? 2 : 1;
     int expr_cnt = (argc - expr_idx);
     int expr_max = ('z' - 'a') + 1;
@@ -406,15 +406,15 @@ int main(int argc, char **argv) {
         return overflow(expr_cnt, expr_max);
     }
     Context ctx;
-    if ((expr_cnt == 1) && (vespalib::string(argv[expr_idx]) == "interactive")) {
+    if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "interactive")) {
         setlocale(LC_ALL, "");
         return interactive_mode(ctx);
     }
-    if ((expr_cnt == 1) && (vespalib::string(argv[expr_idx]) == "json-repl")) {
+    if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "json-repl")) {
         return json_repl_mode(ctx);
     }
     ctx.verbose(verbose);
-    vespalib::string name("a");
+    std::string name("a");
     for (int i = expr_idx; i < argc; ++i) {
         if (auto value = ctx.eval(argv[i])) {
             if (expr_cnt > 1) {
@@ -422,7 +422,7 @@ int main(int argc, char **argv) {
                 ctx.save(name, std::move(value));
                 ++name[0];
             } else {
-                vespalib::string no_name;
+                std::string no_name;
                 print_value(*value, no_name, ctx.meta(), ctx.cost());
             }
         } else {

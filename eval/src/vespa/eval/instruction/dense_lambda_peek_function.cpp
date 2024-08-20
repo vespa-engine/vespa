@@ -61,7 +61,7 @@ DenseLambdaPeekFunction::compile_self(const ValueBuilderFactory &, Stash &stash)
     return InterpretedFunction::Instruction(op, wrap_param<Self>(self));
 }
 
-vespalib::string
+std::string
 DenseLambdaPeekFunction::idx_fun_dump() const {
     return _idx_fun->dump_as_lambda();
 }

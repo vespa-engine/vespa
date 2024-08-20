@@ -24,7 +24,7 @@ public:
     const DocumentTypeRepo& getTypeRepo() const { return *_repo; }
     std::shared_ptr<const DocumentTypeRepo> getTypeRepoSp() const { return _repo; }
     const DocumenttypesConfig& getTypeConfig() const { return _cfg; }
-    const DataType* getDocumentType(const vespalib::string &name) const;
+    const DataType* getDocumentType(const std::string &name) const;
 };
 
 DocumenttypesConfig readDocumenttypesConfig(const char *file_name);

@@ -15,7 +15,7 @@ class PropertiesMap
 {
 private:
     using Props = search::fef::Properties;
-    using PropsMap = vespalib::hash_map<vespalib::string, Props>;
+    using PropsMap = vespalib::hash_map<std::string, Props>;
 
     static Props _emptyProperties;
     PropsMap     _propertiesMap;

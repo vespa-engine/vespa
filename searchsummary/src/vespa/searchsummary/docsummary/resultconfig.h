@@ -29,7 +29,7 @@ class ResultClass;
 class ResultConfig
 {
 private:
-    using NameMap = vespalib::hash_map<vespalib::string, uint32_t>;
+    using NameMap = vespalib::hash_map<std::string, uint32_t>;
     using IdMap = vespalib::hash_map<uint32_t, std::unique_ptr<ResultClass>>;
     uint32_t                    _defaultSummaryId;
     IdMap                       _classLookup;

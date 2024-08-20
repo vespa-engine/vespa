@@ -12,7 +12,7 @@ using namespace slobrok;
 using vespalib::make_string_short::fmt;
 
 struct MapCall {
-    vespalib::string name;
+    std::string name;
     ServiceMapping mapping;
     ServiceMapping old;
     static MapCall add(const ServiceMapping &m) { return {"add", m, {"",""}}; }
@@ -28,7 +28,7 @@ struct MapCall {
 MapCall::~MapCall() = default;
 
 struct MonitorCall {
-    vespalib::string name;
+    std::string name;
     ServiceMapping mapping;
     bool hurry;
     static MonitorCall start(const ServiceMapping &m, bool h) { return {"start", m, h}; }

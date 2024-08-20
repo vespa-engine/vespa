@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search {
 namespace fef {
@@ -31,7 +31,7 @@ namespace now {
         /**
          * Property name.
          **/
-        static const vespalib::string NAME;
+        static const std::string NAME;
     };
 
 } // namespace now

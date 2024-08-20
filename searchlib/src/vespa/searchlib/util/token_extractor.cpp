@@ -96,7 +96,7 @@ constexpr size_t max_fmt_len = 100; // Max length of word in logs
 
 }
 
-TokenExtractor::TokenExtractor(const vespalib::string& field_name, size_t max_word_len)
+TokenExtractor::TokenExtractor(const std::string& field_name, size_t max_word_len)
     : _field_name(field_name),
       _max_word_len(max_word_len)
 {

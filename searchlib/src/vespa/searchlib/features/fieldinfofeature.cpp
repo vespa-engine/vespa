@@ -169,7 +169,7 @@ FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
         return true;
     }
     if (params.size() == 1) {
-        vespalib::string name = params[0].getValue();
+        std::string name = params[0].getValue();
         const fef::FieldInfo *fi = indexEnv.getFieldByName(name);
         if (fi != 0) {
             _fieldId = fi->id();

@@ -59,7 +59,7 @@ DocumentOperation::assertValidBucketId(const document::GlobalId &gid) const
            _bucketId.getRawId() == verId.getId());
 }
 
-vespalib::string DocumentOperation::docArgsToString() const {
+std::string DocumentOperation::docArgsToString() const {
     return make_string("%s, timestamp=%" PRIu64 ", dbdId=(%s), prevDbdId=(%s), "
                        "prevMarkedAsRemoved=%s, prevTimestamp=%" PRIu64 ", serialNum=%" PRIu64,
                        _bucketId.toString().c_str(), _timestamp,

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace proton {
 
@@ -12,7 +12,7 @@ namespace proton {
 class IIndexschemaInspector {
 public:
     virtual ~IIndexschemaInspector() { }
-    virtual bool isStringIndex(const vespalib::string &name) const = 0;
+    virtual bool isStringIndex(const std::string &name) const = 0;
 };
 
 } // namespace proton

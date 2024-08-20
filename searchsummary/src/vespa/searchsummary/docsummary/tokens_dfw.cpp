@@ -9,7 +9,7 @@ using search::memoryindex::FieldInverter;
 
 namespace search::docsummary {
 
-TokensDFW::TokensDFW(const vespalib::string& input_field_name)
+TokensDFW::TokensDFW(const std::string& input_field_name)
     : DocsumFieldWriter(),
       _input_field_name(input_field_name),
       _token_extractor(_input_field_name, FieldInverter::max_word_len)

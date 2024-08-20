@@ -7,12 +7,12 @@
 namespace vespalib {
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vespalib::string);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, int);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, unsigned int);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, unsigned long);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, unsigned long long);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, double);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, std::string);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, int);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, unsigned int);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, unsigned long);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, unsigned long long);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, double);
 VESPALIB_HASH_MAP_INSTANTIATE(int64_t, int32_t);
 VESPALIB_HASH_MAP_INSTANTIATE(int64_t, uint32_t);
 VESPALIB_HASH_MAP_INSTANTIATE(int32_t, uint32_t);

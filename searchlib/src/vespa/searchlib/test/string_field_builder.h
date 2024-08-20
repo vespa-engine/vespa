@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <memory>
+#include <string>
 
 namespace document {
 class SpanList;
@@ -21,7 +21,7 @@ class DocBuilder;
  * Helper class to build annotated string field.
  */
 class StringFieldBuilder {
-    vespalib::string    _value;
+    std::string    _value;
     size_t              _span_start;
     document::SpanList* _span_list;  // owned by _span_tree
     std::unique_ptr<document::SpanTree> _span_tree;
@@ -32,11 +32,11 @@ class StringFieldBuilder {
 public:
     StringFieldBuilder(const DocBuilder& doc_builder);
     ~StringFieldBuilder();
-    StringFieldBuilder& token(const vespalib::string& val, bool is_word);
-    StringFieldBuilder& word(const vespalib::string& val) { return token(val, true); }
+    StringFieldBuilder& token(const std::string& val, bool is_word);
+    StringFieldBuilder& word(const std::string& val) { return token(val, true); }
     StringFieldBuilder& space() { return token(" ", false); }
-    StringFieldBuilder& tokenize(const vespalib::string& val);
-    StringFieldBuilder& alt_word(const vespalib::string& val);
+    StringFieldBuilder& tokenize(const std::string& val);
+    StringFieldBuilder& alt_word(const std::string& val);
     document::StringFieldValue build();
 };
 

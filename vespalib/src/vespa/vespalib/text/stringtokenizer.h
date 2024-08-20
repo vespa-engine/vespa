@@ -6,7 +6,7 @@
  *
  * @brief String tokenizer with a C++ approach.
  *
- * Uses vespalib::string and common C++ functions. Gives a simple interface
+ * Uses std::string and common C++ functions. Gives a simple interface
  * to a string tokenizer, not necessarily the most efficient one.
  *
  * @class vespalib::StringTokenizer
@@ -14,8 +14,8 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
 

@@ -10,7 +10,7 @@ using namespace vespalib;
 using namespace slobrok;
 using vespalib::make_string_short::fmt;
 
-using Map = std::map<vespalib::string, vespalib::string>;
+using Map = std::map<std::string, std::string>;
 
 Map dump(const ServiceMapMirror &mirror) {
     Map result;
@@ -23,7 +23,7 @@ Map dump(const ServiceMapMirror &mirror) {
 
 void addTo(ServiceMapMirror &target, const ServiceMapping &mapping) {
     auto cur = target.currentGeneration();
-    std::vector<vespalib::string> removes = {};
+    std::vector<std::string> removes = {};
     ServiceMappingList updates = { mapping };
     auto nxt = cur;
     nxt.add();
@@ -33,7 +33,7 @@ void addTo(ServiceMapMirror &target, const ServiceMapping &mapping) {
 
 void removeFrom(ServiceMapMirror &target, const ServiceMapping &mapping) {
     auto cur = target.currentGeneration();
-    std::vector<vespalib::string> removes = { mapping.name };
+    std::vector<std::string> removes = { mapping.name };
     ServiceMappingList updates = { };
     auto nxt = cur;
     nxt.add();
@@ -94,7 +94,7 @@ TEST(ServiceMapMirrorTest, full_inspection) {
     EXPECT_EQ(map.size(), 1983ul);
 
     auto cur = mirror.currentGeneration();
-    std::vector<vespalib::string> removes = {
+    std::vector<std::string> removes = {
         "key/123/name",
         "key/1983/name",
         "key/234/name",

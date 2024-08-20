@@ -7,7 +7,7 @@ using namespace search;
 
 namespace {
 
-std::string str(const vespalib::string &s) { return std::string(s.data(), s.size()); }
+std::string str(const std::string &s) { return std::string(s.data(), s.size()); }
 
 }
 

@@ -107,10 +107,10 @@ ApplyBucketDiffState::sync_bucket_info()
     }
 }
 
-std::future<vespalib::string>
+std::future<std::string>
 ApplyBucketDiffState::get_future()
 {
-    _promise = std::promise<vespalib::string>();
+    _promise = std::promise<std::string>();
     return _promise.value().get_future();
 }
 

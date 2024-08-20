@@ -102,7 +102,7 @@ private:
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
                   IDiskMemUsageNotifier &diskMemUsageNotifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,
-                  const vespalib::string &docTypeName,
+                  const std::string &docTypeName,
                   document::BucketSpace bucketSpace);
 
     void startMove(BucketMover & mover, size_t maxDocsToMove);
@@ -137,7 +137,7 @@ public:
            IBucketStateChangedNotifier &bucketStateChangedNotifier,
            IDiskMemUsageNotifier &diskMemUsageNotifier,
            const BlockableMaintenanceJobConfig &blockableConfig,
-           const vespalib::string &docTypeName,
+           const std::string &docTypeName,
            document::BucketSpace bucketSpace);
 
     ~BucketMoveJob() override;

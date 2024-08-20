@@ -18,7 +18,7 @@ public:
     virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
                              const document::DocumentTypeRepo &repo) override;
-    virtual vespalib::string toString() const override;
+    virtual std::string toString() const override;
 };
 
 } // namespace proton

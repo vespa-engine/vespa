@@ -2,10 +2,10 @@
 #pragma once
 
 #include "metrics.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/config-sentinel.h>
 #include <list>
+#include <string>
 
 using cloud::config::SentinelConfig;
 
@@ -59,7 +59,7 @@ public:
     void start();
     void remove();
     void youExited(int status); // Call this if waitpid says it exited
-    const vespalib::string & name() const;
+    const std::string & name() const;
     const char *stateName() const { return stateName(_state); }
     bool isRunning() const;
     bool wantsRestart() const;

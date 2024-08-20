@@ -55,14 +55,14 @@ DocBuilder::~DocBuilder() = default;
 
 
 std::unique_ptr<Document>
-DocBuilder::make_document(vespalib::string document_id) const
+DocBuilder::make_document(std::string document_id) const
 {
     auto doc = std::make_unique<Document>(get_repo(), get_document_type(), DocumentId(document_id));
     return doc;
 }
 
 const DataType&
-DocBuilder::get_data_type(const vespalib::string &name) const
+DocBuilder::get_data_type(const std::string &name) const
 {
     const DataType *type = _repo->getDataType(*_document_type, name);
     assert(type);

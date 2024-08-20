@@ -2,8 +2,8 @@
 #pragma once
 
 // Include something from STL so that _STLPORT_VERSION gets defined if appropriate
-#include <string>
 #include <algorithm>
+#include <string>
 
 /* Juniper debug macro  */
 

@@ -174,9 +174,9 @@ class Exception : public std::exception
 private:
     static const int STACK_FRAME_BUFFER_SIZE = 25;
 
-    mutable string _what;
-    string         _msg;
-    string         _location;
+    mutable std::string _what;
+    std::string    _msg;
+    std::string    _location;
     void*          _stack[STACK_FRAME_BUFFER_SIZE];
     int            _stackframes;
     int            _skipStack;
@@ -223,13 +223,13 @@ public:
     const Exception *getCause() const { return _cause.get(); }
 
     /** @brief Returns the msg parameter that this Exception was constructed with */
-    const string &getMessage() const { return _msg; }
+    const std::string &getMessage() const { return _msg; }
 
     /** @brief Returns the message string */
     const char *message() const { return _msg.c_str(); }
 
     /** @brief Returns the location parameter that this Exception was constructed with */
-    const string &getLocation() const { return _location; }
+    const std::string &getLocation() const { return _location; }
 
     /** @brief Returns the actual class name of the exception */
     virtual const char *getName() const;
@@ -241,7 +241,7 @@ public:
     virtual void throwSelf() const;
 
     /** @brief make a string describing the current object, not including cause */
-    virtual string toString() const;
+    virtual std::string toString() const;
 };
 
 } // namespace vespalib

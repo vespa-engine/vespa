@@ -61,7 +61,7 @@ private:
 public:
     DiskIndexSearchable(std::unique_ptr<DiskIndex> index) : _index(std::move(index)) {}
     ~DiskIndexSearchable() {
-        vespalib::string index_dir = _index->getIndexDir();
+        std::string index_dir = _index->getIndexDir();
         _index.reset();
         std::filesystem::remove_all(std::filesystem::path(index_dir));
     }

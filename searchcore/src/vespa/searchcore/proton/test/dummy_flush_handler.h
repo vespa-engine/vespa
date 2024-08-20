@@ -10,7 +10,7 @@ namespace proton::test {
  */
 struct DummyFlushHandler : public IFlushHandler
 {
-    DummyFlushHandler(const vespalib::string &name) noexcept
+    DummyFlushHandler(const std::string &name) noexcept
         : IFlushHandler(name)
     {}
 

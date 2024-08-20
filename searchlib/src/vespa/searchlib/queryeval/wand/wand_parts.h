@@ -154,8 +154,8 @@ struct MaxSkipOrder {
 namespace {
 
 template <typename ITR, typename F>
-vespalib::string do_stringify(const vespalib::string &title, ITR begin, ITR end, const F &f) {
-    vespalib::string result = vespalib::make_string("[%s]{", title.c_str());
+std::string do_stringify(const std::string &title, ITR begin, ITR end, const F &f) {
+    std::string result = vespalib::make_string("[%s]{", title.c_str());
     for (ITR pos = begin; pos != end; ++pos) {
         if (pos != begin) {
             result.append(", ");
@@ -202,7 +202,7 @@ public:
     uint32_t seek(uint16_t ref, uint32_t docid) { return _iteratorPack.seek(ref, docid); }
     int32_t get_weight(uint16_t ref, uint32_t docid) { return _iteratorPack.get_weight(ref, docid); }
 
-    vespalib::string stringify_docid() const;
+    std::string stringify_docid() const;
 };
 
 template <typename IteratorPack>
@@ -242,7 +242,7 @@ VectorizedState<IteratorPack>::init_state(const Input &input, const Scorer & sco
 }
 
 template <typename IteratorPack>
-vespalib::string
+std::string
 VectorizedState<IteratorPack>::stringify_docid() const {
     auto range = assemble(Ident(), NumericOrder(_docId.size()));
     return do_stringify("state{docid}", range.begin(), range.end(),
@@ -367,7 +367,7 @@ public:
     }
     ref_t *present_begin() const { return _present; }
     ref_t *present_end() const { return _past; }
-    vespalib::string stringify() const;
+    std::string stringify() const;
 };
 
 template <typename FutureHeap, typename PastHeap>
@@ -407,7 +407,7 @@ DualHeap<FutureHeap, PastHeap>::init() {
 }
 
 template <typename FutureHeap, typename PastHeap>
-vespalib::string
+std::string
 DualHeap<FutureHeap, PastHeap>::stringify() const {
     return "Heaps: "
            + do_stringify("future", _future, _present,
@@ -724,7 +724,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::queryeval::wand::Term &obj);
 
 //-----------------------------------------------------------------------------

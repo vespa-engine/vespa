@@ -61,7 +61,7 @@ SharedStringRepo::Partition::Partition()
 SharedStringRepo::Partition::Entry::Entry(Entry &&) noexcept = default;
 SharedStringRepo::Partition::Entry::~Entry() = default;
 
-vespalib::string
+std::string
 SharedStringRepo::Partition::Entry::as_string() const {
     assert(!is_free());
     return _str;
@@ -94,7 +94,7 @@ SharedStringRepo::Partition::resolve(const AltKey &alt_key) {
     }
 }
 
-vespalib::string
+std::string
 SharedStringRepo::Partition::as_string(uint32_t idx) const {
     std::lock_guard guard(_lock);
     return _entries[idx].as_string();
@@ -124,7 +124,7 @@ SharedStringRepo::Partition::find_leaked_entries(size_t my_idx) const
         if (!_entries[i].is_free()) {
             size_t id = (((i << PART_BITS) | my_idx) + 1);
             LOG(warning, "leaked string id: %zu (part: %zu/%d, string: '%s')\n",
-                id, my_idx, NUM_PARTS, vespalib::string(_entries[i].view()).c_str());
+                id, my_idx, NUM_PARTS, std::string(_entries[i].view()).c_str());
         }
     }
 }
@@ -215,7 +215,7 @@ try_make_direct_id(std::string_view str) noexcept {
     }
 }
 
-vespalib::string
+std::string
 string_from_direct_id(uint32_t id) {
     if (id == 0) {
         return {};
@@ -242,7 +242,7 @@ SharedStringRepo::resolve(std::string_view str) {
     }
 }
 
-vespalib::string
+std::string
 SharedStringRepo::as_string(string_id id) {
     if (id._id >= ID_BIAS) {
         uint32_t part = (id._id - ID_BIAS) & PART_MASK;

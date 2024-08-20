@@ -111,9 +111,9 @@ public:
 class NativeFieldMatchBlueprint : public fef::Blueprint {
 private:
     NativeFieldMatchParams _params;
-    vespalib::string            _defaultFirstOcc;
-    vespalib::string            _defaultNumOcc;
-    vespalib::string            _shared_state_key;
+    std::string            _defaultFirstOcc;
+    std::string            _defaultNumOcc;
+    std::string            _shared_state_key;
 
 public:
     NativeFieldMatchBlueprint();

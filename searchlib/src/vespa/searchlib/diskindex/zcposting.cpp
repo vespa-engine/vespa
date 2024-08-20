@@ -15,9 +15,9 @@ LOG_SETUP(".diskindex.zcposting");
 
 namespace {
 
-vespalib::string myId5("Zc.5");
-vespalib::string myId4("Zc.4");
-vespalib::string interleaved_features("interleaved_features");
+std::string myId5("Zc.5");
+std::string myId4("Zc.4");
+std::string interleaved_features("interleaved_features");
 
 }
 
@@ -64,7 +64,7 @@ Zc4PostingSeqRead::readCounts(const PostingListCounts &counts)
 
 
 bool
-Zc4PostingSeqRead::open(const vespalib::string &name,
+Zc4PostingSeqRead::open(const std::string &name,
                         const TuneFileSeqRead &tuneFileRead)
 {
     if (tuneFileRead.getWantDirectIO()) {
@@ -137,7 +137,7 @@ Zc4PostingSeqRead::readHeader()
 {
     FeatureDecodeContextBE &d = _reader.get_decode_features();
     auto &posting_params = _reader.get_posting_params();
-    const vespalib::string &myId = posting_params._dynamic_k ? myId5 : myId4;
+    const std::string &myId = posting_params._dynamic_k ? myId5 : myId4;
 
     vespalib::FileHeader header;
     d.readHeader(header, _file.getSize());
@@ -178,7 +178,7 @@ Zc4PostingSeqRead::readHeader()
 }
 
 
-const vespalib::string &
+const std::string &
 Zc4PostingSeqRead::getIdentifier(bool dynamic_k)
 {
     return (dynamic_k ? myId5 : myId4);
@@ -225,7 +225,7 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
     EncodeContext &e = _writer.get_encode_context();
     ComprFileWriteContext &wce = _writer.get_write_context();
 
-    const vespalib::string &myId = _writer.get_dynamic_k() ? myId5 : myId4;
+    const std::string &myId = _writer.get_dynamic_k() ? myId5 : myId4;
     vespalib::FileHeader header;
 
     using Tag = vespalib::GenericHeader::Tag;
@@ -274,7 +274,7 @@ Zc4PostingSeqWrite::updateHeader()
 
 
 bool
-Zc4PostingSeqWrite::open(const vespalib::string &name,
+Zc4PostingSeqWrite::open(const std::string &name,
                          const TuneFileSeqWrite &tuneFileWrite,
                          const FileHeaderContext &fileHeaderContext)
 {

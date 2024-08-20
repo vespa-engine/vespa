@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::query {
 
@@ -10,7 +10,7 @@ class Node;
 
 struct StackDumpCreator {
     // Creates a stack dump from a query tree.
-    static vespalib::string create(const Node &node);
+    static std::string create(const Node &node);
 };
 
 }

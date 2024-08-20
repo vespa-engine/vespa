@@ -25,7 +25,7 @@ public:
     CatSerializer & get(uint64_t & value) override;
     CatSerializer & get(double & value) override;
     CatSerializer & get(float & value) override;
-    CatSerializer & get(vespalib::string & value) override;
+    CatSerializer & get(std::string & value) override;
 
 private:
     CatSerializer & nop(const void * value) __attribute__((noinline));

@@ -14,7 +14,7 @@
 LOG_SETUP(".searchcorespi.index.diskindexcleaner");
 
 using std::istringstream;
-using vespalib::string;
+using std::string;
 using std::vector;
 
 namespace searchcorespi::index {

@@ -36,9 +36,9 @@ namespace {
 
 struct AttributeGuardComp
 {
-    vespalib::string name;
+    std::string name;
 
-    AttributeGuardComp(const vespalib::string &n)
+    AttributeGuardComp(const std::string &n)
         : name(n)
     { }
 
@@ -90,10 +90,10 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
 
 namespace {
 
-vespalib::hash_set<vespalib::string>
+vespalib::hash_set<std::string>
 get_attribute_names(const proton::IAttributeManager& mgr)
 {
-    vespalib::hash_set<vespalib::string> both;
+    vespalib::hash_set<std::string> both;
     std::vector<AttributeGuard> list;
     mgr.getAttributeListAll(list);
     for (const auto& attr : list) {

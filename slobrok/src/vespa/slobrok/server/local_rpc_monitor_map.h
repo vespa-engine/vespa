@@ -68,7 +68,7 @@ private:
         bool up;
         bool localOnly;
         std::unique_ptr<CompletionHandler> inflight;
-        vespalib::string spec;
+        std::string spec;
         PerService(bool up_in, bool local_only, std::unique_ptr<CompletionHandler> inflight_in, std::string_view spec_in)
             : up(up_in), localOnly(local_only), inflight(std::move(inflight_in)), spec(spec_in)
         {}
@@ -89,7 +89,7 @@ private:
         return {false, false, {}, mapping.spec};
     }
 
-    using Map = std::map<vespalib::string, PerService>;
+    using Map = std::map<std::string, PerService>;
 
     Map _map;
     ProxyMapSource _dispatcher;

@@ -133,7 +133,7 @@ TEST_F(IdentifiableTest, test_nbo_serializer)
     testSerializer(static_cast<uint64_t>(156));
     testSerializer(static_cast<float>(156));
     testSerializer(static_cast<double>(156));
-    testSerializer(vespalib::string("abcdefgh"));
+    testSerializer(std::string("abcdefgh"));
 }
 
 TEST_F(IdentifiableTest, test_nbo_stream)
@@ -151,7 +151,7 @@ TEST_F(IdentifiableTest, test_nbo_stream)
     testStream(static_cast<float>(156));
     testStream(static_cast<double>(156));
     testStream(std::string("abcdefgh"));
-    testStream(vespalib::string("abcdefgh"));
+    testStream(std::string("abcdefgh"));
     {
         nbostream s(4);
         EXPECT_EQ(4u, s.capacity());

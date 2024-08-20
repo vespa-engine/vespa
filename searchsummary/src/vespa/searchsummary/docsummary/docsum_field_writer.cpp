@@ -4,9 +4,9 @@
 
 namespace search::docsummary {
 
-const vespalib::string DocsumFieldWriter::_empty("");
+const std::string DocsumFieldWriter::_empty("");
 
-const vespalib::string&
+const std::string&
 DocsumFieldWriter::getAttributeName() const
 {
     return _empty;

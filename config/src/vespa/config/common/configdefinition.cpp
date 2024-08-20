@@ -32,7 +32,7 @@ ConfigDefinition::deserialize(const Inspector & inspector)
     }
 }
 
-vespalib::string
+std::string
 ConfigDefinition::asString() const
 {
     vespalib::asciistream as;

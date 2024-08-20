@@ -17,7 +17,7 @@ DocumentTypeInspector::DocumentTypeInspector(const document::DocumentType &oldDo
 }
 
 bool
-DocumentTypeInspector::hasUnchangedField(const vespalib::string &name) const
+DocumentTypeInspector::hasUnchangedField(const std::string &name) const
 {
     FieldPath oldPath;
     FieldPath newPath;

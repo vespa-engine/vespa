@@ -151,7 +151,7 @@ public:
      * @param writer        Inject writer for tls, or nullptr to use internal.
      */
     FeedHandler(IThreadingService &writeService,
-                const vespalib::string &tlsSpec,
+                const std::string &tlsSpec,
                 const DocTypeName &docTypeName,
                 IFeedHandlerOwner &owner,
                 const IResourceWriteFilter &writerFilter,
@@ -233,7 +233,7 @@ public:
         return _tlsReplayProgress ? _tlsReplayProgress->getProgress() : 0;
     }
     bool getTransactionLogReplayDone() const;
-    vespalib::string getDocTypeName() const { return _docTypeName.getName(); }
+    std::string getDocTypeName() const { return _docTypeName.getName(); }
     void tlsPrune(SerialNum oldest_to_keep);
 
     void performOperation(FeedToken token, FeedOperationUP op);

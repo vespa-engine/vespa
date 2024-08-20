@@ -154,7 +154,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override { abort(); }
     DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return {}; }
     Document::UP getFullDocument(DocumentIdT lid) const override { return _subDB.getDocument(lid); }
-    CachedSelect::SP parseSelect(const vespalib::string &) const override { return {}; }
+    CachedSelect::SP parseSelect(const std::string &) const override { return {}; }
 };
 
 
@@ -946,7 +946,7 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
 }
 
 const MaintenanceJobRunner *
-findJob(const MaintenanceController::JobList &jobs, const vespalib::string &jobName)
+findJob(const MaintenanceController::JobList &jobs, const std::string &jobName)
 {
     auto itr = std::find_if(jobs.begin(), jobs.end(),
                             [&](const auto &job){ return job->getJob().getName() == jobName; });
@@ -957,7 +957,7 @@ findJob(const MaintenanceController::JobList &jobs, const vespalib::string &jobN
 }
 
 bool
-containsJob(const MaintenanceController::JobList &jobs, const vespalib::string &jobName)
+containsJob(const MaintenanceController::JobList &jobs, const std::string &jobName)
 {
     return findJob(jobs, jobName) != nullptr;
 }

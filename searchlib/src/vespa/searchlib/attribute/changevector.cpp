@@ -7,7 +7,7 @@ LOG_SETUP(".searchlib.attribute.changevector");
 
 namespace search {
 
-StringChangeData::StringChangeData(vespalib::string s) noexcept
+StringChangeData::StringChangeData(std::string s) noexcept
     : _s(std::move(s))
 {
     if (StringAttribute::countZero(_s.data(), _s.size()) > 0) {

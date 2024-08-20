@@ -3,7 +3,7 @@
 
 namespace config {
 
-vespalib::string
+std::string
 compressionTypeToString(const CompressionType & compressionType)
 {
     switch (compressionType) {
@@ -15,7 +15,7 @@ compressionTypeToString(const CompressionType & compressionType)
 }
 
 CompressionType
-stringToCompressionType(const vespalib::string & type)
+stringToCompressionType(const std::string & type)
 {
     if (type.compare("UNCOMPRESSED") == 0) {
         return CompressionType::UNCOMPRESSED;

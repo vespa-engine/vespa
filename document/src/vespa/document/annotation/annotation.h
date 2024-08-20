@@ -37,7 +37,7 @@ public:
     bool valid() const { return _type != nullptr; }
     int32_t getTypeId() const { return _type->getId(); }
     const FieldValue *getFieldValue() const { return _value.get(); }
-    vespalib::string toString() const;
+    std::string toString() const;
 };
 
 std::ostream & operator << (std::ostream & os, const Annotation & span);

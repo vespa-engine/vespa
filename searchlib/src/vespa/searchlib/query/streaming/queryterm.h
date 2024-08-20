@@ -7,7 +7,7 @@
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::fef {
 
@@ -97,7 +97,7 @@ public:
     QueryNodeResultBase & getQueryItem() { return *_result; }
     const HitList &     getHitList() const { return _hitList; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void setIndex(vespalib::string index_) override { _index = std::move(index_); }
+    void setIndex(std::string index_) override { _index = std::move(index_); }
     const string & getIndex() const override { return _index; }
     void set_fuzzy_max_edit_distance(uint32_t fuzzy_max_edit_distance) noexcept { _fuzzy_max_edit_distance = fuzzy_max_edit_distance; }
     void set_fuzzy_prefix_lock_length(uint32_t fuzzy_prefix_length) noexcept { _fuzzy_prefix_lock_length = fuzzy_prefix_length; }

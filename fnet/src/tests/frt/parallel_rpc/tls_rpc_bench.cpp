@@ -63,8 +63,8 @@ struct StartCmp {
     }
 };
 
-vespalib::string get_prefix(const std::vector<TimeTracer::Record> &stats, size_t idx) {
-    vespalib::string prefix;
+std::string get_prefix(const std::vector<TimeTracer::Record> &stats, size_t idx) {
+    std::string prefix;
     TimeTracer::Record self = stats[idx];
     while (idx-- > 0) {
         if (stats[idx].thread_id == self.thread_id) {

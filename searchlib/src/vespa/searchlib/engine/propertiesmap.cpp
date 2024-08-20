@@ -20,7 +20,7 @@ PropertiesMap::~PropertiesMap() = default;
 fef::Properties &
 PropertiesMap::lookupCreate(std::string_view name)
 {
-    return _propertiesMap[vespalib::string(name)];
+    return _propertiesMap[std::string(name)];
 }
 
 const fef::Properties &
@@ -35,5 +35,5 @@ PropertiesMap::lookup(std::string_view name) const
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, search::fef::Properties);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, search::fef::Properties);
 

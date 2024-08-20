@@ -41,8 +41,8 @@ protected:
     }
 
 public:
-    explicit SingleValueNumericAttribute(const vespalib::string & baseFileName);  // Only for testing
-    SingleValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c);
+    explicit SingleValueNumericAttribute(const std::string & baseFileName);  // Only for testing
+    SingleValueNumericAttribute(const std::string & baseFileName, const AttributeVector::Config & c);
 
     ~SingleValueNumericAttribute() override;
 

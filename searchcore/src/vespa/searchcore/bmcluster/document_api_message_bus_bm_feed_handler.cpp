@@ -22,7 +22,7 @@ namespace search::bmcluster {
 
 DocumentApiMessageBusBmFeedHandler::DocumentApiMessageBusBmFeedHandler(BmMessageBus &message_bus, const IBmDistribution& distribution)
     : IBmFeedHandler(),
-      _name(vespalib::string("DocumentApiMessageBusBmFeedHandler(distributor)")),
+      _name(std::string("DocumentApiMessageBusBmFeedHandler(distributor)")),
       _message_bus(message_bus),
       _routes(distribution.get_num_nodes(), true),
       _no_route_error_count(0u),
@@ -83,7 +83,7 @@ DocumentApiMessageBusBmFeedHandler::get_error_count() const
     return _message_bus.get_error_count() + _no_route_error_count;
 }
 
-const vespalib::string&
+const std::string&
 DocumentApiMessageBusBmFeedHandler::get_name() const
 {
     return _name;

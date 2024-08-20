@@ -11,11 +11,10 @@
 
 #include "tokenizer.h"
 
-#include <iostream>
-#include <vector>
-#include <string>
 #include <algorithm>
-
+#include <iostream>
+#include <string>
+#include <vector>
 
 namespace fsa {
 

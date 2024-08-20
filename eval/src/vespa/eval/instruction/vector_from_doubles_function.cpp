@@ -33,7 +33,7 @@ void my_vector_from_doubles_op(InterpretedFunction::State &state, uint64_t param
     state.stack.emplace_back(result);
 }
 
-size_t vector_size(const TensorFunction &child, const vespalib::string &dimension) {
+size_t vector_size(const TensorFunction &child, const std::string &dimension) {
     if (child.result_type().is_double()) {
         return 1;
     }
@@ -95,7 +95,7 @@ const TensorFunction &
 VectorFromDoublesFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto concat = as<Concat>(expr)) {
-        const vespalib::string &dimension = concat->dimension();
+        const std::string &dimension = concat->dimension();
         size_t a_size = vector_size(concat->lhs(), dimension);
         size_t b_size = vector_size(concat->rhs(), dimension);
         if ((a_size > 0) && (b_size > 0)) {

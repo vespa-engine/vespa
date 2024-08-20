@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
+#include <string>
 #include <vector>
 
 namespace vespalib {
@@ -23,7 +23,7 @@ struct TraceVisitor;
  */
 class TraceNode {
 private:
-    string                 _note;
+    std::string            _note;
     std::vector<TraceNode> _children;
     TraceNode             *_parent;
     system_time            _timestamp;
@@ -41,7 +41,7 @@ public:
      * @param note The note for this node.
      * @param timestamp The timestamp to give to node.
      */
-    explicit TraceNode(const string &note, system_time timestamp);
+    explicit TraceNode(const std::string &note, system_time timestamp);
 
     /**
      * Create a leaf node with no note and a time stamp.
@@ -149,7 +149,7 @@ public:
      *
      * @return The note.
      */
-    const string & getNote() const { return _note; }
+    const std::string & getNote() const { return _note; }
 
     /**
      * Returns the timestamp assigned to this node.
@@ -181,7 +181,7 @@ public:
      * @param note The note to assign to the child.
      * @return This, to allow chaining.
      */
-    TraceNode &addChild(const string &note);
+    TraceNode &addChild(const std::string &note);
 
     /**
      * Convenience method to add a child node containing a note to this and a timestamp.
@@ -190,7 +190,7 @@ public:
      * @param timestamp The timestamp to give this child.
      * @return This, to allow chaining.
      */
-    TraceNode &addChild(const string &note, system_time timestamp);
+    TraceNode &addChild(const std::string &note, system_time timestamp);
 
     /**
      * Adds a child node to this.
@@ -215,7 +215,7 @@ public:
      * @return generated string
      * @param limit soft cap for maximum size of generated string
      **/
-    string toString(size_t limit = -1) const;
+    std::string toString(size_t limit = -1) const;
 
     /**
      * Writes a non-parseable, human-readable string representation of
@@ -226,7 +226,7 @@ public:
      * @param indent number of spaces to be used for indent
      * @param limit soft cap for maximum size of generated string
      **/
-    bool writeString(string &dst, size_t indent, size_t limit) const;
+    bool writeString(std::string &dst, size_t indent, size_t limit) const;
 
     /**
      * Returns a parseable (using {@link #decode(String)}) string
@@ -234,7 +234,7 @@ public:
      *
      * @return A string representation of this tree.
      */
-    string encode() const;
+    std::string encode() const;
 
     /**
      * Build a trace tree from the given string representation (possibly
@@ -243,7 +243,7 @@ public:
      * @param str The string to parse.
      * @return The corresponding trace tree, or an empty node if parsing failed.
      */
-    static TraceNode decode(const string &str);
+    static TraceNode decode(const std::string &str);
 
     /**
      * Visits this TraceNode and all of its descendants in depth-first, prefix order.

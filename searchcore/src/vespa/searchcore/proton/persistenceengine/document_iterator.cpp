@@ -137,7 +137,7 @@ namespace {
 
 class Matcher {
 public:
-    Matcher(const IDocumentRetriever &source, bool metaOnly, const vespalib::string &selection) :
+    Matcher(const IDocumentRetriever &source, bool metaOnly, const std::string &selection) :
         _dscTrue(true),
         _metaOnly(metaOnly),
         _willAlwaysFail(false),

@@ -39,7 +39,7 @@ struct IndexEnvironmentFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) override {
+    virtual void visitDumpFeature(const std::string &) override {
         FAIL() << "no features should be dumped";
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
@@ -61,19 +61,19 @@ struct DistanceClosenessFixture : BlueprintFactoryFixture, IndexEnvironmentFixtu
     uint32_t docid_limit;
     bool     _failed;
     DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
-                             const Labels &labels, const vespalib::string &featureName,
-                             const vespalib::string& query_tensor = "",
+                             const Labels &labels, const std::string &featureName,
+                             const std::string& query_tensor = "",
                              search::attribute::DistanceMetric distance_metric = search::attribute::DistanceMetric::Euclidean);
-    DistanceClosenessFixture(const vespalib::string& tensor_type,
+    DistanceClosenessFixture(const std::string& tensor_type,
                              bool direct_tensor,
                              size_t fooCnt, size_t barCnt,
-                             const Labels &labels, const vespalib::string &featureName,
-                             const vespalib::string& query_tensor = "",
+                             const Labels &labels, const std::string &featureName,
+                             const std::string& query_tensor = "",
                              search::attribute::DistanceMetric distance_metric = search::attribute::DistanceMetric::Euclidean);
     ~DistanceClosenessFixture();
     void set_attribute_tensor(uint32_t docid, const vespalib::eval::TensorSpec& spec);
-    void set_query_tensor(const vespalib::string& query_tensor_name,
-                          const vespalib::string& tensor_type,
+    void set_query_tensor(const std::string& query_tensor_name,
+                          const std::string& tensor_type,
                           const vespalib::eval::TensorSpec& spec);
     feature_t getScore(uint32_t docId) {
         return Utils::getScoreFeature(*rankProgram, docId);

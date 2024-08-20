@@ -82,10 +82,10 @@ StructuredDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFi
 
         path.insert(path.begin(), std::make_unique<FieldPathEntry>(fp));
     } else {
-        throw FieldNotFoundException(vespalib::string(currFieldName),
+        throw FieldNotFoundException(std::string(currFieldName),
                                      make_string("Invalid field path '%s', no field named '%s'",
-                                                 vespalib::string(remainFieldName).c_str(),
-                                                 vespalib::string(currFieldName).c_str()));
+                                                 std::string(remainFieldName).c_str(),
+                                                 std::string(currFieldName).c_str()));
     }
 }
 

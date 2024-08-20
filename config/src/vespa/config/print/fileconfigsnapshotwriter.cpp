@@ -7,7 +7,7 @@
 
 namespace config {
 
-FileConfigSnapshotWriter::FileConfigSnapshotWriter(const vespalib::string & fileName)
+FileConfigSnapshotWriter::FileConfigSnapshotWriter(const std::string & fileName)
     : _fileName(fileName)
 {
 }

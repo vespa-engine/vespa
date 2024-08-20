@@ -44,7 +44,7 @@ const ArrayDataType arrayTypeString(*DataType::STRING);
 const WeightedSetDataType weightedSetTypeInt(*DataType::INT, false, false);
 const WeightedSetDataType weightedSetTypeString(*DataType::STRING, false, false);
 const int32_t noInt(search::attribute::getUndefined<int32_t>());
-const vespalib::string noString("");
+const std::string noString("");
 
 std::unique_ptr<FieldValue>
 makeIntArray(const std::vector<int32_t> &array)
@@ -57,7 +57,7 @@ makeIntArray(const std::vector<int32_t> &array)
 }
 
 std::unique_ptr<FieldValue>
-makeStringArray(const std::vector<vespalib::string> &array)
+makeStringArray(const std::vector<std::string> &array)
 {
     auto result = std::make_unique<ArrayFieldValue>(arrayTypeString);
     for (const auto &elem : array) {
@@ -77,7 +77,7 @@ makeIntWeightedSet(const std::vector<std::pair<int32_t, int32_t>> &array)
 }
 
 std::unique_ptr<FieldValue>
-makeStringWeightedSet(const std::vector<std::pair<vespalib::string, int32_t>> &array)
+makeStringWeightedSet(const std::vector<std::pair<std::string, int32_t>> &array)
 {
     auto result = std::make_unique<WeightedSetFieldValue>(weightedSetTypeString);
     for (const auto &elem : array) {
@@ -116,7 +116,7 @@ struct FixtureBase
     }
 
     FieldPath
-    makeFieldPath(const vespalib::string &path)
+    makeFieldPath(const std::string &path)
     {
         FieldPath fieldPath;
         try {
@@ -131,7 +131,7 @@ struct FixtureBase
     }
 
     void
-    assertExtracted(const vespalib::string &path,
+    assertExtracted(const std::string &path,
                     std::unique_ptr<FieldValue> expected) {
         FieldPath fieldPath(makeFieldPath(path));
         std::unique_ptr<FieldValue> fv = extractor->getFieldValue(fieldPath);
@@ -248,7 +248,7 @@ struct StructFixtureBase : public FixtureBase
     }
 
     std::unique_ptr<StructFieldValue>
-    makeStruct(int weight, const vespalib::string &value)
+    makeStruct(int weight, const std::string &value)
     {
         auto ret = makeStruct();
         ret->setValue(weightField, IntFieldValue(weight));
@@ -265,7 +265,7 @@ struct StructFixtureBase : public FixtureBase
     }
 
     std::unique_ptr<StructFieldValue>
-    makeStruct(const vespalib::string &value)
+    makeStruct(const std::string &value)
     {
         auto ret = makeStruct();
         ret->setValue(nameField, StringFieldValue(value));
@@ -339,7 +339,7 @@ struct PrimitiveMapFixture : public FixtureBase
 {
     MapDataType mapFieldType;
     Field mapField;
-    using MapVector = std::vector<std::pair<vespalib::string, int>>;
+    using MapVector = std::vector<std::pair<std::string, int>>;
 
     PrimitiveMapFixture()
         : FixtureBase(false),

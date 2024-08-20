@@ -63,19 +63,19 @@ TEST(NodeStateTest, test_exponential)
 
 TEST(NodeStateTest, state_instances_provide_descriptive_names)
 {
-    EXPECT_EQ(vespalib::string("Unknown"),
+    EXPECT_EQ(std::string("Unknown"),
               State::UNKNOWN.getName());
-    EXPECT_EQ(vespalib::string("Maintenance"),
+    EXPECT_EQ(std::string("Maintenance"),
               State::MAINTENANCE.getName());
-    EXPECT_EQ(vespalib::string("Down"),
+    EXPECT_EQ(std::string("Down"),
               State::DOWN.getName());
-    EXPECT_EQ(vespalib::string("Stopping"),
+    EXPECT_EQ(std::string("Stopping"),
               State::STOPPING.getName());
-    EXPECT_EQ(vespalib::string("Initializing"),
+    EXPECT_EQ(std::string("Initializing"),
               State::INITIALIZING.getName());
-    EXPECT_EQ(vespalib::string("Retired"),
+    EXPECT_EQ(std::string("Retired"),
               State::RETIRED.getName());
-    EXPECT_EQ(vespalib::string("Up"),
+    EXPECT_EQ(std::string("Up"),
               State::UP.getName());
 }
 

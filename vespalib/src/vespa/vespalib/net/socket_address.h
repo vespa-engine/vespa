@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "socket_handle.h"
-#include <vector>
 #include <sys/socket.h>
+#include <cstring>
 #include <functional>
+#include <string>
+#include <vector>
 
 struct sockaddr_in;
 struct sockaddr_in6;
@@ -44,11 +45,11 @@ public:
     bool is_wildcard() const;
     bool is_abstract() const;
     int port() const;
-    vespalib::string ip_address() const;
-    vespalib::string reverse_lookup() const;
-    vespalib::string path() const;
-    vespalib::string name() const;
-    vespalib::string spec() const;
+    std::string ip_address() const;
+    std::string reverse_lookup() const;
+    std::string path() const;
+    std::string name() const;
+    std::string spec() const;
     SocketHandle raw_socket() const;
     SocketHandle connect(const std::function<bool(SocketHandle&)> &tweak) const;
     SocketHandle connect() const { return connect([](SocketHandle&) noexcept { return true; }); }
@@ -75,10 +76,10 @@ public:
         }
         return SocketAddress();
     }
-    static SocketAddress from_path(const vespalib::string &path);
-    static SocketAddress from_name(const vespalib::string &name);
+    static SocketAddress from_path(const std::string &path);
+    static SocketAddress from_name(const std::string &name);
     static std::vector<SocketAddress> get_interfaces();
-    static vespalib::string normalize(const vespalib::string &host_name);
+    static std::string normalize(const std::string &host_name);
 };
 
 } // namespace vespalib

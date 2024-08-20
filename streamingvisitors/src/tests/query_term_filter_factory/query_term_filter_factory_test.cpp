@@ -24,7 +24,7 @@ protected:
         _factory = std::make_unique<QueryTermFilterFactory>(_fields, _summary);
     }
 
-    bool check_view(const vespalib::string& view, const vespalib::string& summary_field) {
+    bool check_view(const std::string& view, const std::string& summary_field) {
         if (!_factory) {
             make_factory();
         }
@@ -32,7 +32,7 @@ protected:
         return query_term_filter->use_view(view);
     }
 
-    void add_summary_field(const vespalib::string& summary_field_name, const std::vector<vespalib::string>& field_names)
+    void add_summary_field(const std::string& summary_field_name, const std::vector<std::string>& field_names)
     {
         VsmsummaryConfigBuilder::Fieldmap field_map;
         field_map.summary = summary_field_name;
@@ -44,7 +44,7 @@ protected:
         _summary.fieldmap.emplace_back(field_map);
         _factory.reset();
     }
-    void add_index(const vespalib::string& index_name, const std::vector<vespalib::string>& field_names)
+    void add_index(const std::string& index_name, const std::vector<std::string>& field_names)
     {
         if (_fields.documenttype.empty()) {
             _fields.documenttype.resize(1);

@@ -78,7 +78,7 @@ TEST("require that tree stats can be calculated") {
 TEST("require that trees can be extracted from forest") {
     for (size_t tree_size = 10; tree_size < 20; ++tree_size) {
         for (size_t forest_size = 10; forest_size < 20; ++forest_size) {
-            vespalib::string expression = Model().make_forest(forest_size, tree_size);
+            std::string expression = Model().make_forest(forest_size, tree_size);
             auto function = Function::parse(expression);
             std::vector<const Node *> trees = extract_trees(function->root());
             EXPECT_EQUAL(forest_size, trees.size());
@@ -109,7 +109,7 @@ TEST("require that forest stats can be calculated") {
     EXPECT_EQUAL(3u, stats.max_set_size);
 }
 
-double expected_path(const vespalib::string &forest) {
+double expected_path(const std::string &forest) {
     return ForestStats(extract_trees(Function::parse(forest)->root())).total_expected_path_length;
 }
 
@@ -125,7 +125,7 @@ TEST("require that expected path length is calculated correctly") {
     EXPECT_EQUAL(0.75*1.0 + 0.25*2.0, expected_path("if(a<1,1,if(a<1,2,3),0.75)"));
 }
 
-double average_path(const vespalib::string &forest) {
+double average_path(const std::string &forest) {
     return ForestStats(extract_trees(Function::parse(forest)->root())).total_average_path_length;
 }
 
@@ -141,7 +141,7 @@ TEST("require that average path length is calculated correctly") {
     EXPECT_EQUAL(5.0/3.0, average_path("if(a<1,1,if(a<1,2,3),0.75)"));
 }
 
-double count_tuned(const vespalib::string &forest) {
+double count_tuned(const std::string &forest) {
     return ForestStats(extract_trees(Function::parse(forest)->root())).total_tuned_checks;
 }
 
@@ -226,7 +226,7 @@ TEST("require that trees can be optimized by a forest optimizer when using ARRAY
     Optimize::Chain chain({DummyForest1::optimize, DummyForest2::optimize});
     size_t tree_size = 20;
     for (size_t forest_size = 10; forest_size <= 100; forest_size += 10) {
-        vespalib::string expression = Model().make_forest(forest_size, tree_size);
+        std::string expression = Model().make_forest(forest_size, tree_size);
         auto function = Function::parse(expression);
         CompiledFunction compiled_function(*function, PassParams::ARRAY, chain);
         std::vector<double> inputs(function->num_params(), 0.5);
@@ -247,7 +247,7 @@ TEST("require that trees can be optimized by a forest optimizer when using LAZY 
     Optimize::Chain chain({DummyForest1::optimize, DummyForest2::optimize});
     size_t tree_size = 20;
     for (size_t forest_size = 10; forest_size <= 100; forest_size += 10) {
-        vespalib::string expression = Model().make_forest(forest_size, tree_size);
+        std::string expression = Model().make_forest(forest_size, tree_size);
         auto function = Function::parse(expression);
         CompiledFunction compiled_function(*function, PassParams::LAZY, chain);
         std::vector<double> inputs(function->num_params(), 0.5);
@@ -349,7 +349,7 @@ TEST("require that forests evaluate to approximately the same for all evaluation
             for (size_t num_trees: std::vector<size_t>({60})) {
                 for (size_t less_percent: std::vector<size_t>({100, 80})) {
                     for (size_t invert_percent: std::vector<size_t>({0, 50})) {
-                        vespalib::string expression = Model().less_percent(less_percent).invert_percent(invert_percent).make_forest(num_trees, tree_size);
+                        std::string expression = Model().less_percent(less_percent).invert_percent(invert_percent).make_forest(num_trees, tree_size);
                         auto function = Function::parse(expression);
                         auto forest = FastForest::try_convert(*function);
                         EXPECT_EQUAL(bool(forest), bool(less_percent == 100));
@@ -389,7 +389,7 @@ TEST("require that fast forest evaluation is correct for all tree size categorie
             for (size_t num_features: std::vector<size_t>({35})) {
                 for (size_t less_percent: std::vector<size_t>({100})) {
                     for (size_t invert_percent: std::vector<size_t>({50})) {
-                        vespalib::string expression = Model().max_features(num_features).less_percent(less_percent).invert_percent(invert_percent).make_forest(num_trees, tree_size);
+                        std::string expression = Model().max_features(num_features).less_percent(less_percent).invert_percent(invert_percent).make_forest(num_trees, tree_size);
                         auto function = Function::parse(expression);
                         auto forest = FastForest::try_convert(*function);
                         if ((tree_size <= 64) || is_little_endian()) {

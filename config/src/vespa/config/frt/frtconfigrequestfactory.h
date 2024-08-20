@@ -28,7 +28,7 @@ public:
 private:
     const int             _traceLevel;
     const VespaVersion    _vespaVersion;
-    vespalib::string      _hostName;
+    std::string      _hostName;
     const CompressionType _compressionType;
 };
 

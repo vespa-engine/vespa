@@ -23,7 +23,7 @@ AttributeConfigInspector::AttributeConfigInspector(const AttributesConfig& confi
 AttributeConfigInspector::~AttributeConfigInspector() = default;
 
 const Config*
-AttributeConfigInspector::get_config(const vespalib::string& name) const
+AttributeConfigInspector::get_config(const std::string& name) const
 {
     auto itr = _hash.find(name);
     return (itr != _hash.end()) ? itr->second.get() : nullptr;

@@ -108,7 +108,7 @@ convertPostingBaseToSlime(const IPostingListAttributeBase &postingBase, Cursor &
     convertMemoryUsageToSlime(memory_usage.bitvectors, cursor.setObject("bitvectors"));
 }
 
-vespalib::string
+std::string
 type_to_string(const Config& cfg)
 {
     if (cfg.basicType().type() == BasicType::TENSOR) {
@@ -117,8 +117,8 @@ type_to_string(const Config& cfg)
     if (cfg.collectionType().type() == CollectionType::SINGLE) {
         return cfg.basicType().asString();
     }
-    return vespalib::string(cfg.collectionType().asString()) +
-           "<" + vespalib::string(cfg.basicType().asString()) + ">";
+    return std::string(cfg.collectionType().asString()) +
+           "<" + std::string(cfg.basicType().asString()) + ">";
 }
 
 void

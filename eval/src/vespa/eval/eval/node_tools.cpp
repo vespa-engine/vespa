@@ -39,7 +39,7 @@ struct CopyNode : NodeTraverser, NodeVisitor {
 
     //-------------------------------------------------------------------------
 
-    void fail(const vespalib::string &msg) {
+    void fail(const std::string &msg) {
         if (!error) {
             error = std::make_unique<Error>(msg);
         }

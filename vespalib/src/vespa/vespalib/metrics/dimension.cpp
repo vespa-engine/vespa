@@ -5,12 +5,12 @@
 namespace vespalib::metrics {
 
 Dimension
-Dimension::from_name(const vespalib::string& name)
+Dimension::from_name(const std::string& name)
 {
     return NameRepo::instance.dimension(name);
 }
 
-const vespalib::string&
+const std::string&
 Dimension::as_name() const
 {
     return NameRepo::instance.dimensionName(*this);

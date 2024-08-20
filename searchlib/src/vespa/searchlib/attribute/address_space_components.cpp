@@ -15,13 +15,13 @@ AddressSpace AddressSpaceComponents::default_multi_value_usage() {
     return AddressSpace(0, 0, (1ull << 32));
 }
 
-const vespalib::string AddressSpaceComponents::enum_store = "enum-store";
-const vespalib::string AddressSpaceComponents::multi_value = "multi-value";
-const vespalib::string AddressSpaceComponents::raw_store = "raw-store";
-const vespalib::string AddressSpaceComponents::tensor_store = "tensor-store";
-const vespalib::string AddressSpaceComponents::shared_string_repo = "shared-string-repo";
-const vespalib::string AddressSpaceComponents::hnsw_levels_store = "hnsw-levels-store";
-const vespalib::string AddressSpaceComponents::hnsw_links_store = "hnsw-links-store";
-const vespalib::string AddressSpaceComponents::hnsw_nodeid_mapping = "hnsw-nodeid-mapping";
+const std::string AddressSpaceComponents::enum_store = "enum-store";
+const std::string AddressSpaceComponents::multi_value = "multi-value";
+const std::string AddressSpaceComponents::raw_store = "raw-store";
+const std::string AddressSpaceComponents::tensor_store = "tensor-store";
+const std::string AddressSpaceComponents::shared_string_repo = "shared-string-repo";
+const std::string AddressSpaceComponents::hnsw_levels_store = "hnsw-levels-store";
+const std::string AddressSpaceComponents::hnsw_links_store = "hnsw-links-store";
+const std::string AddressSpaceComponents::hnsw_nodeid_mapping = "hnsw-nodeid-mapping";
 
 }

@@ -29,13 +29,13 @@ struct Fixture
     uint32_t         _numDocs;
     bool             _strict;
     bool             _optimize;
-    vespalib::string _type;
+    std::string _type;
     std::vector<int> _fillLimits;
 
     Fixture(int argc, char **argv) {
         _type = argv[1];
-        _strict = vespalib::string(argv[2]) == vespalib::string("strict");
-        _optimize = vespalib::string(argv[3]) == vespalib::string("optimize");
+        _strict = std::string(argv[2]) == std::string("strict");
+        _optimize = std::string(argv[3]) == std::string("optimize");
         _numSearch = strtoul(argv[4], NULL, 0);
         _numDocs = strtoul(argv[5], NULL, 0);
         for (int i(6); i < argc; i++) {

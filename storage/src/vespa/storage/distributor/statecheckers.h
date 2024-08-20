@@ -68,7 +68,7 @@ public:
 private:
     static bool isLeastSplitBucket(const document::BucketId& bucket,const std::vector<BucketDatabase::Entry>& entries);
     static uint32_t getHighestUsedBits(const std::vector<BucketDatabase::Entry>& entries);
-    static vespalib::string getReason(const document::BucketId& bucketId, const std::vector<BucketDatabase::Entry>& entries);
+    static std::string getReason(const document::BucketId& bucketId, const std::vector<BucketDatabase::Entry>& entries);
 };
 
 class ActiveList;

@@ -4,6 +4,7 @@
 #include "exceptions.h"
 #include "misc.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/locale/c.h>
 
 namespace config {
@@ -13,8 +14,8 @@ void ConfigParser::throwNoDefaultValue(std::string_view key) {
             "default value and is not specified in config", VESPA_STRLOC);
 }
 
-vespalib::string
-ConfigParser::deQuote(const vespalib::string & source)
+std::string
+ConfigParser::deQuote(const std::string & source)
 {
     const char *src = source.c_str();
     const char *s = src;
@@ -79,13 +80,13 @@ ConfigParser::deQuote(const vespalib::string & source)
         }
     }
     *d = 0;
-    return vespalib::string(dst.data(), d - dst.data());
+    return std::string(dst.data(), d - dst.data());
 }
 
 namespace {
 
 bool
-getValueForKey(std::string_view key, std::string_view line, vespalib::string& retval)
+getValueForKey(std::string_view key, std::string_view line, std::string& retval)
 {
     if (line.length() <= key.length()) {
         return false;
@@ -128,7 +129,7 @@ ConfigParser::getLinesForKey(std::string_view key, Cfg lines)
     StringVector retval;
 
     for (uint32_t i = 0; i < lines.size(); i++) {
-        vespalib::string value;
+        std::string value;
 
         if (getValueForKey(key, lines[i], value)) {
             retval.push_back(value);
@@ -138,11 +139,11 @@ ConfigParser::getLinesForKey(std::string_view key, Cfg lines)
     return retval;
 }
 
-std::set<vespalib::string>
+std::set<std::string>
 ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
-    std::set<vespalib::string> unique;
+    std::set<std::string> unique;
     for (uint32_t i = 0; i < config.size(); i++) {
-        vespalib::string line = stripWhitespace(config[i]);
+        std::string line = stripWhitespace(config[i]);
         if (!line.empty()) {
             unique.insert(line);
         }
@@ -152,9 +153,9 @@ ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
 
 void
 ConfigParser::stripLinesForKey(std::string_view key,
-                               std::set<vespalib::string>& config)
+                               std::set<std::string>& config)
 {
-    vespalib::string value;
+    std::string value;
     for (auto it = config.begin(); it != config.end();) {
         if (getValueForKey(key, *it, value)) {
             it = config.erase(it);
@@ -164,27 +165,27 @@ ConfigParser::stripLinesForKey(std::string_view key,
     }
 }
 
-std::map<vespalib::string, StringVector>
+std::map<std::string, StringVector>
 ConfigParser::splitMap(Cfg config)
 {
-    std::map<vespalib::string, StringVector> items;
+    std::map<std::string, StringVector> items;
 
-    vespalib::string lastValue;
+    std::string lastValue;
 
     // First line contains item count, skip that.
     for (uint32_t i = 0; i < config.size(); i++) {
         size_t pos = config[i].find("}");
 
         if (config[i].size() < 3 || config[i][0] != '{'
-            || pos == vespalib::string::npos)
+            || pos == std::string::npos)
         {
             throw InvalidConfigException(
                     "Value '" + config[i] + "' is not a valid map "
                     "specification.", VESPA_STRLOC);
         }
 
-        vespalib::string key = deQuote(config[i].substr(1, pos - 1));
-        vespalib::string value = config[i].substr(pos + 1);
+        std::string key = deQuote(config[i].substr(1, pos - 1));
+        std::string value = config[i].substr(pos + 1);
 
         if (key != lastValue) {
             items[key] = StringVector();
@@ -205,22 +206,22 @@ ConfigParser::splitArray(Cfg config)
 {
     std::vector<StringVector> items;
 
-    vespalib::string lastValue;
+    std::string lastValue;
 
     // First line contains item count, skip that.
     for (uint32_t i = 0; i < config.size(); i++) {
         size_t pos = config[i].find("]");
 
         if (config[i].size() < 3 || config[i][0] != '['
-            || pos == vespalib::string::npos)
+            || pos == std::string::npos)
         {
             throw InvalidConfigException(
                     "Value '" + config[i] + "' is not a valid array "
                     "specification.", VESPA_STRLOC);
         }
 
-        vespalib::string key = config[i].substr(1, pos - 1);
-        vespalib::string value = config[i].substr(pos + 1);
+        std::string key = config[i].substr(1, pos - 1);
+        std::string value = config[i].substr(pos + 1);
 
         if (key != lastValue) {
             items.emplace_back();
@@ -236,12 +237,12 @@ ConfigParser::splitArray(Cfg config)
     return items;
 }
 
-vespalib::string
+std::string
 ConfigParser::stripWhitespace(std::string_view source)
 {
     // Remove leading spaces and return.
     if (source.empty()) {
-        return vespalib::string(source);
+        return std::string(source);
     }
     size_t start = 0;
     bool found = false;
@@ -274,7 +275,7 @@ ConfigParser::stripWhitespace(std::string_view source)
     return std::string(source.substr(start, stop - start + 1));
 }
 
-vespalib::string
+std::string
 ConfigParser::arrayToString(Cfg array)
 {
     vespalib::asciistream ost;
@@ -296,7 +297,7 @@ ConfigParser::convert<bool>(const StringVector & config)
         throw InvalidConfigException("Expected single line with bool value, "
                 "got " + arrayToString(config), VESPA_STRLOC);
     }
-    vespalib::string value = stripWhitespace(deQuote(config[0]));
+    std::string value = stripWhitespace(deQuote(config[0]));
 
     if (value == "true") {
         return true;
@@ -316,7 +317,7 @@ ConfigParser::convert<int32_t>(const StringVector & config)
         throw InvalidConfigException("Expected single line with int32_t value, "
                 "got " + arrayToString(config), VESPA_STRLOC);
     }
-    vespalib::string value(deQuote(stripWhitespace(config[0])));
+    std::string value(deQuote(stripWhitespace(config[0])));
 
     const char *startp = value.c_str();
     char *endp;
@@ -336,7 +337,7 @@ ConfigParser::convert<int64_t>(const StringVector & config)
         throw InvalidConfigException("Expected single line with int64_t value, "
                 "got " + arrayToString(config), VESPA_STRLOC);
     }
-    vespalib::string value(deQuote(stripWhitespace(config[0])));
+    std::string value(deQuote(stripWhitespace(config[0])));
 
     const char *startp = value.c_str();
     char *endp;
@@ -356,7 +357,7 @@ ConfigParser::convert<double>(const StringVector & config)
         throw InvalidConfigException("Expected single line with double value, "
                 "got " + arrayToString(config), VESPA_STRLOC);
     }
-    vespalib::string value(deQuote(stripWhitespace(config[0])));
+    std::string value(deQuote(stripWhitespace(config[0])));
 
     const char *startp = value.c_str();
     char *endp;
@@ -370,15 +371,15 @@ ConfigParser::convert<double>(const StringVector & config)
 }
 
 template<>
-vespalib::string
-ConfigParser::convert<vespalib::string>(const StringVector & config)
+std::string
+ConfigParser::convert<std::string>(const StringVector & config)
 {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with string value, "
                 "got " + arrayToString(config), VESPA_STRLOC);
     }
 
-    vespalib::string value = stripWhitespace(config[0]);
+    std::string value = stripWhitespace(config[0]);
 
     return deQuote(value);
 }

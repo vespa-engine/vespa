@@ -5,14 +5,14 @@
 
 namespace vespalib {
 
-vespalib::string
+std::string
 getErrorString(const int osError)
 {
     std::error_code ec(osError, std::system_category());
     return ec.message();
 }
 
-vespalib::string
+std::string
 getLastErrorString()
 {
     return getErrorString(errno);

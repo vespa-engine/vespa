@@ -129,9 +129,9 @@ struct MyGetFun {
 
 using MyTypify = TypifyValue<TypifyCellMeta,TypifyAggr,TypifyBool>;
 
-std::pair<std::vector<vespalib::string>,ValueType> sort_and_drop_trivial(const std::vector<vespalib::string> &list_in, const ValueType &type_in) {
-    std::vector<vespalib::string> dropped;
-    std::vector<vespalib::string> list_out;
+std::pair<std::vector<std::string>,ValueType> sort_and_drop_trivial(const std::vector<std::string> &list_in, const ValueType &type_in) {
+    std::vector<std::string> dropped;
+    std::vector<std::string> list_out;
     for (const auto &dim_name: list_in) {
         auto dim_idx = type_in.dimension_index(dim_name);
         assert(dim_idx != ValueType::Dimension::npos);
@@ -159,14 +159,14 @@ template <typename T> struct VectorLookupLoop {
 };
 
 DenseSingleReduceSpec extract_next(const ValueType &type, Aggr aggr,
-                                   std::vector<vespalib::string> &todo)
+                                   std::vector<std::string> &todo)
 {
     size_t outer_size = 1;
     size_t reduce_size = 1;
     size_t inner_size = 1;
     auto dims = type.nontrivial_indexed_dimensions();
-    std::vector<vespalib::string> do_now;
-    std::vector<vespalib::string> do_later;
+    std::vector<std::string> do_now;
+    std::vector<std::string> do_later;
     auto a = VectorLookupLoop(dims);
     auto b = VectorLookupLoop(todo);
     while (a.valid() && b.valid() && (a.get().name < b.get())) {
@@ -196,7 +196,7 @@ DenseSingleReduceSpec extract_next(const ValueType &type, Aggr aggr,
 
 std::vector<DenseSingleReduceSpec>
 make_dense_single_reduce_list(const ValueType &type, Aggr aggr,
-                              const std::vector<vespalib::string> &reduce_dims)
+                              const std::vector<std::string> &reduce_dims)
 {
     auto res_type = type.reduce(reduce_dims);
     if (reduce_dims.empty() || !type.is_dense() || !res_type.is_dense()) {

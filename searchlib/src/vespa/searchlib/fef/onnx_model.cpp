@@ -5,8 +5,8 @@
 
 namespace search::fef {
 
-OnnxModel::OnnxModel(const vespalib::string &name_in,
-                     const vespalib::string &file_path_in)
+OnnxModel::OnnxModel(const std::string &name_in,
+                     const std::string &file_path_in)
     : _name(name_in),
       _file_path(file_path_in),
       _input_features(),
@@ -20,13 +20,13 @@ OnnxModel & OnnxModel::operator =(OnnxModel &&) noexcept = default;
 OnnxModel::~OnnxModel() = default;
 
 OnnxModel &
-OnnxModel::input_feature(const vespalib::string &model_input_name, const vespalib::string &input_feature) {
+OnnxModel::input_feature(const std::string &model_input_name, const std::string &input_feature) {
     _input_features[model_input_name] = input_feature;
     return *this;
 }
 
 OnnxModel &
-OnnxModel::output_name(const vespalib::string &model_output_name, const vespalib::string &output_name) {
+OnnxModel::output_name(const std::string &model_output_name, const std::string &output_name) {
     _output_names[model_output_name] = output_name;
     return *this;
 }
@@ -38,8 +38,8 @@ OnnxModel::dry_run_on_setup(bool value)
     return *this;
 }
 
-std::optional<vespalib::string>
-OnnxModel::input_feature(const vespalib::string &model_input_name) const {
+std::optional<std::string>
+OnnxModel::input_feature(const std::string &model_input_name) const {
     auto pos = _input_features.find(model_input_name);
     if (pos != _input_features.end()) {
         return pos->second;
@@ -47,8 +47,8 @@ OnnxModel::input_feature(const vespalib::string &model_input_name) const {
     return std::nullopt;
 }
 
-std::optional<vespalib::string>
-OnnxModel::output_name(const vespalib::string &model_output_name) const {
+std::optional<std::string>
+OnnxModel::output_name(const std::string &model_output_name) const {
     auto pos = _output_names.find(model_output_name);
     if (pos != _output_names.end()) {
         return pos->second;

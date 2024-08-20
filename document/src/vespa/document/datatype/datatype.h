@@ -8,8 +8,8 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace document {
@@ -31,7 +31,7 @@ class WeightedSetDataType;
 class DataType : public Printable
 {
     int _dataTypeId;
-    vespalib::string _name;
+    std::string _name;
 
 protected:
     /**
@@ -102,7 +102,7 @@ public:
     /** Used by type manager to fetch default types to register. */
     static std::vector<const DataType *> getDefaultDataTypes();
 
-    const vespalib::string& getName() const noexcept { return _name; }
+    const std::string& getName() const noexcept { return _name; }
     int getId() const noexcept { return _dataTypeId; }
     bool isValueType(const FieldValue & fv) const;
 

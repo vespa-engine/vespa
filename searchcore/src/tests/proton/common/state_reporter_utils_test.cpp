@@ -8,7 +8,7 @@ using namespace proton;
 using namespace vespalib::slime;
 using vespalib::Slime;
 
-vespalib::string
+std::string
 toString(const StatusReport &statusReport)
 {
     Slime slime;

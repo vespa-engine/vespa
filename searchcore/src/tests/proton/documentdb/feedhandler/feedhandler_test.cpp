@@ -84,7 +84,7 @@ namespace {
 
 constexpr int tls_port = proton::test::port_numbers::feedhandler_tls_port;
 
-vespalib::string tls_port_spec() {
+std::string tls_port_spec() {
     return vespalib::SocketSpec::from_host_port("localhost", tls_port).spec();
 }
 
@@ -138,7 +138,7 @@ struct MyOwner : public IFeedHandlerOwner
 struct MyResourceWriteFilter : public IResourceWriteFilter
 {
     bool _acceptWriteOperation;
-    vespalib::string _message;
+    std::string _message;
     MyResourceWriteFilter()
         : _acceptWriteOperation(true),
           _message()
@@ -319,7 +319,7 @@ SchemaContext::~SchemaContext() = default;
 struct DocumentContext {
     Document::SP  doc;
     BucketId      bucketId;
-    DocumentContext(const vespalib::string &docId, DocBuilder &builder) :
+    DocumentContext(const std::string &docId, DocBuilder &builder) :
         doc(builder.make_document(docId)),
         bucketId(BucketFactory::getBucketId(doc->getId()))
     {
@@ -338,12 +338,12 @@ TensorDataType tensor1DType(ValueType::from_spec("tensor(x{})"));
 struct UpdateContext {
     DocumentUpdate::SP update;
     BucketId           bucketId;
-    UpdateContext(const vespalib::string &docId, DocBuilder &builder) :
+    UpdateContext(const std::string &docId, DocBuilder &builder) :
         update(std::make_shared<DocumentUpdate>(builder.get_repo(), builder.get_document_type(), DocumentId(docId))),
         bucketId(BucketFactory::getBucketId(update->getId()))
     {
     }
-    void addFieldUpdate(const vespalib::string &fieldName) {
+    void addFieldUpdate(const std::string &fieldName) {
         const auto &docType = update->getType();
         const auto &field = docType.getField(fieldName);
         auto fieldValue = field.createValue();
@@ -423,7 +423,7 @@ struct FeedHandlerFixture
     DummyFileHeaderContext       _fileHeaderContext;
     TransportAndExecutorService  _service;
     TransLogServer               tls;
-    vespalib::string             tlsSpec;
+    std::string             tlsSpec;
     SchemaContext                schema;
     MyOwner                      owner;
     MyResourceWriteFilter        writeFilter;
@@ -662,7 +662,7 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
 
 void
 checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
-            const vespalib::string &fieldName, bool expectReject, bool existing)
+            const std::string &fieldName, bool expectReject, bool existing)
 {
     f.handler.setSerialNum(15);
     UpdateContext updCtx("id:test:searchdocument::foo", schemaContext.builder);

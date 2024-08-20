@@ -3,10 +3,10 @@
 
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/executor_stats.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vector>
 #include <mutex>
+#include <string>
+#include <vector>
 
 namespace vespalib {
 

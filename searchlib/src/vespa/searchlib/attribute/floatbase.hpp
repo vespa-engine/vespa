@@ -9,12 +9,12 @@
 namespace search {
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name)
+FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const std::string & name)
     : FloatingPointAttributeTemplate(name, BasicType::fromType(T()))
 { }
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c)
+FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const std::string & name, const Config & c)
     : FloatingPointAttribute(name, c),
       _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
 {

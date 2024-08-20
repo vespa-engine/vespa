@@ -26,7 +26,7 @@ using search::SerialNum;
 using search::test::DirectoryHandler;
 using vespalib::Stash;
 
-const vespalib::string test_dir = "test_output";
+const std::string test_dir = "test_output";
 
 namespace proton {
 
@@ -50,7 +50,7 @@ Config getPredicateWithArity(uint32_t arity)
     return ret;
 }
 
-Config getTensor(const vespalib::string &spec)
+Config getTensor(const std::string &spec)
 {
     Config ret(BasicType::Type::TENSOR);
     ret.setTensorType(vespalib::eval::ValueType::from_spec(spec));
@@ -65,7 +65,7 @@ Config get_int32_wset_fs()
 }
 
 void
-saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, SerialNum createSerialNum, bool mutate_reserved_doc = false)
+saveAttr(const std::string &name, const Config &cfg, SerialNum serialNum, SerialNum createSerialNum, bool mutate_reserved_doc = false)
 {
     auto diskLayout = AttributeDiskLayout::create(test_dir);
     auto dir = diskLayout->createAttributeDir(name);

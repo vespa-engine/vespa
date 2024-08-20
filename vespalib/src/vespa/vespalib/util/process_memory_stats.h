@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib {
 
@@ -35,7 +36,7 @@ public:
     uint64_t getAnonymousRss() const { return _anonymous_rss; }
     uint64_t getMappingsCount() const { return _mappings_count; }
     bool similarTo(const ProcessMemoryStats &rhs, double epsilon) const;
-    vespalib::string toString() const;
+    std::string toString() const;
     bool operator < (const ProcessMemoryStats & rhs) const { return _anonymous_rss < rhs._anonymous_rss; }
 
     /** for unit tests only */

@@ -54,14 +54,14 @@ std::string_view Capability::name() const noexcept {
     return capability_names[id_as_idx()];
 }
 
-string Capability::to_string() const {
+std::string Capability::to_string() const {
     asciistream os;
     os << "Capability(" << name() << ')';
     return os.str();
 }
 
-std::optional<Capability> Capability::find_capability(const string& cap_name) noexcept {
-    static const hash_map<string, Capability> name_to_cap({
+std::optional<Capability> Capability::find_capability(const std::string& cap_name) noexcept {
+    static const hash_map<std::string, Capability> name_to_cap({
         {"vespa.none",                                          none()},
         {"vespa.http.unclassified",                             http_unclassified()},
         {"vespa.restapi.unclassified",                          restapi_unclassified()},

@@ -329,7 +329,7 @@ Metrics::onNewSegment(uint32_t, uint32_t j, uint32_t)
     _segmentStarts.push_back(j);
 }
 
-vespalib::string
+std::string
 Metrics::toString() const
 {
     return vespalib::make_string("Metrics(match %f)", getMatch());

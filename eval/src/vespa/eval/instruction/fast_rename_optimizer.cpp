@@ -11,11 +11,11 @@ using namespace tensor_function;
 
 bool
 FastRenameOptimizer::is_stable_rename(const ValueType &from_type, const ValueType &to_type,
-                                      const std::vector<vespalib::string> &from,
-                                      const std::vector<vespalib::string> &to)
+                                      const std::vector<std::string> &from,
+                                      const std::vector<std::string> &to)
 {
     assert(from.size() == to.size());
-    auto get_from_idx = [&](const vespalib::string &to_name) {
+    auto get_from_idx = [&](const std::string &to_name) {
         for (size_t i = 0; i < to.size(); ++i) {
             if (to[i] == to_name) {
                 return from_type.dimension_index(from[i]);

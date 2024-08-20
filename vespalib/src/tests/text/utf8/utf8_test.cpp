@@ -17,7 +17,7 @@ using namespace vespalib;
 TEST("utf8_test") {
 
     for (uint32_t h = 0; h < 0x1100; h++) {
-        vespalib::string data;
+        std::string data;
 
         if (h >= 0xD8 && h < 0xE0) continue;
 
@@ -57,7 +57,7 @@ TEST("utf8_test") {
         ASSERT_TRUE(fd > 0);
         auto buf = std::make_unique<char[]>(5510);
         ASSERT_TRUE(::read(fd, buf.get(), 5510) == 5509);
-        vespalib::string data(buf.get(), 5509);
+        std::string data(buf.get(), 5509);
         Utf8Reader r(data);
         uint32_t i = 32;
         uint32_t j = 3;

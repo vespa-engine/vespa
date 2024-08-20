@@ -39,9 +39,9 @@ using vespalib::slime::SlimeInserter;
 namespace {
 
 const int32_t          doc_type_id   = 787121340;
-const vespalib::string doc_type_name = "test";
-const vespalib::string header_name   = doc_type_name + ".header";
-const vespalib::string body_name     = doc_type_name + ".body";
+const std::string doc_type_name = "test";
+const std::string header_name   = doc_type_name + ".header";
+const std::string body_name     = doc_type_name + ".body";
 
 
 std::unique_ptr<const DocumentTypeRepo>
@@ -61,7 +61,7 @@ struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
 
 class DocumentIdDFWTest : public ::testing::Test
 {
-    vespalib::string                        _field_name;
+    std::string                        _field_name;
     vespalib::Memory                        _field_name_view;
     std::unique_ptr<ResultConfig>           _result_config;
     std::unique_ptr<const DocumentTypeRepo> _repo;
@@ -71,7 +71,7 @@ protected:
     DocumentIdDFWTest();
     ~DocumentIdDFWTest() override;
 
-    std::unique_ptr<IDocsumStoreDocument> make_docsum_store_document(const vespalib::string &id);
+    std::unique_ptr<IDocsumStoreDocument> make_docsum_store_document(const std::string &id);
     vespalib::Slime write(const IDocsumStoreDocument* doc);
     vespalib::Memory get_field_name_view() const noexcept { return _field_name_view; }
 };
@@ -93,7 +93,7 @@ DocumentIdDFWTest::~DocumentIdDFWTest() = default;
 
 
 std::unique_ptr<IDocsumStoreDocument>
-DocumentIdDFWTest::make_docsum_store_document(const vespalib::string& id)
+DocumentIdDFWTest::make_docsum_store_document(const std::string& id)
 {
     auto doc = std::make_unique<Document>(*_repo, *_document_type, DocumentId(id));
     return std::make_unique<DocsumStoreDocument>(std::move(doc));
@@ -115,7 +115,7 @@ DocumentIdDFWTest::write(const IDocsumStoreDocument* doc)
 
 TEST_F(DocumentIdDFWTest, insert_document_id)
 {
-    vespalib::string id("id::test::0");
+    std::string id("id::test::0");
     auto doc = make_docsum_store_document(id);
     auto slime = write(doc.get());
     EXPECT_TRUE(slime.get()[get_field_name_view()].valid());

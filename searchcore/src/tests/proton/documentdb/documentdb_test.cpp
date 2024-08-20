@@ -66,7 +66,7 @@ namespace {
 
 constexpr int tls_port = proton::test::port_numbers::documentdb_tls_port;
 
-vespalib::string tls_port_spec() {
+std::string tls_port_spec() {
     return vespalib::SocketSpec::from_host_port("localhost", tls_port).spec();
 }
 
@@ -80,7 +80,7 @@ cleanup_dirs(bool file_config)
     }
 }
 
-vespalib::string
+std::string
 config_subdir(SerialNum serialNum)
 {
     vespalib::asciistream os;
@@ -232,7 +232,7 @@ TEST_F("requireThatFlushTargetsAreNamedBySubDocumentDB", Fixture) {
     auto targets = f._db->getFlushTargets();
     ASSERT_TRUE(!targets.empty());
     for (const IFlushTarget::SP & target : f._db->getFlushTargets()) {
-        vespalib::string name = target->getName();
+        std::string name = target->getName();
         EXPECT_TRUE((name.find("0.ready.") == 0) ||
                     (name.find("1.removed.") == 0) ||
                     (name.find("2.notready.") == 0));

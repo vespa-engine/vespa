@@ -41,7 +41,7 @@ ShrinkLidSpaceFlushTarget::Flusher::getFlushSerial() const
     return _flushSerialNum;
 }
 
-ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const vespalib::string &name,
+ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const std::string &name,
                                                      Type type,
                                                      Component component,
                                                      SerialNum flushedSerialNum,

@@ -14,7 +14,7 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
 using vespalib::eval::test::GenSpec;
 
-std::vector<vespalib::string> params({"x", "y", "z", "w"});
+std::vector<std::string> params({"x", "y", "z", "w"});
 
 double as_number(const Function &f) {
     auto number = as<Number>(f.root());
@@ -22,7 +22,7 @@ double as_number(const Function &f) {
     return number->value();
 }
 
-vespalib::string as_string(const Function &f) {
+std::string as_string(const Function &f) {
     auto string = as<String>(f.root());
     ASSERT_TRUE(string);
     return string->value();
@@ -30,10 +30,10 @@ vespalib::string as_string(const Function &f) {
 
 struct OperatorLayer {
     Operator::Order order;
-    std::vector<vespalib::string> op_names;
+    std::vector<std::string> op_names;
 };
 
-Operator_UP create_op(vespalib::string name) {
+Operator_UP create_op(std::string name) {
     Operator_UP op = OperatorRepo::instance().create(name);
     ASSERT_TRUE(op.get() != nullptr);
     EXPECT_EQUAL(name, op->op_str());
@@ -41,16 +41,16 @@ Operator_UP create_op(vespalib::string name) {
 }
 
 void verify_operator_binding_order(std::initializer_list<OperatorLayer> layers) {
-    std::set<vespalib::string> seen_names;
+    std::set<std::string> seen_names;
     int layer_idx = 0;
     for (OperatorLayer layer: layers) {
         ++layer_idx;
-        for (vespalib::string op_name: layer.op_names) {
+        for (std::string op_name: layer.op_names) {
             seen_names.insert(op_name);
             int other_layer_idx = 0;
             for (OperatorLayer other_layer: layers) {
                 ++other_layer_idx;
-                for (vespalib::string other_op_name: other_layer.op_names) {
+                for (std::string other_op_name: other_layer.op_names) {
                     Operator_UP op = create_op(op_name);
                     Operator_UP other_op = create_op(other_op_name);
                     bool do_op_before_other_op = (layer_idx < other_layer_idx)
@@ -72,20 +72,20 @@ void verify_operator_binding_order(std::initializer_list<OperatorLayer> layers) 
     }
 }
 
-bool verify_string(const vespalib::string &str, const vespalib::string &expr) {
+bool verify_string(const std::string &str, const std::string &expr) {
     bool ok = true;
     ok &= EXPECT_EQUAL(str, as_string(*Function::parse(params, expr)));
     ok &= EXPECT_EQUAL(expr, Function::parse(params, expr)->dump());
     return ok;
 }
 
-void verify_error(const vespalib::string &expr, const vespalib::string &expected_error) {
+void verify_error(const std::string &expr, const std::string &expected_error) {
     auto function = Function::parse(params, expr);
     EXPECT_TRUE(function->has_error());
     EXPECT_EQUAL(expected_error, function->get_error());
 }
 
-void verify_parse(const vespalib::string &expr, const vespalib::string &expect) {
+void verify_parse(const std::string &expr, const std::string &expect) {
     auto function = Function::parse(expr);
     EXPECT_TRUE(!function->has_error());
     EXPECT_EQUAL(function->dump_as_lambda(), expect);
@@ -145,9 +145,9 @@ TEST("require that strings are parsed and dumped correctly") {
     EXPECT_TRUE(verify_string(">\r<", "\">\\r<\""));
     EXPECT_TRUE(verify_string(">\f<", "\">\\f<\""));
     for (int c = 0; c < 256; ++c) {
-        vespalib::string raw_expr = vespalib::make_string("\"%c\"", c);
-        vespalib::string hex_expr = vespalib::make_string("\"\\x%02x\"", c);
-        vespalib::string raw_str = vespalib::make_string("%c", c);
+        std::string raw_expr = vespalib::make_string("\"%c\"", c);
+        std::string hex_expr = vespalib::make_string("\"\\x%02x\"", c);
+        std::string raw_str = vespalib::make_string("%c", c);
         EXPECT_EQUAL(raw_str, as_string(*Function::parse(params, hex_expr)));
         if (c != 0 && c != '\"' && c != '\\') {
             EXPECT_EQUAL(raw_str, as_string(*Function::parse(params, raw_expr)));
@@ -400,7 +400,7 @@ struct MyNodeHandler : public NodeHandler {
     }
 };
 
-size_t detach_from_root(const vespalib::string &expr) {
+size_t detach_from_root(const std::string &expr) {
     MyNodeHandler handler;
     auto function = Function::parse(expr);
     nodes::Node &mutable_root = const_cast<nodes::Node&>(function->root());
@@ -460,7 +460,7 @@ struct MyTraverser : public NodeTraverser {
 
 MyTraverser::~MyTraverser() = default;
 
-size_t verify_traversal(size_t open_true_cnt, const vespalib::string &expression) {
+size_t verify_traversal(size_t open_true_cnt, const std::string &expression) {
     auto function = Function::parse(expression);
     if (!EXPECT_TRUE(!function->has_error())) {
         fprintf(stderr, "--> %s\n", function->get_error().c_str());
@@ -474,7 +474,7 @@ size_t verify_traversal(size_t open_true_cnt, const vespalib::string &expression
     return offset;
 }
 
-bool verify_expression_traversal(const vespalib::string &expression) {
+bool verify_expression_traversal(const std::string &expression) {
     for (size_t open_cnt = 0; true; ++open_cnt) {
         size_t num_callbacks = verify_traversal(open_cnt, expression);
         if (num_callbacks == (open_cnt * 2)) { // graph is now fully expanded
@@ -604,16 +604,16 @@ TEST("require that sums of trees and forests are forests") {
 //-----------------------------------------------------------------------------
 
 struct UnWrapped {
-    vespalib::string wrapper;
-    vespalib::string body;
-    vespalib::string error;
+    std::string wrapper;
+    std::string body;
+    std::string error;
     ~UnWrapped();
 };
 
 
 UnWrapped::~UnWrapped() {}
 
-UnWrapped unwrap(const vespalib::string &str) {
+UnWrapped unwrap(const std::string &str) {
     UnWrapped result;
     bool ok = Function::unwrap(str, result.wrapper, result.body, result.error);
     EXPECT_EQUAL(ok, result.error.empty());
@@ -658,7 +658,7 @@ struct MySymbolExtractor : SymbolExtractor {
     explicit MySymbolExtractor(std::initializer_list<char> extra_in) : extra(extra_in), invoke_count() {}
 
     void extract_symbol(const char *pos_in, const char *end_in,
-                        const char *&pos_out, vespalib::string &symbol_out) const override
+                        const char *&pos_out, std::string &symbol_out) const override
     {
         ++invoke_count;
         for (; pos_in < end_in; ++pos_in) {
@@ -933,7 +933,7 @@ TEST("require that convenient tensor create handles dimension order") {
 }
 
 TEST("require that convenient tensor create can be highly nested") {
-    vespalib::string expect("tensor(a{},b{},c[1],d[1]):{{a:\"x\",b:\"y\",c:0,d:0}:5}");
+    std::string expect("tensor(a{},b{},c[1],d[1]):{{a:\"x\",b:\"y\",c:0,d:0}:5}");
     auto nested1 = Function::parse("tensor(a{},b{},c[1],d[1]):{x:{y:[[5]]}}");
     auto nested2 = Function::parse("tensor(c[1],d[1],a{},b{}):[[{x:{y:5}}]]");
     auto nested3 = Function::parse("tensor(a{},c[1],b{},d[1]): { x : [ { y : [ 5 ] } ] } ");
@@ -943,7 +943,7 @@ TEST("require that convenient tensor create can be highly nested") {
 }
 
 TEST("require that convenient tensor create can have multiple values on multiple levels") {
-    vespalib::string expect("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2,{x:\"b\",y:0}:3,{x:\"b\",y:1}:4}");
+    std::string expect("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2,{x:\"b\",y:0}:3,{x:\"b\",y:1}:4}");
     auto fun1 = Function::parse("tensor(x{},y[2]):{a:[1,2],b:[3,4]}");
     auto fun2 = Function::parse("tensor(y[2],x{}):[{a:1,b:3},{a:2,b:4}]");
     auto fun3 = Function::parse("tensor(x{},y[2]): { a : [ 1 , 2 ] , b : [ 3 , 4 ] } ");
@@ -1014,7 +1014,7 @@ TEST("require that tensor peek empty label is not allowed") {
 //-----------------------------------------------------------------------------
 
 TEST("require that nested tensor lambda using tensor peek can be parsed") {
-    vespalib::string expect("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})");
+    std::string expect("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})");
     EXPECT_EQUAL(Function::parse(expect)->dump(), expect);
 }
 
@@ -1042,8 +1042,8 @@ struct CheckExpressions : test::EvalSpec::EvalTest {
     bool failed = false;
     size_t seen_cnt = 0;
     ~CheckExpressions() override;
-    virtual void next_expression(const std::vector<vespalib::string> &param_names,
-                                 const vespalib::string &expression) override
+    virtual void next_expression(const std::vector<std::string> &param_names,
+                                 const std::string &expression) override
     {
         auto function = Function::parse(param_names, expression);
         if (function->has_error()) {
@@ -1052,9 +1052,9 @@ struct CheckExpressions : test::EvalSpec::EvalTest {
         }
         ++seen_cnt;
     }
-    virtual void handle_case(const std::vector<vespalib::string> &,
+    virtual void handle_case(const std::vector<std::string> &,
                              const std::vector<double> &,
-                             const vespalib::string &,
+                             const std::string &,
                              double) override {}
 };
 

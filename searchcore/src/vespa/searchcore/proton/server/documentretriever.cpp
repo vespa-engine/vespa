@@ -97,7 +97,7 @@ DocumentRetriever
     for (const Field* field : fields) {
         if ((field->getDataType().getId() == positionDataTypeId) || is_array_of_position_type(field->getDataType())) {
             LOG(debug, "Field '%s' is a position field", field->getName().c_str());
-            const vespalib::string & zcurve_name = PositionDataType::getZCurveFieldName(field->getName());
+            const std::string & zcurve_name = PositionDataType::getZCurveFieldName(field->getName());
             AttributeGuard::UP attr = attr_manager.getAttribute(zcurve_name);
             if (attr && attr->valid()) {
                 LOG(debug, "Field '%s' is a registered attribute field", zcurve_name.c_str());
@@ -106,7 +106,7 @@ DocumentRetriever
                 _areAllFieldsAttributes = false;
             }
         } else {
-            const vespalib::string &name = field->getName();
+            const std::string &name = field->getName();
             AttributeGuard::UP attr = attr_manager.getAttribute(name);
             if (attr && attr->valid()
                 && !_schema.isIndexField(field->getName())

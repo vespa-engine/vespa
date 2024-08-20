@@ -81,7 +81,7 @@ BucketId::hash::operator () (const BucketId& bucketId) const noexcept {
     return vespalib::xxhash::xxh3_64(bucketId.getId());
 }
 
-vespalib::string
+std::string
 BucketId::toString() const
 {
     vespalib::asciistream stream;

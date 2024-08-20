@@ -16,7 +16,7 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::query::Node;
-using vespalib::string;
+using std::string;
 using vespalib::Issue;
 
 namespace proton::matching {

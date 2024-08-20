@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <string>
 
 namespace vespalib::net { class ConnectionAuthContext; }
 
@@ -12,12 +12,12 @@ namespace vespalib {
 struct JsonGetHandler {
     class Response {
         int              _status_code;
-        vespalib::string _status_or_payload;
-        vespalib::string _content_type_override;
+        std::string _status_or_payload;
+        std::string _content_type_override;
 
         Response(int status_code,
-                 vespalib::string status_or_payload,
-                 vespalib::string content_type_override);
+                 std::string status_or_payload,
+                 std::string content_type_override);
     public:
         Response(); // By default, 500 Internal Server Error
         ~Response();
@@ -51,15 +51,15 @@ struct JsonGetHandler {
             }
         }
 
-        [[nodiscard]] static Response make_ok_with_json(vespalib::string json);
-        [[nodiscard]] static Response make_ok_with_content_type(vespalib::string payload, vespalib::string content_type);
-        [[nodiscard]] static Response make_failure(int status_code, vespalib::string status_message);
+        [[nodiscard]] static Response make_ok_with_json(std::string json);
+        [[nodiscard]] static Response make_ok_with_content_type(std::string payload, std::string content_type);
+        [[nodiscard]] static Response make_failure(int status_code, std::string status_message);
         [[nodiscard]] static Response make_not_found();
     };
 
-    virtual Response get(const vespalib::string &host,
-                         const vespalib::string &path,
-                         const std::map<vespalib::string,vespalib::string> &params,
+    virtual Response get(const std::string &host,
+                         const std::string &path,
+                         const std::map<std::string,std::string> &params,
                          const net::ConnectionAuthContext &auth_ctx) const = 0;
     virtual ~JsonGetHandler() = default;
 };

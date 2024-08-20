@@ -5,7 +5,7 @@
 #include "item_creator.h"
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/searchlib/query/query_normalization.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search {
 

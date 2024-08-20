@@ -64,7 +64,7 @@ namespace {
 
 FeatureExecutor &
 createAttributeExecutor(const search::fef::IQueryEnvironment &env,
-                        const vespalib::string &attrName,
+                        const std::string &attrName,
                         const ValueType &valueType,
                         vespalib::Stash &stash)
 {
@@ -99,13 +99,13 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
 
 FeatureExecutor &
 createQueryExecutor(const search::fef::IQueryEnvironment &env,
-                    const vespalib::string &queryKey,
+                    const std::string &queryKey,
                     const ValueType &valueType,
                     vespalib::Stash &stash)
 {
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
-        std::vector<vespalib::string> vector;
+        std::vector<std::string> vector;
         ArrayParser::parse(prop.get(), vector);
         auto factory = FastValueBuilderFactory::get();
         auto builder = factory.create_value_builder<double>(valueType, 1, 1, vector.size());

@@ -210,9 +210,9 @@ TEST_F("Test serializing std::string", Fixture)
     f.assertSerialize(exp, val);
 }
 
-TEST_F("Test serializing vespalib::string", Fixture)
+TEST_F("Test serializing std::string", Fixture)
 {
-    vespalib::string val("Hello");
+    std::string val("Hello");
     ExpBuffer exp({ 0x00, 0x00, 0x00, 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f });
     f.assertSerialize(exp, val);
 }
@@ -264,7 +264,7 @@ TEST_F("Test writeSmallString", Fixture)
     f._stream.writeSmallString("Hello");
     ExpBuffer exp({ 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f });
     EXPECT_EQUAL(exp, f._stream);
-    vespalib::string checkString;
+    std::string checkString;
     f._stream.readSmallString(checkString);
     EXPECT_EQUAL("Hello", checkString);
     EXPECT_EQUAL(0u, f._stream.size());

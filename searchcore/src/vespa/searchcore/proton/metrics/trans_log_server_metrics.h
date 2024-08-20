@@ -21,14 +21,14 @@ public:
         metrics::DoubleValueMetric replayTime;
 
         using UP = std::unique_ptr<DomainMetrics>;
-        DomainMetrics(metrics::MetricSet *parent, const vespalib::string &documentType);
+        DomainMetrics(metrics::MetricSet *parent, const std::string &documentType);
         ~DomainMetrics() override;
         void update(const search::transactionlog::DomainInfo &stats);
     };
 
 private:
     metrics::MetricSet *_parent;
-    std::map<vespalib::string, DomainMetrics::UP> _domainMetrics;
+    std::map<std::string, DomainMetrics::UP> _domainMetrics;
 
     void considerAddDomains(const search::transactionlog::DomainStats &stats);
     void considerRemoveDomains(const search::transactionlog::DomainStats &stats);

@@ -29,7 +29,7 @@ TEST("require that a tensor spec can be converted to and from an expression") {
         .add({{"x", 0}, {"y", "yyy"}}, 2.0)
         .add({{"x", 1}, {"y", "xxx"}}, 3.0)
         .add({{"x", 1}, {"y", "yyy"}}, 4.0);
-    vespalib::string expr = spec.to_expr();
+    std::string expr = spec.to_expr();
     fprintf(stderr, "expr: \n%s\n", expr.c_str());
     EXPECT_EQUAL(TensorSpec::from_expr(expr), spec);
 }
@@ -40,7 +40,7 @@ TEST("require that nan/inf/-inf cells get converted to valid expressions") {
         .add({{"x", 0}, {"y", "yyy"}}, my_nan)
         .add({{"x", 1}, {"y", "xxx"}}, my_neg_inf)
         .add({{"x", 1}, {"y", "yyy"}}, my_inf);
-    vespalib::string expr = spec.to_expr();
+    std::string expr = spec.to_expr();
     fprintf(stderr, "expr: \n%s\n", expr.c_str());
     EXPECT_EQUAL(TensorSpec::from_expr(expr), spec);
 }

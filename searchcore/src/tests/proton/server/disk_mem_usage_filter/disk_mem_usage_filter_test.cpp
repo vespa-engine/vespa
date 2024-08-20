@@ -22,7 +22,7 @@ struct DiskMemUsageFilterTest : public ::testing::Test
         _filter.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 299, 300, 42), 20);
     }
 
-    void testWrite(const vespalib::string &exp) {
+    void testWrite(const std::string &exp) {
         if (exp.empty()) {
             EXPECT_TRUE(_filter.acceptWriteOperation());
             State state = _filter.getAcceptState();

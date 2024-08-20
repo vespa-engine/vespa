@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-
 #include <map>
+#include <string>
 
 namespace vespalib::portal {
 
@@ -12,27 +11,27 @@ class HttpRequest
 {
 private:
     // http stuff
-    vespalib::string _method;
-    vespalib::string _uri;
-    vespalib::string _path;
-    std::map<vespalib::string, vespalib::string> _params;
-    vespalib::string _version;
-    std::map<vespalib::string, vespalib::string> _headers;
-    vespalib::string _host;
+    std::string _method;
+    std::string _uri;
+    std::string _path;
+    std::map<std::string, std::string> _params;
+    std::string _version;
+    std::map<std::string, std::string> _headers;
+    std::string _host;
     // internal state
-    vespalib::string _empty;
+    std::string _empty;
     bool             _first;
     bool             _done;
     bool             _error;
-    vespalib::string _header_name;
-    vespalib::string _line_buffer;
+    std::string _header_name;
+    std::string _line_buffer;
 
     void set_done();
     void set_error();
 
-    void handle_request_line(const vespalib::string &line);
-    void handle_header_line(const vespalib::string &line);
-    void handle_line(const vespalib::string &line);
+    void handle_request_line(const std::string &line);
+    void handle_header_line(const std::string &line);
+    void handle_line(const std::string &line);
 
 public:
     HttpRequest();
@@ -41,14 +40,14 @@ public:
     bool need_more_data() const { return (!_error && !_done); }
     bool valid() const { return (!_error && _done); }
     bool is_get() const { return _method == "GET"; }
-    void resolve_host(const vespalib::string &my_host);
-    const vespalib::string &get_header(const vespalib::string &name) const;
-    const vespalib::string &get_host() const { return _host; }
-    const vespalib::string &get_uri() const { return _uri; }
-    const vespalib::string &get_path() const { return _path; }
-    bool has_param(const vespalib::string &name) const;
-    const vespalib::string &get_param(const vespalib::string &name) const;
-    std::map<vespalib::string, vespalib::string> export_params() const { return _params; }
+    void resolve_host(const std::string &my_host);
+    const std::string &get_header(const std::string &name) const;
+    const std::string &get_host() const { return _host; }
+    const std::string &get_uri() const { return _uri; }
+    const std::string &get_path() const { return _path; }
+    bool has_param(const std::string &name) const;
+    const std::string &get_param(const std::string &name) const;
+    std::map<std::string, std::string> export_params() const { return _params; }
 };
 
 } // namespace vespalib::portal

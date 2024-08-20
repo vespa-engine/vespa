@@ -19,8 +19,8 @@ namespace search::fef::test {
  * attribute map for their lookups.
  */
 class AttributeMap {
-    std::map<vespalib::string, std::shared_ptr<attribute::IAttributeVector>> _attributes;
-    std::map<vespalib::string, std::unique_ptr<attribute::AttributeReadGuard>> _guards;
+    std::map<std::string, std::shared_ptr<attribute::IAttributeVector>> _attributes;
+    std::map<std::string, std::unique_ptr<attribute::AttributeReadGuard>> _guards;
 public:
     using IAttributeVector = attribute::IAttributeVector;
     ~AttributeMap();
@@ -34,7 +34,7 @@ public:
     }
 
     const IAttributeVector * getAttribute(std::string_view name_view) const {
-        vespalib::string name(name_view);
+        std::string name(name_view);
         auto attrItr = _attributes.find(name);
         if (attrItr != _attributes.end()) {
             return attrItr->second.get();

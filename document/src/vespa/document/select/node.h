@@ -21,7 +21,7 @@ class Visitor;
 class Node : public Printable
 {
 protected:
-    vespalib::string _name;
+    std::string _name;
     uint32_t _max_depth;
     bool _parentheses; // Set to true if parentheses was used around this part
                        // Set such that we can recreate original query in print.

@@ -22,29 +22,29 @@ public:
     using duration = vespalib::duration;
     SlimeConfigRequest(Connection * connection,
                        const ConfigKey & key,
-                       const vespalib::string & configXxhash64,
+                       const std::string & configXxhash64,
                        int64_t currentGeneration,
-                       const vespalib::string & hostName,
+                       const std::string & hostName,
                        duration serverTimeout,
                        const Trace & trace,
                        const VespaVersion & vespaVersion,
                        int64_t protocolVersion,
                        const CompressionType & compressionType,
-                       const vespalib::string & methodName);
+                       const std::string & methodName);
     ~SlimeConfigRequest();
     bool verifyState(const ConfigState & state) const override;
     virtual std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest * request) const override = 0;
 private:
     void populateSlimeRequest(const ConfigKey & key,
-                              const vespalib::string & configXxhash64,
+                              const std::string & configXxhash64,
                               int64_t currentGeneration,
-                              const vespalib::string & hostName,
+                              const std::string & hostName,
                               duration serverTimeout,
                               const Trace & trace,
                               const VespaVersion & vespaVersion,
                               int64_t protocolVersion,
                               const CompressionType & compressionType);
-    static vespalib::string createJsonFromSlime(const vespalib::Slime & data);
+    static std::string createJsonFromSlime(const vespalib::Slime & data);
     vespalib::Slime _data;
 };
 

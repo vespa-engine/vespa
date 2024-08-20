@@ -21,7 +21,7 @@ class InvalidDataTypeException : public vespalib::IllegalStateException
 public:
     InvalidDataTypeException(const DataType &actual,
                              const DataType &wanted,
-                             const vespalib::string & location);
+                             const std::string & location);
     ~InvalidDataTypeException() override;
 
     const DataType& getActualDataType() const { return _actual; }
@@ -47,7 +47,7 @@ class InvalidDataTypeConversionException
 public:
     InvalidDataTypeConversionException(const DataType &actual,
                                        const DataType &wanted,
-                                       const vespalib::string & location);
+                                       const std::string & location);
     ~InvalidDataTypeConversionException() override;
 
     const DataType& getActualDataType() const { return _actual; }
@@ -70,17 +70,17 @@ private:
 class DocumentTypeNotFoundException : public vespalib::Exception
 {
 private:
-    vespalib::string _type;
+    std::string _type;
 
 public:
-    DocumentTypeNotFoundException(vespalib::string name, const vespalib::string& location);
+    DocumentTypeNotFoundException(std::string name, const std::string& location);
     DocumentTypeNotFoundException(const DocumentTypeNotFoundException &);
     DocumentTypeNotFoundException & operator = (const DocumentTypeNotFoundException &);
     DocumentTypeNotFoundException(DocumentTypeNotFoundException &&) noexcept = default;
     DocumentTypeNotFoundException & operator = (DocumentTypeNotFoundException &&) noexcept = default;
     ~DocumentTypeNotFoundException() override;
 
-    const vespalib::string& getDocumentTypeName() const { return _type; }
+    const std::string& getDocumentTypeName() const { return _type; }
 
     VESPA_DEFINE_EXCEPTION_SPINE(DocumentTypeNotFoundException);
 };
@@ -94,8 +94,8 @@ public:
 class DataTypeNotFoundException : public vespalib::Exception
 {
 public:
-    DataTypeNotFoundException(int id, const vespalib::string& location);
-    DataTypeNotFoundException(const vespalib::string& name, const vespalib::string& location);
+    DataTypeNotFoundException(int id, const std::string& location);
+    DataTypeNotFoundException(const std::string& name, const std::string& location);
     ~DataTypeNotFoundException() override;
 
     VESPA_DEFINE_EXCEPTION_SPINE(DataTypeNotFoundException);
@@ -110,7 +110,7 @@ public:
 class AnnotationTypeNotFoundException : public vespalib::Exception
 {
 public:
-    AnnotationTypeNotFoundException(int id, const vespalib::string& location);
+    AnnotationTypeNotFoundException(int id, const std::string& location);
     ~AnnotationTypeNotFoundException() override;
 
     VESPA_DEFINE_EXCEPTION_SPINE(AnnotationTypeNotFoundException);
@@ -126,19 +126,19 @@ public:
 class FieldNotFoundException : public vespalib::Exception
 {
 private:
-    vespalib::string _fieldName;
+    std::string _fieldName;
     int32_t _fieldId;
 
 public:
-    FieldNotFoundException(vespalib::string fieldName, const vespalib::string& location);
-    FieldNotFoundException(int32_t fieldId, int16_t serializationVersion, const vespalib::string& location);
+    FieldNotFoundException(std::string fieldName, const std::string& location);
+    FieldNotFoundException(int32_t fieldId, int16_t serializationVersion, const std::string& location);
     FieldNotFoundException(const FieldNotFoundException &);
     FieldNotFoundException & operator = (const FieldNotFoundException &);
     FieldNotFoundException(FieldNotFoundException &&) noexcept = default;
     FieldNotFoundException & operator = (FieldNotFoundException &&) noexcept = default;
     ~FieldNotFoundException() override;
 
-    const vespalib::string& getFieldName() const { return _fieldName; }
+    const std::string& getFieldName() const { return _fieldName; }
     int32_t getFieldId()              const { return _fieldId; };
 
     VESPA_DEFINE_EXCEPTION_SPINE(FieldNotFoundException);

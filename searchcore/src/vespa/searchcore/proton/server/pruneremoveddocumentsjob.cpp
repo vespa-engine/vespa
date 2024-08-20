@@ -23,7 +23,7 @@ namespace proton {
 
 PruneRemovedDocumentsJob::
 PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
-                         uint32_t subDbId, document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
+                         uint32_t subDbId, document::BucketSpace bucketSpace, const std::string &docTypeName,
                          IPruneRemovedDocumentsHandler &handler, IThreadService & master,
                          BucketExecutor & bucketExecutor)
     : BlockableMaintenanceJob("prune_removed_documents." + docTypeName,

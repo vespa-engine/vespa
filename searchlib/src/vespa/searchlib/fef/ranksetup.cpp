@@ -17,7 +17,7 @@ class VisitorAdapter : public search::fef::IDumpFeatureVisitor
 public:
     explicit VisitorAdapter(search::fef::BlueprintResolver &resolver)
         : _resolver(resolver) {}
-    void visitDumpFeature(const vespalib::string &name) override {
+    void visitDumpFeature(const std::string &name) override {
         _resolver.addSeed(name);
     }
 };
@@ -93,12 +93,12 @@ RankSetup::configure()
     for (const auto &feature: match::Feature::lookup(_indexEnv.getProperties())) {
         add_match_feature(feature);
     }
-    std::vector<vespalib::string> summaryFeatures = summary::Feature::lookup(_indexEnv.getProperties());
+    std::vector<std::string> summaryFeatures = summary::Feature::lookup(_indexEnv.getProperties());
     for (const auto & feature : summaryFeatures) {
         addSummaryFeature(feature);
     }
     setIgnoreDefaultRankFeatures(dump::IgnoreDefaultFeatures::check(_indexEnv.getProperties()));
-    std::vector<vespalib::string> dumpFeatures = dump::Feature::lookup(_indexEnv.getProperties());
+    std::vector<std::string> dumpFeatures = dump::Feature::lookup(_indexEnv.getProperties());
     for (const auto & feature : dumpFeatures) {
         addDumpFeature(feature);
     }
@@ -146,35 +146,35 @@ RankSetup::configure()
 }
 
 void
-RankSetup::setFirstPhaseRank(const vespalib::string &featureName)
+RankSetup::setFirstPhaseRank(const std::string &featureName)
 {
     assert(!_compiled);
     _firstPhaseRankFeature = featureName;
 }
 
 void
-RankSetup::setSecondPhaseRank(const vespalib::string &featureName)
+RankSetup::setSecondPhaseRank(const std::string &featureName)
 {
     assert(!_compiled);
     _secondPhaseRankFeature = featureName;
 }
 
 void
-RankSetup::add_match_feature(const vespalib::string &match_feature)
+RankSetup::add_match_feature(const std::string &match_feature)
 {
     assert(!_compiled);
     _match_features.push_back(match_feature);
 }
 
 void
-RankSetup::addSummaryFeature(const vespalib::string &summaryFeature)
+RankSetup::addSummaryFeature(const std::string &summaryFeature)
 {
     assert(!_compiled);
     _summaryFeatures.push_back(summaryFeature);
 }
 
 void
-RankSetup::addDumpFeature(const vespalib::string &dumpFeature)
+RankSetup::addDumpFeature(const std::string &dumpFeature)
 {
     assert(!_compiled);
     _dumpFeatures.push_back(dumpFeature);
@@ -199,7 +199,7 @@ RankSetup::compile()
             _firstPhaseRankFeature = parser.featureName();
             _first_phase_resolver->addSeed(_firstPhaseRankFeature);
         } else {
-            vespalib::string e = fmt("invalid feature name for first phase rank: '%s'", _firstPhaseRankFeature.c_str());
+            std::string e = fmt("invalid feature name for first phase rank: '%s'", _firstPhaseRankFeature.c_str());
             _warnings.emplace_back(e);
             _compileError = true;
         }
@@ -210,7 +210,7 @@ RankSetup::compile()
             _secondPhaseRankFeature = parser.featureName();
             _second_phase_resolver->addSeed(_secondPhaseRankFeature);
         } else {
-            vespalib::string e = fmt("invalid feature name for second phase rank: '%s'", _secondPhaseRankFeature.c_str());
+            std::string e = fmt("invalid feature name for second phase rank: '%s'", _secondPhaseRankFeature.c_str());
             _warnings.emplace_back(e);
             _compileError = true;
         }
@@ -257,7 +257,7 @@ RankSetup::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &o
     }
 }
 
-vespalib::string
+std::string
 RankSetup::getJoinedWarnings() const {
     vespalib::asciistream os;
     for (const auto & m : _warnings) {

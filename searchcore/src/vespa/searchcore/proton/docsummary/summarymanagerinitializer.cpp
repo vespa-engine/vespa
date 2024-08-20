@@ -8,8 +8,8 @@ namespace proton {
 
 SummaryManagerInitializer::
 SummaryManagerInitializer(const search::GrowStrategy &grow,
-                          const vespalib::string & baseDir,
-                          const vespalib::string &subDbName,
+                          const std::string & baseDir,
+                          const std::string &subDbName,
                           vespalib::Executor &shared_executor,
                           const search::LogDocumentStore::Config & storeCfg,
                           const search::TuneFileSummary &tuneFile,

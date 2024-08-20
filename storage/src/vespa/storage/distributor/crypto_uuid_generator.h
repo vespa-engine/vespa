@@ -12,7 +12,7 @@ namespace storage::distributor {
 class CryptoUuidGenerator : public UuidGenerator {
 public:
     ~CryptoUuidGenerator() override = default;
-    vespalib::string generate_uuid() const override;
+    std::string generate_uuid() const override;
 };
 
 }

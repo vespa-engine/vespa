@@ -625,7 +625,7 @@ TEST("testBlueprintMakeNew")
     EXPECT_EQUAL(2u, orig->getState().numFields());
 }
 
-vespalib::string
+std::string
 getExpectedBlueprint()
 {
     return "(anonymous namespace)::MyOr {\n"
@@ -680,7 +680,7 @@ getExpectedBlueprint()
            "}\n";
 }
 
-vespalib::string
+std::string
 getExpectedSlimeBlueprint() {
     return "{"
            "    '[type]': '(anonymous namespace)::MyOr',"

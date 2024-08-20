@@ -30,9 +30,9 @@ public:
         QueryBuilder<NodeTypes> builder;
 
         // Make sure that the life time of what pureTermView refers to exceeds that of pureTermView.
-        // Especially make sure that do not create any stack local objects like vespalib::string
+        // Especially make sure that do not create any stack local objects like std::string
         // with smaller scope, that you refer with pureTermView.
-        vespalib::string pureTermView;
+        std::string pureTermView;
         while (!builder.hasError() && queryStack.next()) {
             Term *t = createQueryTerm(queryStack, builder, pureTermView);
             if (!builder.hasError() && t) {
@@ -58,7 +58,7 @@ private:
         StackDumpQueryCreatorHelper::populateMultiTerm(queryStack, builder, mt);
     }
     static Term *
-    createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::string & pureTermView) {
+    createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, std::string & pureTermView) {
         uint32_t arity = queryStack.getArity();
         ParseItem::ItemType type = queryStack.getType();
         Node::UP node;
@@ -141,8 +141,8 @@ private:
         } else if (type == ParseItem::ITEM_FALSE) {
             builder.add_false_node();
         } else {
-            vespalib::string term(queryStack.getTerm());
-            vespalib::string view = queryStack.index_as_string();
+            std::string term(queryStack.getTerm());
+            std::string view = queryStack.index_as_string();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
 
@@ -153,7 +153,7 @@ private:
             } else if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
                 char buf[24];
                 auto res = std::to_chars(buf, buf + sizeof(buf), queryStack.getIntegerTerm(), 10);
-                t = &builder.addNumberTerm(vespalib::string(buf, res.ptr - buf), pureTermView, id, weight);
+                t = &builder.addNumberTerm(std::string(buf, res.ptr - buf), pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PREFIXTERM) {
                 t = &builder.addPrefixTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUBSTRINGTERM) {
@@ -171,7 +171,7 @@ private:
                 t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {
                 if (Term::isPossibleRangeTerm(term)) {
-                    Range range({vespalib::string(term)});
+                    Range range({std::string(term)});
                     t = &builder.addRangeTerm(range, view, id, weight);
                 } else {
                     t = &builder.addNumberTerm(term, view, id, weight);

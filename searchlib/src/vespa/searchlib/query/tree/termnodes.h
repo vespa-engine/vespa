@@ -9,15 +9,16 @@
 #include "term.h"
 #include "term_vector.h"
 #include "const_bool_nodes.h"
+#include <vespa/vespalib/util/vespa_dll_local.h>
 
 namespace search::query {
 
-using StringBase = TermBase<vespalib::string>;
+using StringBase = TermBase<std::string>;
 
 class NumberTerm : public QueryNodeMixin<NumberTerm, StringBase >
 {
 public:
-    NumberTerm(Type term, const vespalib::string & view, int32_t id, Weight weight)
+    NumberTerm(Type term, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight) {}
     virtual ~NumberTerm() = 0;
 };
@@ -27,7 +28,7 @@ public:
 class PrefixTerm : public QueryNodeMixin<PrefixTerm, StringBase >
 {
 public:
-    PrefixTerm(const Type &term, const vespalib::string & view,
+    PrefixTerm(const Type &term, const std::string & view,
                int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -39,7 +40,7 @@ public:
 class RangeTerm : public QueryNodeMixin<RangeTerm, TermBase<Range> >
 {
 public:
-    RangeTerm(const Type& term, const vespalib::string & view,
+    RangeTerm(const Type& term, const std::string & view,
               int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -51,7 +52,7 @@ public:
 class StringTerm : public QueryNodeMixin<StringTerm, StringBase >
 {
 public:
-    StringTerm(const Type &term, vespalib::string, int32_t id, Weight weight);
+    StringTerm(const Type &term, std::string, int32_t id, Weight weight);
     virtual ~StringTerm() = 0;
 };
 
@@ -60,7 +61,7 @@ public:
 class SubstringTerm : public QueryNodeMixin<SubstringTerm, StringBase >
 {
  public:
-    SubstringTerm(const Type &term, const vespalib::string & view, int32_t id, Weight weight)
+    SubstringTerm(const Type &term, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
     virtual ~SubstringTerm() = 0;
@@ -71,7 +72,7 @@ class SubstringTerm : public QueryNodeMixin<SubstringTerm, StringBase >
 class SuffixTerm : public QueryNodeMixin<SuffixTerm, StringBase >
 {
 public:
-    SuffixTerm(const Type &term, const vespalib::string & view, int32_t id, Weight weight)
+    SuffixTerm(const Type &term, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
     virtual ~SuffixTerm() = 0;
@@ -82,7 +83,7 @@ public:
 class LocationTerm : public QueryNodeMixin<LocationTerm, TermBase<Location> >
 {
 public:
-    LocationTerm(const Type &term, const vespalib::string & view, int32_t id, Weight weight)
+    LocationTerm(const Type &term, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
     bool isLocationTerm() const override { return true; }
@@ -95,7 +96,7 @@ class PredicateQuery : public QueryNodeMixin<PredicateQuery,
                                              TermBase<PredicateQueryTerm::UP> >
 {
 public:
-    PredicateQuery(PredicateQueryTerm::UP term, const vespalib::string & view, int32_t id, Weight weight)
+    PredicateQuery(PredicateQueryTerm::UP term, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(std::move(term), view, id, weight)
     {}
 };
@@ -105,7 +106,7 @@ public:
 class RegExpTerm : public QueryNodeMixin<RegExpTerm, StringBase>
 {
 public:
-    RegExpTerm(const Type &term, const vespalib::string & view, int32_t id, Weight weight)
+    RegExpTerm(const Type &term, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
     virtual ~RegExpTerm() = 0;
@@ -118,7 +119,7 @@ class FuzzyTerm : public QueryNodeMixin<FuzzyTerm, StringBase> {
     uint32_t _prefix_lock_length;
     // Prefix match mode is stored in parent Term
 public:
-    FuzzyTerm(const Type &term, const vespalib::string & view, int32_t id, Weight weight, uint32_t max_edit_distance,
+    FuzzyTerm(const Type &term, const std::string & view, int32_t id, Weight weight, uint32_t max_edit_distance,
               uint32_t prefix_lock_length, bool prefix_match)
         : QueryNodeMixinType(term, view, id, weight),
           _max_edit_distance(max_edit_distance),
@@ -146,14 +147,14 @@ public:
  */
 class NearestNeighborTerm : public QueryNodeMixin<NearestNeighborTerm, TermNode> {
 private:
-    vespalib::string _query_tensor_name;
+    std::string _query_tensor_name;
     uint32_t _target_num_hits;
     bool _allow_approximate;
     uint32_t _explore_additional_hits;
     double _distance_threshold;
 
 public:
-    NearestNeighborTerm(std::string_view query_tensor_name, vespalib::string field_name,
+    NearestNeighborTerm(std::string_view query_tensor_name, std::string field_name,
                         int32_t id, Weight weight, uint32_t target_num_hits,
                         bool allow_approximate, uint32_t explore_additional_hits,
                         double distance_threshold)
@@ -165,7 +166,7 @@ public:
           _distance_threshold(distance_threshold)
     {}
     virtual ~NearestNeighborTerm() {}
-    const vespalib::string& get_query_tensor_name() const { return _query_tensor_name; }
+    const std::string& get_query_tensor_name() const { return _query_tensor_name; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
     bool get_allow_approximate() const { return _allow_approximate; }
     uint32_t get_explore_additional_hits() const { return _explore_additional_hits; }
@@ -199,7 +200,7 @@ private:
 
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, MultiTerm>, public Term {
 public:
-    WeightedSetTerm(uint32_t num_terms, const vespalib::string & view, int32_t id, Weight weight)
+    WeightedSetTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(num_terms),
           Term(view, id, weight)
     {}
@@ -208,7 +209,7 @@ public:
 
 class DotProduct : public QueryNodeMixin<DotProduct, MultiTerm>, public Term {
 public:
-    DotProduct(uint32_t num_terms, const vespalib::string & view, int32_t id, Weight weight)
+    DotProduct(uint32_t num_terms, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(num_terms),
           Term(view, id, weight)
     {}
@@ -221,7 +222,7 @@ private:
     int64_t  _scoreThreshold;
     double   _thresholdBoostFactor;
 public:
-    WandTerm(uint32_t num_terms, const vespalib::string & view, int32_t id, Weight weight,
+    WandTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight,
              uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
         : QueryNodeMixinType(num_terms),
           Term(view, id, weight),
@@ -237,7 +238,7 @@ public:
 
 class InTerm : public QueryNodeMixin<InTerm, MultiTerm>, public Term {
 public:
-    InTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const vespalib::string & view, int32_t id, Weight weight)
+    InTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(std::move(terms), type),
           Term(view, id, weight)
     {

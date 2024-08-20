@@ -21,7 +21,7 @@ using namespace vespalib;
 using namespace vespalib::coro;
 using namespace vespalib::test;
 
-vespalib::string impl_spec(AsyncIo &async) {
+std::string impl_spec(AsyncIo &async) {
     switch (async.get_impl_tag()) {
     case AsyncIo::ImplTag::EPOLL: return "epoll";
     case AsyncIo::ImplTag::URING: return "uring";
@@ -71,7 +71,7 @@ TEST(AsyncIoTest, shutdown_with_self_exiting_coroutine) {
     f2.wait();
 }
 
-Lazy<size_t> write_msg(AsyncCryptoSocket &socket, const vespalib::string &msg) {
+Lazy<size_t> write_msg(AsyncCryptoSocket &socket, const std::string &msg) {
     size_t written = 0;
     while (written < msg.size()) {
         size_t write_size = (msg.size() - written);
@@ -84,9 +84,9 @@ Lazy<size_t> write_msg(AsyncCryptoSocket &socket, const vespalib::string &msg) {
     co_return written;
 }
 
-Lazy<vespalib::string> read_msg(AsyncCryptoSocket &socket, size_t wanted_bytes) {
+Lazy<std::string> read_msg(AsyncCryptoSocket &socket, size_t wanted_bytes) {
     char tmp[64];
-    vespalib::string result;
+    std::string result;
     while (result.size() < wanted_bytes) {
         size_t read_size = std::min(sizeof(tmp), wanted_bytes - result.size());
         ssize_t read_result = co_await socket.read(tmp, read_size);
@@ -99,17 +99,17 @@ Lazy<vespalib::string> read_msg(AsyncCryptoSocket &socket, size_t wanted_bytes) 
 }
 
 Work verify_socket_io(AsyncCryptoSocket &socket, bool is_server) {
-    vespalib::string server_message = "hello, this is the server speaking";
-    vespalib::string client_message = "please pick up, I need to talk to you";
+    std::string server_message = "hello, this is the server speaking";
+    std::string client_message = "please pick up, I need to talk to you";
     if (is_server) {
-        vespalib::string read = co_await read_msg(socket, client_message.size());
+        std::string read = co_await read_msg(socket, client_message.size());
         EXPECT_EQ(client_message, read);
         size_t written = co_await write_msg(socket, server_message);
         EXPECT_EQ(written, ssize_t(server_message.size()));
     } else {
         size_t written = co_await write_msg(socket, client_message);
         EXPECT_EQ(written, ssize_t(client_message.size()));
-        vespalib::string read = co_await read_msg(socket, server_message.size());
+        std::string read = co_await read_msg(socket, server_message.size());
         EXPECT_EQ(server_message, read);
     }
     co_return Done{};

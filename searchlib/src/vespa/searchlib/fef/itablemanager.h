@@ -15,7 +15,7 @@ public:
     /**
      * Returns a const view of the table with the given name or NULL if not found.
      **/
-    virtual const Table * getTable(const vespalib::string & name) const = 0;
+    virtual const Table * getTable(const std::string & name) const = 0;
     virtual ~ITableManager() = default;
 };
 

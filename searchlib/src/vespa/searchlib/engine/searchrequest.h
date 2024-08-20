@@ -17,7 +17,7 @@ public:
 
     uint32_t          offset;
     uint32_t          maxhits;
-    vespalib::string  sortSpec;
+    std::string  sortSpec;
     std::vector<char> groupSpec;
 
     SearchRequest();

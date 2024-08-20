@@ -146,7 +146,7 @@ public:
         return *_root.wrap(*_names, symbol);
     }
 
-    vespalib::string toString() const { return get().toString(); }
+    std::string toString() const { return get().toString(); }
 };
 
 bool operator == (const Slime & a, const Slime & b) noexcept;

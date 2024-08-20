@@ -30,8 +30,8 @@ namespace search::features {
 
 namespace {
 
-vespalib::string list_issues(const std::vector<vespalib::string> &issues) {
-    vespalib::string result;
+std::string list_issues(const std::vector<std::string> &issues) {
+    std::string result;
     for (const auto &issue: issues) {
         result += vespalib::make_string("  issue: %s\n", issue.c_str());
     }
@@ -276,7 +276,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
                                   const fef::ParameterList &params)
 {
     // Retrieve and concatenate whatever config is available.
-    vespalib::string script = "";
+    std::string script = "";
     fef::Property property = env.getProperties().lookup(getName(), "rankingScript");
     fef::Property expr_name = env.getProperties().lookup(getName(), "expressionName");
     if (property.size() > 0) {

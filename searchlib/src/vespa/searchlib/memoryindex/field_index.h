@@ -92,10 +92,10 @@ public:
     /**
      * Should only by used by unit tests.
      */
-    queryeval::SearchIterator::UP make_search_iterator(const vespalib::string& term, uint32_t field_id,
+    queryeval::SearchIterator::UP make_search_iterator(const std::string& term, uint32_t field_id,
                                                        fef::TermFieldMatchDataArray match_data) const;
 
-    std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
+    std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const std::string& term,
                                                                         const queryeval::FieldSpec& field,
                                                                         uint32_t field_id) override;
 };

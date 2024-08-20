@@ -22,7 +22,7 @@ class NodeTypes
 private:
     ValueType _not_found;
     std::map<const nodes::Node*,ValueType> _type_map;
-    std::vector<vespalib::string> _errors;
+    std::vector<std::string> _errors;
 public:
     NodeTypes();
     NodeTypes(NodeTypes &&rhs) = default;
@@ -30,7 +30,7 @@ public:
     NodeTypes(const nodes::Node &const_node);
     NodeTypes(const Function &function, const std::vector<ValueType> &input_types);
     ~NodeTypes();
-    const std::vector<vespalib::string> &errors() const { return _errors; }
+    const std::vector<std::string> &errors() const { return _errors; }
     NodeTypes export_types(const nodes::Node &root) const;
     const ValueType &get_type(const nodes::Node &node) const;
     template <typename F>

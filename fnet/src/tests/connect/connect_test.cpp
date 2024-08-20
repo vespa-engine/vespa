@@ -22,11 +22,11 @@ struct BlockingHostResolver : public AsyncResolver::HostResolver {
     Gate caller;
     Gate barrier;
     BlockingHostResolver() : resolver(), caller(), barrier() {}
-    vespalib::string ip_address(const vespalib::string &host) override {
+    std::string ip_address(const std::string &host) override {
         fprintf(stderr, "blocking resolve request: '%s'\n", host.c_str());
         caller.countDown();
         barrier.await();
-        vespalib::string result = resolver.ip_address(host);
+        std::string result = resolver.ip_address(host);
         fprintf(stderr, "returning resolve result: '%s'\n", result.c_str());
         return result;
     }
@@ -111,7 +111,7 @@ struct TransportFixture : FNET_IPacketHandler {
         packet->Free();
         return FNET_FREE_CHANNEL;
     }
-    FNET_Connection *connect(const vespalib::string &spec) {
+    FNET_Connection *connect(const std::string &spec) {
         FNET_Connection *conn = transport.Connect(spec.c_str(), &streamer);
         ASSERT_TRUE(conn != nullptr);
         if (conn->OpenChannel(this, FNET_Context()) == nullptr) {
@@ -152,7 +152,7 @@ TEST_MT_FFFF("require that normal connect works", 2,
         EXPECT_TRUE(socket.valid());
         TEST_BARRIER();
     } else {
-        vespalib::string spec = make_string("tcp/localhost:%d", f1.address().port());
+        std::string spec = make_string("tcp/localhost:%d", f1.address().port());
         FNET_Connection *conn = f2.connect(spec);
         TEST_BARRIER();
         conn->Owner()->Close(conn);
@@ -179,7 +179,7 @@ TEST_MT_FFFFF("require that async close can be called before async resolve compl
         SocketHandle socket = f1.accept();
         EXPECT_TRUE(!socket.valid());
     } else {
-        vespalib::string spec = make_string("tcp/localhost:%d", f1.address().port());
+        std::string spec = make_string("tcp/localhost:%d", f1.address().port());
         FNET_Connection *conn = f3.connect(spec);
         f2->wait_for_caller();
         conn->Owner()->Close(conn);
@@ -201,7 +201,7 @@ TEST_MT_FFFFF("require that async close during async do_handshake_work works", 2
         EXPECT_TRUE(socket.valid());
         TEST_BARRIER(); // #1
     } else {
-        vespalib::string spec = make_string("tcp/localhost:%d", f1.address().port());
+        std::string spec = make_string("tcp/localhost:%d", f1.address().port());
         FNET_Connection *conn = f3.connect(spec);
         f2->handshake_work_enter.await();
         conn->Owner()->Close(conn, false);

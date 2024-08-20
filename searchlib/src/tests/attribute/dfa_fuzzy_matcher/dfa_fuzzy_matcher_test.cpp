@@ -214,10 +214,10 @@ dfa_fuzzy_match_in_dictionary_no_skip(std::string_view target, const StringEnumS
 
 struct TestParam
 {
-    vespalib::string _name;
+    std::string _name;
     bool             _cased;
 
-    TestParam(vespalib::string name, bool cased)
+    TestParam(std::string name, bool cased)
         : _name(std::move(name)),
           _cased(cased)
     {

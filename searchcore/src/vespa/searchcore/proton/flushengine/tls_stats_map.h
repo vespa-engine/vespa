@@ -13,7 +13,7 @@ namespace proton::flushengine {
 class TlsStatsMap
 {
 public:
-    using Map = vespalib::hash_map<vespalib::string, TlsStats>;
+    using Map = vespalib::hash_map<std::string, TlsStats>;
 private:
     Map _map;
 
@@ -21,7 +21,7 @@ public:
     TlsStatsMap(Map &&map);
     ~TlsStatsMap();
 
-    const TlsStats &getTlsStats(const vespalib::string &domain) const;
+    const TlsStats &getTlsStats(const std::string &domain) const;
 };
 
 }

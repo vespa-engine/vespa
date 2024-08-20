@@ -23,7 +23,7 @@ class ReprocessDocumentsTask : public IReprocessingTask,
     using clock = std::chrono::steady_clock;
     proton::ISummaryManager::SP          _sm;
     std::shared_ptr<const document::DocumentTypeRepo>       _docTypeRepo;
-    vespalib::string                     _subDbName;
+    std::string                     _subDbName;
     double                               _visitorProgress;
     double                               _visitorCost;
     DocumentReprocessingHandler          _handler;
@@ -35,7 +35,7 @@ public:
     ReprocessDocumentsTask(IReprocessingInitializer &initializer,
                            const proton::ISummaryManager::SP &sm,
                            const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo,
-                           const vespalib::string &subDbName,
+                           const std::string &subDbName,
                            uint32_t docIdLimit);
 
     void run() override;

@@ -225,10 +225,10 @@ double measure_ns(auto &work) {
 struct BenchmarkResult {
     double cost_ns;
     BenchmarkResult(double cost_ns_in) : cost_ns(cost_ns_in) {}
-    void report(vespalib::string desc) {
+    void report(std::string desc) {
         fprintf(stderr, "%s: cost_ns: %g\n", desc.c_str(), cost_ns);
     }
-    void report(vespalib::string name, vespalib::string desc) {
+    void report(std::string name, std::string desc) {
         report(name + "(" + desc + ")");
     }
 };

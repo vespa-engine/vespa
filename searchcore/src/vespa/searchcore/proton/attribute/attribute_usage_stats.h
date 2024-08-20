@@ -19,8 +19,8 @@ public:
     AttributeUsageStats();
     ~AttributeUsageStats();
     void merge(const search::AddressSpaceUsage &usage,
-               const vespalib::string &attributeName,
-               const vespalib::string &subDbName);
+               const std::string &attributeName,
+               const std::string &subDbName);
 
     const AddressSpaceUsageStats& max_address_space_usage() const { return _max_usage; }
 

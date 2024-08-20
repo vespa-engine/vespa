@@ -43,7 +43,7 @@ void ReferenceFieldValue::requireIdOfMatchingType(
                 make_string("Can't assign document ID '%s' (of type '%s') to "
                             "reference of document type '%s'",
                             id.toString().c_str(),
-                            vespalib::string(id.getDocType()).c_str(),
+                            std::string(id.getDocType()).c_str(),
                             type.getName().c_str()),
                 VESPA_STRLOC);
     }

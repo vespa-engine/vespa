@@ -3,6 +3,7 @@
 #include "feeddebugger.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace proton {
 
@@ -11,7 +12,7 @@ namespace {
 void
 setupDebugging(std::vector<uint32_t> & debugLidList)
 {
-    vespalib::string lidList = vespalib::safe_char_2_string(getenv("VESPA_PROTON_DEBUG_FEED_LID_LIST"));
+    std::string lidList = vespalib::safe_char_2_string(getenv("VESPA_PROTON_DEBUG_FEED_LID_LIST"));
     vespalib::StringTokenizer lidTokenizer(lidList);
     for (auto token : lidTokenizer) {
         vespalib::asciistream is(token);
@@ -24,7 +25,7 @@ setupDebugging(std::vector<uint32_t> & debugLidList)
 void
 setupDebugging(std::vector<document::DocumentId> & debugLidList)
 {
-    vespalib::string lidList = vespalib::safe_char_2_string(getenv("VESPA_PROTON_DEBUG_FEED_DOCID_LIST"));
+    std::string lidList = vespalib::safe_char_2_string(getenv("VESPA_PROTON_DEBUG_FEED_DOCID_LIST"));
     vespalib::StringTokenizer lidTokenizer(lidList);
     for (auto i : lidTokenizer) {
         debugLidList.emplace_back(i);

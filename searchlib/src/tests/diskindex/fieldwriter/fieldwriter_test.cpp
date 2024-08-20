@@ -71,7 +71,7 @@ namespace fieldwriter {
 uint32_t minSkipDocs = 64;
 uint32_t minChunkDocs = 256_Ki;
 
-vespalib::string dirprefix = "index/";
+std::string dirprefix = "index/";
 
 void disableSkip()
 {
@@ -93,7 +93,7 @@ void enableSkipChunks()
 
 const char *bool_to_str(bool val) { return (val ? "true" : "false"); }
 
-vespalib::string
+std::string
 makeWordString(uint64_t wordNum)
 {
     using AS = vespalib::asciistream;
@@ -162,13 +162,13 @@ private:
     bool _encode_interleaved_features;
     uint32_t _numWordIds;
     uint32_t _docIdLimit;
-    vespalib::string _namepref;
+    std::string _namepref;
     Schema _schema;
     uint32_t _indexId;
 
 public:
 
-    WrappedFieldWriter(const vespalib::string &namepref,
+    WrappedFieldWriter(const std::string &namepref,
                        bool dynamicK,
                        bool encoce_cheap_fatures,
                        uint32_t numWordIds,
@@ -181,7 +181,7 @@ public:
 
 WrappedFieldWriter::~WrappedFieldWriter() {}
 
-WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
+WrappedFieldWriter::WrappedFieldWriter(const std::string &namepref,
                                        bool dynamicK,
                                        bool encode_interleaved_features,
                                        uint32_t numWordIds,
@@ -238,7 +238,7 @@ private:
     Schema _schema;
 
 public:
-    WrappedFieldReader(const vespalib::string &namepref,
+    WrappedFieldReader(const std::string &namepref,
                       uint32_t numWordIds,
                       uint32_t docIdLimit);
 
@@ -248,7 +248,7 @@ public:
 };
 
 
-WrappedFieldReader::WrappedFieldReader(const vespalib::string &namepref,
+WrappedFieldReader::WrappedFieldReader(const std::string &namepref,
                                      uint32_t numWordIds,
                                      uint32_t docIdLimit)
     : _fieldReader(),
@@ -298,7 +298,7 @@ class FileChecksum
     unsigned char _digest[EVP_MAX_MD_SIZE];
     unsigned int  _digest_len;
 public:
-    FileChecksum(const vespalib::string &file_name);
+    FileChecksum(const std::string &file_name);
     bool operator==(const FileChecksum &rhs) const {
         return ((_digest_len == rhs._digest_len) &&
                 (memcmp(_digest, rhs._digest, _digest_len) == 0));
@@ -306,13 +306,13 @@ public:
 };
 
 
-FileChecksum::FileChecksum(const vespalib::string &file_name)
+FileChecksum::FileChecksum(const std::string &file_name)
     : _digest(),
       _digest_len(0u)
 {
     FastOS_File f;
     Alloc buf = Alloc::alloc(64_Ki);
-    vespalib::string full_file_name(dirprefix + file_name);
+    std::string full_file_name(dirprefix + file_name);
     bool openres = f.OpenReadOnly(full_file_name.c_str());
     if (!openres) {
         LOG(error, "Could not open %s for sha256 checksum", full_file_name.c_str());
@@ -335,7 +335,7 @@ FileChecksum::FileChecksum(const vespalib::string &file_name)
 }
 
 void
-compare_files(const vespalib::string &file_name_prefix, const vespalib::string &file_name_suffix)
+compare_files(const std::string &file_name_prefix, const std::string &file_name_suffix)
 {
     FileChecksum baseline_checksum(file_name_prefix + file_name_suffix);
     FileChecksum cooked_fusion_checksum(file_name_prefix + "x" + file_name_suffix);
@@ -344,14 +344,14 @@ compare_files(const vespalib::string &file_name_prefix, const vespalib::string &
     assert(baseline_checksum == raw_fusion_checksum);
 }
 
-std::vector<vespalib::string> suffixes = {
+std::vector<std::string> suffixes = {
     "boolocc.bdat", "boolocc.idx",
     "posocc.dat.compressed",
     "dictionary.pdat", "dictionary.spdat", "dictionary.ssdat"
 };
 
 void
-check_fusion(const vespalib::string &file_name_prefix)
+check_fusion(const std::string &file_name_prefix)
 {
     for (const auto &file_name_suffix : suffixes) {
         compare_files(file_name_prefix, file_name_suffix);
@@ -359,9 +359,9 @@ check_fusion(const vespalib::string &file_name_prefix)
 }
 
 void
-remove_field(const vespalib::string &file_name_prefix)
+remove_field(const std::string &file_name_prefix)
 {
-    vespalib::string remove_prefix(dirprefix + file_name_prefix);
+    std::string remove_prefix(dirprefix + file_name_prefix);
     FieldWriter::remove(remove_prefix);
     FieldWriter::remove(remove_prefix + "x");
     FieldWriter::remove(remove_prefix + "xx");
@@ -484,7 +484,7 @@ randReadField(FakeWordSet &wordSet,
     bool openCntRes = dictFile->open(cname, tuneFileRandRead);
     assert(openCntRes);
     (void) openCntRes;
-    vespalib::string cWord;
+    std::string cWord;
 
     std::string pname = dirprefix + namepref + "posocc.dat";
     pname += ".compressed";
@@ -552,8 +552,8 @@ randReadField(FakeWordSet &wordSet,
 void
 fusionField(uint32_t numWordIds,
             uint32_t docIdLimit,
-            const vespalib::string &ipref,
-            const vespalib::string &opref,
+            const std::string &ipref,
+            const std::string &opref,
             bool doRaw,
             bool dynamicK,
             bool encode_interleaved_features)
@@ -609,7 +609,7 @@ fusionField(uint32_t numWordIds,
 
 void
 testFieldWriterVariant(FakeWordSet &wordSet, uint32_t doc_id_limit,
-                       const vespalib::string &file_name_prefix,
+                       const std::string &file_name_prefix,
                        bool dynamic_k,
                        bool encode_interleaved_features,
                        bool verbose)

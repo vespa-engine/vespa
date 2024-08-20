@@ -21,7 +21,7 @@ struct MyType{
 };
 
 TEST("require that map of ints can be inserted") {
-    std::map<vespalib::string, int32_t> map;
+    std::map<std::string, int32_t> map;
     Slime slime;
     Cursor & root = slime.setObject();
     root.setLong("foo", 3);
@@ -36,7 +36,7 @@ TEST("require that map of ints can be inserted") {
 }
 
 TEST("require that map of struct can be inserted") {
-    std::map<vespalib::string, MyType> map;
+    std::map<std::string, MyType> map;
     Slime slime;
     Cursor & root = slime.setObject();
     Cursor & one = root.setObject("foo");
@@ -55,7 +55,7 @@ TEST("require that map of struct can be inserted") {
 }
 
 TEST("require that map of long can be inserted") {
-    std::map<vespalib::string, int64_t> map;
+    std::map<std::string, int64_t> map;
     Slime slime;
     Cursor & root = slime.setObject();
     root.setLong("foo", 3);
@@ -70,7 +70,7 @@ TEST("require that map of long can be inserted") {
 }
 
 TEST("require that map of double can be inserted") {
-    std::map<vespalib::string, double> map;
+    std::map<std::string, double> map;
     Slime slime;
     Cursor & root = slime.setObject();
     root.setDouble("foo", 3.1);
@@ -85,7 +85,7 @@ TEST("require that map of double can be inserted") {
 }
 
 TEST("require that map of bool can be inserted") {
-    std::map<vespalib::string, bool> map;
+    std::map<std::string, bool> map;
     Slime slime;
     Cursor & root = slime.setObject();
     root.setBool("foo", true);
@@ -100,13 +100,13 @@ TEST("require that map of bool can be inserted") {
 }
 
 TEST("require that map of string can be inserted") {
-    std::map<vespalib::string, vespalib::string> map;
+    std::map<std::string, std::string> map;
     Slime slime;
     Cursor & root = slime.setObject();
     root.setString("foo", "baz");
     root.setString("bar", "bar");
     root.setString("baz", "foo");
-    MapInserter<vespalib::string> inserter(map);
+    MapInserter<std::string> inserter(map);
     root.traverse(inserter);
     ASSERT_EQUAL(3u, map.size());
     ASSERT_EQUAL("foo", map["baz"]);

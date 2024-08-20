@@ -29,7 +29,7 @@ using search::attribute::test::MockGidToLidMapperFactory;
 using generation_t = AttributeVector::generation_t;
 
 std::shared_ptr<ReferenceAttribute>
-createReferenceAttribute(const vespalib::string &name)
+createReferenceAttribute(const std::string &name)
 {
     auto refAttr = std::make_shared<ReferenceAttribute>(name);
     refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
@@ -37,7 +37,7 @@ createReferenceAttribute(const vespalib::string &name)
 }
 
 AttributeVector::SP
-createTargetAttribute(const vespalib::string &name)
+createTargetAttribute(const std::string &name)
 {
     return search::AttributeFactory::createAttribute(name, Config(BasicType::STRING));
 }
@@ -79,7 +79,7 @@ struct Fixture {
           ctx(std::make_unique<ImportedAttributesContext>(repo))
     {
     }
-    Fixture &addAttribute(const vespalib::string &name) {
+    Fixture &addAttribute(const std::string &name) {
         auto attr = ImportedAttributeVectorFactory::create(name,
                                                            createReferenceAttribute(name + "_ref"),
                                                            std::shared_ptr<search::IDocumentMetaStoreContext>(),
@@ -89,7 +89,7 @@ struct Fixture {
         repo.add(name, attr);
         return *this;
     }
-    AttributeVector::SP getTargetAttribute(const vespalib::string &importedName) const {
+    AttributeVector::SP getTargetAttribute(const std::string &importedName) const {
         auto readable_target_attr = repo.get(importedName)->getTargetAttribute();
         auto target_attr = std::dynamic_pointer_cast<AttributeVector>(readable_target_attr);
         ASSERT_TRUE(target_attr);

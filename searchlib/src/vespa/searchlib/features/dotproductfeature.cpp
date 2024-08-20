@@ -181,7 +181,7 @@ template <typename BaseType>
 class SingleDotProductByWeightedValueExecutor final : public fef::FeatureExecutor {
 public:
     using WeightedSetReadView = attribute::IWeightedSetReadView<BaseType>;
-    using StoredKeyType = std::conditional_t<std::is_same_v<BaseType,const char*>,vespalib::string,BaseType>;
+    using StoredKeyType = std::conditional_t<std::is_same_v<BaseType,const char*>,std::string,BaseType>;
     SingleDotProductByWeightedValueExecutor(const WeightedSetReadView * weighted_set_read_view, BaseType key, feature_t value)
         : _weighted_set_read_view(weighted_set_read_view),
           _key(key),
@@ -665,16 +665,16 @@ attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property 
     return std::unique_ptr<fef::Anything>();
 }
 
-vespalib::string
-make_queryvector_key(const vespalib::string & base, const vespalib::string & subKey) {
-    vespalib::string key(base);
+std::string
+make_queryvector_key(const std::string & base, const std::string & subKey) {
+    std::string key(base);
     key.append(".vector.");
     key.append(subKey);
     return key;
 }
 
-const vespalib::string &
-make_queryvector_key_for_attribute(const IAttributeVector & attribute, const vespalib::string & key, vespalib::string & scratchPad) {
+const std::string &
+make_queryvector_key_for_attribute(const IAttributeVector & attribute, const std::string & key, std::string & scratchPad) {
     if (attribute.hasEnum() && (attribute.getCollectionType() == attribute::CollectionType::WSET)) {
         scratchPad = key;
         scratchPad.append(".").append(attribute.getName());
@@ -683,9 +683,9 @@ make_queryvector_key_for_attribute(const IAttributeVector & attribute, const ves
     return key;
 }
 
-vespalib::string
-make_attribute_key(const vespalib::string & base, const vespalib::string & subKey) {
-    vespalib::string key(base);
+std::string
+make_attribute_key(const std::string & base, const std::string & subKey) {
+    std::string key(base);
     key.append(".attribute.");
     key.append(subKey);
     return key;
@@ -709,7 +709,7 @@ namespace {
 
 fef::Anything::UP
 createQueryVector(const IQueryEnvironment & env, const IAttributeVector * attribute,
-                  const vespalib::string & baseName, const vespalib::string & queryVector)
+                  const std::string & baseName, const std::string & queryVector)
 {
     fef::Anything::UP arguments;
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
@@ -779,7 +779,7 @@ DotProductBlueprint::DotProductBlueprint() :
 
 DotProductBlueprint::~DotProductBlueprint() = default;
 
-const vespalib::string &
+const std::string &
 DotProductBlueprint::getAttribute(const IQueryEnvironment & env) const
 {
     Property prop = env.getProperties().lookup(getBaseName(), _attributeOverride);
@@ -828,7 +828,7 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
     if (queryVector == nullptr) {
         fef::Anything::UP arguments = createQueryVector(env, attribute, getBaseName(), _queryVector);
         if (arguments) {
-            vespalib::string scratchPad;
+            std::string scratchPad;
             store.add(make_queryvector_key_for_attribute(*attribute, _queryVectorKey, scratchPad), std::move(arguments));
         }
     }
@@ -853,7 +853,7 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
                       getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
-    vespalib::string scratchPad;
+    std::string scratchPad;
     const fef::Anything * queryVectorArg = env.getObjectStore().get(make_queryvector_key_for_attribute(*attribute, _queryVectorKey, scratchPad));
     if (queryVectorArg != nullptr) {
         return createFromObject(attribute, *queryVectorArg, stash);

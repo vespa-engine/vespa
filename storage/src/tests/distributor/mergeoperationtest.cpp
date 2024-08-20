@@ -21,7 +21,7 @@ using namespace ::testing;
 namespace storage::distributor {
 
 namespace {
-vespalib::string _g_storage("storage");
+std::string _g_storage("storage");
 }
 
 struct MergeOperationTest : Test, DistributorStripeTestUtil {

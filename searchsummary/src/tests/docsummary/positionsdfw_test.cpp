@@ -21,7 +21,7 @@ using search::SingleInt64ExtAttribute;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::IAttributeFunctor;
-using vespalib::string;
+using std::string;
 using std::vector;
 
 namespace search::docsummary {
@@ -84,7 +84,7 @@ struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
 
 template <typename AttrType>
 void checkWritePositionField(AttrType &attr,
-                             uint32_t doc_id, const vespalib::string &expect_json) {
+                             uint32_t doc_id, const std::string &expect_json) {
     for (AttributeVector::DocId i = 0; i < doc_id + 1; ) {
         attr.addDoc(i);
         if (i == 007) {

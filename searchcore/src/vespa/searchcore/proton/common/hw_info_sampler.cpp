@@ -60,7 +60,7 @@ sampleCpuCores(const HwInfoSampler::Config &cfg, const vespalib::ResourceLimits&
 }
 
 std::unique_ptr<HwinfoConfig>
-readConfig(const vespalib::string &path) {
+readConfig(const std::string &path) {
     FileSpec spec(path + "/" + "hwinfo.cfg");
     ConfigSubscriber s(spec);
     std::unique_ptr<ConfigHandle<HwinfoConfig>> handle = s.subscribe<HwinfoConfig>("hwinfo");
@@ -69,7 +69,7 @@ readConfig(const vespalib::string &path) {
 }
 
 
-void writeConfig(const vespalib::string &path,
+void writeConfig(const std::string &path,
                  double diskWriteSpeed, Clock::time_point sampleTime)
 {
     HwinfoConfigBuilder builder;
@@ -81,10 +81,10 @@ void writeConfig(const vespalib::string &path,
     }
 }
 
-double measureDiskWriteSpeed(const vespalib::string &path,
+double measureDiskWriteSpeed(const std::string &path,
                              size_t diskWriteLen)
 {
-    vespalib::string fileName = path + "/hwinfo-writespeed";
+    std::string fileName = path + "/hwinfo-writespeed";
     size_t bufferLen = 1_Mi;
     Alloc buffer(Alloc::allocMMap(bufferLen));
     memset(buffer.get(), 0, buffer.size());
@@ -114,7 +114,7 @@ double measureDiskWriteSpeed(const vespalib::string &path,
 
 }
 
-HwInfoSampler::HwInfoSampler(const vespalib::string &path,
+HwInfoSampler::HwInfoSampler(const std::string &path,
                              const Config &config)
     : _hwInfo(),
       _sampleTime(),
@@ -138,7 +138,7 @@ HwInfoSampler::setup(const HwInfo::Disk &disk, const HwInfo::Memory &memory, con
 }
 
 void
-HwInfoSampler::setDiskWriteSpeed(const vespalib::string &path, const Config &config)
+HwInfoSampler::setDiskWriteSpeed(const std::string &path, const Config &config)
 {
     if (config.diskWriteSpeedOverride != 0) {
         _diskWriteSpeed = config.diskWriteSpeedOverride;
@@ -155,7 +155,7 @@ HwInfoSampler::setDiskWriteSpeed(const vespalib::string &path, const Config &con
 }
 
 void
-HwInfoSampler::sampleDiskWriteSpeed(const vespalib::string &path, const Config &config)
+HwInfoSampler::sampleDiskWriteSpeed(const std::string &path, const Config &config)
 {
     size_t minDiskWriteLen = 1_Mi;
     size_t diskWriteLen = config.diskSampleWriteSize;

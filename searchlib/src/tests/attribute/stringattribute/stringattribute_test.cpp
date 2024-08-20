@@ -44,9 +44,9 @@ addDocs(Attribute & vec, uint32_t numDocs)
 template <typename Attribute>
 void
 checkCount(Attribute & vec, uint32_t doc, uint32_t valueCount,
-                                uint32_t numValues, const vespalib::string & value)
+                                uint32_t numValues, const std::string & value)
 {
-    std::vector<vespalib::string> buffer(valueCount);
+    std::vector<std::string> buffer(valueCount);
     EXPECT_TRUE(static_cast<uint32_t>(vec.getValueCount(doc)) == valueCount);
     EXPECT_TRUE(vec.get(doc, buffer.data(), buffer.size()) == valueCount);
     EXPECT_TRUE(std::count(buffer.begin(), buffer.end(), value) == numValues);
@@ -76,7 +76,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
     EXPECT_TRUE(attr.getNumDocs() == 0);
 
     // generate two sets of unique strings
-    std::vector<vespalib::string> uniqueStrings;
+    std::vector<std::string> uniqueStrings;
     uniqueStrings.reserve(numDocs - 1);
     for (uint32_t i = 0; i < numDocs - 1; ++i) {
         char unique[16];
@@ -85,7 +85,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
     }
     ASSERT_TRUE(std::is_sorted(uniqueStrings.begin(), uniqueStrings.end()));
 
-    std::vector<vespalib::string> newUniques;
+    std::vector<std::string> newUniques;
     newUniques.reserve(numDocs - 1);
     for (uint32_t i = 0; i < numDocs - 1; ++i) {
         char unique[16];
@@ -115,7 +115,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
             EXPECT_TRUE(attr.get(doc) == nullptr);
             EXPECT_TRUE(attr.getEnum(doc) == std::numeric_limits<uint32_t>::max());
         } else if (!attr.hasWeightedSetType()) {
-            EXPECT_EQUAL(vespalib::string(attr.get(doc)), uniqueStrings[0]);
+            EXPECT_EQUAL(std::string(attr.get(doc)), uniqueStrings[0]);
             uint32_t e;
             EXPECT_TRUE(attr.findEnum(uniqueStrings[0].c_str(), e));
             EXPECT_EQUAL(1u, attr.findFoldedEnums(uniqueStrings[0].c_str()).size());
@@ -124,7 +124,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
         }
 
         // test get all
-        std::vector<vespalib::string> values(valueCount);
+        std::vector<std::string> values(valueCount);
         ASSERT_TRUE(attr.get(doc, values.data(), valueCount) == valueCount);
 
         std::vector<uint32_t> enums(valueCount);
@@ -166,7 +166,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
         EXPECT_TRUE(valueCount == expectedValueCount);
 
         // test get all
-        std::vector<vespalib::string> values(valueCount);
+        std::vector<std::string> values(valueCount);
         EXPECT_TRUE(attr.get(doc, values.data(), valueCount) == valueCount);
 
         std::vector<uint32_t> enums(valueCount);
@@ -229,7 +229,7 @@ TEST("testMultiValueMultipleClearDocBetweenCommit")
     ArrayStr mvsa("a-string");
     uint32_t numDocs = 50;
     addDocs(mvsa, numDocs);
-    std::vector<vespalib::string> buffer(numDocs);
+    std::vector<std::string> buffer(numDocs);
 
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t valueCount = doc;
@@ -255,7 +255,7 @@ TEST("testMultiValueRemove")
     ArrayStr mvsa("a-string");
     uint32_t numDocs = 50;
     addDocs(mvsa, numDocs);
-    std::vector<vespalib::string> buffer(9);
+    std::vector<std::string> buffer(9);
 
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         EXPECT_TRUE(mvsa.append(doc, "one", 1));
@@ -327,7 +327,7 @@ testSingleValue(Attribute & svsa, Config &cfg)
         EXPECT_TRUE( ! IEnumStore::Index(EntryRef(v.getEnum(doc))).valid() );
     }
 
-    std::map<vespalib::string, uint32_t> enums;
+    std::map<std::string, uint32_t> enums;
     // 10 unique strings
     for (uint32_t i = 0; i < numDocs; ++i) {
         snprintf(tmp,sizeof(tmp), "enum%u", i % 10);
@@ -345,11 +345,11 @@ testSingleValue(Attribute & svsa, Config &cfg)
                 e1 = v.getEnum(j);
                 EXPECT_TRUE( v.findEnum(t, e2) );
                 EXPECT_TRUE( e1 == e2 );
-                if (enums.count(vespalib::string(t)) == 0) {
-                    enums[vespalib::string(t)] = e1;
+                if (enums.count(std::string(t)) == 0) {
+                    enums[std::string(t)] = e1;
                 } else {
-                    EXPECT_TRUE( e1 == enums[vespalib::string(t)]);
-                    EXPECT_TRUE( e2 == enums[vespalib::string(t)]);
+                    EXPECT_TRUE( e1 == enums[std::string(t)]);
+                    EXPECT_TRUE( e2 == enums[std::string(t)]);
                 }
             }
         }

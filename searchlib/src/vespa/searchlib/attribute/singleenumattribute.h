@@ -101,7 +101,7 @@ protected:
     bool onAddDoc(DocId doc) override;
 
 public:
-    SingleValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
+    SingleValueEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
     ~SingleValueEnumAttribute();
 
     bool addDoc(DocId & doc) override;

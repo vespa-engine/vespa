@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/vespalib/trace/tracenode.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/memory.h>
+#include <string>
 
 namespace vespalib::slime {
     struct Cursor;
@@ -32,13 +32,13 @@ public:
     Trace(uint32_t traceLevel, const Clock & clock);
 
     bool shouldTrace(uint32_t level) const;
-    void trace(uint32_t level, const vespalib::string & message);
+    void trace(uint32_t level, const std::string & message);
 
     void serialize(vespalib::slime::Cursor & cursor) const;
     void deserialize(const vespalib::slime::Inspector & inspector);
     const vespalib::TraceNode & getRoot() const { return _root; }
 
-    vespalib::string toString() const;
+    std::string toString() const;
 private:
     void serializeTraceLog(vespalib::slime::Cursor & array) const;
     void deserializeTraceLog(const vespalib::slime::Inspector & inspector);

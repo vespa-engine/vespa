@@ -26,17 +26,17 @@ private:
     void encodeObject(const vespalib::Memory & symbol, const vespalib::slime::Inspector & object);
     void encodeArray(const vespalib::Memory & symbol, const vespalib::slime::Inspector & object);
     void encodeValue(const vespalib::slime::Inspector & value);
-    void encodeString(const vespalib::string & value);
-    void encodeQuotedString(const vespalib::string & value);
+    void encodeString(const std::string & value);
+    void encodeQuotedString(const std::string & value);
     void encodeLong(long value);
     void encodeDouble(double value);
     void encodeBool(bool value);
     struct Node {
-        vespalib::string name;
+        std::string name;
         int arrayIndex;
-        Node(const vespalib::string & nm, int idx) : name(nm), arrayIndex(idx) {}
+        Node(const std::string & nm, int idx) : name(nm), arrayIndex(idx) {}
         Node(int idx) : name(""), arrayIndex(idx) {}
-        Node(const vespalib::string & nm) : name(nm), arrayIndex(-1) {}
+        Node(const std::string & nm) : name(nm), arrayIndex(-1) {}
     };
     using NodeStack = std::vector<Node>;
     const vespalib::slime::Inspector & _inspector;

@@ -4,13 +4,13 @@
 
 namespace search::tags {
 // Do not change these constants, they are persisted in many file headers.
-vespalib::string FREEZE_TIME("freezeTime");
-vespalib::string CREATE_TIME("createTime");
-vespalib::string FROZEN("frozen");
-vespalib::string DOCID_LIMIT("docIdLimit");
-vespalib::string FILE_BIT_SIZE("fileBitSize");
-vespalib::string DESC("desc");
-vespalib::string ENTRY_SIZE("entrySize");
-vespalib::string NUM_KEYS("numKeys");
+std::string FREEZE_TIME("freezeTime");
+std::string CREATE_TIME("createTime");
+std::string FROZEN("frozen");
+std::string DOCID_LIMIT("docIdLimit");
+std::string FILE_BIT_SIZE("fileBitSize");
+std::string DESC("desc");
+std::string ENTRY_SIZE("entrySize");
+std::string NUM_KEYS("numKeys");
 
 }

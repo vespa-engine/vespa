@@ -4,6 +4,7 @@
 #include <lib/tags.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
@@ -44,8 +45,8 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri &uri, std::ostre
 ModelInspect::~ModelInspect() = default;
 
 void
-ModelInspect::printPort(const vespalib::string &host, int port,
-                        const vespalib::string &tags)
+ModelInspect::printPort(const std::string &host, int port,
+                        const std::string &tags)
 {
     if (_flags.tagfilt) {
         for (size_t i = 0; i < _flags.tagFilter.size(); ++i) {
@@ -62,14 +63,14 @@ ModelInspect::printPort(const vespalib::string &host, int port,
     if (_flags.tagfilt) {
         _out << "\n";
     } else {
-        vespalib::string upper = upcase(tags);
+        std::string upper = upcase(tags);
         _out << " (" << upper << ")\n";
     }
 }
 
 void
 ModelInspect::printService(const cloud::config::ModelConfig::Hosts::Services &svc,
-                           const vespalib::string &host)
+                           const std::string &host)
 {
     if (!_flags.tagfilt) {
         _out << svc.name << " @ " << host << " : " << svc.clustertype << std::endl;
@@ -83,7 +84,7 @@ ModelInspect::printService(const cloud::config::ModelConfig::Hosts::Services &sv
 int
 ModelInspect::action(int cnt, char **argv)
 {
-    const vespalib::string cmd = vespalib::safe_char_2_string(*argv++);
+    const std::string cmd = vespalib::safe_char_2_string(*argv++);
     if (cnt == 1) {
         if (cmd == "yamldump") {
             yamlDump();
@@ -122,7 +123,7 @@ ModelInspect::action(int cnt, char **argv)
         }
     }
     if (cnt == 2) {
-        vespalib::string arg = vespalib::safe_char_2_string(*argv++);
+        std::string arg = vespalib::safe_char_2_string(*argv++);
         if (cmd == "host") {
             return listHost(arg);
         }
@@ -131,7 +132,7 @@ ModelInspect::action(int cnt, char **argv)
         }
         if (cmd == "service") {
             size_t colon = arg.find(':');
-            if (colon != vespalib::string::npos)  {
+            if (colon != std::string::npos)  {
                 return listService(arg.substr(0, colon),
                                    arg.substr(colon + 1));
             } else {
@@ -143,8 +144,8 @@ ModelInspect::action(int cnt, char **argv)
         }
     }
     if (cnt == 3) {
-        vespalib::string arg1 = vespalib::safe_char_2_string(*argv++);
-        vespalib::string arg2 = vespalib::safe_char_2_string(*argv++);
+        std::string arg1 = vespalib::safe_char_2_string(*argv++);
+        std::string arg2 = vespalib::safe_char_2_string(*argv++);
         if (cmd == "get-index-of") {
             return getIndexOf(arg1, arg2);
         }
@@ -155,7 +156,7 @@ ModelInspect::action(int cnt, char **argv)
 
 void
 ModelInspect::dumpService(const cloud::config::ModelConfig::Hosts::Services &svc,
-            const vespalib::string &host)
+            const std::string &host)
 {
     _out << "- servicename: " << svc.name << "\n";
     _out << "  servicetype: " << svc.type << "\n";
@@ -188,7 +189,7 @@ ModelInspect::yamlDump()
 void
 ModelInspect::listHosts()
 {
-    std::vector<vespalib::string> hosts;
+    std::vector<std::string> hosts;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
         const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
         hosts.push_back(hconf.name);
@@ -202,7 +203,7 @@ ModelInspect::listHosts()
 void
 ModelInspect::listServices()
 {
-    typedef std::set<vespalib::string> Set;
+    typedef std::set<std::string> Set;
     Set services;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
         const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
@@ -218,7 +219,7 @@ ModelInspect::listServices()
 void
 ModelInspect::listClusters()
 {
-    typedef std::set<vespalib::string> Set;
+    typedef std::set<std::string> Set;
     Set clusters;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
         const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
@@ -234,7 +235,7 @@ ModelInspect::listClusters()
 void
 ModelInspect::listConfigIds()
 {
-    std::vector<vespalib::string> configids;
+    std::vector<std::string> configids;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
         const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
@@ -248,7 +249,7 @@ ModelInspect::listConfigIds()
 }
 
 int
-ModelInspect::listHost(const vespalib::string host)
+ModelInspect::listHost(const std::string host)
 {
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
         const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
@@ -264,7 +265,7 @@ ModelInspect::listHost(const vespalib::string host)
 }
 
 int
-ModelInspect::listCluster(const vespalib::string cluster)
+ModelInspect::listCluster(const std::string cluster)
 {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
@@ -294,7 +295,7 @@ ModelInspect::listAllPorts()
 }
 
 int
-ModelInspect::listService(const vespalib::string svctype)
+ModelInspect::listService(const std::string svctype)
 {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
@@ -313,8 +314,8 @@ ModelInspect::listService(const vespalib::string svctype)
 
 
 int
-ModelInspect::listService(const vespalib::string cluster,
-                          const vespalib::string svctype)
+ModelInspect::listService(const std::string cluster,
+                          const std::string svctype)
 {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
@@ -334,7 +335,7 @@ ModelInspect::listService(const vespalib::string cluster,
 }
 
 int
-ModelInspect::listConfigId(const vespalib::string configid)
+ModelInspect::listConfigId(const std::string configid)
 {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
@@ -352,7 +353,7 @@ ModelInspect::listConfigId(const vespalib::string configid)
 }
 
 int
-ModelInspect::getIndexOf(const vespalib::string service, const vespalib::string host)
+ModelInspect::getIndexOf(const std::string service, const std::string host)
 {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {

@@ -7,17 +7,17 @@ namespace search::attribute {
 
 namespace {
 
-const vespalib::string euclidean = "euclidean";
-const vespalib::string angular = "angular";
-const vespalib::string geodegrees = "geodegrees";
-const vespalib::string innerproduct = "innerproduct";
-const vespalib::string prenormalized_angular = "prenormalized_angular";
-const vespalib::string dotproduct = "dotproduct";
-const vespalib::string hamming = "hamming";
+const std::string euclidean = "euclidean";
+const std::string angular = "angular";
+const std::string geodegrees = "geodegrees";
+const std::string innerproduct = "innerproduct";
+const std::string prenormalized_angular = "prenormalized_angular";
+const std::string dotproduct = "dotproduct";
+const std::string hamming = "hamming";
 
 }
 
-vespalib::string
+std::string
 DistanceMetricUtils::to_string(DistanceMetric metric)
 {
     switch (metric) {
@@ -33,7 +33,7 @@ DistanceMetricUtils::to_string(DistanceMetric metric)
 }
 
 DistanceMetric
-DistanceMetricUtils::to_distance_metric(const vespalib::string& metric)
+DistanceMetricUtils::to_distance_metric(const std::string& metric)
 {
     if (metric == euclidean) {
         return DistanceMetric::Euclidean;

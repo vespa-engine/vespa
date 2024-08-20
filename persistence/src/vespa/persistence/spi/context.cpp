@@ -14,7 +14,7 @@ Context::~Context() = default;
 
 void
 Context::trace(uint32_t level, std::string_view msg, bool addTime) {
-    _trace.trace(level, vespalib::string(msg), addTime);
+    _trace.trace(level, std::string(msg), addTime);
 }
 
 }

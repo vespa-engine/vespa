@@ -15,7 +15,7 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-std::vector<std::pair<vespalib::string,vespalib::string>> add_layouts = {
+std::vector<std::pair<std::string,std::string>> add_layouts = {
     {     "x4_1",     "x4_2" },
     { "x4_2y4_1", "x4_1y4_2" },
     {   "x3y4_1",   "x3y4_2" }
@@ -64,7 +64,7 @@ TEST(PartialAddTest, partial_add_works_for_simple_values) {
     }
 }
 
-std::vector<std::pair<vespalib::string,vespalib::string>> bad_layouts = {
+std::vector<std::pair<std::string,std::string>> bad_layouts = {
     {       "x3",     "x3y1" },
     {     "x3y1",       "x3" },
     {     "x3y3",   "x3y3_1" },

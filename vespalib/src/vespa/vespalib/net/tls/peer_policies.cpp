@@ -84,9 +84,9 @@ public:
 };
 
 class ExactMatchPattern : public CredentialMatchPattern {
-    vespalib::string _must_match_exactly;
+    std::string _must_match_exactly;
 public:
-    explicit ExactMatchPattern(std::string_view str_to_match) noexcept // vespalib::string ctors marked noexcept
+    explicit ExactMatchPattern(std::string_view str_to_match) noexcept // std::string ctors marked noexcept
         : _must_match_exactly(str_to_match)
     {
     }

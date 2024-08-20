@@ -22,7 +22,7 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 
 template <typename T>
-std::unique_ptr<fef::Anything> create_param(const vespalib::string& param) {
+std::unique_ptr<fef::Anything> create_param(const std::string& param) {
     Properties props;
     props.add("foo", param);
     return std::make_unique<dotproduct::ArrayParam<T>>(props.lookup("foo"));
@@ -41,7 +41,7 @@ struct FixtureBase : ImportedAttributeFixture {
     virtual void setup_integer_mappings(BasicType int_type) = 0;
 
     void check_single_execution(feature_t expected,
-                                const vespalib::string& vector,
+                                const std::string& vector,
                                 DocId doc_id,
                                 std::unique_ptr<fef::Anything> pre_parsed = std::unique_ptr<fef::Anything>()) {
         RankResult result;
@@ -69,9 +69,9 @@ struct FixtureBase : ImportedAttributeFixture {
     void check_executions(PerTypeSetupFunctor setup_func,
                           const std::vector<BasicType>& types,
                           feature_t expected,
-                          const vespalib::string& vector,
+                          const std::string& vector,
                           DocId doc_id,
-                          const vespalib::string& shared_param = "") {
+                          const std::string& shared_param = "") {
         for (auto type : types) {
             setup_func(type);
             std::unique_ptr<fef::Anything> pre_parsed;
@@ -83,9 +83,9 @@ struct FixtureBase : ImportedAttributeFixture {
     }
 
     void check_all_integer_executions(feature_t expected,
-                                      const vespalib::string& vector,
+                                      const std::string& vector,
                                       DocId doc_id,
-                                      const vespalib::string& shared_param = "") {
+                                      const std::string& shared_param = "") {
         check_executions<int32_t>([this](auto int_type){ this->setup_integer_mappings(int_type); },
                                   {{BasicType::INT32}},
                                   expected, vector, doc_id, shared_param);
@@ -144,7 +144,7 @@ struct ArrayFixture : FixtureBase {
     void check_prepare_state_output(const vespalib::eval::Value & tensor, const ExpectedType & expected) {
         vespalib::nbostream os;
         encode_value(tensor, os);
-        vespalib::string input_vector(os.data(), os.size());
+        std::string input_vector(os.data(), os.size());
         check_prepare_state_output(".tensor", input_vector, expected);
     }
 
@@ -155,7 +155,7 @@ struct ArrayFixture : FixtureBase {
     }
 
     template <typename ExpectedType>
-    void check_prepare_state_output(const vespalib::string& input_vector, const ExpectedType & expected) {
+    void check_prepare_state_output(const std::string& input_vector, const ExpectedType & expected) {
         check_prepare_state_output("", input_vector, expected);
     }
     template <typename T>
@@ -166,7 +166,7 @@ struct ArrayFixture : FixtureBase {
         }
     }
     template <typename ExpectedType>
-    void check_prepare_state_output(const vespalib::string & postfix, const vespalib::string& input_vector, const ExpectedType & expected) {
+    void check_prepare_state_output(const std::string & postfix, const std::string& input_vector, const ExpectedType & expected) {
         FtFeatureTest feature(_factory, "");
         DotProductBlueprint bp;
         DummyDependencyHandler dependency_handler(bp);
@@ -189,8 +189,8 @@ struct ArrayFixture : FixtureBase {
         verify(expected, *as_object);
     }
 
-    void check_all_float_executions(feature_t expected, const vespalib::string& vector,
-                                    DocId doc_id, const vespalib::string& shared_param = "")
+    void check_all_float_executions(feature_t expected, const std::string& vector,
+                                    DocId doc_id, const std::string& shared_param = "")
     {
         check_executions<float>([this](auto float_type){ this->setup_float_mappings(float_type); },
                                  {{BasicType::FLOAT}},

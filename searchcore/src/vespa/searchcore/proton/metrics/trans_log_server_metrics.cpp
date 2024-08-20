@@ -8,7 +8,7 @@ using search::transactionlog::DomainStats;
 namespace proton {
 
 TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
-                                                    const vespalib::string &documentType)
+                                                    const std::string &documentType)
     : metrics::MetricSet("transactionlog", {{"documenttype", documentType}},
             "Transaction log metrics for a document type", parent),
       entries("entries", {}, "The current number of entries in the transaction log", this),
@@ -31,7 +31,7 @@ void
 TransLogServerMetrics::considerAddDomains(const DomainStats &stats)
 {
     for (const auto &elem : stats) {
-        const vespalib::string &documentType = elem.first;
+        const std::string &documentType = elem.first;
         if (_domainMetrics.find(documentType) == _domainMetrics.end()) {
             _domainMetrics[documentType] = std::make_unique<DomainMetrics>(_parent, documentType);
         }
@@ -42,7 +42,7 @@ void
 TransLogServerMetrics::considerRemoveDomains(const DomainStats &stats)
 {
     for (auto itr = _domainMetrics.begin(); itr != _domainMetrics.end(); ) {
-        const vespalib::string &documentType = itr->first;
+        const std::string &documentType = itr->first;
         if (stats.find(documentType) == stats.end()) {
             _parent->unregisterMetric(*itr->second);
             itr = _domainMetrics.erase(itr);
@@ -56,7 +56,7 @@ void
 TransLogServerMetrics::updateDomainMetrics(const DomainStats &stats)
 {
     for (const auto &elem : stats) {
-        const vespalib::string &documentType = elem.first;
+        const std::string &documentType = elem.first;
         _domainMetrics.find(documentType)->second->update(elem.second);
     }
 }

@@ -32,7 +32,7 @@ MemoryIndexWrapper::MemoryIndexWrapper(const search::index::Schema& schema,
 }
 
 void
-MemoryIndexWrapper::flushToDisk(const vespalib::string &flushDir, uint32_t docIdLimit, SerialNum serialNum)
+MemoryIndexWrapper::flushToDisk(const std::string &flushDir, uint32_t docIdLimit, SerialNum serialNum)
 {
     const uint64_t numWords = _index.getNumWords();
     _index.freeze(); // TODO(geirst): is this needed anymore?
@@ -55,7 +55,7 @@ MemoryIndexWrapper::accept(searchcorespi::IndexSearchableVisitor &visitor) const
 }
 
 FieldLengthInfo
-MemoryIndexWrapper::get_field_length_info(const vespalib::string& field_name) const
+MemoryIndexWrapper::get_field_length_info(const std::string& field_name) const
 {
     return _index.get_field_length_info(field_name);
 }

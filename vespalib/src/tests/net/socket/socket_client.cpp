@@ -6,8 +6,8 @@
 
 using namespace vespalib;
 
-vespalib::string read_msg(SocketHandle &socket) {
-    vespalib::string msg;
+std::string read_msg(SocketHandle &socket) {
+    std::string msg;
     for (;;) {
         char c;
         ssize_t ret = socket.read(&c, 1);
@@ -23,7 +23,7 @@ vespalib::string read_msg(SocketHandle &socket) {
 }
 
 void
-write_msg(SocketHandle &socket, const vespalib::string &msg) {
+write_msg(SocketHandle &socket, const std::string &msg) {
     for (const char & c : msg) {
         ssize_t ret = socket.write(&c, 1);
         if (ret != 1) {
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "usage: %s <host> <port>\n", argv[0]);
         return 1;
     }
-    vespalib::string host(argv[1]);
+    std::string host(argv[1]);
     int port = atoi(argv[2]);
     fprintf(stderr, "running socket test client at host %s\n", HostName::get().c_str());
     fprintf(stderr, "trying to connect to host %s at port %d\n", host.c_str(), port);

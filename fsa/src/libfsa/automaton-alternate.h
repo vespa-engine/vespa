@@ -9,15 +9,15 @@
 
 #pragma once
 
+#include "blob.h"
+#include "fsa.h"
+
+#include <cassert>
 #include <map>
 #include <list>
 #include <string>
-#include <vector>
-#include <cassert>
 #include <sys/mman.h> // for mmap() etc
-
-#include "blob.h"
-#include "fsa.h"
+#include <vector>
 
 namespace fsa {
 

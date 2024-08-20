@@ -12,7 +12,7 @@ ActiveFlushStats::ActiveFlushStats()
 }
 
 void
-ActiveFlushStats::set_start_time(const vespalib::string& handler_name, vespalib::system_time start_time)
+ActiveFlushStats::set_start_time(const std::string& handler_name, vespalib::system_time start_time)
 {
     auto itr = _stats.find(handler_name);
     if (itr != _stats.end()) {
@@ -25,7 +25,7 @@ ActiveFlushStats::set_start_time(const vespalib::string& handler_name, vespalib:
 }
 
 ActiveFlushStats::OptionalTime
-ActiveFlushStats::oldest_start_time(const vespalib::string& handler_name) const
+ActiveFlushStats::oldest_start_time(const std::string& handler_name) const
 {
     auto itr = _stats.find(handler_name);
     if (itr != _stats.end()) {
@@ -36,5 +36,5 @@ ActiveFlushStats::oldest_start_time(const vespalib::string& handler_name) const
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vespalib::system_time);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, vespalib::system_time);
 

@@ -20,7 +20,7 @@ namespace search::queryeval {
 
 namespace {
 
-vespalib::string
+std::string
 to_string(NearestNeighborBlueprint::Algorithm algorithm)
 {
     using NNBA = NearestNeighborBlueprint::Algorithm;

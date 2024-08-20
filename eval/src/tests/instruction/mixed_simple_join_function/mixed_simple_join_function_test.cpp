@@ -85,7 +85,7 @@ struct FunInfo {
     }
 };
 
-void verify_simple(const vespalib::string &expr, Primary primary, Overlap overlap, size_t factor,
+void verify_simple(const std::string &expr, Primary primary, Overlap overlap, size_t factor,
                    bool l_mut, bool r_mut, bool inplace)
 {
     TEST_STATE(expr.c_str());
@@ -96,7 +96,7 @@ void verify_simple(const vespalib::string &expr, Primary primary, Overlap overla
     EvalFixture::verify<FunInfo>(expr, {details}, just_float);
 }
 
-void verify_optimized(const vespalib::string &expr, Primary primary, Overlap overlap, size_t factor,
+void verify_optimized(const std::string &expr, Primary primary, Overlap overlap, size_t factor,
                       bool l_mut = false, bool r_mut = false, bool inplace = false)
 {
     TEST_STATE(expr.c_str());
@@ -105,7 +105,7 @@ void verify_optimized(const vespalib::string &expr, Primary primary, Overlap ove
     EvalFixture::verify<FunInfo>(expr, {details}, all_types);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     TEST_STATE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);
@@ -144,13 +144,13 @@ TEST("require that subset join with complex overlap is not optimized") {
 }
 
 struct LhsRhs {
-    vespalib::string lhs;
-    vespalib::string rhs;
+    std::string lhs;
+    std::string rhs;
     size_t lhs_size;
     size_t rhs_size;
     Overlap overlap;
     size_t factor;
-    LhsRhs(const vespalib::string &lhs_in, const vespalib::string &rhs_in,
+    LhsRhs(const std::string &lhs_in, const std::string &rhs_in,
            size_t lhs_size_in, size_t rhs_size_in, Overlap overlap_in) noexcept
         : lhs(lhs_in), rhs(rhs_in), lhs_size(lhs_size_in), rhs_size(rhs_size_in), overlap(overlap_in), factor(1)
     {

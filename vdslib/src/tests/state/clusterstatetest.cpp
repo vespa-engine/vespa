@@ -8,7 +8,7 @@
 #include <cmath>
 #include <gmock/gmock.h>
 
-using vespalib::string;
+using std::string;
 using ::testing::ContainsRegex;
 
 namespace storage::lib {
@@ -22,8 +22,8 @@ namespace storage::lib {
                 + state->toString(true) + " in " + std::string(typestr) \
                 + " format: " + std::string(e.what())); \
     } \
-    EXPECT_EQ(vespalib::string(typestr) + " \"" + vespalib::string(result) + "\"", \
-              vespalib::string(typestr) + " \"" + ost.view() + "\"") << state->toString(true); \
+    EXPECT_EQ(std::string(typestr) + " \"" + std::string(result) + "\"", \
+              std::string(typestr) + " \"" + ost.view() + "\"") << state->toString(true); \
 }
 
 #define VERIFY2(serialized, result) { \

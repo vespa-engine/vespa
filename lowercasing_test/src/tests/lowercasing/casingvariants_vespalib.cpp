@@ -16,10 +16,10 @@ getUCS4Char(const char *src)
     return reader.getChar();
 }
 
-vespalib::string
+std::string
 getUTF8String(uint32_t ucs4Char)
 {
-    vespalib::string target;
+    std::string target;
     Utf8Writer writer(target);
     writer.putChar(ucs4Char);
     return target;

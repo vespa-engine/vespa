@@ -12,7 +12,7 @@ IMPLEMENT_EXPRESSIONNODE(UcaFunctionNode, UnaryFunctionNode);
 UcaFunctionNode::UcaFunctionNode() = default;
 UcaFunctionNode::~UcaFunctionNode() = default;
 
-UcaFunctionNode::UcaFunctionNode(ExpressionNode::UP arg, const vespalib::string & locale, const vespalib::string & strength) :
+UcaFunctionNode::UcaFunctionNode(ExpressionNode::UP arg, const std::string & locale, const std::string & strength) :
     UnaryFunctionNode(std::move(arg)),
     _locale(locale),
     _strength(strength),

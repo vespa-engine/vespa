@@ -50,7 +50,7 @@ private:
      * @param routeName The candidate route whose selector to run.
      * @return Whether or not to send to the given recipient.
      */
-    bool select(mbus::RoutingContext &context, const vespalib::string &routeName);
+    bool select(mbus::RoutingContext &context, const std::string &routeName);
 
 public:
     /**

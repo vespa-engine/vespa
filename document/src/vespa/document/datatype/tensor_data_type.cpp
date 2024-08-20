@@ -41,7 +41,7 @@ TensorDataType::print(std::ostream& out, bool verbose, const std::string& indent
 }
 
 std::unique_ptr<const TensorDataType>
-TensorDataType::fromSpec(const vespalib::string &spec)
+TensorDataType::fromSpec(const std::string &spec)
 {
     return std::make_unique<const TensorDataType>(ValueType::from_spec(spec));
 }

@@ -124,7 +124,7 @@ Function::Issues
 CompiledFunction::detect_issues(const nodes::Node &node)
 {
     struct NotSupported : NodeTraverser {
-        std::vector<vespalib::string> issues;
+        std::vector<std::string> issues;
         bool open(const nodes::Node &) override { return true; }
         void close(const nodes::Node &node) override {
             if (nodes::check_type<nodes::TensorMap,

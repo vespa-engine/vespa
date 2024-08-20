@@ -3,10 +3,10 @@
 #pragma once
 
 #include "onnx_wrapper.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <map>
 #include <memory>
 #include <mutex>
-#include <map>
+#include <string>
 
 namespace vespalib::eval {
 
@@ -19,7 +19,7 @@ class OnnxModelCache
 {
 private:
     struct ctor_tag {};
-    using Key = vespalib::string;
+    using Key = std::string;
     struct Value {
         size_t num_refs;
         std::unique_ptr<Onnx> model;
@@ -50,7 +50,7 @@ public:
         ~Token() { OnnxModelCache::release(_entry); }
     };
 
-    static Token::UP load(const vespalib::string &model_file);
+    static Token::UP load(const std::string &model_file);
     static size_t num_cached();
     static size_t count_refs();
 };

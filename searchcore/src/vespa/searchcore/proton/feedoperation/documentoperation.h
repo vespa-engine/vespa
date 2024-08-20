@@ -86,7 +86,7 @@ protected:
 
     void assertValidBucketId(const document::DocumentId &docId) const;
     void assertValidBucketId(const document::GlobalId &docId) const;
-    vespalib::string docArgsToString() const;
+    std::string docArgsToString() const;
 };
 
 } // namespace proton

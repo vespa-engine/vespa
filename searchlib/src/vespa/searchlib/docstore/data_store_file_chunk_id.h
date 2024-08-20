@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace search {
 
@@ -19,7 +20,7 @@ public:
     {
     }
     uint64_t nameId() const               { return _nameId; }
-    vespalib::string createName(const vespalib::string &baseName) const;
+    std::string createName(const std::string &baseName) const;
     bool operator<(const DataStoreFileChunkId &rhs) const {
         return _nameId < rhs._nameId;
     }

@@ -111,7 +111,7 @@ BmFeeder::feed_task(uint32_t max_pending, BmRange range, const vespalib::nbostre
 }
 
 void
-BmFeeder::run_feed_tasks(int pass, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, AvgSampler& sampler, const vespalib::string &op_name)
+BmFeeder::run_feed_tasks(int pass, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, AvgSampler& sampler, const std::string &op_name)
 {
     uint32_t old_errors = _feed_handler.get_error_count();
     auto start_time = std::chrono::steady_clock::now();
@@ -139,7 +139,7 @@ BmFeeder::stop()
 }
 
 void
-BmFeeder::run_feed_tasks_loop(int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, const vespalib::string &op_name)
+BmFeeder::run_feed_tasks_loop(int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, const std::string &op_name)
 {
     AvgSampler sampler;
     for (int pass = 0; !_stop.load(std::memory_order_relaxed); ++pass) {

@@ -3,14 +3,14 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/distance_metric.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::attribute {
 
 class DistanceMetricUtils {
 public:
-    static vespalib::string to_string(DistanceMetric metric);
-    static DistanceMetric to_distance_metric(const vespalib::string& metric);
+    static std::string to_string(DistanceMetric metric);
+    static DistanceMetric to_distance_metric(const std::string& metric);
 };
 
 }

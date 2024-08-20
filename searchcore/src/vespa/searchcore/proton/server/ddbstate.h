@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <atomic>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
+#include <string>
 #include <vector>
 
 namespace proton {
@@ -46,8 +46,8 @@ private:
     Mutex     _lock;  // protects state transition
     std::condition_variable       _cond;
 
-    static std::vector<vespalib::string> _stateNames;
-    static std::vector<vespalib::string> _configStateNames;
+    static std::vector<std::string> _stateNames;
+    static std::vector<std::string> _configStateNames;
 
     void set_state(State state) noexcept { _state.store(state, std::memory_order_release); }
 
@@ -68,7 +68,7 @@ public:
     void enterShutdownState();
     void enterDeadState();
     State getState() const noexcept { return _state.load(std::memory_order_acquire); }
-    static vespalib::string getStateString(State state);
+    static std::string getStateString(State state);
     
     bool getClosed() const noexcept {
         State state(getState());
@@ -101,7 +101,7 @@ public:
 
     void clearDelayedConfig();
     ConfigState getConfigState() const noexcept { return _configState.load(std::memory_order_relaxed); }
-    static vespalib::string getConfigStateString(ConfigState configState);
+    static std::string getConfigStateString(ConfigState configState);
     void setConfigState(ConfigState newConfigState);
     void waitForOnlineState();
 };

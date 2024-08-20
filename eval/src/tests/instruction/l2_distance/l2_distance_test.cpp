@@ -19,7 +19,7 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
-void verify(const TensorSpec &a, const TensorSpec &b, const vespalib::string &expr, bool optimized = true) {
+void verify(const TensorSpec &a, const TensorSpec &b, const std::string &expr, bool optimized = true) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", a).add("b", b);
     EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
@@ -27,7 +27,7 @@ void verify(const TensorSpec &a, const TensorSpec &b, const vespalib::string &ex
     EXPECT_EQ(fast_fixture.find_all<L2Distance>().size(), optimized ? 1 : 0);
 }
 
-void verify_cell_types(GenSpec a, GenSpec b, const vespalib::string &expr, bool optimized = true) {
+void verify_cell_types(GenSpec a, GenSpec b, const std::string &expr, bool optimized = true) {
     for (CellType act : CellTypeUtils::list_types()) {
         for (CellType bct : CellTypeUtils::list_types()) {
             if (optimized && (act == bct) && (act != CellType::BFLOAT16)) {
@@ -41,14 +41,14 @@ void verify_cell_types(GenSpec a, GenSpec b, const vespalib::string &expr, bool 
 
 //-----------------------------------------------------------------------------
 
-GenSpec gen(const vespalib::string &desc, int bias) {
+GenSpec gen(const std::string &desc, int bias) {
     return GenSpec::from_desc(desc).cells(CellType::FLOAT).seq(N(bias));
 }
 
 //-----------------------------------------------------------------------------
 
-vespalib::string sq_l2 = "reduce((a-b)^2,sum)";
-vespalib::string alt_sq_l2 = "reduce(map((a-b),f(x)(x*x)),sum)";
+std::string sq_l2 = "reduce((a-b)^2,sum)";
+std::string alt_sq_l2 = "reduce(map((a-b),f(x)(x*x)),sum)";
 
 //-----------------------------------------------------------------------------
 

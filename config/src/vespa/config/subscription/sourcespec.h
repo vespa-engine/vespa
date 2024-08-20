@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/config/common/compressiontype.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 class FNET_Transport;
 
@@ -15,7 +15,7 @@ class ConfigInstance;
 class SourceFactory;
 struct TimingValues;
 
-typedef vespalib::string SourceSpecKey;
+typedef std::string SourceSpecKey;
 
 /**
  * A source spec is a user provided specification of which sources to fetch
@@ -62,9 +62,9 @@ public:
      *
      * @return the config in a string.
      */
-    const vespalib::string & toString() const { return _config; }
+    const std::string & toString() const { return _config; }
 private:
-    vespalib::string _config;
+    std::string _config;
 };
 
 /**
@@ -87,12 +87,12 @@ public:
      *
      * @return the filename from which to serve config.
      */
-    const vespalib::string & getFileName() const { return _fileName; }
+    const std::string & getFileName() const { return _fileName; }
 
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:
-    void verifyName(const vespalib::string & fileName);
-    vespalib::string _fileName;
+    void verifyName(const std::string & fileName);
+    std::string _fileName;
 };
 
 /**
@@ -115,11 +115,11 @@ public:
      *
      * @return the directory from which to serve config.
      */
-    const vespalib::string & getDirName() const { return _dirName; }
+    const std::string & getDirName() const { return _dirName; }
 
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:
-    vespalib::string _dirName;
+    std::string _dirName;
 };
 
 /**
@@ -130,7 +130,7 @@ class ServerSpec : public SourceSpec
 {
 public:
     /// A list of host specifications
-    using HostSpecList = std::vector<vespalib::string>;
+    using HostSpecList = std::vector<std::string>;
 
     /**
      * Construct a ServerSpec that fetches the host specs from the
@@ -167,7 +167,7 @@ public:
      *
      * @param i the spec element to retrieve.
      */
-    const vespalib::string & getHost(size_t i) const { return _hostList[i]; }
+    const std::string & getHost(size_t i) const { return _hostList[i]; }
 
     /**
      * Get the protocol version as parsed by this source spec.
@@ -230,7 +230,7 @@ public:
      * @param builder A builder instance that you can use to change config later
      *                and then call reload on the ConfigContext object.
      */
-    void addBuilder(const vespalib::string & configId, ConfigInstance * builder);
+    void addBuilder(const std::string & configId, ConfigInstance * builder);
 
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:

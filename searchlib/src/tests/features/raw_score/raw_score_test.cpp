@@ -36,7 +36,7 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) override {
+    virtual void visitDumpFeature(const std::string &) override {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
@@ -107,19 +107,19 @@ TEST_FFF("require that no features are dumped", RawScoreBlueprint, IndexFixture,
 TEST_FF("require that setup can be done on index field", RawScoreBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "foo")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "foo")));
 }
 
 TEST_FF("require that setup can be done on attribute field", RawScoreBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(bar)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "bar")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "bar")));
 }
 
 TEST_FF("require that setup fails for unknown field", RawScoreBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(unknown)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "unknown")));
+    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "unknown")));
 }
 
 TEST_F("require that not searching a filed will give it 0.0 raw score", RankFixture(0, 3)) {

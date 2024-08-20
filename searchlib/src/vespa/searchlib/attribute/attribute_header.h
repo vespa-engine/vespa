@@ -8,8 +8,8 @@
 #include <vespa/searchcommon/attribute/hnsw_index_params.h>
 #include <vespa/searchcommon/attribute/predicate_params.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <optional>
+#include <string>
 
 namespace search::attribute {
 
@@ -19,7 +19,7 @@ namespace search::attribute {
  **/
 class AttributeHeader {
 private:
-    vespalib::string _fileName;
+    std::string _fileName;
     BasicType _basicType;
     CollectionType _collectionType;
     vespalib::eval::ValueType _tensorType;
@@ -38,8 +38,8 @@ private:
     void internalExtractTags(const vespalib::GenericHeader &header);
 public:
     AttributeHeader();
-    AttributeHeader(vespalib::string fileName);
-    AttributeHeader(vespalib::string fileName,
+    AttributeHeader(std::string fileName);
+    AttributeHeader(std::string fileName,
                     BasicType basicType,
                     CollectionType collectionType,
                     const vespalib::eval::ValueType &tensorType,
@@ -53,7 +53,7 @@ public:
                     uint32_t version);
     ~AttributeHeader();
 
-    const vespalib::string & getFileName() const { return _fileName; }
+    const std::string & getFileName() const { return _fileName; }
     const BasicType & getBasicType() const { return _basicType; }
     const CollectionType &getCollectionType() const { return _collectionType; }
     const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
@@ -69,7 +69,7 @@ public:
     bool getPredicateParamsSet() const { return _predicateParamsSet; }
     bool getCollectionTypeParamsSet() const { return _collectionTypeParamsSet; }
     const std::optional<HnswIndexParams>& get_hnsw_index_params() const { return _hnsw_index_params; }
-    static AttributeHeader extractTags(const vespalib::GenericHeader &header, const vespalib::string &file_name);
+    static AttributeHeader extractTags(const vespalib::GenericHeader &header, const std::string &file_name);
     void addTags(vespalib::GenericHeader &header) const;
     vespalib::GenericHeader& get_extra_tags() noexcept { return _extra_tags; }
 };

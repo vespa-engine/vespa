@@ -147,9 +147,9 @@ public:
         sizeof(Timestamp);
 
     explicit DocumentMetaStore(BucketDBOwnerSP bucketDB);
-    DocumentMetaStore(BucketDBOwnerSP bucketDB, const vespalib::string & name);
+    DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string & name);
     DocumentMetaStore(BucketDBOwnerSP bucketDB,
-                      const vespalib::string & name,
+                      const std::string & name,
                       const search::GrowStrategy & grow,
                       SubDbType subDbType = SubDbType::READY);
     ~DocumentMetaStore() override;

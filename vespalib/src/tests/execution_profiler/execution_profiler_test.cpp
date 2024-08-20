@@ -59,7 +59,7 @@ bool find_path(const Inspector &self, PathPos pos, PathPos end, bool first = fal
     return false;
 }
 
-bool find_path(const Slime &slime, const std::vector<std::pair<vespalib::string,int64_t>> &path) {
+bool find_path(const Slime &slime, const std::vector<std::pair<std::string,int64_t>> &path) {
     return find_path(slime.get(), path.begin(), path.end(), true);
 }
 
@@ -196,7 +196,7 @@ TEST(ExecutionProfilerTest, with_name_mapping) {
         fox(profiler);
     }
     Slime slime;
-    profiler.report(slime.setObject(), [](const vespalib::string &name)noexcept->vespalib::string {
+    profiler.report(slime.setObject(), [](const std::string &name)noexcept->std::string {
                                            if ((name == "foo") || (name == "bar")) {
                                                return "magic";
                                            }

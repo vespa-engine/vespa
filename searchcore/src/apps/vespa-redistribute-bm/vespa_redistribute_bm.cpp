@@ -55,7 +55,7 @@ using vespalib::makeLambdaTask;
 
 namespace {
 
-vespalib::string base_dir = "testdb";
+std::string base_dir = "testdb";
 constexpr int base_port = 9017;
 
 std::shared_ptr<DocumenttypesConfig> make_document_types() {
@@ -75,7 +75,7 @@ enum class Mode {
     BAD
 };
 
-std::vector<vespalib::string> mode_names = {
+std::vector<std::string> mode_names = {
     "grow",
     "shrink",
     "perm-crash",
@@ -83,9 +83,9 @@ std::vector<vespalib::string> mode_names = {
     "replace"
 };
 
-vespalib::string bad_mode_name("bad");
+std::string bad_mode_name("bad");
 
-Mode get_mode(const vespalib::string& mode_name) {
+Mode get_mode(const std::string& mode_name) {
     for (uint32_t i = 0; i < mode_names.size(); ++i) {
         if (mode_name == mode_names[i]) {
             return static_cast<Mode>(i);
@@ -94,7 +94,7 @@ Mode get_mode(const vespalib::string& mode_name) {
     return Mode::BAD;
 }
 
-vespalib::string& get_mode_name(Mode mode) {
+std::string& get_mode_name(Mode mode) {
     uint32_t i = static_cast<uint32_t>(mode);
     return (i < mode_names.size()) ? mode_names[i] : bad_mode_name;
 }
@@ -106,13 +106,13 @@ enum ReFeedMode {
     BAD
 };
 
-std::vector<vespalib::string> refeed_mode_names = {
+std::vector<std::string> refeed_mode_names = {
     "none",
     "put",
     "update"
 };
 
-ReFeedMode get_refeed_mode(const vespalib::string& refeed_mode_name) {
+ReFeedMode get_refeed_mode(const std::string& refeed_mode_name) {
     for (uint32_t i = 0; i < refeed_mode_names.size(); ++i) {
         if (refeed_mode_name == refeed_mode_names[i]) {
             return static_cast<ReFeedMode>(i);
@@ -195,18 +195,18 @@ class ReFeed {
     vespalib::ThreadStackExecutor           _top_executor;
     vespalib::ThreadStackExecutor           _executor;
     BmFeeder                                _feeder;
-    const vespalib::string                  _op_name;
+    const std::string                  _op_name;
     const BMParams&                         _params;
     int64_t&                                _time_bias;
     const std::vector<vespalib::nbostream>& _feed;
 
     void run();
 public:
-    ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const vespalib::string& op_name);
+    ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const std::string& op_name);
     ~ReFeed();
 };
 
-ReFeed::ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const vespalib::string& op_name)
+ReFeed::ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const std::string& op_name)
     : _top_executor(1),
       _executor(params.get_client_threads()),
       _feeder(repo, feed_handler, _executor),

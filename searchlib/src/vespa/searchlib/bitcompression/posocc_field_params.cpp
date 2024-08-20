@@ -36,7 +36,7 @@ PosOccFieldParams::operator==(const PosOccFieldParams &rhs) const
 }
 
 
-vespalib::string
+std::string
 PosOccFieldParams::getParamsPrefix(uint32_t idx)
 {
     vespalib::asciistream paramsPrefix;
@@ -49,10 +49,10 @@ PosOccFieldParams::getParamsPrefix(uint32_t idx)
 void
 PosOccFieldParams::getParams(PostingListParams &params, uint32_t idx) const
 {
-    vespalib::string paramsPrefix = getParamsPrefix(idx);
-    vespalib::string collStr = paramsPrefix + ".collectionType";
-    vespalib::string avgElemLenStr = paramsPrefix + ".avgElemLen";
-    vespalib::string nameStr = paramsPrefix + ".name";
+    std::string paramsPrefix = getParamsPrefix(idx);
+    std::string collStr = paramsPrefix + ".collectionType";
+    std::string avgElemLenStr = paramsPrefix + ".avgElemLen";
+    std::string nameStr = paramsPrefix + ".name";
 
     switch (_collectionType) {
     case SINGLE:
@@ -73,13 +73,13 @@ PosOccFieldParams::getParams(PostingListParams &params, uint32_t idx) const
 void
 PosOccFieldParams::setParams(const PostingListParams &params, uint32_t idx)
 {
-    vespalib::string paramsPrefix = getParamsPrefix(idx);
-    vespalib::string collStr = paramsPrefix + ".collectionType";
-    vespalib::string avgElemLenStr = paramsPrefix + ".avgElemLen";
-    vespalib::string nameStr = paramsPrefix + ".name";
+    std::string paramsPrefix = getParamsPrefix(idx);
+    std::string collStr = paramsPrefix + ".collectionType";
+    std::string avgElemLenStr = paramsPrefix + ".avgElemLen";
+    std::string nameStr = paramsPrefix + ".name";
 
     if (params.isSet(collStr)) {
-        vespalib::string collVal = params.getStr(collStr);
+        std::string collVal = params.getStr(collStr);
         if (collVal == "single") {
             _collectionType = SINGLE;
             _hasElements = false;
@@ -132,16 +132,16 @@ PosOccFieldParams::setSchemaParams(const Schema &schema, uint32_t fieldId)
 
 namespace {
 
-vespalib::string field_length_infix = "field_length.";
+std::string field_length_infix = "field_length.";
 
 struct FieldLengthKeys {
-    vespalib::string _average;
-    vespalib::string _samples;
-    FieldLengthKeys(const vespalib::string &prefix);
+    std::string _average;
+    std::string _samples;
+    FieldLengthKeys(const std::string &prefix);
     ~FieldLengthKeys();
 };
 
-FieldLengthKeys::FieldLengthKeys(const vespalib::string &prefix)
+FieldLengthKeys::FieldLengthKeys(const std::string &prefix)
     : _average(prefix + field_length_infix + "average"),
       _samples(prefix + field_length_infix + "samples")
 {
@@ -153,12 +153,12 @@ FieldLengthKeys::~FieldLengthKeys() = default;
 
 void
 PosOccFieldParams::readHeader(const GenericHeader &header,
-                              const vespalib::string &prefix)
+                              const std::string &prefix)
 {
     using Tag = GenericHeader::Tag;
-    vespalib::string nameKey(prefix + "fieldName");
-    vespalib::string collKey(prefix + "collectionType");
-    vespalib::string avgElemLenKey(prefix + "avgElemLen");
+    std::string nameKey(prefix + "fieldName");
+    std::string collKey(prefix + "collectionType");
+    std::string avgElemLenKey(prefix + "avgElemLen");
     FieldLengthKeys field_length_keys(prefix);
 
     _name = header.getTag(nameKey).asString();
@@ -197,12 +197,12 @@ PosOccFieldParams::readHeader(const GenericHeader &header,
 
 void
 PosOccFieldParams::writeHeader(GenericHeader &header,
-                               const vespalib::string &prefix) const
+                               const std::string &prefix) const
 {
     using Tag = GenericHeader::Tag;
-    vespalib::string nameKey(prefix + "fieldName");
-    vespalib::string collKey(prefix + "collectionType");
-    vespalib::string avgElemLenKey(prefix + "avgElemLen");
+    std::string nameKey(prefix + "fieldName");
+    std::string collKey(prefix + "collectionType");
+    std::string avgElemLenKey(prefix + "avgElemLen");
     FieldLengthKeys field_length_keys(prefix);
     header.putTag(Tag(nameKey, _name));
     Schema::CollectionType ct(schema::CollectionType::SINGLE);

@@ -11,7 +11,7 @@
 namespace config {
 
 template <typename ConfigType>
-FileConfigReader<ConfigType>::FileConfigReader(const vespalib::string & fileName)
+FileConfigReader<ConfigType>::FileConfigReader(const std::string & fileName)
     : _fileName(fileName)
 {
 }

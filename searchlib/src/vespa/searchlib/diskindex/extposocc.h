@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace search {
     class TuneFileSeqRead;
@@ -39,7 +39,7 @@ makePosOccWrite(index::PostingListCountFileSeqWrite *const posOccCountWrite,
                 const index::FieldLengthInfo &field_length_info);
 
 std::unique_ptr<index::PostingListFileSeqRead>
-makePosOccRead(const vespalib::string &name,
+makePosOccRead(const std::string &name,
                index::PostingListCountFileSeqRead *const posOccCountRead,
                const index::PostingListParams &featureParams,
                const TuneFileSeqRead &tuneFileRead);

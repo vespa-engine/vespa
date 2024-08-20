@@ -12,6 +12,7 @@
 #include <vespa/messagebus/error.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace {
     VESPA_THREAD_STACK_TAG(async_init_policy);

@@ -61,15 +61,15 @@ class StoreOnlySubDBFileHeaderContext : public search::common::FileHeaderContext
 {
     const search::common::FileHeaderContext &_parentFileHeaderContext;
     const DocTypeName &_docTypeName;
-    vespalib::string _subDB;
+    std::string _subDB;
 
 public:
     StoreOnlySubDBFileHeaderContext(const search::common::FileHeaderContext & parentFileHeaderContext,
                                     const DocTypeName &docTypeName,
-                                    const vespalib::string &baseDir);
+                                    const std::string &baseDir);
     ~StoreOnlySubDBFileHeaderContext() override;
 
-    void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
+    void addTags(vespalib::GenericHeader &header, const std::string &name) const override;
 };
 
 /**
@@ -85,13 +85,13 @@ public:
     using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;
     struct Config {
         const DocTypeName _docTypeName;
-        const vespalib::string _subName;
-        const vespalib::string _baseDir;
+        const std::string _subName;
+        const std::string _baseDir;
         const uint32_t _subDbId;
         const SubDbType _subDbType;
 
-        Config(const DocTypeName &docTypeName, const vespalib::string &subName,
-               const vespalib::string &baseDir,
+        Config(const DocTypeName &docTypeName, const std::string &subName,
+               const std::string &baseDir,
                uint32_t subDbId, SubDbType subDbType);
         ~Config();
     };
@@ -125,8 +125,8 @@ public:
 
 protected:
     const DocTypeName             _docTypeName;
-    const vespalib::string        _subName;
-    const vespalib::string        _baseDir;
+    const std::string        _subName;
+    const std::string        _baseDir;
     BucketDBOwnerSP               _bucketDB;
     bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
     IDocumentMetaStoreContext::SP _metaStoreCtx;
@@ -181,7 +181,7 @@ protected:
     virtual IFlushTargetList getFlushTargetsInternal();
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
-    vespalib::string getSubDbName() const;
+    std::string getSubDbName() const;
     void reconfigure(const search::LogDocumentStore::Config & protonConfig, const AllocStrategy& alloc_strategy);
     void reconfigureAttributesConsideringNodeState(OnDone onDone);
 public:
@@ -189,7 +189,7 @@ public:
     ~StoreOnlyDocSubDB() override;
 
     uint32_t getSubDbId() const override { return _subDbId; }
-    vespalib::string getName() const override { return _subName; }
+    std::string getName() const override { return _subName; }
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
@@ -233,7 +233,7 @@ public:
     void setIndexSchema(const Schema::SP &schema, SerialNum serialNum) override;
     search::SearchableStats getSearchableStats() const override;
     std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override;
-    matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
+    matching::MatchingStats getMatcherStats(const std::string &rankProfile) const override;
     void close() override;
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;

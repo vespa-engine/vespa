@@ -45,7 +45,7 @@ struct RpcTask : public vespalib::Executor::Task {
 
 }
 
-TransLogClient::TransLogClient(FNET_Transport & transport, const vespalib::string & rpcTarget) :
+TransLogClient::TransLogClient(FNET_Transport & transport, const std::string & rpcTarget) :
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, translogclient_rpc_callback)),
     _rpcTarget(rpcTarget),
     _sessions(),
@@ -85,7 +85,7 @@ TransLogClient::disconnect()
 }
 
 bool
-TransLogClient::create(const vespalib::string & domain)
+TransLogClient::create(const std::string & domain)
 {
     FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("createDomain");
@@ -96,7 +96,7 @@ TransLogClient::create(const vespalib::string & domain)
 }
 
 bool
-TransLogClient::remove(const vespalib::string & domain)
+TransLogClient::remove(const std::string & domain)
 {
     FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("deleteDomain");
@@ -107,7 +107,7 @@ TransLogClient::remove(const vespalib::string & domain)
 }
 
 std::unique_ptr<Session>
-TransLogClient::open(const vespalib::string & domain)
+TransLogClient::open(const std::string & domain)
 {
     FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("openDomain");
@@ -121,13 +121,13 @@ TransLogClient::open(const vespalib::string & domain)
 }
 
 std::unique_ptr<Visitor>
-TransLogClient::createVisitor(const vespalib::string & domain, Callback & callBack)
+TransLogClient::createVisitor(const std::string & domain, Callback & callBack)
 {
     return std::make_unique<Visitor>(domain, *this, callBack);
 }
 
 bool
-TransLogClient::listDomains(std::vector<vespalib::string> & dir)
+TransLogClient::listDomains(std::vector<std::string> & dir)
 {
     FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("listDomains");
@@ -161,7 +161,7 @@ TransLogClient::rpc(FRT_RPCRequest * req)
 }
 
 Session *
-TransLogClient::findSession(const vespalib::string & domainName, int sessionId)
+TransLogClient::findSession(const std::string & domainName, int sessionId)
 {
     SessionKey key(domainName, sessionId);
     auto found = _sessions.find(key);

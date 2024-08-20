@@ -227,7 +227,7 @@ void checkLiteralFieldValue(nbostream &stream, const string &val) {
     stream >> read_coding >> size;
     EXPECT_EQUAL(0, read_coding);
     size &= (SizeType(-1) >> 1);  // Clear MSB.
-    vespalib::string read_val;
+    std::string read_val;
     read_val.assign(stream.peek(), size);
     stream.adjustReadPos(size);
     EXPECT_EQUAL(val.size(), read_val.size());
@@ -800,7 +800,7 @@ TEST("Require that tensors can be serialized")
 const int tensor_doc_type_id = 321;
 const string tensor_field_name = "my_tensor";
 
-DocumenttypesConfig getTensorDocTypesConfig(const vespalib::string &tensorType) {
+DocumenttypesConfig getTensorDocTypesConfig(const std::string &tensorType) {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(tensor_doc_type_id, "my_type",
                      Struct("my_type.header"),

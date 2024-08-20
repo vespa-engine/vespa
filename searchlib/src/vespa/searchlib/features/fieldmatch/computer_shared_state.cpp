@@ -12,7 +12,7 @@ using namespace search::fef;
 
 namespace search::features::fieldmatch {
 
-ComputerSharedState::ComputerSharedState(const vespalib::string& propertyNamespace, const PhraseSplitterQueryEnv& splitter_query_env,
+ComputerSharedState::ComputerSharedState(const std::string& propertyNamespace, const PhraseSplitterQueryEnv& splitter_query_env,
                    const FieldInfo& fieldInfo, const Params& params)
     : _field_id(fieldInfo.id()),
       _params(params),

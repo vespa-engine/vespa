@@ -21,7 +21,7 @@ SingleExtAttribute<T>::getSearch(QueryTermSimpleUP term, const attribute::Search
 }
 
 template <typename T>
-SingleExtAttribute<T>::SingleExtAttribute(const vespalib::string &name)
+SingleExtAttribute<T>::SingleExtAttribute(const std::string &name)
     : Super(name, Config(BasicType::fromType(T()), attribute::CollectionType::SINGLE))
 {}
 
@@ -47,7 +47,7 @@ SingleExtAttribute<T>::onAddDocs(typename Super::DocId lidLimit) {
 }
 
 template <typename T>
-MultiExtAttribute<T>::MultiExtAttribute(const vespalib::string &name, const attribute::CollectionType &ctype)
+MultiExtAttribute<T>::MultiExtAttribute(const std::string &name, const attribute::CollectionType &ctype)
     : Super(name, Config(BasicType::fromType(T()), ctype))
 { }
 template <typename T>
@@ -60,7 +60,7 @@ MultiExtAttribute<T>::getSearch(QueryTermSimpleUP term, const attribute::SearchC
 }
 
 template <typename T>
-MultiExtAttribute<T>::MultiExtAttribute(const vespalib::string &name)
+MultiExtAttribute<T>::MultiExtAttribute(const std::string &name)
     : Super(name, Config(BasicType::fromType(static_cast<T>(0)), attribute::CollectionType::ARRAY))
 {}
 
@@ -92,7 +92,7 @@ template <typename T>
 MultiExtAttribute<T>::~MultiExtAttribute() = default;
 
 template <typename B>
-WeightedSetExtAttributeBase<B>::WeightedSetExtAttributeBase(const vespalib::string & name)
+WeightedSetExtAttributeBase<B>::WeightedSetExtAttributeBase(const std::string & name)
     : B(name, attribute::CollectionType::WSET),
       _weights()
 {}

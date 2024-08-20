@@ -22,7 +22,7 @@ class ConstantValueCache : public ConstantValueFactory
 private:
     struct Cache {
         using SP = std::shared_ptr<Cache>;
-        using Key = std::pair<vespalib::string, vespalib::string>;
+        using Key = std::pair<std::string, std::string>;
         struct Value {
             size_t num_refs;
             ConstantValue::UP const_value;
@@ -49,7 +49,7 @@ private:
 
 public:
     ConstantValueCache(const ConstantValueFactory &factory);
-    ConstantValue::UP create(const vespalib::string &path, const vespalib::string &type) const override;
+    ConstantValue::UP create(const std::string &path, const std::string &type) const override;
     ~ConstantValueCache() override;
 };
 

@@ -115,7 +115,7 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         return retVal;
     }
 
-    static void assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node, const vespalib::string& bucketSpace,
+    static void assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node, const std::string& bucketSpace,
                                        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats);
 
     SimpleMaintenanceScanner::PendingMaintenanceStats stripe_maintenance_stats() {
@@ -178,7 +178,7 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
 
     void set_up_and_start_get_op_with_stale_reads_enabled(bool enabled);
 
-    void simulate_cluster_state_transition(const vespalib::string& state_str, bool clear_pending);
+    void simulate_cluster_state_transition(const std::string& state_str, bool clear_pending);
     static std::shared_ptr<api::RemoveReply> make_remove_reply_with_bucket_remap(api::StorageCommand& originator_cmd);
 
     // TODO dedupe
@@ -204,7 +204,7 @@ DistributorStripeTest::DistributorStripeTest()
 DistributorStripeTest::~DistributorStripeTest() = default;
 
 void
-DistributorStripeTest::simulate_cluster_state_transition(const vespalib::string& state_str, bool clear_pending)
+DistributorStripeTest::simulate_cluster_state_transition(const std::string& state_str, bool clear_pending)
 {
     simulate_set_pending_cluster_state(state_str);
     if (clear_pending) {
@@ -507,7 +507,7 @@ TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iterat
 
 void
 DistributorStripeTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node,
-                                              const vespalib::string& bucketSpace,
+                                              const std::string& bucketSpace,
                                               const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats)
 {
     auto nodeItr = stats.find(node);

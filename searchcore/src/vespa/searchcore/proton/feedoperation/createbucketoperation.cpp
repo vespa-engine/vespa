@@ -39,7 +39,7 @@ CreateBucketOperation::deserialize(vespalib::nbostream &is,
     is >> _bucketId;
 }
 
-vespalib::string CreateBucketOperation::toString() const {
+std::string CreateBucketOperation::toString() const {
     return make_string("CreateBucket(%s, serialNum=%" PRIu64 ")",
                        _bucketId.toString().c_str(), getSerialNum());
 }

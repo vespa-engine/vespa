@@ -78,15 +78,15 @@ TEST("require that different strings give different function keys") {
 
 struct CheckKeys : test::EvalSpec::EvalTest {
     bool failed = false;
-    std::set<vespalib::string> seen_keys;
+    std::set<std::string> seen_keys;
     ~CheckKeys() override;
-    bool check_key(const vespalib::string &key) {
+    bool check_key(const std::string &key) {
         bool seen = (seen_keys.count(key) > 0);
         seen_keys.insert(key);
         return seen;
     }
-    virtual void next_expression(const std::vector<vespalib::string> &param_names,
-                                 const vespalib::string &expression) override
+    virtual void next_expression(const std::vector<std::string> &param_names,
+                                 const std::string &expression) override
     {
         auto function = Function::parse(param_names, expression);
         if (!CompiledFunction::detect_issues(*function)) {
@@ -99,9 +99,9 @@ struct CheckKeys : test::EvalSpec::EvalTest {
             }
         }
     }
-    virtual void handle_case(const std::vector<vespalib::string> &,
+    virtual void handle_case(const std::vector<std::string> &,
                              const std::vector<double> &,
-                             const vespalib::string &,
+                             const std::string &,
                              double) override {}
 };
 
@@ -252,11 +252,11 @@ struct CompileCheck : test::EvalSpec::EvalTest {
         ~Entry();
     };
     std::vector<Entry> list;
-    void next_expression(const std::vector<vespalib::string> &,
-                         const vespalib::string &) override {}
-    void handle_case(const std::vector<vespalib::string> &param_names,
+    void next_expression(const std::vector<std::string> &,
+                         const std::string &) override {}
+    void handle_case(const std::vector<std::string> &param_names,
                      const std::vector<double> &param_values,
-                     const vespalib::string &expression,
+                     const std::string &expression,
                      double expected_result) override
     {
         auto function = Function::parse(param_names, expression);

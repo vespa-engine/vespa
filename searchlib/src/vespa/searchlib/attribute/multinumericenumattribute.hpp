@@ -20,7 +20,7 @@ using fileutil::LoadedBuffer;
 
 template <typename B, typename M>
 MultiValueNumericEnumAttribute<B, M>::
-MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg)
+MultiValueNumericEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg)
     : MultiValueEnumAttribute<B, M>(baseFileName, cfg)
 { }
 

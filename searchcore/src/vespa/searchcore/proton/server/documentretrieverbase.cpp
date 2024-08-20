@@ -41,7 +41,7 @@ DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
 }
     
 CachedSelect::SP
-DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
+DocumentRetrieverBase::parseSelect(const std::string &selection) const
 {
     {
         std::lock_guard<std::mutex> guard(_lock);

@@ -15,7 +15,7 @@ namespace search {
 
 template <typename B>
 SingleValueEnumAttribute<B>::
-SingleValueEnumAttribute(const vespalib::string &baseFileName,
+SingleValueEnumAttribute(const std::string &baseFileName,
                          const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
       SingleValueEnumAttributeBase(cfg, getGenerationHolder(), this->get_initial_alloc())

@@ -4,10 +4,10 @@
 
 #include "data_store_file_chunk_stats.h"
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/time.h>
 #include <atomic>
+#include <string>
 #include <vector>
 
 namespace vespalib { class DataBuffer; }
@@ -46,7 +46,7 @@ public:
      *
      * @param dirName  The directory that will contain the data file.
      **/
-    IDataStore(const vespalib::string & dirName);
+    IDataStore(const std::string & dirName);
      ~IDataStore() override;
 
     /**
@@ -178,7 +178,7 @@ public:
     /**
      * Returns the name of the base directory where the data file is stored.
      **/
-    const vespalib::string & getBaseDir() const { return _dirName; }
+    const std::string & getBaseDir() const { return _dirName; }
 
 protected:
     void setDocIdLimit(uint32_t docIdLimit) {
@@ -192,7 +192,7 @@ protected:
 
 private:
     std::atomic<uint32_t> _docIdLimit;
-    vespalib::string _dirName;
+    std::string _dirName;
 };
 
 } // namespace search

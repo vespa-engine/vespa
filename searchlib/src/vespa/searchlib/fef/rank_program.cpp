@@ -64,7 +64,7 @@ struct OverrideVisitor : public IPropertiesVisitor
             const auto &feature_type = specs[ref.executor].output_types[ref.output];
             if (feature_type.is_object()) {
                 const auto &value_type = feature_type.type();
-                const vespalib::string &encoded_value = prop.get();
+                const std::string &encoded_value = prop.get();
                 vespalib::nbostream stream(encoded_value.data(), encoded_value.size());
                 try {
                     auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
@@ -109,7 +109,7 @@ struct ProfiledExecutor : FeatureExecutor {
     ExecutionProfiler::TaskId self;
     ProfiledExecutor(ExecutionProfiler &profiler_in,
                      FeatureExecutor &executor_in,
-                     const vespalib::string &name)
+                     const std::string &name)
       : profiler(profiler_in), executor(executor_in), self(profiler.resolve(name)) {}
     void handle_bind_match_data(const MatchData &md) override {
         executor.bind_match_data(md);
@@ -291,9 +291,9 @@ RankProgram::setup(const MatchData &md,
     LOG(debug, "Num executors = %ld, hot stash = %ld, cold stash = %ld, match data fields = %d",
                _executors.size(), _hot_stash.count_used(), _cold_stash.count_used(), md.getNumTermFields());
     if (LOG_WOULD_LOG(debug)) {
-        vespalib::hash_map<vespalib::string, size_t> executorStats;
+        vespalib::hash_map<std::string, size_t> executorStats;
         for (const FeatureExecutor * executor : _executors) {
-            vespalib::string name = executor->getClassName();
+            std::string name = executor->getClassName();
             if (executorStats.find(name) == executorStats.end()) {
                 executorStats[name] = 1;
             } else {

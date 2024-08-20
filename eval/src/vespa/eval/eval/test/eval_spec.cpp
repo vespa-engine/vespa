@@ -10,7 +10,7 @@ namespace vespalib::eval::test {
 
 namespace {
 
-double byte(const vespalib::string &bits) {
+double byte(const std::string &bits) {
     int8_t res = 0;
     assert(bits.size() == 8);
     for (const auto &c: bits) {
@@ -56,7 +56,7 @@ EvalSpec::Expression &EvalSpec::Expression::add_cases(std::initializer_list<doub
     return *this;
 }
 
-void EvalSpec::add_rule(const ParamSpec &a_spec, const vespalib::string &expression, fun_1_ref ref) {
+void EvalSpec::add_rule(const ParamSpec &a_spec, const std::string &expression, fun_1_ref ref) {
     Expression &expr = add_expression({a_spec.name}, expression);
     std::vector<double> a_values = a_spec.expand(7);
     for (double a: a_values) {
@@ -65,7 +65,7 @@ void EvalSpec::add_rule(const ParamSpec &a_spec, const vespalib::string &express
 }
 
 void EvalSpec::add_rule(const ParamSpec &a_spec, const ParamSpec &b_spec,
-                        const vespalib::string &expression, fun_2_ref ref) {
+                        const std::string &expression, fun_2_ref ref) {
     Expression &expr = add_expression({a_spec.name, b_spec.name}, expression);
     std::vector<double> a_values = a_spec.expand(5);
     std::vector<double> b_values = b_spec.expand(5);
@@ -76,13 +76,13 @@ void EvalSpec::add_rule(const ParamSpec &a_spec, const ParamSpec &b_spec,
     }
 }
 
-vespalib::string
-EvalSpec::EvalTest::as_string(const std::vector<vespalib::string> &param_names,
+std::string
+EvalSpec::EvalTest::as_string(const std::vector<std::string> &param_names,
                               const std::vector<double> &param_values,
-                              const vespalib::string &expression)
+                              const std::string &expression)
 {
     assert(param_values.size() == param_names.size());
-    vespalib::string str;
+    std::string str;
     str += "f(";
     for (size_t i = 0; i < param_names.size(); ++i) {
         if (i > 0) {

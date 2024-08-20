@@ -39,7 +39,7 @@ public:
 class SimpleBlueprint : public SimpleLeafBlueprint
 {
 private:
-    vespalib::string  _tag;
+    std::string  _tag;
     SimpleResult _result;
 
 protected:
@@ -48,8 +48,8 @@ protected:
 public:
     SimpleBlueprint(const SimpleResult &result);
     ~SimpleBlueprint() override;
-    SimpleBlueprint &tag(const vespalib::string &tag);
-    const vespalib::string &tag() const { return _tag; }
+    SimpleBlueprint &tag(const std::string &tag);
+    const std::string &tag() const { return _tag; }
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 };
@@ -59,8 +59,8 @@ public:
 class FakeBlueprint : public SimpleLeafBlueprint
 {
 private:
-    vespalib::string _tag;
-    vespalib::string _term;
+    std::string _tag;
+    std::string _term;
     FieldSpec   _field;
     FakeResult  _result;
     std::unique_ptr<attribute::ISearchContext> _ctx;
@@ -73,16 +73,16 @@ public:
     FakeBlueprint(const FieldSpec &field, const FakeResult &result);
     ~FakeBlueprint() override;
 
-    FakeBlueprint &tag(const vespalib::string &t) {
+    FakeBlueprint &tag(const std::string &t) {
         _tag = t;
         return *this;
     }
-    const vespalib::string &tag() const { return _tag; }
+    const std::string &tag() const { return _tag; }
 
     FakeBlueprint &is_attr(bool value);
     bool is_attr() const { return bool(_ctx); }
 
-    FakeBlueprint &term(const vespalib::string &t) {
+    FakeBlueprint &term(const std::string &t) {
         _term = t;
         return *this;
     }

@@ -65,7 +65,7 @@ SplitBucketOperation::deserialize(vespalib::nbostream &is,
     is >> _target2;
 }
 
-vespalib::string SplitBucketOperation::toString() const {
+std::string SplitBucketOperation::toString() const {
     return make_string("SplitBucket(source=%s, target1=%s, target2=%s, "
                        "serialNum=%" PRIu64 ")",
                        _source.toString().c_str(),

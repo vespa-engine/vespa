@@ -53,7 +53,7 @@ public:
     void accept(IndexSearchableVisitor &visitor) const override;
 
     // Implements IFieldLengthInspector
-    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
+    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
 
     // Implements ISearchableIndexCollection
     void append(uint32_t id, const IndexSearchable::SP &source) override;
@@ -62,7 +62,7 @@ public:
     void setSource(uint32_t docId) override;
 
     const ISearchableIndexCollection::SP & getNextIndexCollection() const { return _next; }
-    vespalib::string toString() const override;
+    std::string toString() const override;
     bool doUnpack() const { return _warmupConfig.getUnpack(); }
     void drainPending();
     vespalib::steady_time warmupEndTime() const { return _warmupEndTime; }

@@ -78,7 +78,7 @@ bool is_matrix(const ValueType &type) {
 }
 
 bool is_matmul(const ValueType &a, const ValueType &b,
-               const vespalib::string &reduce_dim, const ValueType &result_type)
+               const std::string &reduce_dim, const ValueType &result_type)
 {
     size_t npos = ValueType::Dimension::npos;
     return (is_matrix(a) && is_matrix(b) && is_matrix(result_type) &&
@@ -93,7 +93,7 @@ const ValueType::Dimension &dim(const TensorFunction &expr, size_t idx) {
 size_t inv(size_t idx) { return (1 - idx); }
 
 const TensorFunction &create_matmul(const TensorFunction &a, const TensorFunction &b,
-                                    const vespalib::string &reduce_dim, const ValueType &result_type, Stash &stash) {
+                                    const std::string &reduce_dim, const ValueType &result_type, Stash &stash) {
     size_t a_idx = a.result_type().dimension_index(reduce_dim);
     size_t b_idx = b.result_type().dimension_index(reduce_dim);
     assert(a_idx != ValueType::Dimension::npos);

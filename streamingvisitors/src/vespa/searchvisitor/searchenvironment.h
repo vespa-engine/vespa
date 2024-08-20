@@ -35,18 +35,18 @@ private:
     class Env : public config::SimpleConfigurable {
     public:
         using SP = std::shared_ptr<Env>;
-        Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
+        Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport, const std::string& file_distributor_connection_spec);
         ~Env() override;
         void configure(const config::ConfigSnapshot & snapshot) override;
 
-        static config::ConfigKeySet createKeySet(const vespalib::string & configId);
+        static config::ConfigKeySet createKeySet(const std::string & configId);
         std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot();
     private:
         template <typename ConfigType, typename RankingAssetType>
         void configure_ranking_asset(std::shared_ptr<const RankingAssetType> &ranking_asset,
                                      const config::ConfigSnapshot& snapshot,
                                      search::fef::RankingAssetsBuilder& builder);
-        const vespalib::string                                 _configId;
+        const std::string                                 _configId;
         config::SimpleConfigurer                               _configurer;
         std::unique_ptr<vsm::VSMAdapter>                       _vsmAdapter;
         std::unique_ptr<RankManager>                           _rankManager;
@@ -60,9 +60,9 @@ private:
         std::shared_ptr<const search::fef::RankingExpressions> _ranking_expressions;
         std::shared_ptr<const search::fef::IRankingAssetsRepo> _ranking_assets_repo;
         FNET_Transport* const                                  _transport;
-        const vespalib::string                                 _file_distributor_connection_spec;
+        const std::string                                 _file_distributor_connection_spec;
     };
-    using EnvMap = vespalib::hash_map<vespalib::string, Env::SP>;
+    using EnvMap = vespalib::hash_map<std::string, Env::SP>;
     using EnvMapUP = std::unique_ptr<EnvMap>;
     using ThreadLocals = std::vector<EnvMapUP>;
 
@@ -73,14 +73,14 @@ private:
     std::unique_ptr<Fast_NormalizeWordFolder> _wordFolder;
     config::ConfigUri        _configUri;
     FNET_Transport* const    _transport;
-    vespalib::string         _file_distributor_connection_spec;
+    std::string         _file_distributor_connection_spec;
 
-    Env & getEnv(const vespalib::string & config_id);
+    Env & getEnv(const std::string & config_id);
 
 public:
-    SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
+    SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const std::string& file_distributor_connection_spec);
     ~SearchEnvironment();
-    std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot(const vespalib::string& config_id);
+    std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot(const std::string& config_id);
     std::optional<int64_t> get_oldest_config_generation();
     // Should only be used by unit tests to simulate that the calling thread is finished.
     void clear_thread_local_env_map();

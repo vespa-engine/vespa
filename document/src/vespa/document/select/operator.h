@@ -19,9 +19,9 @@ namespace document::select {
 
 class Operator : public Printable {
 private:
-    using OperatorMap = vespalib::hash_map<vespalib::string, const Operator*>;
+    using OperatorMap = vespalib::hash_map<std::string, const Operator*>;
     static OperatorMap _operators;
-    vespalib::string _name;
+    std::string _name;
 
 public:
     Operator(std::string_view name);
@@ -30,7 +30,7 @@ public:
     virtual ResultList compare(const Value&, const Value&) const = 0;
     virtual ResultList trace(const Value&, const Value&,
                          std::ostream& trace) const = 0;
-    const vespalib::string& getName() const { return _name; }
+    const std::string& getName() const { return _name; }
 
     static const Operator& get(std::string_view name);
 
@@ -69,7 +69,7 @@ public:
     // Delegates to Value::regexCompare
     ResultList compare(const Value& a, const Value& b) const override;
     ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
-    ResultList match(const vespalib::string & val, std::string_view expr) const;
+    ResultList match(const std::string & val, std::string_view expr) const;
 
     static const RegexOperator REGEX;
 
@@ -108,7 +108,7 @@ public:
      *     as all these match 0-n characters each. This also works with
      *     simplification, i.e. '***foo***' -> /foo/ and '***' -> //
      */
-    static vespalib::string convertToRegex(std::string_view globpattern);
+    static std::string convertToRegex(std::string_view globpattern);
     static bool containsVariables(std::string_view expression);
 
     static const GlobOperator GLOB;

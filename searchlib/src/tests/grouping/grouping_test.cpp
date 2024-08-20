@@ -281,7 +281,7 @@ testMerge(const Grouping &a, const Grouping &b, const Grouping &c, const Group &
 }
 
 void
-testAggregationSimple(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const vespalib::string &name)
+testAggregationSimple(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const std::string &name)
 {
     ExpressionNode::CP clone(aggr);
     Grouping request;

@@ -37,7 +37,7 @@ using std::pair;
 using std::vector;
 using vespalib::nbostream;
 using std::string_view;
-using vespalib::string;
+using std::string;
 using vespalib::slime::BinaryFormat;
 using vespalib::compression::CompressionConfig;
 
@@ -430,7 +430,7 @@ namespace {
 // string instead of string_view. No extra allocs; function only ever called with
 // string arguments.
 void
-writeStringWithZeroTermination(nbostream & os, const vespalib::string& s)
+writeStringWithZeroTermination(nbostream & os, const std::string& s)
 {
     uint32_t sz(s.size() + 1);
     os << sz;

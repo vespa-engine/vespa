@@ -37,13 +37,13 @@ TEST(TestDocManTest, testSimpleUsage)
                 std::string(sval.getValue().c_str()));
     }
     EXPECT_EQ(
-            vespalib::string("id:mail:testdoctype1:n=51019:192.html"),
+            std::string("id:mail:testdoctype1:n=51019:192.html"),
             doc1->getId().toString());
     EXPECT_EQ(
-            vespalib::string("id:mail:testdoctype1:n=51019:192.html"),
+            std::string("id:mail:testdoctype1:n=51019:192.html"),
             doc2->getId().toString());
     EXPECT_EQ(
-            vespalib::string("id:mail:testdoctype1:n=10744:245.html"),
+            std::string("id:mail:testdoctype1:n=10744:245.html"),
             doc3->getId().toString());
 }
 

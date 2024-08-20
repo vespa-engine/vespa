@@ -43,7 +43,7 @@ IndexValue & IndexValue::operator = (const IndexValue & rhs) {
 
 IndexValue::~IndexValue() = default;
 
-vespalib::string
+std::string
 IndexValue::toString() const {
     if (key) {
         return key->toString();
@@ -57,7 +57,7 @@ VariableMap & VariableMap::operator = (VariableMap && rhs) noexcept = default;
 VariableMap::VariableMap() = default;
 VariableMap::~VariableMap() = default;
 
-vespalib::string
+std::string
 VariableMap::toString() const {
     vespalib::asciistream out;
     out << "[ ";

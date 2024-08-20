@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace document { class StringFieldValue; }
 namespace vespalib::slime { struct Inserter; }

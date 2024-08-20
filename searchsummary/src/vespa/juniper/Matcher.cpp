@@ -7,10 +7,10 @@
 #include "result.h"
 #include "juniperparams.h"
 #include "config.h"
-#include <sstream>
 #include <algorithm>
-#include <string>
 #include <cinttypes>
+#include <sstream>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.matcher");

@@ -16,7 +16,7 @@ protected:
     using EnumIndex = IEnumStore::Index;
     using EnumVector = IEnumStore::EnumVector;
 
-    NumericAttribute(const vespalib::string & name, const AttributeVector::Config & cfg)
+    NumericAttribute(const std::string & name, const AttributeVector::Config & cfg)
         : AttributeVector(name, cfg)
     { }
 

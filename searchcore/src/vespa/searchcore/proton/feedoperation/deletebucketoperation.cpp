@@ -41,7 +41,7 @@ DeleteBucketOperation::deserialize(vespalib::nbostream &is,
     deserializeLidsToRemove(is);
 }
 
-vespalib::string DeleteBucketOperation::toString() const {
+std::string DeleteBucketOperation::toString() const {
     return make_string("DeleteBucket(%s, serialNum=%" PRIu64 ")",
                        _bucketId.toString().c_str(), getSerialNum());
 }

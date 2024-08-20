@@ -5,8 +5,8 @@
 
 namespace search {
 
-vespalib::string
-DataStoreFileChunkId::createName(const vespalib::string &baseName) const
+std::string
+DataStoreFileChunkId::createName(const std::string &baseName) const
 {
     FileChunk::NameId id(_nameId);
     return id.createName(baseName);

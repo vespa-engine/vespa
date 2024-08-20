@@ -10,7 +10,7 @@ using searchcorespi::index::IndexReadUtilities;
 
 namespace proton {
 
-DiskIndexWrapper::DiskIndexWrapper(const vespalib::string &indexDir,
+DiskIndexWrapper::DiskIndexWrapper(const std::string &indexDir,
                                    const TuneFileSearch &tuneFileSearch,
                                    size_t cacheSize)
     : _index(indexDir, cacheSize),
@@ -47,7 +47,7 @@ DiskIndexWrapper::accept(searchcorespi::IndexSearchableVisitor &visitor) const
 }
 
 FieldLengthInfo
-DiskIndexWrapper::get_field_length_info(const vespalib::string& field_name) const
+DiskIndexWrapper::get_field_length_info(const std::string& field_name) const
 {
     return _index.get_field_length_info(field_name);
 }

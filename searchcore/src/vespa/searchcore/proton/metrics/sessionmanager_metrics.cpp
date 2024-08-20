@@ -5,7 +5,7 @@
 
 namespace proton {
 
-SessionManagerMetrics::SessionManagerMetrics(const vespalib::string &name, metrics::MetricSet *parent)
+SessionManagerMetrics::SessionManagerMetrics(const std::string &name, metrics::MetricSet *parent)
     : metrics::MetricSet(name, {}, vespalib::make_string("Session manager cache metrics for %s", name.c_str()), parent),
       numInsert("num_insert", {}, "Number of inserted sessions", this),
       numPick("num_pick", {}, "Number if picked sessions", this),

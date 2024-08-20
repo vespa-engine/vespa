@@ -3,19 +3,20 @@
 #include "blueprint.h"
 #include "parametervalidator.h"
 #include <cassert>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace search::fef {
 
 std::optional<FeatureType>
-Blueprint::defineInput(const vespalib::string & inName, AcceptInput accept)
+Blueprint::defineInput(const std::string & inName, AcceptInput accept)
 {
     assert(_dependency_handler != nullptr);
     return _dependency_handler->resolve_input(inName, accept);
 }
 
 void
-Blueprint::describeOutput(const vespalib::string & outName, std::string_view desc, FeatureType type)
+Blueprint::describeOutput(const std::string & outName, std::string_view desc, FeatureType type)
 {
     (void) desc;
     assert(_dependency_handler != nullptr);
@@ -27,7 +28,7 @@ Blueprint::fail(const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
-    vespalib::string msg = vespalib::make_string_va(format, ap);
+    std::string msg = vespalib::make_string_va(format, ap);
     va_end(ap);
     assert(_dependency_handler != nullptr);
     _dependency_handler->fail(msg);
@@ -81,7 +82,7 @@ Blueprint::prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore &
 using IAttributeVectorWrapper = AnyWrapper<const attribute::IAttributeVector *>;
 
 const attribute::IAttributeVector *
-Blueprint::lookupAndStoreAttribute(const vespalib::string & key, std::string_view attrName,
+Blueprint::lookupAndStoreAttribute(const std::string & key, std::string_view attrName,
                                    const IQueryEnvironment & env, IObjectStore & store)
 {
     const Anything * obj = store.get(key);
@@ -94,7 +95,7 @@ Blueprint::lookupAndStoreAttribute(const vespalib::string & key, std::string_vie
 }
 
 const attribute::IAttributeVector *
-Blueprint::lookupAttribute(const vespalib::string & key, std::string_view attrName, const IQueryEnvironment & env)
+Blueprint::lookupAttribute(const std::string & key, std::string_view attrName, const IQueryEnvironment & env)
 {
     const Anything * attributeArg = env.getObjectStore().get(key);
     const IAttributeVector * attribute = (attributeArg != nullptr)
@@ -106,7 +107,7 @@ Blueprint::lookupAttribute(const vespalib::string & key, std::string_view attrNa
     return attribute;;
 }
 
-vespalib::string
+std::string
 Blueprint::createAttributeKey(std::string_view attrName) {
     return "fef.attribute.key." + attrName;
 }

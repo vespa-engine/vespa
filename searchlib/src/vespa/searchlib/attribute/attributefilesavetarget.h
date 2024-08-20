@@ -15,7 +15,7 @@ namespace search {
 class AttributeFileSaveTarget : public IAttributeSaveTarget {
 private:
     using FileWriterUP = std::unique_ptr<AttributeFileWriter>;
-    using WriterMap = std::unordered_map<vespalib::string, FileWriterUP, vespalib::hash<vespalib::string>>;
+    using WriterMap = std::unordered_map<std::string, FileWriterUP, vespalib::hash<std::string>>;
 
     const TuneFileAttributes& _tune_file;
     const search::common::FileHeaderContext& _file_header_ctx;
@@ -42,9 +42,9 @@ public:
     IAttributeFileWriter &weightWriter() override;
     IAttributeFileWriter &udatWriter() override;
 
-    bool setup_writer(const vespalib::string& file_suffix,
-                      const vespalib::string& desc) override;
-    IAttributeFileWriter& get_writer(const vespalib::string& file_suffix) override;
+    bool setup_writer(const std::string& file_suffix,
+                      const std::string& desc) override;
+    IAttributeFileWriter& get_writer(const std::string& file_suffix) override;
 
 };
 

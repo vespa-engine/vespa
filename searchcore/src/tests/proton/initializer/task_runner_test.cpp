@@ -4,10 +4,10 @@ LOG_SETUP("task_runner_test");
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <mutex>
+#include <string>
 
 using proton::initializer::InitializerTask;
 using proton::initializer::TaskRunner;
@@ -15,7 +15,7 @@ using proton::initializer::TaskRunner;
 struct TestLog
 {
     std::mutex _lock;
-    vespalib::string _log;
+    std::string _log;
     using UP = std::unique_ptr<TestLog>;
 
     TestLog()
@@ -24,22 +24,22 @@ struct TestLog
     {
     }
 
-    void append(vespalib::string str) {
+    void append(std::string str) {
         std::lock_guard<std::mutex> guard(_lock);
         _log += str;
     }
 
-    vespalib::string result() const { return _log; }
+    std::string result() const { return _log; }
 };
 
 class NamedTask : public InitializerTask
 {
 protected:
-    vespalib::string  _name;
+    std::string  _name;
     TestLog          &_log;
     size_t            _transient_memory_usage;
 public:
-    NamedTask(const vespalib::string &name, TestLog &log, size_t transient_memory_usage = 0)
+    NamedTask(const std::string &name, TestLog &log, size_t transient_memory_usage = 0)
         : _name(name),
           _log(log),
           _transient_memory_usage(transient_memory_usage)
@@ -147,7 +147,7 @@ TEST_F("multiple threads, dag graph", Fixture(10))
     for (int iter = 0; iter < 1000; ++iter) {
         TestJob job = TestJob::setupDiamond();
         f.run(job._root);
-        vespalib::string result = job._log->result();
+        std::string result = job._log->result();
         EXPECT_TRUE("DABC" == result || "DBAC" == result);
         if ("DABC" == result) {
             ++dabc_count;

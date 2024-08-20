@@ -10,7 +10,7 @@ namespace document {
 
 namespace {
 
-vespalib::string
+std::string
 createName(const DataType& nestedType, bool create, bool remove)
 {
     if (nestedType.getId() == DataType::T_STRING && create && remove) {

@@ -15,11 +15,11 @@ namespace search::docsummary {
 class TokensDFW : public DocsumFieldWriter
 {
 private:
-    vespalib::string            _input_field_name;
+    std::string            _input_field_name;
     linguistics::TokenExtractor _token_extractor;
 
 public:
-    explicit TokensDFW(const vespalib::string& input_field_name);
+    explicit TokensDFW(const std::string& input_field_name);
     ~TokensDFW() override;
     bool isGenerated() const override;
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter& target) const override;

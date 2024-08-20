@@ -3,8 +3,8 @@
 
 #include <cstdint>
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
 /**
  * This is a helper struct that is used by the @ref Client class to

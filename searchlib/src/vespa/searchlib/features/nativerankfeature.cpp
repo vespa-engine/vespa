@@ -14,8 +14,8 @@ using namespace search::fef;
 
 namespace {
 
-vespalib::string
-buildFeatureName(const vespalib::string & baseName, const search::features::FieldWrapper & fields)
+std::string
+buildFeatureName(const std::string & baseName, const search::features::FieldWrapper & fields)
 {
     std::ostringstream oss;
     oss << baseName << "(";
@@ -104,17 +104,17 @@ NativeRankBlueprint::setup(const IIndexEnvironment & env,
         (env.getProperties().lookup(getBaseName(), "fieldMatchWeight").get("100"));
     _params.attributeMatchWeight = util::strToNum<feature_t>
         (env.getProperties().lookup(getBaseName(), "attributeMatchWeight").get("100"));
-    vespalib::string defProxWeight = "25";
+    std::string defProxWeight = "25";
     if (!useTableNormalization(env)) {
         defProxWeight = "100"; // must use another weight to match the default boost tables
     }
     _params.proximityWeight = util::strToNum<feature_t>
         (env.getProperties().lookup(getBaseName(), "proximityWeight").get(defProxWeight));
 
-    vespalib::string nfm = "nativeFieldMatch";
-    vespalib::string np = "nativeProximity";
-    vespalib::string nam = "nativeAttributeMatch";
-    vespalib::string zero = "value(0)";
+    std::string nfm = "nativeFieldMatch";
+    std::string np = "nativeProximity";
+    std::string nam = "nativeAttributeMatch";
+    std::string zero = "value(0)";
 
     // handle parameter list
     if (!params.empty()) {
@@ -165,7 +165,7 @@ bool
 NativeRankBlueprint::useTableNormalization(const search::fef::IIndexEnvironment & env)
 {
     Property norm = env.getProperties().lookup("nativeRank", "useTableNormalization");
-    return (!(norm.found() && (norm.get() == vespalib::string("false"))));
+    return (!(norm.found() && (norm.get() == std::string("false"))));
 }
 
 }

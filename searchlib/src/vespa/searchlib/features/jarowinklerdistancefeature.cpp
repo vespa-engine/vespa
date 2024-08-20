@@ -155,10 +155,10 @@ JaroWinklerDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
 {
     _config.fieldId = params[0].asField()->id();
 
-    vespalib::string boostThreshold = env.getProperties().lookup(getName(), "boostThreshold").getAt(0);
+    std::string boostThreshold = env.getProperties().lookup(getName(), "boostThreshold").getAt(0);
     _config.boostThreshold = boostThreshold.empty() ? 0.7f : vespalib::locale::c::atof(boostThreshold.c_str());
 
-    vespalib::string prefixSize = env.getProperties().lookup(getName(), "prefixSize").getAt(0);
+    std::string prefixSize = env.getProperties().lookup(getName(), "prefixSize").getAt(0);
     _config.prefixSize = prefixSize.empty() ? 4 : atoi(prefixSize.c_str());
 
     defineInput(vespalib::make_string("fieldLength(%s)", params[0].getValue().c_str()));

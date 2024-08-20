@@ -21,7 +21,7 @@ using attribute::IAttributeVector;
 using attribute::IAttributeContext;
 using vespalib::Issue;
 
-GeoPositionDFW::GeoPositionDFW(const vespalib::string & attrName, bool useV8geoPositions) :
+GeoPositionDFW::GeoPositionDFW(const std::string & attrName, bool useV8geoPositions) :
     AttrDFW(attrName),
     _useV8geoPositions(useV8geoPositions)
 { }

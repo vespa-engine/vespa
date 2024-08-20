@@ -44,11 +44,11 @@ using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;
 using vespalib::HwInfo;
 
-const vespalib::string TEST_DIR = "test_output";
+const std::string TEST_DIR = "test_output";
 
-const vespalib::string ref_name("ref");
-const vespalib::string target_name("f3");
-const vespalib::string imported_name("my_f3");
+const std::string ref_name("ref");
+const std::string target_name("f3");
+const std::string imported_name("my_f3");
 
 namespace {
 VESPA_THREAD_STACK_TAG(test_executor)
@@ -68,20 +68,20 @@ struct AttributesStateExplorerTest : public ::testing::Test
     AttributeManagerExplorer _explorer;
     AttributesStateExplorerTest() noexcept;
     ~AttributesStateExplorerTest() override;
-    void addAttribute(const vespalib::string &name) {
+    void addAttribute(const std::string &name) {
         _mgr->addAttribute({name, AttributeUtils::getInt32Config()}, 1);
     }
-    void add_fast_search_attribute(const vespalib::string &name,
+    void add_fast_search_attribute(const std::string &name,
                                    DictionaryConfig::Type dictionary_type) {
         search::attribute::Config cfg = AttributeUtils::getInt32Config();
         cfg.setFastSearch(true);
         cfg.set_dictionary_config(search::DictionaryConfig(dictionary_type));
         _mgr->addAttribute({name, cfg}, 1);
     }
-    void addExtraAttribute(const vespalib::string &name) {
+    void addExtraAttribute(const std::string &name) {
         _mgr->addExtraAttribute(createInt32Attribute(name));
     }
-    Slime explore_attribute(const vespalib::string &name) {
+    Slime explore_attribute(const std::string &name) {
         Slime result;
         vespalib::slime::SlimeInserter inserter(result);
         _explorer.get_child(name)->get_state(inserter, true);
@@ -145,7 +145,7 @@ AttributesStateExplorerTest::AttributesStateExplorerTest() noexcept
 AttributesStateExplorerTest::~AttributesStateExplorerTest() = default;
 
 
-using StringVector = std::vector<vespalib::string>;
+using StringVector = std::vector<std::string>;
 
 TEST_F(AttributesStateExplorerTest, require_that_attributes_are_exposed_as_children_names)
 {
@@ -185,7 +185,7 @@ TEST_F(AttributesStateExplorerTest, require_that_dictionary_memory_usage_is_repo
 
 TEST_F(AttributesStateExplorerTest, require_that_imported_attribute_shows_memory_usage)
 {
-    vespalib::string cache_memory_usage("cacheMemoryUsage");
+    std::string cache_memory_usage("cacheMemoryUsage");
     auto slime = explore_attribute(imported_name);
     EXPECT_LT(0, slime[cache_memory_usage]["allocated"].asLong());
     EXPECT_LT(0, slime[cache_memory_usage]["used"].asLong());

@@ -36,7 +36,7 @@ public:
     ImportedAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, const ImportedAttributeVector &imported_attribute, bool stableEnumGuard);
     ~ImportedAttributeVectorReadGuard() override;
 
-    const vespalib::string &getName() const override;
+    const std::string &getName() const override;
     uint32_t getNumDocs() const override;
     uint32_t getValueCount(uint32_t doc) const override;
     uint32_t getMaxValueCount() const override;

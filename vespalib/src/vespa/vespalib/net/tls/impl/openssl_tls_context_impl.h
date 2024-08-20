@@ -6,9 +6,8 @@
 #include <vespa/vespalib/net/tls/tls_context.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/certificate_verification_callback.h>
-#include <vespa/vespalib/stllike/string.h>
-
 #include <chrono>
+#include <string>
 
 namespace vespalib::net::tls::impl {
 
@@ -47,7 +46,7 @@ private:
     void disable_session_resumption();
     void enforce_peer_certificate_verification();
     void set_ssl_ctx_self_reference();
-    void set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers);
+    void set_accepted_cipher_suites(const std::vector<std::string>& ciphers);
 
     bool verify_trusted_certificate(::X509_STORE_CTX* store_ctx, OpenSslCryptoCodecImpl& codec_impl);
 

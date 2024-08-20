@@ -225,7 +225,7 @@ FieldIndex<interleaved_features>::commit()
 
 template <bool interleaved_features>
 queryeval::SearchIterator::UP
-FieldIndex<interleaved_features>::make_search_iterator(const vespalib::string& term,
+FieldIndex<interleaved_features>::make_search_iterator(const std::string& term,
                                                        uint32_t field_id,
                                                        fef::TermFieldMatchDataArray match_data) const
 {
@@ -245,7 +245,7 @@ private:
     PostingListIteratorType _posting_itr;
     const FeatureStore& _feature_store;
     const uint32_t _field_id;
-    const vespalib::string _query_term;
+    const std::string _query_term;
     const bool _use_bit_vector;
 
 public:
@@ -254,7 +254,7 @@ public:
                         const FeatureStore& feature_store,
                         const queryeval::FieldSpec& field,
                         uint32_t field_id,
-                        const vespalib::string& query_term,
+                        const std::string& query_term,
                         bool use_bit_vector)
         : SimpleLeafBlueprint(field),
           _guard(),
@@ -305,7 +305,7 @@ public:
 
 template <bool interleaved_features>
 std::unique_ptr<queryeval::SimpleLeafBlueprint>
-FieldIndex<interleaved_features>::make_term_blueprint(const vespalib::string& term,
+FieldIndex<interleaved_features>::make_term_blueprint(const std::string& term,
                                                       const queryeval::FieldSpec& field,
                                                       uint32_t field_id)
 {

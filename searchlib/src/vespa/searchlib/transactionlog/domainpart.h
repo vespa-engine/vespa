@@ -19,12 +19,12 @@ public:
     using SP = std::shared_ptr<DomainPart>;
     DomainPart(const DomainPart &) = delete;
     DomainPart& operator=(const DomainPart &) = delete;
-    DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s,
+    DomainPart(const std::string &name, const std::string &baseDir, SerialNum s,
                const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
 
     ~DomainPart();
 
-    const vespalib::string &fileName() const { return _fileName; }
+    const std::string &fileName() const { return _fileName; }
     void commit(const SerializedChunk & serialized);
     bool erase(SerialNum to);
     bool visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet);
@@ -80,7 +80,7 @@ private:
     std::atomic<SerialNum> _range_to;
     std::atomic<size_t>   _sz;
     std::atomic<uint64_t> _byteSize;
-    vespalib::string      _fileName;
+    std::string      _fileName;
     std::unique_ptr<FastOS_FileInterface> _transLog;
     std::vector<SkipInfo> _skipList;
     uint32_t              _headerLen;

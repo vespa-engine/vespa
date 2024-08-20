@@ -51,7 +51,7 @@ TransLogServerExplorer::get_state(const Inserter &inserter, bool full) const
     inserter.insertObject();
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 TransLogServerExplorer::get_children_names() const
 {
     return _server->getDomainNames();

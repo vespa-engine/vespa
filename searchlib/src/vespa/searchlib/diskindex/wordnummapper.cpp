@@ -14,7 +14,7 @@ WordNumMapping::WordNumMapping()
 
 
 void
-WordNumMapping::readMappingFile(const vespalib::string &name,
+WordNumMapping::readMappingFile(const std::string &name,
                                 const TuneFileSeqRead &tuneFileRead)
 {
     // Open word mapping file

@@ -100,8 +100,8 @@ NativeAttributeMatchBlueprint::NativeAttributeMatchBlueprint() :
 }
 
 namespace {
-const vespalib::string DefaultWeightTable = "linear(1,0)";
-const vespalib::string WeightTableName = "weightTable";
+const std::string DefaultWeightTable = "linear(1,0)";
+const std::string WeightTableName = "weightTable";
 }
 
 void

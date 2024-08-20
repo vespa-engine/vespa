@@ -6,7 +6,7 @@ namespace proton {
 
 using Entry = AttributeMetrics::Entry;
 
-AttributeMetrics::Entry::Entry(const vespalib::string &attrName)
+AttributeMetrics::Entry::Entry(const std::string &attrName)
     : metrics::MetricSet("attribute", {{"field", attrName}}, "Metrics for a given attribute vector", nullptr),
       memoryUsage(this)
 {
@@ -19,7 +19,7 @@ AttributeMetrics::AttributeMetrics(metrics::MetricSet *parent)
 }
 
 Entry::SP
-AttributeMetrics::add(const vespalib::string &attrName)
+AttributeMetrics::add(const std::string &attrName)
 {
     if (get(attrName).get() != nullptr) {
         return Entry::SP();
@@ -30,7 +30,7 @@ AttributeMetrics::add(const vespalib::string &attrName)
 }
 
 Entry::SP
-AttributeMetrics::get(const vespalib::string &attrName) const
+AttributeMetrics::get(const std::string &attrName) const
 {
     auto itr = _attributes.find(attrName);
     if (itr != _attributes.end()) {
@@ -40,7 +40,7 @@ AttributeMetrics::get(const vespalib::string &attrName) const
 }
 
 Entry::SP
-AttributeMetrics::remove(const vespalib::string &attrName)
+AttributeMetrics::remove(const std::string &attrName)
 {
     Entry::SP result = get(attrName);
     if (result.get() != nullptr) {

@@ -96,7 +96,7 @@ GreatCircleDistanceBlueprint::createInstance() const
 }
 
 bool
-GreatCircleDistanceBlueprint::setup_geopos(const vespalib::string &attr)
+GreatCircleDistanceBlueprint::setup_geopos(const std::string &attr)
 {
     _attr_name = attr;
     describeOutput("km", "The distance (in km) from the query position.");
@@ -125,7 +125,7 @@ GreatCircleDistanceBlueprint::setup(const IIndexEnvironment & env,
         LOG(error, "Wants 2 parameters, but got %zd", params.size());
         return false;
     }
-    vespalib::string z = document::PositionDataType::getZCurveFieldName(_field_name);
+    std::string z = document::PositionDataType::getZCurveFieldName(_field_name);
     const auto *fi = env.getFieldByName(z);
     if (fi != nullptr && fi->hasAttribute()) {
         auto dt = fi->get_data_type();

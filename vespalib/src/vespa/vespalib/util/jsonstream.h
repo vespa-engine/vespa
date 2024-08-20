@@ -41,7 +41,7 @@ class JsonStream : public JsonStreamTypes {
     static const char* getStateName(const State&);
     struct StateEntry {
         State state;
-        string object_key;
+        std::string object_key;
         size_t array_index;
 
         StateEntry() noexcept;
@@ -90,10 +90,10 @@ public:
 
     JsonStream& finalize();
 
-    vespalib::string getJsonStreamState() const;
+    std::string getJsonStreamState() const;
 
 private:
-    string getStateString() const;
+    std::string getStateString() const;
     void fail(std::string_view error) const;
 };
 

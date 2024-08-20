@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <cstring>
 #include <map>
 #include <set>
 #include <unordered_set>

@@ -3,8 +3,8 @@
 
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <limits>
+#include <string>
 
 namespace search::diskindex {
 
@@ -33,7 +33,7 @@ public:
     }
 
     uint64_t getOldDictSize() const { return _oldDictSize; }
-    void readMappingFile(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead);
+    void readMappingFile(const std::string &name, const TuneFileSeqRead &tuneFileRead);
     void noMappingFile();
     void clear();
     void setup(uint32_t numWordIds);

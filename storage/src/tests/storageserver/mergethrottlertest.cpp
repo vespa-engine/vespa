@@ -35,7 +35,7 @@ namespace {
 using StorServerConfig = vespa::config::content::core::StorServerConfig;
 using StorServerConfigBuilder = vespa::config::content::core::StorServerConfigBuilder;
 
-vespalib::string _storage("storage");
+std::string _storage("storage");
 
 std::unique_ptr<StorServerConfig> default_server_config() {
     auto config = StorageConfigSet::make_storage_node_config();
@@ -446,7 +446,7 @@ TEST_F(MergeThrottlerTest, chain) {
         const MergeBucketReply& mbr = dynamic_cast<const MergeBucketReply&>(*unwind);
 
         EXPECT_EQ(ReturnCode::OK, mbr.getResult().getResult());
-        EXPECT_EQ(vespalib::string("Great success! :D-|-<"), mbr.getResult().getMessage());
+        EXPECT_EQ(std::string("Great success! :D-|-<"), mbr.getResult().getMessage());
         EXPECT_EQ(bucket, mbr.getBucket());
 
     } while (std::next_permutation(indices, indices + _storageNodeCount));

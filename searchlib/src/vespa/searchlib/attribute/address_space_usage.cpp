@@ -13,13 +13,13 @@ AddressSpaceUsage::AddressSpaceUsage()
 }
 
 void
-AddressSpaceUsage::set(const vespalib::string& component, const vespalib::AddressSpace& usage)
+AddressSpaceUsage::set(const std::string& component, const vespalib::AddressSpace& usage)
 {
     _map[component] = usage;
 }
 
 AddressSpace
-AddressSpaceUsage::get(const vespalib::string& component) const
+AddressSpaceUsage::get(const std::string& component) const
 {
     auto itr = _map.find(component);
     if (itr != _map.end()) {

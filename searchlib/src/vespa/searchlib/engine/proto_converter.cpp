@@ -15,7 +15,7 @@ namespace search::engine {
 
 namespace {
 
-std::string escape_message(const vespalib::string &item) {
+std::string escape_message(const std::string &item) {
     static const char hexdigits[] = "0123456789ABCDEF";
     std::string r;
     r.reserve(item.size());
@@ -36,8 +36,8 @@ std::string escape_message(const vespalib::string &item) {
 }
 
 template <typename T>
-vespalib::string make_sort_spec(const T &sorting) {
-    vespalib::string spec;
+std::string make_sort_spec(const T &sorting) {
+    std::string spec;
     for (const auto &field_spec: sorting) {
         if (!spec.empty()) {
             spec.push_back(' ');
@@ -183,7 +183,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     const auto &slime_trace = reply.propertiesMap.trace().lookup("slime");
     proto.set_slime_trace(slime_trace.get().data(), slime_trace.get().size());
     if (reply.my_issues) {
-        reply.my_issues->for_each_message([&](const vespalib::string &err_msg)
+        reply.my_issues->for_each_message([&](const std::string &err_msg)
                                           {
                                               auto *err_obj = proto.add_errors();
                                               err_obj->set_message(escape_message(err_msg));
@@ -240,7 +240,7 @@ ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply
         proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);
     }
     if (reply.hasIssues()) {
-        reply.issues().for_each_message([&](const vespalib::string &err_msg)
+        reply.issues().for_each_message([&](const std::string &err_msg)
                                         {
                                             auto *err_obj = proto.add_errors();
                                             err_obj->set_message(escape_message(err_msg));

@@ -126,7 +126,7 @@ private:
         token = lt->GetNextToken();
         char temp = *token.second;
         *token.second = '\0';
-        vespalib::string word = vespalib::make_string("%s", token.first);
+        std::string word = vespalib::make_string("%s", token.first);
         *token.second = temp;
 
         PushDesc(vespalib::make_string("%s%s == %s", "word: ", word.c_str(), correct).c_str());

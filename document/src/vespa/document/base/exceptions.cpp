@@ -20,7 +20,7 @@ VESPA_IMPLEMENT_EXCEPTION_SPINE(FieldNotFoundException);
 InvalidDataTypeException::InvalidDataTypeException(
         const DataType& actual,
         const DataType& expected,
-        const vespalib::string& location)
+        const std::string& location)
     : IllegalStateException(fmt("Got %s while expecting %s. These types are not compatible.",
                                 actual.toString().c_str(), expected.toString().c_str()),
                             location, 1),
@@ -33,7 +33,7 @@ InvalidDataTypeException::~InvalidDataTypeException() = default;
 InvalidDataTypeConversionException::InvalidDataTypeConversionException(
         const DataType &actual,
         const DataType &expected,
-        const vespalib::string& location)
+        const std::string& location)
     : IllegalStateException(fmt("%s can not be converted to %s.",
                                 actual.toString().c_str(), expected.toString().c_str()),
                             location, 1),
@@ -41,34 +41,34 @@ InvalidDataTypeConversionException::InvalidDataTypeConversionException(
       _expected(expected)
 { }
 
-DocumentTypeNotFoundException::DocumentTypeNotFoundException(vespalib::string name, const vespalib::string& location)
+DocumentTypeNotFoundException::DocumentTypeNotFoundException(std::string name, const std::string& location)
     : Exception("Document type "+name+" not found", location, 1),
       _type(std::move(name))
 { }
 
-DataTypeNotFoundException::DataTypeNotFoundException(int id, const vespalib::string& location)
+DataTypeNotFoundException::DataTypeNotFoundException(int id, const std::string& location)
     : Exception(fmt("Data type with id %d not found", id), location, 1)
 { }
 
-DataTypeNotFoundException::DataTypeNotFoundException(const vespalib::string& name, const vespalib::string& location)
+DataTypeNotFoundException::DataTypeNotFoundException(const std::string& name, const std::string& location)
     : Exception("Data type with name "+name+" not found.", location, 1)
 { }
 
 DataTypeNotFoundException::~DataTypeNotFoundException() = default;
 
-AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(int id, const vespalib::string& location)
+AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(int id, const std::string& location)
     : Exception(fmt("Data type with id %d not found", id), location, 1)
 { }
 
 FieldNotFoundException::
-FieldNotFoundException(vespalib::string fieldName, const vespalib::string& location)
+FieldNotFoundException(std::string fieldName, const std::string& location)
     : Exception("Field with name " + fieldName + " not found", location, 1),
       _fieldName(std::move(fieldName)),
       _fieldId(0)
 { }
 
 FieldNotFoundException::
-FieldNotFoundException(int fieldId, int16_t serializationVersion, const vespalib::string& location)
+FieldNotFoundException(int fieldId, int16_t serializationVersion, const std::string& location)
     : Exception((serializationVersion < Document::getNewestSerializationVersion())
                 ? fmt("Field with id %i (serialization version %d) not found", fieldId, serializationVersion)
                 : fmt("Field with id %i not found", fieldId),

@@ -226,7 +226,7 @@ struct SearchReplyTest : ProtoConverterTest {
         reply.hits[2].metric = 10.0;
     }
     void fill_sort_data() {
-        vespalib::string sort_data("fooxybar");
+        std::string sort_data("fooxybar");
         reply.sortData.assign(sort_data.begin(), sort_data.end());
         reply.sortIndex.push_back(0);
         reply.sortIndex.push_back(3); // hit1: 'foo'
@@ -349,7 +349,7 @@ TEST_F(SearchReplyTest, require_that_match_features_are_converted) {
 }
 
 TEST_F(SearchReplyTest, require_that_grouping_blob_is_converted) {
-    vespalib::string tmp("grouping-result");
+    std::string tmp("grouping-result");
     reply.groupResult.assign(tmp.data(), tmp.data() + tmp.size());
     convert();
     EXPECT_EQ(proto.grouping_blob(), "grouping-result");

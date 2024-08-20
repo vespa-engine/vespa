@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <cstdint>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace storage::rpc {
 
@@ -24,12 +24,12 @@ public:
 
 private:
     RpcTargetVector _targets;
-    const vespalib::string _spec;
+    const std::string _spec;
     uint32_t _slobrok_gen;
 
 public:
-    RpcTargetPool(RpcTargetVector&& targets, const vespalib::string& spec, uint32_t slobrok_gen);
-    const vespalib::string& spec() const { return _spec; }
+    RpcTargetPool(RpcTargetVector&& targets, const std::string& spec, uint32_t slobrok_gen);
+    const std::string& spec() const { return _spec; }
     uint32_t slobrok_gen() const { return _slobrok_gen; }
     void update_slobrok_gen(uint32_t curr_slobrok_gen) { _slobrok_gen = curr_slobrok_gen; }
     std::shared_ptr<RpcTarget> get_target(uint64_t bucket_id) const;

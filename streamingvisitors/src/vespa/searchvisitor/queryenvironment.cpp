@@ -12,7 +12,7 @@ using search::IAttributeManager;
 using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
 using search::fef::Properties;
-using vespalib::string;
+using std::string;
 
 namespace streaming {
 
@@ -54,7 +54,7 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
 
 QueryEnvironment::~QueryEnvironment() {}
 
-void QueryEnvironment::addGeoLocation(const vespalib::string &field, const vespalib::string &location_str) {
+void QueryEnvironment::addGeoLocation(const std::string &field, const std::string &location_str) {
     GeoLocationParser locationParser;
     if (! locationParser.parseNoField(location_str)) {
         LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",

@@ -13,7 +13,7 @@ using vespalib::datastore::EntryRef;
 
 namespace search::attribute {
 
-SingleRawAttribute::SingleRawAttribute(const vespalib::string& name, const Config& config)
+SingleRawAttribute::SingleRawAttribute(const std::string& name, const Config& config)
     : RawAttribute(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
       _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor)

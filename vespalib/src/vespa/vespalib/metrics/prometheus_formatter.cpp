@@ -148,7 +148,7 @@ PrometheusFormatter::emit_gauges(vespalib::asciistream& out) const {
     }
 }
 
-vespalib::string
+std::string
 PrometheusFormatter::as_text_formatted() const {
     asciistream out;
     emit_counters(out);

@@ -15,12 +15,12 @@ namespace fs = std::filesystem;
 
 namespace vespalib::alloc {
 
-MmapFileAllocator::MmapFileAllocator(vespalib::string dir_name)
+MmapFileAllocator::MmapFileAllocator(std::string dir_name)
     : MmapFileAllocator(std::move(dir_name), default_small_limit, default_premmap_size)
 {
 }
 
-MmapFileAllocator::MmapFileAllocator(vespalib::string dir_name, uint32_t small_limit, uint32_t premmap_size)
+MmapFileAllocator::MmapFileAllocator(std::string dir_name, uint32_t small_limit, uint32_t premmap_size)
     : _dir_name(std::move(dir_name)),
       _small_limit(small_limit),
       _premmap_size(premmap_size),

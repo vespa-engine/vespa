@@ -55,7 +55,7 @@ Field::createValue() const {
     return _dataType->createFieldValue();
 }
 
-vespalib::string
+std::string
 Field::toString(bool verbose) const
 {
     vespalib::asciistream out;

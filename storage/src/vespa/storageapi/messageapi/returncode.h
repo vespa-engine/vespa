@@ -59,7 +59,7 @@ public:
 
 private:
     Result _result;
-    std::unique_ptr<vespalib::string> _message;
+    std::unique_ptr<std::string> _message;
 public:
     ReturnCode()
         : _result(OK),
@@ -83,7 +83,7 @@ public:
      * Translate from status code to human-readable string
      * @param result Status code returned from getResult()
      */
-    static vespalib::string getResultString(Result result);
+    static std::string getResultString(Result result);
 
     bool failed() const { return (_result != OK); }
     bool success() const { return (_result == OK); }
@@ -105,7 +105,7 @@ public:
     bool isShutdownRelated() const;
     bool isBucketDisappearance() const;
     bool isNonCriticalForIntegrityChecker() const;
-    vespalib::string toString() const;
+    std::string toString() const;
 };
 
 std::ostream & operator << (std::ostream & os, const ReturnCode & returnCode);

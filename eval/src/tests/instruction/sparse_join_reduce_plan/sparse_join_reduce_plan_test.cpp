@@ -16,7 +16,7 @@ using namespace vespalib::eval::instruction;
 
 using Handle = vespalib::SharedStringRepo::Handle;
 
-Value::UP val(const vespalib::string &value_desc) {
+Value::UP val(const std::string &value_desc) {
     return value_from_spec(GenSpec::from_desc(value_desc), FastValueBuilderFactory::get());
 }
 
@@ -24,7 +24,7 @@ Handle make_handle(string_id id) {
     return Handle::handle_from_id(id);
 }
 
-Handle make_handle(const vespalib::string &str) {
+Handle make_handle(const std::string &str) {
     return Handle(str);
 }
 
@@ -53,7 +53,7 @@ struct Trace {
     void add_raw(size_t lhs_idx, size_t rhs_idx, std::span<const string_id> res_addr) {
         events.emplace_back(lhs_idx, rhs_idx, res_addr);
     }
-    Trace &add(size_t lhs_idx, size_t rhs_idx, std::vector<vespalib::string> res_addr) {
+    Trace &add(size_t lhs_idx, size_t rhs_idx, std::vector<std::string> res_addr) {
         events.emplace_back(lhs_idx, rhs_idx, res_addr);
         return *this;
     }
@@ -86,8 +86,8 @@ operator<<(std::ostream &os, const Trace &trace) {
 
 Trace trace(size_t est) { return Trace(est); }
 
-Trace trace(const vespalib::string &a_desc, const vespalib::string &b_desc,
-            const std::vector<vespalib::string> &reduce_dims)
+Trace trace(const std::string &a_desc, const std::string &b_desc,
+            const std::vector<std::string> &reduce_dims)
 {
     auto a = val(a_desc);
     auto b = val(b_desc);

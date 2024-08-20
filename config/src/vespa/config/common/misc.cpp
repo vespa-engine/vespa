@@ -13,10 +13,10 @@ using vespalib::Memory;
 
 namespace config {
 
-vespalib::string
+std::string
 calculateContentXxhash64(const StringVector & fileContents)
 {
-    vespalib::string normalizedLines;
+    std::string normalizedLines;
     XXH64_hash_t xxhash64;
     vespalib::asciistream s;
     std::stringstream ss;

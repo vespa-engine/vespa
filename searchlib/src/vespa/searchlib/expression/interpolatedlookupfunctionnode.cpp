@@ -21,7 +21,7 @@ InterpolatedLookup::InterpolatedLookup() noexcept
 
 InterpolatedLookup::~InterpolatedLookup() = default;
 
-InterpolatedLookup::InterpolatedLookup(const vespalib::string &attribute, ExpressionNode::UP arg)
+InterpolatedLookup::InterpolatedLookup(const std::string &attribute, ExpressionNode::UP arg)
     : AttributeNode(attribute),
       _lookupExpression(std::move(arg))
 {

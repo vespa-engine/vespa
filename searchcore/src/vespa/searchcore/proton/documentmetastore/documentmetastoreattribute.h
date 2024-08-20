@@ -14,10 +14,10 @@ namespace proton {
 class DocumentMetaStoreAttribute : public search::NotImplementedAttribute
 {
 public:
-    explicit DocumentMetaStoreAttribute(const vespalib::string &name);
+    explicit DocumentMetaStoreAttribute(const std::string &name);
     ~DocumentMetaStoreAttribute() override;
 
-    static const vespalib::string &getFixedName();
+    static const std::string &getFixedName();
 
     size_t getFixedWidth() const override {
         return document::GlobalId::LENGTH;

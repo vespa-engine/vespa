@@ -126,8 +126,8 @@ vespalib::Slime slime; \
 #define ASSERT_NODE_STATUS(jsonData, code, message) \
 { \
     PARSE_JSON(jsonData); \
-    ASSERT_EQ(vespalib::string(code), slime.get()["status"]["code"].asString().make_string()); \
-    ASSERT_EQ(vespalib::string(message), slime.get()["status"]["message"].asString().make_string()); \
+    ASSERT_EQ(std::string(code), slime.get()["status"]["code"].asString().make_string()); \
+    ASSERT_EQ(std::string(message), slime.get()["status"]["message"].asString().make_string()); \
 }
 
 #define ASSERT_METRIC_GET_PUT(jsonData, expGetCount, expPutCount) \
@@ -137,7 +137,7 @@ vespalib::Slime slime; \
     double putCount = -1; \
     size_t metricCount = slime.get()["metrics"]["values"].children(); \
     for (size_t j=0; j<metricCount; j++) { \
-        const vespalib::string name = slime.get()["metrics"]["values"][j]["name"].asString().make_string(); \
+        const std::string name = slime.get()["metrics"]["values"][j]["name"].asString().make_string(); \
         if (name.compare("vds.filestor.allthreads.get.count") == 0) { \
             getCount = slime.get()["metrics"]["values"][j]["values"]["count"].asDouble(); \
         } else if (name.compare("vds.filestor.allthreads.put.count") == 0) { \

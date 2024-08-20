@@ -44,7 +44,7 @@ constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 193;
 constexpr vespalib::duration MAX_COUNT_DURATION(1000ms);
 
-const vespalib::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
+const std::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
 
 void save_mips_max_distance(GenericHeader& header, DistanceFunctionFactory& dff) {
     auto* mips_dff = dynamic_cast<MipsDistanceFunctionFactoryBase*>(&dff);

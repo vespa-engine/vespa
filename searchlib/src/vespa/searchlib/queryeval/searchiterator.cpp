@@ -87,7 +87,7 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
     }
 }
 
-vespalib::string
+std::string
 SearchIterator::asString() const
 {
     vespalib::ObjectDumper dumper;
@@ -104,7 +104,7 @@ SearchIterator::asSlime(const vespalib::slime::Inserter & inserter) const
     return cursor;
 }
 
-vespalib::string
+std::string
 SearchIterator::getClassName() const
 {
     return vespalib::getClassName(*this);

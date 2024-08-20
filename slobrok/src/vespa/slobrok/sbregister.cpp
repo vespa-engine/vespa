@@ -15,10 +15,10 @@ using vespalib::NetworkSetupFailureException;
 
 namespace {
 
-vespalib::string
+std::string
 createSpec(FRT_Supervisor &orb)
 {
-    vespalib::string spec;
+    std::string spec;
     if (orb.GetListenPort() != 0) {
         vespalib::asciistream str;
         str << "tcp/";
@@ -32,7 +32,7 @@ createSpec(FRT_Supervisor &orb)
 
 
 void
-discard(std::vector<vespalib::string> &vec, std::string_view val)
+discard(std::vector<std::string> &vec, std::string_view val)
 {
     uint32_t i = 0;
     uint32_t size = vec.size();
@@ -170,7 +170,7 @@ RegisterAPI::handleReconnect()
 {
     if (_configurator->poll() && _target != 0) {
         if (! _slobrokSpecs.contains(_currSlobrok)) {
-            vespalib::string cps = _slobrokSpecs.logString();
+            std::string cps = _slobrokSpecs.logString();
             LOG(warning, "[RPC @ %s] location broker %s removed, will disconnect and use one of: %s",
                 createSpec(_orb).c_str(), _currSlobrok.c_str(), cps.c_str());
             _target->internal_subref();
@@ -197,7 +197,7 @@ RegisterAPI::handleReconnect()
             double delay = _backOff.get();
             Schedule(delay);
             const char * const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
-            vespalib::string cps = _slobrokSpecs.logString();
+            std::string cps = _slobrokSpecs.logString();
             if (_backOff.shouldWarn()) {
                 LOG(warning, msgfmt, createSpec(_orb).c_str(), cps.c_str(), delay);
             } else {
@@ -214,7 +214,7 @@ RegisterAPI::handlePending()
 {
     bool unreg = false;
     bool reg   = false;
-    vespalib::string name;
+    std::string name;
     {
         std::lock_guard<std::mutex> guard(_lock);
         // pop off the todo stack, unregister has priority

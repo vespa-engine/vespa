@@ -134,7 +134,7 @@ ConfigSnapshot::serializeKeyV1(Cursor & cursor, const ConfigKey & key) const
     cursor.setString("defNamespace", Memory(key.getDefNamespace()));
     cursor.setString("defMd5", Memory(key.getDefMd5()));
     Cursor & defSchema(cursor.setArray("defSchema"));
-    for (const vespalib::string & line : key.getDefSchema()) {
+    for (const std::string & line : key.getDefSchema()) {
         defSchema.addString(vespalib::Memory(line));
     }
 }
@@ -250,7 +250,7 @@ std::pair<int64_t, ConfigValue>
 ConfigSnapshot::deserializeValueV2(Inspector & inspector) const
 {
     int64_t lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
-    vespalib::string xxhash64(inspector["xxhash64"].asString().make_string());
+    std::string xxhash64(inspector["xxhash64"].asString().make_string());
     auto payload = std::make_unique<FixedPayload>();
     copySlimeObject(inspector["payload"], payload->getData().setObject());
     return Value(lastChanged, ConfigValue(std::move(payload), xxhash64));

@@ -32,7 +32,7 @@ IndexEnvironment::getFieldByName(const string &name) const
 
 
 vespalib::eval::ConstantValue::UP
-IndexEnvironment::getConstantValue(const vespalib::string &name) const
+IndexEnvironment::getConstantValue(const std::string &name) const
 {
     auto it = _constants.find(name);
     if (it != _constants.end()) {
@@ -43,7 +43,7 @@ IndexEnvironment::getConstantValue(const vespalib::string &name) const
 }
 
 void
-IndexEnvironment::addConstantValue(const vespalib::string &name,
+IndexEnvironment::addConstantValue(const std::string &name,
                                    vespalib::eval::ValueType type,
                                    std::unique_ptr<vespalib::eval::Value> value)
 {
@@ -52,8 +52,8 @@ IndexEnvironment::addConstantValue(const vespalib::string &name,
     (void) insertRes;
 }
 
-vespalib::string
-IndexEnvironment::getRankingExpression(const vespalib::string &name) const
+std::string
+IndexEnvironment::getRankingExpression(const std::string &name) const
 {
     auto pos = _expressions.find(name);
     if (pos != _expressions.end()) {
@@ -63,13 +63,13 @@ IndexEnvironment::getRankingExpression(const vespalib::string &name) const
 }
 
 void
-IndexEnvironment::addRankingExpression(const vespalib::string &name, const vespalib::string &value)
+IndexEnvironment::addRankingExpression(const std::string &name, const std::string &value)
 {
     _expressions.insert_or_assign(name, value);    
 }
 
 const OnnxModel *
-IndexEnvironment::getOnnxModel(const vespalib::string &name) const
+IndexEnvironment::getOnnxModel(const std::string &name) const
 {
     auto pos = _models.find(name);
     if (pos != _models.end()) {

@@ -13,7 +13,7 @@ using vespalib::asciistream;
 
 namespace {
 
-    void writeFile(const vespalib::string & fileName, const vespalib::string & data)
+    void writeFile(const std::string & fileName, const std::string & data)
     {
         std::ofstream of;
         of.open(fileName.c_str());
@@ -21,7 +21,7 @@ namespace {
         of.close();
     }
 
-    ConfigValue readConfig(const vespalib::string & fileName)
+    ConfigValue readConfig(const std::string & fileName)
     {
         asciistream is(asciistream::createFromFile(fileName));
         return ConfigValue(getlines(is), "");
@@ -105,7 +105,7 @@ TEST("require that array lengths may be specified")
 TEST("require that escaped values are properly unescaped") {
     StringVector payload;
     payload.push_back("foo \"a\\nb\\rc\\\\d\\\"e\x42g\"");
-    vespalib::string value(ConfigParser::parse<vespalib::string>("foo", payload));
+    std::string value(ConfigParser::parse<std::string>("foo", payload));
     ASSERT_EQUAL("a\nb\rc\\d\"eBg", value);
 }
 

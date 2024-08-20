@@ -25,7 +25,7 @@ SocketHandle adjust_blocking(SocketHandle handle, bool value) {
 
 bool is_blocked(int err) { return ((err == EWOULDBLOCK) || (err == EAGAIN)); }
 
-bool is_socket(const vespalib::string &path) {
+bool is_socket(const std::string &path) {
     struct stat info;
     if (path.empty() || (lstat(path.c_str(), &info) != 0)) {
         return false;
@@ -61,7 +61,7 @@ ServerSocket::ServerSocket(const SocketSpec &spec)
     }
 }
 
-ServerSocket::ServerSocket(const vespalib::string &spec)
+ServerSocket::ServerSocket(const std::string &spec)
     : ServerSocket(SocketSpec(spec))
 {
 }

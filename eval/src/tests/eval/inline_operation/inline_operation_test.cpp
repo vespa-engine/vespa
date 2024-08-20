@@ -28,14 +28,14 @@ template <typename T> void test_op2(op2_t ref, double a, double b, double expect
     EXPECT_DOUBLE_EQ(op(a, b), expect);
 };
 
-op1_t as_op1(const vespalib::string &str) {
+op1_t as_op1(const std::string &str) {
     auto fun = Function::parse({"a"}, str);
     auto res = lookup_op1(*fun);
     EXPECT_TRUE(res.has_value());
     return res.value();
 }
 
-op2_t as_op2(const vespalib::string &str) {
+op2_t as_op2(const std::string &str) {
     auto fun = Function::parse({"a", "b"}, str);
     auto res = lookup_op2(*fun);
     EXPECT_TRUE(res.has_value());

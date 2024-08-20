@@ -311,7 +311,7 @@ void verify_get_string_from_enum_is_mapped(FixtureType& f) {
     ASSERT_TRUE(f.target_attr->findEnum("foo", handle));
     const char* from_enum = f.get_imported_attr()->getStringFromEnum(handle);
     ASSERT_TRUE(from_enum != nullptr);
-    EXPECT_EQUAL(vespalib::string("foo"), vespalib::string(from_enum));
+    EXPECT_EQUAL(std::string("foo"), std::string(from_enum));
 }
 
 TEST_F("Single-value getStringFromEnum() returns string enum is mapped to", SingleStringAttrFixture) {

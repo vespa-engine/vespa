@@ -14,15 +14,15 @@ namespace proton {
 
 namespace {
 
-const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.flush.");
-const vespalib::string SHRINK_TARGET_NAME_PREFIX("attribute.shrink.");
+const std::string FLUSH_TARGET_NAME_PREFIX("attribute.flush.");
+const std::string SHRINK_TARGET_NAME_PREFIX("attribute.shrink.");
 
 class FlushTargetFilter
 {
-    const vespalib::string &_prefix;
+    const std::string &_prefix;
     const IFlushTarget::Type _type;
 public:
-    FlushTargetFilter(const vespalib::string &prefix, IFlushTarget::Type type)
+    FlushTargetFilter(const std::string &prefix, IFlushTarget::Type type)
         : _prefix(prefix),
           _type(type)
     {
@@ -30,7 +30,7 @@ public:
     ~FlushTargetFilter();
 
     bool match(const IFlushTarget::SP &flushTarget) const {
-        const vespalib::string &targetName = flushTarget->getName();
+        const std::string &targetName = flushTarget->getName();
         if ((flushTarget->getType() != _type) ||
             (flushTarget->getComponent() != IFlushTarget::Component::ATTRIBUTE)) {
             return false;
@@ -38,8 +38,8 @@ public:
         return (targetName.substr(0, _prefix.size()) == _prefix);
     }
 
-    vespalib::string attributeName(const IFlushTarget::SP &flushTarget) {
-        const vespalib::string &targetName = flushTarget->getName();
+    std::string attributeName(const IFlushTarget::SP &flushTarget) {
+        const std::string &targetName = flushTarget->getName();
         return targetName.substr(_prefix.size());
     }
 };
@@ -153,7 +153,7 @@ FilterAttributeManager::getAttributeList(std::vector<AttributeGuard> &list) cons
 }
 
 search::SerialNum
-FilterAttributeManager::getFlushedSerialNum(const vespalib::string &name) const
+FilterAttributeManager::getFlushedSerialNum(const std::string &name) const
 {
     if (acceptAttribute(name)) {
         return _mgr->getFlushedSerialNum(name);

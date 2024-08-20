@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/document/select/resultset.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace document {
@@ -99,11 +99,11 @@ public:
     const std::unique_ptr<document::select::Node> &preDocOnlySelect() const { return _preDocOnlySelect; }
     const std::unique_ptr<document::select::Node> &preDocSelect() const { return _preDocSelect; }
 
-    void set(const vespalib::string &selection,
+    void set(const std::string &selection,
              const document::IDocumentTypeRepo &repo);
                   
-    void set(const vespalib::string &selection,
-             const vespalib::string &docTypeName,
+    void set(const std::string &selection,
+             const std::string &docTypeName,
              const document::Document &emptyDoc,
              const document::IDocumentTypeRepo &repo,
              const search::IAttributeManager *amgr,

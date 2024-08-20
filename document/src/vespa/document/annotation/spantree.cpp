@@ -38,7 +38,7 @@ SpanTree::compare(const SpanTree &other) const {
     return toString().compare(other.toString());
 }
 
-vespalib::string
+std::string
 SpanTree::toString() const {
     vespalib::asciistream os;
     os << "SpanTree(\"" << _name << "\"" << "\n  ";

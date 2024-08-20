@@ -16,7 +16,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     UcaFunctionNode();
     ~UcaFunctionNode() override;
-    UcaFunctionNode(ExpressionNode::UP arg, const vespalib::string & locale, const vespalib::string & strength);
+    UcaFunctionNode(ExpressionNode::UP arg, const std::string & locale, const std::string & strength);
     UcaFunctionNode(const UcaFunctionNode & rhs);
     UcaFunctionNode & operator = (const UcaFunctionNode & rhs);
 private:
@@ -48,8 +48,8 @@ private:
     private:
         RawResultNodeVector & _result;
     };
-    vespalib::string          _locale;
-    vespalib::string          _strength;
+    std::string          _locale;
+    std::string          _strength;
     common::BlobConverter::SP _collator;
     std::unique_ptr<Handler>    _handler;
 };

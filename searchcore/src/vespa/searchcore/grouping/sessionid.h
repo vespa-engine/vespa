@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::grouping {
 
@@ -10,7 +10,7 @@ namespace search::grouping {
  * Representing the session identifier of a grouping to be used in the
  * session manager.
  **/
-using SessionId = vespalib::string;
+using SessionId = std::string;
 
 }
 

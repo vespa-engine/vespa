@@ -228,7 +228,7 @@ FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm, const Share
 {
     QueryTermList qtl;
     query.getLeaves(qtl);
-    vespalib::string tmp;
+    std::string tmp;
     for (auto& searcher : *this) {
         QueryTermList onlyInIndex;
         vespalib::hash_set<const void*> seen;

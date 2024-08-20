@@ -35,15 +35,15 @@ template vespa_string operator + (std::string_view a, const vespa_string & b) no
 template vespa_string operator + (const vespa_string & a, const char * b) noexcept;
 template vespa_string operator + (const  char * a, const vespa_string & b) noexcept;
 
-const string &empty_string() noexcept {
-    static string empty;
+const std::string &empty_string() noexcept {
+    static std::string empty;
     return empty;
 }
 
 inline namespace waiting_for_godot {
 
-void ltrim(vespalib::string &s) noexcept;
-void rtrim(vespalib::string &s) noexcept;
+void ltrim(std::string &s) noexcept;
+void rtrim(std::string &s) noexcept;
 
 void
 ltrim(std::string &s) noexcept {
@@ -61,39 +61,39 @@ rtrim(std::string &s) noexcept {
 }
 
 void
-chomp(vespalib::string & s) noexcept {
+chomp(std::string & s) noexcept {
     ltrim(s);
     rtrim(s);
 }
 
-vespalib::string
+std::string
 safe_char_2_string(const char * p) {
-    return (p != nullptr) ? vespalib::string(p) : vespalib::string("");
+    return (p != nullptr) ? std::string(p) : std::string("");
 }
 
 }
 
 namespace std {
 
-vespalib::string
+std::string
 operator + (std::string_view a, const char * b) noexcept
 {
-    vespalib::string t(a);
+    std::string t(a);
     t += b;
     return t;
 }
 
-vespalib::string
+std::string
 operator + (const char * a, std::string_view b) noexcept
 {
-    vespalib::string t(a);
+    std::string t(a);
     t += b;
     return t;
 }
 
-vespalib::string
+std::string
 operator + (std::string_view a, std::string_view b) noexcept {
-    vespalib::string t(a);
+    std::string t(a);
     t += b;
     return t;
 }

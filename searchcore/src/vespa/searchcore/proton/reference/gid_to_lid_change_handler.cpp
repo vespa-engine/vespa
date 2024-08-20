@@ -134,8 +134,8 @@ GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> list
 {
     lock_guard guard(_lock);
     if (!_closed) {
-        const vespalib::string &docTypeName = listener->getDocTypeName();
-        const vespalib::string &name = listener->getName();
+        const std::string &docTypeName = listener->getDocTypeName();
+        const std::string &name = listener->getName();
         for (const auto &oldlistener : _listeners) {
             if (oldlistener->getDocTypeName() == docTypeName && oldlistener->getName() == name) {
                 return;
@@ -157,8 +157,8 @@ GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> list
 namespace {
 
 bool shouldRemoveListener(const IGidToLidChangeListener &listener,
-                          const vespalib::string &docTypeName,
-                          const std::set<vespalib::string> &keepNames)
+                          const std::string &docTypeName,
+                          const std::set<std::string> &keepNames)
 {
     return ((listener.getDocTypeName() == docTypeName) &&
             (keepNames.find(listener.getName()) == keepNames.end()));
@@ -167,8 +167,8 @@ bool shouldRemoveListener(const IGidToLidChangeListener &listener,
 }
 
 void
-GidToLidChangeHandler::removeListeners(const vespalib::string &docTypeName,
-                                       const std::set<vespalib::string> &keepNames)
+GidToLidChangeHandler::removeListeners(const std::string &docTypeName,
+                                       const std::set<std::string> &keepNames)
 {
     Listeners deferredDelete;
     {

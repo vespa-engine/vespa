@@ -22,25 +22,25 @@ class Visitor;
 class TransLogClient : private FRT_Invokable
 {
 public:
-    TransLogClient(FNET_Transport & transport, const vespalib::string & rpctarget);
+    TransLogClient(FNET_Transport & transport, const std::string & rpctarget);
     TransLogClient(const TransLogClient &) = delete;
     TransLogClient& operator=(const TransLogClient &) = delete;
     ~TransLogClient() override;
 
     /// Here you create a new domain
-    bool create(const vespalib::string & domain);
+    bool create(const std::string & domain);
     /// Here you remove a domain
-    bool remove(const vespalib::string & domain);
+    bool remove(const std::string & domain);
     /// Here you open an existing domain
-    std::unique_ptr<Session> open(const vespalib::string & domain);
+    std::unique_ptr<Session> open(const std::string & domain);
     /// Here you can get a list of available domains.
-    bool listDomains(std::vector<vespalib::string> & dir);
-    std::unique_ptr<Visitor> createVisitor(const vespalib::string & domain, Callback & callBack);
+    bool listDomains(std::vector<std::string> & dir);
+    std::unique_ptr<Visitor> createVisitor(const std::string & domain, Callback & callBack);
 
     bool isConnected() const;
     void disconnect();
     bool reconnect();
-    const vespalib::string &getRPCTarget() const { return _rpcTarget; }
+    const std::string &getRPCTarget() const { return _rpcTarget; }
 private:
     friend Session;
     friend Visitor;
@@ -50,12 +50,12 @@ private:
     void visitCallbackRPC_hook(FRT_RPCRequest *req);
     void eofCallbackRPC_hook(FRT_RPCRequest *req);
     int32_t rpc(FRT_RPCRequest * req);
-    Session * findSession(const vespalib::string & domain, int sessionId);
+    Session * findSession(const std::string & domain, int sessionId);
 
     using SessionMap = std::map< SessionKey, Session * >;
 
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _executor;
-    vespalib::string                   _rpcTarget;
+    std::string                   _rpcTarget;
     SessionMap                         _sessions;
     //Brute force lock for subscriptions. For multithread safety.
     std::mutex                         _lock;

@@ -3,8 +3,8 @@
 #pragma once
 
 #include "log.h"
-#include <string_view>
 #include <string>
+#include <string_view>
 
 namespace ns_log {
 

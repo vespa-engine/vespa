@@ -17,17 +17,17 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TypedCells;
 
-const vespalib::string tensor_type_spec("tensor(x{})");
-const vespalib::string tensor_type_2d_spec("tensor(x{},y{})");
-const vespalib::string tensor_type_2d_mixed_spec("tensor(x{},y[2])");
-const vespalib::string float_tensor_type_spec("tensor<float>(y{})");
+const std::string tensor_type_spec("tensor(x{})");
+const std::string tensor_type_2d_spec("tensor(x{},y{})");
+const std::string tensor_type_2d_mixed_spec("tensor(x{},y[2])");
+const std::string float_tensor_type_spec("tensor<float>(y{})");
 
 struct TestParam
 {
-    vespalib::string    _name;
+    std::string    _name;
     std::vector<size_t> _array_sizes;
     TensorSpec          _tensor_spec;
-    TestParam(vespalib::string name, std::vector<size_t> array_sizes, TensorSpec tensor_spec)
+    TestParam(std::string name, std::vector<size_t> array_sizes, TensorSpec tensor_spec)
         : _name(std::move(name)),
           _array_sizes(std::move(array_sizes)),
           _tensor_spec(std::move(tensor_spec))

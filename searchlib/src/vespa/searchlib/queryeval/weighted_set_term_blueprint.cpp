@@ -15,18 +15,18 @@ class WeightedSetTermMatchingElementsSearch : public MatchingElementsSearch
 {
     fef::TermFieldMatchData                _tfmd;
     fef::TermFieldMatchDataArray           _tfmda;
-    vespalib::string                       _field_name;
+    std::string                       _field_name;
     const std::vector<Blueprint::UP>      &_terms;
     std::unique_ptr<WeightedSetTermSearch> _search;
     
 public:
-    WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint::UP> &terms);
+    WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const std::string& field_name, const std::vector<Blueprint::UP> &terms);
     ~WeightedSetTermMatchingElementsSearch() override;
     void find_matching_elements(uint32_t docid, MatchingElements& result) override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
 };
 
-WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint::UP> &terms)
+WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const std::string& field_name, const std::vector<Blueprint::UP> &terms)
     : _tfmd(),
       _tfmda(),
       _field_name(field_name),

@@ -6,8 +6,8 @@
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/statistics.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.net.crypto_engine");
@@ -41,7 +41,7 @@ using net::tls::AuthorizationMode;
 AuthorizationMode
 authorization_mode_from_env() {
     const char* env = getenv("VESPA_TLS_INSECURE_AUTHORIZATION_MODE");
-    vespalib::string mode = env ? env : "";
+    std::string mode = env ? env : "";
     if (mode == "enforce") {
         return AuthorizationMode::Enforce;
     } else if (mode == "log_only") {
@@ -58,7 +58,7 @@ authorization_mode_from_env() {
 CryptoEngine::SP
 create_default_crypto_engine() {
     const char *env = getenv("VESPA_TLS_CONFIG_FILE");
-    vespalib::string cfg_file = env ? env : "";
+    std::string cfg_file = env ? env : "";
     if (cfg_file.empty()) {
         return std::make_shared<NullCryptoEngine>();
     }
@@ -66,7 +66,7 @@ create_default_crypto_engine() {
     LOG(debug, "Using TLS crypto engine with config file '%s'", cfg_file.c_str());
     auto tls = std::make_shared<net::tls::AutoReloadingTlsCryptoEngine>(cfg_file, mode);
     env = getenv("VESPA_TLS_INSECURE_MIXED_MODE");
-    vespalib::string mixed_mode = env ? env : "";
+    std::string mixed_mode = env ? env : "";
     if (mixed_mode == "plaintext_client_mixed_server") {
         LOG(debug, "TLS insecure mixed-mode activated: plaintext client, mixed server");
         return std::make_shared<MaybeTlsCryptoEngine>(std::move(tls), false);

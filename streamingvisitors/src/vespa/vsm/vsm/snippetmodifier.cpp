@@ -83,7 +83,7 @@ SnippetModifier::modify(const FieldValue & fv, const document::FieldPath & path)
 {
     reset();
     fv.iterateNested(path, *this);
-    return FieldValue::UP(new StringFieldValue(vespalib::string(_valueBuf->getBuffer(), _valueBuf->getPos())));
+    return FieldValue::UP(new StringFieldValue(std::string(_valueBuf->getBuffer(), _valueBuf->getPos())));
 }
 
 

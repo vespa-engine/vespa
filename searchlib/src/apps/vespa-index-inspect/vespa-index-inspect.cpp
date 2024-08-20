@@ -131,7 +131,7 @@ usageHeader()
 class FieldOptions
 {
 public:
-    std::vector<vespalib::string> _fields;
+    std::vector<std::string> _fields;
     std::vector<uint32_t> _ids;
 
     FieldOptions()
@@ -141,7 +141,7 @@ public:
     }
     ~FieldOptions();
 
-    void addField(const vespalib::string &field) { _fields.push_back(field); }
+    void addField(const std::string &field) { _fields.push_back(field); }
     bool empty() const { return _ids.empty(); }
     void validateFields(const Schema &schema);
 };
@@ -176,9 +176,9 @@ public:
 
 class ShowPostingListSubApp : public SubApp
 {
-    vespalib::string _indexDir;
+    std::string _indexDir;
     FieldOptions _fieldOptions;
-    vespalib::string _word;
+    std::string _word;
     bool _verbose;
     bool _readmmap;
     bool _directio;
@@ -368,10 +368,10 @@ ShowPostingListSubApp::readWordList(const SchemaUtil::IndexIterator &index)
 
     search::TuneFileSeqRead tuneFileRead;
     PageDict4FileSeqRead wr;
-    vespalib::string fieldDir = _indexDir + "/" + index.getName();
+    std::string fieldDir = _indexDir + "/" + index.getName();
     if (!wr.open(fieldDir + "/dictionary", tuneFileRead))
         return false;
-    vespalib::string word;
+    std::string word;
     PostingListCounts counts;
     uint64_t wordNum = noWordNum();
     wr.readWord(word, wordNum, counts);
@@ -420,7 +420,7 @@ ShowPostingListSubApp::readPostings(const SchemaUtil::IndexIterator &index,
 {
     FieldReader r;
     std::unique_ptr<PostingListFileRandRead> postingfile(new Zc4PosOccRandRead);
-    vespalib::string mangledName = _indexDir + "/" + index.getName() +
+    std::string mangledName = _indexDir + "/" + index.getName() +
                               "/";
     search::TuneFileSeqRead tuneFileRead;
     r.setup(_wmv[index.getIndex()], _dm);
@@ -514,8 +514,8 @@ ShowPostingListSubApp::showPostingList()
     Schema schema;
     uint32_t numFields = 1;
     std::string schemaName = _indexDir + "/schema.txt";
-    std::vector<vespalib::string> fieldNames;
-    vespalib::string shortName;
+    std::vector<std::string> fieldNames;
+    std::string shortName;
     if (!schema.loadFromFile(schemaName)) {
         LOG(error,
             "Could not load schema from %s", schemaName.c_str());
@@ -773,7 +773,7 @@ DumpWordsSubApp::dumpWords()
     }
 
     SchemaUtil::IndexIterator index(schema, _fieldOptions._ids[0]);
-    vespalib::string fieldDir = _indexDir + "/" + index.getName();
+    std::string fieldDir = _indexDir + "/" + index.getName();
     PageDict4FileSeqRead wordList;
     std::string wordListName = fieldDir + "/dictionary";
     search::TuneFileSeqRead tuneFileRead;
@@ -782,7 +782,7 @@ DumpWordsSubApp::dumpWords()
         std::_Exit(1);
     }
     uint64_t wordNum = 0;
-    vespalib::string word;
+    std::string word;
     PostingListCounts counts;
     for (;;) {
         wordList.readWord(word, wordNum, counts);

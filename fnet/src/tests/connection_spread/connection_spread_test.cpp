@@ -50,7 +50,7 @@ struct Fixture {
     }
 };
 
-void check_threads(FNET_Transport &transport, size_t num_threads, const vespalib::string &tag) {
+void check_threads(FNET_Transport &transport, size_t num_threads, const std::string &tag) {
     std::set<FNET_TransportThread *> threads;
     while (threads.size() < num_threads) {
         threads.insert(transport.select_thread(nullptr, 0));
@@ -67,7 +67,7 @@ TEST_F("require that connections are spread among transport threads", Fixture)
     FNET_Connector *listener = f1.server.Listen("tcp/0", &f1.streamer, &f1.adapter);
     ASSERT_TRUE(listener);
     uint32_t port = listener->GetPortNumber();
-    vespalib::string spec = vespalib::make_string("tcp/localhost:%u", port);
+    std::string spec = vespalib::make_string("tcp/localhost:%u", port);
     std::vector<FNET_Connection *> connections;
     for (size_t i = 0; i < 256; ++i) {
         std::this_thread::sleep_for(1ms);

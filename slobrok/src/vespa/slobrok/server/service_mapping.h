@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace slobrok {
 
 struct ServiceMapping {
-    vespalib::string name;
-    vespalib::string spec;
-    ServiceMapping(const vespalib::string & name_, const vespalib::string & spec_) noexcept : name(name_), spec(spec_) { }
+    std::string name;
+    std::string spec;
+    ServiceMapping(const std::string & name_, const std::string & spec_) noexcept : name(name_), spec(spec_) { }
     ServiceMapping(const ServiceMapping& rhs) noexcept;
     ~ServiceMapping();
     ServiceMapping& operator=(const ServiceMapping& rhs);

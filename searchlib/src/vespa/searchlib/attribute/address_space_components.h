@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/address_space.h>
+#include <string>
 
 namespace search {
 
@@ -14,14 +14,14 @@ class AddressSpaceComponents {
 public:
     static vespalib::AddressSpace default_enum_store_usage();
     static vespalib::AddressSpace default_multi_value_usage();
-    static const vespalib::string enum_store;
-    static const vespalib::string multi_value;
-    static const vespalib::string raw_store;
-    static const vespalib::string tensor_store;
-    static const vespalib::string shared_string_repo;
-    static const vespalib::string hnsw_levels_store;
-    static const vespalib::string hnsw_links_store;
-    static const vespalib::string hnsw_nodeid_mapping;
+    static const std::string enum_store;
+    static const std::string multi_value;
+    static const std::string raw_store;
+    static const std::string tensor_store;
+    static const std::string shared_string_repo;
+    static const std::string hnsw_levels_store;
+    static const std::string hnsw_links_store;
+    static const std::string hnsw_nodeid_mapping;
 };
 
 }

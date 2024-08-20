@@ -15,7 +15,7 @@ public:
     ~RemoveLocationCommand() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    const vespalib::string& getDocumentSelection() const { return _documentSelection; }
+    const std::string& getDocumentSelection() const { return _documentSelection; }
     // TODO move to factory pattern instead to disallow creating illegal combinations
     void set_only_enumerate_docs(bool only_enumerate) noexcept {
         _only_enumerate_docs = only_enumerate;
@@ -36,7 +36,7 @@ public:
     DECLARE_STORAGECOMMAND(RemoveLocationCommand, onRemoveLocation);
 private:
     // TODO make variant? Only one of the two may be used
-    vespalib::string _documentSelection;
+    std::string _documentSelection;
     std::vector<spi::IdAndTimestamp> _explicit_remove_set;
     bool _only_enumerate_docs;
 };

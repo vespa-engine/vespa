@@ -91,10 +91,10 @@ FS4Properties::value(uint32_t entry) const noexcept {
     return {c_str(pair.first), pair.second};
 }
 
-vespalib::string
+std::string
 FS4Properties::toString(uint32_t indent) const
 {
-    vespalib::string s;
+    std::string s;
     s += make_string("%*sProperties {\n", indent, "");
     s += make_string("%*s  name: ", indent, "");
     s += _name;

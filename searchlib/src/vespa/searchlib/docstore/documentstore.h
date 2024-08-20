@@ -76,7 +76,7 @@ public:
     size_t getMaxSpreadAsBloat() const override { return _backingStore.getMaxSpreadAsBloat(); }
     vespalib::CacheStats getCacheStats() const override;
     size_t memoryMeta() const override { return _backingStore.memoryMeta(); }
-    const vespalib::string & getBaseDir() const override { return _backingStore.getBaseDir(); }
+    const std::string & getBaseDir() const override { return _backingStore.getBaseDir(); }
     void accept(IDocumentStoreReadVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
                 const document::DocumentTypeRepo &repo) override;
     void accept(IDocumentStoreRewriteVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,

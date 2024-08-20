@@ -56,7 +56,7 @@ void ProxyCmd::printArray(FRT_Values *rvals) {
     }
 }
 
-vespalib::string ProxyCmd::makeSpec() {
+std::string ProxyCmd::makeSpec() {
     return vespalib::make_string("tcp/%s:%d", _flags.targethost.c_str(), _flags.portnumber);
 }
 
@@ -65,7 +65,7 @@ void ProxyCmd::autoPrint() {
         std::cerr << "FAILURE ["<< _req->GetMethodName() <<"]: " << _req->GetErrorMessage() << std::endl;
         return;
     }
-    vespalib::string retspec = _req->GetReturnSpec();
+    std::string retspec = _req->GetReturnSpec();
     FRT_Values *rvals = _req->GetReturn();
     if (retspec == "S") {
         printArray(rvals);
@@ -81,7 +81,7 @@ void ProxyCmd::autoPrint() {
 int ProxyCmd::action() {
     int errors = 0;
     initRPC();
-    vespalib::string spec = makeSpec();
+    std::string spec = makeSpec();
     _target = _server->supervisor().GetTarget(spec.c_str());
     _req->SetMethodName(_flags.method.c_str());
     FRT_Values &params = *_req->GetParams();

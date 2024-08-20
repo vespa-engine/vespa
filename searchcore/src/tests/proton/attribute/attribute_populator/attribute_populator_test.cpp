@@ -36,7 +36,7 @@ using search::test::DirectoryHandler;
 using AVBasicType = search::attribute::BasicType;
 using AVConfig = search::attribute::Config;
 
-const vespalib::string TEST_DIR = "testdir";
+const std::string TEST_DIR = "testdir";
 const uint64_t CREATE_SERIAL_NUM = 8u;
 
 std::unique_ptr<const DocumentTypeRepo>
@@ -58,7 +58,7 @@ struct DocContext
     {
     }
     std::shared_ptr<Document> create(uint32_t id, int64_t fieldValue) {
-        vespalib::string docId =
+        std::string docId =
                 vespalib::make_string("id:searchdocument:searchdocument::%u", id);
         auto doc = std::make_shared<Document>(*_repo, *_repo->getDocumentType("searchdocument"), DocumentId(docId));
         doc->setValue("a1", IntFieldValue(fieldValue));

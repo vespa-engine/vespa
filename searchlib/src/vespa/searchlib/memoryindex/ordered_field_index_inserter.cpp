@@ -4,7 +4,6 @@
 #include "i_field_index_insert_listener.h"
 
 #include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -16,6 +15,7 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <cstdio>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.ordered_document_inserter");

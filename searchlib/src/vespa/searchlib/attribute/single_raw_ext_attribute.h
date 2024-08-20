@@ -16,7 +16,7 @@ class SingleRawExtAttribute : public RawAttribute,
     std::vector<char, vespalib::allocator_large<char>>         _buffer;
     std::vector<uint32_t, vespalib::allocator_large<uint32_t>> _offsets;
 public:
-    SingleRawExtAttribute(const vespalib::string& name);
+    SingleRawExtAttribute(const std::string& name);
     ~SingleRawExtAttribute() override;
     void onCommit() override;
     void onUpdateStat() override;

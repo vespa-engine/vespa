@@ -60,7 +60,7 @@ using namespace index;
 namespace diskindex {
 
 class MyMockFieldLengthInspector : public IFieldLengthInspector {
-    FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+    FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         if (field_name == "f0") {
             return FieldLengthInfo(3.5, 21);
         } else {
@@ -76,10 +76,10 @@ protected:
     bool   _force_small_merge_chunk;
     const Schema & getSchema() const { return _schema; }
 
-    void requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap, bool force_short_merge_chunk);
-    void make_simple_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector);
-    bool try_merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources, std::shared_ptr<IFlushToken> flush_token);
-    void merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources);
+    void requireThatFusionIsWorking(const std::string &prefix, bool directio, bool readmmap, bool force_short_merge_chunk);
+    void make_simple_index(const std::string &dump_dir, const IFieldLengthInspector &field_length_inspector);
+    bool try_merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources, std::shared_ptr<IFlushToken> flush_token);
+    void merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources);
     void reconstruct_interleaved_features();
 public:
     FusionTest();
@@ -97,7 +97,7 @@ myPushDocument(DocumentInverter &inv)
 
 }
 
-vespalib::string
+std::string
 toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeights = false)
 {
     vespalib::asciistream ss;
@@ -155,7 +155,7 @@ make_schema(bool interleaved_features)
 }
 
 void
-assert_interleaved_features(DiskIndex &d, const vespalib::string &field, const vespalib::string &term, uint32_t doc_id, uint32_t exp_num_occs, uint32_t exp_field_length)
+assert_interleaved_features(DiskIndex &d, const std::string &field, const std::string &term, uint32_t doc_id, uint32_t exp_num_occs, uint32_t exp_field_length)
 {
     using LookupResult = DiskIndex::LookupResult;
     using PostingListHandle = index::PostingListHandle;
@@ -198,10 +198,10 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         a.add(&f0);
         SB::UP sbap(wh1->createIterator(lr1->counts, a));
         sbap->initFullRange();
-        EXPECT_EQ(vespalib::string("{1000000:}"), toString(f0.getIterator()));
+        EXPECT_EQ(std::string("{1000000:}"), toString(f0.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
         sbap->unpack(10);
-        EXPECT_EQ(vespalib::string("{7:2}"), toString(f0.getIterator()));
+        EXPECT_EQ(std::string("{7:2}"), toString(f0.getIterator()));
     }
     {
         uint32_t id1(schema.getIndexFieldId("f2"));
@@ -214,14 +214,14 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         a.add(&f2);
         SB::UP sbap(wh1->createIterator(lr1->counts, a));
         sbap->initFullRange();
-        EXPECT_EQ(vespalib::string("{1000000:}"), toString(f2.getIterator()));
+        EXPECT_EQ(std::string("{1000000:}"), toString(f2.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
         sbap->unpack(10);
         if (f2HasElements) {
-            EXPECT_EQ(vespalib::string("{3:0[e=0,l=3],0[e=1,l=1]}"),
+            EXPECT_EQ(std::string("{3:0[e=0,l=3],0[e=1,l=1]}"),
                       toString(f2.getIterator(), true));
         } else {
-            EXPECT_EQ(vespalib::string("{3:0[e=0,l=3]}"),
+            EXPECT_EQ(std::string("{3:0[e=0,l=3]}"),
                       toString(f2.getIterator(), true));
         }
     }
@@ -236,14 +236,14 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         a.add(&f3);
         SB::UP sbap(wh1->createIterator(lr1->counts, a));
         sbap->initFullRange();
-        EXPECT_EQ(vespalib::string("{1000000:}"), toString(f3.getIterator()));
+        EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
         sbap->unpack(10);
         if (f3HasWeights) {
-            EXPECT_EQ(vespalib::string("{2:0[e=0,w=4,l=2]}"),
+            EXPECT_EQ(std::string("{2:0[e=0,w=4,l=2]}"),
                       toString(f3.getIterator(), true, true));
         } else {
-            EXPECT_EQ(vespalib::string("{2:0[e=0,w=1,l=2]}"),
+            EXPECT_EQ(std::string("{2:0[e=0,w=1,l=2]}"),
                       toString(f3.getIterator(), true, true));
         }
     }
@@ -258,14 +258,14 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         a.add(&f3);
         SB::UP sbap(wh1->createIterator(lr1->counts, a));
         sbap->initFullRange();
-        EXPECT_EQ(vespalib::string("{1000000:}"), toString(f3.getIterator()));
+        EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(11));
         sbap->unpack(11);
         if (f3HasWeights) {
-            EXPECT_EQ(vespalib::string("{1:0[e=0,w=-27,l=1]}"),
+            EXPECT_EQ(std::string("{1:0[e=0,w=-27,l=1]}"),
                       toString(f3.getIterator(), true, true));
         } else {
-            EXPECT_EQ(vespalib::string("{1:0[e=0,w=1,l=1]}"),
+            EXPECT_EQ(std::string("{1:0[e=0,w=1,l=1]}"),
                       toString(f3.getIterator(), true, true));
         }
     }
@@ -280,14 +280,14 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         a.add(&f3);
         SB::UP sbap(wh1->createIterator(lr1->counts, a));
         sbap->initFullRange();
-        EXPECT_EQ(vespalib::string("{1000000:}"), toString(f3.getIterator()));
+        EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(12));
         sbap->unpack(12);
         if (f3HasWeights) {
-            EXPECT_EQ(vespalib::string("{1:0[e=0,w=0,l=1]}"),
+            EXPECT_EQ(std::string("{1:0[e=0,w=0,l=1]}"),
                          toString(f3.getIterator(), true, true));
         } else {
-            EXPECT_EQ(vespalib::string("{1:0[e=0,w=1,l=1]}"),
+            EXPECT_EQ(std::string("{1:0[e=0,w=1,l=1]}"),
                       toString(f3.getIterator(), true, true));
         }
     }
@@ -297,7 +297,7 @@ VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
 void
-FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap, bool force_small_merge_chunk)
+FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio, bool readmmap, bool force_small_merge_chunk)
 {
     Schema schema;
     Schema schema2;
@@ -361,7 +361,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     myPushDocument(inv);
 
 
-    const vespalib::string dump2dir = prefix + "dump2";
+    const std::string dump2dir = prefix + "dump2";
     constexpr uint32_t numDocs = 12 + 1;
 
     const uint32_t numWords = fic.getNumUniqueWords();
@@ -391,7 +391,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     } while (0);
 
     do {
-        std::vector<vespalib::string> sources;
+        std::vector<std::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
         Fusion fusion(schema, prefix + "dump3", sources, selector,
@@ -405,7 +405,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         validateDiskIndex(dw3, true, true);
     } while (0);
     do {
-        std::vector<vespalib::string> sources;
+        std::vector<std::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
         Fusion fusion(schema2, prefix + "dump4", sources, selector,
@@ -419,7 +419,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         validateDiskIndex(dw4, true, false);
     } while (0);
     do {
-        std::vector<vespalib::string> sources;
+        std::vector<std::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
         Fusion fusion(schema3, prefix + "dump5", sources, selector,
@@ -433,7 +433,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         validateDiskIndex(dw5, false, false);
     } while (0);
     do {
-        std::vector<vespalib::string> sources;
+        std::vector<std::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
         Fusion fusion(schema, prefix + "dump6", sources, selector,
@@ -448,7 +448,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         validateDiskIndex(dw6, true, true);
     } while (0);
     do {
-        std::vector<vespalib::string> sources;
+        std::vector<std::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
         Fusion fusion(schema, prefix + "dump3", sources, selector,
@@ -464,7 +464,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
 }
 
 void
-FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector)
+FusionTest::make_simple_index(const std::string &dump_dir, const IFieldLengthInspector &field_length_inspector)
 {
     FieldIndexCollection fic(_schema, field_length_inspector);
     constexpr  uint32_t numDocs = 20;
@@ -486,7 +486,7 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
 }
 
 bool
-FusionTest::try_merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources, std::shared_ptr<IFlushToken> flush_token)
+FusionTest::try_merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources, std::shared_ptr<IFlushToken> flush_token)
 {
     vespalib::ThreadStackExecutor executor(4);
     TuneFileIndexing tuneFileIndexing;
@@ -498,7 +498,7 @@ FusionTest::try_merge_simple_indexes(const vespalib::string &dump_dir, const std
 }
 
 void
-FusionTest::merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources)
+FusionTest::merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources)
 {
     ASSERT_TRUE(try_merge_simple_indexes(dump_dir, sources, std::make_shared<FlushToken>()));
 }

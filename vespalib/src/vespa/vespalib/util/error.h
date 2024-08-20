@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
-vespalib::string getErrorString(const int osError);
+std::string getErrorString(const int osError);
 
-vespalib::string getLastErrorString();
+std::string getLastErrorString();
 
 }

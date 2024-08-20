@@ -31,15 +31,15 @@ Bucket default_bucket(BucketId id) {
 }
 
 api::StorageMessageAddress make_storage_address(uint16_t node) {
-    static vespalib::string _storage("storage");
+    static std::string _storage("storage");
     return {&_storage, lib::NodeType::STORAGE, node};
 }
 
 struct MockUuidGenerator : UuidGenerator {
-    vespalib::string _uuid;
+    std::string _uuid;
     MockUuidGenerator() : _uuid("a-very-random-id") {}
 
-    vespalib::string generate_uuid() const override {
+    std::string generate_uuid() const override {
         return _uuid;
     }
 };

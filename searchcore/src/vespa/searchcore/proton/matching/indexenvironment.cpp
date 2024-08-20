@@ -11,14 +11,14 @@ using namespace search::fef;
 
 namespace {
 
-using StringSet = std::set<vespalib::string>;
+using StringSet = std::set<std::string>;
 
 void
-consider_field_for_extraction(const vespalib::string& field_name, StringSet& virtual_fields)
+consider_field_for_extraction(const std::string& field_name, StringSet& virtual_fields)
 {
     size_t pos = field_name.find_last_of('.');
-    if (pos != vespalib::string::npos) {
-        vespalib::string virtual_field = field_name.substr(0, pos);
+    if (pos != std::string::npos) {
+        std::string virtual_field = field_name.substr(0, pos);
         virtual_fields.insert(virtual_field);
         consider_field_for_extraction(virtual_field, virtual_fields);
     }

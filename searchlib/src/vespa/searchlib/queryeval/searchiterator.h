@@ -4,11 +4,11 @@
 
 #include "posting_info.h"
 #include "begin_and_end_id.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/trinary.h>
-#include <memory>
-#include <vector>
 #include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
@@ -291,7 +291,7 @@ public:
      *
      * @return structured human-readable representation of this object
      **/
-    vespalib::string asString() const;
+    std::string asString() const;
 
     /**
     * Create a slime representation of this object. This
@@ -310,7 +310,7 @@ public:
      *
      * @return fully qualified class name
      **/
-    virtual vespalib::string getClassName() const;
+    virtual std::string getClassName() const;
 
     /**
      * Visit each of the members of this object. This method should be

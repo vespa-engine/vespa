@@ -6,8 +6,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/document/predicate/predicate_slime_builder.h>
-#include <string>
 #include <climits>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_test");

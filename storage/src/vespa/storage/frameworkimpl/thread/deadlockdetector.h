@@ -68,7 +68,7 @@ struct DeadLockDetector : private framework::Runnable,
                               const framework::ThreadTickData& tick) const;
     void handleDeadlock(vespalib::steady_time currentTime,
                         const framework::Thread& deadlocked_thread,
-                        const vespalib::string& id,
+                        const std::string& id,
                         const framework::ThreadProperties& tp,
                         const framework::ThreadTickData& tick,
                         bool warnOnly);
@@ -83,7 +83,7 @@ struct DeadLockDetector : private framework::Runnable,
 
 private:
     AppKiller::UP _killer;
-    mutable std::map<vespalib::string, State> _states;
+    mutable std::map<std::string, State> _states;
     mutable std::mutex      _lock;
     std::condition_variable _cond;
     std::atomic<bool> _enableWarning;
@@ -97,7 +97,7 @@ private:
 
     void run(framework::ThreadHandle&) override;
     void reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath&) const override;
-    vespalib::string getBucketLockInfo() const;
+    std::string getBucketLockInfo() const;
 };
 
 }

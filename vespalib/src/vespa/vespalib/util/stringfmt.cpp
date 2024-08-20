@@ -8,7 +8,7 @@ namespace vespalib {
 
 //-----------------------------------------------------------------------------
 
-vespalib::string
+std::string
 make_string_va(const char *fmt, va_list ap)
 {
     va_list ap2;
@@ -21,7 +21,7 @@ make_string_va(const char *fmt, va_list ap)
 
     assert(size >= 0);
     if (sizeof(buffer) > static_cast<size_t>(size)) {
-        return vespalib::string(buffer, size);
+        return std::string(buffer, size);
     }
 
     auto allocated = std::make_unique<char[]>(size + 1);
@@ -29,7 +29,7 @@ make_string_va(const char *fmt, va_list ap)
     int newLen = vsnprintf(allocated.get(), size + 1, fmt, ap2);
     va_end(ap2);
     assert(newLen == size);
-    return vespalib::string(allocated.get(), size);
+    return std::string(allocated.get(), size);
 }
 
 /**
@@ -38,23 +38,23 @@ make_string_va(const char *fmt, va_list ap)
  * You must \#include <vespa/vespalib/util/stringfmt.h>
  * to use this utility function.
  * @param fmt format string
- * @return formatted vespalib::string
+ * @return formatted std::string
  **/
-vespalib::string make_string(const char *fmt, ...)
+std::string make_string(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    vespalib::string ret = make_string_va(fmt, ap);
+    std::string ret = make_string_va(fmt, ap);
     va_end(ap);
     return ret;
 }
 
 namespace make_string_short {
-vespalib::string fmt(const char *format, ...)
+std::string fmt(const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
-    vespalib::string ret = make_string_va(format, ap);
+    std::string ret = make_string_va(format, ap);
     va_end(ap);
     return ret;
 }

@@ -2,7 +2,6 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
@@ -10,6 +9,7 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_mapper_factory.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_mapper_test");
@@ -28,9 +28,9 @@ GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
-vespalib::string doc1("id:test:music::1");
-vespalib::string doc2("id:test:music::2");
-vespalib::string doc3("id:test:music::3");
+std::string doc1("id:test:music::1");
+std::string doc2("id:test:music::2");
+std::string doc3("id:test:music::3");
 
 static constexpr uint32_t numBucketBits = UINT32_C(20);
 

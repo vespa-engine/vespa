@@ -54,7 +54,7 @@ ResultClass::addConfigEntry(const char *name)
 }
 
 bool
-ResultClass::all_fields_generated(const vespalib::hash_set<vespalib::string>& fields) const
+ResultClass::all_fields_generated(const vespalib::hash_set<std::string>& fields) const
 {
     if (_dynInfo._generateCnt == getNumEntries()) {
         return true;

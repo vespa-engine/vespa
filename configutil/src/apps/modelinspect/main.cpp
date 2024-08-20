@@ -14,10 +14,10 @@ LOG_SETUP("vespa-model-inspect");
 class Application
 {
     ModelInspect::Flags _flags;
-    vespalib::string _cfgId;
-    vespalib::string _specString;
+    std::string _cfgId;
+    std::string _specString;
     int parseOpts(int argc, char **argv);
-    vespalib::string getSources();
+    std::string getSources();
     config::ConfigUri getConfigUri();
 public:
     void usage(const char *self);
@@ -65,10 +65,10 @@ Application::parseOpts(int argc, char **argv)
     return optind;
 }
 
-vespalib::string
+std::string
 Application::getSources()
 {
-    vespalib::string specs;
+    std::string specs;
     for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
         if (! specs.empty()) specs += ",";
         specs += v;

@@ -16,7 +16,7 @@ public:
                                parentFileHeaderContext,
                                SerialNum serialNum);
 
-    void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
+    void addTags(vespalib::GenericHeader &header, const std::string &name) const override;
 };
 
 }

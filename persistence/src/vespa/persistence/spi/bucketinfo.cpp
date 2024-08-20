@@ -46,7 +46,7 @@ BucketInfo::operator==(const BucketInfo& o) const
             && _active == o._active);
 }
 
-vespalib::string
+std::string
 BucketInfo::toString() const {
     vespalib::asciistream out;
     out << "BucketInfo(";

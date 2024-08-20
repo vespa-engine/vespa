@@ -88,7 +88,7 @@ public:
     uint16_t getIndex() const { return _index; }
     lib::Node getNode() const { return lib::Node(*_nodeType, _index); }
 
-    vespalib::string getIdentity() const;
+    std::string getIdentity() const;
 
     std::shared_ptr<Repos> getTypeRepo() const;
     const document::BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }

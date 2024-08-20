@@ -18,7 +18,7 @@ using search::fef::BlueprintFactory;
 using search::fef::ObjectStore;
 using search::fef::test::IndexEnvironment;
 using search::fef::test::DummyDependencyHandler;
-using StringVector = std::vector<vespalib::string>;
+using StringVector = std::vector<std::string>;
 
 constexpr feature_t unranked = std::numeric_limits<feature_t>::max();
 
@@ -40,7 +40,7 @@ struct FirstPhaseRankBlueprintTest : public ::testing::Test {
         return factory.createBlueprint("firstPhaseRank");
     }
 
-    void expect_setup_fail(const StringVector& params, const vespalib::string& exp_fail_msg) {
+    void expect_setup_fail(const StringVector& params, const std::string& exp_fail_msg) {
         auto blueprint = make_blueprint();
         DummyDependencyHandler deps(*blueprint);
         EXPECT_FALSE(blueprint->setup(index_env, params));

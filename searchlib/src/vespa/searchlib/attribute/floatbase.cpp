@@ -6,7 +6,7 @@
 
 namespace search {
 
-FloatingPointAttribute::FloatingPointAttribute(const vespalib::string & name, const Config & c) :
+FloatingPointAttribute::FloatingPointAttribute(const std::string & name, const Config & c) :
     NumericAttribute(name, c),
     _changes()
 {
@@ -46,7 +46,7 @@ uint32_t FloatingPointAttribute::get(DocId doc, WeightedConstChar * v, uint32_t 
     return 0;
 }
 
-uint32_t FloatingPointAttribute::get(DocId doc, vespalib::string * s, uint32_t sz) const
+uint32_t FloatingPointAttribute::get(DocId doc, std::string * s, uint32_t sz) const
 {
     double * v = new double[sz];
     unsigned num(static_cast<const AttributeVector *>(this)->get(doc, v, sz));

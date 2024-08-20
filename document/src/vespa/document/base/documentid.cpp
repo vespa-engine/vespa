@@ -31,7 +31,7 @@ DocumentId::DocumentId(const DocumentId & rhs) = default;
 DocumentId & DocumentId::operator = (const DocumentId & rhs) = default;
 DocumentId::~DocumentId() noexcept = default;
 
-vespalib::string
+std::string
 DocumentId::toString() const {
     return _id.toString();
 }
@@ -51,7 +51,7 @@ DocumentId::getSerializedSize() const
 void
 DocumentId::calculateGlobalId() const
 {
-    vespalib::string id(_id.toString());
+    std::string id(_id.toString());
 
     unsigned char key[16];
     fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()), id.size(), key);

@@ -22,8 +22,8 @@ AsyncResolver::SteadyClock::now()
 
 //-----------------------------------------------------------------------------
 
-vespalib::string
-AsyncResolver::SimpleHostResolver::ip_address(const vespalib::string &host_name)
+std::string
+AsyncResolver::SimpleHostResolver::ip_address(const std::string &host_name)
 {
     return SocketAddress::select_remote(80, host_name.c_str()).ip_address();
 }
@@ -42,11 +42,11 @@ AsyncResolver::Params::Params()
 
 //-----------------------------------------------------------------------------
 
-vespalib::string
-AsyncResolver::LoggingHostResolver::ip_address(const vespalib::string &host_name)
+std::string
+AsyncResolver::LoggingHostResolver::ip_address(const std::string &host_name)
 {
     auto before = _clock->now();
-    vespalib::string ip_address = _resolver->ip_address(host_name);
+    std::string ip_address = _resolver->ip_address(host_name);
     seconds resolve_time = (_clock->now() - before);
     if (resolve_time >= _max_resolve_time) {
         LOG(warning, "slow resolve time: '%s' -> '%s' (%g s)",
@@ -73,7 +73,7 @@ AsyncResolver::CachingHostResolver::should_evict_oldest_entry(const std::lock_gu
 }
 
 bool
-AsyncResolver::CachingHostResolver::lookup(const vespalib::string &host_name, vespalib::string &ip_address)
+AsyncResolver::CachingHostResolver::lookup(const std::string &host_name, std::string &ip_address)
 {
     auto now = _clock->now();
     std::lock_guard<std::mutex> guard(_lock);
@@ -91,7 +91,7 @@ AsyncResolver::CachingHostResolver::lookup(const vespalib::string &host_name, ve
 }
 
 void
-AsyncResolver::CachingHostResolver::store(const vespalib::string &host_name, const vespalib::string &ip_address)
+AsyncResolver::CachingHostResolver::store(const std::string &host_name, const std::string &ip_address)
 {
     auto end_time = _clock->now() + std::chrono::duration_cast<time_point::duration>(_max_result_age);
     std::lock_guard<std::mutex> guard(_lock);
@@ -113,10 +113,10 @@ AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostRes
 {
 }
 
-vespalib::string
-AsyncResolver::CachingHostResolver::ip_address(const vespalib::string &host_name)
+std::string
+AsyncResolver::CachingHostResolver::ip_address(const std::string &host_name)
 {
-    vespalib::string ip_address;
+    std::string ip_address;
     if (lookup(host_name, ip_address)) {
         return ip_address;
     }
@@ -163,7 +163,7 @@ AsyncResolver::wait_for_pending_resolves() {
 }
 
 void
-AsyncResolver::resolve_async(const vespalib::string &spec, ResultHandler::WP result_handler)
+AsyncResolver::resolve_async(const std::string &spec, ResultHandler::WP result_handler)
 {
     auto task = std::make_unique<ResolveTask>(spec, *_resolver, std::move(result_handler));
     auto rejected = _executor->execute(std::move(task));

@@ -37,7 +37,7 @@ const std::vector<GenSpec> layouts = {
     G().idx("x", 3).map("y", {}).idx("z", 7)
 };
 
-TensorSpec perform_generic_reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims,
+TensorSpec perform_generic_reduce(const TensorSpec &a, Aggr aggr, const std::vector<std::string> &dims,
                                   const ValueBuilderFactory &factory)
 {
     Stash stash;

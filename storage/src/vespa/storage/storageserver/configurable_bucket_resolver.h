@@ -18,15 +18,15 @@ namespace storage {
  */
 class ConfigurableBucketResolver : public BucketResolver {
 public:
-    using BucketSpaceMapping = vespalib::hash_map<vespalib::string, document::BucketSpace>;
+    using BucketSpaceMapping = vespalib::hash_map<std::string, document::BucketSpace>;
     const BucketSpaceMapping _type_to_space;
 public:
     explicit ConfigurableBucketResolver(BucketSpaceMapping type_to_space) noexcept;
     ~ConfigurableBucketResolver() override;
 
     document::Bucket bucketFromId(const document::DocumentId&) const override;
-    document::BucketSpace bucketSpaceFromName(const vespalib::string& name) const override;
-    vespalib::string nameFromBucketSpace(const document::BucketSpace& space) const override;
+    document::BucketSpace bucketSpaceFromName(const std::string& name) const override;
+    std::string nameFromBucketSpace(const document::BucketSpace& space) const override;
 
     static std::shared_ptr<ConfigurableBucketResolver> from_config(
             const vespa::config::content::core::BucketspacesConfig& config);

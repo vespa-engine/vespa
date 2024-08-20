@@ -46,7 +46,7 @@ PutCommand::getDocumentType() const {
     return &_doc->getType();
 }
 
-vespalib::string
+std::string
 PutCommand::getSummary() const
 {
     vespalib::asciistream stream;
@@ -134,7 +134,7 @@ UpdateCommand::getDocumentId() const {
     return _update->getId();
 }
 
-vespalib::string
+std::string
 UpdateCommand::getSummary() const {
     vespalib::asciistream stream;
     stream << "Update(BucketId(0x" << vespalib::hex << getBucketId().getId() << "), "
@@ -205,7 +205,7 @@ GetCommand::GetCommand(const document::Bucket &bucket, const document::DocumentI
 
 GetCommand::~GetCommand() = default;
 
-vespalib::string
+std::string
 GetCommand::getSummary() const
 {
     vespalib::asciistream stream;
@@ -273,7 +273,7 @@ RemoveCommand::RemoveCommand(const document::Bucket &bucket, const document::Doc
 
 RemoveCommand::~RemoveCommand() = default;
 
-vespalib::string
+std::string
 RemoveCommand::getSummary() const {
     vespalib::asciistream stream;
     stream << "Remove(BucketId(0x" << vespalib::hex << getBucketId().getId() << "), "

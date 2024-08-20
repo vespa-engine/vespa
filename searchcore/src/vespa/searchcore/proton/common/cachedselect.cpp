@@ -26,7 +26,7 @@ namespace {
 class AttrVisitor : public document::select::CloningVisitor
 {
 public:
-    using AttrMap = std::map<vespalib::string, uint32_t>;
+    using AttrMap = std::map<std::string, uint32_t>;
 
     AttrMap _amap;
     const search::IAttributeManager &_amgr;
@@ -90,7 +90,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
     // Expression has survived select pruner, thus we know that field is
     // valid for document type.
     bool complex = false;
-    vespalib::string name = SelectUtils::extractFieldName(expr, complex);
+    std::string name = SelectUtils::extractFieldName(expr, complex);
 
     auto av = _amgr.readable_attribute_vector(name);
     if (av) {
@@ -219,7 +219,7 @@ CachedSelect::CachedSelect()
 CachedSelect::~CachedSelect() = default;
 
 void
-CachedSelect::set(const vespalib::string &selection,
+CachedSelect::set(const std::string &selection,
                   const document::IDocumentTypeRepo &repo)
 {
     try {
@@ -235,8 +235,8 @@ CachedSelect::set(const vespalib::string &selection,
 
                   
 void
-CachedSelect::set(const vespalib::string &selection,
-                  const vespalib::string &docTypeName,
+CachedSelect::set(const std::string &selection,
+                  const std::string &docTypeName,
                   const document::Document &emptyDoc,
                   const document::IDocumentTypeRepo &repo,
                   const search::IAttributeManager *amgr,

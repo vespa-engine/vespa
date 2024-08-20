@@ -21,7 +21,7 @@ using storage::spi::Timestamp;
 namespace proton {
 
 LidSpaceCompactionHandler::LidSpaceCompactionHandler(const MaintenanceDocumentSubDB& subDb,
-                                                     const vespalib::string& docTypeName)
+                                                     const std::string& docTypeName)
     : _subDb(subDb),
       _docTypeName(docTypeName)
 {
@@ -29,7 +29,7 @@ LidSpaceCompactionHandler::LidSpaceCompactionHandler(const MaintenanceDocumentSu
 
 LidSpaceCompactionHandler::~LidSpaceCompactionHandler() = default;
 
-vespalib::string
+std::string
 LidSpaceCompactionHandler::getName() const {
     return _docTypeName + "." + _subDb.name();
 }

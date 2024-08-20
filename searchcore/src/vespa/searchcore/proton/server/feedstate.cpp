@@ -9,7 +9,7 @@ using vespalib::make_string;
 
 namespace proton {
 
-void FeedState::throwExceptionInReceive(const vespalib::string &docType,
+void FeedState::throwExceptionInReceive(const std::string &docType,
                                         uint64_t serialRangeFrom,
                                         uint64_t serialRangeTo,
                                         size_t packetSize) {
@@ -26,7 +26,7 @@ void FeedState::throwExceptionInReceive(const vespalib::string &docType,
 }
 
 void
-FeedState::throwExceptionInHandleOperation(const vespalib::string &docType, const FeedOperation &op)
+FeedState::throwExceptionInHandleOperation(const std::string &docType, const FeedOperation &op)
 {
     throw IllegalStateException
         (make_string("We should not receive any feed operations"
@@ -38,7 +38,7 @@ FeedState::throwExceptionInHandleOperation(const vespalib::string &docType, cons
                      op.getSerialNum()));
 }
 
-vespalib::string FeedState::getName() const {
+std::string FeedState::getName() const {
     switch(_type) {
     case NORMAL:
         return "NORMAL";

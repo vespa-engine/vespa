@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
-#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
 

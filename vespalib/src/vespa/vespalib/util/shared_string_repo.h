@@ -5,7 +5,7 @@
 #include "memoryusage.h"
 #include "string_id.h"
 #include "spin_lock.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/small_string.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
@@ -87,7 +87,7 @@ private:
                 _str.clear();
                 _str.shrink_to_fit();
             }
-            [[nodiscard]] VESPA_DLL_LOCAL vespalib::string as_string() const;
+            [[nodiscard]] VESPA_DLL_LOCAL std::string as_string() const;
             VESPA_DLL_LOCAL void add_ref();
             VESPA_DLL_LOCAL bool sub_ref();
         };
@@ -123,7 +123,7 @@ private:
         VESPA_DLL_LOCAL void find_leaked_entries(size_t my_idx) const;
         VESPA_DLL_LOCAL Stats stats() const;
         VESPA_DLL_LOCAL uint32_t resolve(const AltKey &alt_key);
-        VESPA_DLL_LOCAL vespalib::string as_string(uint32_t idx) const;
+        VESPA_DLL_LOCAL std::string as_string(uint32_t idx) const;
         VESPA_DLL_LOCAL void copy(uint32_t idx);
         VESPA_DLL_LOCAL void reclaim(uint32_t idx);
     };
@@ -134,7 +134,7 @@ private:
     ~SharedStringRepo();
 
     string_id resolve(std::string_view str);
-    vespalib::string as_string(string_id id);
+    std::string as_string(string_id id);
     string_id copy(string_id id);
     void reclaim(string_id id);
 
@@ -174,7 +174,7 @@ public:
         bool operator!=(const Handle &rhs) const noexcept { return (_id != rhs._id); }
         [[nodiscard]] string_id id() const noexcept { return _id; }
         [[nodiscard]] uint32_t hash() const noexcept { return _id.hash(); }
-        [[nodiscard]] vespalib::string as_string() const { return _repo.as_string(_id); }
+        [[nodiscard]] std::string as_string() const { return _repo.as_string(_id); }
         static Handle handle_from_id(string_id weak_id) { return Handle(weak_id); }
         static Handle handle_from_number(int64_t value) {
             if ((value < 0) || (value > FAST_ID_MAX)) {
@@ -182,7 +182,7 @@ public:
             }
             return Handle(string_id(value + 1));
         }
-        static vespalib::string string_from_id(string_id weak_id) { return _repo.as_string(weak_id); }
+        static std::string string_from_id(string_id weak_id) { return _repo.as_string(weak_id); }
         ~Handle() { _repo.reclaim(_id); }
     };
 

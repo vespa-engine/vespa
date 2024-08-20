@@ -116,7 +116,7 @@ EncodeContext64EBase<false>::writeBits(uint64_t data, uint32_t length)
 
 namespace {
 
-vespalib::string noFeatures = "NoFeatures";
+std::string noFeatures = "NoFeatures";
 
 }
 
@@ -307,7 +307,7 @@ template <bool bigEndian>
 void
 FeatureDecodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-            const vespalib::string &prefix)
+            const std::string &prefix)
 {
     (void) header;
     (void) prefix;
@@ -315,7 +315,7 @@ readHeader(const vespalib::GenericHeader &header,
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 FeatureDecodeContext<bigEndian>::getIdentifier() const
 {
     return noFeatures;
@@ -390,7 +390,7 @@ template <bool bigEndian>
 void
 FeatureEncodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-           const vespalib::string &prefix)
+           const std::string &prefix)
 {
     (void) header;
     (void) prefix;
@@ -401,7 +401,7 @@ template <bool bigEndian>
 void
 FeatureEncodeContext<bigEndian>::
 writeHeader(vespalib::GenericHeader &header,
-            const vespalib::string &prefix) const
+            const std::string &prefix) const
 {
     (void) header;
     (void) prefix;
@@ -409,7 +409,7 @@ writeHeader(vespalib::GenericHeader &header,
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 FeatureEncodeContext<bigEndian>::getIdentifier() const
 {
     return noFeatures;

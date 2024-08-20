@@ -93,7 +93,7 @@ SimpleBlueprint::SimpleBlueprint(const SimpleResult &result)
 SimpleBlueprint::~SimpleBlueprint() = default;
 
 SimpleBlueprint &
-SimpleBlueprint::tag(const vespalib::string &t)
+SimpleBlueprint::tag(const std::string &t)
 {
     _tag = t;
     return *this;
@@ -104,9 +104,9 @@ SimpleBlueprint::tag(const vespalib::string &t)
 namespace {
 
 struct FakeContext : attribute::ISearchContext {
-    const vespalib::string &name;
+    const std::string &name;
     const FakeResult &result;
-    FakeContext(const vespalib::string &name_in, const FakeResult &result_in)
+    FakeContext(const std::string &name_in, const FakeResult &result_in)
         : name(name_in), result(result_in) {}
     int32_t onFind(DocId docid, int32_t elemid, int32_t &weight) const override {
         for (const auto &doc: result.inspect()) {
@@ -132,7 +132,7 @@ struct FakeContext : attribute::ISearchContext {
     Int64Range getAsIntegerTerm() const override { abort(); }
     DoubleRange getAsDoubleTerm() const override { abort(); }
     const QueryTermUCS4 * queryTerm() const override { abort(); }
-    const vespalib::string &attributeName() const override { return name; }
+    const std::string &attributeName() const override { return name; }
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 

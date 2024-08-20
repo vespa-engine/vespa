@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_transient_memory_calculator.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
@@ -18,7 +18,7 @@ namespace proton {
 
 namespace {
 
-AttributesConfig::Attribute build_single_config(const vespalib::string& name, bool fast_search)
+AttributesConfig::Attribute build_single_config(const std::string& name, bool fast_search)
 {
     AttributesConfigBuilder::Attribute builder;
     builder.name = name;
@@ -36,7 +36,7 @@ AttributesConfig build_config(bool fast_search)
     return builder;
 }
 
-std::shared_ptr<AttributeVector> build_attribute_vector(const vespalib::string& name, const AttributeConfigInspector& attribute_config_inspector, uint32_t docs)
+std::shared_ptr<AttributeVector> build_attribute_vector(const std::string& name, const AttributeConfigInspector& attribute_config_inspector, uint32_t docs)
 {
     auto attribute_vector = search::AttributeFactory::createAttribute(name, *attribute_config_inspector.get_config(name));
     attribute_vector->addReservedDoc();

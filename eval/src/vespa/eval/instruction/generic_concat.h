@@ -5,8 +5,8 @@
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/small_vector.h>
+#include <string>
 
 namespace vespalib::eval { struct ValueBuilderFactory; }
 
@@ -16,7 +16,7 @@ struct GenericConcat {
     static InterpretedFunction::Instruction
     make_instruction(const ValueType &result_type,
                      const ValueType &lhs_type, const ValueType &rhs_type,
-                     const vespalib::string &dimension,
+                     const std::string &dimension,
                      const ValueBuilderFactory &factory, Stash &stash);
 };
 

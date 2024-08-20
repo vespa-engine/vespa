@@ -3,9 +3,9 @@
 #include "distributor_message_sender_stub.h"
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <string>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 namespace storage {
 

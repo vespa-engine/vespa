@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/iblobconverter.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::common {
 
@@ -19,7 +19,7 @@ public:
     LowercaseConverter() noexcept;
 private:
     ConstBufferRef onConvert(const ConstBufferRef & src) const override;
-    mutable vespalib::string _buffer;
+    mutable std::string _buffer;
 };
 
 class ConverterFactory {

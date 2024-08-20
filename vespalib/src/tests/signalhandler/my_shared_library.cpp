@@ -17,6 +17,6 @@ void my_cool_function(vespalib::CountDownLatch& arrival_latch, vespalib::CountDo
     asm(""); // Dear GCC; really, really don't inline this function. It's clobberin' time!
 }
 
-vespalib::string my_totally_tubular_and_groovy_function() {
+std::string my_totally_tubular_and_groovy_function() {
     return vespalib::SignalHandler::get_cross_thread_stack_trace(pthread_self());
 }

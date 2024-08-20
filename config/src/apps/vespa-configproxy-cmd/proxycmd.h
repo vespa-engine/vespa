@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 class FRT_Target;
 class FRT_RPCRequest;
@@ -12,9 +12,9 @@ class FRT_Values;
 namespace fnet::frt { class StandaloneFRT; }
 
 struct Flags {
-    vespalib::string method;
-    std::vector<vespalib::string> args;
-    vespalib::string targethost;
+    std::string method;
+    std::vector<std::string> args;
+    std::string targethost;
     int portnumber;
     Flags(const Flags &);
     Flags & operator=(const Flags &);
@@ -34,7 +34,7 @@ private:
     void invokeRPC();
     void finiRPC();
     void printArray(FRT_Values *rvals);
-    vespalib::string makeSpec();
+    std::string makeSpec();
     void autoPrint();
 public:
     ProxyCmd(const Flags& flags);

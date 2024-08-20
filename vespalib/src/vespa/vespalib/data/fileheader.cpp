@@ -28,7 +28,7 @@ GenericHeader::Tag::Tag()
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, float val)
+GenericHeader::Tag::Tag(const std::string &name, float val)
     : _type(TYPE_FLOAT),
       _name(name),
       _fVal(val),
@@ -36,7 +36,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, float val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, double val)
+GenericHeader::Tag::Tag(const std::string &name, double val)
     : _type(TYPE_FLOAT),
       _name(name),
       _fVal(val),
@@ -44,7 +44,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, double val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int8_t val)
+GenericHeader::Tag::Tag(const std::string &name, int8_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -52,7 +52,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, int8_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint8_t val)
+GenericHeader::Tag::Tag(const std::string &name, uint8_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -60,7 +60,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, uint8_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int16_t val)
+GenericHeader::Tag::Tag(const std::string &name, int16_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -68,7 +68,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, int16_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint16_t val)
+GenericHeader::Tag::Tag(const std::string &name, uint16_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -76,7 +76,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, uint16_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int32_t val)
+GenericHeader::Tag::Tag(const std::string &name, int32_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -84,7 +84,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, int32_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint32_t val)
+GenericHeader::Tag::Tag(const std::string &name, uint32_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -92,7 +92,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, uint32_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int64_t val)
+GenericHeader::Tag::Tag(const std::string &name, int64_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -100,7 +100,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, int64_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint64_t val)
+GenericHeader::Tag::Tag(const std::string &name, uint64_t val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -108,7 +108,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, uint64_t val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, bool val)
+GenericHeader::Tag::Tag(const std::string &name, bool val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
@@ -116,7 +116,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, bool val)
       _sVal()
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, const char *val)
+GenericHeader::Tag::Tag(const std::string &name, const char *val)
     : _type(TYPE_STRING),
       _name(name),
       _fVal(0),
@@ -124,7 +124,7 @@ GenericHeader::Tag::Tag(const vespalib::string &name, const char *val)
       _sVal(val)
 { }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, const vespalib::string &val)
+GenericHeader::Tag::Tag(const std::string &name, const std::string &val)
     : _type(TYPE_STRING),
       _name(name),
       _fVal(0),
@@ -154,7 +154,7 @@ size_t
 GenericHeader::Tag::read(DataBuffer &buf)
 {
     char *pos = buf.getData();
-    vespalib::string name(pos);
+    std::string name(pos);
     buf.moveDataToDead(name.size() + 1);
     uint8_t type = buf.readInt8();
     switch (type) {
@@ -165,7 +165,7 @@ GenericHeader::Tag::read(DataBuffer &buf)
         _iVal = buf.readInt64();
         break;
     case TYPE_STRING:
-        _sVal = vespalib::string(buf.getData());
+        _sVal = std::string(buf.getData());
         buf.moveDataToDead(_sVal.size() + 1);
         break;
     default:
@@ -256,7 +256,7 @@ GenericHeader::getTag(size_t idx) const
 }
 
 const GenericHeader::Tag &
-GenericHeader::getTag(const vespalib::string &key) const
+GenericHeader::getTag(const std::string &key) const
 {
     auto it = _tags.find(key);
     if (it == _tags.end()) {
@@ -266,7 +266,7 @@ GenericHeader::getTag(const vespalib::string &key) const
 }
 
 bool
-GenericHeader::hasTag(const vespalib::string &key) const
+GenericHeader::hasTag(const std::string &key) const
 {
     return _tags.find(key) != _tags.end();
 }
@@ -274,7 +274,7 @@ GenericHeader::hasTag(const vespalib::string &key) const
 bool
 GenericHeader::putTag(const GenericHeader::Tag &tag)
 {
-    const vespalib::string &key = tag.getName();
+    const std::string &key = tag.getName();
     auto it = _tags.find(key);
     if (it != _tags.end()) {
         it->second = tag;
@@ -284,7 +284,7 @@ GenericHeader::putTag(const GenericHeader::Tag &tag)
     return true;
 }
 bool
-GenericHeader::removeTag(const vespalib::string &key)
+GenericHeader::removeTag(const std::string &key)
 {
     auto it = _tags.find(key);
     if (it == _tags.end()) {

@@ -3,6 +3,7 @@
 #include "foldedstringcompare.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
+#include <cstring>
 
 using vespalib::LowerCase;
 using vespalib::Utf8ReaderForZTS;

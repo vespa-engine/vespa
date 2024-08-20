@@ -40,8 +40,8 @@ namespace search::bmcluster {
 
 namespace {
 
-vespalib::string message_bus_config_id("bm-message-bus");
-vespalib::string rpc_client_config_id("bm-rpc-client");
+std::string message_bus_config_id("bm-message-bus");
+std::string rpc_client_config_id("bm-rpc-client");
 
 enum class PortBias
 {
@@ -94,11 +94,11 @@ collect_persistence_providers(const std::vector<std::unique_ptr<BmNode>> &nodes)
 }
 
 struct BmCluster::MessageBusConfigSet {
-    vespalib::string              config_id;
+    std::string              config_id;
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
 
-    MessageBusConfigSet(const vespalib::string &config_id_in, int slobrok_port)
+    MessageBusConfigSet(const std::string &config_id_in, int slobrok_port)
         : config_id(config_id_in),
           slobroks(),
           messagebus()
@@ -116,10 +116,10 @@ struct BmCluster::MessageBusConfigSet {
 BmCluster::MessageBusConfigSet::~MessageBusConfigSet() = default;
 
 struct BmCluster::RpcClientConfigSet {
-    vespalib::string      config_id;
+    std::string      config_id;
     SlobroksConfigBuilder slobroks;
 
-    RpcClientConfigSet(const vespalib::string &config_id_in, int slobrok_port)
+    RpcClientConfigSet(const std::string &config_id_in, int slobrok_port)
         : config_id(config_id_in),
           slobroks()
     {
@@ -134,7 +134,7 @@ struct BmCluster::RpcClientConfigSet {
 
 BmCluster::RpcClientConfigSet::~RpcClientConfigSet() = default;
 
-BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const document::DocumentTypeRepo> repo)
+BmCluster::BmCluster(const std::string& base_dir, int base_port, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const document::DocumentTypeRepo> repo)
     : _params(params),
       _slobrok_port(port_number(base_port, PortBias::SLOBROK_PORT)),
       _rpc_client_port(port_number(base_port, PortBias::RPC_CLIENT_PORT)),
@@ -189,7 +189,7 @@ BmCluster::stop_slobrok()
 }
 
 void
-BmCluster::wait_slobrok(const vespalib::string &name)
+BmCluster::wait_slobrok(const std::string &name)
 {
     auto &mirror = _rpc_client->slobrok_mirror();
     LOG(info, "Waiting for %s in slobrok", name.c_str());
@@ -252,7 +252,7 @@ BmCluster::make_node(uint32_t node_idx)
     assert(!_nodes[node_idx]);
     vespalib::asciistream s;
     s << _base_dir << "/n" << node_idx;
-    vespalib::string node_base_dir(s.view());
+    std::string node_base_dir(s.view());
     int node_base_port = port_number(_base_port, PortBias::NUM_PORTS) + BmNode::num_ports() * node_idx;
     _nodes[node_idx] = BmNode::create(node_base_dir, node_base_port, node_idx, *this, _params, _document_types, _slobrok_port);
 }

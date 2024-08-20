@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 class FNET_DataBuffer;
 
@@ -155,5 +155,5 @@ public:
      *
      * @param indent indent in number of spaces
      **/
-    virtual vespalib::string Print(uint32_t indent = 0);
+    virtual std::string Print(uint32_t indent = 0);
 };

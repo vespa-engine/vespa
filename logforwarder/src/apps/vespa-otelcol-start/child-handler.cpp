@@ -2,15 +2,15 @@
 
 #include "child-handler.h"
 
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <string>
-#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".child-handler");

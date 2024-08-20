@@ -131,7 +131,7 @@ public:
 
     // Invokes full cluster state transition pipeline rather than directly applying
     // the state and just pretending everything has been completed.
-    void receive_set_system_state_command(const vespalib::string& state_str);
+    void receive_set_system_state_command(const std::string& state_str);
     bool handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
 
     void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);

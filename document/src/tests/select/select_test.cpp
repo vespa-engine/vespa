@@ -58,7 +58,7 @@ protected:
 public:
     DocumentSelectTest();
     ~DocumentSelectTest() override;
-    void check_select(const Document &doc, const vespalib::string &expression, const Result &exp_result);
+    void check_select(const Document &doc, const std::string &expression, const Result &exp_result);
 };
 
 DocumentSelectTest::DocumentSelectTest()
@@ -76,7 +76,7 @@ DocumentSelectTest::DocumentSelectTest()
 DocumentSelectTest::~DocumentSelectTest() = default;
 
 void
-DocumentSelectTest::check_select(const Document& doc, const vespalib::string& expression, const Result &exp_result)
+DocumentSelectTest::check_select(const Document& doc, const std::string& expression, const Result &exp_result)
 {
     auto node = _parser->parse(expression);
     EXPECT_EQ(node->contains(doc), exp_result);

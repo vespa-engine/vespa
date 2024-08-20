@@ -15,9 +15,9 @@ namespace search::features {
  */
 class AttributeBlueprint : public fef::Blueprint {
 private:
-    vespalib::string          _attrName; // the name of the attribute vector
-    vespalib::string          _attrKey;  // Used for looking up the attribute in the ObjectStore.
-    vespalib::string          _extra;    // the index or key
+    std::string          _attrName; // the name of the attribute vector
+    std::string          _attrKey;  // Used for looking up the attribute in the ObjectStore.
+    std::string          _extra;    // the index or key
     vespalib::eval::ValueType _tensorType;
     uint8_t                   _numOutputs;
 

@@ -37,7 +37,7 @@ public:
     void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const override;
     const search::attribute::IAttributeVector *getAttributeStableEnum(std::string_view name) const override;
 
-    const vespalib::eval::Value* get_query_tensor(const vespalib::string& tensor_name) const override;
+    const vespalib::eval::Value* get_query_tensor(const std::string& tensor_name) const override;
 
     const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const override {
         return _attribute_blueprint_params;

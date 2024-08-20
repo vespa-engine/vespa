@@ -41,12 +41,12 @@ DocumentDBExplorer::get_state(const Inserter &inserter, bool full) const
     }
 }
 
-const vespalib::string SUB_DB = "subdb";
-const vespalib::string THREADING_SERVICE = "threadingservice";
-const vespalib::string BUCKET_DB = "bucketdb";
-const vespalib::string MAINTENANCE_CONTROLLER = "maintenancecontroller";
+const std::string SUB_DB = "subdb";
+const std::string THREADING_SERVICE = "threadingservice";
+const std::string BUCKET_DB = "bucketdb";
+const std::string MAINTENANCE_CONTROLLER = "maintenancecontroller";
 
-std::vector<vespalib::string>
+std::vector<std::string>
 DocumentDBExplorer::get_children_names() const
 {
     return {SUB_DB, THREADING_SERVICE, BUCKET_DB, MAINTENANCE_CONTROLLER};

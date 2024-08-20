@@ -24,7 +24,7 @@ using search::query::PredicateQueryTerm;
 using std::make_pair;
 using std::pair;
 using std::vector;
-using vespalib::string;
+using std::string;
 using namespace search::predicate;
 
 namespace search::queryeval {

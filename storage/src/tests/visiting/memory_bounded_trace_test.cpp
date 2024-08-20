@@ -86,7 +86,7 @@ TEST(MemoryBoundedTraceTest, moved_tree_includes_stats_node_when_nodes_omitted) 
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
     EXPECT_EQ(2, target.getChild(0).getNumChildren());
-    vespalib::string expected("Trace too large; omitted 1 subsequent trace "
+    std::string expected("Trace too large; omitted 1 subsequent trace "
                               "trees containing a total of 9 bytes");
     EXPECT_EQ(expected, target.getChild(0).getChild(1).getNote());
 }

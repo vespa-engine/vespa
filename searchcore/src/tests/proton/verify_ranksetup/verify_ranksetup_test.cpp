@@ -5,11 +5,11 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/onnx_model.h>
-#include <string>
-#include <vector>
+#include <initializer_list>
 #include <map>
 #include <set>
-#include <initializer_list>
+#include <string>
+#include <vector>
 
 const char *prog = "../../../apps/verify_ranksetup/vespa-verify-ranksetup-bin";
 const std::string gen_dir("generated");

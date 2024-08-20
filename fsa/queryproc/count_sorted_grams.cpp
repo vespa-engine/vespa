@@ -1,8 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <iostream>
-#include <iomanip>
-#include <map>
-#include <string>
 
 #include "fsa.h"
 #include "permuter.h"
@@ -10,6 +6,10 @@
 #include "ngram.h"
 #include "base64.h"
 #include "wordchartokenizer.h"
+#include <iostream>
+#include <iomanip>
+#include <map>
+#include <string>
 
 using namespace fsa;
 

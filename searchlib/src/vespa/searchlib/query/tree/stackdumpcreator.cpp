@@ -11,7 +11,7 @@
 #include <vespa/searchlib/util/rawbuf.h>
 #include <cassert>
 
-using vespalib::string;
+using std::string;
 using std::vector;
 using search::ParseItem;
 using search::RawBuf;
@@ -67,7 +67,7 @@ class QueryNodeConverter : public QueryVisitor {
         double nboVal = vespalib::nbo::n2h(i);
         _buf.append(&nboVal, sizeof(double));
     }
-    void append(const vespalib::string &s) { appendString(s); }
+    void append(const std::string &s) { appendString(s); }
     void append(uint64_t l) { appendLong(l); }
 
     template <typename V>
@@ -107,14 +107,14 @@ class QueryNodeConverter : public QueryVisitor {
         visitNodes(node.getChildren());
     }
 
-    void createIntermediate(const Intermediate &node, ParseItem::ItemType type, const vespalib::string & view) {
+    void createIntermediate(const Intermediate &node, ParseItem::ItemType type, const std::string & view) {
         append_type_and_features(type, 0);
         appendCompressedPositiveNumber(node.getChildren().size());
         appendString(view);
         visitNodes(node.getChildren());
     }
 
-    void createIntermediateX(const Intermediate &node, ParseItem::ItemType type, size_t target_num_hits, const vespalib::string & view) {
+    void createIntermediateX(const Intermediate &node, ParseItem::ItemType type, size_t target_num_hits, const std::string & view) {
         append_type_and_features(type, 0);
         appendCompressedPositiveNumber(node.getChildren().size());
         appendCompressedPositiveNumber(target_num_hits);

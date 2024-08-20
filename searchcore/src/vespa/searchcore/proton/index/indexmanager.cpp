@@ -49,7 +49,7 @@ IndexManager::MaintainerOperations::createMemoryIndex(const Schema& schema,
 }
 
 IDiskIndex::SP
-IndexManager::MaintainerOperations::loadDiskIndex(const vespalib::string &indexDir)
+IndexManager::MaintainerOperations::loadDiskIndex(const std::string &indexDir)
 {
     return std::make_shared<DiskIndexWrapper>(indexDir, _tuneFileSearch, _cacheSize);
 }
@@ -63,8 +63,8 @@ IndexManager::MaintainerOperations::reloadDiskIndex(const IDiskIndex &oldIndex)
 
 bool
 IndexManager::MaintainerOperations::runFusion(const Schema &schema,
-                                              const vespalib::string &outputDir,
-                                              const std::vector<vespalib::string> &sources,
+                                              const std::string &outputDir,
+                                              const std::vector<std::string> &sources,
                                               const SelectorArray &selectorArray,
                                               SerialNum serialNum,
                                               std::shared_ptr<IFlushToken> flush_token)
@@ -76,7 +76,7 @@ IndexManager::MaintainerOperations::runFusion(const Schema &schema,
 }
 
 
-IndexManager::IndexManager(const vespalib::string &baseDir,
+IndexManager::IndexManager(const std::string &baseDir,
                            const IndexConfig & indexConfig,
                            const Schema &schema,
                            SerialNum serialNum,

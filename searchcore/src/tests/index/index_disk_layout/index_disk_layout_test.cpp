@@ -8,14 +8,14 @@ namespace searchcorespi::index {
 
 namespace {
 
-void expect_index_disk_dir(IndexDiskDir exp, const vespalib::string& dir)
+void expect_index_disk_dir(IndexDiskDir exp, const std::string& dir)
 {
     auto act = IndexDiskLayout::get_index_disk_dir(dir);
     ASSERT_TRUE(act.valid());
     ASSERT_EQ(exp, act);
 }
 
-void expect_bad_index_disk_dir(const vespalib::string& dir)
+void expect_bad_index_disk_dir(const std::string& dir)
 {
     auto act = IndexDiskLayout::get_index_disk_dir(dir);
     ASSERT_FALSE(act.valid());

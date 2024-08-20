@@ -3,7 +3,7 @@
 
 #include "indexsearchable.h"
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace searchcorespi::index {
 
@@ -17,7 +17,7 @@ struct IDiskIndex : public IndexSearchable {
     /**
      * Returns the directory in which this disk index exists.
      */
-    virtual const vespalib::string &getIndexDir() const = 0;
+    virtual const std::string &getIndexDir() const = 0;
 
     /**
      * Returns the schema used by this disk index.

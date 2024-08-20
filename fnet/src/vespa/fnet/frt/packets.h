@@ -61,7 +61,7 @@ public:
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;
-    vespalib::string Print(uint32_t indent = 0) override;
+    std::string Print(uint32_t indent = 0) override;
 };
 
 
@@ -77,7 +77,7 @@ public:
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;
-    vespalib::string Print(uint32_t indent = 0) override;
+    std::string Print(uint32_t indent = 0) override;
 };
 
 
@@ -93,7 +93,7 @@ public:
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;
-    vespalib::string Print(uint32_t indent = 0) override;
+    std::string Print(uint32_t indent = 0) override;
 };
 
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::docsummary::command {
 
@@ -10,20 +10,20 @@ namespace search::docsummary::command {
  * This contains all commands that map to specific docsum field writer(s) when setting up a summary result class.
  */
 
-extern const vespalib::string abs_distance;
-extern const vespalib::string attribute;
-extern const vespalib::string attribute_combiner;
-extern const vespalib::string attribute_tokens;
-extern const vespalib::string copy;
-extern const vespalib::string documentid;
-extern const vespalib::string dynamic_teaser;
-extern const vespalib::string empty;
-extern const vespalib::string geo_position;
-extern const vespalib::string matched_attribute_elements_filter;
-extern const vespalib::string matched_elements_filter;
-extern const vespalib::string positions;
-extern const vespalib::string rank_features;
-extern const vespalib::string summary_features;
-extern const vespalib::string tokens;
+extern const std::string abs_distance;
+extern const std::string attribute;
+extern const std::string attribute_combiner;
+extern const std::string attribute_tokens;
+extern const std::string copy;
+extern const std::string documentid;
+extern const std::string dynamic_teaser;
+extern const std::string empty;
+extern const std::string geo_position;
+extern const std::string matched_attribute_elements_filter;
+extern const std::string matched_elements_filter;
+extern const std::string positions;
+extern const std::string rank_features;
+extern const std::string summary_features;
+extern const std::string tokens;
 
 }

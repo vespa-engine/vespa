@@ -106,7 +106,7 @@ private:
     void run(framework::ThreadHandle&) override;
 
         // Status::Reporter implementation
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     /** Event saying node is up and running. We can start to build cache. */

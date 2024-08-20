@@ -302,7 +302,7 @@ class Fixture
 private:
     fnet::frt::StandaloneFRT  _client;
     fnet::frt::StandaloneFRT  _server;
-    vespalib::string   _peerSpec;
+    std::string   _peerSpec;
     FRT_Target        *_target;
     TestRPC            _testRPC;
     EchoTest           _echoTest;

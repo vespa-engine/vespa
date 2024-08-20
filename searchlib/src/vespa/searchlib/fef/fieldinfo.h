@@ -4,7 +4,8 @@
 
 #include "fieldtype.h"
 #include <vespa/searchcommon/common/datatype.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace search::fef {
 
@@ -19,7 +20,7 @@ class FieldInfo
 public:
     using CollectionType = search::index::schema::CollectionType;
     using DataType = search::index::schema::DataType;
-    using string = vespalib::string;
+    using string = std::string;
 private:
     FieldType      _type;
     DataType       _data_type;

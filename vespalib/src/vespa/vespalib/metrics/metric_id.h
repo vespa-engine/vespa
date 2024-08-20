@@ -2,7 +2,7 @@
 #pragma once
 
 #include "handle.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib::metrics {
 
@@ -14,8 +14,8 @@ struct MetricIdTag {};
 struct MetricId : Handle<MetricIdTag>
 {
     explicit MetricId(size_t id) : Handle(id) {}
-    static MetricId from_name(const vespalib::string& name);
-    const vespalib::string& as_name() const;
+    static MetricId from_name(const std::string& name);
+    const std::string& as_name() const;
 };
 
 } // namespace vespalib::metrics

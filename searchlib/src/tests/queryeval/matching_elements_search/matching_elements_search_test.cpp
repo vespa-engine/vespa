@@ -34,7 +34,7 @@ std::shared_ptr<AttributeVector> make_attribute(BasicType type) {
     return result;
 }
 
-std::unique_ptr<MatchingElementsSearch> make_search(AttributeVector &attr, const std::vector<vespalib::string> &terms)
+std::unique_ptr<MatchingElementsSearch> make_search(AttributeVector &attr, const std::vector<std::string> &terms)
 {
     using LookupResult = IDirectPostingStore::LookupResult;
     auto dwa = attr.as_docid_with_weight_posting_store();
@@ -54,8 +54,8 @@ class MatchingElementsSearchTest : public ::testing::Test {
 public:
     static constexpr bool is_string = std::is_same_v<KeyType, const char *>;
     using Values = std::vector<std::pair<KeyType, int32_t>>;
-    using MatchResult = std::map<std::conditional_t<is_string, vespalib::string, KeyType>, int32_t>;
-    using LookupTest = std::pair<std::vector<vespalib::string>, MatchResult>;
+    using MatchResult = std::map<std::conditional_t<is_string, std::string, KeyType>, int32_t>;
+    using LookupTest = std::pair<std::vector<std::string>, MatchResult>;
     using LookupTests = std::vector<LookupTest>;
     using AttributeSubType = std::conditional_t<is_string, StringAttribute, IntegerAttribute>;
     static Values _values;

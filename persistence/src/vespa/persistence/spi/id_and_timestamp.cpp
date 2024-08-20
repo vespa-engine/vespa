@@ -20,7 +20,7 @@ void IdAndTimestamp::print(vespalib::asciistream& os) const {
     os << id.toString() << " at time " << timestamp.getValue();
 }
 
-vespalib::string IdAndTimestamp::to_string() const {
+std::string IdAndTimestamp::to_string() const {
     vespalib::asciistream os;
     print(os);
     return os.str();

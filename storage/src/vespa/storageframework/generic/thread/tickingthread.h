@@ -18,9 +18,9 @@
  */
 #pragma once
 
-#include <memory>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <memory>
+#include <string>
 
 namespace storage::framework {
 
@@ -93,7 +93,7 @@ struct TickingThreadPool : public ThreadLock {
     /** Start all the threads added. */
     virtual void start(ThreadPool& pool) = 0;
     virtual void stop() = 0;
-    virtual vespalib::string getStatus() = 0;
+    virtual std::string getStatus() = 0;
 };
 
 }

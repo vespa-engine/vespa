@@ -53,6 +53,6 @@ public:
     /**
      * Identify as dummy packet.
      **/
-    vespalib::string Print(uint32_t indent = 0) override;
+    std::string Print(uint32_t indent = 0) override;
 };
 

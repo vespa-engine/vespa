@@ -3,6 +3,7 @@
 #pragma once
 
 #include "andsearchnostrict.h"
+#include <vespa/vespalib/util/vespa_dll_local.h>
 
 namespace search::queryeval {
 

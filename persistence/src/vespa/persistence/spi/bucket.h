@@ -32,7 +32,7 @@ public:
         return (_bucket == o._bucket);
     }
 
-    vespalib::string toString() const;
+    std::string toString() const;
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const Bucket& bucket);

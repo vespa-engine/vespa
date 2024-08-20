@@ -144,7 +144,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     FunctionBuilder(llvm::LLVMContext &context_in,
                     llvm::Module &module_in,
-                    const vespalib::string &name_in,
+                    const std::string &name_in,
                     size_t num_params_in,
                     PassParams pass_params_in,
                     const gbdt::Optimize::Chain &forest_optimizers_in,

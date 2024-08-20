@@ -2,10 +2,10 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <atomic>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("compression_test");
@@ -13,7 +13,7 @@ LOG_SETUP("compression_test");
 using namespace vespalib;
 using namespace vespalib::compression;
 
-static vespalib::string _G_compressableText("AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"
+static std::string _G_compressableText("AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"
                                             "AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"
                                             "AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"
                                             "AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"
@@ -48,7 +48,7 @@ TEST("require that no compression/decompression works") {
     EXPECT_EQUAL(CompressionConfig::Type::NONE, compress.type());
     EXPECT_EQUAL(1072u, compress.size());
     Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
-    EXPECT_EQUAL(_G_compressableText, vespalib::string(decompress.data(), decompress.size()));
+    EXPECT_EQUAL(_G_compressableText, std::string(decompress.data(), decompress.size()));
 }
 
 TEST("require that lz4 compression/decompression works") {
@@ -57,7 +57,7 @@ TEST("require that lz4 compression/decompression works") {
     EXPECT_EQUAL(CompressionConfig::Type::LZ4, compress.type());
     EXPECT_EQUAL(66u, compress.size());
     Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
-    EXPECT_EQUAL(_G_compressableText, vespalib::string(decompress.data(), decompress.size()));
+    EXPECT_EQUAL(_G_compressableText, std::string(decompress.data(), decompress.size()));
 }
 
 TEST("requiret that zstd compression/decompression works") {
@@ -66,7 +66,7 @@ TEST("requiret that zstd compression/decompression works") {
     EXPECT_EQUAL(CompressionConfig::Type::ZSTD, compress.type());
     EXPECT_EQUAL(64u, compress.size());
     Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
-    EXPECT_EQUAL(_G_compressableText, vespalib::string(decompress.data(), decompress.size()));
+    EXPECT_EQUAL(_G_compressableText, std::string(decompress.data(), decompress.size()));
 }
 
 TEST("require that CompressionConfig is Atomic") {

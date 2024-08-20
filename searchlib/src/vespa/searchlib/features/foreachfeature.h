@@ -142,10 +142,10 @@ private:
     std::unique_ptr<ExecutorCreatorBase> _executorCreator;
     size_t _num_inputs;
 
-    bool decideDimension(const vespalib::string & param);
-    bool decideCondition(const vespalib::string & condition, const vespalib::string & operation);
+    bool decideDimension(const std::string & param);
+    bool decideCondition(const std::string & condition, const std::string & operation);
     template <typename CO>
-    bool decideOperation(CO condition, const vespalib::string & operation);
+    bool decideOperation(CO condition, const std::string & operation);
     template <typename CO, typename OP>
     void setExecutorCreator(CO condition);
 

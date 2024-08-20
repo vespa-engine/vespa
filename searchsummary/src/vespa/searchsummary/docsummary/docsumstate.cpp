@@ -31,7 +31,7 @@ GetDocsumsState::DynTeaserState::~DynTeaserState() = default;
 std::unique_ptr<juniper::QueryHandle>&
 GetDocsumsState::DynTeaserState::get_query(std::string_view field)
 {
-    return _queries[vespalib::string(field)];
+    return _queries[std::string(field)];
 }
 
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
@@ -86,8 +86,8 @@ GetDocsumsState::parse_locations()
         search::SimpleQueryStackDumpIterator iterator(stackdump);
         while (iterator.next()) {
             if (iterator.getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
-                vespalib::string view = iterator.index_as_string();
-                vespalib::string term(iterator.getTerm());
+                std::string view = iterator.index_as_string();
+                std::string term(iterator.getTerm());
                 GeoLocationParser parser;                
                 if (parser.parseNoField(term)) {
                     auto attr_name = PositionDataType::getZCurveFieldName(view);

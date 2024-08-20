@@ -71,8 +71,8 @@ DocumentDBConfig::DocumentDBConfig(
                const search::LogDocumentStore::Config & storeConfig,
                const ThreadingServiceConfig & threading_service_config,
                const AllocConfig & alloc_config,
-               const vespalib::string &configId,
-               const vespalib::string &docTypeName) noexcept
+               const std::string &configId,
+               const std::string &docTypeName) noexcept
     : _configId(configId),
       _docTypeName(docTypeName),
       _generation(generation),

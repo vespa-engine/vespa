@@ -120,7 +120,7 @@ public:
     *
     * @return fully qualified class name
     **/
-    vespalib::string getClassName() const;
+    std::string getClassName() const;
 
     // bind order per executor: inputs, outputs, match_data
     void bind_inputs(std::span<const LazyValue> inputs);

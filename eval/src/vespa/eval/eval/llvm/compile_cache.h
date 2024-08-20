@@ -21,7 +21,7 @@ namespace vespalib::eval {
 class CompileCache
 {
 private:
-    using Key = vespalib::string;
+    using Key = std::string;
     struct Result {
         using SP = std::shared_ptr<Result>;
         std::atomic<const CompiledFunction *> cf;

@@ -17,14 +17,14 @@ namespace search {
 
 template <typename B>
 SingleValueNumericAttribute<B>::
-SingleValueNumericAttribute(const vespalib::string & baseFileName)
+SingleValueNumericAttribute(const std::string & baseFileName)
     : SingleValueNumericAttribute(baseFileName, attribute::Config(attribute::BasicType::fromType(T()),
                                                                   attribute::CollectionType::SINGLE))
 { }
 
 template <typename B>
 SingleValueNumericAttribute<B>::
-SingleValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c)
+SingleValueNumericAttribute(const std::string & baseFileName, const AttributeVector::Config & c)
     : B(baseFileName, c),
       _data(c.getGrowStrategy(), getGenerationHolder(), this->get_initial_alloc())
 { }

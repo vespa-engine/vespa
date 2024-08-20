@@ -5,7 +5,7 @@
 
 namespace proton {
 
-std::vector<vespalib::string> DDBState::_stateNames =
+std::vector<std::string> DDBState::_stateNames =
 {
     "CONSTRUCT",
     "LOAD",
@@ -18,7 +18,7 @@ std::vector<vespalib::string> DDBState::_stateNames =
     "DEAD",
 };
 
-std::vector<vespalib::string> DDBState::_configStateNames =
+std::vector<std::string> DDBState::_configStateNames =
 {
     "OK",
     "NEED_RESTART"
@@ -156,14 +156,14 @@ DDBState::clearDelayedConfig()
 }
 
 
-vespalib::string
+std::string
 DDBState::getStateString(State state)
 {
     return _stateNames[static_cast<unsigned int>(state)];
 }
 
 
-vespalib::string
+std::string
 DDBState::getConfigStateString(ConfigState configState)
 {
     return _configStateNames[static_cast<unsigned int>(configState)];

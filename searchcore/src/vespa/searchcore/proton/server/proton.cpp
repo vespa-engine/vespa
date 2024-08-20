@@ -144,12 +144,12 @@ struct MetricsUpdateHook : metrics::UpdateHook
     }
 };
 
-const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
+const std::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
 VESPA_THREAD_STACK_TAG(proton_close_executor);
 VESPA_THREAD_STACK_TAG(proton_executor);
 
-void ensureWritableDir(const vespalib::string &dirName) {
+void ensureWritableDir(const std::string &dirName) {
     auto filename = dirName + "/tmp.filesystem.probe";
     vespalib::File probe(filename);
     probe.unlink();
@@ -161,7 +161,7 @@ void ensureWritableDir(const vespalib::string &dirName) {
 
 } // namespace <unnamed>
 
-Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const vespalib::string &creator)
+Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const std::string &creator)
     : _hostName(),
       _creator(creator),
       _cluster(),
@@ -175,7 +175,7 @@ Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() = default;
 
 void
 Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,
-        const vespalib::string &name) const
+        const std::string &name) const
 {
     using Tag = vespalib::GenericHeader::Tag;
 
@@ -192,8 +192,8 @@ Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,
 
 
 void
-Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string & clusterName,
-                                                const vespalib::string & baseDir)
+Proton::ProtonFileHeaderContext::setClusterName(const std::string & clusterName,
+                                                const std::string & baseDir)
 {
     if (!clusterName.empty()) {
         _cluster = clusterName;
@@ -201,13 +201,13 @@ Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string & cluster
     }
     // Derive cluster name from base dir.
     size_t cpos(baseDir.rfind('/'));
-    if (cpos == vespalib::string::npos)
+    if (cpos == std::string::npos)
         return;
     size_t rpos(baseDir.rfind('/', cpos - 1));
-    if (rpos == vespalib::string::npos)
+    if (rpos == std::string::npos)
         return;
     size_t clpos(baseDir.rfind('/', rpos - 1));
-    if (clpos == vespalib::string::npos)
+    if (clpos == std::string::npos)
         return;
     if (baseDir.substr(clpos + 1, 8) != "cluster.")
         return;
@@ -216,7 +216,7 @@ Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string & cluster
 
 
 Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
-               const vespalib::string &progName, vespalib::duration subscribeTimeout)
+               const std::string &progName, vespalib::duration subscribeTimeout)
     : IProtonConfigurerOwner(),
       search::engine::MonitorServer(),
       IDocumentDBOwner(),
@@ -348,7 +348,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, hwInfo), *_scheduler);
 
-    vespalib::string fileConfigId;
+    std::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
 
     InitializeThreadsCalculator calc(hwInfo.cpu(), protonConfig.basedir, protonConfig.initialize.threads);
@@ -417,7 +417,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
 std::shared_ptr<DocumentDBConfigOwner>
 Proton::addDocumentDB(const DocTypeName &docTypeName,
                       document::BucketSpace bucketSpace,
-                      const vespalib::string &configId,
+                      const std::string &configId,
                       const BootstrapConfig::SP &bootstrapConfig,
                       const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                       InitializeThreads initializeThreads)
@@ -580,7 +580,7 @@ Proton::get_monitor_server()
     return *this;
 }
 
-vespalib::string
+std::string
 Proton::getDelayedConfigs() const
 {
     std::ostringstream res;
@@ -626,7 +626,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         return it->second;
     }
 
-    vespalib::string db_dir = config.basedir + "/documents/" + docTypeName.toString();
+    std::string db_dir = config.basedir + "/documents/" + docTypeName.toString();
     std::filesystem::create_directory(std::filesystem::path(db_dir)); // Assume parent is created.
     auto config_store = std::make_unique<FileConfigManager>(_transport, db_dir + "/config",
                                                             documentDBConfig->getConfigId(), docTypeName.getName());
@@ -888,7 +888,7 @@ Proton::getComponentConfig(Consumer &consumer)
         }
     }
     for (const auto &docDb : dbs) {
-        vespalib::string name("proton.documentdb.");
+        std::string name("proton.documentdb.");
         name.append(docDb->getDocTypeName().getName());
         int64_t gen = docDb->getActiveGeneration();
         if (docDb->getDelayedConfig()) {
@@ -936,21 +936,21 @@ Proton::setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterStat
 
 namespace {
 
-const vespalib::string MATCH_ENGINE = "matchengine";
-const vespalib::string DOCUMENT_DB = "documentdb";
-const vespalib::string FLUSH_ENGINE = "flushengine";
-const vespalib::string TLS_NAME = "tls";
-const vespalib::string RESOURCE_USAGE = "resourceusage";
-const vespalib::string THREAD_POOLS = "threadpools";
-const vespalib::string HW_INFO = "hwinfo";
-const vespalib::string SESSION = "session";
+const std::string MATCH_ENGINE = "matchengine";
+const std::string DOCUMENT_DB = "documentdb";
+const std::string FLUSH_ENGINE = "flushengine";
+const std::string TLS_NAME = "tls";
+const std::string RESOURCE_USAGE = "resourceusage";
+const std::string THREAD_POOLS = "threadpools";
+const std::string HW_INFO = "hwinfo";
+const std::string SESSION = "session";
 
 
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
     explicit StateExplorerProxy(const StateExplorer &explorer_in) : explorer(explorer_in) {}
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override { explorer.get_state(inserter, full); }
-    std::vector<vespalib::string> get_children_names() const override { return explorer.get_children_names(); }
+    std::vector<std::string> get_children_names() const override { return explorer.get_children_names(); }
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override { return explorer.get_child(name); }
 };
 
@@ -961,9 +961,9 @@ struct DocumentDBMapExplorer : vespalib::StateExplorer {
     DocumentDBMapExplorer(const DocumentDBMap &documentDBMap_in, std::shared_mutex &mutex_in)
         : documentDBMap(documentDBMap_in), mutex(mutex_in) {}
     void get_state(const vespalib::slime::Inserter &, bool) const override {}
-    std::vector<vespalib::string> get_children_names() const override {
+    std::vector<std::string> get_children_names() const override {
         std::shared_lock<std::shared_mutex> guard(mutex);
-        std::vector<vespalib::string> names;
+        std::vector<std::string> names;
         for (const auto &item: documentDBMap) {
             names.push_back(item.first.getName());
         }
@@ -971,7 +971,7 @@ struct DocumentDBMapExplorer : vespalib::StateExplorer {
     }
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override {
         std::shared_lock<std::shared_mutex> guard(mutex);
-        auto result = documentDBMap.find(DocTypeName(vespalib::string(name)));
+        auto result = documentDBMap.find(DocTypeName(std::string(name)));
         if (result == documentDBMap.end()) {
             return {};
         }
@@ -986,7 +986,7 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 {
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 Proton::get_children_names() const
 {
     return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE, SESSION};

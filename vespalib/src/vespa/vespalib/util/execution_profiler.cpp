@@ -11,12 +11,12 @@ namespace vespalib {
 struct ExecutionProfiler::ReportContext {
     const ExecutionProfiler &profiler;
     const ExecutionProfiler::NameMapper &name_mapper;
-    vespalib::hash_map<TaskId,vespalib::string> name_cache;
+    vespalib::hash_map<TaskId,std::string> name_cache;
     ReportContext(const ExecutionProfiler &profiler_in,
                   const ExecutionProfiler::NameMapper &name_mapper_in, size_t num_names)
       : profiler(profiler_in), name_mapper(name_mapper_in), name_cache(num_names * 2) {}
     size_t get_max_depth() const { return profiler._max_depth; }
-    const vespalib::string &resolve_name(TaskId task) {
+    const std::string &resolve_name(TaskId task) {
         auto pos = name_cache.find(task);
         if (pos == name_cache.end()) {
             pos = name_cache.insert(std::make_pair(task, name_mapper(profiler.name_of(task)))).first;
@@ -234,7 +234,7 @@ ExecutionProfiler::ExecutionProfiler(int32_t profile_depth)
 ExecutionProfiler::~ExecutionProfiler() = default;
 
 ExecutionProfiler::TaskId
-ExecutionProfiler::resolve(const vespalib::string &name)
+ExecutionProfiler::resolve(const std::string &name)
 {
     auto [pos, was_new] = _name_map.insert(std::make_pair(name, _names.size()));
     if (was_new) {

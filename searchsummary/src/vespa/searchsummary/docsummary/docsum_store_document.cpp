@@ -18,7 +18,7 @@ DocsumStoreDocument::DocsumStoreDocument(std::unique_ptr<document::Document> doc
 DocsumStoreDocument::~DocsumStoreDocument() = default;
 
 DocsumStoreFieldValue
-DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
+DocsumStoreDocument::get_field_value(const std::string& field_name) const
 {
     if (_document) {
         try {
@@ -37,7 +37,7 @@ DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
 }
 
 void
-DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
+DocsumStoreDocument::insert_summary_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {
@@ -46,7 +46,7 @@ DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, ve
 }
 
 void
-DocsumStoreDocument::insert_juniper_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
+DocsumStoreDocument::insert_juniper_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {

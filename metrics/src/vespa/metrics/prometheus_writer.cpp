@@ -47,7 +47,7 @@ namespace {
     return std::ranges::any_of(value, [](char ch) noexcept { return label_char_needs_escaping(ch); });
 }
 
-[[nodiscard]] vespalib::string prometheus_escaped_name(std::string_view str) {
+[[nodiscard]] std::string prometheus_escaped_name(std::string_view str) {
     asciistream os;
     for (char ch : str) {
         if (valid_prometheus_char(ch)) [[likely]] {
@@ -123,7 +123,7 @@ std::span<const std::string_view> PrometheusWriter::metric_to_path_ref(std::stri
     return _arena.copy_array<std::string_view>({path_refs.data(), path_refs.size()});
 }
 
-vespalib::string PrometheusWriter::escaped_label_value(std::string_view value) {
+std::string PrometheusWriter::escaped_label_value(std::string_view value) {
     asciistream out;
     for (char ch : value) {
         if (ch == '\\') {

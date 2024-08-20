@@ -11,7 +11,7 @@ using namespace vespalib;
 
 namespace {
 
-vespalib::string fileheader_tmp("fileheader.tmp");
+std::string fileheader_tmp("fileheader.tmp");
 
 }
 

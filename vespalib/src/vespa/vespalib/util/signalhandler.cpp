@@ -184,7 +184,7 @@ SignalHandler::enable_cross_thread_stack_tracing()
  *  4. Caller exits poll-loop and assembles a complete stack trace from the frame
  *     addresses in the shared buffer, all demangled and shiny.
  */
-string
+std::string
 SignalHandler::get_cross_thread_stack_trace(pthread_t thread_id)
 {
     if (!_shared_backtrace_data._signal_is_hooked) {

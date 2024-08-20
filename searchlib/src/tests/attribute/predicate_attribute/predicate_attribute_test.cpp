@@ -89,7 +89,7 @@ make_sample_predicate_attribute()
 }
 
 void
-corrupt_file_header(const vespalib::string &name)
+corrupt_file_header(const std::string &name)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     FastOS_File f;

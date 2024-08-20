@@ -18,7 +18,7 @@
  * Base class for test application used by feature unit tests.
  */
 struct FtTestAppBase {
-    using string = vespalib::string;
+    using string = std::string;
     static void FT_SETUP_FAIL(const search::fef::Blueprint &prototype, const StringList &params);
     static void FT_SETUP_FAIL(const search::fef::Blueprint &prototype, const search::fef::test::IndexEnvironment &env,
                               const StringList &params);
@@ -27,40 +27,40 @@ struct FtTestAppBase {
     static void FT_SETUP_OK(const search::fef::Blueprint &prototype, const search::fef::test::IndexEnvironment &env,
                             const StringList &params, const StringList &expectedIn, const StringList &expectedOut);
 
-    static void FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const vespalib::string &baseName);
-    static void FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const vespalib::string &baseName,
+    static void FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const std::string &baseName);
+    static void FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const std::string &baseName,
                               search::fef::test::IndexEnvironment &env);
-    static void FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::string &baseName,
+    static void FT_DUMP(search::fef::BlueprintFactory &factory, const std::string &baseName,
                         const StringList &expected);
-    static void FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::string &baseName,
+    static void FT_DUMP(search::fef::BlueprintFactory &factory, const std::string &baseName,
                         search::fef::test::IndexEnvironment &env,
                         const StringList &expected);
 
     static void FT_EQUAL(const std::vector<string> &expected, const std::vector<string> &actual,
-                         const vespalib::string & prefix = "");
+                         const std::string & prefix = "");
 
     static void FT_LOG(const search::fef::Blueprint &prototype, const search::fef::test::IndexEnvironment &env, const StringList &params);
-    static void FT_LOG(const vespalib::string &prefix, const std::vector<vespalib::string> &arr);
+    static void FT_LOG(const std::string &prefix, const std::vector<std::string> &arr);
 
 
-    static void FT_SETUP(FtFeatureTest & test, const vespalib::string & query, const StringMap & index, uint32_t docId);
+    static void FT_SETUP(FtFeatureTest & test, const std::string & query, const StringMap & index, uint32_t docId);
     static void FT_SETUP(FtFeatureTest & test, const FtQuery & query, const StringVectorMap & index, uint32_t docId);
 
     static void FT_SETUP(FtFeatureTest &test, const FtQuery &query, const FtIndex &index, uint32_t docId);
 
     static void setupQueryEnv(FtQueryEnvironment & queryEnv, const FtQuery & query);
-    static void setupFieldMatch(FtFeatureTest & test, const vespalib::string & indexName,
-                                const vespalib::string & query, const vespalib::string & field,
+    static void setupFieldMatch(FtFeatureTest & test, const std::string & indexName,
+                                const std::string & query, const std::string & field,
                                 const search::features::fieldmatch::Params * params,
                                 uint32_t totalTermWeight, feature_t totalSignificance,
                                 uint32_t docId);
 
-    static search::fef::test::RankResult toRankResult(const vespalib::string & baseName,
-                                                      const vespalib::string & result,
-                                                      const vespalib::string & separator = " ");
+    static search::fef::test::RankResult toRankResult(const std::string & baseName,
+                                                      const std::string & result,
+                                                      const std::string & separator = " ");
 
     template <typename T>
-    static bool assertCreateInstance(const T & prototype, const vespalib::string & baseName) {
+    static bool assertCreateInstance(const T & prototype, const std::string & baseName) {
         search::fef::Blueprint::UP bp = prototype.createInstance();
 #ifdef ENABLE_GTEST_MIGRATION
         bool failed = false;

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace search { class AttributeVector; }
 

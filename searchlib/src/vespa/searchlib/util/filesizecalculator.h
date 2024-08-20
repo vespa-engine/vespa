@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib { class GenericHeader; }
 
@@ -19,7 +20,7 @@ class FileSizeCalculator
 public:
     static bool
     extractFileSize(const vespalib::GenericHeader &header, size_t headerLen,
-                    vespalib::string fileName, uint64_t &fileSize);
+                    std::string fileName, uint64_t &fileSize);
 };
 
 }

@@ -102,10 +102,10 @@ public:
     void run(Hits hits) const;
 private:
     search::attribute::BasicType getAttributeType() const;
-    const vespalib::string & getOperation() const { return _operation; }
+    const std::string & getOperation() const { return _operation; }
     const RequestContext & _requestContext;
-    vespalib::string _attribute;
-    vespalib::string _operation;
+    std::string _attribute;
+    std::string _operation;
 };
 
 class MatchToolsFactory
@@ -148,7 +148,7 @@ public:
                       IAttributeContext &attributeContext,
                       search::engine::Trace & root_trace,
                       std::string_view queryStack,
-                      const vespalib::string &location,
+                      const std::string &location,
                       const ViewResolver &viewResolver,
                       const search::IDocumentMetaStore &metaStore,
                       const IIndexEnvironment &indexEnv,

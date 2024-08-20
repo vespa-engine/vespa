@@ -57,7 +57,7 @@ ArithmeticValueUpdate::applyTo(FieldValue& value) const
         LongFieldValue& lValue = static_cast<LongFieldValue&>(value);
         lValue.setValue(applyTo(lValue.getAsLong()));
     } else {
-        vespalib::string err = vespalib::make_string(
+        std::string err = vespalib::make_string(
                 "Unable to perform an arithmetic update on a \"%s\" field "
                 "value.", value.className());
         throw IllegalStateException(err, VESPA_STRLOC);

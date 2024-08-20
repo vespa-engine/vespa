@@ -64,9 +64,9 @@ JuniperProperties::configure(const JuniperrcConfig &cfg)
     _properties["juniper.stem.max_extend"]  = make_string("%d", cfg.stemMaxExtend);
 
     for (const auto & override : cfg.override) {
-        const vespalib::string keyDynsum = make_string("%s.dynsum.", override.fieldname.c_str());
-        const vespalib::string keyMatcher = make_string("%s.matcher.", override.fieldname.c_str());
-        const vespalib::string keyStem = make_string("%s.stem.", override.fieldname.c_str());
+        const std::string keyDynsum = make_string("%s.dynsum.", override.fieldname.c_str());
+        const std::string keyMatcher = make_string("%s.matcher.", override.fieldname.c_str());
+        const std::string keyStem = make_string("%s.stem.", override.fieldname.c_str());
 
         _properties[keyDynsum + "fallback"]           = override.prefix ? "prefix" : "none";
         _properties[keyDynsum + "length"]             = make_string("%d", override.length);

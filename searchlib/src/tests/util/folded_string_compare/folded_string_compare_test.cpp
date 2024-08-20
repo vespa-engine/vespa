@@ -2,17 +2,17 @@
 
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <algorithm>
+#include <string>
 
 using search::FoldedStringCompare;
 using vespalib::LowerCase;
 using vespalib::Utf8ReaderForZTS;
 
 using IntVec = std::vector<int>;
-using StringVec = std::vector<vespalib::string>;
+using StringVec = std::vector<std::string>;
 
 namespace {
 
@@ -42,7 +42,7 @@ protected:
 
     template <bool fold_lhs, bool fold_rhs>
     int
-    compare_folded_helper2(const vespalib::string& lhs, const vespalib::string& rhs)
+    compare_folded_helper2(const std::string& lhs, const std::string& rhs)
     {
         int ret = FoldedStringCompare::compareFolded<fold_lhs, fold_rhs>(lhs.c_str(), rhs.c_str());
         auto folded_lhs_utf32 = as_utf32<fold_lhs>(lhs.c_str());
@@ -54,7 +54,7 @@ protected:
 
     template <bool fold_lhs, bool fold_rhs>
     int
-    compare_folded_helper(const vespalib::string& lhs, const vespalib::string& rhs)
+    compare_folded_helper(const std::string& lhs, const std::string& rhs)
     {
         int ret = compare_folded_helper2<fold_lhs, fold_rhs>(lhs, rhs);
         EXPECT_EQ(-ret, (compare_folded_helper2<fold_rhs, fold_lhs>(rhs, lhs)));
@@ -62,7 +62,7 @@ protected:
     }
 
     IntVec
-    compare_folded(const vespalib::string& lhs, const vespalib::string& rhs)
+    compare_folded(const std::string& lhs, const std::string& rhs)
     {
         IntVec result;
         result.emplace_back(compare_folded_helper<false, false>(lhs, rhs));
@@ -74,7 +74,7 @@ protected:
 
     template <bool fold_lhs, bool fold_rhs>
     int
-    compare_folded_prefix_helper(const vespalib::string& lhs, const vespalib::string& rhs, size_t prefix_len)
+    compare_folded_prefix_helper(const std::string& lhs, const std::string& rhs, size_t prefix_len)
     {
         int ret = FoldedStringCompare::compareFoldedPrefix<fold_lhs, fold_rhs>(lhs.c_str(), rhs.c_str(), prefix_len);
         EXPECT_EQ(-ret, (FoldedStringCompare::compareFoldedPrefix<fold_rhs, fold_lhs>(rhs.c_str(), lhs.c_str(), prefix_len)));
@@ -82,7 +82,7 @@ protected:
     }
 
     IntVec
-    compare_folded_prefix(const vespalib::string& lhs, const vespalib::string& rhs, size_t prefix_len)
+    compare_folded_prefix(const std::string& lhs, const std::string& rhs, size_t prefix_len)
     {
         IntVec result;
         result.emplace_back(compare_folded_prefix_helper<false, false>(lhs, rhs, prefix_len));
@@ -93,14 +93,14 @@ protected:
     }
 
     int
-    compare(const vespalib::string& lhs, const vespalib::string& rhs) {
+    compare(const std::string& lhs, const std::string& rhs) {
         int ret = normalize_ret(FoldedStringCompare::compare(lhs.c_str(), rhs.c_str()));
         EXPECT_EQ(-ret, normalize_ret(FoldedStringCompare::compare(rhs.c_str(), lhs.c_str())));
         return ret;
     }
 
     int
-    compare_prefix(const vespalib::string& lhs, const vespalib::string& rhs, size_t prefix_len) {
+    compare_prefix(const std::string& lhs, const std::string& rhs, size_t prefix_len) {
         int ret = normalize_ret(FoldedStringCompare::comparePrefix(lhs.c_str(), rhs.c_str(), prefix_len));
         EXPECT_EQ(-ret, normalize_ret(FoldedStringCompare::comparePrefix(rhs.c_str(), lhs.c_str(), prefix_len)));
         return ret;

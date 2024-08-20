@@ -17,18 +17,18 @@ private:
     search::SerialNum _initSerialNum;
     search::SerialNum _currSerialNum;
     search::SerialNum _configSerialNum;
-    vespalib::string  _subDbName;
+    std::string  _subDbName;
 
     search::SerialNum nextSerialNum();
 
-    std::vector<vespalib::string> getNames() const;
+    std::vector<std::string> getNames() const;
 
 public:
     using SP = std::shared_ptr<AttributePopulator>;
 
     AttributePopulator(const proton::IAttributeManager::SP &mgr,
                        search::SerialNum initSerialNum,
-                       const vespalib::string &subDbName,
+                       const std::string &subDbName,
                        search::SerialNum configSerialNum);
     ~AttributePopulator() override;
 

@@ -6,7 +6,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace searchcorespi::index {
 
@@ -18,12 +18,12 @@ struct IndexWriteUtilities
 {
     static void
     writeSerialNum(search::SerialNum serialNum,
-                   const vespalib::string &dir,
+                   const std::string &dir,
                    const search::common::FileHeaderContext &fileHeaderContext);
 
     static bool
-    copySerialNumFile(const vespalib::string &sourceDir,
-                      const vespalib::string &destDir);
+    copySerialNumFile(const std::string &sourceDir,
+                      const std::string &destDir);
 
     static void
     writeSourceSelector(search::FixedSourceSelector::SaveInfo &saveInfo,
@@ -34,7 +34,7 @@ struct IndexWriteUtilities
                         search::SerialNum serialNum);
 
     static void
-    updateDiskIndexSchema(const vespalib::string &indexDir,
+    updateDiskIndexSchema(const std::string &indexDir,
                           const search::index::Schema &schema,
                           search::SerialNum serialNum);
 };

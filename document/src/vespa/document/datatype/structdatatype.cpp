@@ -60,7 +60,7 @@ StructDataType::print(std::ostream& out, bool verbose,
 void
 StructDataType::addField(const Field& field)
 {
-    vespalib::string error = containsConflictingField(field);
+    std::string error = containsConflictingField(field);
     if (!error.empty()) {
         throw IllegalArgumentException(make_string("Failed to add field '%s' to struct '%s': %s",
                                                    field.getName().data(), getName().c_str(),
@@ -77,7 +77,7 @@ StructDataType::addField(const Field& field)
 void
 StructDataType::addInheritedField(const Field& field)
 {
-    vespalib::string error = containsConflictingField(field);
+    std::string error = containsConflictingField(field);
     if (!error.empty()) {
             // Deploy application should fail if overwriting a field with field
             // of different type. Java version of document sees to this. C++
@@ -106,7 +106,7 @@ StructDataType::getField(std::string_view name) const
 {
     StringFieldMap::const_iterator it(_nameFieldMap.find(name));
     if (it == _nameFieldMap.end()) {
-        throw FieldNotFoundException(vespalib::string(name), VESPA_STRLOC);
+        throw FieldNotFoundException(std::string(name), VESPA_STRLOC);
     } else {
         return *it->second;
     }
@@ -162,7 +162,7 @@ bool differs(const Field &field1, const Field &field2) {
 }
 }  // namespace
 
-vespalib::string
+std::string
 StructDataType::containsConflictingField(const Field& field) const
 {
     StringFieldMap::const_iterator it1( _nameFieldMap.find(field.getName()));

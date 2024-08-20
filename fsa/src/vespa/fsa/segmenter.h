@@ -10,17 +10,15 @@
 
 #pragma once
 
-#include <string>
-#include <map>
-#include <vector>
-#include <list>
-
-#include <stdio.h>
-
 #include "fsa.h"
 #include "ngram.h"
 #include "detector.h"
 
+#include <cstdio>
+#include <list>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace fsa {
 

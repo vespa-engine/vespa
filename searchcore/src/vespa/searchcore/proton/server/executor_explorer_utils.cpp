@@ -22,7 +22,7 @@ namespace proton::explorer {
 namespace {
 
 void
-convert_syncable_executor_to_slime(const ThreadExecutor& executor, const vespalib::string& type, Cursor& object)
+convert_syncable_executor_to_slime(const ThreadExecutor& executor, const std::string& type, Cursor& object)
 {
     object.setString("type", type);
     object.setLong("num_threads", executor.getNumThreads());
@@ -38,7 +38,7 @@ convert_single_executor_to_slime(const SingleExecutor& executor, Cursor& object)
 }
 
 void
-set_type(Cursor& object, const vespalib::string& type)
+set_type(Cursor& object, const std::string& type)
 {
     object.setString("type", type);
 }

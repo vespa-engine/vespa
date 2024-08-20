@@ -39,9 +39,9 @@ public:
  */
 class GreatCircleDistanceBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _field_name;
-    vespalib::string _attr_name;
-    bool setup_geopos(const vespalib::string &attr);
+    std::string _field_name;
+    std::string _attr_name;
+    bool setup_geopos(const std::string &attr);
 public:
     GreatCircleDistanceBlueprint();
     ~GreatCircleDistanceBlueprint();

@@ -50,7 +50,7 @@ InputReader::~InputReader()
 }
 
 void
-InputReader::fail(const vespalib::string &msg) {
+InputReader::fail(const std::string &msg) {
     if (!failed()) {
         _error = msg;
         _input.evict(_pos);

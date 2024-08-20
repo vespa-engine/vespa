@@ -7,6 +7,7 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -121,7 +122,7 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
         }
         LOG(debug, "Unknown key %s in nodestate. Ignoring it, assuming it's a "
                    "new feature from a newer version than ourself: %s",
-            std::string(key).c_str(), vespalib::string(serialized).c_str());
+            std::string(key).c_str(), std::string(serialized).c_str());
     }
 }
 

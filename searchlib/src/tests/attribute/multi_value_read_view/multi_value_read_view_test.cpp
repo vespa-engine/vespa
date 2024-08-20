@@ -30,8 +30,8 @@ GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
-vespalib::string doc1("id:test:music::1");
-vespalib::string doc2("id:test:music::2");
+std::string doc1("id:test:music::1");
+std::string doc2("id:test:music::2");
 
 struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
 {
@@ -63,7 +63,7 @@ MockDocumentMetaStoreContext::getReadGuard() const
 
 
 std::shared_ptr<ReferenceAttribute>
-create_reference_attribute(const vespalib::string &name, const std::shared_ptr<IGidToLidMapperFactory> gid_to_lid_mapper_factory)
+create_reference_attribute(const std::string &name, const std::shared_ptr<IGidToLidMapperFactory> gid_to_lid_mapper_factory)
 {
     auto attr = std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
     attr->addReservedDoc();
@@ -319,7 +319,7 @@ MultiValueReadViewTest::make_imported_attribute(std::shared_ptr<AttributeVector>
 std::shared_ptr<AttributeVector>
 MultiValueReadViewTest::make_extendable_attribute(CollectionType collection_type)
 {
-    vespalib::string name("attr");
+    std::string name("attr");
     // Match strategy in streaming visitor
     switch (collection_type.type()) {
     case CollectionType::Type::ARRAY:

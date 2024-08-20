@@ -48,7 +48,7 @@ class ShrinkSummaryLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget
     vespalib::Executor & _summaryService;
 
 public:
-    ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
+    ShrinkSummaryLidSpaceFlushTarget(const std::string &name, Type type, Component component,
                                      SerialNum flushedSerialNum, vespalib::system_time lastFlushTime,
                                      vespalib::Executor & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
@@ -57,7 +57,7 @@ public:
 };
 
 ShrinkSummaryLidSpaceFlushTarget::
-ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
+ShrinkSummaryLidSpaceFlushTarget(const std::string &name, Type type, Component component,
                                  SerialNum flushedSerialNum, vespalib::system_time lastFlushTime,
                                  vespalib::Executor & summaryService,
                                  std::shared_ptr<ICompactableLidSpace> target)
@@ -80,7 +80,7 @@ ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared
 }
 
 SummaryManager::SummarySetup::
-SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
+SummarySetup(const std::string & baseDir, const SummaryConfig & summaryCfg,
              const JuniperrcConfig & juniperCfg,
              search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
              std::shared_ptr<const DocumentTypeRepo> repo,
@@ -129,7 +129,7 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
 }
 
 SummaryManager::SummaryManager(vespalib::Executor &shared_executor, const LogDocumentStore::Config & storeConfig,
-                               const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
+                               const search::GrowStrategy & growStrategy, const std::string &baseDir,
                                const TuneFileSummary &tuneFileSummary,
                                const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
                                search::IBucketizer::SP bucketizer)

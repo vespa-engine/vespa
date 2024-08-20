@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
@@ -10,6 +10,6 @@ namespace vespalib {
  * Normalize a demangled class name to compensate for different demangling
  * with g++ / libstdc++ / binutils and clang++ / libc++ / llvm toolchains.
  */
-vespalib::string normalize_class_name(vespalib::string class_name);
+std::string normalize_class_name(std::string class_name);
 
 }

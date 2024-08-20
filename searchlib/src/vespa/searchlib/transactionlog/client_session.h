@@ -4,7 +4,7 @@
 #include "client_common.h"
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 class FRT_RPCRequest;
 
@@ -15,19 +15,19 @@ class TransLogClient;
 class SessionKey
 {
 public:
-    SessionKey(const vespalib::string & domain, int sessionId);
+    SessionKey(const std::string & domain, int sessionId);
     ~SessionKey();
     bool operator < (const SessionKey & b) const { return cmp(b) < 0; }
 private:
     int cmp(const SessionKey & b) const;
-    vespalib::string _domain;
+    std::string _domain;
     int         _sessionId;
 };
 
 class Session
 {
 public:
-    Session(const vespalib::string & domain, TransLogClient & tlc);
+    Session(const std::string & domain, TransLogClient & tlc);
     virtual ~Session();
     /// You can commit data of any registered type to any channel.
     bool commit(const vespalib::ConstBufferRef & packet);
@@ -41,13 +41,13 @@ public:
     virtual void eof()    { }
     bool close();
     void clear();
-    const vespalib::string & getDomain() const { return _domain; }
+    const std::string & getDomain() const { return _domain; }
     const TransLogClient & getTLC() const { return _tlc; }
 protected:
     bool init(FRT_RPCRequest * req);
     bool run();
     TransLogClient & _tlc;
-    vespalib::string _domain;
+    std::string _domain;
     int              _sessionId;
 };
 
@@ -55,7 +55,7 @@ protected:
 class Visitor : public Session
 {
 public:
-    Visitor(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack);
+    Visitor(const std::string & domain, TransLogClient & tlc, Callback & callBack);
     bool visit(const SerialNum & from, const SerialNum & to);
     virtual ~Visitor() override;
     RPC::Result visit(const Packet & packet) override { return _callback.receive(packet); }

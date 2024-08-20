@@ -11,13 +11,13 @@ private:
     static StructDataType::UP createInstance();
 
 public:
-    static const vespalib::string STRUCT_NAME;
+    static const std::string STRUCT_NAME;
     static const int              STRUCT_VERSION;
-    static const vespalib::string FIELD_X;
-    static const vespalib::string FIELD_Y;
+    static const std::string FIELD_X;
+    static const std::string FIELD_Y;
 
     static const StructDataType &getInstance();
-    static vespalib::string getZCurveFieldName(const vespalib::string &name);
+    static std::string getZCurveFieldName(const std::string &name);
     static std::string_view cutZCurveFieldName(std::string_view name);
     static bool isZCurveFieldName(std::string_view name);
 };

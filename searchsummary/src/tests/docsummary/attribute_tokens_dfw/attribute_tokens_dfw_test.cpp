@@ -24,7 +24,7 @@ protected:
     MockStateCallback _callback;
     GetDocsumsState _state;
     std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;
-    vespalib::string _field_name;
+    std::string _field_name;
 
 public:
     AttributeTokensDFWTest()
@@ -43,7 +43,7 @@ public:
     }
     ~AttributeTokensDFWTest() {}
 
-    void setup(const vespalib::string& field_name) {
+    void setup(const std::string& field_name) {
         _writer = std::make_unique<AttributeTokensDFW>(field_name);
         _writer->setIndex(0);
         auto attr = _state._attrCtx->getAttribute(field_name);
@@ -54,7 +54,7 @@ public:
         _state._attributes[0] = attr;
     }
 
-    void expect_field(const vespalib::string& exp_slime_as_json, uint32_t docid) {
+    void expect_field(const std::string& exp_slime_as_json, uint32_t docid) {
         vespalib::Slime act;
         vespalib::slime::SlimeInserter inserter(act);
         if (!_writer->isDefaultValue(docid, _state)) {

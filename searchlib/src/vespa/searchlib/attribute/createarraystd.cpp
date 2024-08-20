@@ -20,7 +20,7 @@ using attribute::BasicType;
 
 
 AttributeVector::SP
-AttributeFactory::createArrayStd(vespalib::string name, const Config & info)
+AttributeFactory::createArrayStd(std::string name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::ARRAY);
     AttributeVector::SP ret;

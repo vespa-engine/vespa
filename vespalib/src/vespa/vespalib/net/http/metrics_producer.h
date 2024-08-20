@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
@@ -12,8 +12,8 @@ struct MetricsProducer {
         Prometheus
     };
 
-    virtual vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) = 0;
-    virtual vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) = 0;
+    virtual std::string getMetrics(const std::string &consumer, ExpositionFormat format) = 0;
+    virtual std::string getTotalMetrics(const std::string &consumer, ExpositionFormat format) = 0;
     virtual ~MetricsProducer() = default;
 };
 

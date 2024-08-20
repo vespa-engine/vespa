@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketspace.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace proton {
 
@@ -21,7 +21,7 @@ public:
     virtual ~IProtonConfigurerOwner() = default;
     virtual std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
                                                                  document::BucketSpace bucketSpace,
-                                                                 const vespalib::string &configId,
+                                                                 const std::string &configId,
                                                                  const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
                                                                  const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                                                                  InitializeThreads initializeThreads) = 0;

@@ -12,9 +12,9 @@ namespace search::queryeval {
 class FakeSearch : public SearchIterator
 {
 private:
-    vespalib::string             _tag;
-    vespalib::string             _field;
-    vespalib::string             _term;
+    std::string             _tag;
+    std::string             _field;
+    std::string             _term;
     FakeResult                   _result;
     uint32_t                     _offset;
     fef::TermFieldMatchDataArray _tfmda;
@@ -25,9 +25,9 @@ private:
     void next() { ++_offset; }
 
 public:
-    FakeSearch(const vespalib::string &tag,
-               const vespalib::string &field,
-               const vespalib::string &term,
+    FakeSearch(const std::string &tag,
+               const std::string &field,
+               const std::string &term,
                const FakeResult &res,
                fef::TermFieldMatchDataArray tfmda);
     void attr_ctx(const attribute::ISearchContext *ctx) { _ctx = ctx; }

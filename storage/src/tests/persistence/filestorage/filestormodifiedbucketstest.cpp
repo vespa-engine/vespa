@@ -50,7 +50,7 @@ assertIsNotifyCommandWithActiveBucket(api::StorageMessage& msg)
     auto& cmd = dynamic_cast<api::NotifyBucketChangeCommand&>(msg);
     ASSERT_TRUE(cmd.getBucketInfo().isActive());
     ASSERT_EQ(
-            vespalib::string("StorageMessageAddress(Storage protocol, "
+            std::string("StorageMessageAddress(Storage protocol, "
                              "cluster storage, nodetype distributor, index 0)"),
             cmd.getAddress()->toString());
 }

@@ -17,17 +17,17 @@
 
 using namespace ::testing;
 
-vespalib::string fetch(int port, const vespalib::string &path) {
+std::string fetch(int port, const std::string &path) {
     auto crypto = vespalib::CryptoEngine::get_default();
     auto socket = vespalib::SocketSpec::from_port(port).client_address().connect();
     assert(socket.valid());
     auto conn = vespalib::SyncCryptoSocket::create_client(*crypto, std::move(socket), vespalib::SocketSpec::from_host_port("localhost", port));
-    vespalib::string http_req = vespalib::make_string("GET %s HTTP/1.1\r\n"
+    std::string http_req = vespalib::make_string("GET %s HTTP/1.1\r\n"
                                                       "Host: localhost:%d\r\n"
                                                       "\r\n", path.c_str(), port);
     assert(conn->write(http_req.data(), http_req.size()) == ssize_t(http_req.size()));
     char buf[1024];
-    vespalib::string result;
+    std::string result;
     ssize_t res = conn->read(buf, sizeof(buf));
     while (res > 0) {
         result.append(std::string_view(buf, res));
@@ -72,7 +72,7 @@ namespace {
         XmlStatusReporter(const std::string& id, const std::string& name)
             : framework::XmlStatusReporter(id, name) {}
 
-        vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
+        std::string reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
                                          const framework::HttpUrlPath&) const override
         {
             xos << vespalib::xml::XmlTag("mytag")

@@ -7,9 +7,9 @@
 #include "properties.h"
 #include "matchdata.h"
 #include "feature_resolver.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <string>
 
 namespace vespalib { class ExecutionProfiler; }
 

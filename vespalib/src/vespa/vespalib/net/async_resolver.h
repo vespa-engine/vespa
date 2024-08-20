@@ -44,7 +44,7 @@ public:
     };
 
     struct HostResolver {
-        virtual vespalib::string ip_address(const vespalib::string &host_name) = 0;
+        virtual std::string ip_address(const std::string &host_name) = 0;
         virtual ~HostResolver() {}
         using SP = std::shared_ptr<HostResolver>;
     };
@@ -54,7 +54,7 @@ public:
     };
 
     struct SimpleHostResolver : public HostResolver {
-        vespalib::string ip_address(const vespalib::string &host_name) override;
+        std::string ip_address(const std::string &host_name) override;
     };
 
     struct Params {
@@ -77,18 +77,18 @@ private:
     public:
         LoggingHostResolver(Clock::SP clock, HostResolver::SP resolver, seconds max_resolve_time) noexcept
             : _clock(std::move(clock)), _resolver(std::move(resolver)), _max_resolve_time(max_resolve_time) {}
-        vespalib::string ip_address(const vespalib::string &host_name) override;
+        std::string ip_address(const std::string &host_name) override;
     };
 
     class CachingHostResolver : public HostResolver {
     private:
         struct Entry {
-            vespalib::string  ip_address;
+            std::string  ip_address;
             time_point        end_time;
-            Entry(const vespalib::string &ip, time_point end)
+            Entry(const std::string &ip, time_point end)
                 : ip_address(ip), end_time(end) {}
         };
-        using Map = std::map<vespalib::string,Entry>;
+        using Map = std::map<std::string,Entry>;
         using Itr = Map::iterator;
         Clock::SP        _clock;
         HostResolver::SP _resolver;
@@ -99,20 +99,20 @@ private:
         ArrayQueue<Itr>  _queue;
 
         bool should_evict_oldest_entry(const std::lock_guard<std::mutex> &guard, time_point now);
-        bool lookup(const vespalib::string &host_name, vespalib::string &ip_address);
-        void resolve(const vespalib::string &host_name, vespalib::string &ip_address);
-        void store(const vespalib::string &host_name, const vespalib::string &ip_address);
+        bool lookup(const std::string &host_name, std::string &ip_address);
+        void resolve(const std::string &host_name, std::string &ip_address);
+        void store(const std::string &host_name, const std::string &ip_address);
 
     public:
         CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age) noexcept;
-        vespalib::string ip_address(const vespalib::string &host_name) override;
+        std::string ip_address(const std::string &host_name) override;
     };
 
     struct ResolveTask : public Executor::Task {
-        vespalib::string spec;
+        std::string spec;
         HostResolver &resolver;
         ResultHandler::WP weak_handler;
-        ResolveTask(const vespalib::string &spec_in, HostResolver &resolver_in, ResultHandler::WP weak_handler_in)
+        ResolveTask(const std::string &spec_in, HostResolver &resolver_in, ResultHandler::WP weak_handler_in)
             : spec(spec_in), resolver(resolver_in), weak_handler(std::move(weak_handler_in)) {}
         void run() override;
     };
@@ -125,7 +125,7 @@ private:
     AsyncResolver(HostResolver::SP resolver, size_t num_threads);
 public:
     ~AsyncResolver();
-    void resolve_async(const vespalib::string &spec, ResultHandler::WP result_handler);
+    void resolve_async(const std::string &spec, ResultHandler::WP result_handler);
     void wait_for_pending_resolves();
     static AsyncResolver::SP create(Params params);
     static AsyncResolver::SP get_shared();

@@ -11,8 +11,8 @@ namespace proton {
 GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor & executor,
                                                std::shared_ptr<search::attribute::ReferenceAttribute> attr,
                                                RetainGuard retainGuard,
-                                               const vespalib::string &name,
-                                               const vespalib::string &docTypeName)
+                                               const std::string &name,
+                                               const std::string &docTypeName)
     : _executor(executor),
       _executorId(_executor.getExecutorIdFromName(attr->getNamePrefix())),
       _attr(std::move(attr)),
@@ -61,13 +61,13 @@ GidToLidChangeListener::notifyRegistered(const std::vector<document::GlobalId>& 
     future.wait();
 }
 
-const vespalib::string &
+const std::string &
 GidToLidChangeListener::getName() const
 {
     return _name;
 }
 
-const vespalib::string &
+const std::string &
 GidToLidChangeListener::getDocTypeName() const
 {
     return _docTypeName;

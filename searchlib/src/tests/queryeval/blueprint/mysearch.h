@@ -16,7 +16,7 @@ public:
     using MatchData = search::fef::MatchData;
 
 private:
-    vespalib::string _tag;
+    std::string _tag;
     bool             _isLeaf;
     bool             _isStrict;
     TFMDA            _match;

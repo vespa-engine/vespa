@@ -16,7 +16,7 @@
 
 namespace vespalib {
 
-Process::Process(const vespalib::string &cmd, bool capture_stderr)
+Process::Process(const std::string &cmd, bool capture_stderr)
   : _pid(-1),
     _in(),
     _out(),
@@ -105,9 +105,9 @@ Process::commit(size_t bytes)
     return *this;
 }
 
-vespalib::string
+std::string
 Process::read_line() {
-    vespalib::string line;
+    std::string line;
     for (auto mem = obtain(); (mem.size > 0); mem = obtain()) {
         for (size_t i = 0; i < mem.size; ++i) {
             if (mem.data[i] == '\n') {
@@ -147,7 +147,7 @@ Process::~Process()
 }
 
 bool
-Process::run(const vespalib::string &cmd, vespalib::string &output)
+Process::run(const std::string &cmd, std::string &output)
 {
     Process proc(cmd);
     proc.close();
@@ -162,9 +162,9 @@ Process::run(const vespalib::string &cmd, vespalib::string &output)
 }
 
 bool
-Process::run(const vespalib::string &cmd)
+Process::run(const std::string &cmd)
 {
-    vespalib::string ignore_output;
+    std::string ignore_output;
     return run(cmd, ignore_output);
 }
 

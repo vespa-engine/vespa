@@ -12,8 +12,8 @@ namespace search::fef {
 
 namespace {
 
-vespalib::string extract_data(vespalib::Input &input) {
-    vespalib::string result;
+std::string extract_data(vespalib::Input &input) {
+    std::string result;
     for (auto chunk = input.obtain(); chunk.size > 0; chunk = input.obtain()) {
         result.append(std::string_view(chunk.data, chunk.size));
         input.evict(chunk.size);
@@ -28,14 +28,14 @@ RankingExpressions::RankingExpressions(RankingExpressions &&rhs) noexcept = defa
 RankingExpressions::~RankingExpressions() = default;
 
 RankingExpressions &
-RankingExpressions::add(const vespalib::string &name, const vespalib::string &path)
+RankingExpressions::add(const std::string &name, const std::string &path)
 {
     _expressions.insert_or_assign(name, path);
     return *this;
 }
 
-vespalib::string
-RankingExpressions::loadExpression(const vespalib::string &name) const
+std::string
+RankingExpressions::loadExpression(const std::string &name) const
 {
     auto pos = _expressions.find(name);
     if (pos == _expressions.end()) {

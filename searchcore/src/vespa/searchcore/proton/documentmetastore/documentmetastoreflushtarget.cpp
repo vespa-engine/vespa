@@ -33,7 +33,7 @@ private:
     DocumentMetaStoreFlushTarget     &_dmsft;
     std::unique_ptr<search::AttributeSaver> _saver;
     uint64_t                          _syncToken;
-    vespalib::string                  _flushDir;
+    std::string                  _flushDir;
 
     bool saveDocumentMetaStore(); // not updating snap info.
 public:
@@ -59,7 +59,7 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
     DocumentMetaStore &dms = *_dmsft._dms;
     dms.commit(CommitParam(syncToken));
     _flushDir = writer.getSnapshotDir(syncToken);
-    vespalib::string newBaseFileName(_flushDir + "/" + dms.getName());
+    std::string newBaseFileName(_flushDir + "/" + dms.getName());
     _saver = dms.initSave(newBaseFileName);
     assert(_saver);
 }
@@ -92,7 +92,7 @@ DocumentMetaStoreFlushTarget::Flusher::flush(AttributeDirectory::Writer &writer)
 {
     writer.createInvalidSnapshot(_syncToken);
     if (!saveDocumentMetaStore()) {
-        vespalib::string baseFileName(_flushDir + "/" + _dmsft._dms->getName());
+        std::string baseFileName(_flushDir + "/" + _dmsft._dms->getName());
         LOG(warning, "Could not write document meta store '%s' to disk", baseFileName.c_str());
         return false;
     }
@@ -148,7 +148,7 @@ DocumentMetaStoreFlushTarget::Flusher::run()
 
 DocumentMetaStoreFlushTarget::
 DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer &tlsSyncer,
-                             const vespalib::string & baseDir, const TuneFileAttributes &tuneFileAttributes,
+                             const std::string & baseDir, const TuneFileAttributes &tuneFileAttributes,
                              const FileHeaderContext &fileHeaderContext, const vespalib::HwInfo &hwInfo)
     : LeafFlushTarget("documentmetastore.flush", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),

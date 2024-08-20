@@ -9,8 +9,8 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attibute_aspect_delayer_test");
@@ -37,7 +37,7 @@ namespace proton {
 
 namespace {
 
-AttributesConfig::Attribute make_sv_cfg(const vespalib::string &name, AttributesConfig::Attribute::Datatype dataType)
+AttributesConfig::Attribute make_sv_cfg(const std::string &name, AttributesConfig::Attribute::Datatype dataType)
 {
     AttributesConfig::Attribute attr;
     attr.name = name;
@@ -51,7 +51,7 @@ AttributesConfig::Attribute make_sv_cfg(AttributesConfig::Attribute::Datatype da
     return make_sv_cfg("a", dataType);
 }
 
-AttributesConfig::Attribute make_int32_sv_cfg(const vespalib::string &name) {
+AttributesConfig::Attribute make_int32_sv_cfg(const std::string &name) {
     return make_sv_cfg(name, AttributesConfig::Attribute::Datatype::INT32);
 }
 
@@ -70,7 +70,7 @@ AttributesConfig::Attribute make_predicate_cfg(uint32_t arity)
     return attr;
 }
 
-AttributesConfig::Attribute make_tensor_cfg(const vespalib::string &spec)
+AttributesConfig::Attribute make_tensor_cfg(const std::string &spec)
 {
     auto attr = make_sv_cfg(AttributesConfig::Attribute::Datatype::TENSOR);
     attr.tensortype = spec;
@@ -96,14 +96,14 @@ AttributesConfig::Attribute make_fa(const AttributesConfig::Attribute &cfg)
     return attr;
 }
 
-SummaryConfig::Classes::Fields make_summary_field(const vespalib::string &name)
+SummaryConfig::Classes::Fields make_summary_field(const std::string &name)
 {
     SummaryConfig::Classes::Fields field;
     field.name = name;
     return field;
 }
 
-SummaryConfig::Classes::Fields make_summary_field(const vespalib::string &name, const vespalib::string& command, const vespalib::string& source)
+SummaryConfig::Classes::Fields make_summary_field(const std::string &name, const std::string& command, const std::string& source)
 {
     SummaryConfig::Classes::Fields field;
     field.name = name;
@@ -124,9 +124,9 @@ SummaryConfig sCfg(std::vector<SummaryConfig::Classes::Fields> fields)
 
 class MyInspector : public IDocumentTypeInspector
 {
-    std::set<vespalib::string> _unchanged;
+    std::set<std::string> _unchanged;
 public:
-    virtual bool hasUnchangedField(const vespalib::string &name) const override {
+    virtual bool hasUnchangedField(const std::string &name) const override {
         return _unchanged.count(name) > 0;
     }
     MyInspector()
@@ -134,7 +134,7 @@ public:
     {
     }
     ~MyInspector() { }
-    void addFields(const std::vector<vespalib::string> &fields) {
+    void addFields(const std::vector<std::string> &fields) {
         for (const auto &field : fields) {
             _unchanged.insert(field);
         }
@@ -156,10 +156,10 @@ public:
     {
     }
     ~DelayerTest() { }
-    void addFields(const std::vector<vespalib::string> &fields) {
+    void addFields(const std::vector<std::string> &fields) {
         _inspector.addFields(fields);
     }
-    void addOldIndexField(const vespalib::string &name) {
+    void addOldIndexField(const std::string &name) {
         IndexschemaConfig::Indexfield field;
         field.name = name;
         _oldIndexSchema.indexfield.emplace_back(field);

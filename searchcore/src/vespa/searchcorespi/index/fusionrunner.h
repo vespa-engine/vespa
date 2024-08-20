@@ -40,7 +40,7 @@ public:
      * Create a FusionRunner that operates on indexes stored in the
      * base dir.
      **/
-    FusionRunner(const vespalib::string &base_dir,
+    FusionRunner(const std::string &base_dir,
                  const search::index::Schema &schema,
                  const search::TuneFileAttributes &tuneFileAttributes,
                  const search::common::FileHeaderContext &fileHeaderContext);

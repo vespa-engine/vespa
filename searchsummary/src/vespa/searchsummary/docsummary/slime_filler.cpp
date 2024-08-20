@@ -338,7 +338,7 @@ SlimeFiller::visit(const ReferenceFieldValue& value)
 {
     _inserter.insertString(Memory(value.hasValidDocumentId()
                                   ? value.getDocumentId().toString()
-                                  : vespalib::string()));
+                                  : std::string()));
 }
 
 void

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <cstdint>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::bmcluster {
 

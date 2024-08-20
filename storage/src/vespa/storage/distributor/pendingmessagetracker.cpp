@@ -35,7 +35,7 @@ PendingMessageTracker::MessageEntry::MessageEntry(TimePoint timeStamp_, uint32_t
       nodeIdx(nodeIdx_)
 { }
 
-vespalib::string
+std::string
 PendingMessageTracker::MessageEntry::toHtml() const {
     vespalib::asciistream ss;
     ss << "<li><i>Node " << nodeIdx << "</i>: "
@@ -306,7 +306,7 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 {
     std::lock_guard guard(_lock);
     const auto& msgs = boost::multi_index::get<IndexByNodeAndBucket>(_messages);
-    using BucketMap = std::map<document::Bucket, std::vector<vespalib::string>>;
+    using BucketMap = std::map<document::Bucket, std::vector<std::string>>;
     BucketMap perBucketMsgs;
     for (const auto& msg : msgs) {
         perBucketMsgs[msg.bucket].emplace_back(msg.toHtml());

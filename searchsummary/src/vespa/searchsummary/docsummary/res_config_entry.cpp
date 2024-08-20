@@ -5,7 +5,7 @@
 
 namespace search::docsummary {
 
-ResConfigEntry::ResConfigEntry(const vespalib::string& name_in) noexcept
+ResConfigEntry::ResConfigEntry(const std::string& name_in) noexcept
     : _name(name_in),
       _writer(),
       _generated(false)

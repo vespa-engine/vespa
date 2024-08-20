@@ -10,7 +10,7 @@ LOG_SETUP(".filekit");
 namespace search {
 
 vespalib::system_time
-FileKit::getModificationTime(const vespalib::string &name)
+FileKit::getModificationTime(const std::string &name)
 {
     FastOS_StatInfo statInfo;
     if (FastOS_File::Stat(name.c_str(), &statInfo)) {

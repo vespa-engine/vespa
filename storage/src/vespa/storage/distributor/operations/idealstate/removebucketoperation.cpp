@@ -74,7 +74,7 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
                 "%s on node %u: %s. Reinserting node into bucket db with %s",
                 getBucketId().toString().c_str(),
                 node,
-                vespalib::string(rep->getResult().getMessage()).c_str(),
+                std::string(rep->getResult().getMessage()).c_str(),
                 rep->getBucketInfo().toString().c_str());
 
             _manager->operation_context().update_bucket_database(

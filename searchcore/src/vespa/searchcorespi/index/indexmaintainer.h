@@ -71,7 +71,7 @@ class IndexMaintainer : public IIndexManager,
     using ISourceSelector = search::queryeval::ISourceSelector;
     using LockGuard = std::lock_guard<std::mutex>;
 
-    const vespalib::string _base_dir;
+    const std::string _base_dir;
     const WarmupConfig     _warmupConfig;
     std::shared_ptr<DiskIndexes>  _disk_indexes;
     IndexDiskLayout        _layout;
@@ -146,8 +146,8 @@ class IndexMaintainer : public IIndexManager,
     uint32_t get_absolute_id() const noexcept { return _last_fusion_id + _current_index_id; }
     // set id for new memory index, other callers than constructor holds SL and IUL
     void set_id_for_new_memory_index();
-    vespalib::string getFlushDir(uint32_t sourceId) const;
-    vespalib::string getFusionDir(uint32_t sourceId) const;
+    std::string getFlushDir(uint32_t sourceId) const;
+    std::string getFusionDir(uint32_t sourceId) const;
 
     /**
      * Will reopen diskindexes if necessary due to schema changes.
@@ -156,7 +156,7 @@ class IndexMaintainer : public IIndexManager,
      */
     bool reopenDiskIndexes(ISearchableIndexCollection &coll);
 
-    void updateDiskIndexSchema(const vespalib::string &indexDir,
+    void updateDiskIndexSchema(const std::string &indexDir,
                                const Schema &schema,
                                SerialNum serialNum);
 
@@ -165,8 +165,8 @@ class IndexMaintainer : public IIndexManager,
                             SerialNum serialNum);
 
     void updateActiveFusionPrunedSchema(const Schema &schema);
-    void deactivateDiskIndexes(vespalib::string indexDir);
-    std::shared_ptr<IDiskIndex> loadDiskIndex(const vespalib::string &indexDir);
+    void deactivateDiskIndexes(std::string indexDir);
+    std::shared_ptr<IDiskIndex> loadDiskIndex(const std::string &indexDir);
     std::shared_ptr<IDiskIndex> reloadDiskIndex(const IDiskIndex &oldIndex);
 
     std::shared_ptr<IDiskIndex> flushMemoryIndex(IMemoryIndex &memoryIndex,
@@ -293,7 +293,7 @@ public:
     /**
      * Runs fusion for any available specs and return the output fusion directory.
      */
-    vespalib::string doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token);
+    std::string doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token);
     uint32_t runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search::IFlushToken> flush_token);
     void removeOldDiskIndexes();
 
@@ -330,7 +330,7 @@ public:
      **/
     FlushStats getFlushStats() const;
     FusionStats getFusionStats() const;
-    const vespalib::string & getBaseDir() const { return _base_dir; }
+    const std::string & getBaseDir() const { return _base_dir; }
     uint32_t getNumFrozenMemoryIndexes() const;
     uint32_t getMaxFrozenMemoryIndexes() const { return _maxFrozen; }
 

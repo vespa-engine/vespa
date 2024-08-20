@@ -148,7 +148,7 @@ SBEnv::resume()
 
 namespace {
 
-vespalib::string
+std::string
 toString(const std::vector<std::string> & v) {
     vespalib::asciistream os;
     os << "[" << '\n';
@@ -242,7 +242,7 @@ SBEnv::addPeer(const std::string &name, const std::string &spec)
                 return OkState(0, "already configured with peer");
             }
         }
-        vespalib::string peers = toString(_partnerList);
+        std::string peers = toString(_partnerList);
         LOG(warning, "got addPeer with non-configured peer %s, check config consistency. configured peers = %s",
                      spec.c_str(), peers.c_str());
         _partnerList.push_back(spec);

@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace document { class DocumentTypeRepo; }
 namespace vespalib { class nbostream; }
@@ -56,7 +56,7 @@ public:
     SerialNum getSerialNum() const { return _serialNum; }
     virtual void serialize(vespalib::nbostream &os) const = 0;
     virtual void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) = 0;
-    virtual vespalib::string toString() const = 0;
+    virtual std::string toString() const = 0;
 };
 
 } // namespace proton

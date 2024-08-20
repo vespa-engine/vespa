@@ -14,7 +14,7 @@ class ServerSocket
 {
 private:
     SocketHandle _handle;
-    vespalib::string _path;
+    std::string _path;
     bool _blocking;
     std::atomic<bool> _shutdown;
 
@@ -22,7 +22,7 @@ private:
 public:
     ServerSocket() : _handle(), _path(), _blocking(false), _shutdown(false) {}
     explicit ServerSocket(const SocketSpec &spec);
-    explicit ServerSocket(const vespalib::string &spec);
+    explicit ServerSocket(const std::string &spec);
     explicit ServerSocket(int port);
     ServerSocket(ServerSocket &&rhs);
     ServerSocket &operator=(ServerSocket &&rhs);

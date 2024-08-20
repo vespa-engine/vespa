@@ -3,7 +3,7 @@
 #pragma once
 
 #include "query_term_simple.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search {
 

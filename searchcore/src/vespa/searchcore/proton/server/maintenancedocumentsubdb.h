@@ -17,7 +17,7 @@ class ILidCommitState;
 class MaintenanceDocumentSubDB
 {
 private:
-    vespalib::string       _name;
+    std::string       _name;
     uint32_t               _sub_db_id;
     IDocumentMetaStore::SP _meta_store;
     IDocumentRetriever::SP _retriever;
@@ -28,14 +28,14 @@ public:
     MaintenanceDocumentSubDB();
     ~MaintenanceDocumentSubDB();
 
-    MaintenanceDocumentSubDB(const vespalib::string& name,
+    MaintenanceDocumentSubDB(const std::string& name,
                              uint32_t sub_db_id,
                              IDocumentMetaStore::SP meta_store,
                              IDocumentRetriever::SP retriever,
                              IFeedView::SP feed_view,
                              const ILidCommitState *);
 
-    const vespalib::string& name() const { return _name; }
+    const std::string& name() const { return _name; }
     uint32_t sub_db_id() const { return _sub_db_id; }
     const IDocumentMetaStore::SP& meta_store() const { return _meta_store; }
     const IDocumentRetriever::SP& retriever() const { return _retriever; }

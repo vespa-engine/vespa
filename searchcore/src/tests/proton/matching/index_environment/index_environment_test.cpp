@@ -22,7 +22,7 @@ using SAF = Schema::AttributeField;
 using SIAF = Schema::ImportedAttributeField;
 using SIF = Schema::IndexField;
 
-const vespalib::string my_expr_ref(
+const std::string my_expr_ref(
     "this is my reference ranking expression.\n"
     "this is my reference ranking expression.\n"
     "it will not compile into a function.\n"
@@ -52,15 +52,15 @@ struct MyRankingAssetsRepo : public IRankingAssetsRepo {
           _onnxModels(std::move(onnxModels))
     {}
     ~MyRankingAssetsRepo() override;
-    ConstantValue::UP getConstant(const vespalib::string &) const override {
+    ConstantValue::UP getConstant(const std::string &) const override {
         return {};
     }
 
-    vespalib::string getExpression(const vespalib::string & name) const override {
+    std::string getExpression(const std::string & name) const override {
         return _expressions.loadExpression(name);
     }
 
-    const OnnxModel *getOnnxModel(const vespalib::string & name) const override {
+    const OnnxModel *getOnnxModel(const std::string & name) const override {
         return _onnxModels.getModel(name);
     }
 };
@@ -93,7 +93,7 @@ struct Fixture {
     {
     }
     const FieldInfo *assertField(size_t idx,
-                                 const vespalib::string &name,
+                                 const std::string &name,
                                  DataType dataType,
                                  CollectionType collectionType) const {
         const FieldInfo *field = env.getField(idx);
@@ -106,7 +106,7 @@ struct Fixture {
         return field;
     }
     void assertHiddenAttributeField(size_t idx,
-                                    const vespalib::string &name,
+                                    const std::string &name,
                                     DataType dataType,
                                     CollectionType collectionType) const {
         const FieldInfo *field = assertField(idx, name, dataType, collectionType);
@@ -115,7 +115,7 @@ struct Fixture {
         EXPECT_TRUE(field->isFilter());
     }
     void assertAttributeField(size_t idx,
-                              const vespalib::string &name,
+                              const std::string &name,
                               DataType dataType,
                               CollectionType collectionType) const {
         const FieldInfo *field = assertField(idx, name, dataType, collectionType);
@@ -124,7 +124,7 @@ struct Fixture {
         EXPECT_FALSE(field->isFilter());
     }
     void assert_virtual_field(size_t idx,
-                              const vespalib::string& name) const {
+                              const std::string& name) const {
         const auto* field = assertField(idx, name, DataType::COMBINED, CollectionType::ARRAY);
         EXPECT_TRUE(field->type() == FieldType::VIRTUAL);
     }
@@ -187,14 +187,14 @@ TEST_F("require that onnx model config can be obtained", Fixture(buildEmptySchem
     {
         auto model = f1.env.getOnnxModel("model1");
         ASSERT_TRUE(model != nullptr);
-        EXPECT_EQUAL(model->file_path(), vespalib::string("path1"));
-        EXPECT_EQUAL(model->input_feature("input1").value(), vespalib::string("feature1"));
-        EXPECT_EQUAL(model->output_name("output1").value(), vespalib::string("out1"));
+        EXPECT_EQUAL(model->file_path(), std::string("path1"));
+        EXPECT_EQUAL(model->input_feature("input1").value(), std::string("feature1"));
+        EXPECT_EQUAL(model->output_name("output1").value(), std::string("out1"));
     }
     {
         auto model = f1.env.getOnnxModel("model2");
         ASSERT_TRUE(model != nullptr);
-        EXPECT_EQUAL(model->file_path(), vespalib::string("path2"));
+        EXPECT_EQUAL(model->file_path(), std::string("path2"));
         EXPECT_FALSE(model->input_feature("input1").has_value());
         EXPECT_FALSE(model->output_name("output1").has_value());
     }

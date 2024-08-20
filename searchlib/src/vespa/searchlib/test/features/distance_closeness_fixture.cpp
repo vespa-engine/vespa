@@ -31,8 +31,8 @@ namespace search::features::test {
 namespace {
 
 std::shared_ptr<TensorAttribute>
-create_tensor_attribute(const vespalib::string& attr_name,
-                        const vespalib::string& tensor_type,
+create_tensor_attribute(const std::string& attr_name,
+                        const std::string& tensor_type,
                         DistanceMetric distance_metric,
                         bool direct_tensor,
                         uint32_t docid_limit)
@@ -60,19 +60,19 @@ FeatureDumpFixture::~FeatureDumpFixture() = default;
 
 DistanceClosenessFixture::DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
                                                    const Labels& labels,
-                                                   const vespalib::string& featureName,
-                                                   const vespalib::string& query_tensor,
+                                                   const std::string& featureName,
+                                                   const std::string& query_tensor,
                                                    DistanceMetric distance_metric)
     : DistanceClosenessFixture("tensor(x[2])", false, fooCnt, barCnt, labels, featureName, query_tensor, distance_metric)
 {
 }
 
-DistanceClosenessFixture::DistanceClosenessFixture(const vespalib::string& tensor_type,
+DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_type,
                                                    bool direct_tensor,
                                                    size_t fooCnt, size_t barCnt,
                                                    const Labels& labels,
-                                                   const vespalib::string& featureName,
-                                                   const vespalib::string& query_tensor,
+                                                   const std::string& featureName,
+                                                   const std::string& query_tensor,
                                                    DistanceMetric distance_metric)
     : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
       mdl(), match_data(), rankProgram(), fooHandles(), barHandles(),
@@ -129,8 +129,8 @@ DistanceClosenessFixture::set_attribute_tensor(uint32_t docid, const vespalib::e
 }
 
 void
-DistanceClosenessFixture::set_query_tensor(const vespalib::string& query_tensor_name,
-                                           const vespalib::string& tensor_type,
+DistanceClosenessFixture::set_query_tensor(const std::string& query_tensor_name,
+                                           const std::string& tensor_type,
                                            const TensorSpec& spec)
 {
     search::fef::indexproperties::type::QueryFeature::set(indexEnv.getProperties(), query_tensor_name, tensor_type);

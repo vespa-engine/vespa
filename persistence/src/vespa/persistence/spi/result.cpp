@@ -14,7 +14,7 @@ Result & Result::operator = (const Result &) = default;
 Result& Result::operator=(Result&&) noexcept = default;
 Result::~Result() = default;
 
-vespalib::string
+std::string
 Result::toString() const {
     vespalib::asciistream os;
     os << "Result(" << static_cast<int>(_errorCode) << ", " << _errorMessage << ")";
@@ -52,7 +52,7 @@ IterateResult::~IterateResult() = default;
 IterateResult::IterateResult(IterateResult &&) noexcept = default;
 IterateResult & IterateResult::operator=(IterateResult &&) noexcept = default;
 
-IterateResult::IterateResult(ErrorType error, const vespalib::string& errorMessage)
+IterateResult::IterateResult(ErrorType error, const std::string& errorMessage)
     : Result(error, errorMessage),
       _completed(false)
 { }

@@ -243,7 +243,7 @@ IndexCollection::createBlueprint(const IRequestContext & requestContext,
 }
 
 FieldLengthInfo
-IndexCollection::get_field_length_info(const vespalib::string& field_name) const
+IndexCollection::get_field_length_info(const std::string& field_name) const
 {
     if (_sources.empty()) {
         return FieldLengthInfo();

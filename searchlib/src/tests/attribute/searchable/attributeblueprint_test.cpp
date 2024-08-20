@@ -155,7 +155,7 @@ downcast(ParentType& parent)
 }
 
 AttributeVector::SP
-make_string_attribute(std::initializer_list<vespalib::string> values)
+make_string_attribute(std::initializer_list<std::string> values)
 {
     Config cfg(BasicType::STRING, CollectionType::SINGLE);
     return AttributeBuilder(field, cfg).fill(values).get();
@@ -168,7 +168,7 @@ make_string_attribute(const std::string& value)
 }
 
 AttributeVector::SP
-make_wset_string_attribute(std::initializer_list<std::initializer_list<vespalib::string>> values)
+make_wset_string_attribute(std::initializer_list<std::initializer_list<std::string>> values)
 {
     Config cfg(BasicType::STRING, CollectionType::WSET);
     // fast-search is needed to trigger use of DirectAttributeBlueprint.
@@ -276,7 +276,7 @@ TEST(AttributeBlueprintTest, require_that_fast_search_location_terms_work)
 }
 
 AttributeVector::SP
-make_tensor_attribute(const vespalib::string& name, const vespalib::string& tensor_spec)
+make_tensor_attribute(const std::string& name, const std::string& tensor_spec)
 {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(ValueType::from_spec(tensor_spec));
@@ -284,7 +284,7 @@ make_tensor_attribute(const vespalib::string& name, const vespalib::string& tens
 }
 
 AttributeVector::SP
-make_int_attribute(const vespalib::string& name)
+make_int_attribute(const std::string& name)
 {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     return AttributeFactory::createAttribute(name, cfg);
@@ -296,7 +296,7 @@ class BlueprintFactoryFixture {
 public:
     AttributeVector::SP attr;
     MyAttributeManager mgr;
-    vespalib::string attr_name;
+    std::string attr_name;
     AttributeContext attr_ctx;
     FakeRequestContext request_ctx;
     AttributeBlueprintFactory source;
@@ -354,7 +354,7 @@ public:
 };
 
 void
-expect_nearest_neighbor_blueprint(const vespalib::string& attribute_tensor_type_spec,
+expect_nearest_neighbor_blueprint(const std::string& attribute_tensor_type_spec,
                                   const TensorSpec& query_tensor,
                                   const TensorSpec& converted_query_tensor)
 {

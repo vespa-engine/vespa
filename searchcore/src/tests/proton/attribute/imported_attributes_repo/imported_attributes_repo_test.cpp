@@ -20,7 +20,7 @@ using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 
 ImportedAttributeVector::SP
-createAttr(const vespalib::string &name)
+createAttr(const std::string &name)
 {
     return ImportedAttributeVectorFactory::create(name,
                                                   ReferenceAttribute::SP(),
@@ -36,7 +36,7 @@ struct Fixture {
     void add(ImportedAttributeVector::SP attr) {
         repo.add(attr->getName(), attr);
     }
-    ImportedAttributeVector::SP get(const vespalib::string &name) const {
+    ImportedAttributeVector::SP get(const std::string &name) const {
         return repo.get(name);
     }
 };

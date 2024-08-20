@@ -3,8 +3,8 @@
 #pragma once
 
 #include "iblueprintregistry.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <string>
 
 namespace search::fef {
 
@@ -20,7 +20,7 @@ class BlueprintFactory : public IBlueprintRegistry
 {
 private:
     using BlueprintSP = std::shared_ptr<Blueprint>;
-    using BlueprintMap = std::map<vespalib::string, BlueprintSP>;
+    using BlueprintMap = std::map<std::string, BlueprintSP>;
 
     BlueprintMap _blueprintMap;
 
@@ -51,7 +51,7 @@ public:
      * @return fresh and clean blueprint of the appropriate class
      * @param name feature executor base name
      **/
-    BlueprintSP createBlueprint(const vespalib::string &name) const;
+    BlueprintSP createBlueprint(const std::string &name) const;
 };
 
 }

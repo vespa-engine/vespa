@@ -3,8 +3,8 @@
 #pragma once
 
 #include "countcompression.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <cassert>
+#include <string>
 
 namespace search::bitcompression {
 
@@ -119,7 +119,7 @@ class PageDict4SSWriter : public PageDict4PageParams
 
 private:
     EC &_eL6;           // L6 stream
-    vespalib::string _l6Word;   // L6 word
+    std::string _l6Word;   // L6 word
     StartOffset _l6StartOffset; // file offsets + accnum
     uint64_t _l6PageNum;    // Page number for last L6 entry
     uint32_t _l6SparsePageNum;  // Sparse page number for last L6 entry
@@ -187,10 +187,10 @@ private:
     ComprFileWriteContext _wcL4;// L4 buffer
     EC _eL5;            // L5 stream
     ComprFileWriteContext _wcL5;// L5 buffer
-    vespalib::string _l3Word;   // last L3 word written
-    vespalib::string _l4Word;   // last L4 word written
-    vespalib::string _l5Word;   // last L5 word written
-    vespalib::string _l6Word;   // word before this sparse page
+    std::string _l3Word;   // last L3 word written
+    std::string _l4Word;   // last L4 word written
+    std::string _l5Word;   // last L5 word written
+    std::string _l6Word;   // word before this sparse page
     uint32_t _l3WordOffset; // Offset for next L3 word to write
     uint32_t _l4WordOffset; // Offset for last L4 word written
     uint32_t _l5WordOffset; // Offset for last L5 word written
@@ -303,11 +303,11 @@ private:
     ComprFileWriteContext _wcL1;// L1 buffer
     EC _eL2;            // L2 stream
     ComprFileWriteContext _wcL2;// L2 buffer
-    vespalib::string _countsWord;   // last counts on page
-    vespalib::string _l1Word;   // Last L1 word written
-    vespalib::string _l2Word;   // Last L2 word written
-    vespalib::string _l3Word;   // word before this page
-    vespalib::string _pendingCountsWord; // pending counts word (counts written)
+    std::string _countsWord;   // last counts on page
+    std::string _l1Word;   // Last L1 word written
+    std::string _l2Word;   // Last L2 word written
+    std::string _l3Word;   // word before this page
+    std::string _pendingCountsWord; // pending counts word (counts written)
     uint32_t _countsWordOffset; // Offset for next counts word to write
     uint32_t _l1WordOffset; // Offset of last L1 word written
     uint32_t _l2WordOffset; // Offset of last L2 word written
@@ -374,8 +374,8 @@ public:
     using Counts = index::PostingListCounts;
     using StartOffset = PageDict4StartOffset;
 
-    vespalib::string _l6Word;   // last L6 word before key
-    vespalib::string _lastWord; // L6 or overflow word >= key
+    std::string _l6Word;   // last L6 word before key
+    std::string _lastWord; // L6 or overflow word >= key
     StartOffset      _l6StartOffset;    // File offsets
     Counts      _counts;    // Counts valid if overflow
     uint64_t _pageNum;
@@ -404,7 +404,7 @@ public:
     class L7Entry
     {
     public:
-        vespalib::string _l7Word;
+        std::string _l7Word;
         StartOffset      _l7StartOffset;    // Offsets in data files
         uint64_t _l7WordNum;
         uint64_t _l6Offset; // Offset in L6+overflow stream
@@ -511,8 +511,8 @@ class PageDict4SPLookupRes : public PageDict4PageParams
     using SSReader = PageDict4SSReader;
 
 public:
-    vespalib::string _l3Word;
-    vespalib::string _lastWord; // L3 word >= key
+    std::string _l3Word;
+    std::string _lastWord; // L3 word >= key
     StartOffset      _l3StartOffset;
     uint64_t _pageNum;
     uint64_t _l3WordNum;
@@ -546,7 +546,7 @@ public:
     StartOffset _startOffset;
     uint64_t _wordNum;
     bool _res;
-    vespalib::string *_nextWord;
+    std::string *_nextWord;
 
 public:
     PageDict4PLookupRes();
@@ -679,8 +679,8 @@ public:
     WV _words;
     WV::const_iterator _wc;
     WV::const_iterator _we;
-    vespalib::string _lastWord;
-    vespalib::string _lastSSWord;
+    std::string _lastWord;
+    std::string _lastSSWord;
 
     DC &_spd;
     uint32_t _l3Residue;
@@ -702,11 +702,11 @@ public:
     void setup();
     void setupPage();
     void setupSPage();
-    void decodePWord(vespalib::string &word);
-    void decodeSPWord(vespalib::string &word);
-    void decodeSSWord(vespalib::string &word);
-    void readCounts(vespalib::string &word, uint64_t &wordNum, Counts &counts);
-    void readOverflowCounts(vespalib::string &word, Counts &counts);
+    void decodePWord(std::string &word);
+    void decodeSPWord(std::string &word);
+    void decodeSSWord(std::string &word);
+    void readCounts(std::string &word, uint64_t &wordNum, Counts &counts);
+    void readOverflowCounts(std::string &word, Counts &counts);
 };
 
 }

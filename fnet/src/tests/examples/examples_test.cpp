@@ -14,7 +14,7 @@ static const int PORT0 = 18570;
 using vespalib::Process;
 using vespalib::make_string_short::fmt;
 
-int run_proc(Process &proc, vespalib::string &output) {
+int run_proc(Process &proc, std::string &output) {
     proc.close();
     for (auto mem = proc.obtain(); mem.size > 0; mem = proc.obtain()) {
         output.append(mem.data, mem.size);
@@ -24,7 +24,7 @@ int run_proc(Process &proc, vespalib::string &output) {
 }
 
 void consume_result(Process &proc) {
-    vespalib::string output;
+    std::string output;
     int status = run_proc(proc, output);
     fprintf(stderr, "child output(server): >>>%s<<<\n", output.c_str());
     if (status != 0) {
@@ -39,13 +39,13 @@ void consume_result(Process &proc) {
     }
 }
 
-bool run_with_retry(const vespalib::string &cmd) {
+bool run_with_retry(const std::string &cmd) {
     for (size_t retry = 0; retry < 60; ++retry) {
         if (retry > 0) {
             fprintf(stderr, "retrying command in 500ms...\n");
             std::this_thread::sleep_for(500ms);
         }
-        vespalib::string output;
+        std::string output;
         Process proc(cmd, true);
         int status = run_proc(proc, output);
         fprintf(stderr, "child output(client): >>>%s<<<\n", output.c_str());
@@ -70,7 +70,7 @@ TEST("usage") {
 }
 
 TEST("timeout") {
-    vespalib::string out;
+    std::string out;
     EXPECT_TRUE(Process::run("exec ../../examples/timeout/fnet_timeout_app", out));
     fprintf(stderr, "%s\n", out.c_str());
 }

@@ -15,7 +15,7 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-std::vector<std::pair<vespalib::string,vespalib::string>> modify_layouts = {
+std::vector<std::pair<std::string,std::string>> modify_layouts = {
     {       "x4_1",         "x4_1" },
     {       "x4_1",         "x4_2" },
     {         "x4",         "x4_2" },
@@ -79,8 +79,8 @@ TensorSpec perform_partial_modify_with_defaults(const TensorSpec &a, const Tenso
     return spec_from_value(*up);
 }
 
-void expect_modify_with_defaults(const vespalib::string& lhs_expr, const vespalib::string& rhs_expr,
-                                 join_fun_t fun, double default_cell_value, const vespalib::string& exp_expr) {
+void expect_modify_with_defaults(const std::string& lhs_expr, const std::string& rhs_expr,
+                                 join_fun_t fun, double default_cell_value, const std::string& exp_expr) {
     auto lhs = TensorSpec::from_expr(lhs_expr);
     auto rhs = TensorSpec::from_expr(rhs_expr);
     auto exp = TensorSpec::from_expr(exp_expr);
@@ -137,7 +137,7 @@ TEST(PartialModifyTest, partial_modify_with_defauls) {
                                 "tensor(x[3]):{{x:0}:2,{x:1}:3,{x:2}:0}");
 }
 
-std::vector<std::pair<vespalib::string,vespalib::string>> bad_layouts = {
+std::vector<std::pair<std::string,std::string>> bad_layouts = {
     {       "x3",       "x3" },
     {   "x3y4_1",   "x3y4_1" },
     {     "x4_1", "x4_1y4_1" },

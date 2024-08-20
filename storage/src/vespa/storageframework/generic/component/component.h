@@ -81,7 +81,7 @@ class Thread;
 class Component : private ManagedComponent
 {
     ComponentRegister* _componentRegister;
-    vespalib::string _name;
+    std::string _name;
     const StatusReporter* _status;
     metrics::Metric* _metric;
     ThreadPool* _threadPool;
@@ -127,7 +127,7 @@ public:
     void registerMetricUpdateHook(MetricUpdateHook&, vespalib::system_time::duration period);
 
     /** Get the name of the component. Must be a unique name. */
-    [[nodiscard]] const vespalib::string& getName() const override { return _name; }
+    [[nodiscard]] const std::string& getName() const override { return _name; }
 
     /**
      * Get the thread pool for this application. Note that this call will fail

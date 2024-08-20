@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include "querymodifier.h"
+#include <string>
+#include <vector>
 
 /** The internal query data structure used by the matching engine
  *  in Matcher.h
@@ -161,7 +161,7 @@ public:
     juniper::Rewriter* rewriter;
     juniper::string_matcher* reduce_matcher;
 private:
-    vespalib::string _term;
+    std::string _term;
     ucs4_t* _ucs4_term;
 };
 

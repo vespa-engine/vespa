@@ -7,9 +7,9 @@ using vespalib::slime::Inserter;
 
 namespace proton {
 
-const vespalib::string READY = "ready";
-const vespalib::string REMOVED = "removed";
-const vespalib::string NOT_READY = "notready";
+const std::string READY = "ready";
+const std::string REMOVED = "removed";
+const std::string NOT_READY = "notready";
 
 namespace {
 
@@ -34,7 +34,7 @@ DocumentSubDBCollectionExplorer::get_state(const Inserter &inserter, bool full) 
     (void) full;
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 DocumentSubDBCollectionExplorer::get_children_names() const
 {
     return {READY, REMOVED, NOT_READY};

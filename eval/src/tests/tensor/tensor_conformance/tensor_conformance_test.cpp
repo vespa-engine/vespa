@@ -10,11 +10,11 @@ using vespalib::Slime;
 using vespalib::slime::JsonFormat;
 using vespalib::MappedFileInput;
 
-vespalib::string module_build_path("../../../../");
+std::string module_build_path("../../../../");
 
 TEST("require that (some) cross-language tensor conformance tests pass with C++ expression evaluation") {
-    vespalib::string result_file = "conformance_result.json";
-    vespalib::string binary = module_build_path + "src/apps/tensor_conformance/vespa-tensor-conformance";
+    std::string result_file = "conformance_result.json";
+    std::string binary = module_build_path + "src/apps/tensor_conformance/vespa-tensor-conformance";
     EXPECT_EQUAL(system(fmt("%s generate-some | %s evaluate | %s verify > %s", binary.c_str(), binary.c_str(), binary.c_str(), result_file.c_str()).c_str()), 0);
     Slime result;
     MappedFileInput input(result_file);

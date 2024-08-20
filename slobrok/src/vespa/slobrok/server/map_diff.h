@@ -14,7 +14,7 @@ namespace slobrok {
 struct MapDiff {
     /** construct incremental diff */
     MapDiff(const vespalib::GenCnt &from,
-            std::vector<vespalib::string> remove,
+            std::vector<std::string> remove,
             ServiceMappingList update,
             const vespalib::GenCnt &to)
       : fromGen(from),
@@ -39,7 +39,7 @@ struct MapDiff {
     vespalib::GenCnt fromGen;
 
     // names to remove (empty if is_full_dump):
-    std::vector<vespalib::string> removed;
+    std::vector<std::string> removed;
 
     // name->spec pairs to add or update:
     ServiceMappingList updated;

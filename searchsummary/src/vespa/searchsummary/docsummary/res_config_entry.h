@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace search::docsummary {
 
@@ -14,15 +14,15 @@ class DocsumFieldWriter;
  **/
 class ResConfigEntry {
 private:
-    vespalib::string _name;
+    std::string _name;
     std::unique_ptr<DocsumFieldWriter> _writer;
     bool _generated;
 public:
-    ResConfigEntry(const vespalib::string& name_in) noexcept;
+    ResConfigEntry(const std::string& name_in) noexcept;
     ~ResConfigEntry();
     ResConfigEntry(ResConfigEntry&&) noexcept;
     void set_writer(std::unique_ptr<DocsumFieldWriter> writer);
-    const vespalib::string& name() const { return _name; }
+    const std::string& name() const { return _name; }
     DocsumFieldWriter* writer() const { return _writer.get(); }
     bool is_generated() const { return _generated; }
 };

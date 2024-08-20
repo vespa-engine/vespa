@@ -23,14 +23,14 @@ struct Frame {
 
 } // namespace vespalib::eval::nodes::<unnamed>
 
-vespalib::string
+std::string
 Number::dump(DumpContext &) const {
     return make_string("%g", _value);
 }
 
-vespalib::string
+std::string
 If::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "if(";
     str += _cond->dump(ctx);
     str += ",";

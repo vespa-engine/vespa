@@ -19,7 +19,7 @@ private:
     query::Weight   _weight;
     uint32_t        _numTerms;
     uint32_t        _uniqueId;
-    std::optional<vespalib::string>  _query_tensor_name;
+    std::optional<std::string>  _query_tensor_name;
     std::vector<SimpleTermFieldData> _fields;
 
 public:
@@ -38,7 +38,7 @@ public:
 
     [[nodiscard]] uint32_t getUniqueId() const override { return _uniqueId; }
 
-    [[nodiscard]] std::optional<vespalib::string> query_tensor_name() const override { return _query_tensor_name; }
+    [[nodiscard]] std::optional<std::string> query_tensor_name() const override { return _query_tensor_name; }
 
     [[nodiscard]] size_t numFields() const override { return _fields.size(); }
 
@@ -85,7 +85,7 @@ public:
         return *this;
     }
 
-    SimpleTermData &set_query_tensor_name(const vespalib::string &name) {
+    SimpleTermData &set_query_tensor_name(const std::string &name) {
         _query_tensor_name = name;
         return *this;
     }

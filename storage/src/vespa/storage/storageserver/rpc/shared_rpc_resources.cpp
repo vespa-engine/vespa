@@ -27,10 +27,10 @@ namespace {
 class RpcTargetImpl : public RpcTarget {
 private:
     FRT_Target* _target;
-    vespalib::string _spec;
+    std::string _spec;
 
 public:
-    RpcTargetImpl(FRT_Target* target, const vespalib::string& spec)
+    RpcTargetImpl(FRT_Target* target, const std::string& spec)
         : _target(target),
           _spec(spec)
     {}
@@ -39,7 +39,7 @@ public:
     }
     FRT_Target* get() noexcept override { return _target; }
     bool is_valid() const noexcept override { return _target->IsValid(); }
-    const vespalib::string& spec() const noexcept override { return _spec; }
+    const std::string& spec() const noexcept override { return _spec; }
 };
 
 }
@@ -52,7 +52,7 @@ public:
     RpcTargetFactoryImpl(FRT_Supervisor& orb)
         : _orb(orb)
     {}
-    std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec) const override {
+    std::unique_ptr<RpcTarget> make_target(const std::string& connection_spec) const override {
         auto* raw_target = _orb.GetTarget(connection_spec.c_str());
         if (raw_target) {
             return std::make_unique<RpcTargetImpl>(raw_target, connection_spec);
@@ -86,7 +86,7 @@ SharedRpcResources::~SharedRpcResources() {
 
 void SharedRpcResources::start_server_and_register_slobrok(std::string_view my_handle) {
     LOG(debug, "Starting main RPC supervisor on port %d with slobrok handle '%s'",
-        _rpc_server_port, vespalib::string(my_handle).c_str());
+        _rpc_server_port, std::string(my_handle).c_str());
     if (!_orb->Listen(_rpc_server_port)) {
         throw IllegalStateException(fmt("Failed to listen to RPC port %d", _rpc_server_port), VESPA_STRLOC);
     }

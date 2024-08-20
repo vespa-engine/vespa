@@ -60,7 +60,7 @@ JoinBucketsOperation::deserialize(vespalib::nbostream &is,
     is >> _target;
 }
 
-vespalib::string JoinBucketsOperation::toString() const {
+std::string JoinBucketsOperation::toString() const {
     return make_string("JoinBuckets(source1=%s, source2=%s, target=%s, "
                        "serialNum=%" PRIu64 ")",
                        _source1.toString().c_str(),

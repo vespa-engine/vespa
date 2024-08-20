@@ -11,8 +11,8 @@ namespace vespalib::eval {
  **/
 struct FastRenameOptimizer {
     static bool is_stable_rename(const ValueType &from_type, const ValueType &to_type,
-                                 const std::vector<vespalib::string> &from,
-                                 const std::vector<vespalib::string> &to);
+                                 const std::vector<std::string> &from,
+                                 const std::vector<std::string> &to);
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 

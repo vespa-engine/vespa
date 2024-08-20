@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib {
 
@@ -28,7 +29,7 @@ public:
     };
 
     /**
-     * Filter a string (std::string or vespalib::string)
+     * Filter a string (std::string or std::string)
      * and replace any invalid UTF8 sequences with the
      * standard replacement char U+FFFD; note that any
      * UTF-8 encoded surrogates are also considered invalid.
@@ -335,7 +336,7 @@ class Utf8Writer : public Utf8
 public:
     /**
      * construct a writer appending to the given string
-     * @param target a reference to a vespalib::string
+     * @param target a reference to a std::string
      * that the writer will append to.  Must be writable
      * and must be kept alive while the writer is active.
      **/

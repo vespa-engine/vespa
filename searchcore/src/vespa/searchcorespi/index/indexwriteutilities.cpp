@@ -37,11 +37,11 @@ SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
 void
 IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
-                                    const vespalib::string &dir,
+                                    const std::string &dir,
                                     const FileHeaderContext &fileHeaderContext)
 {
-    const vespalib::string fileName = IndexDiskLayout::getSerialNumFileName(dir);
-    const vespalib::string tmpFileName = fileName + ".tmp";
+    const std::string fileName = IndexDiskLayout::getSerialNumFileName(dir);
+    const std::string tmpFileName = fileName + ".tmp";
 
     SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext, serialNum);
     Fast_BufferedFile file(16_Ki);
@@ -77,12 +77,12 @@ IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
 }
 
 bool
-IndexWriteUtilities::copySerialNumFile(const vespalib::string &sourceDir,
-                                       const vespalib::string &destDir)
+IndexWriteUtilities::copySerialNumFile(const std::string &sourceDir,
+                                       const std::string &destDir)
 {
-    vespalib::string source = IndexDiskLayout::getSerialNumFileName(sourceDir);
-    vespalib::string dest = IndexDiskLayout::getSerialNumFileName(destDir);
-    vespalib::string tmpDest = dest + ".tmp";
+    std::string source = IndexDiskLayout::getSerialNumFileName(sourceDir);
+    std::string dest = IndexDiskLayout::getSerialNumFileName(destDir);
+    std::string tmpDest = dest + ".tmp";
     std::error_code ec;
 
     fs::copy_file(fs::path(source), fs::path(tmpDest), ec);
@@ -117,9 +117,9 @@ IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo & saveInf
 }
 
 void
-IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir, const Schema &schema, SerialNum serialNum)
+IndexWriteUtilities::updateDiskIndexSchema(const std::string &indexDir, const Schema &schema, SerialNum serialNum)
 {
-    vespalib::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
+    std::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
     Schema oldSchema;
     if (!oldSchema.loadFromFile(schemaName)) {
         LOG(error, "Could not open schema '%s'", schemaName.c_str());
@@ -139,8 +139,8 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir, con
             return;
         }
     }
-    vespalib::string schemaTmpName = schemaName + ".tmp";
-    vespalib::string schemaOrigName = schemaName + ".orig";
+    std::string schemaTmpName = schemaName + ".tmp";
+    std::string schemaOrigName = schemaName + ".orig";
     fs::remove(fs::path(schemaTmpName));
     if (!newSchema->saveToFile(schemaTmpName)) {
         LOG(error, "Could not save schema to '%s'", schemaTmpName.c_str());

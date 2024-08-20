@@ -39,7 +39,7 @@ public:
     virtual void compactFeatures() = 0;
     virtual void dump(search::index::FieldIndexBuilder& builder) = 0;
 
-    virtual std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
+    virtual std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const std::string& term,
                                                                                 const queryeval::FieldSpec& field,
                                                                                 uint32_t field_id) = 0;
 

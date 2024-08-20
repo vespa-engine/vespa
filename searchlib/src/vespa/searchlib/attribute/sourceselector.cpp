@@ -15,9 +15,9 @@ namespace search {
 
 namespace {
 
-const vespalib::string defaultSourceTag = "Default source";
-const vespalib::string baseIdTag = "Base id";
-const vespalib::string docIdLimitTag = "Doc id limit";
+const std::string defaultSourceTag = "Default source";
+const std::string baseIdTag = "Base id";
+const std::string docIdLimitTag = "Doc id limit";
 
 class AddMyHeaderTags : public FileHeaderContext
 {
@@ -31,7 +31,7 @@ public:
     { }
 
     virtual void
-    addTags(GenericHeader &header, const vespalib::string &name) const override
+    addTags(GenericHeader &header, const std::string &name) const override
     {
         using Tag = GenericHeader::Tag;
         _parent.addTags(header, name);
@@ -43,7 +43,7 @@ public:
 
 }  // namespace
 
-SourceSelector::HeaderInfo::HeaderInfo(const vespalib::string & baseFileName,
+SourceSelector::HeaderInfo::HeaderInfo(const std::string & baseFileName,
                                        Source defaultSource,
                                        uint32_t baseId,
                                        uint32_t docIdLimit) :
@@ -53,7 +53,7 @@ SourceSelector::HeaderInfo::HeaderInfo(const vespalib::string & baseFileName,
     _docIdLimit(docIdLimit)
 { }
 
-SourceSelector::SaveInfo::SaveInfo(const vespalib::string & baseFileName,
+SourceSelector::SaveInfo::SaveInfo(const std::string & baseFileName,
                                    Source defaultSource,
                                    uint32_t baseId,
                                    uint32_t docIdLimit,
@@ -73,14 +73,14 @@ SourceSelector::SaveInfo::save(const TuneFileAttributes &tuneFileAttributes,
     return _memSaver.writeToFile(tuneFileAttributes, fh);
 }
 
-SourceSelector::LoadInfo::LoadInfo(const vespalib::string &baseFileName)
+SourceSelector::LoadInfo::LoadInfo(const std::string &baseFileName)
     : _header(baseFileName, 0, 0, 0)
 { }
 
 void
 SourceSelector::LoadInfo::load()
 {
-    const vespalib::string fileName = _header._baseFileName + ".dat";
+    const std::string fileName = _header._baseFileName + ".dat";
     Fast_BufferedFile file(16_Ki);
     // XXX no checking for success
     file.ReadOpen(fileName.c_str());
@@ -104,14 +104,14 @@ SourceSelector::SourceSelector(Source defaultSource, AttributeVector::SP realSou
 { }
 
 SourceSelector::SaveInfo::UP
-SourceSelector::extractSaveInfo(const vespalib::string & baseFileName)
+SourceSelector::extractSaveInfo(const std::string & baseFileName)
 {
     return std::make_unique<SaveInfo>(baseFileName, getDefaultSource(), getBaseId(),
                                       getDocIdLimit(), *_realSource);
 }
 
 SourceSelector::LoadInfo::UP
-SourceSelector::extractLoadInfo(const vespalib::string & baseFileName)
+SourceSelector::extractLoadInfo(const std::string & baseFileName)
 {
     return std::make_unique<LoadInfo>(baseFileName);
 }

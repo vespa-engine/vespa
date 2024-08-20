@@ -13,7 +13,7 @@
 using namespace search::queryeval;
 using namespace search::query;
 using vespalib::make_string;
-using vespalib::string;
+using std::string;
 using vespalib::make_string_short::fmt;
 
 namespace proton::matching {
@@ -57,8 +57,8 @@ AttributeLimiter::~AttributeLimiter() = default;
 
 namespace {
 
-vespalib::string STRICT_STR("strict");
-vespalib::string LOOSE_STR("loose");
+std::string STRICT_STR("strict");
+std::string LOOSE_STR("loose");
 
 }
 
@@ -70,7 +70,7 @@ AttributeLimiter::toDiversityCutoffStrategy(std::string_view strategy)
         : DiversityCutoffStrategy::LOOSE;
 }
 
-const vespalib::string &
+const std::string &
 toString(AttributeLimiter::DiversityCutoffStrategy strategy)
 {
     return (strategy == AttributeLimiter::DiversityCutoffStrategy::STRICT) ? STRICT_STR : LOOSE_STR;

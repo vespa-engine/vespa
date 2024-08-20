@@ -26,14 +26,14 @@ EvalFixture::ParamRepo make_params() {
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
-void verify_optimized(const vespalib::string &expr) {
+void verify_optimized(const std::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<ReplaceTypeFunction>();

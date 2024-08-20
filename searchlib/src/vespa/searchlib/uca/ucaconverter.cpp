@@ -2,8 +2,9 @@
 
 #include "ucaconverter.h"
 #include <unicode/ustring.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <mutex>
 #include <vespa/log/log.h>
 LOG_SETUP(".search.common.sortspec");

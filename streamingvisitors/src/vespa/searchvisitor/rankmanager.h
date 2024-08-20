@@ -45,9 +45,9 @@ public:
      **/
     class Snapshot {
     private:
-        using NamedPropertySet = std::pair<vespalib::string, search::fef::Properties>;
-        using ViewMap = vespalib::hash_map<vespalib::string, View>;
-        using Map = vespalib::hash_map<vespalib::string, int>;
+        using NamedPropertySet = std::pair<std::string, search::fef::Properties>;
+        using ViewMap = vespalib::hash_map<std::string, View>;
+        using Map = vespalib::hash_map<std::string, int>;
         IndexEnvPrototype                         _protoEnv;
         std::vector<NamedPropertySet>             _properties; // property set per rank profile
         std::vector<IndexEnvironment>             _indexEnv;   // index environment per rank profile
@@ -61,7 +61,7 @@ public:
         void build_field_mappings(const vsm::VsmfieldsHandle& fields);
         bool initRankSetup(const search::fef::BlueprintFactory & factory);
         bool setup(const RankManager & manager);
-        int getIndex(const vespalib::string & key) const {
+        int getIndex(const std::string & key) const {
             auto found = _rpmap.find(key);
             return (found != _rpmap.end()) ? found->second : 0;
         }
@@ -71,16 +71,16 @@ public:
         ~Snapshot();
         const std::vector<NamedPropertySet> & getProperties() const { return _properties; }
         bool setup(const RankManager & manager, const vespa::config::search::RankProfilesConfig & cfg, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo);
-        const search::fef::RankSetup & getRankSetup(const vespalib::string &rankProfile) const {
+        const search::fef::RankSetup & getRankSetup(const std::string &rankProfile) const {
             return *(_rankSetup[getIndex(rankProfile)]);
         }
-        const IndexEnvironment & getIndexEnvironment(const vespalib::string &rankProfile) const {
+        const IndexEnvironment & getIndexEnvironment(const std::string &rankProfile) const {
             return _indexEnv[getIndex(rankProfile)];
         }
         const IndexEnvironment& get_proto_index_environment() const {
             return _protoEnv.current();
         }
-        const View *getView(const vespalib::string & index, bool is_same_element) const {
+        const View *getView(const std::string & index, bool is_same_element) const {
             auto&  views = is_same_element ? _same_element_views : _views;
             auto itr = views.find(index);
             if (itr != views.end()) {

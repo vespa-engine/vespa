@@ -17,7 +17,7 @@ struct SelfState : slime::ObjectTraverser {
 };
 
 struct ChildrenNames : slime::ObjectTraverser {
-    std::vector<vespalib::string> result;
+    std::vector<std::string> result;
     void field(const Memory &key, const slime::Inspector &value) override {
         if (value.type().getId() == slime::OBJECT::ID) {
             result.push_back(key.make_string());
@@ -40,7 +40,7 @@ SlimeExplorer::get_state(const slime::Inserter &inserter, bool full) const
     }
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 SlimeExplorer::get_children_names() const
 {
     ChildrenNames names;

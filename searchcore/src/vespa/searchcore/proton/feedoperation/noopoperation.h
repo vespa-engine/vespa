@@ -13,7 +13,7 @@ struct NoopOperation : FeedOperation {
     virtual void serialize(vespalib::nbostream &) const override {}
     virtual void deserialize(vespalib::nbostream &,
                              const document::DocumentTypeRepo &) override {}
-    virtual vespalib::string toString() const override;
+    virtual std::string toString() const override;
 };
 
 } // namespace proton

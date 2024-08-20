@@ -83,7 +83,7 @@ LoadAttribute::printContent(const AttributePtr & ptr, std::ostream & os)
         }
         delete [] buf;
     } else {
-        vespalib::string *buf = new vespalib::string[ptr->getMaxValueCount()];
+        std::string *buf = new std::string[ptr->getMaxValueCount()];
         for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
             uint32_t valueCount = ptr->get(doc, buf, sz);
             assert(valueCount <= sz);
@@ -146,10 +146,10 @@ LoadAttribute::main(int argc, char **argv)
         return -1;
     }
 
-    vespalib::string fileName(argv[optind]);
+    std::string fileName(argv[optind]);
     vespalib::FileHeader fh;
     {
-        vespalib::string datFileName(fileName + ".dat");
+        std::string datFileName(fileName + ".dat");
         Fast_BufferedFile file;
         file.ReadOpenExisting(datFileName.c_str());
         (void) fh.readFile(file);
@@ -172,7 +172,7 @@ LoadAttribute::main(int argc, char **argv)
     }
 
     if (doPrintContent) {
-        vespalib::string outFile(fileName + ".out");
+        std::string outFile(fileName + ".out");
         std::ofstream of(outFile.c_str());
         if (of.fail()) {
             std::cout << "failed opening: " << fileName << ".out" << std::endl;
@@ -183,7 +183,7 @@ LoadAttribute::main(int argc, char **argv)
     }
 
     if (doSave) {
-        vespalib::string saveFile = fileName + ".save";
+        std::string saveFile = fileName + ".save";
         std::cout << "saving attribute: " << saveFile << std::endl;
         timer = vespalib::Timer();
         ptr->save(saveFile);

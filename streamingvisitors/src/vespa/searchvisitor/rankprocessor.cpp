@@ -38,8 +38,8 @@ namespace streaming {
 
 namespace {
 
-vespalib::string
-getIndexName(const vespalib::string & indexName, const vespalib::string & expandedIndexName)
+std::string
+getIndexName(const std::string & indexName, const std::string & expandedIndexName)
 {
     if (indexName == expandedIndexName) {
         return indexName;
@@ -61,7 +61,7 @@ RankProcessor::resolve_fields_from_children(QueryTermData& qtd, const MultiTerm&
 {
     vespalib::hash_set<uint32_t> field_ids;
     for (auto& subterm : mt.get_terms()) {
-        vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(subterm->index());
+        std::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(subterm->index());
         const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName, false);
         if (view != nullptr) {
             for (auto field_id : *view) {
@@ -86,7 +86,7 @@ RankProcessor::resolve_fields_from_children(QueryTermData& qtd, const MultiTerm&
 void
 RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::streaming::QueryTerm& term)
 {
-    vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term.index());
+    std::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term.index());
     const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName, term.is_same_element_query_node());
     if (view != nullptr) {
         for (auto field_id : *view) {
@@ -110,8 +110,8 @@ RankProcessor::initQueryEnvironment()
         if (!term->isRanked()) continue;
 
         if (term->isGeoLoc()) {
-            const vespalib::string & fieldName = term->index();
-            const vespalib::string & locStr = term->getTermString();
+            const std::string & fieldName = term->index();
+            const std::string & locStr = term->getTermString();
             _queryEnv.addGeoLocation(fieldName, locStr);
         }
         QueryTermData & qtd = dynamic_cast<QueryTermData &>(term->getQueryItem());
@@ -174,9 +174,9 @@ RankProcessor::init(bool forRanking, size_t wantedHitCount, bool use_sort_blob)
 }
 
 RankProcessor::RankProcessor(std::shared_ptr<const RankManager::Snapshot> snapshot,
-                             const vespalib::string &rankProfile,
+                             const std::string &rankProfile,
                              Query & query,
-                             const vespalib::string & location,
+                             const std::string & location,
                              const Properties & queryProperties,
                              const Properties & featureOverrides,
                              const search::IAttributeManager * attrMgr) :

@@ -12,7 +12,7 @@ namespace search {
 
 template <typename B>
 NumericDirectAttribute<B>::
-NumericDirectAttribute(const vespalib::string & baseFileName, const Config & c)
+NumericDirectAttribute(const std::string & baseFileName, const Config & c)
     : B(baseFileName, c),
       _data(),
       _idx()
@@ -73,7 +73,7 @@ bool NumericDirectAttribute<B>::addDoc(DocId & )
 
 template <typename F, typename B>
 NumericDirectAttrVector<F, B>::
-NumericDirectAttrVector(const vespalib::string & baseFileName, const AttributeVector::Config & c)
+NumericDirectAttrVector(const std::string & baseFileName, const AttributeVector::Config & c)
     : search::NumericDirectAttribute<B>(baseFileName, c)
 {
     if (F::IsMultiValue()) {
@@ -83,7 +83,7 @@ NumericDirectAttrVector(const vespalib::string & baseFileName, const AttributeVe
 
 template <typename F, typename B>
 NumericDirectAttrVector<F, B>::
-NumericDirectAttrVector(const vespalib::string & baseFileName)
+NumericDirectAttrVector(const std::string & baseFileName)
     : search::NumericDirectAttribute<B>(baseFileName, AttributeVector::Config(AttributeVector::BasicType::fromType(BaseType()), F::IsMultiValue() ? search::attribute::CollectionType::ARRAY : search::attribute::CollectionType::SINGLE))
 {
     if (F::IsMultiValue()) {
@@ -126,7 +126,7 @@ NumericDirectAttrVector<F, B>::onSerializeForDescendingSort(DocId doc, void* ser
 
 template <typename F>
 StringDirectAttrVector<F>::
-StringDirectAttrVector(const vespalib::string & baseFileName, const Config & c) :
+StringDirectAttrVector(const std::string & baseFileName, const Config & c) :
     search::StringDirectAttribute(baseFileName, c)
 {
     if (F::IsMultiValue()) {
@@ -137,7 +137,7 @@ StringDirectAttrVector(const vespalib::string & baseFileName, const Config & c) 
 
 template <typename F>
 StringDirectAttrVector<F>::
-StringDirectAttrVector(const vespalib::string & baseFileName) :
+StringDirectAttrVector(const std::string & baseFileName) :
     search::StringDirectAttribute(baseFileName, Config(BasicType::STRING, F::IsMultiValue() ? search::attribute::CollectionType::ARRAY : search::attribute::CollectionType::SINGLE))
 {
     if (F::IsMultiValue()) {

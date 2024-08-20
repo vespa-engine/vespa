@@ -40,9 +40,9 @@ ProtonThreadPoolsExplorer::get_state(const vespalib::slime::Inserter& inserter, 
     }
 }
 
-const vespalib::string FIELD_WRITER = "field_writer";
+const std::string FIELD_WRITER = "field_writer";
 
-std::vector<vespalib::string>
+std::vector<std::string>
 ProtonThreadPoolsExplorer::get_children_names() const
 {
     return {FIELD_WRITER};

@@ -51,7 +51,7 @@ class BmCluster {
     std::unique_ptr<mbus::Slobrok>                    _slobrok;
     std::unique_ptr<BmMessageBus>                     _message_bus;
     std::unique_ptr<storage::rpc::SharedRpcResources> _rpc_client;
-    vespalib::string                                  _base_dir;
+    std::string                                  _base_dir;
     int                                               _base_port;
     std::shared_ptr<DocumenttypesConfig>              _document_types;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
@@ -63,11 +63,11 @@ class BmCluster {
     std::unique_ptr<IBmFeedHandler>                   _feed_handler;
 
 public:
-    BmCluster(const vespalib::string& base_dir, int base_port, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const document::DocumentTypeRepo> repo);
+    BmCluster(const std::string& base_dir, int base_port, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const document::DocumentTypeRepo> repo);
     ~BmCluster();
     void start_slobrok();
     void stop_slobrok();
-    void wait_slobrok(const vespalib::string &name);
+    void wait_slobrok(const std::string &name);
     void start_message_bus();
     void stop_message_bus();
     void start_rpc_client();

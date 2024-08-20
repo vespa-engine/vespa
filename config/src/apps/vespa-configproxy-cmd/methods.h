@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 struct Method {
     const char *shortName;
@@ -11,7 +11,7 @@ struct Method {
 
 namespace methods {
 
-const Method find(const vespalib::string &name);
+const Method find(const std::string &name);
 void dump();
 
 };

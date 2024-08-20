@@ -14,9 +14,9 @@ namespace vespalib {
 class UnwindMessage {
 private:
     int _num_active;
-    vespalib::string _message;
+    std::string _message;
 public:
-    UnwindMessage(const vespalib::string &msg);
+    UnwindMessage(const std::string &msg);
     UnwindMessage(UnwindMessage &&rhs) noexcept ;
     UnwindMessage(const UnwindMessage &) = delete;
     UnwindMessage &operator=(const UnwindMessage &) = delete;

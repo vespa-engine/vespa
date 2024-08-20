@@ -9,7 +9,7 @@ MatchingElements::MatchingElements() = default;
 MatchingElements::~MatchingElements() = default;
 
 void
-MatchingElements::add_matching_elements(uint32_t docid, const vespalib::string &field_name, const std::vector<uint32_t> &elements)
+MatchingElements::add_matching_elements(uint32_t docid, const std::string &field_name, const std::vector<uint32_t> &elements)
 {
     auto &list = _map[key_t(docid, field_name)];
     std::vector<uint32_t> new_list;
@@ -18,7 +18,7 @@ MatchingElements::add_matching_elements(uint32_t docid, const vespalib::string &
 }
 
 const std::vector<uint32_t> &
-MatchingElements::get_matching_elements(uint32_t docid, const vespalib::string &field_name) const
+MatchingElements::get_matching_elements(uint32_t docid, const std::string &field_name) const
 {
     static const std::vector<uint32_t> empty;
     auto res = _map.find(key_t(docid, field_name));

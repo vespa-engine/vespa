@@ -26,7 +26,7 @@ namespace storage::distributor {
 
 using IndexList = lib::Distribution::IndexList;
 
-vespalib::string
+std::string
 ActiveCopy::getReason() const {
     vespalib::asciistream ost;
     if (_ready && (_doc_count > 0) && valid_ideal()) {

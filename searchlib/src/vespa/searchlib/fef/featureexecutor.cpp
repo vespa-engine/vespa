@@ -8,7 +8,7 @@ namespace search::fef {
 FeatureExecutor::FeatureExecutor() = default;
 
 
-vespalib::string
+std::string
 FeatureExecutor::getClassName() const
 {
     return vespalib::getClassName(*this);

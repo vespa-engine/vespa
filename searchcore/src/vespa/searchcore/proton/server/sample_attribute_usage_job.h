@@ -26,7 +26,7 @@ public:
     SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
                             IAttributeManagerSP notReadyAttributeManager,
                             AttributeUsageFilter &attributeUsageFilter,
-                            const vespalib::string &docTypeName,
+                            const std::string &docTypeName,
                             vespalib::duration interval);
     ~SampleAttributeUsageJob() override;
 

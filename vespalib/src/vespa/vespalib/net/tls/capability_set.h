@@ -2,12 +2,12 @@
 #pragma once
 
 #include "capability.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <bitset>
 #include <initializer_list>
 #include <iosfwd>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace vespalib { class asciistream; }
@@ -42,7 +42,7 @@ public:
     constexpr CapabilitySet() noexcept = default;
     constexpr ~CapabilitySet() = default;
 
-    [[nodiscard]] string to_string() const;
+    [[nodiscard]] std::string to_string() const;
 
     [[nodiscard]] bool operator==(const CapabilitySet& rhs) const noexcept {
         return (_capability_mask == rhs._capability_mask);
@@ -93,9 +93,9 @@ public:
      *      capability to our own working set. Return true.
      *   3. Otherwise, return false.
      */
-    [[nodiscard]] bool resolve_and_add(const string& set_or_cap_name) noexcept;
+    [[nodiscard]] bool resolve_and_add(const std::string& set_or_cap_name) noexcept;
 
-    [[nodiscard]] static std::optional<CapabilitySet> find_capability_set(const string& cap_set_name) noexcept;
+    [[nodiscard]] static std::optional<CapabilitySet> find_capability_set(const std::string& cap_set_name) noexcept;
 
     [[nodiscard]] static CapabilitySet of(std::initializer_list<Capability> caps) noexcept {
         CapabilitySet set;

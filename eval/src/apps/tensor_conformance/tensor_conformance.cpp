@@ -79,7 +79,7 @@ nbostream extract_data(const Inspector &value) {
 
 //-----------------------------------------------------------------------------
 
-void insert_value(Cursor &cursor, const vespalib::string &name, const TensorSpec &spec) {
+void insert_value(Cursor &cursor, const std::string &name, const TensorSpec &spec) {
     nbostream data;
     Value::UP value = value_from_spec(spec, simple_factory);
     encode_value(*value, data);
@@ -93,9 +93,9 @@ TensorSpec extract_value(const Inspector &inspector) {
 
 //-----------------------------------------------------------------------------
 
-std::vector<vespalib::string> extract_fields(const Inspector &object) {
+std::vector<std::string> extract_fields(const Inspector &object) {
     struct FieldExtractor : slime::ObjectTraverser {
-        std::vector<vespalib::string> result;
+        std::vector<std::string> result;
         void field(const Memory &symbol, const Inspector &) override {
             result.push_back(symbol.make_string());
         }
@@ -185,9 +185,9 @@ private:
     TestWriter _writer;
 public:
     MyTestBuilder(bool full_in, Output &out) : TestBuilder(full_in), _writer(out) {}
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs_in,
-             const std::set<vespalib::string> &ignore_in) override
+    void add(const std::string &expression,
+             const std::map<std::string,TensorSpec> &inputs_in,
+             const std::set<std::string> &ignore_in) override
     {
         Cursor &test = _writer.create();
         test.setString("expression", expression);
@@ -242,7 +242,7 @@ void evaluate(Input &in, Output &out) {
 //-----------------------------------------------------------------------------
 
 void verify(Input &in, Output &out) {
-    std::map<vespalib::string,size_t> result_map;
+    std::map<std::string,size_t> result_map;
     auto handle_test = [&result_map](Slime &slime) {
         TensorSpec reference_result = ref_eval(slime.get());
         for (const auto &result: extract_fields(slime["result"])) {
@@ -315,7 +315,7 @@ int main(int argc, char **argv) {
     if (argc < 2) {
         return usage(argv[0]);
     }
-    vespalib::string mode = argv[1];
+    std::string mode = argv[1];
     if (mode == "generate") {
         generate(std_out, true);
     } else if (mode == "generate-some") {

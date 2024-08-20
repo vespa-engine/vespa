@@ -4,15 +4,15 @@
 
 using namespace vespalib;
 
-void checkMemory(const vespalib::string &expect, const Memory &mem) {
-    EXPECT_EQUAL(expect, vespalib::string(mem.data, mem.size));
+void checkMemory(const std::string &expect, const Memory &mem) {
+    EXPECT_EQUAL(expect, std::string(mem.data, mem.size));
 }
 
-void checkBuffer(const vespalib::string &expect, SmartBuffer &buf) {
+void checkBuffer(const std::string &expect, SmartBuffer &buf) {
     TEST_DO(checkMemory(expect, buf.obtain()));
 }
 
-void write_buf(const vespalib::string &str, SmartBuffer &buf) {
+void write_buf(const std::string &str, SmartBuffer &buf) {
     WritableMemory mem = buf.reserve(str.size());
     for (size_t i = 0; i < str.size(); ++i) {
         mem.data[i] = str.data()[i];

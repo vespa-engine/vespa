@@ -97,7 +97,7 @@ ProcessMemoryStats::createStatsFromSmaps()
     bool anonymous = true;
     uint64_t lineVal = 0;
     while (!smaps.eof()) {
-        string backedLine = smaps.getline();
+        std::string backedLine = smaps.getline();
         std::string_view line(backedLine);
         if (isRange(line)) {
             ret._mappings_count += 1;
@@ -171,7 +171,7 @@ ProcessMemoryStats::similarTo(const ProcessMemoryStats &rhs, double epsilon) con
            (_mappings_count == rhs._mappings_count);
 }
 
-vespalib::string
+std::string
 ProcessMemoryStats::toString() const
 {
     vespalib::asciistream stream;

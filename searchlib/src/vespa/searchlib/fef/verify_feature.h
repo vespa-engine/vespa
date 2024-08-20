@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace search::fef {
@@ -11,7 +11,7 @@ class BlueprintFactory;
 class IIndexEnvironment;
 
 enum class Level {INFO, WARNING, ERROR};
-using Message = std::pair<Level, vespalib::string>;
+using Message = std::pair<Level, std::string>;
 
 /**
  * Verify whether a specific feature can be computed. If the feature

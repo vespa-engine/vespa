@@ -9,7 +9,7 @@ TableManager::TableManager() = default;
 TableManager::~TableManager() = default;
 
 const Table *
-TableManager::getTable(const vespalib::string & name) const
+TableManager::getTable(const std::string & name) const
 {
     std::lock_guard guard(_lock);
     auto itr = _cache.find(name);

@@ -31,15 +31,15 @@ struct ReferenceOperations {
 
     static TensorSpec cell_cast(const TensorSpec &a, CellType to);
     static TensorSpec concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim);
-    static TensorSpec create(const vespalib::string &type, const CreateSpec &spec, const std::vector<TensorSpec> &children);
+    static TensorSpec create(const std::string &type, const CreateSpec &spec, const std::vector<TensorSpec> &children);
     static TensorSpec join(const TensorSpec &a, const TensorSpec &b, join_fun_t function);
     static TensorSpec map(const TensorSpec &a, map_fun_t func);
     static TensorSpec map_subspaces(const TensorSpec &a, map_subspace_fun_t fun);
     static TensorSpec merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun);
     static TensorSpec peek(const PeekSpec &spec, const std::vector<TensorSpec> &children);
-    static TensorSpec reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims);
-    static TensorSpec rename(const TensorSpec &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to);
-    static TensorSpec lambda(const vespalib::string &type, lambda_fun_t fun);
+    static TensorSpec reduce(const TensorSpec &a, Aggr aggr, const std::vector<std::string> &dims);
+    static TensorSpec rename(const TensorSpec &a, const std::vector<std::string> &from, const std::vector<std::string> &to);
+    static TensorSpec lambda(const std::string &type, lambda_fun_t fun);
 };
 
 } // namespace

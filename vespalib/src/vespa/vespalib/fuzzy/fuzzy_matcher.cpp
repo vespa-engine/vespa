@@ -78,8 +78,8 @@ bool vespalib::FuzzyMatcher::isMatch(std::string_view target) const {
             _max_edit_distance, _is_prefix).has_value();
 }
 
-vespalib::string vespalib::FuzzyMatcher::getPrefix() const {
-    vespalib::string prefix;
+std::string vespalib::FuzzyMatcher::getPrefix() const {
+    std::string prefix;
     Utf8Writer writer(prefix);
     for (const uint32_t& code: _folded_term_codepoints_prefix) {
         writer.putChar(code);

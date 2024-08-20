@@ -16,7 +16,7 @@ using search::SerialNum;
 using searchcorespi::IFlushTarget;
 
 using Config = PrepareRestartFlushStrategy::Config;
-using FlushContextsMap = std::map<vespalib::string, FlushContext::List>;
+using FlushContextsMap = std::map<std::string, FlushContext::List>;
 using FlushTargetCandidatesList = std::vector<FlushTargetCandidates::UP>;
 
 PrepareRestartFlushStrategy::Config::Config(double tlsReplayByteCost_,
@@ -52,7 +52,7 @@ groupByFlushHandler(const FlushContext::List &flushContexts)
 {
     FlushContextsMap result;
     for (const auto &flushContext : flushContexts) {
-        const vespalib::string &handlerName = flushContext->getHandler()->getName();
+        const std::string &handlerName = flushContext->getHandler()->getName();
         result[handlerName].push_back(flushContext);
     }
     return result;
@@ -82,7 +82,7 @@ sortByOldestFlushedSerialNumber(std::vector<FlushTargetCandidate>& candidates)
               });
 }
 
-vespalib::string
+std::string
 toString(const FlushContext::List &flushContexts)
 {
     std::ostringstream oss;

@@ -11,8 +11,8 @@ using vespalib::Serializer;
 using vespalib::Deserializer;
 
 namespace {
-    vespalib::string _G_docIdField("docId");
-    vespalib::string _G_summaryField("summary");
+    std::string _G_docIdField("docId");
+    std::string _G_summaryField("summary");
 }
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, VdsHit, Hit);

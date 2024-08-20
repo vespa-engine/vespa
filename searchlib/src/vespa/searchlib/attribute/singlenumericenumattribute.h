@@ -48,7 +48,7 @@ protected:
     void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) override;
 
 public:
-    SingleValueNumericEnumAttribute(const vespalib::string & baseFileName,
+    SingleValueNumericEnumAttribute(const std::string & baseFileName,
                                     const AttributeVector::Config & c =
                                     AttributeVector::Config(AttributeVector::BasicType::fromType(T()),
                                                         attribute::CollectionType::SINGLE));

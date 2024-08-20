@@ -50,7 +50,7 @@ CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageRepl
 
 namespace {
 
-vespalib::string getNodeId(StorageComponent& sc) {
+std::string getNodeId(StorageComponent& sc) {
     vespalib::asciistream ost;
     ost << sc.cluster_context().cluster_name() << "/" << sc.getNodeType() << "/" << sc.getIndex();
     return ost.str();
@@ -76,7 +76,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         _messageBusSession->reply(std::move(reply));
         return;
     }
-    const vespalib::string & protocolName = msg->getProtocol();
+    const std::string & protocolName = msg->getProtocol();
 
     if (protocolName == documentapi::DocumentProtocol::NAME) {
         std::unique_ptr<documentapi::DocumentMessage> docMsgPtr(static_cast<documentapi::DocumentMessage*>(msg.release()));
@@ -127,7 +127,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
         if (message) {
             std::unique_ptr<mbus::Reply> convertedReply;
 
-            const vespalib::string& protocolName = message->getProtocol();
+            const std::string& protocolName = message->getProtocol();
             if (protocolName == documentapi::DocumentProtocol::NAME) {
                 convertedReply = static_cast<documentapi::DocumentMessage &>(*message).createReply();
             } else {
@@ -146,7 +146,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
     }
 
     if (reply->getContext().value.UINT64 != FORWARDED_MESSAGE) {
-        const vespalib::string& protocolName = reply->getProtocol();
+        const std::string& protocolName = reply->getProtocol();
 
         if (protocolName == documentapi::DocumentProtocol::NAME) {
             std::shared_ptr<api::StorageCommand> originalCommand;
@@ -178,7 +178,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
 
 void CommunicationManager::fail_with_unresolvable_bucket_space(
         std::unique_ptr<documentapi::DocumentMessage> msg,
-        const vespalib::string& error_message)
+        const std::string& error_message)
 {
     LOG(debug, "Could not map DocumentAPI message to internal bucket: %s", error_message.c_str());
     MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Failing message as its document type has no known bucket space mapping");
@@ -196,10 +196,10 @@ struct PlaceHolderBucketResolver : public BucketResolver {
     [[nodiscard]] document::Bucket bucketFromId(const document::DocumentId &) const override {
         return {FixedBucketSpaces::default_space(), document::BucketId(0)};
     }
-    [[nodiscard]] document::BucketSpace bucketSpaceFromName(const vespalib::string &) const override {
+    [[nodiscard]] document::BucketSpace bucketSpaceFromName(const std::string &) const override {
         return FixedBucketSpaces::default_space();
     }
-    [[nodiscard]] vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
+    [[nodiscard]] std::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
         assert(bucketSpace == FixedBucketSpaces::default_space());
         return FixedBucketSpaces::to_string(bucketSpace);
     }
@@ -626,7 +626,7 @@ CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
         // due to a higher version having been previously received.
         auto& state_reply = dynamic_cast<api::SetSystemStateReply&>(*reply);
         if (state_reply.getResult().getResult() == api::ReturnCode::REJECTED) {
-            vespalib::string err_msg(state_reply.getResult().getMessage()); // ReturnCode message is string_view
+            std::string err_msg(state_reply.getResult().getMessage()); // ReturnCode message is string_view
             request.returnError(FRTE_RPC_METHOD_FAILED, err_msg.c_str());
             return;
         }
@@ -664,7 +664,7 @@ CommunicationManager::sendMessageBusReply(StorageTransportContext& context,
 
     // Create an MBus reply and transfer state to it.
     if (reply->getResult().getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
-        replyUP = std::make_unique<documentapi::WrongDistributionReply>(vespalib::string(reply->getResult().getMessage()));
+        replyUP = std::make_unique<documentapi::WrongDistributionReply>(std::string(reply->getResult().getMessage()));
         replyUP->swapState(*context._docAPIMsg);
         replyUP->setTrace(reply->steal_trace());
         replyUP->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_WRONG_DISTRIBUTION,

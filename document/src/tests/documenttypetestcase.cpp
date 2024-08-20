@@ -117,13 +117,13 @@ TEST(DocumentTypeTest, testMultipleInheritance)
     doc.setValue(doc.getField("tmp"), stringVal);
 
     EXPECT_TRUE(doc.getValue(doc.getField("nalle"))->getAsInt()==3);
-    EXPECT_EQ(vespalib::string("tmp"),
+    EXPECT_EQ(std::string("tmp"),
               doc.getValue(doc.getField("tmp"))->getAsString());
 }
 
 namespace {
 
-bool containsField(const DocumentType::FieldSet &fieldSet, const vespalib::string &field) {
+bool containsField(const DocumentType::FieldSet &fieldSet, const std::string &field) {
     return fieldSet.getFields().find(field) != fieldSet.getFields().end();
 }
 

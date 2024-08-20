@@ -63,11 +63,11 @@ JsonHandlerRepo::add_root_resource(std::string_view path)
     return std::make_unique<Unbinder>(_state, _state->add_root_resource(path));
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 JsonHandlerRepo::get_root_resources() const
 {
     std::lock_guard<std::mutex> guard(_state->lock);
-    std::vector<vespalib::string> result;
+    std::vector<std::string> result;
     for (const Resource &resource: _state->root_resources) {
         result.push_back(resource.path);
     }
@@ -75,9 +75,9 @@ JsonHandlerRepo::get_root_resources() const
 }
 
 JsonGetHandler::Response
-JsonHandlerRepo::get(const vespalib::string &host,
-                     const vespalib::string &path,
-                     const std::map<vespalib::string,vespalib::string> &params,
+JsonHandlerRepo::get(const std::string &host,
+                     const std::string &path,
+                     const std::map<std::string,std::string> &params,
                      const net::ConnectionAuthContext &auth_ctx) const
 {
     std::lock_guard<std::mutex> guard(_state->lock);

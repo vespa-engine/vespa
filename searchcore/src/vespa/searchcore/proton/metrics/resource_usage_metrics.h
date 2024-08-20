@@ -28,7 +28,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
         metrics::DoubleValueMetric total_util;
         metrics::DoubleValueMetric transient;
 
-        DetailedResourceMetrics(const vespalib::string& resource_type, metrics::MetricSet* parent);
+        DetailedResourceMetrics(const std::string& resource_type, metrics::MetricSet* parent);
         ~DetailedResourceMetrics();
     };
 

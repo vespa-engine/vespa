@@ -10,7 +10,7 @@ namespace search::fef {
 
 void
 assertTermData(const ITermData *td, uint32_t uniqueId, uint32_t numTerms,
-               uint32_t fieldId, uint32_t tfHandle, const vespalib::string& label)
+               uint32_t fieldId, uint32_t tfHandle, const std::string& label)
 {
     SCOPED_TRACE(label);
     // fprintf(stderr, "checking uid=%d numterms=%d field=%d handle=%d\n", uniqueId, numTerms, fieldId, tfHandle);

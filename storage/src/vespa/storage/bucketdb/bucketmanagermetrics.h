@@ -41,7 +41,7 @@ struct BucketSpaceMetrics : metrics::MetricSet {
     metrics::LongValueMetric ready_buckets;
     ContentBucketDbMetrics bucket_db_metrics;
 
-    BucketSpaceMetrics(const vespalib::string& space_name, metrics::MetricSet* owner);
+    BucketSpaceMetrics(const std::string& space_name, metrics::MetricSet* owner);
     ~BucketSpaceMetrics() override;
 };
 

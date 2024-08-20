@@ -46,7 +46,7 @@ public:
 class ServerCmd {
 private:
     Process _child;
-    vespalib::string _basename;
+    std::string _basename;
     bool _closed;
     bool _exited;
     int _exit_code;
@@ -54,16 +54,16 @@ private:
     void maybe_close();
     void maybe_exit();
 
-    void dump_string(const char *prefix, const vespalib::string &str);
+    void dump_string(const char *prefix, const std::string &str);
     void dump_message(const char *prefix, const Slime &slime);
 
 public:
     struct capture_stderr_tag{};
-    ServerCmd(vespalib::string cmd);
-    ServerCmd(vespalib::string cmd, capture_stderr_tag);
+    ServerCmd(std::string cmd);
+    ServerCmd(std::string cmd, capture_stderr_tag);
     ~ServerCmd();
     Slime invoke(const Slime &req);
-    vespalib::string write_then_read_all(const vespalib::string &input);
+    std::string write_then_read_all(const std::string &input);
     int shutdown();
 };
 
@@ -75,7 +75,7 @@ private:
     Input &_input;
 public:
     LineReader(Input &input) : _input(input) {}
-    bool read_line(vespalib::string &line);
+    bool read_line(std::string &line);
 };
 
 /**

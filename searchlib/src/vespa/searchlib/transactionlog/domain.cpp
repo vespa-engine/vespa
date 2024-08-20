@@ -22,7 +22,7 @@
 
 LOG_SETUP(".transactionlog.domain");
 
-using vespalib::string;
+using std::string;
 using vespalib::make_string_short::fmt;
 using vespalib::makeLambdaTask;
 using vespalib::CpuUsage;
@@ -487,10 +487,10 @@ Domain::scanDir()
 {
     SerialNumList res;
     std::filesystem::directory_iterator dir_scan{std::filesystem::path(dir())};
-    vespalib::string prefix = _name + "-";
+    std::string prefix = _name + "-";
     for (auto& entry : dir_scan) {
         if (entry.is_regular_file()) {
-            vespalib::string ename = entry.path().filename().string();
+            std::string ename = entry.path().filename().string();
             if (ename.substr(0, prefix.size()) == prefix) {
                 const char *p = &ename[prefix.size()];
                 uint64_t num = strtoull(p, nullptr, 10);

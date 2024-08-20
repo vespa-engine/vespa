@@ -23,7 +23,7 @@ namespace search::fef {
 
 constexpr vespalib::duration file_resolve_timeout = 60min;
 
-RankingAssetsBuilder::RankingAssetsBuilder(FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
+RankingAssetsBuilder::RankingAssetsBuilder(FNET_Transport* transport, const std::string& file_distributor_connection_spec)
     : _file_acquirer(),
       _time_box(vespalib::to_s(file_resolve_timeout), 5)
 {
@@ -34,10 +34,10 @@ RankingAssetsBuilder::RankingAssetsBuilder(FNET_Transport* transport, const vesp
 
 RankingAssetsBuilder::~RankingAssetsBuilder() = default;
 
-vespalib::string
-RankingAssetsBuilder::resolve_file(const vespalib::string& desc, const vespalib::string& fileref)
+std::string
+RankingAssetsBuilder::resolve_file(const std::string& desc, const std::string& fileref)
 {
-    vespalib::string file_path;
+    std::string file_path;
     LOG(debug, "Waiting for file acquirer (%s, ref='%s')", desc.c_str(), fileref.c_str());
     while (_time_box.hasTimeLeft() && (file_path == "")) {
         file_path = _file_acquirer->wait_for(fileref, _time_box.timeLeft());
@@ -60,7 +60,7 @@ RankingAssetsBuilder::build(const OnnxModelsConfig& config)
     if (_file_acquirer) {
         for (const auto& rc : config.model) {
             auto desc = fmt("name='%s'", rc.name.c_str());
-            vespalib::string file_path = resolve_file(desc, rc.fileref);
+            std::string file_path = resolve_file(desc, rc.fileref);
             models.emplace_back(rc.name, file_path);
             OnnxModels::configure(rc, models.back());
         }
@@ -75,7 +75,7 @@ RankingAssetsBuilder::build(const RankingConstantsConfig& config)
     if (_file_acquirer) {
         for (const auto& rc : config.constant) {
             auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
-            vespalib::string file_path = resolve_file(desc, rc.fileref);
+            std::string file_path = resolve_file(desc, rc.fileref);
             constants.emplace_back(rc.name, rc.type, file_path);
         }
     }
@@ -89,7 +89,7 @@ RankingAssetsBuilder::build(const RankingExpressionsConfig& config)
     if (_file_acquirer) {
         for (const auto& rc : config.expression) {
             auto desc = fmt("name='%s'", rc.name.c_str());
-            vespalib::string filePath = resolve_file(desc, rc.fileref);
+            std::string filePath = resolve_file(desc, rc.fileref);
             expressions.add(rc.name, filePath);
         }
     }

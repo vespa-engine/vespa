@@ -4,7 +4,7 @@
 
 #include "readable_attribute_vector.h"
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib { class MemoryUsage; }
 
@@ -58,7 +58,7 @@ public:
         return _search_cache;
     }
     void clearSearchCache();
-    const vespalib::string &getName() const {
+    const std::string &getName() const {
         return _name;
     }
 
@@ -67,7 +67,7 @@ public:
     vespalib::MemoryUsage get_memory_usage() const;
 
 protected:
-    vespalib::string                           _name;
+    std::string                           _name;
     std::shared_ptr<ReferenceAttribute>        _reference_attribute;
     std::shared_ptr<IDocumentMetaStoreContext> _document_meta_store;
     std::shared_ptr<ReadableAttributeVector>   _target_attribute;

@@ -26,8 +26,8 @@ DictionaryWordReader::DictionaryWordReader()
 DictionaryWordReader::~DictionaryWordReader() = default;
 
 bool
-DictionaryWordReader::open(const vespalib::string & dictionaryName,
-                           const vespalib::string & wordMapName,
+DictionaryWordReader::open(const std::string & dictionaryName,
+                           const std::string & wordMapName,
                            const TuneFileSeqRead &tuneFileRead)
 {
     _old2newwordfile = std::make_unique<Fast_BufferedFile>();

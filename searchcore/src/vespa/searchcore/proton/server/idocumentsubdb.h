@@ -5,9 +5,9 @@
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/searchable_stats.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <optional>
+#include <string>
 
 namespace search::index { class Schema; }
 
@@ -71,7 +71,7 @@ public:
     IDocumentSubDB() noexcept { }
     virtual ~IDocumentSubDB() = default;
     virtual uint32_t getSubDbId() const = 0;
-    virtual vespalib::string getName() const = 0;
+    virtual std::string getName() const = 0;
 
     virtual std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
@@ -126,7 +126,7 @@ public:
     virtual search::SearchableStats getSearchableStats() const = 0;
     virtual std::shared_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
 
-    virtual matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const = 0;
+    virtual matching::MatchingStats getMatcherStats(const std::string &rankProfile) const = 0;
     virtual void close() = 0;
     virtual std::shared_ptr<IDocumentDBReference> getDocumentDBReference() = 0;
     virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) = 0;

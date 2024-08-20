@@ -6,17 +6,16 @@
 #include <vespa/searchcore/proton/matching/session_manager_explorer.h>
 #include <vespa/searchcore/proton/matching/search_session.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
-
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sessionmanager_test");
 
-using vespalib::string;
+using std::string;
 using namespace proton;
 using namespace proton::matching;
 using vespalib::StateExplorer;
@@ -72,7 +71,7 @@ TEST("require that SessionManager can be explored") {
     session_manager.insert(std::make_shared<SearchSession>("baz", start, doom,
                                                            MatchToolsFactory::UP(), SearchSession::OwnershipBundle()));
     SessionManagerExplorer explorer(session_manager);
-    EXPECT_EQUAL(std::vector<vespalib::string>({"search"}),
+    EXPECT_EQUAL(std::vector<std::string>({"search"}),
                  explorer.get_children_names());
     std::unique_ptr<StateExplorer> search = explorer.get_child("search");
     ASSERT_TRUE(search.get() != nullptr);

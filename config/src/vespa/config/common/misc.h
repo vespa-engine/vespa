@@ -18,7 +18,7 @@ namespace config {
 /**
  * Miscellaneous utility functions specific to config.
  */
-vespalib::string calculateContentXxhash64(const StringVector & fileContents);
+std::string calculateContentXxhash64(const StringVector & fileContents);
 
 bool isGenerationNewer(int64_t newGen, int64_t oldGen);
 

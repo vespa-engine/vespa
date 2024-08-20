@@ -78,7 +78,7 @@ public:
     void setPayload(Anything::UP payload) { _payload = std::move(payload); }
     const char * what() const noexcept override;
 private:
-    vespalib::string _msg;
+    std::string _msg;
     Anything::UP     _payload;
 };
 
@@ -96,9 +96,9 @@ class PortListenException : public Exception
 {
 private:
     int _port;
-    vespalib::string _protocol;
+    std::string _protocol;
 
-    vespalib::string make_message(int port, std::string_view protocol, std::string_view msg);
+    std::string make_message(int port, std::string_view protocol, std::string_view msg);
 
 public:
     PortListenException(int port, std::string_view protocol, std::string_view msg = "",
@@ -112,7 +112,7 @@ public:
     ~PortListenException() override;
     VESPA_DEFINE_EXCEPTION_SPINE(PortListenException);
     int get_port() const { return _port; }
-    const vespalib::string &get_protocol() const { return _protocol; }
+    const std::string &get_protocol() const { return _protocol; }
 };
 
 //-----------------------------------------------------------------------------
@@ -138,7 +138,7 @@ public:
 
     VESPA_DEFINE_EXCEPTION_SPINE(IoException);
 
-    static string createMessage(std::string_view msg, Type type);
+    static std::string createMessage(std::string_view msg, Type type);
 
     Type getType() const { return _type; }
 

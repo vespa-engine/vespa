@@ -22,13 +22,13 @@ namespace search {
 //-----------------------------------------------------------------------------
 template <typename B, typename M>
 MultiValueStringAttributeT<B, M>::
-MultiValueStringAttributeT(const vespalib::string &name,
+MultiValueStringAttributeT(const std::string &name,
                            const AttributeVector::Config &c)
     : MultiValueEnumAttribute<B, M>(name, c)
 { }
 
 template <typename B, typename M>
-MultiValueStringAttributeT<B, M>::MultiValueStringAttributeT(const vespalib::string &name)
+MultiValueStringAttributeT<B, M>::MultiValueStringAttributeT(const std::string &name)
     : MultiValueStringAttributeT<B, M>(name, AttributeVector::Config(AttributeVector::BasicType::STRING,  attribute::CollectionType::ARRAY))
 { }
 

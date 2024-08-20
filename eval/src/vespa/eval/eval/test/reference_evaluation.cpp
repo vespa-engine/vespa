@@ -69,15 +69,15 @@ struct EvalNode : public NodeVisitor {
         result = ReferenceOperations::merge(eval_node(a, params), eval_node(b, params), op2);
     }
 
-    void eval_reduce(const Node &a, Aggr aggr, const std::vector<vespalib::string> &dimensions) {
+    void eval_reduce(const Node &a, Aggr aggr, const std::vector<std::string> &dimensions) {
         result = ReferenceOperations::reduce(eval_node(a, params), aggr, dimensions);
     }
 
-    void eval_rename(const Node &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+    void eval_rename(const Node &a, const std::vector<std::string> &from, const std::vector<std::string> &to) {
         result = ReferenceOperations::rename(eval_node(a, params), from, to);
     }
 
-    void eval_concat(const Node &a, const Node &b, const vespalib::string &dimension) {
+    void eval_concat(const Node &a, const Node &b, const std::string &dimension) {
         result = ReferenceOperations::concat(eval_node(a, params), eval_node(b, params), dimension);
     }
 
@@ -113,14 +113,14 @@ struct EvalNode : public NodeVisitor {
     void eval_peek(const TensorPeek &node) {
         TensorSpec param = eval_node(node.param(), params);
         ValueType param_type = ValueType::from_spec(param.type());
-        auto is_indexed = [&](const vespalib::string &dim_name) {
+        auto is_indexed = [&](const std::string &dim_name) {
             size_t dim_idx = param_type.dimension_index(dim_name);
             return ((dim_idx != ValueType::Dimension::npos) &&
                     (param_type.dimensions()[dim_idx].is_indexed()));
         };
         std::vector<TensorSpec> children;
         children.push_back(param);
-        std::map<vespalib::string, std::variant<TensorSpec::Label, size_t>> spec;
+        std::map<std::string, std::variant<TensorSpec::Label, size_t>> spec;
         for (const auto &[name, label]: node.dim_list()) {
             if (label.is_expr()) {
                 spec.emplace(name, size_t(children.size()));

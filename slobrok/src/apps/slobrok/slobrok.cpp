@@ -50,7 +50,7 @@ int
 App::main(int argc, char **argv)
 {
     uint32_t portnum = 2773;
-    vespalib::string cfgId;
+    std::string cfgId;
 
     int c;
     while ((c = getopt(argc, argv, "c:s:p:N")) != -1) {

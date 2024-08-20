@@ -137,7 +137,7 @@ void Trace::done() {
     root().setDouble("duration_ms", vespalib::count_ns(_relativeTime.timeSinceDawn())/1000000.0);
 }
 
-vespalib::string
+std::string
 Trace::toString() const {
     return hasTrace() ? slime().toString() : "";
 }

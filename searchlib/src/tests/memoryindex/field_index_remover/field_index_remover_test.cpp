@@ -14,7 +14,7 @@ using namespace search;
 using namespace search::memoryindex;
 
 struct WordFieldPair {
-    vespalib::string _word;
+    std::string _word;
     uint32_t _fieldId;
     WordFieldPair(std::string_view word, uint32_t fieldId) noexcept
         : _word(word), _fieldId(fieldId)
@@ -48,7 +48,7 @@ struct MockRemoveListener : public IFieldIndexRemoveListener {
         _words.clear();
         _expDocId = expDocId;
     }
-    vespalib::string getWords() {
+    std::string getWords() {
         std::sort(_words.begin(), _words.end());
         std::ostringstream oss;
         oss << _words;
@@ -60,12 +60,12 @@ struct MockRemoveListener : public IFieldIndexRemoveListener {
 struct FieldIndexRemoverTest : public ::testing::Test {
     MockRemoveListener _listener;
     std::vector<std::unique_ptr<WordStore>> _wordStores;
-    std::vector<std::map<vespalib::string, vespalib::datastore::EntryRef>> _wordToRefMaps;
+    std::vector<std::map<std::string, vespalib::datastore::EntryRef>> _wordToRefMaps;
     std::vector<std::unique_ptr<FieldIndexRemover>> _removers;
 
     FieldIndexRemoverTest();
     ~FieldIndexRemoverTest() override;
-    vespalib::datastore::EntryRef getWordRef(const vespalib::string &word, uint32_t fieldId) {
+    vespalib::datastore::EntryRef getWordRef(const std::string &word, uint32_t fieldId) {
         auto &wordToRefMap = _wordToRefMaps[fieldId];
         WordStore &wordStore = *_wordStores[fieldId];
         auto itr = wordToRefMap.find(word);
@@ -76,7 +76,7 @@ struct FieldIndexRemoverTest : public ::testing::Test {
         }
         return itr->second;
     }
-    FieldIndexRemoverTest &insert(const vespalib::string &word, uint32_t fieldId, uint32_t docId) {
+    FieldIndexRemoverTest &insert(const std::string &word, uint32_t fieldId, uint32_t docId) {
         assert(fieldId < _wordStores.size());
         _removers[fieldId]->insert(getWordRef(word, fieldId), docId);
         return *this;
@@ -86,7 +86,7 @@ struct FieldIndexRemoverTest : public ::testing::Test {
             remover->flush();
         }
     }
-    vespalib::string remove(uint32_t docId) {
+    std::string remove(uint32_t docId) {
         _listener.reset(docId);
         uint32_t fieldId = 0;
         for (auto &remover : _removers) {

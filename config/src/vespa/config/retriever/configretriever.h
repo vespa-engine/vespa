@@ -6,8 +6,8 @@
 #include "fixedconfigsubscriber.h"
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/subscription/configsubscription.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <mutex>
+#include <string>
 
 namespace config {
 

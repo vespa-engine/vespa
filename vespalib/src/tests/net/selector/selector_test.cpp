@@ -219,7 +219,7 @@ TEST_MT_FFF("require that single fd selector can wait for read events while hand
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
         f2.wakeup();
         TEST_BARRIER(); // #1
-        vespalib::string msg("test");
+        std::string msg("test");
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
         ASSERT_EQUAL(f1.b.write(msg.data(), msg.size()), ssize_t(msg.size()));
         TEST_BARRIER(); // #2

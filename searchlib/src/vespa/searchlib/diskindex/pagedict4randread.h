@@ -48,7 +48,7 @@ public:
     bool lookup(std::string_view word, uint64_t &wordNum,
                 PostingListOffsetAndCounts &offsetAndCounts) override;
 
-    bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
+    bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
 
     bool close() override;
     uint64_t getNumWordIds() const override;

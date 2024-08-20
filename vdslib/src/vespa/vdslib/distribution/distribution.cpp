@@ -104,7 +104,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
     configure(config);
 }
 
-Distribution::Distribution(const vespalib::string& serialized)
+Distribution::Distribution(const std::string& serialized)
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
       _node2Group(),

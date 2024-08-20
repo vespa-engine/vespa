@@ -93,7 +93,7 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
         }
         for (uint32_t i = 0; i < context.getNumRecipients(); ++i) {
             const mbus::Route &recipient = context.getRecipient(i);
-            vespalib::string routeName = recipient.toString();
+            std::string routeName = recipient.toString();
             if (select(context, routeName)) {
                 const mbus::Route *route = context.getMessageBus().getRoutingTable(DocumentProtocol::NAME)->getRoute(routeName);
                 context.addChild(route != nullptr ? *route : recipient);
@@ -110,7 +110,7 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
 }
 
 bool
-DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespalib::string &routeName)
+DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const std::string &routeName)
 {
     if (_config.empty()) {
         LOG(debug, "No config at all, select '%s'.", routeName.c_str());

@@ -111,7 +111,7 @@ makeDoc17(DocBuilder &b)
     return doc;
 }
 
-vespalib::string corruptWord = "corruptWord";
+std::string corruptWord = "corruptWord";
 
 Document::UP
 makeCorruptDocument(DocBuilder &b, size_t wordOffset)
@@ -141,7 +141,7 @@ make_very_long_word_document(DocBuilder& b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::19");
-    vespalib::string long_word(FieldInverter::max_word_len + 1, 'z');
+    std::string long_word(FieldInverter::max_word_len + 1, 'z');
     doc->setValue("f0", sfb.tokenize("before ").word(long_word).tokenize(" after").build());
     return doc;
 }

@@ -37,10 +37,10 @@ using vespalib::ForegroundTaskExecutor;
 using vespalib::ForegroundThreadExecutor;
 using vespalib::HwInfo;
 
-const vespalib::string TEST_DIR = "test_output";
+const std::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
-using StringVector = std::vector<vespalib::string>;
-using StringSet = std::set<vespalib::string>;
+using StringVector = std::vector<std::string>;
+using StringSet = std::set<std::string>;
 using ARIConfig = AttributeReprocessingInitializer::Config;
 
 struct MyReprocessingHandler : public IReprocessingHandler
@@ -64,7 +64,7 @@ struct MyConfig
     HwInfo _hwInfo;
     AttributeManager::SP _mgr;
     search::index::Schema _schema;
-    std::set<vespalib::string> _fields;
+    std::set<std::string> _fields;
     MyConfig();
     ~MyConfig();
     void addFields(const StringVector &fields) {
@@ -86,7 +86,7 @@ struct MyConfig
             }
         }
     }
-    void addIndexField(const vespalib::string &name) {
+    void addIndexField(const std::string &name) {
         _schema.addIndexField(Schema::IndexField(name, DataType::STRING));
     }
 };
@@ -112,7 +112,7 @@ struct MyDocTypeInspector : public IDocumentTypeInspector
           _newCfg(newCfg)
     {
     }
-    virtual bool hasUnchangedField(const vespalib::string &name) const override {
+    virtual bool hasUnchangedField(const std::string &name) const override {
         return _oldCfg._fields.count(name) > 0 &&
             _newCfg._fields.count(name) > 0;
     }
@@ -125,7 +125,7 @@ struct MyIndexschemaInspector : public IIndexschemaInspector
         : _schema(schema)
     {
     }
-    virtual bool isStringIndex(const vespalib::string &name) const override {
+    virtual bool isStringIndex(const std::string &name) const override {
         uint32_t fieldId = _schema.getIndexFieldId(name);
         if (fieldId == Schema::UNKNOWN_FIELD_ID) {
             return false;
@@ -191,7 +191,7 @@ public:
         } else {
             const auto & populator = dynamic_cast<const AttributePopulator &>(*_handler._reader);
             std::vector<search::AttributeVector *> attrList = populator.getWriter().getWritableAttributes();
-            std::set<vespalib::string> actAttrs;
+            std::set<std::string> actAttrs;
             for (const auto attr : attrList) {
                 actAttrs.insert(attr->getName());
             }

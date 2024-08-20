@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace search::features::fieldmatch {
 
@@ -523,7 +523,7 @@ public:
      *
      * @return A string representation.
      */
-    vespalib::string toString() const;
+    std::string toString() const;
 
 private:
     const Computer *_source;

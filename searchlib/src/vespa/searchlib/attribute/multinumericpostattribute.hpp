@@ -40,7 +40,7 @@ MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& doc
 }
 
 template <typename B, typename M>
-MultiValueNumericPostingAttribute<B, M>::MultiValueNumericPostingAttribute(const vespalib::string & name,
+MultiValueNumericPostingAttribute<B, M>::MultiValueNumericPostingAttribute(const std::string & name,
                                                                            const AttributeVector::Config & cfg)
     : MultiValueNumericEnumAttribute<B, M>(name, cfg),
       PostingParent(*this, this->getEnumStore()),

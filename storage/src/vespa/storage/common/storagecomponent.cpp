@@ -94,7 +94,7 @@ StorageComponent::getStateUpdater() const
     return *_nodeStateUpdater;
 }
 
-vespalib::string
+std::string
 StorageComponent::getIdentity() const
 {
     vespalib::asciistream name;

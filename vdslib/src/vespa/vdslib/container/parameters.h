@@ -25,17 +25,17 @@ namespace vdslib {
 class Parameters : public vespalib::xml::XmlSerializable {
 public:
     using KeyT = std::string_view;
-    class Value : public vespalib::string
+    class Value : public std::string
     {
     public:
       Value() = default;
-      explicit Value(std::string_view s) noexcept : vespalib::string(s) { }
-      explicit Value(const vespalib::string & s) noexcept : vespalib::string(s) { }
-      Value(const void *v, size_t sz) noexcept : vespalib::string(static_cast<const char *>(v), sz) { }
+      explicit Value(std::string_view s) noexcept : std::string(s) { }
+      explicit Value(const std::string & s) noexcept : std::string(s) { }
+      Value(const void *v, size_t sz) noexcept : std::string(static_cast<const char *>(v), sz) { }
       size_t length() const noexcept { return size() - 1; }
     };
     using ValueRef = std::string_view;
-    using ParametersMap = vespalib::hash_map<vespalib::string, Value>;
+    using ParametersMap = vespalib::hash_map<std::string, Value>;
 private:
     ParametersMap _parameters;
 
@@ -59,7 +59,7 @@ public:
     unsigned int size()                    const { return _parameters.size(); }
     bool lookup(KeyT id, ValueRef & v) const;
     void set(KeyT id, const void * v, size_t sz) {
-        _parameters[vespalib::string(id)] = Value(v, sz);
+        _parameters[std::string(id)] = Value(v, sz);
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
@@ -71,7 +71,7 @@ public:
     ParametersMap::const_iterator end() const { return _parameters.end(); }
     /// Convenience from earlier use.
     void set(KeyT id, std::string_view value) {
-        _parameters[vespalib::string(id)] = Value(value.data(), value.size());
+        _parameters[std::string(id)] = Value(value.data(), value.size());
     }
     void set(KeyT id, int32_t value);
     void set(KeyT id, int64_t value);
@@ -92,7 +92,7 @@ public:
     template<typename T>
     T get(KeyT id, T def) const;
 
-    vespalib::string toString() const;
+    std::string toString() const;
 };
 
 } // vdslib

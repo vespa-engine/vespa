@@ -18,14 +18,14 @@ using search::transactionlog::client::Session;
 namespace proton {
 
 void
-TransactionLogManager::doLogReplayComplete(const vespalib::string &domainName,
+TransactionLogManager::doLogReplayComplete(const std::string &domainName,
                                            vespalib::duration elapsedTime) const
 {
     EventLogger::transactionLogReplayComplete(domainName, elapsedTime);
 }
 
 
-TransactionLogManager::TransactionLogManager(FNET_Transport & transport, const vespalib::string &tlsSpec, const vespalib::string &domainName)
+TransactionLogManager::TransactionLogManager(FNET_Transport & transport, const std::string &tlsSpec, const std::string &domainName)
     : TransactionLogManagerBase(transport, tlsSpec, domainName),
       _visitor()
 {
@@ -60,7 +60,7 @@ getStatus(Session & session, search::SerialNum & serialBegin, search::SerialNum 
 }
 
 void getStatus(TransLogClient & client,
-               const vespalib::string & domainName,
+               const std::string & domainName,
                search::SerialNum & serialBegin,
                search::SerialNum & serialEnd,
                size_t & count)
@@ -80,7 +80,7 @@ void getStatus(TransLogClient & client,
 
 void
 TransactionLogManager::prepareReplay(TransLogClient &client,
-                                     const vespalib::string &domainName,
+                                     const std::string &domainName,
                                      SerialNum flushedIndexMgrSerial,
                                      SerialNum flushedSummaryMgrSerial,
                                      ConfigStore &config_store)

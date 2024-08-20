@@ -29,7 +29,7 @@ BucketId bucket2(2);
 BucketId bucket3(3);
 Distribution distribution(Distribution::getDefaultDistributionConfig(3, 3));
 
-ClusterState make_cluster_state(const vespalib::string& state, uint16_t node_index, bool maintenance_in_all_spaces = false) {
+ClusterState make_cluster_state(const std::string& state, uint16_t node_index, bool maintenance_in_all_spaces = false) {
     return ClusterState(storage::lib::ClusterState(state), node_index, distribution, maintenance_in_all_spaces);
 }
 

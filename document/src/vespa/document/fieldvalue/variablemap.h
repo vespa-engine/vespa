@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
 #include <memory>
+#include <string>
 
 namespace document {
     class FieldValue;
@@ -24,14 +24,14 @@ public:
 
     ~IndexValue();
 
-    vespalib::string toString() const;
+    std::string toString() const;
     bool operator==(const IndexValue& other) const;
 
     int index; // For array
     std::unique_ptr<FieldValue> key; // For map/wset
 };
 
-using VariableMapT = std::map<vespalib::string, IndexValue>;
+using VariableMapT = std::map<std::string, IndexValue>;
 
 class VariableMap : public VariableMapT {
 public:
@@ -41,7 +41,7 @@ public:
     VariableMap(const VariableMap & rhs) = delete;
     VariableMap & operator = (const VariableMap & rhs) = delete;
     ~VariableMap();
-    vespalib::string toString() const;
+    std::string toString() const;
 };
 
 }

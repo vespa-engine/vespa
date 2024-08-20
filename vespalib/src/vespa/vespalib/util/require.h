@@ -5,6 +5,7 @@
 #include "macro.h"
 #include "approx.h"
 #include "classname.h"
+#include <cstdint>
 #include <iostream>
 #include <type_traits>
 #include <vespa/vespalib/util/exception.h>

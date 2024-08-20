@@ -3,11 +3,12 @@
 
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 #include <vespa/vespalib/btree/btreestore.hpp>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using search::predicate::PredicateRangeTermExpander;
 using std::vector;
-using vespalib::string;
+using std::string;
 
 namespace {
 

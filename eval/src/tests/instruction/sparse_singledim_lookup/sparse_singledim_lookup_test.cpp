@@ -22,12 +22,12 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr) {
+void verify_optimized(const std::string &expr) {
     CellTypeSpace type_space(CellTypeUtils::list_types(), 1);
     EvalFixture::verify<FunInfo>(expr, {FunInfo()}, type_space);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     CellTypeSpace just_float({CellType::FLOAT}, 1);
     EvalFixture::verify<FunInfo>(expr, {}, just_float);
 }

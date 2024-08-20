@@ -134,11 +134,11 @@ template <> size_t get_lsb<uint16_t>(uint16_t value) { return vespalib::Optimize
 // implementation using single value mask per tree
 //-----------------------------------------------------------------------------
 
-template <typename T> vespalib::string fixed_impl_name();
-template <> vespalib::string fixed_impl_name<uint8_t>() { return "ff-fixed<8>"; }
-template <> vespalib::string fixed_impl_name<uint16_t>() { return "ff-fixed<16>"; }
-template <> vespalib::string fixed_impl_name<uint32_t>() { return "ff-fixed<32>"; }
-template <> vespalib::string fixed_impl_name<uint64_t>() { return "ff-fixed<64>"; }
+template <typename T> std::string fixed_impl_name();
+template <> std::string fixed_impl_name<uint8_t>() { return "ff-fixed<8>"; }
+template <> std::string fixed_impl_name<uint16_t>() { return "ff-fixed<16>"; }
+template <> std::string fixed_impl_name<uint32_t>() { return "ff-fixed<32>"; }
+template <> std::string fixed_impl_name<uint64_t>() { return "ff-fixed<64>"; }
 
 template <typename T>
 constexpr size_t max_leafs() { return (sizeof(T) * bits_per_byte); }
@@ -197,7 +197,7 @@ struct FixedForest : FastForest {
     static void apply_masks(T *ctx_masks, const DMask *pos, const DMask *end);
     double get_result(const T *ctx_masks) const;
 
-    vespalib::string impl_name() const override { return fixed_impl_name<T>(); }
+    std::string impl_name() const override { return fixed_impl_name<T>(); }
     Context::UP create_context() const override;
     double eval(Context &context, const float *params) const override;
 };
@@ -437,7 +437,7 @@ struct MultiWordForest : FastForest {
     static size_t find_leaf(const uint32_t *ctx_words);
     double get_result(const uint32_t *ctx_words) const;
 
-    vespalib::string impl_name() const override { return "ff-multiword"; }
+    std::string impl_name() const override { return "ff-multiword"; }
     Context::UP create_context() const override;
     double eval(Context &context, const float *params) const override;
 };

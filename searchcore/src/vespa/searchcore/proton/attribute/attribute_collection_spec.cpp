@@ -14,7 +14,7 @@ AttributeCollectionSpec::AttributeCollectionSpec(AttributeList && attributes, ui
 AttributeCollectionSpec::~AttributeCollectionSpec() = default;
 
 bool
-AttributeCollectionSpec::hasAttribute(const vespalib::string &name) const {
+AttributeCollectionSpec::hasAttribute(const std::string &name) const {
     for (const auto &attr : _attributes) {
         if (attr.getName() == name) {
             return true;

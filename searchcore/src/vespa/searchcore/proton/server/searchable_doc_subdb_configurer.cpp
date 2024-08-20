@@ -96,7 +96,7 @@ SearchableDocSubDBConfigurer(const std::shared_ptr<ISummaryManager>& summaryMgr,
                              matching::QueryLimiter &queryLimiter,
                              const vespalib::eval::ConstantValueFactory& constant_value_factory,
                              const std::atomic<steady_time> & now_ref,
-                             const vespalib::string &subDbName,
+                             const std::string &subDbName,
                              uint32_t distributionKey) :
     _summaryMgr(summaryMgr),
     _searchView(searchView),
@@ -122,7 +122,7 @@ SearchableDocSubDBConfigurer::createMatchers(const DocumentDBConfig& new_config_
     auto newMatchers = std::make_shared<Matchers>(_now_ref, _queryLimiter, ranking_assets_repo_source);
     auto& ranking_assets_repo = newMatchers->get_ranking_assets_repo();
     for (const auto &profile : cfg.rankprofile) {
-        vespalib::string name = profile.name;
+        std::string name = profile.name;
         search::fef::Properties properties;
         for (const auto &property : profile.fef.property) {
             properties.add(property.name, property.value);
@@ -171,7 +171,7 @@ createAttributeReprocessingInitializer(const DocumentDBConfig &newConfig,
                                        const std::shared_ptr<IAttributeManager>& newAttrMgr,
                                        const DocumentDBConfig &oldConfig,
                                        const std::shared_ptr<IAttributeManager>& oldAttrMgr,
-                                       const vespalib::string &subDbName,
+                                       const std::string &subDbName,
                                        search::SerialNum serialNum)
 {
     const document::DocumentType *newDocType = newConfig.getDocumentType();

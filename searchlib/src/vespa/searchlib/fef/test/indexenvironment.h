@@ -47,9 +47,9 @@ public:
         ~ConstantRef() override = default;
     };
 
-    using ConstantsMap = std::map<vespalib::string, Constant>;
-    using ExprMap = std::map<vespalib::string, vespalib::string>;
-    using ModelMap = std::map<vespalib::string, OnnxModel>;
+    using ConstantsMap = std::map<std::string, Constant>;
+    using ExprMap = std::map<std::string, std::string>;
+    using ModelMap = std::map<std::string, OnnxModel>;
 
     IndexEnvironment();
     IndexEnvironment(const IndexEnvironment &) = delete;
@@ -80,16 +80,16 @@ public:
     /** Returns a reference to the table manager of this. */
     TableManager &getTableManager() { return _tableMan; }
 
-    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override;
+    vespalib::eval::ConstantValue::UP getConstantValue(const std::string &name) const override;
 
-    void addConstantValue(const vespalib::string &name,
+    void addConstantValue(const std::string &name,
                           vespalib::eval::ValueType type,
                           std::unique_ptr<vespalib::eval::Value> value);
 
-    vespalib::string getRankingExpression(const vespalib::string &name) const override;
-    void addRankingExpression(const vespalib::string &name, const vespalib::string &value);
+    std::string getRankingExpression(const std::string &name) const override;
+    void addRankingExpression(const std::string &name, const std::string &value);
 
-    const OnnxModel *getOnnxModel(const vespalib::string &name) const override;
+    const OnnxModel *getOnnxModel(const std::string &name) const override;
     void addOnnxModel(OnnxModel model);
 
 private:

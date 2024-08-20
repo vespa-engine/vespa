@@ -176,7 +176,7 @@ TEST(MonitoringSearchIteratorTest, require_that_calls_are_forwarded_to_underlyin
 
 void
 addIterator(MonitoringSearchIterator::Dumper &d,
-            const vespalib::string &name,
+            const std::string &name,
             int64_t numSeeks,
             double avgDocIdSteps,
             double avgHitSkips,

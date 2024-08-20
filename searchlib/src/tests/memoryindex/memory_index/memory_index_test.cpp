@@ -58,19 +58,19 @@ using namespace search::queryeval;
 //-----------------------------------------------------------------------------
 
 struct MySetup : public IFieldLengthInspector {
-    std::vector<vespalib::string> fields;
-    std::map<vespalib::string, FieldLengthInfo> field_lengths;
+    std::vector<std::string> fields;
+    std::map<std::string, FieldLengthInfo> field_lengths;
     MySetup();
     ~MySetup() override;
     MySetup &field(const std::string &name) {
         fields.emplace_back(name);
         return *this;
     }
-    MySetup& field_length(const vespalib::string& field_name, const FieldLengthInfo& info) {
+    MySetup& field_length(const std::string& field_name, const FieldLengthInfo& info) {
         field_lengths[field_name] = info;
         return *this;
     }
-    FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+    FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         auto itr = field_lengths.find(field_name);
         if (itr != field_lengths.end()) {
             return itr->second;

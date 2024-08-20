@@ -24,12 +24,12 @@ using search::test::StringFieldBuilder;
 namespace
 {
 
-const vespalib::string SPANTREE_NAME("linguistics");
+const std::string SPANTREE_NAME("linguistics");
 
 struct MyAnnotation {
     int32_t start;
     int32_t length;
-    std::optional<vespalib::string> label;
+    std::optional<std::string> label;
 
     MyAnnotation(int32_t start_in, int32_t length_in) noexcept
         : start(start_in),
@@ -38,7 +38,7 @@ struct MyAnnotation {
     {
     }
 
-    MyAnnotation(int32_t start_in, int32_t length_in, vespalib::string label_in) noexcept
+    MyAnnotation(int32_t start_in, int32_t length_in, std::string label_in) noexcept
         : start(start_in),
           length(length_in),
           label(label_in)
@@ -75,7 +75,7 @@ protected:
     StringFieldBuilderTest();
     ~StringFieldBuilderTest();
     std::vector<MyAnnotation> get_annotations(const StringFieldValue& val);
-    void assert_annotations(std::vector<MyAnnotation> exp, const vespalib::string& plain, const StringFieldValue& val);
+    void assert_annotations(std::vector<MyAnnotation> exp, const std::string& plain, const StringFieldValue& val);
 };
 
 StringFieldBuilderTest::StringFieldBuilderTest()
@@ -112,7 +112,7 @@ StringFieldBuilderTest::get_annotations(const StringFieldValue& val)
 }
 
 void
-StringFieldBuilderTest::assert_annotations(std::vector<MyAnnotation> exp, const vespalib::string& plain, const StringFieldValue& val)
+StringFieldBuilderTest::assert_annotations(std::vector<MyAnnotation> exp, const std::string& plain, const StringFieldValue& val)
 {
     EXPECT_EQ(exp, get_annotations(val));
     EXPECT_EQ(plain, val.getValue());

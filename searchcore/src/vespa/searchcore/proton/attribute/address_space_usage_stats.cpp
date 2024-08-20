@@ -17,9 +17,9 @@ AddressSpaceUsageStats::~AddressSpaceUsageStats() = default;
 
 void
 AddressSpaceUsageStats::merge(const vespalib::AddressSpace &usage,
-                              const vespalib::string &attributeName,
-                              const vespalib::string &component_name,
-                              const vespalib::string &subDbName)
+                              const std::string &attributeName,
+                              const std::string &component_name,
+                              const std::string &subDbName)
 {
     if (attributeName.empty() || usage.usage() > _usage.usage()) {
         _usage = usage;

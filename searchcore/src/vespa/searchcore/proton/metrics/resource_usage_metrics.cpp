@@ -19,7 +19,7 @@ ResourceUsageMetrics::CpuUtilMetrics::CpuUtilMetrics(metrics::MetricSet *parent)
 
 ResourceUsageMetrics::CpuUtilMetrics::~CpuUtilMetrics() = default;
 
-ResourceUsageMetrics::DetailedResourceMetrics::DetailedResourceMetrics(const vespalib::string& resource_type, metrics::MetricSet* parent)
+ResourceUsageMetrics::DetailedResourceMetrics::DetailedResourceMetrics(const std::string& resource_type, metrics::MetricSet* parent)
     : MetricSet(make_string("%s_usage", resource_type.c_str()), {}, make_string("Detailed resource usage metrics for %s",
                                                                                 resource_type.c_str()), parent),
       total("total", {}, make_string("The total relative amount of %s used by this content node (value in the range [0, 1])",

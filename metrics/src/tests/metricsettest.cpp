@@ -64,14 +64,14 @@ TEST(MetricSetTest, test_normal_usage)
     // Check that paths are set
     MetricSet topSet("top", {}, "");
     topSet.registerMetric(set);
-    EXPECT_EQ(vespalib::string("a"), set.getPath());
-    EXPECT_EQ(vespalib::string("a.c"), v1.getPath());
-    EXPECT_EQ(vespalib::string("a.b"), v2.getPath());
-    EXPECT_EQ(vespalib::string("a.d"), v3.getPath());
-    EXPECT_EQ(vespalib::string("a.e"), set2.getPath());
-    EXPECT_EQ(vespalib::string("a.e.f"), v4.getPath());
-    EXPECT_EQ(vespalib::string("a.g"), v5.getPath());
-    EXPECT_EQ(vespalib::string("a.b"), v2copy->getPath());
+    EXPECT_EQ(std::string("a"), set.getPath());
+    EXPECT_EQ(std::string("a.c"), v1.getPath());
+    EXPECT_EQ(std::string("a.b"), v2.getPath());
+    EXPECT_EQ(std::string("a.d"), v3.getPath());
+    EXPECT_EQ(std::string("a.e"), set2.getPath());
+    EXPECT_EQ(std::string("a.e.f"), v4.getPath());
+    EXPECT_EQ(std::string("a.g"), v5.getPath());
+    EXPECT_EQ(std::string("a.b"), v2copy->getPath());
 
     // Verify XML output. Should be in register order.
     std::string expected("'\n"

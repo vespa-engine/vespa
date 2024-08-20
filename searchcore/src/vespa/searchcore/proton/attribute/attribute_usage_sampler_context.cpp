@@ -19,8 +19,8 @@ AttributeUsageSamplerContext::~AttributeUsageSamplerContext()
 
 void
 AttributeUsageSamplerContext::merge(const search::AddressSpaceUsage &usage,
-                                    const vespalib::string &attributeName,
-                                    const vespalib::string &subDbName)
+                                    const std::string &attributeName,
+                                    const std::string &subDbName)
 {
     Guard guard(_lock);
     _usage.merge(usage, attributeName, subDbName);

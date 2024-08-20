@@ -45,7 +45,7 @@ public:
  * to share constants among users.
  **/
 struct ConstantValueFactory {
-    virtual ConstantValue::UP create(const vespalib::string &path, const vespalib::string &type) const = 0;
+    virtual ConstantValue::UP create(const std::string &path, const std::string &type) const = 0;
     virtual ~ConstantValueFactory() {}
 };
 

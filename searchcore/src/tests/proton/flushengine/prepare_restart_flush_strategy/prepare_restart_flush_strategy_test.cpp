@@ -23,7 +23,7 @@ struct SimpleFlushTarget : public test::DummyFlushTarget
     SerialNum flushedSerial;
     uint64_t approxDiskBytes;
     double replay_operation_cost;
-    SimpleFlushTarget(const vespalib::string &name,
+    SimpleFlushTarget(const std::string &name,
                       const Type &type,
                       SerialNum flushedSerial_,
                       uint64_t approxDiskBytes_,
@@ -48,9 +48,9 @@ class ContextsBuilder
 {
 private:
     FlushContext::List _result;
-    std::map<vespalib::string, IFlushHandler::SP> _handlers;
+    std::map<std::string, IFlushHandler::SP> _handlers;
 
-    IFlushHandler::SP createAndGetHandler(const vespalib::string &handlerName) {
+    IFlushHandler::SP createAndGetHandler(const std::string &handlerName) {
         auto itr = _handlers.find(handlerName);
         if (itr != _handlers.end()) {
             return itr->second;
@@ -63,8 +63,8 @@ private:
 public:
     ContextsBuilder() noexcept;
     ~ContextsBuilder();
-    ContextsBuilder &add(const vespalib::string &handlerName,
-                         const vespalib::string &targetName,
+    ContextsBuilder &add(const std::string &handlerName,
+                         const std::string &targetName,
                          IFlushTarget::Type targetType,
                          SerialNum flushedSerial,
                          uint64_t approxDiskBytes,
@@ -78,20 +78,20 @@ public:
         _result.push_back(std::make_shared<FlushContext>(handler, target, 0));
         return *this;
     }
-    ContextsBuilder &add(const vespalib::string &handlerName,
-                         const vespalib::string &targetName,
+    ContextsBuilder &add(const std::string &handlerName,
+                         const std::string &targetName,
                          SerialNum flushedSerial,
                          uint64_t approxDiskBytes,
                          double replay_operation_cost = 0.0) {
         return add(handlerName, targetName, IFlushTarget::Type::FLUSH, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
-    ContextsBuilder &add(const vespalib::string &targetName,
+    ContextsBuilder &add(const std::string &targetName,
                          SerialNum flushedSerial,
                          uint64_t approxDiskBytes,
                          double replay_operation_cost = 0.0) {
         return add("handler1", targetName, IFlushTarget::Type::FLUSH, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
-    ContextsBuilder &addGC(const vespalib::string &targetName,
+    ContextsBuilder &addGC(const std::string &targetName,
                            SerialNum flushedSerial,
                            uint64_t approxDiskBytes,
                            double replay_operation_cost = 0.0) {
@@ -226,7 +226,7 @@ struct FlushStrategyFixture
     }
 };
 
-vespalib::string
+std::string
 toString(const FlushContext::List &flushContexts)
 {
     std::ostringstream oss;
@@ -244,7 +244,7 @@ toString(const FlushContext::List &flushContexts)
 }
 
 void
-assertFlushContexts(const vespalib::string &expected, const FlushContext::List &actual)
+assertFlushContexts(const std::string &expected, const FlushContext::List &actual)
 {
     EXPECT_EQUAL(expected, toString(actual));
 }

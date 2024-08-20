@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "table.h"
+#include <string>
 
 namespace search::fef {
 
@@ -22,7 +22,7 @@ public:
      * Creates a table with the given name.
      * Table::SP(NULL) is returned if the table cannot be created.
      **/
-    virtual Table::SP createTable(const vespalib::string & name) const = 0;
+    virtual Table::SP createTable(const std::string & name) const = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.

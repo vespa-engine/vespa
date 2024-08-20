@@ -31,7 +31,7 @@ IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, con
     }
     ns_log::Logger::LogLevel level = getDebugLevel(lid, doc.getId());
     if (LOG_WOULD_VLOG(level)) {
-        vespalib::string s1(doc.toString(true));
+        std::string s1(doc.toString(true));
         VLOG(level, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(sz=%ld)",
             serialNum, doc.getId().toString().c_str(), lid, s1.size());
         const size_t chunksize(30000);

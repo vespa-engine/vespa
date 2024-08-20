@@ -10,7 +10,7 @@
 
 namespace document {
 
-DocumentCalculator::DocumentCalculator(const IDocumentTypeRepo& repo, const vespalib::string & expression)
+DocumentCalculator::DocumentCalculator(const IDocumentTypeRepo& repo, const std::string & expression)
 {
     BucketIdFactory factory;
     select::Parser parser(repo, factory);

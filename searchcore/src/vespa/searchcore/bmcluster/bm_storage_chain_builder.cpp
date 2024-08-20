@@ -20,7 +20,7 @@ BmStorageChainBuilder::~BmStorageChainBuilder() = default;
 void
 BmStorageChainBuilder::add(std::unique_ptr<storage::StorageLink> link)
 {
-    vespalib::string name = link->getName();
+    std::string name = link->getName();
     storage::StorageChainBuilder::add(std::move(link));
     LOG(info, "Added storage link '%s'", name.c_str());
     if (name == "Communication manager") {

@@ -17,7 +17,7 @@ OnnxModelCache::release(Map::iterator entry)
 }
 
 OnnxModelCache::Token::UP
-OnnxModelCache::load(const vespalib::string &model_file)
+OnnxModelCache::load(const std::string &model_file)
 {
     std::lock_guard<std::mutex> guard(_lock);
     auto pos = _cached.find(model_file);

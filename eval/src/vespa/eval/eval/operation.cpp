@@ -62,7 +62,7 @@ double Cube::f(double a) { return (a * a * a); }
 namespace {
 
 template <typename T>
-void add_op(std::map<vespalib::string,T> &map, const Function &fun, T op) {
+void add_op(std::map<std::string,T> &map, const Function &fun, T op) {
     assert(!fun.has_error());
     auto key = gen_key(fun, PassParams::SEPARATE);
     auto res = map.emplace(key, op);
@@ -70,7 +70,7 @@ void add_op(std::map<vespalib::string,T> &map, const Function &fun, T op) {
 }
 
 template <typename T>
-std::optional<T> lookup_op(const std::map<vespalib::string,T> &map, const Function &fun) {
+std::optional<T> lookup_op(const std::map<std::string,T> &map, const Function &fun) {
     auto key = gen_key(fun, PassParams::SEPARATE);
     auto pos = map.find(key);
     if (pos != map.end()) {
@@ -79,16 +79,16 @@ std::optional<T> lookup_op(const std::map<vespalib::string,T> &map, const Functi
     return std::nullopt;
 }
 
-void add_op1(std::map<vespalib::string,op1_t> &map, const vespalib::string &expr, op1_t op) {
+void add_op1(std::map<std::string,op1_t> &map, const std::string &expr, op1_t op) {
     add_op(map, *Function::parse({"a"}, expr), op);
 }
 
-void add_op2(std::map<vespalib::string,op2_t> &map, const vespalib::string &expr, op2_t op) {
+void add_op2(std::map<std::string,op2_t> &map, const std::string &expr, op2_t op) {
     add_op(map, *Function::parse({"a", "b"}, expr), op);
 }
 
-std::map<vespalib::string,op1_t> make_op1_map() {
-    std::map<vespalib::string,op1_t> map;
+std::map<std::string,op1_t> make_op1_map() {
+    std::map<std::string,op1_t> map;
     add_op1(map, "-a",         Neg::f);
     add_op1(map, "!a",         Not::f);
     add_op1(map, "cos(a)",     Cos::f);
@@ -124,8 +124,8 @@ std::map<vespalib::string,op1_t> make_op1_map() {
     return map;
 }
 
-std::map<vespalib::string,op2_t> make_op2_map() {
-    std::map<vespalib::string,op2_t> map;
+std::map<std::string,op2_t> make_op2_map() {
+    std::map<std::string,op2_t> map;
     add_op2(map, "a+b",        Add::f);
     add_op2(map, "a-b",        Sub::f);
     add_op2(map, "a*b",        Mul::f);
@@ -155,12 +155,12 @@ std::map<vespalib::string,op2_t> make_op2_map() {
 } // namespace <unnamed>
 
 std::optional<op1_t> lookup_op1(const Function &fun) {
-    static const std::map<vespalib::string,op1_t> map = make_op1_map();
+    static const std::map<std::string,op1_t> map = make_op1_map();
     return lookup_op(map, fun);
 }
 
 std::optional<op2_t> lookup_op2(const Function &fun) {
-    static const std::map<vespalib::string,op2_t> map = make_op2_map();
+    static const std::map<std::string,op2_t> map = make_op2_map();
     return lookup_op(map, fun);
 }
 

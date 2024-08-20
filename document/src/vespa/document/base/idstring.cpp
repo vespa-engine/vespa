@@ -3,12 +3,13 @@
 #include "idstring.h"
 #include "idstringexception.h"
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cstring>
 #include <charconv>
 
-using vespalib::string;
+using std::string;
 using std::string_view;
 using vespalib::make_string;
 

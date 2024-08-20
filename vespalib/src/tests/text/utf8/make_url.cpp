@@ -3,7 +3,7 @@
 
 void printCodepoint(unsigned long codepoint)
 {
-    vespalib::string data;
+    std::string data;
     vespalib::Utf8Writer w(data);
     w.putChar(codepoint);
     printf("URL encoding of codepoint U+%04lX entity &#%lu; string value '%s' is:\n",

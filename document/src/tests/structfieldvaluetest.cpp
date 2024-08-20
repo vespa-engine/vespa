@@ -130,7 +130,7 @@ TEST_F(StructFieldValueTest, testStruct)
     EXPECT_EQ(value, value2);
     value2.setValue(strF, StringFieldValue("foo"));
     EXPECT_TRUE(value2.hasValue(strF));
-    EXPECT_EQ(vespalib::string("foo"), value2.getValue(strF)->getAsString());
+    EXPECT_EQ(std::string("foo"), value2.getValue(strF)->getAsString());
     EXPECT_TRUE(value != value2);
     value2.assign(value);
     EXPECT_EQ(value, value2);

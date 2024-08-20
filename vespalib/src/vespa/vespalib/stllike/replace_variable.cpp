@@ -6,10 +6,10 @@
  
 namespace vespalib {
 
-vespalib::string
-replace_variable(const vespalib::string &input,
-                 const vespalib::string &variable,
-                 const vespalib::string &replacement)
+std::string
+replace_variable(const std::string &input,
+                 const std::string &variable,
+                 const std::string &replacement)
 {
     vespalib::asciistream result;
     bool is_in_word = false;
@@ -26,7 +26,7 @@ replace_variable(const vespalib::string &input,
             ++last_word_size;
         } else {
             if (is_in_word) {
-                vespalib::string last_word = input.substr(last_word_start, last_word_size);
+                std::string last_word = input.substr(last_word_start, last_word_size);
                 if (last_word == variable) {
                     result << replacement;
                 } else {
@@ -38,7 +38,7 @@ replace_variable(const vespalib::string &input,
        }
    }
    if (is_in_word) {
-       vespalib::string last_word = input.substr(last_word_start, last_word_size);
+       std::string last_word = input.substr(last_word_start, last_word_size);
        if (last_word == variable) {
            result << replacement;
        } else {

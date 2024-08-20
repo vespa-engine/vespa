@@ -22,8 +22,8 @@ private:
     using FileWriterUP = std::unique_ptr<AttributeMemoryFileWriter>;
     struct WriterEntry {
         FileWriterUP writer;
-        vespalib::string desc;
-        WriterEntry(FileWriterUP writer_in, vespalib::string desc_in)
+        std::string desc;
+        WriterEntry(FileWriterUP writer_in, std::string desc_in)
             : writer(std::move(writer_in)),
               desc(std::move(desc_in))
         {}
@@ -31,7 +31,7 @@ private:
         WriterEntry & operator=(WriterEntry &&) noexcept = default;
         ~WriterEntry();
     };
-    using WriterMap = std::unordered_map<vespalib::string, WriterEntry, vespalib::hash<vespalib::string>>;
+    using WriterMap = std::unordered_map<std::string, WriterEntry, vespalib::hash<std::string>>;
 
     AttributeMemoryFileWriter _datWriter;
     AttributeMemoryFileWriter _idxWriter;
@@ -56,9 +56,9 @@ public:
     IAttributeFileWriter &weightWriter() override;
     IAttributeFileWriter &udatWriter() override;
 
-    bool setup_writer(const vespalib::string& file_suffix,
-                      const vespalib::string& desc) override;
-    IAttributeFileWriter& get_writer(const vespalib::string& file_suffix) override;
+    bool setup_writer(const std::string& file_suffix,
+                      const std::string& desc) override;
+    IAttributeFileWriter& get_writer(const std::string& file_suffix) override;
 
 };
 

@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <xxhash.h>
@@ -11,11 +10,12 @@
 #include <memory>
 #include <algorithm>
 #include <unistd.h>
+#include <string>
 #include <string.h>
 
 using vespalib::make_string_short::fmt;
 
-constexpr auto npos = vespalib::string::npos;
+constexpr auto npos = std::string::npos;
 
 //-----------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ public:
     uint64_t get() const { return XXH3_64bits_digest(_state); }
 };
 
-uint64_t get_hash(const std::vector<vespalib::string> &list) {
+uint64_t get_hash(const std::vector<std::string> &list) {
     static Hasher hasher;
     hasher.reset();
     for (const auto &item: list) {
@@ -47,13 +47,13 @@ uint64_t get_hash(const std::vector<vespalib::string> &list) {
 
 class SymbolHist {
 private:
-    std::map<vespalib::string,size_t> _hist;
+    std::map<std::string,size_t> _hist;
 public:
-    void add(const vespalib::string &value, size_t weight) {
+    void add(const std::string &value, size_t weight) {
         _hist[value] += weight;
     }
     void dump(FILE *dst) {
-        std::vector<std::pair<vespalib::string,size_t>> entries;
+        std::vector<std::pair<std::string,size_t>> entries;
         for (const auto &entry: _hist) {
             entries.push_back(entry);
         }
@@ -80,7 +80,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-vespalib::string get_symbol_from_frame(const vespalib::string &frame) {
+std::string get_symbol_from_frame(const std::string &frame) {
     auto pos1 = frame.find("#");
     pos1 = frame.find(" ", pos1);
     auto pos2 = frame.rfind(" /");
@@ -93,14 +93,14 @@ vespalib::string get_symbol_from_frame(const vespalib::string &frame) {
     return frame.substr(pos1+1, pos2-pos1-1);
 }
 
-void strip_after(vespalib::string &str, const vespalib::string &delimiter) {
+void strip_after(std::string &str, const std::string &delimiter) {
     auto pos = str.find(delimiter);
     if (pos != npos) {
         str = str.substr(0, pos);
     }
 }
 
-void replace_first(vespalib::string &str, const vespalib::string &old_str, const vespalib::string &new_str) {    
+void replace_first(std::string &str, const std::string &old_str, const std::string &new_str) {    
     auto pos = str.find(old_str);
     if (pos != npos) {
         str.replace(pos, old_str.size(), new_str);
@@ -109,18 +109,18 @@ void replace_first(vespalib::string &str, const vespalib::string &old_str, const
 
 class StackTrace {
 private:
-    vespalib::string _heading;
-    std::vector<vespalib::string> _frames;
+    std::string _heading;
+    std::vector<std::string> _frames;
     uint64_t _hash;
     bool _is_read;
     bool _is_write;
 public:
-    StackTrace(const vespalib::string &heading) noexcept;
+    StackTrace(const std::string &heading) noexcept;
     StackTrace(const StackTrace &);
     StackTrace(StackTrace &&) noexcept;
     StackTrace & operator=(StackTrace &&) noexcept;
     ~StackTrace();
-    void add_frame(const vespalib::string &frame) {
+    void add_frame(const std::string &frame) {
         _frames.push_back(frame);
     }
     void done() {
@@ -141,8 +141,8 @@ public:
             hist.add(get_symbol_from_frame(frame), weight);
         }
     }
-    const vespalib::string &heading() const { return _heading; }
-    void dump(FILE *dst, const vespalib::string &info) const {
+    const std::string &heading() const { return _heading; }
+    void dump(FILE *dst, const std::string &info) const {
         fprintf(dst, "%s %s\n", _heading.c_str(), info.c_str());
         for (const auto &frame: _frames) {
             fprintf(dst, "%s\n", frame.c_str());
@@ -151,7 +151,7 @@ public:
     }
 };
 
-StackTrace::StackTrace(const vespalib::string &heading) noexcept
+StackTrace::StackTrace(const std::string &heading) noexcept
     : _heading(heading), _frames(), _hash(), _is_read(false), _is_write(false)
 {}
 StackTrace::StackTrace(const StackTrace &) = default;
@@ -160,7 +160,7 @@ StackTrace & StackTrace::operator=(StackTrace &&) noexcept = default;
 StackTrace::~StackTrace() = default;
 
 std::vector<StackTrace>
-extract_traces(const std::vector<vespalib::string> &lines, size_t cutoff) {
+extract_traces(const std::vector<std::string> &lines, size_t cutoff) {
     std::vector<StackTrace> result;
     for (size_t i = 1; (i < lines.size()) && (result.size() < cutoff); ++i) {
         auto pos = lines[i].find("#0 ");
@@ -186,7 +186,7 @@ extract_traces(const std::vector<vespalib::string> &lines, size_t cutoff) {
 
 enum class ReportType { UNKNOWN, RACE };
 
-ReportType detect_report_type(const std::vector<vespalib::string> &lines) {
+ReportType detect_report_type(const std::vector<std::string> &lines) {
     for (const auto &line: lines) {
         if (line.starts_with("WARNING: ThreadSanitizer: data race")) {
             return ReportType::RACE;
@@ -197,7 +197,7 @@ ReportType detect_report_type(const std::vector<vespalib::string> &lines) {
 
 //-----------------------------------------------------------------------------
 
-bool is_delimiter(const vespalib::string &line) {
+bool is_delimiter(const std::string &line) {
     // TSAN delimiter is 18=, look for at least 16=
     return (line.find("================") < line.size());
 }
@@ -211,7 +211,7 @@ void dump_delimiter(FILE *dst) {
 struct Report {
     using UP = std::unique_ptr<Report>;
     using SP = std::shared_ptr<Report>;
-    virtual std::vector<vespalib::string> make_keys() const = 0;
+    virtual std::vector<std::string> make_keys() const = 0;
     virtual void merge(const Report &report) = 0;
     virtual size_t count() const = 0;
     virtual void dump(FILE *dst) const = 0;
@@ -222,15 +222,15 @@ size_t raw_reports = 0;
 
 class RawReport : public Report {
 private:
-    std::vector<vespalib::string> _lines;
+    std::vector<std::string> _lines;
     size_t _count;
 public:
-    RawReport(const std::vector<vespalib::string> &lines)
+    RawReport(const std::vector<std::string> &lines)
       : _lines(lines), _count(1)
     {
         ++raw_reports;
     }
-    std::vector<vespalib::string> make_keys() const override {
+    std::vector<std::string> make_keys() const override {
         return {fmt("raw:%" PRIu64, get_hash(_lines))};
     }
     void merge(const Report &) override { ++_count; }
@@ -285,8 +285,8 @@ public:
         }
     }
 
-    std::vector<vespalib::string> make_keys() const override {
-        std::vector<vespalib::string> result;
+    std::vector<std::string> make_keys() const override {
+        std::vector<std::string> result;
         for (const auto &node: _nodes) {
             result.push_back(fmt("race:%" PRIu64, node.trace.hash()));
         }
@@ -325,7 +325,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-using ReportMap = std::map<vespalib::string,Report::SP>;
+using ReportMap = std::map<std::string,Report::SP>;
 using MapPos = ReportMap::const_iterator;
 
 size_t total_reports = 0;
@@ -361,7 +361,7 @@ void handle_report(std::unique_ptr<Report> report) {
     }
 }
 
-void make_report(const std::vector<vespalib::string> &lines) {
+void make_report(const std::vector<std::string> &lines) {
     auto type = detect_report_type(lines);
     if (type == ReportType::RACE) {
         auto traces = extract_traces(lines, 2);
@@ -378,9 +378,9 @@ void make_report(const std::vector<vespalib::string> &lines) {
     return handle_report(std::make_unique<RawReport>(lines));
 }
 
-void handle_line(const vespalib::string &line) {
+void handle_line(const std::string &line) {
     static bool inside = false;
-    static std::vector<vespalib::string> lines;
+    static std::vector<std::string> lines;
     if (is_delimiter(line)) {
         inside = !inside;
         if (!inside && !lines.empty()) {
@@ -395,7 +395,7 @@ void handle_line(const vespalib::string &line) {
 void read_input() {
     char buf[64_Ki];
     bool eof = false;
-    vespalib::string line;
+    std::string line;
     while (!eof) {
         ssize_t res = read(STDIN_FILENO, buf, sizeof(buf));
         if (res < 0) {
@@ -443,7 +443,7 @@ int main(int, char **) {
     try {
         read_input();
         write_output();
-    } catch (vespalib::string &err) {
+    } catch (std::string &err) {
         fprintf(stderr, "%s\n", err.c_str());
         return 1;
     }

@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <list>
 #include <cassert>
 #include <algorithm>
@@ -72,8 +73,8 @@ double MetricSet::getDoubleValue(string_view) const {
 const Metric*
 MetricSet::getMetric(string_view name) const
 {
-    vespalib::string::size_type pos = name.find('.');
-    if (pos == vespalib::string::npos) {
+    std::string::size_type pos = name.find('.');
+    if (pos == std::string::npos) {
         return getMetricInternal(name);
     } else {
         string_view child(name.substr(0, pos));

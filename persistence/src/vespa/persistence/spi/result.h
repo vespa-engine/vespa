@@ -31,7 +31,7 @@ public:
     /**
      * Constructor to use when an error has been detected.
      */
-    Result(ErrorType error, const vespalib::string& errorMessage) noexcept
+    Result(ErrorType error, const std::string& errorMessage) noexcept
         : _errorCode(error),
           _errorMessage(errorMessage)
     {}
@@ -56,15 +56,15 @@ public:
         return _errorCode;
     }
 
-    const vespalib::string& getErrorMessage() const {
+    const std::string& getErrorMessage() const {
         return _errorMessage;
     }
 
-    vespalib::string toString() const;
+    std::string toString() const;
 
 private:
     ErrorType _errorCode;
-    vespalib::string _errorMessage;
+    std::string _errorMessage;
 };
 
 std::ostream & operator << (std::ostream & os, const Result & r);
@@ -78,7 +78,7 @@ public:
      * The service layer will not update the bucket information in this case,
      * so it should not be returned either.
      */
-    BucketInfoResult(ErrorType error, const vespalib::string& errorMessage)
+    BucketInfoResult(ErrorType error, const std::string& errorMessage)
         : Result(error, errorMessage) {};
 
     /**
@@ -103,7 +103,7 @@ public:
      * The service layer will not update the bucket information in this case,
      * so it should not be returned either.
      */
-    UpdateResult(ErrorType error, const vespalib::string& errorMessage)
+    UpdateResult(ErrorType error, const std::string& errorMessage)
         : Result(error, errorMessage),
           _existingTimestamp(0) { }
 
@@ -134,7 +134,7 @@ public:
      * The service layer will not update the bucket information in this case,
      * so it should not be returned either.
      */
-    RemoveResult(ErrorType error, const vespalib::string& errorMessage) noexcept
+    RemoveResult(ErrorType error, const std::string& errorMessage) noexcept
         : Result(error, errorMessage),
           _numRemoved(0)
     { }
@@ -157,7 +157,7 @@ public:
      * Constructor to use when there was an error retrieving the document.
      * Not finding the document is not an error in this context.
      */
-    GetResult(ErrorType error, const vespalib::string& errorMessage)
+    GetResult(ErrorType error, const std::string& errorMessage)
         : Result(error, errorMessage),
           _timestamp(0),
           _is_tombstone(false)
@@ -234,7 +234,7 @@ public:
     /**
      * Constructor used when there was an error listing the buckets.
      */
-    BucketIdListResult(ErrorType error, const vespalib::string& errorMessage)
+    BucketIdListResult(ErrorType error, const std::string& errorMessage)
         : Result(error, errorMessage) {}
 
     /**
@@ -267,7 +267,7 @@ public:
     /**
      * Constructor used when there was an error creating the iterator.
      */
-    CreateIteratorResult(ErrorType error, const vespalib::string& errorMessage) noexcept
+    CreateIteratorResult(ErrorType error, const std::string& errorMessage) noexcept
         : Result(error, errorMessage),
           _iterator(0) { }
 
@@ -291,7 +291,7 @@ public:
     /**
      * Constructor used when there was an error creating the iterator.
      */
-    IterateResult(ErrorType error, const vespalib::string& errorMessage);
+    IterateResult(ErrorType error, const std::string& errorMessage);
 
     /**
      * Constructor used when the iteration was successful.

@@ -342,7 +342,7 @@ void BucketManager::run(framework::ThreadHandle& thread)
     }
 }
 
-vespalib::string
+std::string
 BucketManager::getReportContentType(const framework::HttpUrlPath& path) const
 {
     bool showAll = path.hasAttribute("showall");

@@ -84,7 +84,7 @@ UnpackInfo::needUnpack(size_t index) const
     return false;
 }
 
-vespalib::string 
+std::string 
 UnpackInfo::toString() const
 {
     vespalib::asciistream os;

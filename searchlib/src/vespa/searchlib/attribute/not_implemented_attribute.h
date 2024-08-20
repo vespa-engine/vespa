@@ -17,7 +17,7 @@ struct NotImplementedAttribute : AttributeVector {
     std::span<const char> get_raw(DocId) const override;
     uint32_t get(DocId, largeint_t *, uint32_t) const override;
     uint32_t get(DocId, double *, uint32_t) const override;
-    uint32_t get(DocId, vespalib::string *, uint32_t) const override;
+    uint32_t get(DocId, std::string *, uint32_t) const override;
     uint32_t get(DocId, const char **, uint32_t) const override;
     uint32_t get(DocId, EnumHandle *, uint32_t) const override;
     uint32_t get(DocId, WeightedInt *, uint32_t) const override;

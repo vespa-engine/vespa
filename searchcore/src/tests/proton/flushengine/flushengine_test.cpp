@@ -61,7 +61,7 @@ class SimpleGetSerialNum : public IGetSerialNum
 class SimpleTlsStatsFactory : public flushengine::ITlsStatsFactory
 {
     flushengine::TlsStatsMap create() override {
-        vespalib::hash_map<vespalib::string, flushengine::TlsStats> map;
+        vespalib::hash_map<std::string, flushengine::TlsStats> map;
         return flushengine::TlsStatsMap(std::move(map));
     }
 };
@@ -289,14 +289,14 @@ public:
 
 class GCTarget : public SimpleTarget {
 public:
-    GCTarget(const vespalib::string &name, search::SerialNum flushedSerial)
+    GCTarget(const std::string &name, search::SerialNum flushedSerial)
         : SimpleTarget(name, Type::GC, flushedSerial)
     {}
 };
 
 class HighPriorityTarget : public SimpleTarget {
 public:
-    HighPriorityTarget(const vespalib::string &name, search::SerialNum flushedSerial, bool proceed)
+    HighPriorityTarget(const std::string &name, search::SerialNum flushedSerial, bool proceed)
         : SimpleTarget(name, Type::OTHER, flushedSerial, proceed)
     {}
 
@@ -411,7 +411,7 @@ public:
 class AppendTask : public FlushTask
 {
 public:
-    AppendTask(const vespalib::string & name, std::vector<vespalib::string> & list, vespalib::Gate & done) :
+    AppendTask(const std::string & name, std::vector<std::string> & list, vespalib::Gate & done) :
         _list(list),
         _done(done),
         _name(name)
@@ -421,9 +421,9 @@ public:
         _done.countDown();
     }
     search::SerialNum getFlushSerial() const override { return 0u; }
-    std::vector<vespalib::string> & _list;
+    std::vector<std::string> & _list;
     vespalib::Gate    & _done;
-    vespalib::string    _name;
+    std::string    _name;
 };
 
 
@@ -443,7 +443,7 @@ struct Fixture
         : Fixture(numThreads, idleInterval, std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF))
     { }
 
-    void putFlushHandler(const vespalib::string &docTypeName, IFlushHandler::SP handler) {
+    void putFlushHandler(const std::string &docTypeName, IFlushHandler::SP handler) {
         engine.putFlushHandler(DocTypeName(docTypeName), handler);
     }
 
@@ -484,7 +484,7 @@ TEST("require that leaf defaults are sane") {
 TEST_F("require that strategy controls flush target", Fixture(1, IINTERVAL))
 {
     vespalib::Gate fooG, barG;
-    std::vector<vespalib::string> order;
+    std::vector<std::string> order;
     auto foo = std::make_shared<SimpleTarget>(std::make_unique<AppendTask>("foo", order, fooG), "foo");
     auto bar = std::make_shared<SimpleTarget>(std::make_unique<AppendTask>("bar", order, barG), "bar");
     f.addTargetToStrategy(foo);

@@ -11,7 +11,7 @@ LOG_SETUP(".config.frt.frtconnectionpool");
 
 namespace config {
 
-FRTConnectionPool::FRTConnectionKey::FRTConnectionKey(int idx, const vespalib::string& hostname)
+FRTConnectionPool::FRTConnectionKey::FRTConnectionKey(int idx, const std::string& hostname)
     : _idx(idx),
       _hostname(hostname)
 {
@@ -95,7 +95,7 @@ namespace {
  * @param s the string to compute the hash from
  * @return the hash value
  */
-int hashCode(const vespalib::string & s) {
+int hashCode(const std::string & s) {
     unsigned int hashval = 0;
 
     for (int i = 0; i < (int) s.length(); i++) {

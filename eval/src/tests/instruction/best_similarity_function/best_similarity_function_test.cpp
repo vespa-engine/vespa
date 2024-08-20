@@ -15,7 +15,7 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
-void verify_impl(const TensorSpec &a, const TensorSpec &b, const vespalib::string &expr, bool optimized) {
+void verify_impl(const TensorSpec &a, const TensorSpec &b, const std::string &expr, bool optimized) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", a).add("b", b);
     EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
@@ -23,27 +23,27 @@ void verify_impl(const TensorSpec &a, const TensorSpec &b, const vespalib::strin
     EXPECT_EQ(fast_fixture.find_all<BestSimilarityFunction>().size(), optimized ? 1 : 0);
 }
 
-void verify(const TensorSpec &a, const TensorSpec &b, const vespalib::string &expr, bool optimized = true) {
+void verify(const TensorSpec &a, const TensorSpec &b, const std::string &expr, bool optimized = true) {
     verify_impl(a, b, expr, optimized);
     verify_impl(b, a, expr, optimized);
 }
 
 //-----------------------------------------------------------------------------
 
-GenSpec gen_double(const vespalib::string &desc, int bias) {
+GenSpec gen_double(const std::string &desc, int bias) {
     return GenSpec::from_desc(desc).cells(CellType::DOUBLE).seq(N(bias));
 }
 
-GenSpec gen_float(const vespalib::string &desc, int bias) {
+GenSpec gen_float(const std::string &desc, int bias) {
     return GenSpec::from_desc(desc).cells(CellType::FLOAT).seq(N(bias));
 }
 
-GenSpec gen_int8(const vespalib::string &desc, int bias) {
+GenSpec gen_int8(const std::string &desc, int bias) {
     return GenSpec::from_desc(desc).cells(CellType::INT8).seq(N(bias));
 }
 
-vespalib::string max_sim = "reduce(reduce(a*b,sum,d),max,b)";
-vespalib::string min_hamming = "reduce(reduce(hamming(a,b),sum,d),min,b)";
+std::string max_sim = "reduce(reduce(a*b,sum,d),max,b)";
+std::string min_hamming = "reduce(reduce(hamming(a,b),sum,d),min,b)";
 
 //-----------------------------------------------------------------------------
 
@@ -88,13 +88,13 @@ TEST(BestSimilarityFunctionTest, extra_trivial_dimensions_are_allowed) {
 }
 
 TEST(BestSimilarityFunctionTest, allow_full_reduce_for_outer_dimension) {
-    vespalib::string my_max_sim = "reduce(reduce(a*b,sum,d),max)";
-    vespalib::string my_min_hamming = "reduce(reduce(hamming(a,b),sum,d),min)";
+    std::string my_max_sim = "reduce(reduce(a*b,sum,d),max)";
+    std::string my_min_hamming = "reduce(reduce(hamming(a,b),sum,d),min)";
     verify(gen_float("d8", 3), gen_float("b5d8", 7), my_max_sim);
     verify(gen_int8("d8", 3), gen_int8("b5_2d8", 7), my_min_hamming);
 }
 
-vespalib::string inv_max_sim = "reduce(reduce(a*b,sum,b),max,d)";
+std::string inv_max_sim = "reduce(reduce(a*b,sum,b),max,d)";
 
 TEST(BestSimilarityFunctionTest, dimensions_can_be_inverted_if_best_dimension_is_sparse) {
     verify(gen_float("b8", 3), gen_float("b8d5_2", 7), inv_max_sim);
@@ -108,7 +108,7 @@ TEST(BestSimilarityFunctionTest, cell_type_must_match_operation) {
 }
 
 TEST(BestSimilarityFunctionTest, similarity_must_use_1d_vector) {
-    vespalib::string max_sim_2d_dist = "reduce(reduce(a*b,sum,d,e),max,b)";
+    std::string max_sim_2d_dist = "reduce(reduce(a*b,sum,d,e),max,b)";
     verify(gen_float("d8_1", 3), gen_float("b5d8_1", 7), max_sim, false);
     verify(gen_float("d8e1", 3), gen_float("b5d8e1", 7), max_sim_2d_dist, false);
 }
@@ -119,7 +119,7 @@ TEST(BestSimilarityFunctionTest, similarity_dimension_must_be_inner) {
 }
 
 TEST(BestSimilarityFunctionTest, alternatives_must_use_a_single_dimension) {
-    vespalib::string max_sim_2d_best = "reduce(reduce(a*b,sum,d),max,a,b)";
+    std::string max_sim_2d_best = "reduce(reduce(a*b,sum,d),max,a,b)";
     verify(gen_float("d8", 3), gen_float("a1b5d8", 7), max_sim_2d_best, false);
 }
 
@@ -140,10 +140,10 @@ TEST(BestSimilarityFunctionTest, secondary_tensor_must_not_contain_extra_nontriv
 //-----------------------------------------------------------------------------
 
 TEST(BestSimilarityFunctionTest, similar_expressions_are_not_optimized) {
-    vespalib::string other_join = "reduce(reduce(a+b,sum,d),max,b)";
-    vespalib::string other_reduce = "reduce(reduce(a*b,min,d),max,b)";
-    vespalib::string mismatch_best_sim = "reduce(reduce(a*b,sum,d),min,b)";
-    vespalib::string mismatch_best_hamming = "reduce(reduce(hamming(a,b),sum,d),max,b)";
+    std::string other_join = "reduce(reduce(a+b,sum,d),max,b)";
+    std::string other_reduce = "reduce(reduce(a*b,min,d),max,b)";
+    std::string mismatch_best_sim = "reduce(reduce(a*b,sum,d),min,b)";
+    std::string mismatch_best_hamming = "reduce(reduce(hamming(a,b),sum,d),max,b)";
     verify(gen_float("d8", 3), gen_float("b5d8", 7), other_join, false);
     verify(gen_float("d8", 3), gen_float("b5d8", 7), other_reduce, false);
     verify(gen_float("d8", 3), gen_float("b5d8", 7), mismatch_best_sim, false);

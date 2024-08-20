@@ -14,7 +14,7 @@ namespace proton {
  */
 class IndexManagerInitializer :  public initializer::InitializerTask
 {
-    const vespalib::string                      _baseDir;
+    const std::string                      _baseDir;
     const index::IndexConfig                    _indexConfig;
     const search::index::Schema                 _schema;
     search::SerialNum                           _serialNum;
@@ -27,7 +27,7 @@ class IndexManagerInitializer :  public initializer::InitializerTask
     std::shared_ptr<searchcorespi::IIndexManager::SP> _indexManager;
 public:
     // Note: lifetime of indexManager must be handled by caller.
-    IndexManagerInitializer(const vespalib::string &baseDir,
+    IndexManagerInitializer(const std::string &baseDir,
                             const index::IndexConfig & indexCfg,
                             const search::index::Schema &schema,
                             search::SerialNum serialNum,

@@ -19,7 +19,7 @@ using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 
-const vespalib::string tensor_type_spec("tensor(x{})");
+const std::string tensor_type_spec("tensor(x{})");
 
 class TensorBufferStoreTest : public testing::Test
 {
@@ -192,7 +192,7 @@ TEST_F(TensorBufferStoreTest, buffer_handles_range_of_subspaces)
     for (uint32_t x = 0; x < 400; ++x) {
         vespalib::asciistream x_stream;
         x_stream << x;
-        vespalib::string x_as_string = x_stream.str();
+        std::string x_as_string = x_stream.str();
         tensor_spec.add({{"x", x_as_string.c_str()}}, x + 1.5);
         auto tensor = value_from_spec(tensor_spec, FastValueBuilderFactory::get());
         EXPECT_EQ(_tensor_type, tensor->type());

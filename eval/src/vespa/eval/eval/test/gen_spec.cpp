@@ -47,12 +47,12 @@ Sequence Seq(const std::vector<double> &seq) {
 
 //-----------------------------------------------------------------------------
 
-DimSpec::DimSpec(const vespalib::string &name, size_t size) noexcept
+DimSpec::DimSpec(const std::string &name, size_t size) noexcept
     : _name(name), _size(size), _dict()
 {
     assert(_size);
 }
-DimSpec::DimSpec(const vespalib::string &name, std::vector<vespalib::string> dict) noexcept
+DimSpec::DimSpec(const std::string &name, std::vector<std::string> dict) noexcept
     : _name(name), _size(), _dict(std::move(dict))
 {
     assert(!_size);
@@ -65,10 +65,10 @@ DimSpec & DimSpec::operator=(const DimSpec &) = default;
 
 DimSpec::~DimSpec() = default;
 
-std::vector<vespalib::string>
-DimSpec::make_dict(size_t size, size_t stride, const vespalib::string &prefix)
+std::vector<std::string>
+DimSpec::make_dict(size_t size, size_t stride, const std::string &prefix)
 {
-    std::vector<vespalib::string> dict;
+    std::vector<std::string> dict;
     for (size_t i = 0; i < size; ++i) {
         dict.push_back(fmt("%s%zu", prefix.c_str(), (i + 1) * stride));
     }
@@ -84,10 +84,10 @@ auto is_dim_name = [](char c) {
 // 'a2' -> DimSpec("a", 2);
 // 'b2_3' -> DimSpec("b", make_dict(2, 3, ""));
 DimSpec
-DimSpec::from_desc(const vespalib::string &desc)
+DimSpec::from_desc(const std::string &desc)
 {
     size_t idx = 0;
-    vespalib::string name;
+    std::string name;
     auto is_num = [](char c) { return ((c >= '0') && (c <= '9')); };
     auto as_num = [](char c) { return size_t(c - '0'); };
     auto is_map_tag = [](char c) { return (c == '_'); };
@@ -119,10 +119,10 @@ DimSpec::from_desc(const vespalib::string &desc)
 // 'a2b12c5' -> GenSpec().idx("a", 2).idx("b", 12).idx("c", 5);
 // 'a2_1b3_2c5_1' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
 GenSpec
-GenSpec::from_desc(const vespalib::string &desc)
+GenSpec::from_desc(const std::string &desc)
 {
     size_t idx = 0;
-    vespalib::string dim_desc;
+    std::string dim_desc;
     std::vector<DimSpec> dim_list;
     while (idx < desc.size()) {
         dim_desc.clear();

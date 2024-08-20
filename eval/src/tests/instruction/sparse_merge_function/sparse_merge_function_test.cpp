@@ -29,7 +29,7 @@ EvalFixture::ParamRepo make_params() {
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
-void assert_optimized(const vespalib::string &expr) {
+void assert_optimized(const std::string &expr) {
     EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
     EvalFixture test_fixture(test_factory, expr, param_repo, true);
     EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
@@ -41,7 +41,7 @@ void assert_optimized(const vespalib::string &expr) {
     EXPECT_EQ(slow_fixture.find_all<SparseMergeFunction>().size(), 0u);
 }
 
-void assert_not_optimized(const vespalib::string &expr) {
+void assert_not_optimized(const std::string &expr) {
     EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQ(fast_fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQ(fast_fixture.find_all<SparseMergeFunction>().size(), 0u);

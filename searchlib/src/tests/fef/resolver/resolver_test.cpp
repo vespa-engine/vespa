@@ -87,9 +87,9 @@ TEST_F("require_that_bad_input_is_handled", Fixture) {
 }
 
 TEST("require that features can be described") {
-    EXPECT_EQUAL(BlueprintResolver::describe_feature("featureName"), vespalib::string("rank feature featureName"));
-    EXPECT_EQUAL(BlueprintResolver::describe_feature("rankingExpression(foo)"), vespalib::string("function foo"));
-    EXPECT_EQUAL(BlueprintResolver::describe_feature("rankingExpression(foo@1234.5678)"), vespalib::string("function foo"));
+    EXPECT_EQUAL(BlueprintResolver::describe_feature("featureName"), std::string("rank feature featureName"));
+    EXPECT_EQUAL(BlueprintResolver::describe_feature("rankingExpression(foo)"), std::string("function foo"));
+    EXPECT_EQUAL(BlueprintResolver::describe_feature("rankingExpression(foo@1234.5678)"), std::string("function foo"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

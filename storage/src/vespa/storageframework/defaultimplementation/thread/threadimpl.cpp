@@ -81,7 +81,7 @@ ThreadImpl::join()
     }
 }
 
-vespalib::string
+std::string
 ThreadImpl::get_live_thread_stack_trace() const
 {
     auto native_handle = const_cast<std::thread&>(_thread).native_handle();

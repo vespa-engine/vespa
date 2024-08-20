@@ -69,7 +69,7 @@ makeDiskLimitMessage(std::ostream &os,
     os << "}";
 }
 
-vespalib::string
+std::string
 makeUnblockingMessage(double memoryUsed,
                       double memoryLimit,
                       const vespalib::ProcessMemoryStats &memoryStats,
@@ -117,7 +117,7 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
         _acceptWrite = false;
     } else {
         if (!_acceptWrite) {
-            vespalib::string unblockMsg = makeUnblockingMessage(memoryUsed,
+            std::string unblockMsg = makeUnblockingMessage(memoryUsed,
                                                                 _config._memoryLimit,
                                                                 _memoryStats,
                                                                 _hwInfo,

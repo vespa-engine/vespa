@@ -85,7 +85,7 @@ public:
             return (includedMetrics.find(m.getPath()) != includedMetrics.end());
         }
 
-        vespalib::string toString() const;
+        std::string toString() const;
 
         void addMemoryUsage(MemoryConsumption&) const;
     };

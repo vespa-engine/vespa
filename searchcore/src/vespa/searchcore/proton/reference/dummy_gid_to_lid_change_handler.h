@@ -25,7 +25,7 @@ public:
     void notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serial_num) override;
     void notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gid, SerialNum serialNum) override;
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
-    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override;
+    void removeListeners(const std::string &docTypeName, const std::set<std::string> &keepNames) override;
     std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override;
 };
 

@@ -26,7 +26,7 @@ class SingleRawAttribute : public RawAttribute
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 public:
-    SingleRawAttribute(const vespalib::string& name, const Config& config);
+    SingleRawAttribute(const std::string& name, const Config& config);
     ~SingleRawAttribute() override;
     void onCommit() override;
     void onUpdateStat() override;

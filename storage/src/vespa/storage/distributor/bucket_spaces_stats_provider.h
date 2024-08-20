@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
 #include <map>
 #include <ostream>
+#include <string>
 #include <unordered_map>
 
 namespace storage::distributor {
@@ -55,7 +56,7 @@ std::ostream& operator<<(std::ostream& out, const BucketSpaceStats& stats);
 class BucketSpacesStatsProvider {
 public:
     // Mapping from bucket space name to statistics for that bucket space.
-    using BucketSpacesStats = std::map<vespalib::string, BucketSpaceStats>;
+    using BucketSpacesStats = std::map<std::string, BucketSpaceStats>;
     // Mapping from content node index to statistics for all bucket spaces on that node.
     using PerNodeBucketSpacesStats = std::unordered_map<uint16_t, BucketSpacesStats>;
 

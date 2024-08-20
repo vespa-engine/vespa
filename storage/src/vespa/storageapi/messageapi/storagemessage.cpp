@@ -17,7 +17,7 @@ std::atomic<uint64_t> _g_lastMsgId(1000);
 
 }
 
-static const vespalib::string STORAGEADDRESS_PREFIX = "storage/cluster.";
+static const std::string STORAGEADDRESS_PREFIX = "storage/cluster.";
 
 const char*
 StorageMessage::getPriorityString(Priority p) {
@@ -138,7 +138,7 @@ std::ostream & operator << (std::ostream & os, const StorageMessageAddress & add
 
 namespace {
 
-vespalib::string
+std::string
 createAddress(std::string_view cluster, const lib::NodeType &type, uint16_t index) {
     vespalib::asciistream os;
     os << STORAGEADDRESS_PREFIX << cluster << '/' << type.toString() << '/' << index << "/default";
@@ -152,7 +152,7 @@ calculate_node_hash(const lib::NodeType &type, uint16_t index) {
     return uint32_t(hash & 0xffffffffl) ^ uint32_t(hash >> 32);
 }
 
-vespalib::string Empty;
+std::string Empty;
 
 }
 
@@ -165,11 +165,11 @@ StorageMessageAddress::StorageMessageAddress() noexcept
       _index(0)
 {}
 
-StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept
+StorageMessageAddress::StorageMessageAddress(const std::string * cluster, const lib::NodeType& type, uint16_t index) noexcept
     : StorageMessageAddress(cluster, type, index, Protocol::STORAGE)
 { }
 
-StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type,
+StorageMessageAddress::StorageMessageAddress(const std::string * cluster, const lib::NodeType& type,
                                              uint16_t index, Protocol protocol) noexcept
     : _cluster(cluster),
       _precomputed_storage_hash(calculate_node_hash(type, index)),
@@ -201,7 +201,7 @@ StorageMessageAddress::operator==(const StorageMessageAddress& other) const noex
     return true;
 }
 
-vespalib::string
+std::string
 StorageMessageAddress::toString() const
 {
     vespalib::asciistream os;
@@ -258,7 +258,7 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id internal_id, Id o
 
 StorageMessage::~StorageMessage() = default;
 
-vespalib::string
+std::string
 StorageMessage::getSummary() const {
     return toString();
 }

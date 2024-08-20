@@ -3,6 +3,7 @@
 
 #include "valuemetric.h"
 #include "memoryconsumption.h"
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
@@ -226,7 +227,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::getDoubleValue(string_view id) const
     if (id == "min") return static_cast<double>(values._count > 0 ? values._min : 0);
     if (id == "max") return static_cast<double>(values._count > 0 ? values._max : 0);
     throw vespalib::IllegalArgumentException(
-            "No value " + vespalib::string(id) + " in average metric.", VESPA_STRLOC);
+            "No value " + std::string(id) + " in average metric.", VESPA_STRLOC);
 }
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>

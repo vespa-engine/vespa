@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace search {
@@ -18,9 +18,9 @@ namespace search::docsummary {
  */
 class StructFieldsResolver {
 private:
-    using StringVector = std::vector<vespalib::string>;
-    vespalib::string _field_name;
-    vespalib::string _map_key_attribute;
+    using StringVector = std::vector<std::string>;
+    std::string _field_name;
+    std::string _map_key_attribute;
     StringVector _map_value_fields;
     StringVector _map_value_attributes;
     StringVector _array_fields;
@@ -30,7 +30,7 @@ private:
     bool _error;
 
 public:
-    StructFieldsResolver(const vespalib::string& field_name, const search::attribute::IAttributeContext& attr_ctx,
+    StructFieldsResolver(const std::string& field_name, const search::attribute::IAttributeContext& attr_ctx,
                          bool require_all_struct_fields_as_attributes);
     ~StructFieldsResolver();
     bool is_map_of_scalar() const { return (_has_map_key &&
@@ -39,7 +39,7 @@ public:
                                             _map_value_fields.empty());
     }
     bool is_map_of_struct() const { return !_map_value_fields.empty(); }
-    const vespalib::string& get_map_key_attribute() const { return _map_key_attribute; }
+    const std::string& get_map_key_attribute() const { return _map_key_attribute; }
     const StringVector& get_map_value_fields() const { return _map_value_fields; }
     const StringVector& get_map_value_attributes() const { return _map_value_attributes; }
     const StringVector& get_array_fields() const { return _array_fields; }

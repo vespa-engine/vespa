@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib::eval {
 
@@ -13,6 +14,6 @@ enum class PassParams : uint8_t;
  * Function used to generate a binary key that may be used to query
  * the compilation cache.
  **/
-vespalib::string gen_key(const Function &function, PassParams pass_params);
+std::string gen_key(const Function &function, PassParams pass_params);
 
 }

@@ -55,7 +55,7 @@ RpcForwarder::ping_logserver()
 }
 
 RpcForwarder::RpcForwarder(Metrics& metrics, const ForwardMap& forward_filter, FRT_Supervisor& supervisor,
-                           const vespalib::string &hostname, int rpc_port,
+                           const std::string &hostname, int rpc_port,
                            double rpc_timeout_secs, size_t max_messages_per_request)
     : _metrics(metrics),
       _connection_spec(make_string("tcp/%s:%d", hostname.c_str(), rpc_port)),

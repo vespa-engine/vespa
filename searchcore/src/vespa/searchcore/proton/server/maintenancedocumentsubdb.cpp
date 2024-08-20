@@ -16,7 +16,7 @@ MaintenanceDocumentSubDB::MaintenanceDocumentSubDB()
 
 MaintenanceDocumentSubDB::~MaintenanceDocumentSubDB() = default;
 
-MaintenanceDocumentSubDB::MaintenanceDocumentSubDB(const vespalib::string& name,
+MaintenanceDocumentSubDB::MaintenanceDocumentSubDB(const std::string& name,
                                                    uint32_t sub_db_id,
                                                    IDocumentMetaStore::SP meta_store,
                                                    IDocumentRetriever::SP retriever,

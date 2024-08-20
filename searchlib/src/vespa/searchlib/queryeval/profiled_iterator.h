@@ -54,7 +54,7 @@ public:
     const PostingInfo *getPostingInfo() const override { return _search->getPostingInfo(); }
     static std::unique_ptr<SearchIterator> profile(Profiler &profiler,
                                                    std::unique_ptr<SearchIterator> node,
-                                                   const vespalib::string &path = "/");
+                                                   const std::string &path = "/");
 };
 
 } // namespace

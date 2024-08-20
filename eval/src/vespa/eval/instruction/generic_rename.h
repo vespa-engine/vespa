@@ -5,8 +5,8 @@
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/small_vector.h>
+#include <string>
 #include <vector>
 
 namespace vespalib::eval { struct ValueBuilderFactory; }
@@ -19,8 +19,8 @@ struct DenseRenamePlan {
     const size_t subspace_size;
     DenseRenamePlan(const ValueType &lhs_type,
                     const ValueType &output_type,
-                    const std::vector<vespalib::string> &from,
-                    const std::vector<vespalib::string> &to);
+                    const std::vector<std::string> &from,
+                    const std::vector<std::string> &to);
     ~DenseRenamePlan();
     template <typename F> void execute(size_t offset, const F &f) const {
         run_nested_loop(offset, loop_cnt, stride, f);
@@ -33,8 +33,8 @@ struct SparseRenamePlan {
     bool can_forward_index;
     SparseRenamePlan(const ValueType &input_type,
                      const ValueType &output_type,
-                     const std::vector<vespalib::string> &from,
-                     const std::vector<vespalib::string> &to);
+                     const std::vector<std::string> &from,
+                     const std::vector<std::string> &to);
     ~SparseRenamePlan();
 };
 
@@ -44,8 +44,8 @@ struct GenericRename {
     static InterpretedFunction::Instruction
     make_instruction(const ValueType &result_type,
                      const ValueType &input_type,
-                     const std::vector<vespalib::string> &rename_dimension_from,
-                     const std::vector<vespalib::string> &rename_dimension_to,
+                     const std::vector<std::string> &rename_dimension_from,
+                     const std::vector<std::string> &rename_dimension_to,
                      const ValueBuilderFactory &factory, Stash &stash);
 };
 

@@ -52,7 +52,7 @@ public:
                                      const Config &oldCfg,
                                      const IDocumentTypeInspector &inspector,
                                      const IIndexschemaInspector &oldIndexschemaInspector,
-                                     const vespalib::string &subDbName,
+                                     const std::string &subDbName,
                                      search::SerialNum serialNum);
 
     // Implements IReprocessingInitializer

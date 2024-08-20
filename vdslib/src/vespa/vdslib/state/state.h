@@ -11,14 +11,14 @@
 
 #include "nodetype.h"
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace storage::lib {
 
 class State : public vespalib::Printable {
-    vespalib::string _name;
-    vespalib::string _serialized;
+    std::string _name;
+    std::string _serialized;
     uint8_t _rankValue;
     std::vector<bool> _validReportedNodeState;
     std::vector<bool> _validWantedNodeState;
@@ -45,7 +45,7 @@ public:
 
     /** Throws vespalib::IllegalArgumentException if invalid state given. */
     static const State& get(std::string_view serialized);
-    const vespalib::string& serialize() const { return _serialized; }
+    const std::string& serialize() const { return _serialized; }
 
     bool validReportedNodeState(const NodeType& node) const { return _validReportedNodeState[node]; }
     bool validWantedNodeState(const NodeType& node) const { return _validWantedNodeState[node]; }
@@ -62,7 +62,7 @@ public:
      *
      * Example: State::RETIRED.getName() -> "Retired"
      */
-    const vespalib::string& getName() const noexcept {
+    const std::string& getName() const noexcept {
         return _name;
     }
 

@@ -14,7 +14,7 @@ private:
     search::SerialNum _serialNum;
 
 public:
-    DiskIndexWrapper(const vespalib::string &indexDir,
+    DiskIndexWrapper(const std::string &indexDir,
                      const search::TuneFileSearch &tuneFileSearch,
                      size_t cacheSize);
 
@@ -37,8 +37,8 @@ public:
     search::SerialNum getSerialNum() const override;
 
     void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
-    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
-    const vespalib::string &getIndexDir() const override { return _index.getIndexDir(); }
+    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
+    const std::string &getIndexDir() const override { return _index.getIndexDir(); }
     const search::index::Schema &getSchema() const override { return _index.getSchema(); }
 };
 

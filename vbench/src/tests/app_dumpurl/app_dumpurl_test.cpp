@@ -31,7 +31,7 @@ void readUntil(Input &input, SimpleBuffer &buffer, const string &end) {
 }
 
 TEST("dumpurl usage") {
-    vespalib::string out;
+    std::string out;
     EXPECT_FALSE(Process::run("../../apps/dumpurl/vbench_dumpurl_app", out));
     fprintf(stderr, "%s\n", out.c_str());
 }
@@ -47,7 +47,7 @@ TEST_MT_F("run dumpurl", 2, ServerSocket()) {
         out.write("\r\n");
         out.write("data");
     } else {
-        vespalib::string out;
+        std::string out;
         EXPECT_TRUE(Process::run(strfmt("../../apps/dumpurl/vbench_dumpurl_app localhost %d /foo",
                                         f1.port()).c_str(), out));
         fprintf(stderr, "%s\n", out.c_str());

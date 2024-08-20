@@ -13,7 +13,7 @@ SplunkStarter::~SplunkStarter() = default;
 
 namespace {
 
-vespalib::string fixDir(const vespalib::string &parent, const vespalib::string &subdir) {
+std::string fixDir(const std::string &parent, const std::string &subdir) {
     auto dirname = parent + "/" + subdir;
     DIR *dp = opendir(dirname.c_str());
     if (dp == NULL) {
@@ -27,17 +27,17 @@ vespalib::string fixDir(const vespalib::string &parent, const vespalib::string &
     return dirname;
 }
 
-vespalib::string
-cfFilePath(const vespalib::string &parent, const vespalib::string &filename) {
-    vespalib::string path = parent;
+std::string
+cfFilePath(const std::string &parent, const std::string &filename) {
+    std::string path = parent;
     path = fixDir(path, "etc");
     path = fixDir(path, "system");
     path = fixDir(path, "local");
     return path + "/" + filename;
 }
 
-vespalib::string splunkCertPath(const vespalib::string &parent, const vespalib::string &filename) {
-        vespalib::string path = parent;
+std::string splunkCertPath(const std::string &parent, const std::string &filename) {
+        std::string path = parent;
         path = fixDir(path, "var");
         path = fixDir(path, "lib");
         path = fixDir(path, "sia");
@@ -45,7 +45,7 @@ vespalib::string splunkCertPath(const vespalib::string &parent, const vespalib::
         return path + "/" + filename;
     }
 
-void appendFile(FILE *target, const vespalib::string &filename) {
+void appendFile(FILE *target, const std::string &filename) {
     FILE *fp = fopen(filename.c_str(), "r");
     if (fp != NULL) {
         int c;
@@ -59,9 +59,9 @@ void appendFile(FILE *target, const vespalib::string &filename) {
 } // namespace <unnamed>
 
 void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
-    vespalib::string path = cfFilePath(config.splunkHome, "deploymentclient.conf");
+    std::string path = cfFilePath(config.splunkHome, "deploymentclient.conf");
     LOG(debug, "got config, writing %s", path.c_str());
-    vespalib::string tmpPath = path + ".new";
+    std::string tmpPath = path + ".new";
     FILE *fp = fopen(tmpPath.c_str(), "w");
     if (fp == NULL) {
         LOG(warning, "could not open '%s' for write", tmpPath.c_str());
@@ -101,10 +101,10 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
             rename(tmpPath.c_str(), path.c_str());
         }
     }
-    vespalib::string clientCert = clientCertFile();
-    vespalib::string clientKey = clientKeyFile();
+    std::string clientCert = clientCertFile();
+    std::string clientKey = clientKeyFile();
     if (!clientCert.empty() && !clientKey.empty()) {
-        vespalib::string certPath = splunkCertPath(config.splunkHome, "servercert.pem");
+        std::string certPath = splunkCertPath(config.splunkHome, "servercert.pem");
         tmpPath = certPath + ".new";
         fp = fopen(tmpPath.c_str(), "w");
         appendFile(fp, clientCert);

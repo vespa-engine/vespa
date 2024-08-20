@@ -37,7 +37,7 @@ void check_gen_with_result(size_t l, size_t r, double wanted) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", makeTensor(l, leftBias));
     param_repo.add("b", makeTensor(r, rightBias));
-    vespalib::string expr = "reduce(a*b,sum,x)";
+    std::string expr = "reduce(a*b,sum,x)";
     EvalFixture evaluator(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(GenSpec(wanted).gen(), evaluator.result());
     EXPECT_EQUAL(evaluator.result(), EvalFixture::ref(expr, param_repo));
@@ -93,14 +93,14 @@ struct FunInfo {
 };
 
 
-void assertOptimized(const vespalib::string &expr) {
+void assertOptimized(const std::string &expr) {
     TEST_STATE(expr.c_str());
     auto all_types = CellTypeSpace(CellTypeUtils::list_types(), 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo{}}, all_types);
 
 }
 
-void assertNotOptimized(const vespalib::string &expr) {
+void assertNotOptimized(const std::string &expr) {
     TEST_STATE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);
@@ -146,7 +146,7 @@ TEST("require that result must be double to trigger optimization") {
     TEST_DO(assertNotOptimized("reduce(x3y3$1*x3y3$2,sum,y)"));
 }
 
-void verify_compatible(const vespalib::string &a, const vespalib::string &b) {
+void verify_compatible(const std::string &a, const std::string &b) {
     auto a_type = ValueType::from_spec(a);
     auto b_type = ValueType::from_spec(b);
     EXPECT_TRUE(!a_type.is_error());
@@ -155,7 +155,7 @@ void verify_compatible(const vespalib::string &a, const vespalib::string &b) {
     EXPECT_TRUE(DenseDotProductFunction::compatible_types(ValueType::double_type(), b_type, a_type));
 }
 
-void verify_not_compatible(const vespalib::string &a, const vespalib::string &b) {
+void verify_not_compatible(const std::string &a, const std::string &b) {
     auto a_type = ValueType::from_spec(a);
     auto b_type = ValueType::from_spec(b);
     EXPECT_TRUE(!a_type.is_error());

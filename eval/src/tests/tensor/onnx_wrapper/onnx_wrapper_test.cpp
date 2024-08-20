@@ -510,7 +510,7 @@ TEST(OnnxModelCacheTest, share_and_evict_onnx_models) {
     EXPECT_EQ(OnnxModelCache::count_refs(), 0);
 }
 
-TensorSpec val(const vespalib::string &expr) {
+TensorSpec val(const std::string &expr) {
     auto result = TensorSpec::from_expr(expr);
     EXPECT_FALSE(ValueType::from_spec(result.type()).is_error());
     return result;

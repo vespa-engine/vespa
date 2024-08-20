@@ -56,7 +56,7 @@ bool match_prod_join(const Node &node) {
     return false;
 }
 
-bool match_max_reduce(const Node &node, vespalib::string &reduce_dim) {
+bool match_max_reduce(const Node &node, std::string &reduce_dim) {
     auto reduce = as<TensorReduce>(node);
     if (!reduce || (reduce->aggr() != Aggr::MAX) || (reduce->dimensions().size() > 1)) {
         return false;
@@ -67,7 +67,7 @@ bool match_max_reduce(const Node &node, vespalib::string &reduce_dim) {
     return true;
 }
 
-bool match_function(const Function &function, vespalib::string &reduce_dim) {
+bool match_function(const Function &function, std::string &reduce_dim) {
     const Node &expect_max = function.root();
     if ((function.num_params() == 2) && match_max_reduce(expect_max, reduce_dim)) {
         const Node &expect_mul = expect_max.get_child(0);
@@ -78,17 +78,17 @@ bool match_function(const Function &function, vespalib::string &reduce_dim) {
     return false;
 }
 
-void try_extract_param(const vespalib::string &feature, const vespalib::string &wanted_wrapper,
-                       vespalib::string &param, vespalib::string &dim)
+void try_extract_param(const std::string &feature, const std::string &wanted_wrapper,
+                       std::string &param, std::string &dim)
 {
     FeatureNameParser parser(feature);
     if (parser.valid() &&
         (parser.parameters().size() >= 1) &&
         (parser.parameters().size() <= 2))
     {
-        vespalib::string wrapper;
-        vespalib::string body;
-        vespalib::string error;
+        std::string wrapper;
+        std::string body;
+        std::string error;
         if (Function::unwrap(parser.parameters()[0], wrapper, body, error) &&
             (wrapper == wanted_wrapper))
         {
@@ -103,12 +103,12 @@ void try_extract_param(const vespalib::string &feature, const vespalib::string &
 }
 
 struct MatchInputs {
-    vespalib::string attribute;
-    vespalib::string attribute_dim;
-    vespalib::string query;
-    vespalib::string query_dim;
+    std::string attribute;
+    std::string attribute_dim;
+    std::string query;
+    std::string query_dim;
     MatchInputs() : attribute(), attribute_dim(), query(), query_dim() {}
-    void process(const vespalib::string &param) {
+    void process(const std::string &param) {
         if (param.starts_with("tensorFromLabels")) {
             try_extract_param(param, "attribute", attribute, attribute_dim);
         } else if (param.starts_with("tensorFromWeightedSet")) {
@@ -127,7 +127,7 @@ struct MaxReduceProdJoinReplacerImpl : ExpressionReplacer {
     IntrinsicExpression::UP maybe_replace(const Function &function,
                                           const IIndexEnvironment &env) const override
     {
-        vespalib::string reduce_dim;
+        std::string reduce_dim;
         if (match_function(function, reduce_dim)) {
             MatchInputs match_inputs;
             match_inputs.process(function.param_name(0));

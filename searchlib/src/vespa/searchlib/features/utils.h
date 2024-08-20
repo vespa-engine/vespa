@@ -138,8 +138,8 @@ feature_t calculate_legacy_significance(const search::fef::ITermData& termData);
  * @return the table pointer or NULL if not found.
  **/
 const search::fef::Table *
-lookupTable(const search::fef::IIndexEnvironment & env, const vespalib::string & featureName,
-            const vespalib::string & table, const vespalib::string & fieldName, const vespalib::string & fallback);
+lookupTable(const search::fef::IIndexEnvironment & env, const std::string & featureName,
+            const std::string & table, const std::string & fieldName, const std::string & fallback);
 
 /**
  * Obtain query information for a term/field combination.
@@ -180,7 +180,7 @@ getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, u
  * @param label query item label
  **/
 const search::fef::ITermData *
-getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label);
+getTermByLabel(const search::fef::IQueryEnvironment &env, const std::string &label);
 
 std::optional<search::fef::DocumentFrequency>
 lookup_document_frequency(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);

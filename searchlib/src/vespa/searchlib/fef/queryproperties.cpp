@@ -7,7 +7,7 @@ namespace fef {
 namespace queryproperties {
 namespace now {
 
-const vespalib::string SystemTime::NAME("vespa.now");
+const std::string SystemTime::NAME("vespa.now");
 
 } // namespace now
 } // namespace queryproperties

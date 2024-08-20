@@ -39,7 +39,7 @@ std::vector<std::string> ns_list = {
     {"vespalib::eval::aggr::"},
     {"vespalib::eval::"}
 };
-std::string strip_ns(const vespalib::string &str) {
+std::string strip_ns(const std::string &str) {
     std::string tmp = str;
     for (const auto &ns: ns_list) {
         for (bool again = true; again;) {
@@ -58,7 +58,7 @@ CellType always_double(size_t) { return CellType::DOUBLE; }
 select_cell_type_t select(CellType lct) { return [lct](size_t)noexcept{ return lct; }; }
 select_cell_type_t  select(CellType lct, CellType rct) { return [lct,rct](size_t idx)noexcept{ return idx ? rct : lct; }; }
 
-TensorSpec make_spec(const vespalib::string &param_name, size_t idx, select_cell_type_t select_cell_type) {
+TensorSpec make_spec(const std::string &param_name, size_t idx, select_cell_type_t select_cell_type) {
     return GenSpec::from_desc(param_name).cells(select_cell_type(idx)).seq(N(1 + idx));
 }
 
@@ -77,19 +77,19 @@ private:
 public:
     enum class With { NONE, CUSTOM, PROD, SPECIFIC };
     With with;
-    vespalib::string name;
+    std::string name;
     OptimizeTensorFunctionOptions options;
     tensor_function_optimizer optimizer;
-    Optimize(With with_in, const vespalib::string name_in,
+    Optimize(With with_in, const std::string name_in,
              const OptimizeTensorFunctionOptions &options_in,
              tensor_function_optimizer optimizer_in, ctor_tag)
       : with(with_in), name(name_in), options(options_in), optimizer(optimizer_in) {}
     static Optimize none() { return {With::NONE, "none", {}, {}, {}}; }
     static Optimize prod() { return {With::PROD, "prod", {}, {}, {}}; }
-    static Optimize custom(const vespalib::string &name_in, const OptimizeTensorFunctionOptions &options_in) {
+    static Optimize custom(const std::string &name_in, const OptimizeTensorFunctionOptions &options_in) {
         return {With::CUSTOM, name_in, options_in, {}, {}};
     }
-    static Optimize specific(const vespalib::string &name_in, tensor_function_optimizer optimizer_in) {
+    static Optimize specific(const std::string &name_in, tensor_function_optimizer optimizer_in) {
         return {With::SPECIFIC, name_in, {}, optimizer_in, {}};
     }
     ~Optimize();
@@ -124,7 +124,7 @@ bool satisfies(bool actual, Trinary expect) {
     return (expect == Trinary::Undefined) || (actual == (expect == Trinary::True));
 }
 
-void verify(const vespalib::string &expr, select_cell_type_t select_cell_type,
+void verify(const std::string &expr, select_cell_type_t select_cell_type,
             Trinary expect_forward, Trinary expect_distinct, Trinary expect_single)
 {
     ++verify_cnt;
@@ -171,17 +171,17 @@ void verify(const vespalib::string &expr, select_cell_type_t select_cell_type,
     auto expected = eval_ref(*fun, select_cell_type);
     EXPECT_EQ(spec_from_value(actual), expected);
 }
-void verify(const vespalib::string &expr) {
+void verify(const std::string &expr) {
     verify(expr, always_double, Trinary::Undefined, Trinary::Undefined, Trinary::Undefined);
 }
-void verify(const vespalib::string &expr, select_cell_type_t select_cell_type, bool forward, bool distinct, bool single) {
+void verify(const std::string &expr, select_cell_type_t select_cell_type, bool forward, bool distinct, bool single) {
     verify(expr, select_cell_type, tri(forward), tri(distinct), tri(single));
 }
 
-using cost_list_t = std::vector<std::pair<vespalib::string,double>>;
-std::vector<std::pair<vespalib::string,cost_list_t>> benchmark_results;
+using cost_list_t = std::vector<std::pair<std::string,double>>;
+std::vector<std::pair<std::string,cost_list_t>> benchmark_results;
 
-void benchmark(const vespalib::string &expr, std::vector<Optimize> list) {
+void benchmark(const std::string &expr, std::vector<Optimize> list) {
     verify(expr);
     auto fun = Function::parse(expr);
     ASSERT_FALSE(fun->has_error());

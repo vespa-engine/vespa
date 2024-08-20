@@ -3,11 +3,11 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/eval/eval/value_type.h>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace search::fef::test {
 
@@ -18,20 +18,20 @@ namespace search::fef::test {
 struct DummyDependencyHandler : public Blueprint::DependencyHandler
 {
     Blueprint                             &blueprint;
-    std::map<vespalib::string,FeatureType> object_type_map;
+    std::map<std::string,FeatureType> object_type_map;
     bool                                   accept_type_mismatch;
-    std::vector<vespalib::string>          input;
+    std::vector<std::string>          input;
     std::vector<Blueprint::AcceptInput>    accept_input;
-    std::vector<vespalib::string>          output;
+    std::vector<std::string>          output;
     std::vector<FeatureType>               output_type;
-    vespalib::string                       fail_msg;
+    std::string                       fail_msg;
 
     explicit DummyDependencyHandler(Blueprint &blueprint_in);
     ~DummyDependencyHandler();
-    void define_object_input(const vespalib::string &name, const vespalib::eval::ValueType &type);
-    std::optional<FeatureType> resolve_input(const vespalib::string &feature_name, Blueprint::AcceptInput accept_type) override;
-    void define_output(const vespalib::string &output_name, FeatureType type) override;
-    void fail(const vespalib::string &msg) override;
+    void define_object_input(const std::string &name, const vespalib::eval::ValueType &type);
+    std::optional<FeatureType> resolve_input(const std::string &feature_name, Blueprint::AcceptInput accept_type) override;
+    void define_output(const std::string &output_name, FeatureType type) override;
+    void fail(const std::string &msg) override;
 };
 
 }

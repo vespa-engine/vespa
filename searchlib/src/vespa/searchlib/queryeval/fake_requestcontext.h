@@ -37,13 +37,13 @@ public:
                    ? _attributeContext->getAttribute(name)
                    : nullptr;
     }
-    vespalib::eval::Value* get_query_tensor(const vespalib::string& tensor_name) const override {
+    vespalib::eval::Value* get_query_tensor(const std::string& tensor_name) const override {
         if (_query_tensor && (tensor_name == _query_tensor_name)) {
             return _query_tensor.get();
         }
         return nullptr;
     }
-    void set_query_tensor(const vespalib::string& name, const vespalib::eval::TensorSpec& tensor_spec) {
+    void set_query_tensor(const std::string& name, const vespalib::eval::TensorSpec& tensor_spec) {
         _query_tensor_name = name;
         _query_tensor = vespalib::eval::value_from_spec(tensor_spec, vespalib::eval::FastValueBuilderFactory::get());
     }
@@ -54,7 +54,7 @@ private:
     std::unique_ptr<vespalib::TestClock> _clock;
     const vespalib::Doom _doom;
     attribute::IAttributeContext *_attributeContext;
-    vespalib::string _query_tensor_name;
+    std::string _query_tensor_name;
     std::unique_ptr<vespalib::eval::Value> _query_tensor;
     search::attribute::AttributeBlueprintParams _attribute_blueprint_params;
 };

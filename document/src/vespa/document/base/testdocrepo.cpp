@@ -75,7 +75,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
 }
 
 const DataType*
-TestDocRepo::getDocumentType(const vespalib::string &t) const {
+TestDocRepo::getDocumentType(const std::string &t) const {
     return _repo->getDocumentType(t);
 }
 

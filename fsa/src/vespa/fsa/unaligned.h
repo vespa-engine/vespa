@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstring>
+#include <type_traits>
 
 namespace fsa {
 

@@ -23,7 +23,7 @@ using namespace vespalib;
 
 namespace {
 
-int get_port(const vespalib::string &spec) {
+int get_port(const std::string &spec) {
     const char *port = (spec.data() + spec.size());
     while ((port > spec.data()) && (port[-1] >= '0') && (port[-1] <= '9')) {
         --port;
@@ -31,8 +31,8 @@ int get_port(const vespalib::string &spec) {
     return atoi(port);
 }
 
-const vespalib::string requestTypes = "s";
-const vespalib::string responseTypes = "sx";
+const std::string requestTypes = "s";
+const std::string responseTypes = "sx";
 
 struct RPCServer : public FRT_Invokable {
     vespalib::Barrier barrier;
@@ -72,7 +72,7 @@ struct RPCServer : public FRT_Invokable {
 
         SimpleBuffer pbuf;
         JsonFormat::encode(payload, pbuf, false);
-        vespalib::string d = pbuf.get().make_string();
+        std::string d = pbuf.get().make_string();
         ret.AddData(d.c_str(), d.size());
         LOG(info, "Answering...");
     }
@@ -94,8 +94,8 @@ struct ServerFixture {
     std::unique_ptr<fnet::frt::StandaloneFRT> frt;
     RPCServer server;
     Barrier b;
-    const vespalib::string listenSpec;
-    ServerFixture(const vespalib::string & ls)
+    const std::string listenSpec;
+    ServerFixture(const std::string & ls)
         : frt(),
           server(),
           b(2),
@@ -134,7 +134,7 @@ struct NetworkFixture {
     std::vector<ServerFixture::UP> serverList;
     ServerSpec spec;
     bool running;
-    NetworkFixture(const std::vector<vespalib::string> & serverSpecs)
+    NetworkFixture(const std::vector<std::string> & serverSpecs)
         : spec(serverSpecs), running(true)
     {
         for (size_t i = 0; i < serverSpecs.size(); i++) {
@@ -258,7 +258,7 @@ struct ConfigReloadFixture {
 };
 
 struct ThreeServersFixture {
-    std::vector<vespalib::string> specs;
+    std::vector<std::string> specs;
     ThreeServersFixture() : specs() {
         specs.push_back("tcp/localhost:18590");
         specs.push_back("tcp/localhost:18592");
@@ -267,7 +267,7 @@ struct ThreeServersFixture {
 };
 
 struct OneServerFixture {
-    std::vector<vespalib::string> specs;
+    std::vector<std::string> specs;
     OneServerFixture() : specs() {
         specs.push_back("tcp/localhost:18590");
     }

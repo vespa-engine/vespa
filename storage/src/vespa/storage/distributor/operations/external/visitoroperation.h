@@ -62,7 +62,7 @@ public:
     [[nodiscard]] bool is_read_for_write() const noexcept { return _is_read_for_write; }
     [[nodiscard]] std::optional<document::Bucket> first_bucket_to_visit() const;
     void assign_bucket_lock_handle(SequencingHandle handle);
-    void assign_put_lock_access_token(const vespalib::string& token);
+    void assign_put_lock_access_token(const std::string& token);
 
 private:
     struct BucketInfo {
@@ -75,7 +75,7 @@ private:
         ~BucketInfo();
 
         void print(vespalib::asciistream & out) const;
-        vespalib::string toString() const;
+        std::string toString() const;
     };
 
     using VisitBucketMap = std::map<document::BucketId, BucketInfo>;
@@ -182,7 +182,7 @@ private:
     mbus::TraceNode trace;
     framework::MilliSecTimer _operationTimer;
     SequencingHandle _bucket_lock;
-    vespalib::string _put_lock_token;
+    std::string _put_lock_token;
     bool _sentReply;
     bool _verified_and_expanded;
     bool _is_read_for_write;

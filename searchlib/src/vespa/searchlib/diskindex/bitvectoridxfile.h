@@ -5,7 +5,7 @@
 #include "bitvectorkeyscope.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 class Fast_BufferedFile;
 
@@ -38,7 +38,7 @@ public:
 
     virtual ~BitVectorIdxFileWrite();
 
-    virtual void open(const vespalib::string &name, uint32_t docIdLimit,
+    virtual void open(const std::string &name, uint32_t docIdLimit,
                       const TuneFileSeqWrite &tuneFileWrite,
                       const common::FileHeaderContext &fileHeaderContext);
 

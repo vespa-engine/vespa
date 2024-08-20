@@ -6,7 +6,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace document;
-using vespalib::string;
+using std::string;
 
 namespace {
 
