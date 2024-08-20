@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
  *
  * @author arnej27959
  */
-public class ArrayAtLookupNode extends UnaryFunctionNode {
+public final class ArrayAtLookupNode extends UnaryFunctionNode {
 
     public static final int classId = registerClass(0x4000 + 38, ArrayAtLookupNode.class, ArrayAtLookupNode::new);
     private String attribute;
@@ -46,14 +46,12 @@ public class ArrayAtLookupNode extends UnaryFunctionNode {
      * Sets the name of the attribute whose value we do index in.
      *
      * @param attribute The attribute to retrieve.
-     * @return This, to allow chaining.
      */
-    public ArrayAtLookupNode setAttributeName(String attribute) {
+    private void setAttributeName(String attribute) {
         if (attribute == null) {
             throw new IllegalArgumentException("Attribute name can not be null.");
         }
         this.attribute = attribute;
-        return this;
     }
 
     @Override

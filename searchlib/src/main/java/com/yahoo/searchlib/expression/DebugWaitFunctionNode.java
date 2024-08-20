@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
  *
  * @author Ulf Lilleengen
  */
-public class DebugWaitFunctionNode extends UnaryFunctionNode {
+public final class DebugWaitFunctionNode extends UnaryFunctionNode {
 
     public static final int classId = registerClass(0x4000 + 144, DebugWaitFunctionNode.class, DebugWaitFunctionNode::new);
     private double waitTime;

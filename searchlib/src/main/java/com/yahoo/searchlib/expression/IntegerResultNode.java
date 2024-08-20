@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
  * @author baldersheim
  * @author Simon Thoresen Hult
  */
-public class IntegerResultNode extends NumericResultNode {
+public final class IntegerResultNode extends NumericResultNode {
 
     public static final int classId = registerClass(0x4000 + 107, IntegerResultNode.class, IntegerResultNode::new);
     private static final IntegerResultNode negativeInfinity = new IntegerResultNode(Long.MIN_VALUE);

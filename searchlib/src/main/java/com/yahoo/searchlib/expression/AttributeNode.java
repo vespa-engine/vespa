@@ -27,7 +27,10 @@ public class AttributeNode extends FunctionNode {
      * @param attribute The attribute to retrieve.
      */
     public AttributeNode(String attribute) {
-        setAttributeName(attribute);
+        if (attribute == null) {
+            throw new IllegalArgumentException("Attribute name can not be null.");
+        }
+        this.attribute = attribute;
     }
 
     /**
@@ -43,14 +46,12 @@ public class AttributeNode extends FunctionNode {
      * Sets the name of the attribute whose value this function is to retrieve.
      *
      * @param attribute The attribute to retrieve.
-     * @return This, to allow chaining.
      */
-    public AttributeNode setAttributeName(String attribute) {
+    final void setAttributeName(String attribute) {
         if (attribute == null) {
             throw new IllegalArgumentException("Attribute name can not be null.");
         }
         this.attribute = attribute;
-        return this;
     }
 
     @Override

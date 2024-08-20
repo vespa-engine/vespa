@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class Grouping extends Identifiable {
+public final class Grouping extends Identifiable {
 
     // Force load all of expression and aggregation when using this class.
     static {

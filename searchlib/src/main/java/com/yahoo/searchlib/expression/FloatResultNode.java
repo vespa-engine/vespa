@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
  * @author baldersheim
  * @author Simon Thoresen Hult
  */
-public class FloatResultNode extends NumericResultNode {
+public final class FloatResultNode extends NumericResultNode {
 
     // The global class identifier shared with C++.
     public static final int classId = registerClass(0x4000 + 52, FloatResultNode.class, FloatResultNode::new);
@@ -43,11 +43,9 @@ public class FloatResultNode extends NumericResultNode {
      * Sets the value of this result.
      *
      * @param value The value to set.
-     * @return This, to allow chaining.
      */
-    public FloatResultNode setValue(double value) {
+    void setValue(double value) {
         this.value = value;
-        return this;
     }
 
     @Override

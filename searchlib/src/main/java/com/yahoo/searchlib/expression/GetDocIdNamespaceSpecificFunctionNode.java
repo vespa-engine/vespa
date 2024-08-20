@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
  * @author baldersheim
  * @author Simon Thoresen Hult
  */
-public class GetDocIdNamespaceSpecificFunctionNode extends DocumentAccessorNode {
+public final class GetDocIdNamespaceSpecificFunctionNode extends DocumentAccessorNode {
 
     public static final int classId = registerClass(0x4000 + 73, GetDocIdNamespaceSpecificFunctionNode.class, GetDocIdNamespaceSpecificFunctionNode::new);
     private ResultNode result = null;
@@ -30,18 +30,7 @@ public class GetDocIdNamespaceSpecificFunctionNode extends DocumentAccessorNode 
      */
     public GetDocIdNamespaceSpecificFunctionNode(ResultNode result) {
         super();
-        setResult(result);
-    }
-
-    /**
-     * Sets the result of this function.
-     *
-     * @param result The result to set.
-     * @return This, to allow chaining.
-     */
-    public GetDocIdNamespaceSpecificFunctionNode setResult(ResultNode result) {
         this.result = result;
-        return this;
     }
 
     @Override
