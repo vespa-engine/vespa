@@ -16,6 +16,7 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>

@@ -4,6 +4,7 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exception.h>
 #include <cmath>
 #include <gmock/gmock.h>
