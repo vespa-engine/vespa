@@ -17,39 +17,39 @@ public class ServicePoolTestCase {
     void testMaxSize() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         RPCNetwork net = new RPCNetwork(new RPCNetworkParams().setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
-        RPCServicePool pool = new RPCServicePool(net, 2);
+        RPCServicePool pool = new RPCServicePool(2);
 
-        pool.resolve("foo");
+        pool.resolve("foo", net.getMirror());
         assertEquals(1, pool.getSize());
         assertTrue(pool.hasService("foo"));
         assertFalse(pool.hasService("bar"));
         assertFalse(pool.hasService("baz"));
 
-        pool.resolve("foo");
+        pool.resolve("foo", net.getMirror());
         assertEquals(1, pool.getSize());
         assertTrue(pool.hasService("foo"));
         assertFalse(pool.hasService("bar"));
         assertFalse(pool.hasService("baz"));
 
-        pool.resolve("bar");
+        pool.resolve("bar", net.getMirror());
         assertEquals(2, pool.getSize());
         assertTrue(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));
         assertFalse(pool.hasService("baz"));
 
-        pool.resolve("baz");
+        pool.resolve("baz", net.getMirror());
         assertEquals(2, pool.getSize());
         assertFalse(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));
         assertTrue(pool.hasService("baz"));
 
-        pool.resolve("bar");
+        pool.resolve("bar", net.getMirror());
         assertEquals(2, pool.getSize());
         assertFalse(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));
         assertTrue(pool.hasService("baz"));
 
-        pool.resolve("foo");
+        pool.resolve("foo", net.getMirror());
         assertEquals(2, pool.getSize());
         assertTrue(pool.hasService("foo"));
         assertTrue(pool.hasService("bar"));

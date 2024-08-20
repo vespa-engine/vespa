@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  *
  * @author havardpe
  */
-public final class RPCNetwork implements Network, MethodHandler {
+public class RPCNetwork implements Network, MethodHandler {
 
     private static final Logger log = Logger.getLogger(RPCNetwork.class.getName());
     private static final Version REPORTED_VERSION = new Version(8, 310);
