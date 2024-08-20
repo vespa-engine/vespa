@@ -29,10 +29,10 @@ import java.util.logging.Level;
  */
 public class TestServer {
 
-    private static Logger log = Logger.getLogger(TestServer.class.getName());
+    private static final Logger log = Logger.getLogger(TestServer.class.getName());
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
-    public final VersionedRPCNetwork net;
+    public final RPCNetwork net;
     public final MessageBus mb;
 
     /**
@@ -69,7 +69,8 @@ public class TestServer {
 
     /** Creates a new test server. */
     public TestServer(MessageBusParams mbusParams, RPCNetworkParams netParams) {
-        net = new VersionedRPCNetwork(netParams);
+        net = new RPCNetwork(netParams);
+        net.setVersion(Vtag.currentVersion);
         mb = new MessageBus(net, mbusParams);
     }
 
@@ -166,25 +167,6 @@ public class TestServer {
             }
         }
         return false;
-    }
-
-    public static class VersionedRPCNetwork extends RPCNetwork {
-
-        private Version version = Vtag.currentVersion;
-
-        public VersionedRPCNetwork(RPCNetworkParams netParams) {
-            super(netParams);
-        }
-
-        @Override
-        protected Version getVersion() {
-            return version;
-        }
-
-        public void setVersion(Version version) {
-            this.version = version;
-            flushTargetPool();
-        }
     }
 
 }

@@ -5,6 +5,8 @@ package com.yahoo.jrt;
 import com.yahoo.security.tls.Capability;
 import com.yahoo.security.tls.CapabilitySet;
 
+import java.util.Objects;
+
 /**
  * <p>A Method encapsulates the reflective information about a single RPC
  * method.</p>
@@ -81,13 +83,9 @@ public class Method {
      *
      * @throws MethodCreateException if the handler is <i>null</i>.
      **/
-    public Method(String name, String paramTypes, String returnTypes,
-                  MethodHandler handler) {
-
+    public Method(String name, String paramTypes, String returnTypes, MethodHandler handler) {
+        Objects.requireNonNull(handler, "Handler is null");
         this.handler = handler;
-        if (this.handler == null) {
-            throw new MethodCreateException("Handler is null");
-        }
         init(name, paramTypes, returnTypes);
     }
 

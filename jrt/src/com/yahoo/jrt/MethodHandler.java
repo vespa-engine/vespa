@@ -18,5 +18,5 @@ public interface MethodHandler {
      *
      * @param req the request
      **/
-    public void invoke(Request req);
+    void invoke(Request req);
 }
