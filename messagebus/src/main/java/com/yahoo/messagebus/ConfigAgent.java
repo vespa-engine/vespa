@@ -14,7 +14,7 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
  *
  * @author Simon Thoresen Hult
  */
-public class ConfigAgent implements ConfigSubscriber.SingleSubscriber<MessagebusConfig>{
+public final class ConfigAgent implements ConfigSubscriber.SingleSubscriber<MessagebusConfig>{
 
     private final ConfigURI configURI;
     private final ConfigHandler handler;
