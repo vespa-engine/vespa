@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
  * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
  * @author Simon Thoresen Hult
  */
-public class FixedWidthBucketFunctionNode extends UnaryFunctionNode {
+public final class FixedWidthBucketFunctionNode extends UnaryFunctionNode {
 
     public static final int classId = registerClass(0x4000 + 77, FixedWidthBucketFunctionNode.class, FixedWidthBucketFunctionNode::new);
     private NumericResultNode width = null;
