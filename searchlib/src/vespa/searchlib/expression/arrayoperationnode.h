@@ -36,7 +36,7 @@ protected:
     }
 
 private:
-    vespalib::string _attributeName;
+    std::string _attributeName;
     const attribute::IAttributeVector * _attribute;
     DocId _docId;
 };

@@ -5,7 +5,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace searchcorespi::index {
 
@@ -14,7 +14,7 @@ namespace searchcorespi::index {
  */
 class IndexMaintainerConfig {
 private:
-    const vespalib::string _baseDir;
+    const std::string _baseDir;
     const WarmupConfig _warmup;
     const size_t _maxFlushed;
     const search::index::Schema _schema;
@@ -22,7 +22,7 @@ private:
     const search::TuneFileAttributes _tuneFileAttributes;
 
 public:
-    IndexMaintainerConfig(const vespalib::string &baseDir,
+    IndexMaintainerConfig(const std::string &baseDir,
                           const WarmupConfig & warmup,
                           size_t maxFlushed,
                           const search::index::Schema &schema,
@@ -34,7 +34,7 @@ public:
     /**
      * Returns the base directory in which the maintainer will store its indexes.
      */
-    const vespalib::string &getBaseDir() const {
+    const std::string &getBaseDir() const {
         return _baseDir;
     }
 

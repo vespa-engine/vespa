@@ -2,25 +2,25 @@
 #pragma once
 
 #include <map>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::index {
 
 class PostingListParams {
-    using Map = std::map<vespalib::string, vespalib::string>;
+    using Map = std::map<std::string, std::string>;
     Map _map;
 public:
     template <typename TYPE>
-    void set(const vespalib::string &key, const TYPE &val);
+    void set(const std::string &key, const TYPE &val);
 
     template <typename TYPE>
-    void get(const vespalib::string &key, TYPE &val) const;
+    void get(const std::string &key, TYPE &val) const;
 
-    bool isSet(const vespalib::string &key) const;
-    void setStr(const vespalib::string &key, const vespalib::string &val);
-    const vespalib::string & getStr(const vespalib::string &key) const;
+    bool isSet(const std::string &key) const;
+    void setStr(const std::string &key, const std::string &val);
+    const std::string & getStr(const std::string &key) const;
     void clear();
-    void erase(const vespalib::string &key);
+    void erase(const std::string &key);
     bool operator!=(const PostingListParams &rhs) const;
     void add(const PostingListParams & toAdd);
 };

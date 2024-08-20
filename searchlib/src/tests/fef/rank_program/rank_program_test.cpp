@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
@@ -15,6 +14,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <string>
 
 using namespace search::fef;
 using namespace search::fef::test;
@@ -65,7 +65,7 @@ size_t count_const_features(const RankProgram &program) {
     return count(program, [](const LazyValue &value){ return value.is_const(); });
 }
 
-vespalib::string expr_feature(const vespalib::string &name) {
+std::string expr_feature(const std::string &name) {
     return vespalib::make_string("rankingExpression(%s)", name.c_str());
 }
 
@@ -99,18 +99,18 @@ struct Fixture {
         indexEnv.getProperties().add(indexproperties::eval::UseFastForest::NAME, "true");
         return *this;
     }
-    Fixture &add_expr(const vespalib::string &name, const vespalib::string &expr) {
-        vespalib::string feature_name = expr_feature(name);
-        vespalib::string expr_name = feature_name + ".rankingScript";
+    Fixture &add_expr(const std::string &name, const std::string &expr) {
+        std::string feature_name = expr_feature(name);
+        std::string expr_name = feature_name + ".rankingScript";
         indexEnv.getProperties().add(expr_name, expr);
         add(feature_name);
         return *this;
     }
-    Fixture &add(const vespalib::string &feature) {
+    Fixture &add(const std::string &feature) {
         resolver->addSeed(feature);
         return *this;
     }
-    Fixture &override(const vespalib::string &feature, double value) {
+    Fixture &override(const std::string &feature, double value) {
         overrides.add(feature, vespalib::make_string("%g", value));
         return *this;
     }
@@ -121,7 +121,7 @@ struct Fixture {
         match_data = mdl.createMatchData();
         program.setup(*match_data, queryEnv, overrides, profiler);
     }
-    vespalib::string final_executor_name() const {
+    std::string final_executor_name() const {
         size_t n = program.num_executors();
         bool failed = false;
         EXPECT_TRUE(n > 0) << (failed = true, "");
@@ -132,7 +132,7 @@ struct Fixture {
         EXPECT_EQ(1u, result.num_features());
         return result.resolve(0).as_number(docid);
     }
-    double get(const vespalib::string &feature, uint32_t docid = default_docid) {
+    double get(const std::string &feature, uint32_t docid = default_docid) {
         auto result = program.get_seeds();
         for (size_t i = 0; i < result.num_features(); ++i) {
             if (result.name_of(i) == feature) {
@@ -141,9 +141,9 @@ struct Fixture {
         }
         return 31212.0;
     }
-    std::map<vespalib::string, double> all(uint32_t docid = default_docid) {
+    std::map<std::string, double> all(uint32_t docid = default_docid) {
         auto result = program.get_seeds();
-        std::map<vespalib::string, double> result_map;
+        std::map<std::string, double> result_map;
         for (size_t i = 0; i < result.num_features(); ++i) {
             result_map[result.name_of(i)] = result.resolve(i).as_number(docid);
         }
@@ -420,7 +420,7 @@ TEST(RankProgramTest, interpreted_ranking_expressions_are_pure)
     EXPECT_EQ(f1.get(), 7.0);
 }
 
-const vespalib::string tree_expr = "if(value(1)<2,1,2)+if(value(2)<1,10,20)";
+const std::string tree_expr = "if(value(1)<2,1,2)+if(value(2)<1,10,20)";
 
 TEST(RankProgramTest, fast_forest_gbdt_evaluation_can_be_enabled)
 {
@@ -468,12 +468,12 @@ TEST(RankProgramTest, rank_program_can_be_profiled)
     if ((*b)["count"].asLong() > (*a)["count"].asLong()) {
         std::swap(a, b);
     }
-    EXPECT_EQ((*a)["name"].asString().make_string(), vespalib::string("mysum(value(10),ivalue(5))"));
+    EXPECT_EQ((*a)["name"].asString().make_string(), std::string("mysum(value(10),ivalue(5))"));
     EXPECT_EQ((*a)["count"].asLong(), 3);
     EXPECT_EQ((*a)["children"].entries(), 1u);
-    EXPECT_EQ((*a)["children"][0]["name"].asString().make_string(), vespalib::string("ivalue(5)"));
+    EXPECT_EQ((*a)["children"][0]["name"].asString().make_string(), std::string("ivalue(5)"));
     EXPECT_EQ((*a)["children"][0]["count"].asLong(), 3);
-    EXPECT_EQ((*b)["name"].asString().make_string(), vespalib::string("value(10)"));
+    EXPECT_EQ((*b)["name"].asString().make_string(), std::string("value(10)"));
     EXPECT_EQ((*b)["count"].asLong(), 1);
 }
 

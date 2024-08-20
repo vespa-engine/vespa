@@ -13,12 +13,12 @@ LOG_SETUP(".diskindex.pagedict4file");
 
 namespace {
 
-vespalib::string myPId("PageDict4P.1");
-vespalib::string mySPId("PageDict4SP.1");
-vespalib::string mySSId("PageDict4SS.1");
+std::string myPId("PageDict4P.1");
+std::string mySPId("PageDict4SP.1");
+std::string mySSId("PageDict4SS.1");
 
 void
-assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
+assertOpenWriteOnly(bool ok, const std::string &fileName)
 {
     if (!ok) {
         int osError = errno;
@@ -51,12 +51,12 @@ using vespalib::getLastErrorString;
 namespace search::diskindex {
 
 struct PageDict4FileSeqRead::DictFileReadContext {
-    DictFileReadContext(std::string_view id, const vespalib::string & name, const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront);
+    DictFileReadContext(std::string_view id, const std::string & name, const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront);
     ~DictFileReadContext();
     vespalib::FileHeader readHeader();
     void readExtendedHeader();
     bool close();
-    const vespalib::string _id;
+    const std::string _id;
     uint64_t               _fileBitSize;
     uint32_t               _headerLen;
     bool                   _valid;
@@ -65,7 +65,7 @@ struct PageDict4FileSeqRead::DictFileReadContext {
     FastOS_File            _file;
 };
 
-PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(std::string_view id, const vespalib::string & name,
+PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(std::string_view id, const std::string & name,
                                                                const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront)
     : _id(id),
       _fileBitSize(0u),
@@ -168,7 +168,7 @@ PageDict4FileSeqRead::DictFileReadContext::readExtendedHeader()
 }
 
 void
-PageDict4FileSeqRead::readWord(vespalib::string &word, uint64_t &wordNum, PostingListCounts &counts)
+PageDict4FileSeqRead::readWord(std::string &word, uint64_t &wordNum, PostingListCounts &counts)
 {
     // Map to external ids and filter by what's present in the schema.
     uint64_t checkWordNum = 0;
@@ -190,7 +190,7 @@ PageDict4FileSeqRead::DictFileReadContext::close() {
 }
 
 bool
-PageDict4FileSeqRead::open(const vespalib::string &name,
+PageDict4FileSeqRead::open(const std::string &name,
                            const TuneFileSeqRead &tuneFileRead)
 {
     _ss = std::make_unique<DictFileReadContext>(mySSId, name + ".ssdat", tuneFileRead, _mmap_file_size_threshold, true);
@@ -246,14 +246,14 @@ PageDict4FileSeqRead::getParams(PostingListParams &params)
 
 struct PageDict4FileSeqWrite::DictFileContext {
     DictFileContext(bool extended, std::string_view id, std::string_view desc,
-                    const vespalib::string &name, const TuneFileSeqWrite &tune);
+                    const std::string &name, const TuneFileSeqWrite &tune);
     ~DictFileContext();
     void makeHeader(const FileHeaderContext &fileHeaderContext);
     bool updateHeader(uint64_t fileBitSize, uint64_t wordNum);
     void writeExtendedHeader(vespalib::GenericHeader &header);
     bool close();
-    const vespalib::string _id;
-    const vespalib::string _desc;
+    const std::string _id;
+    const std::string _desc;
     const bool             _extended;
     uint32_t               _headerLen;
     bool                   _valid;
@@ -263,7 +263,7 @@ struct PageDict4FileSeqWrite::DictFileContext {
 };
 
 PageDict4FileSeqWrite::DictFileContext::DictFileContext(bool extended, std::string_view id, std::string_view desc,
-                                                        const vespalib::string & name, const TuneFileSeqWrite &tune)
+                                                        const std::string & name, const TuneFileSeqWrite &tune)
     : _id(id),
       _desc(desc),
       _extended(extended),
@@ -327,7 +327,7 @@ PageDict4FileSeqWrite::writeWord(std::string_view word, const PostingListCounts 
 }
 
 bool
-PageDict4FileSeqWrite::open(const vespalib::string &name,
+PageDict4FileSeqWrite::open(const std::string &name,
                             const TuneFileSeqWrite &tune,
                             const FileHeaderContext &fileHeaderContext)
 {

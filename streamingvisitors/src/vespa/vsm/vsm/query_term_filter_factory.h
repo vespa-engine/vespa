@@ -22,8 +22,8 @@ public:
     using VsmfieldsConfig = vespa::config::search::vsm::VsmfieldsConfig;
     using VsmsummaryConfig = vespa::config::search::vsm::VsmsummaryConfig;
 private:
-    using StringSet = vespalib::hash_set<vespalib::string>;
-    using StringSetMap = vespalib::hash_map<vespalib::string, StringSet>;
+    using StringSet = vespalib::hash_set<std::string>;
+    using StringSetMap = vespalib::hash_map<std::string, StringSet>;
     StringSetMap _view_map;  // document field    -> views
     StringSetMap _field_map; // vsm summary field -> document fields
     void populate_view_map(VsmfieldsConfig& vsm_fields_config);

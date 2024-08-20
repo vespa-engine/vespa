@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <cassert>
+#include <string>
 
 namespace search { class BitVector; }
 
@@ -22,7 +22,7 @@ public:
     void clear();
     void setup(uint32_t docIdLimit);
     void setup(uint32_t docIdLimit, const SelectorArray *selector, uint8_t selectorId);
-    bool readDocIdLimit(const vespalib::string &dir);
+    bool readDocIdLimit(const std::string &dir);
 };
 
 

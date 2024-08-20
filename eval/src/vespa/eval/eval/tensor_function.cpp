@@ -26,7 +26,7 @@ LOG_SETUP(".eval.eval.tensor_function");
 namespace vespalib {
 namespace eval {
 
-vespalib::string
+std::string
 TensorFunction::as_string() const
 {
     ObjectDumper dumper;
@@ -47,7 +47,7 @@ TensorFunction::visit_children(vespalib::ObjectVisitor &visitor) const
     std::vector<vespalib::eval::TensorFunction::Child::CREF> children;
     push_children(children);
     for (size_t i = 0; i < children.size(); ++i) {
-        vespalib::string name = vespalib::make_string("children[%zu]", i);
+        std::string name = vespalib::make_string("children[%zu]", i);
         ::visit(visitor, name, children[i].get().get());
     }
 }
@@ -456,7 +456,7 @@ const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &sta
     return stash.create<Inject>(type, param_idx);
 }
 
-const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
+const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<std::string> &dimensions, Stash &stash) {
     ValueType result_type = child.result_type().reduce(dimensions);
     if (dimensions.empty()) { // expand dimension list for full reduce
         return stash.create<Reduce>(result_type, child, aggr, child.result_type().dimension_names());
@@ -485,7 +485,7 @@ const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs
     return stash.create<Merge>(result_type, lhs, rhs, function);
 }
 
-const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const vespalib::string &dimension, Stash &stash) {
+const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const std::string &dimension, Stash &stash) {
     ValueType result_type = ValueType::concat(lhs.result_type(), rhs.result_type(), dimension);
     return stash.create<Concat>(result_type, lhs, rhs, dimension);
 }
@@ -503,8 +503,8 @@ const TensorFunction &cell_cast(const TensorFunction &child, CellType cell_type,
     return stash.create<CellCast>(result_type, child, cell_type);
 }
 
-const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash) {
-    std::vector<vespalib::string> dimensions;
+const TensorFunction &peek(const TensorFunction &param, const std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash) {
+    std::vector<std::string> dimensions;
     for (const auto &dim_spec: spec) {
         dimensions.push_back(dim_spec.first);
     }
@@ -513,7 +513,7 @@ const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib:
     return stash.create<Peek>(result_type, param, spec);
 }
 
-const TensorFunction &rename(const TensorFunction &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {
+const TensorFunction &rename(const TensorFunction &child, const std::vector<std::string> &from, const std::vector<std::string> &to, Stash &stash) {
     ValueType result_type = child.result_type().rename(from, to);
     return stash.create<Rename>(result_type, child, from, to);
 }

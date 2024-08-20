@@ -7,7 +7,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-using vespalib::string;
+using std::string;
 using document::test::makeBucketSpace;
 using namespace ::testing;
 
@@ -28,7 +28,7 @@ std::shared_ptr<api::CreateVisitorCommand> getCommand(
     return cmd;
 }
 
-const vespalib::string &
+const std::string &
 getCommandString(const std::shared_ptr<api::CreateVisitorCommand>& cmd)
 {
     return cmd->getDocumentSelection();

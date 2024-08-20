@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "redundancygroupdistribution.h"
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <cassert>
@@ -29,7 +30,7 @@ namespace {
                 firstAsterisk = i;
                 continue;
             }
-            uint32_t number = atoi(vespalib::string(st[i]).c_str());
+            uint32_t number = atoi(std::string(st[i]).c_str());
             if (number <= 0 || number >= 256) {
                 throw vespalib::IllegalArgumentException(
                     "Illegal distribution spec \"" + serialized + "\". "

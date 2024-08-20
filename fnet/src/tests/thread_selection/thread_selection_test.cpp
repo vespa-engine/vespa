@@ -40,7 +40,7 @@ struct Fixture {
 TEST_F("require that selection is time sensistive", Fixture(8))
 {
     using namespace std::literals;
-    vespalib::string key("my random key");
+    std::string key("my random key");
     for (size_t i = 0; i < 256; ++i) {
         f1.count_selected_thread(key.data(), key.size());
         std::this_thread::sleep_for(10ms);
@@ -52,7 +52,7 @@ TEST_F("require that selection is time sensistive", Fixture(8))
 TEST_F("require that selection is key sensistive", Fixture(8))
 {
     for (size_t i = 0; i < 256; ++i) {
-        vespalib::string key = vespalib::make_string("my random key %zu", i);
+        std::string key = vespalib::make_string("my random key %zu", i);
         f1.count_selected_thread(key.data(), key.size());
     }
     EXPECT_EQUAL(f1.counts.size(), 8u);

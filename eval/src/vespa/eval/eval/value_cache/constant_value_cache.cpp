@@ -23,7 +23,7 @@ ConstantValueCache::ConstantValueCache(const ConstantValueFactory &factory)
 ConstantValueCache::~ConstantValueCache() = default;
 
 ConstantValue::UP
-ConstantValueCache::create(const vespalib::string &path, const vespalib::string &type) const
+ConstantValueCache::create(const std::string &path, const std::string &type) const
 {
     Cache::Key key = std::make_pair(path, type);
     std::lock_guard<std::mutex> guard(_cache->lock);

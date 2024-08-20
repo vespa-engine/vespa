@@ -30,7 +30,7 @@ public:
         FieldSpec _field_spec;
         bool attribute_field;
 
-        FieldEntry(const vespalib::string &name, uint32_t fieldId, bool is_filter) noexcept
+        FieldEntry(const std::string &name, uint32_t fieldId, bool is_filter) noexcept
             : ITermFieldData(fieldId),
               _field_spec(name, fieldId, search::fef::IllegalHandle, is_filter),
               attribute_field(false)
@@ -41,7 +41,7 @@ public:
         }
         [[nodiscard]] TermFieldHandle getHandle() const { return getHandle(MatchDataDetails::Normal); }
         [[nodiscard]] TermFieldHandle getHandle(MatchDataDetails requested_details) const override;
-        [[nodiscard]] const vespalib::string & getName() const noexcept { return _field_spec.getName(); }
+        [[nodiscard]] const std::string & getName() const noexcept { return _field_spec.getName(); }
         [[nodiscard]] bool is_filter() const noexcept { return _field_spec.isFilter(); }
     };
 
@@ -52,7 +52,7 @@ private:
 
 protected:
     void resolve(const ViewResolver &resolver, const search::fef::IIndexEnvironment &idxEnv,
-                 const vespalib::string &view, bool forceFilter);
+                 const std::string &view, bool forceFilter);
 
 public:
     ProtonTermData() noexcept;
@@ -64,7 +64,7 @@ public:
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
 
     // ITermData interface
-    [[nodiscard]] std::optional<vespalib::string> query_tensor_name() const override { return std::nullopt; }
+    [[nodiscard]] std::optional<std::string> query_tensor_name() const override { return std::nullopt; }
     [[nodiscard]] size_t numFields() const final { return _fields.size(); }
     [[nodiscard]] const FieldEntry &field(size_t i) const final { return _fields[i]; }
     [[nodiscard]] const FieldEntry *lookupField(uint32_t fieldId) const final;
@@ -129,7 +129,7 @@ struct ProtonSameElement final : public ProtonTermBase<search::query::SameElemen
 
 struct ProtonNearestNeighborTerm : public ProtonTermBase<search::query::NearestNeighborTerm> {
     using ProtonTermBase::ProtonTermBase;
-    [[nodiscard]] std::optional<vespalib::string> query_tensor_name() const override {
+    [[nodiscard]] std::optional<std::string> query_tensor_name() const override {
         return ProtonTermBase::NearestNeighborTerm::get_query_tensor_name();
     }
 };

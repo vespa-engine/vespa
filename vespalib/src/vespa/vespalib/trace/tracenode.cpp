@@ -72,7 +72,7 @@ TraceNode & TraceNode::operator =(const TraceNode &) = default;
 
 TraceNode::~TraceNode() = default;
 
-TraceNode::TraceNode(const string &note, system_time timestamp)
+TraceNode::TraceNode(const std::string &note, system_time timestamp)
     : _note(note),
       _children(),
       _parent(nullptr),
@@ -182,13 +182,13 @@ TraceNode::normalize()
 }
 
 TraceNode &
-TraceNode::addChild(const string &note)
+TraceNode::addChild(const std::string &note)
 {
     return addChild(TraceNode(note, system_time()));
 }
 
 TraceNode &
-TraceNode::addChild(const string &note, system_time timestamp)
+TraceNode::addChild(const std::string &note, system_time timestamp)
 {
     return addChild(TraceNode(note, timestamp));
 }
@@ -211,10 +211,10 @@ TraceNode::addChildren(std::vector<TraceNode> children)
     return *this;
 }
 
-string
+std::string
 TraceNode::toString(size_t limit) const
 {
-    string str;
+    std::string str;
     if (!writeString(str, 0, limit)) {
         str.append("...\n");
     }
@@ -222,17 +222,17 @@ TraceNode::toString(size_t limit) const
 }
 
 bool
-TraceNode::writeString(string &dst, size_t indent, size_t limit) const
+TraceNode::writeString(std::string &dst, size_t indent, size_t limit) const
 {
     if (dst.size() >= limit) {
         return false;
     }
-    string pre(indent, ' ');
+    std::string pre(indent, ' ');
     if (_hasNote) {
         dst.append(pre).append(_note).append("\n");
         return true;
     }
-    string name = isStrict() ? "trace" : "fork";
+    std::string name = isStrict() ? "trace" : "fork";
     dst.append(pre).append("<").append(name).append(">\n");
     for (const auto & child : _children) {
         if (!child.writeString(dst, indent + 4, limit)) {
@@ -246,10 +246,10 @@ TraceNode::writeString(string &dst, size_t indent, size_t limit) const
     return true;
 }
 
-string
+std::string
 TraceNode::encode() const
 {
-    string ret = "";
+    std::string ret = "";
     if (_hasNote) {
         ret.append("[");
         for (char c : _note) {
@@ -270,14 +270,14 @@ TraceNode::encode() const
 }
 
 TraceNode
-TraceNode::decode(const string &str)
+TraceNode::decode(const std::string &str)
 {
     if (str.empty()) {
         return TraceNode();
     }
     TraceNode proxy;
     TraceNode *node = &proxy;
-    string note = "";
+    std::string note = "";
     bool inNote = false, inEscape = false;
     for (uint32_t i = 0, len = str.size(); i < len; ++i) {
         char c = str[i];

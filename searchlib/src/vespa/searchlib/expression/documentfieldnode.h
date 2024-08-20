@@ -39,7 +39,7 @@ public:
     DocumentFieldNode & operator = (const DocumentFieldNode & rhs);
     DocumentFieldNode(DocumentFieldNode && rhs) noexcept = default;
     DocumentFieldNode & operator = (DocumentFieldNode && rhs) noexcept = default;
-    const vespalib::string & getFieldName() const override { return _fieldName; }
+    const std::string & getFieldName() const override { return _fieldName; }
 public:
     class Handler : public document::fieldvalue::IteratorHandler {
     public:
@@ -76,7 +76,7 @@ protected:
     document::FieldPath                _fieldPath;
     mutable ResultNode::CP             _value;
     mutable std::unique_ptr<Handler>   _handler;
-    vespalib::string                   _fieldName;
+    std::string                   _fieldName;
     const document::Document         * _doc;
 
 };

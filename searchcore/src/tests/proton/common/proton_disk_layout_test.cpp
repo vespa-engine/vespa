@@ -24,8 +24,8 @@ using proton::Transport;
 namespace {
 constexpr unsigned int tlsPort = proton::test::port_numbers::proton_disk_layout_tls_port;
 
-const vespalib::string baseDir("testdb");
-const vespalib::string documentsDir(baseDir + "/documents");
+const std::string baseDir("testdb");
+const std::string documentsDir(baseDir + "/documents");
 
 struct FixtureBase
 {
@@ -37,37 +37,37 @@ struct DiskLayoutFixture {
     DummyFileHeaderContext  _fileHeaderContext;
     Transport               _transport;
     TransLogServer          _tls;
-    vespalib::string        _tlsSpec;
+    std::string        _tlsSpec;
     ProtonDiskLayout        _diskLayout;
 
     DiskLayoutFixture();
     ~DiskLayoutFixture();
 
-    void createDirs(const std::set<vespalib::string> &dirs) {
+    void createDirs(const std::set<std::string> &dirs) {
         for (const auto &dir : dirs) {
             std::filesystem::create_directory(std::filesystem::path(documentsDir + "/" + dir));
         }
     }
-    void createDomains(const std::set<vespalib::string> &domains) {
+    void createDomains(const std::set<std::string> &domains) {
         TransLogClient tlc(_transport.transport(), _tlsSpec);
         for (const auto &domain : domains) {
             ASSERT_TRUE(tlc.create(domain));
         }
     }
 
-    std::set<vespalib::string> listDomains() {
-        std::vector<vespalib::string> domainVector;
+    std::set<std::string> listDomains() {
+        std::vector<std::string> domainVector;
         TransLogClient tlc(_transport.transport(), _tlsSpec);
         ASSERT_TRUE(tlc.listDomains(domainVector));
-        std::set<vespalib::string> domains;
+        std::set<std::string> domains;
         for (const auto &domain : domainVector) {
             domains.emplace(domain);
         }
         return domains;
     }
 
-    std::set<vespalib::string> listDirs() {
-        std::set<vespalib::string> dirs;
+    std::set<std::string> listDirs() {
+        std::set<std::string> dirs;
         auto names = vespalib::listDirectory(documentsDir);
         for (const auto &name : names) {
             if (std::filesystem::is_directory(std::filesystem::path(documentsDir + "/" + name))) {
@@ -77,7 +77,7 @@ struct DiskLayoutFixture {
         return dirs;
     }
 
-    void initAndPruneUnused(const std::set<vespalib::string> names)
+    void initAndPruneUnused(const std::set<std::string> names)
     {
         std::set<DocTypeName> docTypeNames;
         for (const auto &name: names) {
@@ -86,11 +86,11 @@ struct DiskLayoutFixture {
         _diskLayout.initAndPruneUnused(docTypeNames);
     }
 
-    void assertDirs(const std::set<vespalib::string> &expDirs) {
+    void assertDirs(const std::set<std::string> &expDirs) {
         EXPECT_EQUAL(expDirs, listDirs());
     }
 
-    void assertDomains(const std::set<vespalib::string> &expDomains)
+    void assertDomains(const std::set<std::string> &expDomains)
     {
         EXPECT_EQUAL(expDomains, listDomains());
     }

@@ -7,19 +7,19 @@
 using namespace vespalib::eval;
 
 auto make_copy(const Function &fun) {
-    std::vector<vespalib::string> params;
+    std::vector<std::string> params;
     for (size_t i = 0; i < fun.num_params(); ++i) {
         params.push_back(fun.param_name(i));
     }
     return Function::create(NodeTools::copy(fun.root()), params);
 }
 
-void verify_copy(const vespalib::string &expr, const vespalib::string &expect) {   
+void verify_copy(const std::string &expr, const std::string &expect) {   
     auto fun = Function::parse(expr);
     auto fun_copy = make_copy(*fun);
     EXPECT_EQUAL(fun_copy->dump(), expect);
 }
-void verify_copy(const vespalib::string &expr) { verify_copy(expr, expr); }
+void verify_copy(const std::string &expr) { verify_copy(expr, expr); }
 
 TEST("require that required parameter count can be detected") {
     auto function = Function::parse({"a","b","c"}, "(c+a)+(b+1)");

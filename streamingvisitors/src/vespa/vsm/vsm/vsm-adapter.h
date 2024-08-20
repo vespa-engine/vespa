@@ -48,17 +48,17 @@ class DocsumTools : public IDocsumEnvironment
 public:
     class FieldSpec {
     private:
-        vespalib::string                      _outputName;
-        std::vector<vespalib::string>         _inputNames;
+        std::string                      _outputName;
+        std::vector<std::string>         _inputNames;
         VsmsummaryConfig::Fieldmap::Command   _command;
 
     public:
         FieldSpec() noexcept;
         ~FieldSpec();
-        const vespalib::string & getOutputName() const { return _outputName; }
-        void setOutputName(const vespalib::string & name) { _outputName = name; }
-        const std::vector<vespalib::string> & getInputNames() const { return _inputNames; }
-        std::vector<vespalib::string> & getInputNames() { return _inputNames; }
+        const std::string & getOutputName() const { return _outputName; }
+        void setOutputName(const std::string & name) { _outputName = name; }
+        const std::vector<std::string> & getInputNames() const { return _inputNames; }
+        std::vector<std::string> & getInputNames() { return _inputNames; }
         VsmsummaryConfig::Fieldmap::Command getCommand() const { return _command; }
         void setCommand(VsmsummaryConfig::Fieldmap::Command command) { _command = command; }
     };
@@ -91,10 +91,10 @@ using DocsumToolsPtr = std::shared_ptr<const DocsumTools>;
 
 class VSMConfigSnapshot {
 private:
-    const vespalib::string _configId;
+    const std::string _configId;
     std::unique_ptr<const config::ConfigSnapshot> _snapshot;
 public:
-    VSMConfigSnapshot(const vespalib::string & configId, const config::ConfigSnapshot & snapshot);
+    VSMConfigSnapshot(const std::string & configId, const config::ConfigSnapshot & snapshot);
     ~VSMConfigSnapshot();
     template <typename ConfigType>
     std::unique_ptr<ConfigType> getConfig() const;
@@ -103,14 +103,14 @@ public:
 class VSMAdapter
 {
 public:
-    VSMAdapter(const vespalib::string& configId, const Fast_WordFolder& wordFolder);
+    VSMAdapter(const std::string& configId, const Fast_WordFolder& wordFolder);
     virtual ~VSMAdapter();
 
     VsmfieldsHandle getFieldsConfig() const { return _fieldsCfg.get(); }
     DocsumToolsPtr getDocsumTools()   const { return _docsumTools.get(); }
     void configure(const VSMConfigSnapshot & snapshot);
 private:
-    const vespalib::string                    _configId;
+    const std::string                    _configId;
     const Fast_WordFolder&                    _wordFolder;
     vespalib::PtrHolder<VsmfieldsConfig>      _fieldsCfg;
     vespalib::PtrHolder<DocsumTools>          _docsumTools;

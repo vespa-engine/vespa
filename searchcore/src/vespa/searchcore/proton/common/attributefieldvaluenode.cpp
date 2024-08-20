@@ -27,8 +27,8 @@ using vespalib::IllegalStateException;
 using vespalib::make_string;
 
 AttributeFieldValueNode::
-AttributeFieldValueNode(const vespalib::string& doctype,
-                        const vespalib::string& field,
+AttributeFieldValueNode(const std::string& doctype,
+                        const std::string& field,
                         uint32_t attr_guard_index)
     : FieldValueNode(doctype, field),
       _attr_guard_index(attr_guard_index)

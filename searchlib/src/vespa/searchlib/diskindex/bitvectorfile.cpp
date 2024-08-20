@@ -20,7 +20,7 @@ using namespace tags;
 namespace {
 
 void
-readHeader(vespalib::FileHeader &h, const vespalib::string &name)
+readHeader(vespalib::FileHeader &h, const std::string &name)
 {
     Fast_BufferedFile file(32_Ki);
     file.ReadOpenExisting(name.c_str());
@@ -39,11 +39,11 @@ BitVectorFileWrite::BitVectorFileWrite(BitVectorKeyScope scope)
 BitVectorFileWrite::~BitVectorFileWrite() = default;
 
 void
-BitVectorFileWrite::open(const vespalib::string &name, uint32_t docIdLimit,
+BitVectorFileWrite::open(const std::string &name, uint32_t docIdLimit,
                          const TuneFileSeqWrite &tuneFileWrite,
                          const FileHeaderContext &fileHeaderContext)
 {
-    vespalib::string datname = name + ".bdat";
+    std::string datname = name + ".bdat";
 
     assert( ! _datFile);
 

@@ -4,7 +4,7 @@
 
 namespace config {
 
-vespalib::string ErrorCode::getName(int error) {
+std::string ErrorCode::getName(int error) {
     switch(error) {
     case UNKNOWN_CONFIG:            return "UNKNOWN_CONFIG";
     case UNKNOWN_DEFINITION:        return "UNKNOWN_DEFINITION";

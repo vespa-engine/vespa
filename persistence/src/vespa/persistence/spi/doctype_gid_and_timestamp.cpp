@@ -11,7 +11,7 @@ DocTypeGidAndTimestamp::DocTypeGidAndTimestamp()
 {
 }
 
-DocTypeGidAndTimestamp::DocTypeGidAndTimestamp(const vespalib::string& doc_type_, document::GlobalId gid_, Timestamp timestamp_) noexcept
+DocTypeGidAndTimestamp::DocTypeGidAndTimestamp(const std::string& doc_type_, document::GlobalId gid_, Timestamp timestamp_) noexcept
     : doc_type(doc_type_),
       gid(std::move(gid_)),
       timestamp(timestamp_)
@@ -26,7 +26,7 @@ void DocTypeGidAndTimestamp::print(vespalib::asciistream& os) const {
     os << doc_type << ":" << gid.toString() << " at time " << timestamp.getValue();
 }
 
-vespalib::string DocTypeGidAndTimestamp::to_string() const {
+std::string DocTypeGidAndTimestamp::to_string() const {
     vespalib::asciistream os;
     print(os);
     return os.str();

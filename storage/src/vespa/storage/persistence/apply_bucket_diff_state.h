@@ -31,10 +31,10 @@ class ApplyBucketDiffState {
     MergeHandlerMetrics&                    _merge_handler_metrics;
     framework::MilliSecTimer                _start_time;
     spi::Bucket                             _bucket;
-    vespalib::string                        _fail_message;
+    std::string                        _fail_message;
     std::atomic_flag                        _failed_flag;
     bool                                    _stale_bucket_info;
-    std::optional<std::promise<vespalib::string>> _promise;
+    std::optional<std::promise<std::string>> _promise;
     std::unique_ptr<MessageTracker>         _tracker;
     std::shared_ptr<api::StorageReply>      _delayed_reply;
     MessageSender*                          _sender;
@@ -52,7 +52,7 @@ public:
     void check();
     void mark_stale_bucket_info();
     void sync_bucket_info();
-    std::future<vespalib::string> get_future();
+    std::future<std::string> get_future();
     void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, std::shared_ptr<api::StorageReply>&& delayed_reply);
     void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, MessageSender& sender, FileStorThreadMetrics::Op* op_metrics, const framework::MilliSecTimer& op_start_time, std::shared_ptr<api::StorageReply>&& delayed_reply);
     void set_tracker(std::unique_ptr<MessageTracker>&& tracker);

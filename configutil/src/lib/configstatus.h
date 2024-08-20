@@ -3,8 +3,8 @@
 
 #include "hostfilter.h"
 #include <vespa/config-model.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/subscription/configuri.h>
+#include <string>
 
 class ConfigStatus
 {

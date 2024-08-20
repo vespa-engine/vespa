@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <random>
+#include <cassert>
 #include <chrono>
-#include <assert.h>
+#include <random>
+#include <string>
 
 namespace vespalib::gp {
 
@@ -68,10 +68,10 @@ struct OpRepo {
     using value_op2 = Value (*)(Value lhs, Value rhs);
     static Value forward_op(Value lhs, Value) { return lhs; }
     struct Entry {
-        vespalib::string name;
+        std::string name;
         value_op2 fun;
         size_t cost;
-        Entry(const vespalib::string &name_in, value_op2 fun_in, size_t cost_in) noexcept
+        Entry(const std::string &name_in, value_op2 fun_in, size_t cost_in) noexcept
             : name(name_in), fun(fun_in), cost(cost_in) {}
     };
     feedback_fun _find_weakness;
@@ -81,11 +81,11 @@ struct OpRepo {
     {
         _list.emplace_back("forward", forward_op, 0);
     }
-    OpRepo &add(const vespalib::string &name, value_op2 fun) {
+    OpRepo &add(const std::string &name, value_op2 fun) {
         _list.emplace_back(name, fun, 1);
         return *this;
     }
-    const vespalib::string &name_of(size_t op) const { return _list[op].name; }
+    const std::string &name_of(size_t op) const { return _list[op].name; }
     size_t cost_of(size_t op) const { return _list[op].cost; }
     size_t max_op() const { return (_list.size() - 1); }
     void find_weakness(Random &rnd, Sim &sim) const {
@@ -190,7 +190,7 @@ struct Program : public Sim {
     size_t get_cost(size_t alt) const;
 
     size_t size_of(Ref ref) const;
-    vespalib::string as_string(Ref ref) const;
+    std::string as_string(Ref ref) const;
 
     // implementation of the Sim interface
     size_t num_inputs() const override { return _in_cnt; }

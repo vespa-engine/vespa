@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace config {
 
@@ -43,7 +43,7 @@ public:
     virtual void fill() = 0;
 
     /** @return Error message if a request has failed, null otherwise. */
-    virtual vespalib::string errorMessage() const = 0;
+    virtual std::string errorMessage() const = 0;
 
     virtual int errorCode() const = 0;
 

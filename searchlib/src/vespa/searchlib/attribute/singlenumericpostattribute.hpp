@@ -19,7 +19,7 @@ SingleValueNumericPostingAttribute<B>::~SingleValueNumericPostingAttribute()
 }
 
 template <typename B>
-SingleValueNumericPostingAttribute<B>::SingleValueNumericPostingAttribute(const vespalib::string & name,
+SingleValueNumericPostingAttribute<B>::SingleValueNumericPostingAttribute(const std::string & name,
                                                                           const AttributeVector::Config & c) :
     SingleValueNumericEnumAttribute<B>(name, c),
     PostingParent(*this, this->getEnumStore()),

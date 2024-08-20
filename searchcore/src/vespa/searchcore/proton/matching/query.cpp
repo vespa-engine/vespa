@@ -43,7 +43,7 @@ using search::queryeval::MatchingPhase;
 using search::queryeval::RankBlueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Issue;
-using vespalib::string;
+using std::string;
 using std::vector;
 
 namespace proton::matching {

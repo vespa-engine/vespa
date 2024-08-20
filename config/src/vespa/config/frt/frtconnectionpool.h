@@ -22,17 +22,17 @@ private:
     class FRTConnectionKey {
     private:
         int _idx;
-        vespalib::string _hostname;
+        std::string _hostname;
     public:
         FRTConnectionKey() : FRTConnectionKey(0, "") {}
-        FRTConnectionKey(int idx, const vespalib::string& hostname);
+        FRTConnectionKey(int idx, const std::string& hostname);
         int operator<(const FRTConnectionKey& right) const;
         int operator==(const FRTConnectionKey& right) const;
     };
 
     std::unique_ptr<FRT_Supervisor> _supervisor;
     int _selectIdx;
-    vespalib::string _hostname;
+    std::string _hostname;
     using ConnectionMap = std::map<FRTConnectionKey, FRTConnection::SP>;
     ConnectionMap _connections;
 
@@ -54,7 +54,7 @@ public:
      *
      * @param hostname the hostname
      */
-    void setHostname(const vespalib::string & hostname) { _hostname = hostname; }
+    void setHostname(const std::string & hostname) { _hostname = hostname; }
 
     FNET_Scheduler * getScheduler() override;
 

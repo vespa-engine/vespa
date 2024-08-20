@@ -130,7 +130,7 @@ public:
     size_t getNumActiveDocs() const override;
     search::SearchableStats getSearchableStats() const override ;
     std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override;
-    matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
+    matching::MatchingStats getMatcherStats(const std::string &rankProfile) const override;
     void close() override;
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;

@@ -287,7 +287,7 @@ public:
     void setBaseFileName(std::string_view name) { _baseFileName = name; }
     bool isUpdateableInMemoryOnly() const { return _isUpdateableInMemoryOnly; }
 
-    const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
+    const std::string & getName() const override final { return _baseFileName.getAttributeName(); }
 
     bool hasEnum() const override final;
     uint32_t getMaxValueCount() const override;
@@ -357,7 +357,7 @@ public:
     virtual uint32_t get(DocId doc, largeint_t *v, uint32_t sz) const override = 0;
     virtual uint32_t get(DocId doc, double *v, uint32_t sz) const override = 0;
 
-    virtual uint32_t get(DocId doc, vespalib::string *v, uint32_t sz) const = 0;
+    virtual uint32_t get(DocId doc, std::string *v, uint32_t sz) const = 0;
 
 
     // Implements IAttributeVector

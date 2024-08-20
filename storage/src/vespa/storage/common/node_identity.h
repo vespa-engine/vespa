@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vdslib/state/nodetype.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace storage {
 
@@ -12,7 +12,7 @@ namespace storage {
  */
 class NodeIdentity {
 private:
-    vespalib::string _cluster_name;
+    std::string _cluster_name;
     const lib::NodeType& _node_type;
     uint16_t _node_index;
 
@@ -20,7 +20,7 @@ public:
     NodeIdentity(std::string_view cluster_name_in,
                  const lib::NodeType& node_type_in,
                  uint16_t node_index_in);
-    const vespalib::string& cluster_name() const { return _cluster_name; }
+    const std::string& cluster_name() const { return _cluster_name; }
     const lib::NodeType& node_type() const { return _node_type; }
     uint16_t node_index() const { return _node_index; }
 };

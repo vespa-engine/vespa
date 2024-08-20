@@ -3,6 +3,7 @@
 #include "datatype.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arraysize.h>
 #include <ostream>
 
@@ -49,7 +50,7 @@ const char *datatype_str[] = { "BOOL",
                                "REFERENCE",
                                "COMBINED"};
 
-vespalib::string
+std::string
 getTypeName(DataType type) {
     size_t typeAsNum = static_cast<size_t>(type);
     if (typeAsNum >= vespalib::arraysize(datatype_str)) {
@@ -81,7 +82,7 @@ const char *collectiontype_str[] = { "SINGLE",
                                      "ARRAY",
                                      "WEIGHTEDSET" };
 
-vespalib::string
+std::string
 getTypeName(CollectionType type) {
     size_t typeAsNum = static_cast<size_t>(type);
     if (typeAsNum >= vespalib::arraysize(collectiontype_str)) {

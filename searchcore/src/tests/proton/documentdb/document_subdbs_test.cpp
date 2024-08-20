@@ -91,10 +91,10 @@ const std::string SUB_NAME = "subdb";
 const std::string BASE_DIR = "basedir";
 const SerialNum CFG_SERIAL = 5;
 
-struct ConfigDir1 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg1"); } };
-struct ConfigDir2 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg2"); } };
-struct ConfigDir3 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg3"); } };
-struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg4"); } };
+struct ConfigDir1 { static std::string dir() { return TEST_PATH("document_subdbs/cfg1"); } };
+struct ConfigDir2 { static std::string dir() { return TEST_PATH("document_subdbs/cfg2"); } };
+struct ConfigDir3 { static std::string dir() { return TEST_PATH("document_subdbs/cfg3"); } };
+struct ConfigDir4 { static std::string dir() { return TEST_PATH("document_subdbs/cfg4"); } };
 
 struct MySubDBOwner : public IDocumentSubDBOwner
 {
@@ -102,7 +102,7 @@ struct MySubDBOwner : public IDocumentSubDBOwner
     MySubDBOwner();
     ~MySubDBOwner() override;
     document::BucketSpace getBucketSpace() const override { return makeBucketSpace(); }
-    vespalib::string getName() const override { return "owner"; }
+    std::string getName() const override { return "owner"; }
     uint32_t getDistributionKey() const override { return -1; }
     SessionManager & session_manager() override { return _sessionMgr; }
 };
@@ -123,12 +123,12 @@ struct MyGetSerialNum : public IGetSerialNum
 
 struct MyFileHeaderContext : public FileHeaderContext
 {
-    void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
+    void addTags(vespalib::GenericHeader &, const std::string &) const override {}
 };
 
 struct MyMetricsWireService : public DummyWireService
 {
-    std::set<vespalib::string> _attributes;
+    std::set<std::string> _attributes;
     MyMetricsWireService() : _attributes() {}
     void addAttribute(AttributeMetrics &, const std::string &name) override {
         _attributes.insert(name);
@@ -291,7 +291,7 @@ struct MyConfigSnapshot
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
     BootstrapConfig::SP  _bootstrap;
-    MyConfigSnapshot(FNET_Transport & transport, Schema schema, const vespalib::string &cfgDir);
+    MyConfigSnapshot(FNET_Transport & transport, Schema schema, const std::string &cfgDir);
     MyConfigSnapshot(const MyConfigSnapshot &) = delete;
     MyConfigSnapshot & operator = (const MyConfigSnapshot &) = delete;
     ~MyConfigSnapshot();
@@ -299,7 +299,7 @@ struct MyConfigSnapshot
 
 MyConfigSnapshot::~MyConfigSnapshot() = default;
 
-MyConfigSnapshot::MyConfigSnapshot(FNET_Transport & transport, Schema schema, const vespalib::string &cfgDir)
+MyConfigSnapshot::MyConfigSnapshot(FNET_Transport & transport, Schema schema, const std::string &cfgDir)
     : _schema(std::move(schema)),
       _builder(get_add_fields(_schema.getNumAttributeFields() > 1)),
       _cfg(),
@@ -378,10 +378,10 @@ struct FixtureBase
     void basicReconfig(SerialNum serialNum) {
         runInMasterAndSync([&]() { performReconfig(serialNum, make_all_attr_schema(two_attr_schema), ConfigDir2::dir()); });
     }
-    void reconfig(SerialNum serialNum, Schema reconfigSchema, const vespalib::string &reconfigConfigDir) {
+    void reconfig(SerialNum serialNum, Schema reconfigSchema, const std::string &reconfigConfigDir) {
         runInMasterAndSync([&]() { performReconfig(serialNum, std::move(reconfigSchema), reconfigConfigDir); });
     }
-    void performReconfig(SerialNum serialNum, Schema reconfigSchema, const vespalib::string &reconfigConfigDir) {
+    void performReconfig(SerialNum serialNum, Schema reconfigSchema, const std::string &reconfigConfigDir) {
         auto newCfg = std::make_unique<MyConfigSnapshot>(_service.transport(), std::move(reconfigSchema), reconfigConfigDir);
         DocumentDBConfig::ComparisonResult cmpResult;
         cmpResult.attributesChanged = true;
@@ -762,7 +762,7 @@ using FType = IFlushTarget::Type;
 using FComponent = IFlushTarget::Component;
 
 bool
-assertTarget(const vespalib::string &name,
+assertTarget(const std::string &name,
              FType type,
              FComponent component,
              const IFlushTarget &target)
@@ -906,7 +906,7 @@ struct DocumentHandler
 };
 
 void
-assertAttribute(const AttributeGuard &attr, const vespalib::string &name, uint32_t numDocs,
+assertAttribute(const AttributeGuard &attr, const std::string &name, uint32_t numDocs,
                 int64_t doc1Value, int64_t doc2Value, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
     EXPECT_EQUAL(name, attr->getName());
@@ -1060,7 +1060,7 @@ struct ExplorerFixture : public FixtureType
 using StoreOnlyExplorerFixture = ExplorerFixture<StoreOnlyFixture>;
 using FastAccessExplorerFixture = ExplorerFixture<FastAccessFixture>;
 using SearchableExplorerFixture = ExplorerFixture<SearchableFixture>;
-using StringVector = std::vector<vespalib::string>;
+using StringVector = std::vector<std::string>;
 
 void
 assertExplorer(const StringVector &extraNames, const vespalib::StateExplorer &explorer)

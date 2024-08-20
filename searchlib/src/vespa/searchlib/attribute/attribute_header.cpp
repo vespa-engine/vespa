@@ -11,25 +11,25 @@ namespace search::attribute {
 
 namespace {
 
-const vespalib::string versionTag = "version";
-const vespalib::string dataTypeTag = "datatype";
-const vespalib::string collectionTypeTag = "collectiontype";
-const vespalib::string createIfNonExistentTag = "collectiontype.createIfNonExistent";
-const vespalib::string removeIfZeroTag = "collectiontype.removeIfZero";
-const vespalib::string createSerialNumTag = "createSerialNum";
-const vespalib::string tensorTypeTag = "tensortype";
-const vespalib::string predicateArityTag = "predicate.arity";
-const vespalib::string predicateLowerBoundTag = "predicate.lower_bound";
-const vespalib::string predicateUpperBoundTag = "predicate.upper_bound";
-const vespalib::string nearest_neighbor_index_tag = "nearest_neighbor_index";
-const vespalib::string hnsw_index_value = "hnsw";
-const vespalib::string hnsw_max_links_tag = "hnsw.max_links_per_node";
-const vespalib::string hnsw_neighbors_to_explore_tag = "hnsw.neighbors_to_explore_at_insert";
-const vespalib::string hnsw_distance_metric = "hnsw.distance_metric";
-const vespalib::string doc_id_limit_tag = "docIdLimit";
-const vespalib::string enumerated_tag = "enumerated";
-const vespalib::string unique_value_count_tag = "uniqueValueCount";
-const vespalib::string total_value_count_tag = "totalValueCount";
+const std::string versionTag = "version";
+const std::string dataTypeTag = "datatype";
+const std::string collectionTypeTag = "collectiontype";
+const std::string createIfNonExistentTag = "collectiontype.createIfNonExistent";
+const std::string removeIfZeroTag = "collectiontype.removeIfZero";
+const std::string createSerialNumTag = "createSerialNum";
+const std::string tensorTypeTag = "tensortype";
+const std::string predicateArityTag = "predicate.arity";
+const std::string predicateLowerBoundTag = "predicate.lower_bound";
+const std::string predicateUpperBoundTag = "predicate.upper_bound";
+const std::string nearest_neighbor_index_tag = "nearest_neighbor_index";
+const std::string hnsw_index_value = "hnsw";
+const std::string hnsw_max_links_tag = "hnsw.max_links_per_node";
+const std::string hnsw_neighbors_to_explore_tag = "hnsw.neighbors_to_explore_at_insert";
+const std::string hnsw_distance_metric = "hnsw.distance_metric";
+const std::string doc_id_limit_tag = "docIdLimit";
+const std::string enumerated_tag = "enumerated";
+const std::string unique_value_count_tag = "uniqueValueCount";
+const std::string total_value_count_tag = "totalValueCount";
 
 }
 
@@ -38,7 +38,7 @@ AttributeHeader::AttributeHeader()
 {
 }
 
-AttributeHeader::AttributeHeader(vespalib::string fileName)
+AttributeHeader::AttributeHeader(std::string fileName)
     : _fileName(std::move(fileName)),
       _basicType(attribute::BasicType::Type::NONE),
       _collectionType(attribute::CollectionType::Type::SINGLE),
@@ -57,7 +57,7 @@ AttributeHeader::AttributeHeader(vespalib::string fileName)
 {
 }
 
-AttributeHeader::AttributeHeader(vespalib::string fileName,
+AttributeHeader::AttributeHeader(std::string fileName,
                                  attribute::BasicType basicType,
                                  attribute::CollectionType collectionType,
                                  const vespalib::eval::ValueType &tensorType,
@@ -154,7 +154,7 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
 }
 
 AttributeHeader
-AttributeHeader::extractTags(const vespalib::GenericHeader &header, const vespalib::string &file_name)
+AttributeHeader::extractTags(const vespalib::GenericHeader &header, const std::string &file_name)
 {
     AttributeHeader result(file_name);
     result.internalExtractTags(header);

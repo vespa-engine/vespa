@@ -16,8 +16,8 @@ using namespace search::fef::test;
 using namespace search::features;
 using CollectionType = FieldInfo::CollectionType;
 
-std::vector<vespalib::string> featureNamesFoo() {
-    std::vector<vespalib::string> f;
+std::vector<std::string> featureNamesFoo() {
+    std::vector<std::string> f;
     f.push_back("textSimilarity(foo).score");
     f.push_back("textSimilarity(foo).proximity");
     f.push_back("textSimilarity(foo).order");
@@ -58,9 +58,9 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    std::vector<vespalib::string> expect;
+    std::vector<std::string> expect;
     size_t dumped;
-    virtual void visitDumpFeature(const vespalib::string &name) override {
+    virtual void visitDumpFeature(const std::string &name) override {
         EXPECT_LT(dumped, expect.size());
         EXPECT_EQ(expect[dumped++], name);
     }
@@ -69,10 +69,10 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
 
 struct RankFixture : BlueprintFactoryFixture {
     RankFixture() : BlueprintFactoryFixture() {}
-    double get_feature(const vespalib::string &query, const FtIndex &index, size_t select,
+    double get_feature(const std::string &query, const FtIndex &index, size_t select,
                        bool useStaleMatchData = false)
     {
-        std::vector<vespalib::string> names = featureNamesFoo();
+        std::vector<std::string> names = featureNamesFoo();
         EXPECT_TRUE(names.size() == 5u);
         FtFeatureTest ft(factory, names);
         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -122,7 +122,7 @@ TEST(TextSimilarityFeatureTest, require_that_setup_can_be_done_on_single_value_i
     IndexFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "foo")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "foo")));
 }
 
 TEST(TextSimilarityFeatureTest, require_that_setup_can_not_be_done_on_weighted_set_index_field)
@@ -131,7 +131,7 @@ TEST(TextSimilarityFeatureTest, require_that_setup_can_not_be_done_on_weighted_s
     IndexFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(bar)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "bar")));
+    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "bar")));
 }
 
 TEST(TextSimilarityFeatureTest, require_that_setup_can_not_be_done_on_single_value_attribute_field)
@@ -140,7 +140,7 @@ TEST(TextSimilarityFeatureTest, require_that_setup_can_not_be_done_on_single_val
     IndexFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(baz)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "baz")));
+    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "baz")));
 }
 
 TEST(TextSimilarityFeatureTest, require_that_no_match_gives_zero_outputs)

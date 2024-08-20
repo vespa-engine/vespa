@@ -29,7 +29,7 @@ namespace {
 
 constexpr size_t ALIGNMENT=0x1000;
 constexpr size_t ENTRY_BIAS_SIZE=8;
-const vespalib::string DOC_ID_LIMIT_KEY("docIdLimit");
+const std::string DOC_ID_LIMIT_KEY("docIdLimit");
 
 }
 
@@ -43,24 +43,24 @@ FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSer
     assert(valid());
 }
 
-vespalib::string
-FileChunk::NameId::createName(const vespalib::string &baseName) const {
+std::string
+FileChunk::NameId::createName(const std::string &baseName) const {
     vespalib::asciistream os;
     os << baseName << '/' << vespalib::setfill('0') << vespalib::setw(19) << getId();
     return os.str();
 }
 
-vespalib::string
-FileChunk::createIdxFileName(const vespalib::string & name) {
+std::string
+FileChunk::createIdxFileName(const std::string & name) {
     return name + ".idx";
 }
 
-vespalib::string
-FileChunk::createDatFileName(const vespalib::string & name) {
+std::string
+FileChunk::createDatFileName(const std::string & name) {
     return name + ".dat";
 }
 
-FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName,
+FileChunk::FileChunk(FileId fileId, NameId nameId, const std::string & baseName,
                      const TuneFileSummary & tune, const IBucketizer * bucketizer)
     : _fileId(fileId),
       _nameId(nameId),
@@ -509,9 +509,9 @@ FileChunk::getMemoryUsage() const
 }
 
 bool
-FileChunk::isIdxFileEmpty(const vespalib::string & name)
+FileChunk::isIdxFileEmpty(const std::string & name)
 {
-    vespalib::string fileName(name + ".idx");
+    std::string fileName(name + ".idx");
     FastOS_File idxFile(fileName.c_str());
     idxFile.enableMemoryMap(0);
     if (idxFile.OpenReadOnly()) {
@@ -531,16 +531,16 @@ FileChunk::isIdxFileEmpty(const vespalib::string & name)
 }
 
 void
-FileChunk::eraseIdxFile(const vespalib::string & name)
+FileChunk::eraseIdxFile(const std::string & name)
 {
-    vespalib::string fileName(createIdxFileName(name));
+    std::string fileName(createIdxFileName(name));
     std::filesystem::remove(std::filesystem::path(fileName));
 }
 
 void
-FileChunk::eraseDatFile(const vespalib::string & name)
+FileChunk::eraseDatFile(const std::string & name)
 {
-    vespalib::string fileName(createDatFileName(name));
+    std::string fileName(createDatFileName(name));
     std::filesystem::remove(std::filesystem::path(fileName));
 }
 

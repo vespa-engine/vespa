@@ -94,7 +94,7 @@ private:
      */
     void send(SendContext &ctx);
 
-    static vespalib::string buildRecipientListString(const SendContext& ctx);
+    static std::string buildRecipientListString(const SendContext& ctx);
 
 protected:
     /**

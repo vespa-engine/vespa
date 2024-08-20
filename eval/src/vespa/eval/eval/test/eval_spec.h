@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <initializer_list>
 #include <cassert>
+#include <initializer_list>
+#include <string>
 #include <vector>
 
 namespace vespalib::eval::test {
@@ -27,10 +27,10 @@ private:
             Case(std::initializer_list<double> param_values_in, double expected_result_in)
                 : param_values(param_values_in), expected_result(expected_result_in) {}
         };
-        std::vector<vespalib::string> param_names;
-        vespalib::string expression;
+        std::vector<std::string> param_names;
+        std::string expression;
         std::vector<Case> cases;
-        Expression(std::initializer_list<vespalib::string> param_names_in, vespalib::string expression_in)
+        Expression(std::initializer_list<std::string> param_names_in, std::string expression_in)
             : param_names(param_names_in), expression(expression_in) {}
         ~Expression();
 
@@ -40,13 +40,13 @@ private:
     };
     std::vector<Expression> expressions;
 
-    Expression &add_expression(std::initializer_list<vespalib::string> param_names, vespalib::string expression) {
+    Expression &add_expression(std::initializer_list<std::string> param_names, std::string expression) {
         expressions.emplace_back(param_names, expression);
         return expressions.back();
     }
 
     struct ParamSpec {
-        vespalib::string name;
+        std::string name;
         double min;
         double max;
         std::vector<double> expand(size_t inner_samples) const {
@@ -70,21 +70,21 @@ private:
         }
     };
 
-    void add_rule(const ParamSpec &a_spec, const vespalib::string &expression, fun_1_ref ref);
+    void add_rule(const ParamSpec &a_spec, const std::string &expression, fun_1_ref ref);
 
-    void add_rule(const ParamSpec &a_spec, const ParamSpec &b_spec, const vespalib::string &expression, fun_2_ref ref);
+    void add_rule(const ParamSpec &a_spec, const ParamSpec &b_spec, const std::string &expression, fun_2_ref ref);
 
 public:
     struct EvalTest {
-        static vespalib::string as_string(const std::vector<vespalib::string> &param_names,
+        static std::string as_string(const std::vector<std::string> &param_names,
                                           const std::vector<double> &param_values,
-                                          const vespalib::string &expression);
+                                          const std::string &expression);
         bool is_same(double expected, double actual);
-        virtual void next_expression(const std::vector<vespalib::string> &param_names,
-                                     const vespalib::string &expression) = 0;
-        virtual void handle_case(const std::vector<vespalib::string> &param_names,
+        virtual void next_expression(const std::vector<std::string> &param_names,
+                                     const std::string &expression) = 0;
+        virtual void handle_case(const std::vector<std::string> &param_names,
                                  const std::vector<double> &param_values,
-                                 const vespalib::string &expression,
+                                 const std::string &expression,
                                  double expected_result) = 0;
         virtual ~EvalTest() {}
     };

@@ -24,7 +24,7 @@ using search::index::Schema;
 
 namespace {
 
-vespalib::string PosOccIdCooked = "PosOcc.1.Cooked";
+std::string PosOccIdCooked = "PosOcc.1.Cooked";
 
 }
 
@@ -75,7 +75,7 @@ makePosOccWrite(PostingListCountFileSeqWrite *const posOccCountWrite,
 
 
 std::unique_ptr<PostingListFileSeqRead>
-makePosOccRead(const vespalib::string &name,
+makePosOccRead(const std::string &name,
                PostingListCountFileSeqRead *const posOccCountRead,
                const PostingListParams &featureParams,
                const TuneFileSeqRead &tuneFileRead)

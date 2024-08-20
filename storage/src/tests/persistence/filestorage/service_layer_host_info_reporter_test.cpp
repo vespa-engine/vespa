@@ -17,20 +17,20 @@ using spi::ResourceUsage;
 namespace {
 
 double
-get_usage_element(const vespalib::Slime& root, const vespalib::string& label)
+get_usage_element(const vespalib::Slime& root, const std::string& label)
 {
     return root.get()["content-node"]["resource-usage"][label]["usage"].asDouble();
 }
 
 AttributeResourceUsage
-get_attribute_usage_element(const vespalib::Slime& root, const vespalib::string& label)
+get_attribute_usage_element(const vespalib::Slime& root, const std::string& label)
 {
     double usage = get_usage_element(root, label);
     auto name = root.get()["content-node"]["resource-usage"][label]["name"].asString();
     return AttributeResourceUsage(usage, name.make_string());
 }
 
-const vespalib::string attr_name("doctype.subdb.attr.enum-store");
+const std::string attr_name("doctype.subdb.attr.enum-store");
 
 }
 

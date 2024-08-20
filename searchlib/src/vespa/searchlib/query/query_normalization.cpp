@@ -2,6 +2,7 @@
 
 #include "query_normalization.h"
 #include <vespa/fastlib/text/normwordfolder.h>
+#include <cstring>
 #include <ostream>
 
 namespace search {
@@ -32,11 +33,11 @@ requireFold(TermType type, Normalizing normalizing) {
            : Normalizing::NONE;
 }
 
-vespalib::string
+std::string
 fold(std::string_view s) {
     const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
     const unsigned char * end = curr + s.size();
-    vespalib::string folded;
+    std::string folded;
     for (; curr < end;) {
         uint32_t c_ucs4 = *curr;
         if (c_ucs4 < 0x80) {
@@ -58,11 +59,11 @@ fold(std::string_view s) {
     return folded;
 }
 
-vespalib::string
+std::string
 lowercase(std::string_view s) {
     const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
     const unsigned char * end = curr + s.size();
-    vespalib::string folded;
+    std::string folded;
     for (; curr < end;) {
         uint32_t c_ucs4 = *curr;
         if (c_ucs4 < 0x80) {
@@ -85,14 +86,14 @@ operator<<(std::ostream &os, Normalizing n) {
     return os;
 }
 
-vespalib::string
+std::string
 QueryNormalization::optional_fold(std::string_view s, TermType type, Normalizing normalizing) {
     switch ( requireFold(type, normalizing)) {
-        case Normalizing::NONE: return vespalib::string(s);
+        case Normalizing::NONE: return std::string(s);
         case Normalizing::LOWERCASE: return lowercase(s);
         case Normalizing::LOWERCASE_AND_FOLD: return fold(s);
     }
-    return vespalib::string(s);
+    return std::string(s);
 }
 
 }

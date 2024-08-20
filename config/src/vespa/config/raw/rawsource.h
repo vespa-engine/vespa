@@ -12,7 +12,7 @@ class IConfigHolder;
  */
 class RawSource : public Source {
 public:
-    RawSource(std::shared_ptr<IConfigHolder> holder, const vespalib::string & payload);
+    RawSource(std::shared_ptr<IConfigHolder> holder, const std::string & payload);
     RawSource(const RawSource &) = delete;
     RawSource & operator = (const RawSource &) = delete;
     ~RawSource() override;
@@ -22,7 +22,7 @@ public:
 private:
     std::shared_ptr<IConfigHolder> _holder;
     StringVector readConfig();
-    const vespalib::string _payload;
+    const std::string _payload;
 };
 
 }

@@ -29,7 +29,7 @@ namespace streaming {
 
 __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap = nullptr;
 
-SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
+SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport, const std::string& file_distributor_connection_spec)
     : _configId(configUri.getConfigId()),
       _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
       _vsmAdapter(std::make_unique<VSMAdapter>(_configId, wf)),
@@ -50,7 +50,7 @@ SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_Norma
 }
 
 config::ConfigKeySet
-SearchEnvironment::Env::createKeySet(const vespalib::string & configId)
+SearchEnvironment::Env::createKeySet(const std::string & configId)
 {
     config::ConfigKeySet set;
     set.add<vespa::config::search::vsm::VsmfieldsConfig,
@@ -106,7 +106,7 @@ SearchEnvironment::Env::~Env()
     _configurer.close();
 }
 
-SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
+SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const std::string& file_distributor_connection_spec)
     : VisitorEnvironment(),
       _envMap(),
       _wordFolder(std::make_unique<Fast_NormalizeWordFolder>()),
@@ -124,7 +124,7 @@ SearchEnvironment::~SearchEnvironment()
 }
 
 SearchEnvironment::Env &
-SearchEnvironment::getEnv(const vespalib::string & config_id)
+SearchEnvironment::getEnv(const std::string & config_id)
 {
     config::ConfigUri configUri(_configUri.createWithNewId(config_id));
     if (_localEnvMap == nullptr) {
@@ -156,7 +156,7 @@ SearchEnvironment::clear_thread_local_env_map()
 }
 
 std::shared_ptr<const SearchEnvironmentSnapshot>
-SearchEnvironment::get_snapshot(const vespalib::string& config_id)
+SearchEnvironment::get_snapshot(const std::string& config_id)
 {
     return getEnv(config_id).get_snapshot();
 }

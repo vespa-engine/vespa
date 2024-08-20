@@ -63,14 +63,14 @@ public:
     void hintFeatureMotivation(FeatureMotivation motivation) const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
 
-    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
+    vespalib::eval::ConstantValue::UP getConstantValue(const std::string &name) const override {
         return _rankingAssetsRepo.getConstant(name);
     }
-    vespalib::string getRankingExpression(const vespalib::string &name) const override {
+    std::string getRankingExpression(const std::string &name) const override {
         return _rankingAssetsRepo.getExpression(name);
     }
 
-    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const override {
+    const search::fef::OnnxModel *getOnnxModel(const std::string &name) const override {
         return _rankingAssetsRepo.getOnnxModel(name);
     }
 };

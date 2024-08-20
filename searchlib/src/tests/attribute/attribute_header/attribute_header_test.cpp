@@ -17,7 +17,7 @@ using HnswIPO = std::optional<HnswIndexParams>;
 using vespalib::eval::ValueType;
 
 const Config tensor_cfg(BasicType::TENSOR, CollectionType::SINGLE);
-const vespalib::string file_name = "my_file_name";
+const std::string file_name = "my_file_name";
 const ValueType tensor_type = ValueType::from_spec("tensor<float>(x[4])");
 constexpr uint32_t num_docs = 23;
 constexpr uint64_t unique_value_count = 11;

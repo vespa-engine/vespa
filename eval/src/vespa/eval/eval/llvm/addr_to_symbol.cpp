@@ -23,7 +23,7 @@ bool symbol_is_data_or_function(SymbolType type)
 
 } // <unnamed>
 
-vespalib::string addr_to_symbol(const void *addr) {
+std::string addr_to_symbol(const void *addr) {
     if (addr == nullptr) {
         return {"<nullptr>"};
     }

@@ -4,11 +4,11 @@
 
 using namespace vespalib;
 
-void checkMemory(const string &expect, const Memory &mem) {
+void checkMemory(const std::string &expect, const Memory &mem) {
     EXPECT_EQUAL(expect, mem.make_stringview());
 }
 
-void checkBuffer(const string &expect, const SimpleBuffer &buf) {
+void checkBuffer(const std::string &expect, const SimpleBuffer &buf) {
     TEST_DO(checkMemory(expect, buf.get()));
 }
 

@@ -57,7 +57,7 @@ void Parameters::deserialize(document::ByteBuffer& buffer)
     for (int i=0; i<mysize; i++) {
         int32_t keylen = 0;
         buffer.getIntNetwork(keylen);
-        vespalib::string key(buffer.getBufferAtPos(), keylen);
+        std::string key(buffer.getBufferAtPos(), keylen);
         buffer.incPos(keylen);
         int32_t sz(0);
         buffer.getIntNetwork(sz);
@@ -133,9 +133,9 @@ void Parameters::print(std::ostream& out, bool verbose, const std::string& inden
     out << ")";
 }
 
-vespalib::string Parameters::toString() const
+std::string Parameters::toString() const
 {
-    vespalib::string ret;
+    std::string ret;
     for (const auto & entry : _parameters) {
         ret += entry.first;
         ret += '=';
@@ -149,28 +149,28 @@ void
 Parameters::set(KeyT id, int32_t value) {
     char tmp[16];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
-    _parameters[vespalib::string(id)] = Value(tmp, size_t(res.ptr - tmp));
+    _parameters[std::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
 void
 Parameters::set(KeyT id, int64_t value) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
-    _parameters[vespalib::string(id)] = Value(tmp, size_t(res.ptr - tmp));
+    _parameters[std::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
 void
 Parameters::set(KeyT id, uint64_t value) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
-    _parameters[vespalib::string(id)] = Value(tmp, size_t(res.ptr - tmp));
+    _parameters[std::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
 void
 Parameters::set(KeyT id, double value) {
     vespalib::asciistream ost;
     ost << value;
-    _parameters[vespalib::string(id)] = Value(ost.view());
+    _parameters[std::string(id)] = Value(ost.view());
 }
 
 
@@ -180,4 +180,4 @@ template uint64_t vdslib::Parameters::get(std::string_view , uint64_t) const;
 template double vdslib::Parameters::get(std::string_view , double) const;
 template std::string vdslib::Parameters::get(std::string_view , std::string) const;
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vdslib::Parameters::Value);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, vdslib::Parameters::Value);

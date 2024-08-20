@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::index::schema {
 
@@ -38,11 +38,11 @@ enum class CollectionType {
 };
 
 DataType dataTypeFromName(std::string_view name);
-vespalib::string getTypeName(DataType type);
+std::string getTypeName(DataType type);
 std::ostream &operator<<(std::ostream &os, const DataType &type);
 
 CollectionType collectionTypeFromName(std::string_view n);
-vespalib::string getTypeName(CollectionType type);
+std::string getTypeName(CollectionType type);
 std::ostream &operator<<(std::ostream &os, const CollectionType &type);
 
 

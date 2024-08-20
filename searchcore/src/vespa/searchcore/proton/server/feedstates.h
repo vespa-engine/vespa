@@ -21,10 +21,10 @@ namespace proton {
  * The feed handler owner is initializing components.
  */
 class InitState : public FeedState {
-    vespalib::string _doc_type_name;
+    std::string _doc_type_name;
 
 public:
-    InitState(const vespalib::string &name) noexcept
+    InitState(const std::string &name) noexcept
         : FeedState(INIT),
           _doc_type_name(name)
     {
@@ -46,11 +46,11 @@ public:
  * Replayed messages from the transaction log are sent to the active feed view.
  */
 class ReplayTransactionLogState : public FeedState {
-    vespalib::string _doc_type_name;
+    std::string _doc_type_name;
     std::unique_ptr<IReplayPacketHandler> _packet_handler;
 
 public:
-    ReplayTransactionLogState(const vespalib::string &name,
+    ReplayTransactionLogState(const std::string &name,
             IFeedView *& feed_view_ptr,
             bucketdb::IBucketDBHandler &bucketDBHandler,
             IReplayConfig &replay_config,

@@ -14,8 +14,8 @@ using namespace search;
 class DocumentStoreInspectApp
 {
     void usage(const char *self);
-    int verify(const vespalib::string & directory);
-    int dumpIdxFile(const vespalib::string & file);
+    int verify(const std::string & directory);
+    int dumpIdxFile(const std::string & file);
 public:
     int main(int argc, char **argv);
 };
@@ -29,7 +29,7 @@ DocumentStoreInspectApp::usage(const char *self)
     fflush(stdout);
 }
 
-int DocumentStoreInspectApp::dumpIdxFile(const vespalib::string & file)
+int DocumentStoreInspectApp::dumpIdxFile(const std::string & file)
 {
     FastOS_File idxFile(file.c_str());
     idxFile.enableMemoryMap(0);
@@ -67,13 +67,13 @@ int DocumentStoreInspectApp::dumpIdxFile(const vespalib::string & file)
 int
 DocumentStoreInspectApp::main(int argc, char **argv)
 {
-    vespalib::string cmd;
+    std::string cmd;
     if (argc >= 2) {
         cmd = argv[1];
         if (cmd == "dumpidxfile") {
-            vespalib::string idxfile;
+            std::string idxfile;
             if (argc >= 4) {
-                if (vespalib::string(argv[2]) == vespalib::string("--idxfile")) {
+                if (std::string(argv[2]) == std::string("--idxfile")) {
                     idxfile = argv[3];
                     dumpIdxFile(idxfile);
                 } else {
@@ -100,7 +100,7 @@ DocumentStoreInspectApp::main(int argc, char **argv)
 }
 
 int
-DocumentStoreInspectApp::verify(const vespalib::string & dir)
+DocumentStoreInspectApp::verify(const std::string & dir)
 {
     int retval(0);
 

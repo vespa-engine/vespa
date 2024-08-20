@@ -401,9 +401,9 @@ public:
     static SearchIteratorUP create_default_filter(FilterConstraint constraint);
 
     // for debug dumping
-    vespalib::string asString() const;
+    std::string asString() const;
     vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
-    virtual vespalib::string getClassName() const;
+    virtual std::string getClassName() const;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     virtual bool isEquiv() const noexcept { return false; }
     virtual bool isWhiteList() const noexcept { return false; }
@@ -566,7 +566,7 @@ public:
     SearchIteratorUP createSearch(fef::MatchData &md) const override;
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
-    virtual bool getRange(vespalib::string & from, vespalib::string & to) const;
+    virtual bool getRange(std::string & from, std::string & to) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const = 0;
 };
 

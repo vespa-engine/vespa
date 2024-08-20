@@ -18,7 +18,7 @@ public:
         OUTSTANDING_OPS = 3
     };
 
-    IBlockableMaintenanceJob(const vespalib::string &name,
+    IBlockableMaintenanceJob(const std::string &name,
                              vespalib::duration delay,
                              vespalib::duration interval)
         : IMaintenanceJob(name, delay, interval)

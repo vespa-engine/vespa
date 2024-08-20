@@ -20,7 +20,7 @@ RankingAssetsRepo::RankingAssetsRepo(const ConstantValueFactory &factory,
 RankingAssetsRepo::~RankingAssetsRepo() = default;
 
 ConstantValue::UP
-RankingAssetsRepo::getConstant(const vespalib::string &name) const
+RankingAssetsRepo::getConstant(const std::string &name) const
 {
     if ( ! _constants) return {};
     const RankingConstants::Constant *constant = _constants->getConstant(name);
@@ -30,13 +30,13 @@ RankingAssetsRepo::getConstant(const vespalib::string &name) const
     return {};
 }
 
-vespalib::string
-RankingAssetsRepo::getExpression(const vespalib::string &name) const {
+std::string
+RankingAssetsRepo::getExpression(const std::string &name) const {
     return _rankingExpressions ? _rankingExpressions->loadExpression(name) : "";
 }
 
 const OnnxModel *
-RankingAssetsRepo::getOnnxModel(const vespalib::string &name) const {
+RankingAssetsRepo::getOnnxModel(const std::string &name) const {
     return _onnxModels ? _onnxModels->getModel(name) : nullptr;
 }
 

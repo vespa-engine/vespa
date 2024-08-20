@@ -243,7 +243,7 @@ TEST_F(BouncerTest, internal_operations_are_not_rejected) {
 namespace {
 
 std::shared_ptr<const lib::ClusterStateBundle>
-makeClusterStateBundle(const vespalib::string &baselineState, const std::map<document::BucketSpace, vespalib::string> &derivedStates)
+makeClusterStateBundle(const std::string &baselineState, const std::map<document::BucketSpace, std::string> &derivedStates)
 {
     lib::ClusterStateBundle::BucketSpaceStateMapping derivedBucketSpaceStates;
     for (const auto &entry : derivedStates) {

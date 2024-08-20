@@ -15,7 +15,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributemanager");
 
-using vespalib::string;
+using std::string;
 using vespalib::IllegalStateException;
 using search::attribute::IAttributeContext;
 
@@ -199,7 +199,7 @@ AttributeManager::createContext() const
 string
 AttributeManager::createBaseFileName(std::string_view name) const
 {
-    vespalib::string dir = getBaseDir();
+    std::string dir = getBaseDir();
     if ( ! getSnapshot().dirName.empty()) {
         dir += "/";
         dir += getSnapshot().dirName;

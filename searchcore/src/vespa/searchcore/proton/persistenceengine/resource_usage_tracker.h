@@ -30,11 +30,11 @@ class ResourceUsageTracker : public std::enable_shared_from_this<ResourceUsageTr
     storage::spi::ResourceUsage _resource_usage;
     storage::spi::IResourceUsageListener* _listener;
     IDiskMemUsageNotifier&      _disk_mem_usage_notifier;
-    vespalib::hash_map<vespalib::string, AttributeUsageStats> _attribute_usage;
-    vespalib::string            _attribute_address_space_max_document_type;
+    vespalib::hash_map<std::string, AttributeUsageStats> _attribute_usage;
+    std::string            _attribute_address_space_max_document_type;
     void remove_listener();
-    void remove_document_type(const vespalib::string &document_type);
-    void notify_attribute_usage(const vespalib::string &document_type, const AttributeUsageStats &attribute_usage);
+    void remove_document_type(const std::string &document_type);
+    void notify_attribute_usage(const std::string &document_type, const AttributeUsageStats &attribute_usage);
     bool scan_attribute_usage(bool force_changed, std::lock_guard<std::mutex>&);
 public:
     ResourceUsageTracker(IDiskMemUsageNotifier& notifier);
@@ -42,7 +42,7 @@ public:
     storage::spi::ResourceUsage get_resource_usage() const;
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     std::unique_ptr<vespalib::IDestructorCallback> set_listener(storage::spi::IResourceUsageListener& listener);
-    std::unique_ptr<IAttributeUsageListener> make_attribute_usage_listener(const vespalib::string &document_type);
+    std::unique_ptr<IAttributeUsageListener> make_attribute_usage_listener(const std::string &document_type);
 };
 
 }

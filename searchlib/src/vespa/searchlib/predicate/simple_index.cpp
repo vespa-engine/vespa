@@ -17,7 +17,7 @@ bool log_enabled() {
     return LOG_WOULD_LOG(debug);
 }
 
-void log_debug(vespalib::string &str) {
+void log_debug(std::string &str) {
     LOG(debug, "%s", str.c_str());
 }
 

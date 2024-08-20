@@ -84,7 +84,7 @@ NBOSerializer &NBOSerializer::get(float & value) {
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(string & value) {
+NBOSerializer &NBOSerializer::get(std::string & value) {
     _stream >> value;
     return *this;
 }

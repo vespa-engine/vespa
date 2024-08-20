@@ -20,9 +20,9 @@ using vespalib::DataBuffer;
 using vespalib::Memory;
 using vespalib::compression::CompressionConfig;
 
-vespalib::string
+std::string
 getAnswer(size_t num, const char * reply = "myreply") {
-    vespalib::string s;
+    std::string s;
     s += "{";
     s += "  docsums: [";
     for (size_t i = 0; i < num; i++) {
@@ -119,7 +119,7 @@ createRequest(size_t num = 1) {
         r->hits.emplace_back(GlobalId("aaaaaaaaaaaa"));
     } else {
         for (size_t i = 0; i < num; i++) {
-            vespalib::string s = vespalib::make_string("aaaaaaaaaaa%c", char('a' + i % 26));
+            std::string s = vespalib::make_string("aaaaaaaaaaa%c", char('a' + i % 26));
             r->hits.emplace_back(GlobalId(s.c_str()));
         }
     }

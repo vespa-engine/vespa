@@ -30,7 +30,7 @@ class ImportedSearchContext : public ISearchContext {
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
     using TargetLids = std::span<const AtomicTargetLid>;
     const ImportedAttributeVector&                  _imported_attribute;
-    vespalib::string                                _queryTerm;
+    std::string                                _queryTerm;
     bool                                            _useSearchCache;
     std::shared_ptr<BitVectorSearchCache::Entry>    _searchCacheLookup;
     IDocumentMetaStoreContext::IReadGuard::SP       _dmsReadGuardFallback;
@@ -71,7 +71,7 @@ public:
     Int64Range getAsIntegerTerm() const override;
     DoubleRange getAsDoubleTerm() const override;
     const QueryTermUCS4 * queryTerm() const override;
-    const vespalib::string& attributeName() const override;
+    const std::string& attributeName() const override;
 
     using DocId = uint32_t;
 

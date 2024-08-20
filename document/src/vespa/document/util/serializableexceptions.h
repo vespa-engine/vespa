@@ -18,9 +18,9 @@ namespace document {
 
 class DeserializeException : public vespalib::IoException {
 public:
-    DeserializeException(const vespalib::string& msg, const vespalib::string& location = "");
-    DeserializeException(const vespalib::string& msg, const vespalib::Exception& cause,
-                         const vespalib::string& location = "");
+    DeserializeException(const std::string& msg, const std::string& location = "");
+    DeserializeException(const std::string& msg, const vespalib::Exception& cause,
+                         const std::string& location = "");
     VESPA_DEFINE_EXCEPTION_SPINE(DeserializeException)
 };
 

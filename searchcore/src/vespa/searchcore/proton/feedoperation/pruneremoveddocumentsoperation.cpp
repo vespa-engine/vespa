@@ -49,7 +49,7 @@ PruneRemovedDocumentsOperation::deserialize(vespalib::nbostream &is, const Docum
     deserializeLidsToRemove(is);
 }
 
-vespalib::string PruneRemovedDocumentsOperation::toString() const {
+std::string PruneRemovedDocumentsOperation::toString() const {
     LidVectorContext::SP lids = getLidsToRemove();
     return make_string("PruneRemovedDocuments(limitLid=%zu, subDbId=%d, "
                        "serialNum=%" PRIu64 ")",

@@ -16,13 +16,13 @@ public:
           generation(0),
           applyOnRestart(false)
     { }
-    ConfigState(const vespalib::string & xxhash, int64_t gen, bool _applyOnRestart)
+    ConfigState(const std::string & xxhash, int64_t gen, bool _applyOnRestart)
         : xxhash64(xxhash),
           generation(gen),
           applyOnRestart(_applyOnRestart)
     { }
 
-    vespalib::string xxhash64;
+    std::string xxhash64;
     int64_t generation;
     bool applyOnRestart;
 

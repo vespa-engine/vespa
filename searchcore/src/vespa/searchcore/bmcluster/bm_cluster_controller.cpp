@@ -46,7 +46,7 @@ BmClusterController::BmClusterController(BmCluster& cluster, const IBmDistributi
 void
 BmClusterController::propagate_cluster_state(uint32_t node_idx, bool distributor)
 {
-    static vespalib::string _storage("storage");
+    static std::string _storage("storage");
     StorageMessageAddress storage_address(&_storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, node_idx);
     auto req = make_set_cluster_state_request(_distribution);
     auto& shared_rpc_resources = _cluster.get_rpc_client();

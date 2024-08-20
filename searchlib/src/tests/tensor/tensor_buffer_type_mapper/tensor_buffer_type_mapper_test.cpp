@@ -12,11 +12,11 @@ using search::tensor::TensorBufferTypeMapper;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::eval::ValueType;
 
-const vespalib::string tensor_type_sparse_spec("tensor(x{})");
-const vespalib::string tensor_type_2d_spec("tensor(x{},y{})");
-const vespalib::string tensor_type_2d_mixed_spec("tensor(x{},y[2])");
-const vespalib::string float_tensor_type_spec("tensor<float>(y{})");
-const vespalib::string tensor_type_dense_spec("tensor(x[2])");
+const std::string tensor_type_sparse_spec("tensor(x{})");
+const std::string tensor_type_2d_spec("tensor(x{},y{})");
+const std::string tensor_type_2d_mixed_spec("tensor(x{},y[2])");
+const std::string float_tensor_type_spec("tensor<float>(y{})");
+const std::string tensor_type_dense_spec("tensor(x[2])");
 
 namespace {
 
@@ -28,12 +28,12 @@ constexpr size_t max_max_buffer_size = std::numeric_limits<uint32_t>::max();
 
 struct TestParam
 {
-    vespalib::string    _name;
+    std::string    _name;
     std::vector<size_t> _array_sizes;
     std::vector<size_t> _large_array_sizes;
     std::vector<uint32_t> _type_id_caps;
-    vespalib::string    _tensor_type_spec;
-    TestParam(vespalib::string name, std::vector<size_t> array_sizes, std::vector<size_t> large_array_sizes, std::vector<uint32_t> type_id_caps, const vespalib::string& tensor_type_spec)
+    std::string    _tensor_type_spec;
+    TestParam(std::string name, std::vector<size_t> array_sizes, std::vector<size_t> large_array_sizes, std::vector<uint32_t> type_id_caps, const std::string& tensor_type_spec)
         : _name(std::move(name)),
           _array_sizes(std::move(array_sizes)),
           _large_array_sizes(std::move(large_array_sizes)),

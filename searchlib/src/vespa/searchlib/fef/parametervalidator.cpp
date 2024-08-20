@@ -32,10 +32,10 @@ bool checkDataType(ParameterDataTypeSet accept, search::index::schema::DataType 
 class ValidateException
 {
 public:
-    ValidateException(const vespalib::string & message) : _message(message) { }
-    const vespalib::string & getMessage() const { return _message; }
+    ValidateException(const std::string & message) : _message(message) { }
+    const std::string & getMessage() const { return _message; }
 private:
-    vespalib::string _message;
+    std::string _message;
 };
 
 } // namespace search::fef::<unnamed>

@@ -16,7 +16,7 @@
 
 using config::ConfigGetter;
 using config::FileSpec;
-using vespalib::string;
+using std::string;
 using document::test::makeDocumentBucket;
 using namespace document;
 using namespace storage::api;

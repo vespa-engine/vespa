@@ -21,7 +21,7 @@ public:
 
     void serialize(vespalib::nbostream &os) const override;
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &) override;
-    vespalib::string toString() const override;
+    std::string toString() const override;
 };
 
 }

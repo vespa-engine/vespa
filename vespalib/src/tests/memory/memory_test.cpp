@@ -128,28 +128,28 @@ TEST("require that VESPA_NELEMS works as expected") {
 }
 
 TEST("require that memcpy_safe works as expected") {
-    vespalib::string a("abcdefgh");
-    vespalib::string b("01234567");
+    std::string a("abcdefgh");
+    std::string b("01234567");
     memcpy_safe(&b[0], &a[0], 4);
     memcpy_safe(nullptr, &a[0], 0);
     memcpy_safe(&b[0], nullptr, 0);
     memcpy_safe(nullptr, nullptr, 0);
-    EXPECT_EQUAL(vespalib::string("abcdefgh"), a);
-    EXPECT_EQUAL(vespalib::string("abcd4567"), b);
+    EXPECT_EQUAL(std::string("abcdefgh"), a);
+    EXPECT_EQUAL(std::string("abcd4567"), b);
 }
 
 TEST("require that memmove_safe works as expected") {
-    vespalib::string str("0123456789");
+    std::string str("0123456789");
     memmove_safe(&str[2], &str[0], 5);
     memmove_safe(nullptr, &str[0], 0);
     memmove_safe(&str[0], nullptr, 0);
     memmove_safe(nullptr, nullptr, 0);
-    EXPECT_EQUAL(vespalib::string("0101234789"), str);
+    EXPECT_EQUAL(std::string("0101234789"), str);
 }
 
 TEST("require that memcmp_safe works as expected") {
-    vespalib::string a("ab");
-    vespalib::string b("ac");
+    std::string a("ab");
+    std::string b("ac");
     EXPECT_EQUAL(memcmp_safe(&a[0], &b[0], 0), 0);
     EXPECT_EQUAL(memcmp_safe(nullptr, &b[0], 0), 0);
     EXPECT_EQUAL(memcmp_safe(&a[0], nullptr, 0), 0);

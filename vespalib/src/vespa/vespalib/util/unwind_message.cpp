@@ -5,7 +5,7 @@
 
 namespace vespalib {
 
-UnwindMessage::UnwindMessage(const vespalib::string &msg)
+UnwindMessage::UnwindMessage(const std::string &msg)
     : _num_active(std::uncaught_exceptions()),
       _message(msg)
 {
@@ -28,7 +28,7 @@ UnwindMessage unwind_msg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    vespalib::string msg = make_string_va(fmt, ap);
+    std::string msg = make_string_va(fmt, ap);
     va_end(ap);
     return {msg};
 }

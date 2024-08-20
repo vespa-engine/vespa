@@ -29,7 +29,7 @@ class MyConfigResponse : public ConfigResponse
 {
 public:
     MyConfigResponse(const ConfigKey & key, ConfigValue value, bool valid, int64_t timestamp,
-                     const vespalib::string & xxhash64, const std::string & errorMsg, int errorC0de, bool iserror)
+                     const std::string & xxhash64, const std::string & errorMsg, int errorC0de, bool iserror)
         : _key(key),
           _value(std::move(value)),
           _fillCalled(false),
@@ -46,7 +46,7 @@ public:
     bool hasValidResponse() const override { return _valid; }
     bool validateResponse() override { return _valid; }
     void fill() override { _fillCalled = true; }
-    vespalib::string errorMessage() const override { return _errorMessage; }
+    std::string errorMessage() const override { return _errorMessage; }
     int errorCode() const override { return _errorCode; }
     bool isError() const override { return  _isError; }
     const Trace & getTrace() const override { return _trace; }
@@ -56,13 +56,13 @@ public:
     bool _fillCalled;
     bool _valid;
     const ConfigState _state;
-    vespalib::string _errorMessage;
+    std::string _errorMessage;
     int _errorCode;
     bool _isError;
     Trace _trace;
 
 
-    static std::unique_ptr<ConfigResponse> createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const vespalib::string & xxhash64 = "a")
+    static std::unique_ptr<ConfigResponse> createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const std::string & xxhash64 = "a")
     {
         return std::make_unique<MyConfigResponse>(key, value, true, timestamp, xxhash64, "", 0, false);
     }

@@ -34,7 +34,7 @@ CompactLidSpaceOperation::deserialize(vespalib::nbostream& is, const document::D
     is >> _lidLimit;
 }
 
-vespalib::string
+std::string
 CompactLidSpaceOperation::toString() const
 {
     return vespalib::make_string("CompactLidSpace(subDbId=%u, lidLimit=%u, serialNum=%" PRIu64 ")",

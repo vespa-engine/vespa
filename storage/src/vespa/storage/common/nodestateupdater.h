@@ -23,9 +23,9 @@
  */
 #pragma once
 
-#include <string>
 #include <vespa/vdslib/state/nodestate.h>
 #include "vespa/vespalib/util/jsonstream.h"
+#include <string>
 
 namespace metrics { class JsonWriter; }
 namespace storage {

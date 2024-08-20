@@ -50,13 +50,13 @@ ByteBuffer::getDoubleLongNetwork(T &val) {
 
 VESPA_IMPLEMENT_EXCEPTION_SPINE(BufferOutOfBoundsException);
 
-vespalib::string BufferOutOfBoundsException::createMessage(size_t pos, size_t len) {
+std::string BufferOutOfBoundsException::createMessage(size_t pos, size_t len) {
     vespalib::asciistream ost;
     ost << pos << " > " << len;
     return ost.str();
 }
 
-BufferOutOfBoundsException::BufferOutOfBoundsException(size_t pos, size_t len, const vespalib::string& location)
+BufferOutOfBoundsException::BufferOutOfBoundsException(size_t pos, size_t len, const std::string& location)
     : IoException(createMessage(pos, len), IoException::NO_SPACE, location, 1)
 {
 }

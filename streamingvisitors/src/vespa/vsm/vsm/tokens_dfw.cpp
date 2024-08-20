@@ -9,7 +9,7 @@ using search::docsummary::GetDocsumsState;
 
 namespace vsm {
 
-TokensDFW::TokensDFW(const vespalib::string& input_field_name, bool exact_match, search::Normalizing normalize_mode)
+TokensDFW::TokensDFW(const std::string& input_field_name, bool exact_match, search::Normalizing normalize_mode)
     : DocsumFieldWriter(),
       _input_field_name(input_field_name),
       _exact_match(exact_match),

@@ -58,7 +58,7 @@ public:
     /**
        Hides the printable toString() for effiency reasons.
     */
-    vespalib::string toString() const;
+    std::string toString() const;
 
     bool operator==(const DocumentId& other) const { return _id == other._id; }
     bool operator!=(const DocumentId& other) const { return ! (_id == other._id); }

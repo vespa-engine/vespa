@@ -97,39 +97,39 @@ TEST_F(ProdFeaturesTest, test_ft_lib)
     { // toQuery
         FtQuery q = FtUtil::toQuery("a b!50 0.5:c!200%0.5  d%0.3   e!300 0.3:f ");
         ASSERT_TRUE(q.size() == 6);
-        EXPECT_EQ(q[0].term, vespalib::string("a"));
+        EXPECT_EQ(q[0].term, std::string("a"));
         EXPECT_EQ(q[0].termWeight.percent(), 100);
         EXPECT_NEAR(q[0].connexity, 0.1f, EPS);
         EXPECT_NEAR(q[0].significance, 0.1f, EPS);
-        EXPECT_EQ(q[1].term, vespalib::string("b"));
+        EXPECT_EQ(q[1].term, std::string("b"));
         EXPECT_EQ(q[1].termWeight.percent(), 50);
         EXPECT_NEAR(q[1].connexity, 0.1f, EPS);
         EXPECT_NEAR(q[1].significance, 0.1f, EPS);
-        EXPECT_EQ(q[2].term, vespalib::string("c"));
+        EXPECT_EQ(q[2].term, std::string("c"));
         EXPECT_EQ(q[2].termWeight.percent(), 200);
         EXPECT_NEAR(q[2].connexity, 0.5f, EPS);
         EXPECT_NEAR(q[2].significance, 0.5f, EPS);
-        EXPECT_EQ(q[3].term, vespalib::string("d"));
+        EXPECT_EQ(q[3].term, std::string("d"));
         EXPECT_EQ(q[3].termWeight.percent(), 100);
         EXPECT_NEAR(q[3].connexity, 0.1f, EPS);
         EXPECT_NEAR(q[3].significance, 0.3f, EPS);
-        EXPECT_EQ(q[4].term, vespalib::string("e"));
+        EXPECT_EQ(q[4].term, std::string("e"));
         EXPECT_EQ(q[4].termWeight.percent(), 300);
         EXPECT_NEAR(q[4].connexity, 0.1f, EPS);
         EXPECT_NEAR(q[4].significance, 0.1f, EPS);
-        EXPECT_EQ(q[5].term, vespalib::string("f"));
+        EXPECT_EQ(q[5].term, std::string("f"));
         EXPECT_EQ(q[5].termWeight.percent(), 100);
         EXPECT_NEAR(q[5].connexity, 0.3f, EPS);
         EXPECT_NEAR(q[5].significance, 0.1f, EPS);
     }
     { // toRankResult
         RankResult rr = toRankResult("foo", "a:0.5 b:-0.5  c:2   d:3 ");
-        std::vector<vespalib::string> keys = rr.getKeys();
+        std::vector<std::string> keys = rr.getKeys();
         ASSERT_TRUE(keys.size() == 4);
-        EXPECT_EQ(keys[0], vespalib::string("foo.a"));
-        EXPECT_EQ(keys[1], vespalib::string("foo.b"));
-        EXPECT_EQ(keys[2], vespalib::string("foo.c"));
-        EXPECT_EQ(keys[3], vespalib::string("foo.d"));
+        EXPECT_EQ(keys[0], std::string("foo.a"));
+        EXPECT_EQ(keys[1], std::string("foo.b"));
+        EXPECT_EQ(keys[2], std::string("foo.c"));
+        EXPECT_EQ(keys[3], std::string("foo.d"));
         EXPECT_NEAR(rr.getScore("foo.a"), 0.5f, EPS);
         EXPECT_NEAR(rr.getScore("foo.b"), -0.5f, EPS);
         EXPECT_NEAR(rr.getScore("foo.c"), 2.0f, EPS);
@@ -165,9 +165,9 @@ TEST_F(ProdFeaturesTest, test_age)
 }
 
 void
-Test::assertAge(feature_t expAge, const vespalib::string & attr, uint64_t now, uint64_t docTime)
+Test::assertAge(feature_t expAge, const std::string & attr, uint64_t now, uint64_t docTime)
 {
-    vespalib::string feature = "age(" + attr + ")";
+    std::string feature = "age(" + attr + ")";
     FtFeatureTest ft(_factory, feature);
     setupForAgeTest(ft, docTime);
     ft.getQueryEnv().getProperties().add(queryproperties::now::SystemTime::NAME,
@@ -474,9 +474,9 @@ TEST_F(ProdFeaturesTest, test_closeness)
 }
 
 void
-Test::assertCloseness(feature_t exp, const vespalib::string & attr, double distance, double maxDistance, double halfResponse)
+Test::assertCloseness(feature_t exp, const std::string & attr, double distance, double maxDistance, double halfResponse)
 {
-    vespalib::string feature = "closeness(" + attr + ")";
+    std::string feature = "closeness(" + attr + ")";
     FtFeatureTest ft(_factory, feature);
     std::vector<std::pair<int32_t, int32_t> > positions;
     int32_t x = 0;
@@ -549,9 +549,9 @@ TEST_F(ProdFeaturesTest, test_field_length)
 
 
 void
-Test::assertFieldMatch(const vespalib::string & spec,
-                       const vespalib::string & query,
-                       const vespalib::string & field,
+Test::assertFieldMatch(const std::string & spec,
+                       const std::string & query,
+                       const std::string & field,
                        const fieldmatch::Params * params,
                        uint32_t totalTermWeight,
                        feature_t totalSignificance)
@@ -559,7 +559,7 @@ Test::assertFieldMatch(const vespalib::string & spec,
     LOG(info, "assertFieldMatch('%s', '%s', '%s', (%u))", spec.c_str(), query.c_str(), field.c_str(), totalTermWeight);
 
     // Setup feature test.
-    vespalib::string feature = "fieldMatch(foo)";
+    std::string feature = "fieldMatch(foo)";
     FtFeatureTest ft(_factory, feature);
 
     setupFieldMatch(ft, "foo", query, field, params, totalTermWeight, totalSignificance, 1);
@@ -571,18 +571,18 @@ Test::assertFieldMatch(const vespalib::string & spec,
 }
 
 void
-Test::assertFieldMatch(const vespalib::string & spec,
-                       const vespalib::string & query,
-                       const vespalib::string & field,
+Test::assertFieldMatch(const std::string & spec,
+                       const std::string & query,
+                       const std::string & field,
                        uint32_t totalTermWeight)
 {
     assertFieldMatch(spec, query, field, nullptr, totalTermWeight);
 }
 
 void
-Test::assertFieldMatchTS(const vespalib::string & spec,
-                         const vespalib::string & query,
-                         const vespalib::string & field,
+Test::assertFieldMatchTS(const std::string & spec,
+                         const std::string & query,
+                         const std::string & field,
                          feature_t totalSignificance)
 {
     assertFieldMatch(spec, query, field, nullptr, 0, totalSignificance);
@@ -715,7 +715,7 @@ TEST_F(ProdFeaturesTest, test_foreach)
         }
 
         { // double loop
-            vespalib::string feature =
+            std::string feature =
                 "foreach(fields,N,foreach(attributes,M,rankingExpression(\"value(N)+value(M)\"),true,product),true,sum)";
             LOG(info, "double loop feature: '%s'", feature.c_str());
             FtFeatureTest ft(_factory, feature);
@@ -733,9 +733,9 @@ TEST_F(ProdFeaturesTest, test_foreach)
 }
 
 void
-Test::assertForeachOperation(feature_t exp, const vespalib::string & cond, const vespalib::string & op)
+Test::assertForeachOperation(feature_t exp, const std::string & cond, const std::string & op)
 {
-    vespalib::string feature = "foreach(fields,N,value(N)," + cond + "," + op + ")";
+    std::string feature = "foreach(fields,N,value(N)," + cond + "," + op + ")";
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "4.5");
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "2");
@@ -793,9 +793,9 @@ TEST_F(ProdFeaturesTest, test_freshness)
 }
 
 void
-Test::assertFreshness(feature_t expFreshness, const vespalib::string & attr, uint32_t age, uint32_t maxAge, double halfResponse, bool logScale)
+Test::assertFreshness(feature_t expFreshness, const std::string & attr, uint32_t age, uint32_t maxAge, double halfResponse, bool logScale)
 {
-    vespalib::string feature = "freshness(" + attr + ")";
+    std::string feature = "freshness(" + attr + ")";
     FtFeatureTest ft(_factory, feature);
     setupForAgeTest(ft, 60); // time = 60
     if (maxAge > 0) {
@@ -904,7 +904,7 @@ TEST_F(ProdFeaturesTest, test_distance)
 
         { // test 2D multi location (zcurve)
             // note: "aspect" is ignored now, computed from "y", and cos(60 degrees) = 0.5
-            vespalib::string positions = "5:59999995," "35:60000000," "5:60000040," "35:59999960";
+            std::string positions = "5:59999995," "35:60000000," "5:60000040," "35:59999960";
             assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 59999995, 0, 0);
             assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 60000000, 0x10000000, 1);
             assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 60000040, 0x20000000, 2);
@@ -926,7 +926,7 @@ TEST_F(ProdFeaturesTest, test_distance)
 
         { // test geo multi location (zcurve)
             // note: cos(70.528779 degrees) = 1/3
-            vespalib::string positions = "0:70528779," "100:70528879," "-200:70528979," "-300:70528479," "400:70528379";
+            std::string positions = "0:70528779," "100:70528879," "-200:70528979," "-300:70528479," "400:70528379";
             assert2DZDistance(static_cast<feature_t>(0.0f),  positions,    0, 70528779 +   0, 0, 0);
             assert2DZDistance(static_cast<feature_t>(1.0f),  positions,  100, 70528779 + 101, 0x20000000, 1);
             assert2DZDistance(static_cast<feature_t>(0.0f),  positions, -200, 70528779 + 200, 0x40000000, 2);
@@ -987,7 +987,7 @@ TEST_F(ProdFeaturesTest, test_distance)
 }
 
 void
-Test::setupForDistanceTest(FtFeatureTest &ft, const vespalib::string & attrName,
+Test::setupForDistanceTest(FtFeatureTest &ft, const std::string & attrName,
                            const std::vector<std::pair<int32_t, int32_t> > & positions, bool zcurve)
 {
     auto pos = AttributeBuilder(attrName, AVC(AVBT::INT64,  AVCT::ARRAY)).docs(1).get();
@@ -1006,16 +1006,16 @@ Test::setupForDistanceTest(FtFeatureTest &ft, const vespalib::string & attrName,
 }
 
 void
-Test::assert2DZDistance(feature_t exp, const vespalib::string & positions,
+Test::assert2DZDistance(feature_t exp, const std::string & positions,
                         int32_t xquery, int32_t yquery, uint32_t xAspect,
                         uint32_t hit_index)
 {
     LOG(info, "assert2DZDistance(%g, %s, %d, %d, %u, %u)", exp, positions.c_str(), xquery, yquery, xAspect, hit_index);
     FtFeatureTest ft(_factory, "distance(pos)");
-    std::vector<vespalib::string> ta = FtUtil::tokenize(positions, ",");
+    std::vector<std::string> ta = FtUtil::tokenize(positions, ",");
     std::vector<std::pair<int32_t, int32_t> > pos;
     for (const auto & s : ta) {
-        std::vector<vespalib::string> tb = FtUtil::tokenize(s, ":");
+        std::vector<std::string> tb = FtUtil::tokenize(s, ":");
         auto x = util::strToNum<int32_t>(tb[0]);
         auto y = util::strToNum<int32_t>(tb[1]);
         pos.emplace_back(x, y);
@@ -1146,7 +1146,7 @@ TEST_F(ProdFeaturesTest, test_distance_to_path)
 
 void
 Test::assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos,
-                           const vespalib::string &path, feature_t distance, feature_t traveled, feature_t product)
+                           const std::string &path, feature_t distance, feature_t traveled, feature_t product)
 {
     LOG(info, "Testing distance to path '%s' with %zd document locations.", path.c_str(), pos.size());
 
@@ -1167,7 +1167,7 @@ void
 verifyCorrectDotProductExecutor(BlueprintFactory & factory, std::string_view attrName,
                                 std::string_view queryVector, std::string_view expected)
 {
-    ParameterList params = {{ParameterType::ATTRIBUTE, vespalib::string(attrName)}, {ParameterType::STRING, "vector"}};
+    ParameterList params = {{ParameterType::ATTRIBUTE, std::string(attrName)}, {ParameterType::STRING, "vector"}};
     FtFeatureTest ft(factory, "value(0)");
     Test::setupForDotProductTest(ft);
     ft.getQueryEnv().getProperties().add("dotProduct.vector", queryVector);
@@ -1184,8 +1184,8 @@ verifyCorrectDotProductExecutor(BlueprintFactory & factory, std::string_view att
 template<typename T>
 void verifyArrayParser()
 {
-    std::vector<vespalib::string> v = {"(0:2,7:-3,1:-3)", "{0:2,7:-3,1:-3}", "[2 -3 0 0 0 0 0 -3]"};
-    for(const vespalib::string & s : v) {
+    std::vector<std::string> v = {"(0:2,7:-3,1:-3)", "{0:2,7:-3,1:-3}", "[2 -3 0 0 0 0 0 -3]"};
+    for(const std::string & s : v) {
         std::vector<T> out;
         ArrayParser::parse(s, out);
         EXPECT_EQ(8u, out.size());
@@ -1242,8 +1242,8 @@ TEST_F(ProdFeaturesTest, test_dot_product)
                 EXPECT_EQ(out.getVector()[0].first, e);
                 EXPECT_EQ(out.getVector()[0].second, 1.0);
             }
-            std::vector<vespalib::string> v = {"(b:2.5,c:-3.5)", "{b:2.5,c:-3.5}"};
-            for(const vespalib::string & s : v) {
+            std::vector<std::string> v = {"(b:2.5,c:-3.5)", "{b:2.5,c:-3.5}"};
+            for(const std::string & s : v) {
                 dotproduct::wset::EnumVector out(sv);
                 WeightedSetParser::parse(s, out);
                 EXPECT_EQ(out.getVector().size(), 2u);
@@ -1303,7 +1303,7 @@ TEST_F(ProdFeaturesTest, test_dot_product)
     verifyArrayParser<float>();
     verifyArrayParser<double>();
     {
-        vespalib::string s = "[[1:3]]";
+        std::string s = "[[1:3]]";
         std::vector<int32_t> out;
         ArrayParser::parse(s, out);
         EXPECT_EQ(0u, out.size());
@@ -1364,8 +1364,8 @@ TEST_F(ProdFeaturesTest, test_dot_product)
 }
 
 void
-Test::assertDotProduct(feature_t exp, const vespalib::string & vector, uint32_t docId,
-                       const vespalib::string & attribute, const vespalib::string & attributeOverride)
+Test::assertDotProduct(feature_t exp, const std::string & vector, uint32_t docId,
+                       const std::string & attribute, const std::string & attributeOverride)
 {
     RankResult rr;
     rr.addScore("dotProduct(" + attribute + ",vector)", exp);
@@ -1744,9 +1744,9 @@ TEST_F(ProdFeaturesTest, test_matches)
 
 bool
 Test::assertMatches(uint32_t output,
-                    const vespalib::string & query,
-                    const vespalib::string & field,
-                    const vespalib::string & feature,
+                    const std::string & query,
+                    const std::string & field,
+                    const std::string & feature,
                     uint32_t docId)
 {
     LOG(info, "assertMatches(%u, '%s', '%s', '%s')", output, query.c_str(), field.c_str(), feature.c_str());
@@ -1754,7 +1754,7 @@ Test::assertMatches(uint32_t output,
     // Setup feature test.
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
-    std::map<vespalib::string, std::vector<vespalib::string> > index;
+    std::map<std::string, std::vector<std::string> > index;
     index["foo"] = FtUtil::tokenize(field);
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
 
@@ -2046,7 +2046,7 @@ TEST_F(ProdFeaturesTest, test_ranking_expression)
         }
         {
             // test interpreted expression
-            vespalib::string my_expr("3.0 + value(4.0) + reduce(tensorFromWeightedSet(query(my_tensor)),sum)");
+            std::string my_expr("3.0 + value(4.0) + reduce(tensorFromWeightedSet(query(my_tensor)),sum)");
             FtFeatureTest ft(_factory, getExpression(my_expr));
             ft.getQueryEnv().getProperties().add("my_tensor", "{a:1,b:2,c:3}");
             ASSERT_TRUE(ft.setup());
@@ -2055,8 +2055,8 @@ TEST_F(ProdFeaturesTest, test_ranking_expression)
     }
 }
 
-vespalib::string
-Test::getExpression(const vespalib::string &parameter) const
+std::string
+Test::getExpression(const std::string &parameter) const
 {
     using FNB = search::fef::FeatureNameBuilder;
     return FNB().baseName("rankingExpression").parameter(parameter).buildName();
@@ -2077,7 +2077,7 @@ TEST_F(ProdFeaturesTest, test_term)
         {
             StringList dump;
             for (uint32_t term = 0; term < 3; ++term) {
-                vespalib::string bn = vespalib::make_string("term(%u)", term);
+                std::string bn = vespalib::make_string("term(%u)", term);
                 dump.add(bn + ".connectedness").add(bn + ".significance").add(bn + ".weight");
             }
             FtIndexEnvironment ie;
@@ -2085,7 +2085,7 @@ TEST_F(ProdFeaturesTest, test_term)
             FT_DUMP(_factory, "term", ie, dump); // check override
 
             for (uint32_t term = 3; term < 5; ++term) {
-                vespalib::string bn = vespalib::make_string("term(%u)", term);
+                std::string bn = vespalib::make_string("term(%u)", term);
                 dump.add(bn + ".connectedness").add(bn + ".significance").add(bn + ".weight");
             }
             FT_DUMP(_factory, "term", dump); // check default
@@ -2189,13 +2189,13 @@ TEST_F(ProdFeaturesTest, test_term_distance)
 
 bool
 Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
-                         const vespalib::string & query,
-                         const vespalib::string & field,
+                         const std::string & query,
+                         const std::string & field,
                          uint32_t docId)
 {
     LOG(info, "assertTermDistance('%s', '%s')", query.c_str(), field.c_str());
 
-    vespalib::string feature = "termDistance(foo,0,1)";
+    std::string feature = "termDistance(foo,0,1)";
     FtFeatureTest ft(_factory, feature);
 
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");

@@ -2,10 +2,10 @@
 #pragma once
 
 #include "capability_set.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <memory>
-#include <vector>
 #include <iosfwd>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace vespalib::net::tls {
 
@@ -25,7 +25,7 @@ public:
     };
 private:
     Field _field = Field::SAN_DNS;
-    vespalib::string _original_pattern;
+    std::string _original_pattern;
     std::shared_ptr<const CredentialMatchPattern> _match_pattern;
 public:
     RequiredPeerCredential() = default;
@@ -48,7 +48,7 @@ public:
     }
 
     [[nodiscard]] Field field() const noexcept { return _field; }
-    [[nodiscard]] const vespalib::string& original_pattern() const noexcept { return _original_pattern; }
+    [[nodiscard]] const std::string& original_pattern() const noexcept { return _original_pattern; }
 };
 
 class PeerPolicy {

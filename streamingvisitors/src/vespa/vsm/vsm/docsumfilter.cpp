@@ -70,7 +70,7 @@ prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpe
                  const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap)
 {
     { // setup output field
-        const vespalib::string & name = toolsSpec.getOutputName();
+        const std::string & name = toolsSpec.getOutputName();
         LOG(debug, "prepareFieldSpec: output field name '%s'", name.c_str());
         FieldIdT field = fieldMap.fieldNo(name);
         if (field != FieldMap::npos) {
@@ -178,9 +178,9 @@ class DocsumStoreVsmDocument : public IDocsumStoreDocument
 public:
     DocsumStoreVsmDocument(DocsumFilter& docsum_filter, const Document& vsm_document);
     ~DocsumStoreVsmDocument() override;
-    DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const override;
-    void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
-    void insert_juniper_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
+    DocsumStoreFieldValue get_field_value(const std::string& field_name) const override;
+    void insert_summary_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
+    void insert_juniper_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
     void insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
 
@@ -195,7 +195,7 @@ DocsumStoreVsmDocument::DocsumStoreVsmDocument(DocsumFilter& docsum_filter, cons
 DocsumStoreVsmDocument::~DocsumStoreVsmDocument() = default;
 
 DocsumStoreFieldValue
-DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) const
+DocsumStoreVsmDocument::get_field_value(const std::string& field_name) const
 {
     if (_document != nullptr) {
         auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
@@ -219,7 +219,7 @@ DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) cons
 }
 
 void
-DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
+DocsumStoreVsmDocument::insert_summary_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
 {
     if (_document != nullptr) {
         auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
@@ -243,7 +243,7 @@ DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name,
 }
 
 void
-DocsumStoreVsmDocument::insert_juniper_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
+DocsumStoreVsmDocument::insert_juniper_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {

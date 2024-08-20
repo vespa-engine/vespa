@@ -43,7 +43,7 @@ public:
 
 
 template <typename B>
-FlagAttributeT<B>::FlagAttributeT(const vespalib::string & baseFileName, const AttributeVector::Config & cfg) :
+FlagAttributeT<B>::FlagAttributeT(const std::string & baseFileName, const AttributeVector::Config & cfg) :
     B(baseFileName, cfg),
     _bitVectorHolder(),
     _bitVectorStore(256),

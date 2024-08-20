@@ -72,7 +72,7 @@ void
 Value::traverse(ObjectTraverser &) const {}
 
 // generate string representation
-vespalib::string
+std::string
 Value::toString() const
 {
     SimpleBuffer buf;

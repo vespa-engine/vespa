@@ -26,7 +26,7 @@ ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> rep
 
 ResultProcessor::Result::~Result() = default;
 
-ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss)
+ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const std::string &ss)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
       sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory)
@@ -60,8 +60,8 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
                                  const search::IDocumentMetaStore &metaStore,
                                  SessionManager &sessionMgr,
                                  GroupingContext &groupingContext,
-                                 const vespalib::string &sessionId,
-                                 const vespalib::string &sortSpec,
+                                 const std::string &sessionId,
+                                 const std::string &sortSpec,
                                  size_t offset, size_t hits)
     : _attrContext(attrContext),
       _metaStore(metaStore),

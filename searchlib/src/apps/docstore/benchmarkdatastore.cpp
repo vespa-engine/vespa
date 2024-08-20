@@ -19,7 +19,7 @@ using namespace search;
 class BenchmarkDataStoreApp
 {
     void usage(const char *self);
-    int benchmark(const vespalib::string & directory, size_t numReads, size_t numThreads, size_t perChunk, const vespalib::string & readType);
+    int benchmark(const std::string & directory, size_t numReads, size_t numThreads, size_t perChunk, const std::string & readType);
     void read(size_t numReads, size_t perChunk, const IDataStore * dataStore);
 public:
     int main(int argc, char **argv);
@@ -41,8 +41,8 @@ BenchmarkDataStoreApp::main(int argc, char **argv)
         size_t numThreads(16);
         size_t numReads(1000000);
         size_t perChunk(1);
-        vespalib::string readType("directio");
-        vespalib::string directory(argv[1]);
+        std::string readType("directio");
+        std::string directory(argv[1]);
         if (argc >= 3) {
             numReads = strtoul(argv[2], NULL, 0);
             if (argc >= 4) {
@@ -83,7 +83,7 @@ void BenchmarkDataStoreApp::read(size_t numReads, size_t perChunk, const IDataSt
 }
 
 int
-BenchmarkDataStoreApp::benchmark(const vespalib::string & dir, size_t numReads, size_t numThreads, size_t perChunk, const vespalib::string & readType)
+BenchmarkDataStoreApp::benchmark(const std::string & dir, size_t numReads, size_t numThreads, size_t perChunk, const std::string & readType)
 {
     int retval(0);
     LogDataStore::Config config;

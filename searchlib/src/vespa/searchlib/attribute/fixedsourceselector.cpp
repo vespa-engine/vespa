@@ -35,7 +35,7 @@ FixedSourceSelector::Iterator::Iterator(const FixedSourceSelector & sourceSelect
 { }
 
 FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
-                                         const vespalib::string & attrBaseFileName,
+                                         const std::string & attrBaseFileName,
                                          uint32_t initialNumDocs) :
     SourceSelector(defaultSource, std::make_shared<SourceStore>(attrBaseFileName, getConfig())),
     _source(static_cast<SourceStore &>(*_realSource))
@@ -49,7 +49,7 @@ FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
 FixedSourceSelector::~FixedSourceSelector() = default;
 
 FixedSourceSelector::UP
-FixedSourceSelector::cloneAndSubtract(const vespalib::string & attrBaseFileName, uint32_t diff)
+FixedSourceSelector::cloneAndSubtract(const std::string & attrBaseFileName, uint32_t diff)
 {
     queryeval::Source newDefault = getNewSource(getDefaultSource(), diff);
     auto selector = std::make_unique< FixedSourceSelector>(newDefault, attrBaseFileName, _source.getNumDocs()-1);
@@ -66,7 +66,7 @@ FixedSourceSelector::cloneAndSubtract(const vespalib::string & attrBaseFileName,
 }
 
 FixedSourceSelector::UP
-FixedSourceSelector::load(const vespalib::string & baseFileName, uint32_t currentId)
+FixedSourceSelector::load(const std::string & baseFileName, uint32_t currentId)
 {
     LoadInfo::UP info = extractLoadInfo(baseFileName);
     info->load();

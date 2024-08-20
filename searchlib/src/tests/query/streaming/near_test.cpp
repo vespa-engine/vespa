@@ -70,7 +70,7 @@ NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHi
         builder.addStringTerm(s.str(), "field", idx, Weight(0));
     }
     auto node = builder.build();
-    vespalib::string stackDump = StackDumpCreator::create(*node);
+    std::string stackDump = StackDumpCreator::create(*node);
     QueryNodeResultFactory empty;
     auto q = std::make_unique<Query>(empty, stackDump);
     if (GetParam().ordered()) {

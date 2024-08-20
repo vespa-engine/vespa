@@ -203,11 +203,11 @@ TEST_F(TransportSecurityOptionsTest, missing_file_referenced_by_field_throws_exc
                 testing::ThrowsMessage<IllegalArgumentException>(testing::HasSubstr("File 'missing_privkey.txt' referenced by TLS config does not exist")));
 }
 
-vespalib::string json_with_policies(const vespalib::string& policies) {
+std::string json_with_policies(const std::string& policies) {
     return ConfigWriter().authorized_peers(std::string("[") + policies + "]").write();
 }
 
-TransportSecurityOptions parse_policies(const vespalib::string& policies)
+TransportSecurityOptions parse_policies(const std::string& policies)
 {
     return *read_options_from_json_string(json_with_policies(policies));
 }

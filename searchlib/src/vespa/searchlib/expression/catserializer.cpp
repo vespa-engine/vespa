@@ -9,7 +9,7 @@ namespace search::expression {
 
 using vespalib::Serializer;
 using vespalib::Deserializer;
-using vespalib::string;
+using std::string;
 
 CatSerializer & CatSerializer::put(std::string_view value)
 {

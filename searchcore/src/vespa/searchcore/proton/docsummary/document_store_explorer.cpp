@@ -43,7 +43,7 @@ DocumentStoreExplorer::get_state(const Inserter &inserter, bool full) const
     object.setLong("docIdLimit", storageStats.docIdLimit());
     setMemoryUsage(object, store.getMemoryUsage());
     if (full) {
-        const vespalib::string &baseDir = store.getBaseDir();
+        const std::string &baseDir = store.getBaseDir();
         std::vector<DataStoreFileChunkStats> chunks;
         chunks = store.getFileChunkStats();
         Cursor &fileChunksArrayCursor = object.setArray("fileChunks");

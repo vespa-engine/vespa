@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stash.h>
-#include <chrono>
-#include <mutex>
 #include <atomic>
-#include <thread>
+#include <chrono>
 #include <map>
+#include <mutex>
+#include <string>
+#include <thread>
 
 namespace vespalib::test {
 
@@ -60,7 +60,7 @@ public:
     private:
         uint32_t _id;
     public:
-        Tag(const vespalib::string &name_in);
+        Tag(const std::string &name_in);
         ~Tag();
         uint32_t id() const { return _id; }
     };
@@ -84,7 +84,7 @@ public:
             : thread_id(thread_id_in), tag_id(tag_id_in),
               start(start_in), stop(stop_in) {}
         double ms_duration() const;
-        vespalib::string tag_name() const;
+        std::string tag_name() const;
     };
 
     class Extractor {
@@ -158,13 +158,13 @@ private:
 
     std::mutex _lock;
     std::vector<ThreadState::UP> _state_list;
-    std::map<vespalib::string, uint32_t> _tags;
-    std::vector<vespalib::string> _tag_names;
+    std::map<std::string, uint32_t> _tags;
+    std::vector<std::string> _tag_names;
 
     TimeTracer();
     ~TimeTracer();
-    uint32_t get_tag_id(const vespalib::string &tag_name);
-    vespalib::string get_tag_name(uint32_t tag_id);
+    uint32_t get_tag_id(const std::string &tag_name);
+    std::string get_tag_name(uint32_t tag_id);
     ThreadState *create_thread_state();
     std::vector<Record> extract_impl(const Extractor &extractor);
 

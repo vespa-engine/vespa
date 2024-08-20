@@ -134,7 +134,7 @@ SchemaBuilder::add_attribute(std::string_view field_name)
     auto ct = get_collection_type(field.getDataType());
     auto& type = get_nested_type(field.getDataType());
     auto dt = get_data_type(type);
-    vespalib::string tensor_type_spec;
+    std::string tensor_type_spec;
     assert(type.getId() != DataType::Type::T_URI);
     if (type.getId() == DataType::Type::T_TENSOR) {
         assert(ct == search::index::schema::CollectionType::SINGLE);

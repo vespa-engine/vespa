@@ -29,7 +29,7 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(std::shared_p
 
 ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() = default;
 
-const vespalib::string& ImportedAttributeVectorReadGuard::getName() const {
+const std::string& ImportedAttributeVectorReadGuard::getName() const {
     return _imported_attribute.getName();
 }
 

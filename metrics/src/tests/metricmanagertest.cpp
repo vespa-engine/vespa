@@ -150,7 +150,7 @@ struct MetricNameVisitor : public MetricVisitor {
 namespace {
 
 std::pair<std::string, std::string>
-getMatchedMetrics(const vespalib::string& config)
+getMatchedMetrics(const std::string& config)
 {
     TestMetricSet mySet;
     MetricManager mm;
@@ -614,9 +614,9 @@ TEST_F(MetricManagerTest, test_json_output)
     // Verify some content
     EXPECT_EQ(1000.0, slime.get()["snapshot"]["from"].asDouble()) << jsonData;
     EXPECT_EQ(1300.0, slime.get()["snapshot"]["to"].asDouble()) << jsonData;
-    EXPECT_EQ(vespalib::string("temp.val6"),
+    EXPECT_EQ(std::string("temp.val6"),
               slime.get()["values"][0]["name"].asString().make_string()) << jsonData;
-    EXPECT_EQ(vespalib::string("val6 desc"),
+    EXPECT_EQ(std::string("val6 desc"),
               slime.get()["values"][0]["description"].asString().make_string()) << jsonData;
     EXPECT_EQ(2.0, slime.get()["values"][0]["values"]["average"].asDouble()) << jsonData;
     EXPECT_EQ(1.0, slime.get()["values"][0]["values"]["count"].asDouble()) << jsonData;
@@ -624,9 +624,9 @@ TEST_F(MetricManagerTest, test_json_output)
     EXPECT_EQ(2.0, slime.get()["values"][0]["values"]["max"].asDouble()) << jsonData;
     EXPECT_EQ(2.0, slime.get()["values"][0]["values"]["last"].asDouble()) << jsonData;
 
-    EXPECT_EQ(vespalib::string("temp.multisub.sum.valsum"),
+    EXPECT_EQ(std::string("temp.multisub.sum.valsum"),
               slime.get()["values"][10]["name"].asString().make_string()) << jsonData;
-    EXPECT_EQ(vespalib::string("valsum desc"),
+    EXPECT_EQ(std::string("valsum desc"),
               slime.get()["values"][10]["description"].asString().make_string()) << jsonData;
     EXPECT_EQ(10.0, slime.get()["values"][10]["values"]["average"].asDouble()) << jsonData;
     EXPECT_EQ(3.0, slime.get()["values"][10]["values"]["count"].asDouble()) << jsonData;
@@ -635,9 +635,9 @@ TEST_F(MetricManagerTest, test_json_output)
     EXPECT_EQ(10.0, slime.get()["values"][10]["values"]["last"].asDouble()) << jsonData;
 
     metrics::StateApiAdapter adapter(mm);
-    vespalib::string normal = adapter.getMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
-    EXPECT_EQ(vespalib::string(jsonData), normal);
-    vespalib::string total = adapter.getTotalMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
+    std::string normal = adapter.getMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
+    EXPECT_EQ(std::string(jsonData), normal);
+    std::string total = adapter.getTotalMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
     EXPECT_GT(total.size(), 0);
     EXPECT_NE(total, normal);
 }

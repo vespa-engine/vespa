@@ -43,7 +43,7 @@ IntermediateBlueprintFactory::make_blueprint()
     return res;
 }
 
-vespalib::string
+std::string
 IntermediateBlueprintFactory::get_name(Blueprint& blueprint) const
 {
     auto* intermediate = blueprint.asIntermediate();

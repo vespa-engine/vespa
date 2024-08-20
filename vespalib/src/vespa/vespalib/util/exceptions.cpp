@@ -26,7 +26,7 @@ VESPA_IMPLEMENT_EXCEPTION_SPINE(IoException);
 namespace {
 
 std::mutex _G_silence_mutex;
-vespalib::string _G_what;
+std::string _G_what;
 
 void silent_terminate() {
     std::lock_guard<std::mutex> guard(_G_silence_mutex);
@@ -69,13 +69,13 @@ SilenceUncaughtException::~SilenceUncaughtException()
     _G_what = "";
 }
 
-vespalib::string
+std::string
 PortListenException::make_message(int port, std::string_view protocol,
                                   std::string_view msg)
 {
     return make_string("failed to listen on port %d with protocol %s%s%s",
-                       port, vespalib::string(protocol).c_str(), msg.empty() ? "" : ": ",
-                       vespalib::string(msg).c_str());
+                       port, std::string(protocol).c_str(), msg.empty() ? "" : ": ",
+                       std::string(msg).c_str());
 }
 
 PortListenException::PortListenException(int port, std::string_view protocol,
@@ -126,7 +126,7 @@ IoException::IoException(IoException &&) noexcept = default;
 IoException & IoException::operator =(IoException &&) noexcept = default;
 IoException::~IoException() = default;
 
-string
+std::string
 IoException::createMessage(std::string_view msg, Type type)
 {
     vespalib::asciistream ost;

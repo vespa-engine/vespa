@@ -206,7 +206,7 @@ namespace {
 RealClock clock;
 
 void printTaskInfo(const std::string& task, const char* action) {
-    vespalib::string msg = vespalib::make_string(
+    std::string msg = vespalib::make_string(
             "%" PRIu64 ": %s %s\n",
             vespalib::count_us(clock.getSystemTime().time_since_epoch()),
             task.c_str(),

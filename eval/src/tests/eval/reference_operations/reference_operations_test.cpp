@@ -49,7 +49,7 @@ TensorSpec sparse_1d_all_two() {
         .add({{"c", "qux"}}, 2.0);
 }
 
-TensorSpec spec(const vespalib::string &expr) {
+TensorSpec spec(const std::string &expr) {
     auto result = TensorSpec::from_expr(expr);
     EXPECT_FALSE(ValueType::from_spec(result.type()).is_error());
     return result;

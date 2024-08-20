@@ -23,17 +23,17 @@ struct FunInfo {
     }
 };
 
-void verify_optimized_cell_types(const vespalib::string &expr, size_t expected_dense_factor = 1) {
+void verify_optimized_cell_types(const std::string &expr, size_t expected_dense_factor = 1) {
     CellTypeSpace types(CellTypeUtils::list_types(), 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo(expected_dense_factor)}, types);
 }
 
-void verify_optimized(const vespalib::string &expr, size_t expected_dense_factor = 1) {
+void verify_optimized(const std::string &expr, size_t expected_dense_factor = 1) {
     CellTypeSpace just_float({CellType::FLOAT}, 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo(expected_dense_factor)}, just_float);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     CellTypeSpace just_float({CellType::FLOAT}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_float);
 }

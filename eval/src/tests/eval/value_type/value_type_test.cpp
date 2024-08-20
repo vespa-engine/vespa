@@ -14,13 +14,13 @@ using namespace vespalib::eval;
 
 const size_t npos = ValueType::Dimension::npos;
 
-ValueType type(const vespalib::string &type_str) {
+ValueType type(const std::string &type_str) {
     ValueType ret = ValueType::from_spec(type_str);
     ASSERT_TRUE(!ret.is_error() || (type_str == "error"));
     return ret;
 }
 
-std::vector<vespalib::string> str_list(const std::vector<vespalib::string> &list) {
+std::vector<std::string> str_list(const std::vector<std::string> &list) {
     return list;
 }
 
@@ -265,16 +265,16 @@ TEST("require that malformed value type spec is parsed as error") {
 }
 
 struct ParseResult {
-    vespalib::string spec;
+    std::string spec;
     const char *pos;
     const char *end;
     const char *after;
     ValueType type;
-    ParseResult(const vespalib::string &spec_in);
+    ParseResult(const std::string &spec_in);
     ~ParseResult();
     bool after_inside() const { return ((after > pos) && (after < end)); }
 };
-ParseResult::ParseResult(const vespalib::string &spec_in)
+ParseResult::ParseResult(const std::string &spec_in)
     : spec(spec_in),
       pos(spec.data()),
       end(pos + spec.size()),
@@ -633,7 +633,7 @@ TEST("require that diverging types can not be merged") {
     EXPECT_EQUAL(ValueType::merge(type("tensor(x{})"), type("tensor(y{})")), type("error"));
 }
 
-void verify_concat(const ValueType &a, const ValueType &b, const vespalib::string &dim, const ValueType &res) {
+void verify_concat(const ValueType &a, const ValueType &b, const std::string &dim, const ValueType &res) {
     EXPECT_EQUAL(ValueType::concat(a, b, dim), res);
     EXPECT_EQUAL(ValueType::concat(b, a, dim), res);
 }

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/juniper/query.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search {
     class SimpleQueryStackDumpIterator;

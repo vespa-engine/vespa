@@ -30,13 +30,13 @@ using AttributesConfigHash = ConfigHash<AttributesConfig::Attribute>;
 
 bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Config &cfg,
                                                   const IIndexschemaInspector &indexschemaInspector,
-                                                  const vespalib::string &name)
+                                                  const std::string &name)
 {
     return isUpdateableInMemoryOnly(name, cfg) &&
             !indexschemaInspector.isStringIndex(name);
 }
 
-vespalib::string
+std::string
 source_field(const SummaryConfig::Classes::Fields& summary_field)
 {
     if (summary_field.source == "") {
@@ -65,20 +65,20 @@ class AttributeAspectConfigRewriter
     AttributesConfigHash          _new_attributes_config_hash;
     const IIndexschemaInspector&  _old_index_schema_inspector;
     const IDocumentTypeInspector& _inspector;
-    vespalib::hash_set<vespalib::string> _delayed_add_attribute_aspect;
-    vespalib::hash_set<vespalib::string> _delayed_add_attribute_aspect_struct;
-    vespalib::hash_set<vespalib::string> _delayed_remove_attribute_aspect;
+    vespalib::hash_set<std::string> _delayed_add_attribute_aspect;
+    vespalib::hash_set<std::string> _delayed_add_attribute_aspect_struct;
+    vespalib::hash_set<std::string> _delayed_remove_attribute_aspect;
 
-    bool has_unchanged_field(const vespalib::string& name) const;
-    bool should_delay_add_attribute_aspect(const vespalib::string& name) const;
-    bool should_delay_remove_attribute_aspect(const vespalib::string& name) const;
+    bool has_unchanged_field(const std::string& name) const;
+    bool should_delay_add_attribute_aspect(const std::string& name) const;
+    bool should_delay_remove_attribute_aspect(const std::string& name) const;
     bool calculate_fast_access(const AttributesConfig::Attribute& new_attribute_config) const;
-    void mark_delayed_add_attribute_aspect(const vespalib::string& name) { _delayed_add_attribute_aspect.insert(name); }
-    bool is_delayed_add_attribute_aspect(const vespalib::string& name) const noexcept { return _delayed_add_attribute_aspect.find(name) != _delayed_add_attribute_aspect.end(); }
-    void mark_delayed_add_attribute_aspect_struct(const vespalib::string& name) { _delayed_add_attribute_aspect_struct.insert(name); }
-    bool is_delayed_add_attribute_aspect_struct(const vespalib::string& name) const noexcept { return _delayed_add_attribute_aspect_struct.find(name) != _delayed_add_attribute_aspect_struct.end(); }
-    void mark_delayed_remove_attribute_aspect(const vespalib::string& name) { _delayed_remove_attribute_aspect.insert(name); }
-    bool is_delayed_remove_attribute_aspect(const vespalib::string& name) const noexcept { return _delayed_remove_attribute_aspect.find(name) != _delayed_remove_attribute_aspect.end(); }
+    void mark_delayed_add_attribute_aspect(const std::string& name) { _delayed_add_attribute_aspect.insert(name); }
+    bool is_delayed_add_attribute_aspect(const std::string& name) const noexcept { return _delayed_add_attribute_aspect.find(name) != _delayed_add_attribute_aspect.end(); }
+    void mark_delayed_add_attribute_aspect_struct(const std::string& name) { _delayed_add_attribute_aspect_struct.insert(name); }
+    bool is_delayed_add_attribute_aspect_struct(const std::string& name) const noexcept { return _delayed_add_attribute_aspect_struct.find(name) != _delayed_add_attribute_aspect_struct.end(); }
+    void mark_delayed_remove_attribute_aspect(const std::string& name) { _delayed_remove_attribute_aspect.insert(name); }
+    bool is_delayed_remove_attribute_aspect(const std::string& name) const noexcept { return _delayed_remove_attribute_aspect.find(name) != _delayed_remove_attribute_aspect.end(); }
 public:
     AttributeAspectConfigRewriter(const AttributesConfig& old_attributes_config,
                                   const AttributesConfig& new_attributes_config,
@@ -111,13 +111,13 @@ AttributeAspectConfigRewriter::AttributeAspectConfigRewriter(const AttributesCon
 AttributeAspectConfigRewriter::~AttributeAspectConfigRewriter() = default;
 
 bool
-AttributeAspectConfigRewriter::has_unchanged_field(const vespalib::string& name) const
+AttributeAspectConfigRewriter::has_unchanged_field(const std::string& name) const
 {
     return _inspector.hasUnchangedField(name);
 }
 
 bool
-AttributeAspectConfigRewriter::should_delay_add_attribute_aspect(const vespalib::string& name) const
+AttributeAspectConfigRewriter::should_delay_add_attribute_aspect(const std::string& name) const
 {
     if (!has_unchanged_field(name)) {
         // No reprocessing due to field type/presence change, just use new config
@@ -136,7 +136,7 @@ AttributeAspectConfigRewriter::should_delay_add_attribute_aspect(const vespalib:
 }
 
 bool
-AttributeAspectConfigRewriter::should_delay_remove_attribute_aspect(const vespalib::string& name) const
+AttributeAspectConfigRewriter::should_delay_remove_attribute_aspect(const std::string& name) const
 {
     if (!has_unchanged_field(name)) {
         // No reprocessing due to field type/presence change, just use new config
@@ -184,7 +184,7 @@ AttributeAspectConfigRewriter::calculate_delayed_attribute_aspects()
         if (should_delay_add_attribute_aspect(newAttr.name)) {
             mark_delayed_add_attribute_aspect(newAttr.name);
             auto pos = newAttr.name.find('.');
-            if (pos != vespalib::string::npos) {
+            if (pos != std::string::npos) {
                 mark_delayed_add_attribute_aspect_struct(newAttr.name.substr(0, pos));
             }
         }

@@ -46,11 +46,11 @@ StringSearchContext::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_stor
             auto comp = enum_store.make_folded_comparator_prefix(queryTerm()->getTerm());
             enum_hint_sc.lookupRange(comp, comp);
         } else if (isRegex()) {
-            vespalib::string prefix(vespalib::RegexpUtil::get_prefix(queryTerm()->getTerm()));
+            std::string prefix(vespalib::RegexpUtil::get_prefix(queryTerm()->getTerm()));
             auto comp = enum_store.make_folded_comparator_prefix(prefix.c_str());
             enum_hint_sc.lookupRange(comp, comp);
         } else if (isFuzzy()) {
-            vespalib::string prefix(getFuzzyMatcher().getPrefix());
+            std::string prefix(getFuzzyMatcher().getPrefix());
             auto comp = enum_store.make_folded_comparator_prefix(prefix.c_str());
             enum_hint_sc.lookupRange(comp, comp);
         } else {

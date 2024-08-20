@@ -7,7 +7,7 @@
 
 namespace search {
 
-IntegerAttribute::IntegerAttribute(const vespalib::string & name, const Config & c) :
+IntegerAttribute::IntegerAttribute(const std::string & name, const Config & c) :
     NumericAttribute(name, c),
     _changes()
 {
@@ -29,11 +29,11 @@ uint32_t IntegerAttribute::clearDoc(DocId doc)
 namespace {
 
 // TODO Move to vespalib::to_string and template on value type
-vespalib::string
+std::string
 to_string(int64_t v) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp) - 1, v, 10);
-    return vespalib::string(tmp, res.ptr - tmp);
+    return std::string(tmp, res.ptr - tmp);
 }
 
 }
@@ -62,7 +62,7 @@ IntegerAttribute::get_raw(DocId) const
     return {};
 }
 
-uint32_t IntegerAttribute::get(DocId doc, vespalib::string * s, uint32_t sz) const
+uint32_t IntegerAttribute::get(DocId doc, std::string * s, uint32_t sz) const
 {
     largeint_t * v = new largeint_t[sz];
     unsigned num(static_cast<const AttributeVector *>(this)->get(doc, v, sz));

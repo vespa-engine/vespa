@@ -27,7 +27,7 @@ struct ReduceParam {
     SparseReducePlan sparse_plan;
     DenseReducePlan dense_plan;
     const ValueBuilderFactory &factory;
-    ReduceParam(const ValueType &type, const std::vector<vespalib::string> &dimensions,
+    ReduceParam(const ValueType &type, const std::vector<std::string> &dimensions,
                 const ValueBuilderFactory &factory_in)
         : res_type(type.reduce(dimensions)),
           sparse_plan(type, res_type),
@@ -304,7 +304,7 @@ using ReduceTypify = TypifyValue<TypifyCellMeta,TypifyBool,TypifyAggr>;
 
 Instruction
 GenericReduce::make_instruction(const ValueType &result_type,
-                                const ValueType &input_type, Aggr aggr, const std::vector<vespalib::string> &dimensions,
+                                const ValueType &input_type, Aggr aggr, const std::vector<std::string> &dimensions,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
     auto &param = stash.create<ReduceParam>(input_type, dimensions, factory);

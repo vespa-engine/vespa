@@ -64,10 +64,10 @@ RUsage::createChildren(vespalib::steady_time since)
     return r;
 }
 
-vespalib::string
+std::string
 RUsage::toString()
 {
-    vespalib::string s;
+    std::string s;
     if (_time != duration::zero()) s += make_string("duration = %1.6f\n", vespalib::to_s(_time));
     if (from_timeval(ru_utime) > duration::zero()) s += make_string("user time = %1.6f\n", to_s(from_timeval(ru_utime)));
     if (from_timeval(ru_stime) > duration::zero()) s += make_string("system time = %1.6f\n", to_s(from_timeval(ru_stime)));

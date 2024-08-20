@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace vespalib::eval { struct ConstantValue; }
 
@@ -21,7 +21,7 @@ class OnnxModel;
 class IIndexEnvironment
 {
 public:
-    using string = vespalib::string;
+    using string = std::string;
     /**
      * This enum defines the different motivations the framework has
      * for configuring a feature blueprint. RANK means the feature is
@@ -100,17 +100,17 @@ public:
     /**
      * Returns a constant rank value with the given name or null ptr if no such value exists.
      */
-    virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const vespalib::string &name) const = 0;
+    virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const std::string &name) const = 0;
 
     /**
      * Returns the ranking expression with the given name or empty string if not found.
      **/
-    virtual vespalib::string getRankingExpression(const vespalib::string &name) const = 0;
+    virtual std::string getRankingExpression(const std::string &name) const = 0;
 
     /**
      * Get configuration for the given onnx model.
      **/
-    virtual const OnnxModel *getOnnxModel(const vespalib::string &name) const = 0;
+    virtual const OnnxModel *getOnnxModel(const std::string &name) const = 0;
 
     virtual uint32_t getDistributionKey() const = 0;
 

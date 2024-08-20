@@ -7,7 +7,7 @@ namespace search::attribute::test {
 
 AttributeVector::SP
 MockAttributeManager::findAttribute(std::string_view name) const {
-    auto itr = _attributes.find(vespalib::string(name));
+    auto itr = _attributes.find(std::string(name));
     if (itr != _attributes.end()) {
         return itr->second;
     }
@@ -55,7 +55,7 @@ MockAttributeManager::createContext() const {
 void
 MockAttributeManager::addAttribute(std::string_view name, const AttributeVector::SP &attr) {
     attr->addReservedDoc();
-    _attributes[vespalib::string(name)] = attr;
+    _attributes[std::string(name)] = attr;
 }
 void
 MockAttributeManager::addAttribute(const AttributeVector::SP &attr) {

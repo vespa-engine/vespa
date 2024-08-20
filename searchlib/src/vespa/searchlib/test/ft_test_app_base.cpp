@@ -57,14 +57,14 @@ FtTestAppBase::FT_SETUP_OK(const search::fef::Blueprint &prototype, const search
 }
 
 void
-FtTestAppBase::FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const vespalib::string &baseName)
+FtTestAppBase::FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const std::string &baseName)
 {
     StringList empty;
     FT_DUMP(factory, baseName, empty);
 }
 
 void
-FtTestAppBase::FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const vespalib::string &baseName,
+FtTestAppBase::FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const std::string &baseName,
                              search::fef::test::IndexEnvironment &env)
 {
     StringList empty;
@@ -72,7 +72,7 @@ FtTestAppBase::FT_DUMP_EMPTY(search::fef::BlueprintFactory &factory, const vespa
 }
 
 void
-FtTestAppBase::FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::string &baseName,
+FtTestAppBase::FT_DUMP(search::fef::BlueprintFactory &factory, const std::string &baseName,
                        const StringList &expected)
 {
     search::fef::test::IndexEnvironment ie;
@@ -80,7 +80,7 @@ FtTestAppBase::FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::s
 }
 
 void
-FtTestAppBase::FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::string &baseName,
+FtTestAppBase::FT_DUMP(search::fef::BlueprintFactory &factory, const std::string &baseName,
                        search::fef::test::IndexEnvironment &env,
                        const StringList &expected)
 {
@@ -96,7 +96,7 @@ FtTestAppBase::FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::s
 
 void
 FtTestAppBase::FT_EQUAL(const std::vector<string> &expected, const std::vector<string> &actual,
-                        const vespalib::string &prefix)
+                        const std::string &prefix)
 {
     FT_LOG(prefix + " expected", expected);
     FT_LOG(prefix + " actual  ", actual);
@@ -113,7 +113,7 @@ FtTestAppBase::FT_LOG(const search::fef::Blueprint &prototype, const search::fef
                       const StringList &params)
 {
     LOG(info, "Testing blueprint '%s'.", prototype.getBaseName().c_str());
-    std::vector<vespalib::string> arr;
+    std::vector<std::string> arr;
     for (const auto & it : env.getFields()) {
         arr.push_back(it.name());
     }
@@ -122,9 +122,9 @@ FtTestAppBase::FT_LOG(const search::fef::Blueprint &prototype, const search::fef
 }
 
 void
-FtTestAppBase::FT_LOG(const vespalib::string &prefix, const std::vector<vespalib::string> &arr)
+FtTestAppBase::FT_LOG(const std::string &prefix, const std::vector<std::string> &arr)
 {
-    vespalib::string str = prefix + " = [ ";
+    std::string str = prefix + " = [ ";
     for (uint32_t i = 0; i < arr.size(); ++i) {
         str.append("'").append(arr[i]).append("'");
         if (i < arr.size() - 1) {
@@ -136,7 +136,7 @@ FtTestAppBase::FT_LOG(const vespalib::string &prefix, const std::vector<vespalib
 }
 
 void
-FtTestAppBase::FT_SETUP(FtFeatureTest &test, const vespalib::string &query, const StringMap &index,
+FtTestAppBase::FT_SETUP(FtFeatureTest &test, const std::string &query, const StringMap &index,
                         uint32_t docId)
 {
     LOG(info, "Setup test for query '%s'.", query.c_str());
@@ -154,7 +154,7 @@ FtTestAppBase::FT_SETUP(FtFeatureTest &test, const vespalib::string &query, cons
         ASSERT_TRUE(mdb->setFieldLength(it->first, it->second.size()));
         for (uint32_t i = 0; i < it->second.size(); ++i) {
             size_t pos = query.find_first_of(it->second[i]);
-            if (pos != vespalib::string::npos) {
+            if (pos != std::string::npos) {
                 LOG(debug, "Occurence of '%c' added to field '%s' at position %d.", query[pos], it->first.c_str(), i);
                 ASSERT_TRUE(mdb->addOccurence(it->first, pos, i));
             }
@@ -207,7 +207,7 @@ FtTestAppBase::FT_SETUP(FtFeatureTest &test, const FtQuery &query, const FtIndex
             const FtIndex::Element &element = field[e];
             ASSERT_TRUE(mdb->addElement(itr->first, element.weight, element.tokens.size()));
             for (size_t t = 0; t < element.tokens.size(); ++t) {
-                const vespalib::string &token = element.tokens[t];
+                const std::string &token = element.tokens[t];
                 for (size_t q = 0; q < query.size(); ++q) {
                     if (query[q].term == token) {
                         ASSERT_TRUE(mdb->addOccurence(itr->first, q, t, e));
@@ -229,22 +229,22 @@ FtTestAppBase::setupQueryEnv(FtQueryEnvironment & queryEnv, const FtQuery & quer
         queryEnv.getTerms()[i].setUniqueId(i);
         queryEnv.getTerms()[i].setWeight(query[i].termWeight);
         if (i > 0) {
-            vespalib::string from = vespalib::make_string("vespa.term.%u.connexity", i);
-            vespalib::string to = vespalib::make_string("%u", i - 1);
-            vespalib::string connexity = vespalib::make_string("%f", query[i].connexity);
+            std::string from = vespalib::make_string("vespa.term.%u.connexity", i);
+            std::string to = vespalib::make_string("%u", i - 1);
+            std::string connexity = vespalib::make_string("%f", query[i].connexity);
             queryEnv.getProperties().add(from, to);
             queryEnv.getProperties().add(from, connexity);
         }
-        vespalib::string term = vespalib::make_string("vespa.term.%u.significance", i);
-        vespalib::string significance = vespalib::make_string("%f", query[i].significance);
+        std::string term = vespalib::make_string("vespa.term.%u.significance", i);
+        std::string significance = vespalib::make_string("%f", query[i].significance);
         queryEnv.getProperties().add(term, significance);
         LOG(debug, "Add term node: '%s'", query[i].term.c_str());
     }
 }
 
 void
-FtTestAppBase::setupFieldMatch(FtFeatureTest & ft, const vespalib::string & indexName,
-                               const vespalib::string & query, const vespalib::string & field,
+FtTestAppBase::setupFieldMatch(FtFeatureTest & ft, const std::string & indexName,
+                               const std::string & query, const std::string & field,
                                const fieldmatch::Params * params, uint32_t totalTermWeight, feature_t totalSignificance,
                                uint32_t docId)
 {
@@ -276,16 +276,16 @@ FtTestAppBase::setupFieldMatch(FtFeatureTest & ft, const vespalib::string & inde
                 vespalib::make_string("%f", totalSignificance));
     }
 
-    std::map<vespalib::string, std::vector<vespalib::string> > index;
+    std::map<std::string, std::vector<std::string> > index;
     index[indexName] = FtUtil::tokenize(field);
     FT_SETUP(ft, FtUtil::toQuery(query), index, docId);
 }
 
 
 RankResult
-FtTestAppBase::toRankResult(const vespalib::string & baseName,
-                            const vespalib::string & result,
-                            const vespalib::string & separator)
+FtTestAppBase::toRankResult(const std::string & baseName,
+                            const std::string & result,
+                            const std::string & separator)
 {
     return FtUtil::toRankResult(baseName, result, separator);
 }

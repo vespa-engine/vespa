@@ -39,8 +39,8 @@ struct AttributeCombinerTest : public ::testing::Test
 
     AttributeCombinerTest();
     ~AttributeCombinerTest() override;
-    void set_field(const vespalib::string &field_name, bool filter_elements);
-    void assertWritten(const vespalib::string &exp, uint32_t docId);
+    void set_field(const std::string &field_name, bool filter_elements);
+    void assertWritten(const std::string &exp, uint32_t docId);
 };
 
 AttributeCombinerTest::AttributeCombinerTest()
@@ -76,7 +76,7 @@ AttributeCombinerTest::AttributeCombinerTest()
 AttributeCombinerTest::~AttributeCombinerTest() = default;
 
 void
-AttributeCombinerTest::set_field(const vespalib::string &field_name, bool filter_elements)
+AttributeCombinerTest::set_field(const std::string &field_name, bool filter_elements)
 {
     if (filter_elements) {
         _matching_elems_fields = std::make_shared<search::MatchingElementsFields>();
@@ -87,7 +87,7 @@ AttributeCombinerTest::set_field(const vespalib::string &field_name, bool filter
 }
 
 void
-AttributeCombinerTest::assertWritten(const vespalib::string &exp_slime_as_json, uint32_t docId)
+AttributeCombinerTest::assertWritten(const std::string &exp_slime_as_json, uint32_t docId)
 {
     vespalib::Slime act;
     vespalib::slime::SlimeInserter inserter(act);

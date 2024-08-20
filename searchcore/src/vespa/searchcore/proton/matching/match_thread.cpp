@@ -535,11 +535,11 @@ MatchThread::run()
     }
     if (first_phase_profiler) {
         first_phase_profiler->report(trace->createCursor("first_phase_profiling"),
-                                     [](const vespalib::string &name){ return BlueprintResolver::describe_feature(name); });
+                                     [](const std::string &name){ return BlueprintResolver::describe_feature(name); });
     }
     if (second_phase_profiler) {
         second_phase_profiler->report(trace->createCursor("second_phase_profiling"),
-                                      [](const vespalib::string &name){ return BlueprintResolver::describe_feature(name); });
+                                      [](const std::string &name){ return BlueprintResolver::describe_feature(name); });
     }
 }
 

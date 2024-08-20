@@ -19,8 +19,8 @@ using search::index::PostingListParams;
 
 namespace {
 
-vespalib::string test_dir("long_words_dir");
-vespalib::string dict(test_dir + "/dict");
+std::string test_dir("long_words_dir");
+std::string dict(test_dir + "/dict");
 
 PostingListCounts make_counts()
 {
@@ -31,11 +31,11 @@ PostingListCounts make_counts()
     return counts;
 }
 
-vespalib::string
+std::string
 make_word(int i)
 {
     vespalib::asciistream os;
-    vespalib::string word(5_Ki, 'a');
+    std::string word(5_Ki, 'a');
     os << vespalib::setfill('0') << vespalib::setw(8) << i;
     word.append(os.view());
     return word;
@@ -112,7 +112,7 @@ TEST(PageDict4LongWordsTest, test_many_long_words)
     auto dr = std::make_unique<PageDict4FileSeqRead>();
     search::TuneFileSeqRead tune_file_read;
     EXPECT_TRUE(dr->open(dict, tune_file_read));
-    vespalib::string check_word;
+    std::string check_word;
     PostingListCounts check_counts;
     for (int i = 0; i < num_words; ++i) {
         uint64_t check_word_num = 0;

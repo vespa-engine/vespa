@@ -64,9 +64,9 @@ public:
     using UP = std::unique_ptr<RankProcessor>;
 
     RankProcessor(std::shared_ptr<const RankManager::Snapshot> snapshot,
-                  const vespalib::string &rankProfile,
+                  const std::string &rankProfile,
                   search::streaming::Query & query,
-                  const vespalib::string & location,
+                  const std::string & location,
                   const search::fef::Properties & queryProperties,
                   const search::fef::Properties & featureOverrides,
                   const search::IAttributeManager * attrMgr);

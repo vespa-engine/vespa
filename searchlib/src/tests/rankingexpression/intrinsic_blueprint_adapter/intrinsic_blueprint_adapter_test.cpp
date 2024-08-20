@@ -14,26 +14,26 @@ using namespace search::fef;
 using vespalib::Stash;
 using vespalib::eval::ValueType;
 
-vespalib::string fail_setup    = "fail_setup";
-vespalib::string extra_input   = "extra_input";
-vespalib::string extra_output  = "extra_output";
-vespalib::string no_output     = "no_output";
-vespalib::string object_result = "object_result";
-vespalib::string error_result  = "error_result";
+std::string fail_setup    = "fail_setup";
+std::string extra_input   = "extra_input";
+std::string extra_output  = "extra_output";
+std::string no_output     = "no_output";
+std::string object_result = "object_result";
+std::string error_result  = "error_result";
 
 struct MyExecutor : FeatureExecutor {
     void execute(uint32_t) override {}
 };
 
 struct MyBlueprint : Blueprint {
-    std::set<vespalib::string> flags;
+    std::set<std::string> flags;
     MyBlueprint() : Blueprint("my_bp"), flags() {}
-    MyBlueprint(const std::set<vespalib::string> &flags_in) : Blueprint("my_bp"), flags(flags_in) {}
-    void set(const vespalib::string &flag) { flags.insert(flag); }
-    bool is_set(const vespalib::string &flag) const { return (flags.count(flag) > 0); }
+    MyBlueprint(const std::set<std::string> &flags_in) : Blueprint("my_bp"), flags(flags_in) {}
+    void set(const std::string &flag) { flags.insert(flag); }
+    bool is_set(const std::string &flag) const { return (flags.count(flag) > 0); }
     void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
     Blueprint::UP createInstance() const override { return std::make_unique<MyBlueprint>(flags); }
-    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override {
+    bool setup(const IIndexEnvironment &, const std::vector<std::string> &params) override {
         EXPECT_EQUAL(getName(), "my_bp(foo,bar)");        
         ASSERT_TRUE(params.size() == 2);
         EXPECT_EQUAL(params[0], "foo");

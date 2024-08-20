@@ -20,7 +20,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib {
     class nbostream;
@@ -59,7 +60,7 @@ public:
     bool operator==(const BucketId& id) const noexcept { return getId() == id.getId(); }
     bool operator!=(const BucketId& id) const noexcept { return getId() != id.getId(); }
 
-    vespalib::string toString() const;
+    std::string toString() const;
 
     bool valid() const noexcept {
         return validUsedBits(getUsedBits());

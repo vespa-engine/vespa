@@ -8,7 +8,7 @@ namespace config {
 template <typename ConfigType>
 class FileConfigReader : public ConfigReader<ConfigType> {
 public:
-    FileConfigReader(const vespalib::string & fileName);
+    FileConfigReader(const std::string & fileName);
 
     // Implements ConfigReader
     std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter) override;
@@ -20,7 +20,7 @@ public:
      */
     std::unique_ptr<ConfigType> read();
 private:
-    const vespalib::string _fileName;
+    const std::string _fileName;
 };
 
 } // namespace config

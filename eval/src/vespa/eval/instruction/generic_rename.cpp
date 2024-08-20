@@ -16,10 +16,10 @@ using Instruction = InterpretedFunction::Instruction;
 
 namespace {
 
-const vespalib::string &
-find_rename(const vespalib::string & original,
-            const std::vector<vespalib::string> &from,
-            const std::vector<vespalib::string> &to)
+const std::string &
+find_rename(const std::string & original,
+            const std::vector<std::string> &from,
+            const std::vector<std::string> &to)
 {
     for (size_t i = 0; i < from.size(); ++i) {
         if (original == from[i]) {
@@ -30,7 +30,7 @@ find_rename(const vespalib::string & original,
 }
 
 size_t
-find_index_of(const vespalib::string & name,
+find_index_of(const std::string & name,
               const std::vector<ValueType::Dimension> & dims)
 {
     for (size_t i = 0; i < dims.size(); ++i) {
@@ -47,8 +47,8 @@ struct RenameParam {
     DenseRenamePlan dense_plan;
     const ValueBuilderFactory &factory;
     RenameParam(const ValueType &lhs_type,
-                const std::vector<vespalib::string> &rename_dimension_from,
-                const std::vector<vespalib::string> &rename_dimension_to,
+                const std::vector<std::string> &rename_dimension_from,
+                const std::vector<std::string> &rename_dimension_to,
                 const ValueBuilderFactory &factory_in)
         : res_type(lhs_type.rename(rename_dimension_from, rename_dimension_to)),
           sparse_plan(lhs_type, res_type, rename_dimension_from, rename_dimension_to),
@@ -138,8 +138,8 @@ struct SelectGenericRenameOp {
  
 SparseRenamePlan::SparseRenamePlan(const ValueType &input_type,
                                    const ValueType &output_type,
-                                   const std::vector<vespalib::string> &from,
-                                   const std::vector<vespalib::string> &to)
+                                   const std::vector<std::string> &from,
+                                   const std::vector<std::string> &to)
   : output_dimensions(), can_forward_index(true)
 {
     const auto in_dims = input_type.mapped_dimensions();
@@ -162,8 +162,8 @@ SparseRenamePlan::~SparseRenamePlan() = default;
 
 DenseRenamePlan::DenseRenamePlan(const ValueType &lhs_type,
                                  const ValueType &output_type,
-                                 const std::vector<vespalib::string> &from,
-                                 const std::vector<vespalib::string> &to)
+                                 const std::vector<std::string> &from,
+                                 const std::vector<std::string> &to)
     : loop_cnt(),
       stride(),
       subspace_size(output_type.dense_subspace_size())
@@ -204,8 +204,8 @@ DenseRenamePlan::~DenseRenamePlan() = default;
 InterpretedFunction::Instruction
 GenericRename::make_instruction(const ValueType &result_type,
                                 const ValueType &input_type,
-                                const std::vector<vespalib::string> &rename_dimension_from,
-                                const std::vector<vespalib::string> &rename_dimension_to,
+                                const std::vector<std::string> &rename_dimension_from,
+                                const std::vector<std::string> &rename_dimension_to,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
     auto &param = stash.create<RenameParam>(input_type,

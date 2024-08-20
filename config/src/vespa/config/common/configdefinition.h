@@ -18,7 +18,7 @@ public:
     ConfigDefinition(StringVector schema);
     void deserialize(const vespalib::slime::Inspector & inspector);
     void serialize(vespalib::slime::Cursor & cursor) const;
-    vespalib::string asString() const;
+    std::string asString() const;
 private:
     StringVector _schema;
 };

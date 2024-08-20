@@ -3,7 +3,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
 #include <vespa/fsa/fsa.h>

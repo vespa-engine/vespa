@@ -17,7 +17,7 @@ using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
 using vespalib::make_string;
-using vespalib::string;
+using std::string;
 using namespace vespalib::xml;
 
 namespace document {
@@ -41,7 +41,7 @@ deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, st
     stream >> version;
     const DocumentType * docType =  repo.getDocumentType(typestr);
     if (!docType) {
-        throw DocumentTypeNotFoundException(vespalib::string(typestr), VESPA_STRLOC);
+        throw DocumentTypeNotFoundException(std::string(typestr), VESPA_STRLOC);
     }
     return docType;
 }

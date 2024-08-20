@@ -29,7 +29,7 @@ private:
     feature_t _maxDistance;
     feature_t _scaleDistance;
     feature_t _halfResponse;
-    vespalib::string _arg_string;
+    std::string _arg_string;
     uint32_t _attr_id;
     bool _use_geo_pos;
     bool _use_nns_tensor;

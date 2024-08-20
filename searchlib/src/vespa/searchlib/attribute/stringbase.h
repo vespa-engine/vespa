@@ -24,17 +24,17 @@ public:
     using LoadedVector = NoLoadedVector;
     using OffsetVector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 public:
-    bool append(DocId doc, const vespalib::string & v, int32_t weight) {
+    bool append(DocId doc, const std::string & v, int32_t weight) {
         return AttributeVector::append(_changes, doc, StringChangeData(v), weight);
     }
     template<typename Accessor>
     bool append(DocId doc, Accessor & ac) {
         return AttributeVector::append(_changes, doc, ac);
     }
-    bool remove(DocId doc, const vespalib::string & v, int32_t weight) {
+    bool remove(DocId doc, const std::string & v, int32_t weight) {
         return AttributeVector::remove(_changes, doc, StringChangeData(v), weight);
     }
-    bool update(DocId doc, const vespalib::string & v) {
+    bool update(DocId doc, const std::string & v) {
         return AttributeVector::update(_changes, doc, StringChangeData(v));
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
@@ -55,8 +55,8 @@ public:
     std::span<const char> get_raw(DocId) const override;
     static const char * defaultValue() { return ""; }
 protected:
-    StringAttribute(const vespalib::string & name);
-    StringAttribute(const vespalib::string & name, const Config & c);
+    StringAttribute(const std::string & name);
+    StringAttribute(const std::string & name, const Config & c);
     ~StringAttribute() override;
     using Change = ChangeTemplate<StringChangeData>;
     using ChangeVector = ChangeVectorT<Change>;

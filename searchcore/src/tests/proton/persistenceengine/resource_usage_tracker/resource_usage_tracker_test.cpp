@@ -114,10 +114,10 @@ namespace {
 
 struct NamedAttribute
 {
-    vespalib::string subdb;
-    vespalib::string attribute;
+    std::string subdb;
+    std::string attribute;
 
-    NamedAttribute(const vespalib::string& subdb_in, const vespalib::string& attribute_in)
+    NamedAttribute(const std::string& subdb_in, const std::string& attribute_in)
         : subdb(subdb_in),
           attribute(attribute_in)
     {
@@ -164,7 +164,7 @@ double rel_usage(size_t usage) noexcept {
     return (double) usage / (double) usage_limit;
 }
 
-ResourceUsage make_resource_usage(const vespalib::string& attr_name, size_t used_address_space)
+ResourceUsage make_resource_usage(const std::string& attr_name, size_t used_address_space)
 {
     AttributeResourceUsage address_space_usage(rel_usage(used_address_space), attr_name);
     return ResourceUsage(0.0, 0.0, address_space_usage);

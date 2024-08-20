@@ -95,7 +95,7 @@ private:
     using BinarySortData = std::vector<uint8_t, vespalib::allocator_large<uint8_t>>;
     using SortDataArray = std::vector<SortData, vespalib::allocator_large<SortData>>;
     using ConverterFactory = search::common::ConverterFactory;
-    vespalib::string         _documentmetastore;
+    std::string         _documentmetastore;
     uint16_t                 _partitionId;
     vespalib::Doom           _doom;
     const ConverterFactory & _ucaFactory;
@@ -117,7 +117,7 @@ public:
     std::pair<const char *, size_t> getSortRef(size_t i) const {
         return {(const char*)(&_binarySortData[0] + _sortDataArray[i]._idx), _sortDataArray[i]._len };
     }
-    bool Init(const vespalib::string & sortSpec, search::attribute::IAttributeContext & vecMan);
+    bool Init(const std::string & sortSpec, search::attribute::IAttributeContext & vecMan);
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
     uint32_t getSortDataSize(uint32_t offset, uint32_t n);
     void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);

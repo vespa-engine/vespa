@@ -30,7 +30,7 @@ EvalFixture::ParamRepo make_params() {
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
-void verify(const vespalib::string &expr, double expect, size_t expect_optimized_cnt, size_t expect_not_optimized_cnt) {
+void verify(const std::string &expr, double expect, size_t expect_optimized_cnt, size_t expect_not_optimized_cnt) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     auto expect_spec = TensorSpec("double").add({}, expect);
     EXPECT_EQUAL(EvalFixture::ref(expr, param_repo), expect_spec);

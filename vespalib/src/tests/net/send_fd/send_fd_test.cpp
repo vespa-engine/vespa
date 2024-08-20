@@ -21,9 +21,9 @@
 using namespace vespalib;
 using vespalib::test::Nexus;
 
-vespalib::string read_bytes(SocketHandle &socket, size_t wanted_bytes) {
+std::string read_bytes(SocketHandle &socket, size_t wanted_bytes) {
     char tmp[64];
-    vespalib::string result;
+    std::string result;
     while (result.size() < wanted_bytes) {
         size_t read_size = std::min(sizeof(tmp), wanted_bytes - result.size());
         ssize_t read_result = socket.read(tmp, read_size);
@@ -36,17 +36,17 @@ vespalib::string read_bytes(SocketHandle &socket, size_t wanted_bytes) {
 }
 
 void verify_socket_io(bool is_server, SocketHandle &socket) {
-    vespalib::string server_message = "hello, this is the server speaking";
-    vespalib::string client_message = "please pick up, I need to talk to you";
+    std::string server_message = "hello, this is the server speaking";
+    std::string client_message = "please pick up, I need to talk to you";
     if(is_server) {
         ssize_t written = socket.write(server_message.data(), server_message.size());
         EXPECT_EQ(written, ssize_t(server_message.size()));
-        vespalib::string read = read_bytes(socket, client_message.size());
+        std::string read = read_bytes(socket, client_message.size());
         EXPECT_EQ(client_message, read);
     } else {
         ssize_t written = socket.write(client_message.data(), client_message.size());
         EXPECT_EQ(written, ssize_t(client_message.size()));
-        vespalib::string read = read_bytes(socket, server_message.size());
+        std::string read = read_bytes(socket, server_message.size());
         EXPECT_EQ(server_message, read);
     }
 }

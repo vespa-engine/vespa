@@ -31,19 +31,19 @@ struct ReduceSpec {
     }
 };
 
-void verify_not_optimized(const vespalib::string &expr,
+void verify_not_optimized(const std::string &expr,
                           std::vector<CellType> with_cell_types = {CellType::DOUBLE})
 {
     EvalFixture::verify<ReduceSpec>(expr, {}, CellTypeSpace(with_cell_types, 1));
 }
 
-void verify_optimized(const vespalib::string &expr, const ReduceSpec &spec,
+void verify_optimized(const std::string &expr, const ReduceSpec &spec,
                       std::vector<CellType> with_cell_types = CellTypeUtils::list_types())
 {
     EvalFixture::verify<ReduceSpec>(expr, {spec}, CellTypeSpace(with_cell_types, 1));
 }
 
-void verify_optimized(const vespalib::string &expr, const ReduceSpec &spec1, const ReduceSpec &spec2,
+void verify_optimized(const std::string &expr, const ReduceSpec &spec1, const ReduceSpec &spec2,
                       std::vector<CellType> with_cell_types = CellTypeUtils::list_types())
 {
     EvalFixture::verify<ReduceSpec>(expr, {spec1, spec2}, CellTypeSpace(with_cell_types, 1));
@@ -101,7 +101,7 @@ TEST("require that non-simple aggregators cannot be decomposed into multiple red
     TEST_DO(verify_not_optimized("reduce(a2b3c4d5,median,a,c)"));
 }
 
-void verify_optimized_multi(const vespalib::string &arg, const vespalib::string &dim, size_t outer_size, size_t reduce_size, size_t inner_size) {
+void verify_optimized_multi(const std::string &arg, const std::string &dim, size_t outer_size, size_t reduce_size, size_t inner_size) {
     for (Aggr aggr: Aggregator::list()) {
         if (aggr != Aggr::PROD) {
             auto expr = fmt("reduce(%s,%s,%s)", arg.c_str(), AggrNames::name_of(aggr)->c_str(), dim.c_str());

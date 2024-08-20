@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace config {
 
@@ -45,7 +45,7 @@ public:
 
     static const int INCONSISTENT_CONFIG_MD5 = UNKNOWN_CONFIG + 400;
 
-    static vespalib::string getName(int error);
+    static std::string getName(int error);
 };
 
 }

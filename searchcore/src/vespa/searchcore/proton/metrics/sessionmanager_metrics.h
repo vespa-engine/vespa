@@ -21,7 +21,7 @@ struct SessionManagerMetrics : metrics::MetricSet
     metrics::LongCountMetric numTimedout;
 
     void update(const proton::matching::SessionManager::Stats &stats);
-    SessionManagerMetrics(const vespalib::string &name, metrics::MetricSet *parent);
+    SessionManagerMetrics(const std::string &name, metrics::MetricSet *parent);
     ~SessionManagerMetrics();
 };
 

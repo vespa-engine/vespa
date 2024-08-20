@@ -37,7 +37,7 @@ Context::Context(const DocumentUpdate& docUpdate)
 Context::~Context() = default;
 
 std::unique_ptr<Value>
-Context::getValue(const vespalib::string & value) const {
+Context::getValue(const std::string & value) const {
     if (_variables) {
         VariableMap::const_iterator iter = _variables->find(value);
 

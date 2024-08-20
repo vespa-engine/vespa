@@ -174,7 +174,7 @@ public:
 
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }
 
-    index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
+    index::FieldLengthInfo get_field_length_info(const std::string& field_name) const;
 
     void insert_write_context_state(vespalib::slime::Cursor& object) const;
 };

@@ -45,7 +45,7 @@ createEmptyTensor(const ValueType &type)
     return vespalib::eval::value_from_spec(empty_spec, factory);
 }
 
-vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
+std::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
 {
     return vespalib::make_string("Field tensor type is '%s' but other tensor type is '%s'",
                                  fieldTensorType.to_spec().c_str(),

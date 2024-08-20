@@ -13,7 +13,7 @@ using FlagBaseImpl = MultiValueNumericAttribute< IntegerAttributeTemplate<int8_t
 template <typename B>
 class FlagAttributeT : public B {
 public:
-    FlagAttributeT(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
+    FlagAttributeT(const std::string & baseFileName, const AttributeVector::Config & cfg);
 private:
     using DocId = AttributeVector::DocId;
     bool onLoad(vespalib::Executor *executor) override;

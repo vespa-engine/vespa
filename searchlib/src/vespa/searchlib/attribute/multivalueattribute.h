@@ -55,7 +55,7 @@ protected:
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
 public:
-    MultiValueAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
+    MultiValueAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
     ~MultiValueAttribute() override;
 
     bool addDoc(DocId & doc) override;

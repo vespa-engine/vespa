@@ -27,7 +27,7 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr) {
+void verify_optimized(const std::string &expr) {
     SCOPED_TRACE(expr.c_str());
     auto diff_types = CellTypeSpace(CellTypeUtils::list_types(), 2).different();
     EvalFixture::verify<FunInfo>(expr, {}, diff_types);
@@ -35,7 +35,7 @@ void verify_optimized(const vespalib::string &expr) {
     EvalFixture::verify<FunInfo>(expr, {FunInfo{false}}, same_types);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);

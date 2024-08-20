@@ -12,6 +12,7 @@
 
 #include "fieldvalue.h"
 #include <vespa/document/base/field.h>
+#include <vespa/vespalib/util/vespa_dll_local.h>
 
 namespace document {
 

@@ -4,8 +4,9 @@
 
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace search::fef { class Properties; }
@@ -24,13 +25,13 @@ namespace eval {
 
 // lazy evaluation of expressions. affects rank/summary/dump
 struct LazyExpressions {
-    static const vespalib::string NAME;
+    static const std::string NAME;
     static bool check(const Properties &props, bool default_value);
 };
 
 // use fast-forest evaluation for gbdt expressions. affects rank/summary/dump
 struct UseFastForest {
-    static const vespalib::string NAME;
+    static const std::string NAME;
     static const bool DEFAULT_VALUE;
     static bool check(const Properties &props);
 };
@@ -43,18 +44,18 @@ namespace rank {
      * Property for the feature name used for first phase rank.
      **/
     struct FirstPhase {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props);
     };
 
     /**
      * Property for the feature name used for second phase rank.
      **/
     struct SecondPhase {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props);
     };
 
 } // namespace rank
@@ -66,8 +67,8 @@ namespace feature_rename {
      * with a different name, typically rankingExpression(foo) -> foo
      **/
     struct Rename {
-        static const vespalib::string NAME;
-        static std::vector<std::pair<vespalib::string,vespalib::string>> lookup(const Properties &props);
+        static const std::string NAME;
+        static std::vector<std::pair<std::string,std::string>> lookup(const Properties &props);
     };
 
 
@@ -80,9 +81,9 @@ namespace match {
      * reply (match features).
      **/
     struct Feature {
-        static const vespalib::string NAME;
-        static const std::vector<vespalib::string> DEFAULT_VALUE;
-        static std::vector<vespalib::string> lookup(const Properties &props);
+        static const std::string NAME;
+        static const std::vector<std::string> DEFAULT_VALUE;
+        static std::vector<std::string> lookup(const Properties &props);
     };
 
 } // namespace match
@@ -94,9 +95,9 @@ namespace summary {
      * summaryfeatures docsum field
      **/
     struct Feature {
-        static const vespalib::string NAME;
-        static const std::vector<vespalib::string> DEFAULT_VALUE;
-        static std::vector<vespalib::string> lookup(const Properties &props);
+        static const std::string NAME;
+        static const std::vector<std::string> DEFAULT_VALUE;
+        static std::vector<std::string> lookup(const Properties &props);
     };
 
 } // namespace summary
@@ -107,9 +108,9 @@ namespace dump {
      * Property for the set of feature names used for dumping.
      **/
     struct Feature {
-        static const vespalib::string NAME;
-        static const std::vector<vespalib::string> DEFAULT_VALUE;
-        static std::vector<vespalib::string> lookup(const Properties &props);
+        static const std::string NAME;
+        static const std::vector<std::string> DEFAULT_VALUE;
+        static std::vector<std::string> lookup(const Properties &props);
     };
 
     /**
@@ -117,8 +118,8 @@ namespace dump {
      * dumping.
      **/
     struct IgnoreDefaultFeatures {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
         static bool check(const Properties &props);
     };
 
@@ -126,53 +127,53 @@ namespace dump {
 
 namespace execute::onmatch {
     struct Attribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
     struct Operation {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 }
 
 namespace execute::onrerank {
     struct Attribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
     struct Operation {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 }
 
 namespace execute::onsummary {
     struct Attribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
     struct Operation {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 }
 
 namespace mutate {
     //TODO Remove October 2022
     struct AllowQueryOverride {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static bool check(const Properties &props);
     };
 }
@@ -186,7 +187,7 @@ namespace temporary {
  * 0.0 which is default gives default legacy behavior.
  **/
 struct WeakAndRange {
-    static const vespalib::string NAME;
+    static const std::string NAME;
     static const double DEFAULT_VALUE;
     static double lookup(const Properties &props);
     static double lookup(const Properties &props, double defaultValue);
@@ -195,61 +196,61 @@ struct WeakAndRange {
 
 namespace mutate::on_match {
     struct Attribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
     struct Operation {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 }
 
 namespace mutate::on_first_phase {
     struct Attribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
     struct Operation {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 }
 
 namespace mutate::on_second_phase {
     struct Attribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
     struct Operation {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 }
 
 namespace mutate::on_summary {
     struct Attribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
     struct Operation {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 }
 
@@ -262,7 +263,7 @@ namespace matching {
      * is 1 (never).
      **/
     struct TermwiseLimit {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
@@ -272,7 +273,7 @@ namespace matching {
      * Property for the number of threads used per search.
      **/
     struct NumThreadsPerSearch {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
@@ -281,7 +282,7 @@ namespace matching {
      * Property for the minimum number of hits per thread.
      **/
     struct MinHitsPerThread {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
@@ -291,7 +292,7 @@ namespace matching {
      * A partition is a unit of work for the search threads.
      **/
     struct NumSearchPartitions {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
@@ -304,7 +305,7 @@ namespace matching {
      * then don't build a global filter. The effect will be falling back to bruteforce instead of approximation.
      **/
     struct GlobalFilterLowerLimit {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
@@ -319,7 +320,7 @@ namespace matching {
      * adding 20% margin to handle some correlation between filter and rest of query.
      **/
     struct GlobalFilterUpperLimit {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
@@ -334,7 +335,7 @@ namespace matching {
      * This property ensures an upper bound of adjustedTargetHits, avoiding that the search in the HNSW index takes too long.
      **/
     struct TargetHitsMaxAdjustmentFactor {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
@@ -344,7 +345,7 @@ namespace matching {
      * Property to control the algorithm using for fuzzy matching.
      **/
     struct FuzzyAlgorithm {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const vespalib::FuzzyMatchingAlgorithm DEFAULT_VALUE;
         static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props);
         static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props, vespalib::FuzzyMatchingAlgorithm default_value);
@@ -353,7 +354,7 @@ namespace matching {
      * Sort blueprints based on relative cost estimate rather than est_hits
      **/
     struct SortBlueprintsByCost {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const bool DEFAULT_VALUE;
         static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
         static bool check(const Properties &props, bool fallback);
@@ -364,7 +365,7 @@ namespace matching {
      * under all intermediate iterators, not only AND.
      **/
     struct AlwaysMarkPhraseExpensive {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const bool DEFAULT_VALUE;
         static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
         static bool check(const Properties &props, bool fallback);
@@ -377,7 +378,7 @@ namespace softtimeout {
      * Default is off, but will change in Q1 2017
      */
     struct Enabled {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const bool DEFAULT_VALUE;
         static bool lookup(const Properties &props);
         static bool lookup(const Properties &props, bool defaultValue);
@@ -388,7 +389,7 @@ namespace softtimeout {
      * Be it summary fetching or what not. default is 0.10 or 10%.
      */
     struct TailCost {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
     };
@@ -398,7 +399,7 @@ namespace softtimeout {
      * The backend starts off with a value of 0.5.
      */
     struct Factor {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
@@ -412,17 +413,17 @@ namespace matchphase {
      * Property for the attribute used for graceful degradation during match phase.
      **/
     struct DegradationAttribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 
     /**
      * Property for the order used for graceful degradation during match phase.
      **/
     struct DegradationAscendingOrder {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const bool DEFAULT_VALUE;
         static bool lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
         static bool lookup(const Properties &props, bool defaultValue);
@@ -432,7 +433,7 @@ namespace matchphase {
      * Property for how many hits the used wanted for graceful degradation during match phase.
      **/
     struct DegradationMaxHits {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
@@ -442,14 +443,14 @@ namespace matchphase {
      * Property for how many hits out of wanted hits to collect before considering graceful degradation during match phase.
      **/
     struct DegradationSamplePercentage {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
         static double lookup(const Properties &props, double defaultValue);
     };
 
     struct DegradationMaxFilterCoverage {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
         static double lookup(const Properties &props, double defaultValue);
@@ -460,7 +461,7 @@ namespace matchphase {
      * > 1 favors pre filtering, less favour post filtering
      **/
     struct DegradationPostFilterMultiplier {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
         static double lookup(const Properties &props, double defaultValue);
@@ -472,10 +473,10 @@ namespace matchphase {
      * string; the default) diversity will be disabled.
      **/
     struct DiversityAttribute {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 
     /**
@@ -484,23 +485,23 @@ namespace matchphase {
      * is 1 (the default) diversity will be disabled.
      **/
     struct DiversityMinGroups {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
 
     struct DiversityCutoffFactor {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
         static double lookup(const Properties &props, double defaultValue);
     };
     struct DiversityCutoffStrategy {
-        static const vespalib::string NAME;
-        static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+        static const std::string NAME;
+        static const std::string DEFAULT_VALUE;
+        static std::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static std::string lookup(const Properties &props, const std::string & defaultValue);
     };
 
 } // namespace matchphase
@@ -511,7 +512,7 @@ namespace trace {
  * Property for the heap size used in the hit collector.
  **/
     struct Level {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
@@ -526,7 +527,7 @@ namespace hitcollector {
      * Property for the heap size used in the hit collector.
      **/
     struct HeapSize {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
@@ -536,7 +537,7 @@ namespace hitcollector {
      * Property for the array size used in the hit collector.
      **/
     struct ArraySize {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
         static uint32_t lookup(const Properties &props, uint32_t defaultValue);
@@ -547,7 +548,7 @@ namespace hitcollector {
      * Specifies when to estimate the total number of hits.
      **/
     struct EstimatePoint {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
     };
@@ -557,7 +558,7 @@ namespace hitcollector {
      * Specifies the limit for a hit estimate. If the estimate is above the limit abort ranking.
      **/
     struct EstimateLimit {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
     };
@@ -568,7 +569,7 @@ namespace hitcollector {
      * Drop a hit if the first phase rank score <= drop limit.
      **/
     struct FirstPhaseRankScoreDropLimit {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const std::optional<feature_t> DEFAULT_VALUE;
         static std::optional<feature_t> lookup(const Properties &props);
         static std::optional<feature_t> lookup(const Properties &props, std::optional<feature_t> default_value);
@@ -580,7 +581,7 @@ namespace hitcollector {
      * rescored) <= drop limit.
      **/
     struct SecondPhaseRankScoreDropLimit {
-        static const vespalib::string NAME;
+        static const std::string NAME;
         static const std::optional<feature_t> DEFAULT_VALUE;
         static std::optional<feature_t> lookup(const Properties &props);
         static std::optional<feature_t> lookup(const Properties &props, std::optional<double> default_value);
@@ -592,19 +593,19 @@ namespace hitcollector {
  * Property for the field weight of a field.
  **/
 struct FieldWeight {
-    static const vespalib::string BASE_NAME;
+    static const std::string BASE_NAME;
     static const uint32_t DEFAULT_VALUE;
-    static uint32_t lookup(const Properties &props, const vespalib::string &fieldName);
+    static uint32_t lookup(const Properties &props, const std::string &fieldName);
 };
 
 /**
  * Property for whether a field is a filter field.
  **/
 struct IsFilterField {
-    static const vespalib::string BASE_NAME;
-    static const vespalib::string DEFAULT_VALUE;
-    static void set(Properties &props, const vespalib::string &fieldName);
-    static bool check(const Properties &props, const vespalib::string &fieldName);
+    static const std::string BASE_NAME;
+    static const std::string DEFAULT_VALUE;
+    static void set(Properties &props, const std::string &fieldName);
+    static bool check(const Properties &props, const std::string &fieldName);
 };
 
 namespace type {
@@ -614,10 +615,10 @@ namespace type {
  * Currently, only tensor types are specified using this.
  */
 struct Attribute {
-    static const vespalib::string BASE_NAME;
-    static const vespalib::string DEFAULT_VALUE;
-    static vespalib::string lookup(const Properties &props, const vespalib::string &attributeName);
-    static void set(Properties &props, const vespalib::string &attributeName, const vespalib::string &type);
+    static const std::string BASE_NAME;
+    static const std::string DEFAULT_VALUE;
+    static std::string lookup(const Properties &props, const std::string &attributeName);
+    static void set(Properties &props, const std::string &attributeName, const std::string &type);
 };
 
 /**
@@ -625,10 +626,10 @@ struct Attribute {
  * Currently, only tensor types are specified using this.
  */
 struct QueryFeature {
-    static const vespalib::string BASE_NAME;
-    static const vespalib::string DEFAULT_VALUE;
-    static vespalib::string lookup(const Properties &props, const vespalib::string &queryFeatureName);
-    static void set(Properties &props, const vespalib::string &queryFeatureName, const vespalib::string &type);
+    static const std::string BASE_NAME;
+    static const std::string DEFAULT_VALUE;
+    static std::string lookup(const Properties &props, const std::string &queryFeatureName);
+    static void set(Properties &props, const std::string &queryFeatureName, const std::string &type);
 };
 
 } // namespace type

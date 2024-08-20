@@ -9,7 +9,7 @@
 #include "predicate_interval.h"
 #include <vespa/searchlib/common/bitvectorcache.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <unordered_map>
 
 namespace search::predicate {

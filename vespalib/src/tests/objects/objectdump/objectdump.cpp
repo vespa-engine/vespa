@@ -40,7 +40,7 @@ struct Bar : public Base
     uint64_t         _uint64;
     float            _float;
     double           _double;
-    vespalib::string _string;
+    std::string _string;
     Bar() noexcept : _bool(true), _int8(-1), _uint8(1), _int16(-2), _uint16(2),
             _int32(-4), _uint32(4), _int64(-8), _uint64(8),
             _float(2.5), _double(2.75), _string("bla bla") {}

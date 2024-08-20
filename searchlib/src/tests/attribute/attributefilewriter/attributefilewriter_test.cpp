@@ -21,8 +21,8 @@ namespace search {
 
 namespace {
 
-vespalib::string testFileName("test.dat");
-vespalib::string hello("Hello world");
+std::string testFileName("test.dat");
+std::string hello("Hello world");
 
 void removeTestFile() { std::filesystem::remove(std::filesystem::path(testFileName)); }
 
@@ -30,7 +30,7 @@ struct Fixture {
     TuneFileAttributes _tuneFileAttributes;
     DummyFileHeaderContext _fileHeaderContext;
     attribute::AttributeHeader _header;
-    const vespalib::string _desc;
+    const std::string _desc;
     AttributeFileWriter _writer;
 
     Fixture()

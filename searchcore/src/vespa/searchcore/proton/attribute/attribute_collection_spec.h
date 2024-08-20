@@ -39,7 +39,7 @@ public:
     const std::optional<SerialNum>& getCurrentSerialNum() const noexcept {
         return _currentSerialNum;
     }
-    bool hasAttribute(const vespalib::string &name) const;
+    bool hasAttribute(const std::string &name) const;
 };
 
 } // namespace proton

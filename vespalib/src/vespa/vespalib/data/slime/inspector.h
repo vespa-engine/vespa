@@ -31,7 +31,7 @@ struct Inspector {
     virtual void traverse(ObjectSymbolTraverser &ot) const = 0;
     virtual void traverse(ObjectTraverser &ot) const = 0;
 
-    virtual vespalib::string toString() const = 0;
+    virtual std::string toString() const = 0;
 
     virtual Inspector &operator[](size_t idx) const = 0;
     virtual Inspector &operator[](Symbol sym) const = 0;

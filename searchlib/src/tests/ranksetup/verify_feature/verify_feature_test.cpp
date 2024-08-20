@@ -14,7 +14,7 @@ using namespace search::fef::test;
 using namespace search::fef;
 using vespalib::make_string_short::fmt;
 
-typedef bool (*cmp)(const vespalib::string & a, const vespalib::string &b);
+typedef bool (*cmp)(const std::string & a, const std::string &b);
 
 namespace search::fef {
 std::ostream &operator<<(std::ostream &os, Level level) {
@@ -28,12 +28,12 @@ std::ostream &operator<<(std::ostream &os, Level level) {
 }
 }
 
-bool equal(const vespalib::string & a, const vespalib::string &b) {
+bool equal(const std::string & a, const std::string &b) {
     EXPECT_EQUAL(a, b);
     return a == b;
 }
 
-bool regex(const vespalib::string & a, const vespalib::string &b) {
+bool regex(const std::string & a, const std::string &b) {
     std::regex exp(b.c_str());
     return std::regex_match(a.c_str(), exp);
 }

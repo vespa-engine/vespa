@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <set>
 #include <map>
+#include <set>
+#include <string>
 
 namespace search {
 
@@ -17,29 +17,29 @@ namespace search {
  **/
 class MatchingElementsFields {
 private:
-    std::set<vespalib::string> _fields;
-    std::map<vespalib::string, vespalib::string> _struct_fields;
+    std::set<std::string> _fields;
+    std::map<std::string, std::string> _struct_fields;
 
 public:
     MatchingElementsFields();
     ~MatchingElementsFields();
     bool empty() const { return _fields.empty(); }
-    void add_field(const vespalib::string &field_name) {
+    void add_field(const std::string &field_name) {
         _fields.insert(field_name);
     }
-    void add_mapping(const vespalib::string &field_name,
-                     const vespalib::string &struct_field_name) {
+    void add_mapping(const std::string &field_name,
+                     const std::string &struct_field_name) {
         _fields.insert(field_name);
         _struct_fields[struct_field_name] = field_name;
     }
-    bool has_field(const vespalib::string &field_name) const {
+    bool has_field(const std::string &field_name) const {
         return (_fields.count(field_name) > 0);
     }
-    bool has_struct_field(const vespalib::string &struct_field_name) const {
+    bool has_struct_field(const std::string &struct_field_name) const {
         return (_struct_fields.find(struct_field_name) != _struct_fields.end());
     }
-    const vespalib::string &get_enclosing_field(const vespalib::string &struct_field_name) const {
-        static const vespalib::string empty;
+    const std::string &get_enclosing_field(const std::string &struct_field_name) const {
+        static const std::string empty;
         auto res = _struct_fields.find(struct_field_name);
         if (res == _struct_fields.end()) {
             return empty;

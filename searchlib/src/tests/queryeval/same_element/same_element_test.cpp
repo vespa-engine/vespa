@@ -37,7 +37,7 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResul
     auto result = std::make_unique<SameElementBlueprint>(make_field_spec(), false);
     for (size_t i = 0; i < children.size(); ++i) {
         uint32_t field_id = i;
-        vespalib::string field_name = vespalib::make_string("f%u", field_id);
+        std::string field_name = vespalib::make_string("f%u", field_id);
         FieldSpec field = result->getNextChildField(field_name, field_id);
         auto fake = std::make_unique<FakeBlueprint>(field, children[i]);
         fake->is_attr(fake_attr);

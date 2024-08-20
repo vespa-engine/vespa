@@ -242,7 +242,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         for (uint32_t i = 0; i < from.getCompletedBucketsList().size(); ++i) {
             to->getFinishedBuckets().push_back(from.getCompletedBucketsList()[i].bucketId);
         }
-        to->setErrorMessage(vespalib::string(from.getErrorCode().getMessage()));
+        to->setErrorMessage(std::string(from.getErrorCode().getMessage()));
         toMsg = std::move(to);
         break;
     }

@@ -29,7 +29,7 @@ struct MyBlueprint : Blueprint {
     MyBlueprint(bool &was_used_out) : Blueprint("my_bp"), was_used(was_used_out) {}
     void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
     Blueprint::UP createInstance() const override { return std::make_unique<MyBlueprint>(was_used); }
-    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override {
+    bool setup(const IIndexEnvironment &, const std::vector<std::string> &params) override {
         EXPECT_EQUAL(getName(), "my_bp(foo,bar)");
         ASSERT_TRUE(params.size() == 2);
         EXPECT_EQUAL(params[0], "foo");
@@ -43,7 +43,7 @@ struct MyBlueprint : Blueprint {
     }
 };
 
-bool replaced(const vespalib::string &expr) {
+bool replaced(const std::string &expr) {
     bool was_used = false;
     ExpressionReplacer::UP replacer = MaxReduceProdJoinReplacer::create(std::make_unique<MyBlueprint>(was_used));
     auto rank_function = Function::parse(expr, FeatureNameExtractor());

@@ -8,7 +8,7 @@ using namespace vespalib::literals;
 
 TEST(StaticStringViewTest, simple_usage) {
     auto value = "foo bar"_ssv;
-    vespalib::string expect("foo bar");
+    std::string expect("foo bar");
     std::string expect_std("foo bar");
     static_assert(std::same_as<decltype(value),StaticStringView>);
     auto a_ref = value.ref();

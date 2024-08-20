@@ -148,7 +148,7 @@ public:
     void hammer(DocIdRange range, uint32_t count) { hammerAttribute(_v, range, count); }
     void clean(DocIdRange range) { cleanAttribute(*_v, range); }
     AttributeStatus getStatus() { _v->commit(true); return _v->getStatus(); }
-    AttributeStatus getStatus(const vespalib::string &prefix) {
+    AttributeStatus getStatus(const std::string &prefix) {
         AttributeStatus status(getStatus());
         LOG(info, "status %s: allocated=%" PRIu64 ", used=%" PRIu64 ", dead=%" PRIu64 ", onHold=%" PRIu64 ", waste=%f",
             prefix.c_str(), status.getAllocated(), status.getUsed(), status.getDead(), status.getOnHold(),
@@ -157,7 +157,7 @@ public:
     }
     const Config &getConfig() const { return _v->getConfig(); }
     AddressSpace getMultiValueAddressSpaceUsage() const {return _v->getAddressSpaceUsage().multi_value_usage(); }
-    AddressSpace getMultiValueAddressSpaceUsage(const vespalib::string &prefix) {
+    AddressSpace getMultiValueAddressSpaceUsage(const std::string &prefix) {
         AddressSpace usage(getMultiValueAddressSpaceUsage());
         LOG(info, "address space usage %s: used=%zu, dead=%zu, limit=%zu, usage=%12.8f",
             prefix.c_str(), usage.used(), usage.dead(), usage.limit(), usage.usage());

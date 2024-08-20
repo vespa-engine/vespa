@@ -14,7 +14,7 @@ namespace search::queryeval::test {
  */
 class IntermediateBlueprintFactory : public BenchmarkBlueprintFactory {
 private:
-    vespalib::string _name;
+    std::string _name;
     std::vector<std::shared_ptr<BenchmarkBlueprintFactory>> _children;
     std::unordered_map<void*, char> _child_names;
 
@@ -28,7 +28,7 @@ public:
         _children.push_back(std::move(child));
     }
     std::unique_ptr<Blueprint> make_blueprint() override;
-    vespalib::string get_name(Blueprint& blueprint) const override;
+    std::string get_name(Blueprint& blueprint) const override;
 };
 
 class AndBlueprintFactory : public IntermediateBlueprintFactory {

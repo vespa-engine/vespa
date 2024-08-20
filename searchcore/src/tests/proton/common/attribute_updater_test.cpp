@@ -173,8 +173,8 @@ GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
-vespalib::string doc1("id:test:testdoc::1");
-vespalib::string doc2("id:test:testdoc::2");
+std::string doc1("id:test:testdoc::1");
+std::string doc2("id:test:testdoc::2");
 
 ReferenceAttribute &asReferenceAttribute(AttributeVector &vec)
 {
@@ -248,7 +248,7 @@ TEST_F("require that single attributes are updated", Fixture)
         TEST_DO(assertNoRef(*vec, 3));
     }
     {
-        vespalib::string first_backing("first");
+        std::string first_backing("first");
         std::span<const char> first(first_backing.data(), first_backing.size());
         auto vec = AttributeBuilder("in1/raw", Config(BasicType::RAW)).fill({first, first, first, first}).get();
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<RawFieldValue>("second")));
@@ -371,7 +371,7 @@ TEST_F("require that weighted set attributes are updated", Fixture)
 
 template <typename TensorAttributeType>
 std::unique_ptr<TensorAttributeType>
-makeTensorAttribute(const vespalib::string &name, const vespalib::string &tensorType)
+makeTensorAttribute(const std::string &name, const std::string &tensorType)
 {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(ValueType::from_spec(tensorType));
@@ -381,10 +381,10 @@ makeTensorAttribute(const vespalib::string &name, const vespalib::string &tensor
     return result;
 }
 
-vespalib::hash_map<vespalib::string, std::unique_ptr<const TensorDataType>> tensorTypes;
+vespalib::hash_map<std::string, std::unique_ptr<const TensorDataType>> tensorTypes;
 
 const TensorDataType &
-getTensorDataType(const vespalib::string &spec)
+getTensorDataType(const std::string &spec)
 {
     auto insres = tensorTypes.insert(std::make_pair(spec, TensorDataType::fromSpec(spec)));
     return *insres.first->second;
@@ -407,10 +407,10 @@ makeTensorFieldValue(const TensorSpec &spec)
 
 template <typename TensorAttributeType>
 struct TensorFixture : public Fixture {
-    vespalib::string type;
+    std::string type;
     std::unique_ptr<TensorAttributeType> attribute;
 
-    TensorFixture(const vespalib::string &type_, const vespalib::string &name)
+    TensorFixture(const std::string &type_, const std::string &name)
         : type(type_),
           attribute(makeTensorAttribute<TensorAttributeType>(name, type))
     {

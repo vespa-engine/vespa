@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/stllike/string.h>
 #include <cassert>
 #include <ostream>
 
@@ -40,7 +41,7 @@ getHexVal(char c)
 
 namespace document {
 
-vespalib::string GlobalId::toString() const {
+std::string GlobalId::toString() const {
     vespalib::asciistream out;
     out << "gid(0x" << vespalib::hex;
     for (int i = 0; i < (int)LENGTH; ++i) {

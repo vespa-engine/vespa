@@ -461,7 +461,7 @@ SplitInconsistentStateChecker::getHighestUsedBits(const std::vector<BucketDataba
     return highestUsedBits;
 }
 
-vespalib::string
+std::string
 SplitInconsistentStateChecker::getReason(const document::BucketId& bucketId, const std::vector<BucketDatabase::Entry>& entries)
 {
     vespalib::asciistream reason;

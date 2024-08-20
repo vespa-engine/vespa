@@ -29,10 +29,10 @@ public:
      **/
     class Field
     {
-        vespalib::string  _name;
+        std::string  _name;
         DataType          _dataType;
         CollectionType    _collectionType;
-        vespalib::string  _tensor_spec;
+        std::string  _tensor_spec;
 
     public:
         Field(std::string_view n, DataType dt) noexcept;
@@ -52,10 +52,10 @@ public:
 
         virtual void write(vespalib::asciistream & os, std::string_view prefix) const;
 
-        const vespalib::string &getName() const noexcept { return _name; }
+        const std::string &getName() const noexcept { return _name; }
         DataType getDataType() const noexcept { return _dataType; }
         CollectionType getCollectionType() const noexcept { return _collectionType; }
-        const vespalib::string& get_tensor_spec() const noexcept { return _tensor_spec; }
+        const std::string& get_tensor_spec() const noexcept { return _tensor_spec; }
 
         bool matchingTypes(const Field &rhs) const noexcept {
             return getDataType() == rhs.getDataType() &&
@@ -113,8 +113,8 @@ public:
      **/
     class FieldSet
     {
-        vespalib::string _name;
-        std::vector<vespalib::string> _fields;
+        std::string _name;
+        std::vector<std::string> _fields;
 
     public:
         explicit FieldSet(std::string_view n) noexcept : _name(n), _fields() {}
@@ -135,8 +135,8 @@ public:
             return *this;
         }
 
-        const vespalib::string &getName() const noexcept { return _name; }
-        const std::vector<vespalib::string> &getFields() const noexcept { return _fields; }
+        const std::string &getName() const noexcept { return _name; }
+        const std::vector<std::string> &getFields() const noexcept { return _fields; }
 
         bool operator==(const FieldSet &rhs) const noexcept;
         bool operator!=(const FieldSet &rhs) const noexcept;
@@ -149,7 +149,7 @@ private:
     std::vector<AttributeField>  _attributeFields;
     std::vector<FieldSet> _fieldSets;
     std::vector<ImportedAttributeField> _importedAttributeFields;
-    using Name2IdMap = vespalib::hash_map<vespalib::string, uint32_t>;
+    using Name2IdMap = vespalib::hash_map<std::string, uint32_t>;
     Name2IdMap _indexIds;
     Name2IdMap _attributeIds;
     Name2IdMap _fieldSetIds;
@@ -174,7 +174,7 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be loaded.
      **/
-    bool loadFromFile(const vespalib::string & fileName);
+    bool loadFromFile(const std::string & fileName);
 
     /**
      * Save this schema to the file with the given name.
@@ -182,9 +182,9 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be saved.
      **/
-    bool saveToFile(const vespalib::string & fileName) const;
+    bool saveToFile(const std::string & fileName) const;
 
-    vespalib::string toString() const;
+    std::string toString() const;
 
     /**
      * Add an index field to this schema

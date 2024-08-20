@@ -25,7 +25,7 @@ AttributeUsageSamplerFunctor::operator()(const search::attribute::IAttributeVect
     // Executed by attribute writer thread
     const auto & attributeVector = dynamic_cast<const search::AttributeVector &>(iAttributeVector);
     search::AddressSpaceUsage usage = attributeVector.getAddressSpaceUsage();
-    vespalib::string attributeName = attributeVector.getName();
+    std::string attributeName = attributeVector.getName();
     _samplerContext->merge(usage, attributeName, _subDbName);
 }
 

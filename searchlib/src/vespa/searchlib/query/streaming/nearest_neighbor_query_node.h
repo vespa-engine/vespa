@@ -44,7 +44,7 @@ public:
     bool evaluate() const override;
     void reset() override;
     NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept override;
-    const vespalib::string& get_query_tensor_name() const { return getTermString(); }
+    const std::string& get_query_tensor_name() const { return getTermString(); }
     uint32_t get_target_hits() const { return _target_hits; }
     double get_distance_threshold() const { return _distance_threshold; }
     void set_raw_score_calc(RawScoreCalculator* calc_in) { _calc = calc_in; }

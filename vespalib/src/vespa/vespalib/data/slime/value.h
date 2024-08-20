@@ -44,7 +44,7 @@ public:
     void traverse(ObjectSymbolTraverser &ot) const override;
     void traverse(ObjectTraverser &ot) const override;
 
-    vespalib::string toString() const override;
+    std::string toString() const override;
 
     Cursor &operator[](size_t idx) const override;
     Cursor &operator[](Symbol sym) const override;

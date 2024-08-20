@@ -21,16 +21,16 @@ DocumentTypeMapping::~DocumentTypeMapping() { }
 
 namespace {
 
-vespalib::string getDocTypeId(const document::DocumentType & docType)
+std::string getDocTypeId(const document::DocumentType & docType)
 {
-    vespalib::string typeId(docType.getName());
+    std::string typeId(docType.getName());
     typeId += "0";  // Hardcoded version (version not supported)
     return typeId;
 }
 
 }
 
-void DocumentTypeMapping::init(const vespalib::string & defaultDocumentType,
+void DocumentTypeMapping::init(const std::string & defaultDocumentType,
                                const StringFieldIdTMapT & fieldList,
                                const document::DocumentTypeRepo &repo)
 {
@@ -58,7 +58,7 @@ bool DocumentTypeMapping::prepareBaseDoc(SharedFieldPathMap & map) const
 
 void DocumentTypeMapping::buildFieldMap(
         const document::DocumentType *docTypePtr,
-        const StringFieldIdTMapT & fieldList, const vespalib::string & typeId)
+        const StringFieldIdTMapT & fieldList, const std::string & typeId)
 {
     LOG(debug, "buildFieldMap: docType = '%s', fieldList.size = '%zd', typeId = '%s'",
         docTypePtr->getName().c_str(), fieldList.size(), typeId.c_str());
@@ -74,7 +74,7 @@ void DocumentTypeMapping::buildFieldMap(
 
     size_t validCount(0);
     for (const auto& elem : fieldList) {
-        vespalib::string fname = elem.first;
+        std::string fname = elem.first;
         LOG(debug, "Handling %s -> %d", fname.c_str(), elem.second);
         try {
             if ((elem.first[0] != '[') && (elem.first != "summaryfeatures") && (elem.first != "rankfeatures") && (elem.first != "ranklog") && (elem.first != "sddocname") && (elem.first != "documentid")) {

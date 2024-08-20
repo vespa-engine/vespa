@@ -670,7 +670,7 @@ public:
 
     static std::unique_ptr<lib::Distribution> default_grouped_distribution() {
         return std::make_unique<lib::Distribution>(
-                lib::Distribution::ConfigWrapper(lib::GlobalBucketSpaceDistributionConverter::string_to_config(vespalib::string(
+                lib::Distribution::ConfigWrapper(lib::GlobalBucketSpaceDistributionConverter::string_to_config(std::string(
 R"(redundancy 2
 group[3]
 group[0].name "invalid"

@@ -73,7 +73,7 @@ private:
     void applyValueChanges(EnumStoreBatchUpdater& updater) override;
 
 public:
-    SingleValueNumericPostingAttribute(const vespalib::string & name, const AttributeVector::Config & cfg);
+    SingleValueNumericPostingAttribute(const std::string & name, const AttributeVector::Config & cfg);
     ~SingleValueNumericPostingAttribute();
 
     void reclaim_memory(generation_t oldest_used_gen) override;

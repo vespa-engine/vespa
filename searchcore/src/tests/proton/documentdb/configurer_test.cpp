@@ -70,8 +70,8 @@ using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
 
 namespace {
-const vespalib::string BASE_DIR("baseDir");
-const vespalib::string DOC_TYPE("invalid");
+const std::string BASE_DIR("baseDir");
+const std::string DOC_TYPE("invalid");
 
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer
 {
@@ -146,7 +146,7 @@ ViewSet::ViewSet()
 ViewSet::~ViewSet() = default;
 
 struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
-    vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
+    vespalib::eval::ConstantValue::UP create(const std::string &, const std::string &) const override {
         return {};
     }
 };

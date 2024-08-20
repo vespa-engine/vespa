@@ -38,24 +38,24 @@ AttributeFileSaveTarget::~AttributeFileSaveTarget() = default;
 bool
 AttributeFileSaveTarget::setup()
 {
-    const vespalib::string & baseFileName = _header.getFileName();
-    vespalib::string datFileName(baseFileName + ".dat");
+    const std::string & baseFileName = _header.getFileName();
+    std::string datFileName(baseFileName + ".dat");
     if (!_datWriter.open(datFileName)) {
         return false;
     }
     if (_header.getEnumerated()) {
-        vespalib::string udatFileName(baseFileName + ".udat");
+        std::string udatFileName(baseFileName + ".udat");
         if (!_udatWriter.open(udatFileName)) {
             return false;
         }
     }
     if (_header.hasMultiValue()) {
-        vespalib::string idxFileName(baseFileName + ".idx");
+        std::string idxFileName(baseFileName + ".idx");
         if (!_idxWriter.open(idxFileName)) {
             return false;
         }
         if (_header.hasWeightedSetType()) {
-            vespalib::string weightFileName(baseFileName + ".weight");
+            std::string weightFileName(baseFileName + ".weight");
             if (!_weightWriter.open(weightFileName)) {
                 return false;
             }
@@ -101,10 +101,10 @@ AttributeFileSaveTarget::udatWriter()
 }
 
 bool
-AttributeFileSaveTarget::setup_writer(const vespalib::string& file_suffix,
-                                      const vespalib::string& desc)
+AttributeFileSaveTarget::setup_writer(const std::string& file_suffix,
+                                      const std::string& desc)
 {
-    vespalib::string file_name(_header.getFileName() + "." + file_suffix);
+    std::string file_name(_header.getFileName() + "." + file_suffix);
     auto writer = std::make_unique<AttributeFileWriter>(_tune_file, _file_header_ctx,
                                                         _header, desc);
     if (!writer->open(file_name)) {
@@ -119,7 +119,7 @@ AttributeFileSaveTarget::setup_writer(const vespalib::string& file_suffix,
 }
 
 IAttributeFileWriter&
-AttributeFileSaveTarget::get_writer(const vespalib::string& file_suffix)
+AttributeFileSaveTarget::get_writer(const std::string& file_suffix)
 {
     auto itr = _writers.find(file_suffix);
     if (itr == _writers.end()) {

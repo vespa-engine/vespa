@@ -32,7 +32,7 @@ public:
     explicit MockIndexSearchable(const FieldLengthInfo& field_length_info)
         : _field_length_info(field_length_info)
     {}
-    FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+    FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         (void) field_name;
         return _field_length_info;
     }

@@ -6,7 +6,7 @@
 namespace search::attribute {
 
 bool
-isUpdateableInMemoryOnly(const vespalib::string &attrName, const Config &cfg)
+isUpdateableInMemoryOnly(const std::string &attrName, const Config &cfg)
 {
     auto basicType = cfg.basicType().type();
     return ((basicType != BasicType::Type::PREDICATE) &&
@@ -15,9 +15,9 @@ isUpdateableInMemoryOnly(const vespalib::string &attrName, const Config &cfg)
 }
 
 bool
-isStructFieldAttribute(const vespalib::string &attrName)
+isStructFieldAttribute(const std::string &attrName)
 {
-    return attrName.find('.') != vespalib::string::npos;
+    return attrName.find('.') != std::string::npos;
 }
 
 }

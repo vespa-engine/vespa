@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
+#include <string>
 #include <vector>
 
 namespace proton {
@@ -14,7 +14,7 @@ namespace proton {
 class EventLogger {
 private:
     using SerialNum = search::SerialNum;
-    using string = vespalib::string;
+    using string = std::string;
 public:
     static void transactionLogReplayComplete(const string &domainName, vespalib::duration elapsedTime);
     static void populateAttributeStart(const std::vector<string> &names);
@@ -46,13 +46,13 @@ public:
                               const string &outputPath,
                               size_t outputPathElems);
     static void flushPrune(const string &name, SerialNum oldestFlushed);
-    static void loadAttributeStart(const vespalib::string &subDbName, const vespalib::string &attrName);
-    static void loadAttributeComplete(const vespalib::string &subDbName,
-                                      const vespalib::string &attrName, vespalib::duration elapsedTime);
-    static void loadDocumentMetaStoreStart(const vespalib::string &subDbName);
-    static void loadDocumentMetaStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime);
-    static void loadDocumentStoreStart(const vespalib::string &subDbName);
-    static void loadDocumentStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime);
+    static void loadAttributeStart(const std::string &subDbName, const std::string &attrName);
+    static void loadAttributeComplete(const std::string &subDbName,
+                                      const std::string &attrName, vespalib::duration elapsedTime);
+    static void loadDocumentMetaStoreStart(const std::string &subDbName);
+    static void loadDocumentMetaStoreComplete(const std::string &subDbName, vespalib::duration elapsedTime);
+    static void loadDocumentStoreStart(const std::string &subDbName);
+    static void loadDocumentStoreComplete(const std::string &subDbName, vespalib::duration elapsedTime);
     static void transactionLogPruneComplete(const string &domainName, SerialNum prunedSerial);
 };
 

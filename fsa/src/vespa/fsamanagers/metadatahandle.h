@@ -10,10 +10,9 @@
 
 #pragma once
 
-#include <string>
-
 #include "refcountable.h"
 #include <vespa/fsa/metadata.h>
+#include <string>
 
 namespace fsa {
 

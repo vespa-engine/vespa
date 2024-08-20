@@ -30,9 +30,9 @@ public:
              MetricsProducer &mp,
              ComponentConfigProducer &ccp);
     ~StateApi() override;
-    Response get(const vespalib::string &host,
-                 const vespalib::string &path,
-                 const std::map<vespalib::string,vespalib::string> &params,
+    Response get(const std::string &host,
+                 const std::string &path,
+                 const std::map<std::string,std::string> &params,
                  const net::ConnectionAuthContext &auth_ctx) const override;
     JsonHandlerRepo &repo() { return _handler_repo; }
 };

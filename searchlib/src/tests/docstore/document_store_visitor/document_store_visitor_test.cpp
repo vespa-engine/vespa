@@ -21,7 +21,7 @@ LOG_SETUP("document_store_visitor_test");
 
 using namespace search;
 
-using vespalib::string;
+using std::string;
 using document::DataType;
 using document::Document;
 using document::DocumentId;

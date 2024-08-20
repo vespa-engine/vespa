@@ -22,7 +22,7 @@ struct Metrics {
     Metrics(std::shared_ptr<MetricsManager> m);
     ~Metrics();
 
-    void countLine(const vespalib::string &level, const vespalib::string &service) const;
+    void countLine(const std::string &level, const std::string &service) const;
 };
 
 } // namespace logdemon

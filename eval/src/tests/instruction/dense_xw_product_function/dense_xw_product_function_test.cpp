@@ -29,19 +29,19 @@ struct FunInfo {
     }
 };
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     EvalFixture::verify<FunInfo>(expr, {}, CellTypeSpace({CellType::FLOAT}, 2));
 }
 
-void verify_optimized(const vespalib::string &expr, size_t vec_size, size_t res_size, bool happy) {
+void verify_optimized(const std::string &expr, size_t vec_size, size_t res_size, bool happy) {
     EvalFixture::verify<FunInfo>(expr, {{vec_size, res_size, happy}}, CellTypeSpace(CellTypeUtils::list_types(), 2));
 }
 
-vespalib::string make_expr(const vespalib::string &a, const vespalib::string &b, const vespalib::string &common) {
+std::string make_expr(const std::string &a, const std::string &b, const std::string &common) {
     return make_string("reduce(%s*%s,sum,%s)", a.c_str(), b.c_str(), common.c_str());
 }
 
-void verify_optimized_multi(const vespalib::string &a, const vespalib::string &b, const vespalib::string &common,
+void verify_optimized_multi(const std::string &a, const std::string &b, const std::string &common,
                             size_t vec_size, size_t res_size, bool happy)
 {
     {

@@ -23,8 +23,8 @@ namespace {
 void
 prepare_query_tensor(const fef::IQueryEnvironment& env,
                      fef::IObjectStore& store,
-                     const vespalib::string& query_tensor_name,
-                     const vespalib::string& feature_name)
+                     const std::string& query_tensor_name,
+                     const std::string& feature_name)
 {
     try {
         auto qvalue = QueryValue::from_config(query_tensor_name, env.getIndexEnvironment());
@@ -38,8 +38,8 @@ prepare_query_tensor(const fef::IQueryEnvironment& env,
 std::unique_ptr<DistanceCalculator>
 make_distance_calculator(const fef::IQueryEnvironment& env,
                          const search::attribute::IAttributeVector& attr,
-                         const vespalib::string& query_tensor_name,
-                         const vespalib::string& feature_name)
+                         const std::string& query_tensor_name,
+                         const std::string& feature_name)
 {
     try {
         auto qvalue = QueryValue::from_config(query_tensor_name, env.getIndexEnvironment());
@@ -63,7 +63,7 @@ make_distance_calculator(const fef::IQueryEnvironment& env,
 const search::attribute::IAttributeVector*
 resolve_attribute_for_field(const fef::IQueryEnvironment& env,
                             uint32_t field_id,
-                            const vespalib::string& feature_name)
+                            const std::string& feature_name)
 {
     const auto* field = env.getIndexEnvironment().getField(field_id);
     if (field != nullptr) {
@@ -95,7 +95,7 @@ DistanceCalculatorBundle::Element::~Element() = default;
 
 DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
                                                    uint32_t field_id,
-                                                   const vespalib::string& feature_name)
+                                                   const std::string& feature_name)
 
     : _elems(),
       _min_rawscore(0.0)
@@ -120,8 +120,8 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
 
 DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
                                                    std::optional<uint32_t> field_id,
-                                                   const vespalib::string& label,
-                                                   const vespalib::string& feature_name)
+                                                   const std::string& label,
+                                                   const std::string& feature_name)
     : _elems(),
       _min_rawscore(0.0)
 {
@@ -155,7 +155,7 @@ void
 DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env,
                                                fef::IObjectStore& store,
                                                uint32_t field_id,
-                                               const vespalib::string& feature_name)
+                                               const std::string& feature_name)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, field_id);
@@ -171,8 +171,8 @@ DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env
 void
 DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env,
                                                fef::IObjectStore& store,
-                                               const vespalib::string& label,
-                                               const vespalib::string& feature_name)
+                                               const std::string& label,
+                                               const std::string& feature_name)
 {
     const auto* term = util::getTermByLabel(env, label);
     if ((term != nullptr) && term->query_tensor_name().has_value()) {

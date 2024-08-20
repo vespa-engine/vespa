@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace search::test {

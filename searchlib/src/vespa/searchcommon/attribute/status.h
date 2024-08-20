@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <atomic>
+#include <string>
 
 namespace search::attribute {
 
@@ -40,7 +40,7 @@ public:
     void incBitVectors() { _bitVectors.store(getBitVectors() + 1, std::memory_order_relaxed); }
     void decBitVectors() { _bitVectors.store(getBitVectors() - 1, std::memory_order_relaxed); }
 
-    static vespalib::string
+    static std::string
     createName(std::string_view index, std::string_view attr);
 private:
     std::atomic<uint64_t> _numDocs;

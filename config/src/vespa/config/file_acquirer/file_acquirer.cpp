@@ -11,15 +11,15 @@ LOG_SETUP(".config.file_acquirer");
 
 namespace config {
 
-RpcFileAcquirer::RpcFileAcquirer(FNET_Transport & transport, const vespalib::string &spec)
+RpcFileAcquirer::RpcFileAcquirer(FNET_Transport & transport, const std::string &spec)
     : _orb(std::make_unique<FRT_Supervisor>(&transport)),
       _spec(spec)
 { }
 
-vespalib::string
-RpcFileAcquirer::wait_for(const vespalib::string &file_ref, double timeout_s)
+std::string
+RpcFileAcquirer::wait_for(const std::string &file_ref, double timeout_s)
 {
-    vespalib::string path;
+    std::string path;
     FRT_Target *target = _orb->GetTarget(_spec.c_str());
     FRT_RPCRequest *req = _orb->AllocRPCRequest();
     req->SetMethodName("waitFor");

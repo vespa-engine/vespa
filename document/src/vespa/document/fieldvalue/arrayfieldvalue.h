@@ -26,7 +26,7 @@ private:
     bool addValue(const FieldValue&) override;
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
-    fieldvalue::ModificationStatus iterateSubset(int startPos, int endPos, const vespalib::string & variable,
+    fieldvalue::ModificationStatus iterateSubset(int startPos, int endPos, const std::string & variable,
                                                  PathRange nested, fieldvalue::IteratorHandler& handler) const;
     fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
 public:

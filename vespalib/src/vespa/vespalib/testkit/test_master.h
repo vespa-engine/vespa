@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include <functional>
 #include <memory>
 #include <mutex>
-#include <functional>
+#include <string>
+#include <vector>
 
 namespace vespalib {
 

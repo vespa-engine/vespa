@@ -43,9 +43,9 @@ GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
-vespalib::string doc1("id:test:music::1");
-vespalib::string doc2("id:test:music::2");
-vespalib::string doc3("id:test:music::3");
+std::string doc1("id:test:music::1");
+std::string doc2("id:test:music::2");
+std::string doc3("id:test:music::3");
 
 }
 

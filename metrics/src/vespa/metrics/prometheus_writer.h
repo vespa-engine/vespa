@@ -72,7 +72,7 @@ private:
     [[nodiscard]] std::string_view stable_label_value_string_ref(std::string_view raw_label_value);
     void build_labels_upto_root(vespalib::SmallVector<std::string_view, 16>& out, const Metric& m);
 
-    [[nodiscard]] static vespalib::string escaped_label_value(std::string_view value);
+    [[nodiscard]] static std::string escaped_label_value(std::string_view value);
     // Renders name with a tailing '_' character, as the caller is expected to append an aggregate.
     static void render_path_as_metric_name_prefix(vespalib::asciistream& out, std::span<const std::string_view> path);
     static void render_label_pairs(vespalib::asciistream& out, std::span<const std::string_view> labels);

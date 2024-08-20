@@ -9,7 +9,7 @@
 
 using vespalib::FeatureValues;
 using FeatureValue = vespalib::FeatureSet::Value;
-using ConvertedValue = std::variant<double, vespalib::string>;
+using ConvertedValue = std::variant<double, std::string>;
 
 namespace vdslib {
 
@@ -60,14 +60,14 @@ void populate(SearchResult& sr, FeatureValues& mf)
     sr.set_match_features(FeatureValues(mf));
 }
 
-void check_match_features(SearchResult& sr, const vespalib::string& label, bool sort_remap)
+void check_match_features(SearchResult& sr, const std::string& label, bool sort_remap)
 {
     SCOPED_TRACE(label);
     EXPECT_EQ((std::vector<ConvertedValue>{1.0, "Hi"}), convert(sr.get_match_feature_values(sort_remap ? 1 : 0)));
     EXPECT_EQ((std::vector<ConvertedValue>{12.0, "There"}), convert(sr.get_match_feature_values(sort_remap ? 0 : 1)));
 }
 
-void check_match_features(const std::vector<char> & buf, const vespalib::string& label, bool sort_remap)
+void check_match_features(const std::vector<char> & buf, const std::string& label, bool sort_remap)
 {
     SearchResult sr;
     deserialize(sr, buf);

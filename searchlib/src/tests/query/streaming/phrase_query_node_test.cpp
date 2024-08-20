@@ -31,7 +31,7 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
         builder.addStringTerm("c", "", 0, Weight(0));
     }
     Node::UP node = builder.build();
-    vespalib::string stackDump = StackDumpCreator::create(*node);
+    std::string stackDump = StackDumpCreator::create(*node);
     QueryNodeResultFactory empty;
     Query q(empty, stackDump);
     auto& p = dynamic_cast<PhraseQueryNode&>(q.getRoot());

@@ -77,7 +77,7 @@ public:
      * @return True if the note was added to the trace information, false
      * otherwise.
      */
-    bool trace(uint32_t level, const string &note, bool addTime = true);
+    bool trace(uint32_t level, const std::string &note, bool addTime = true);
 
     void normalize() {
         if (_root) {
@@ -101,7 +101,7 @@ public:
 
     uint32_t getNumChildren() const noexcept { return _root ? _root->getNumChildren() : 0; }
     const TraceNode & getChild(uint32_t child) const { return getRoot().getChild(child); }
-    string encode() const;
+    std::string encode() const;
 
     /**
      * Returns a string representation of the contained trace tree. This is a
@@ -109,7 +109,7 @@ public:
      *
      * @return Readable trace string.
      */
-    string toString(size_t limit=31337) const;
+    std::string toString(size_t limit=31337) const;
     size_t computeMemoryUsage() const {
         return _root ? _root->computeMemoryUsage() : 0;
     }

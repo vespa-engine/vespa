@@ -8,6 +8,7 @@
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>
@@ -200,8 +201,8 @@ FloatValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
-FieldValueNode::FieldValueNode(const vespalib::string& doctype,
-                               const vespalib::string& fieldExpression)
+FieldValueNode::FieldValueNode(const std::string& doctype,
+                               const std::string& fieldExpression)
     : _doctype(doctype),
       _fieldExpression(fieldExpression),
       _fieldName(extractFieldName(fieldExpression))
@@ -212,7 +213,7 @@ FieldValueNode::~FieldValueNode() = default;
 
 namespace {
 
-size_t first_ident_length_or_npos(const vespalib::string& expr) {
+size_t first_ident_length_or_npos(const std::string& expr) {
     for (size_t i = 0; i < expr.size(); ++i) {
         switch (expr[i]) {
         case '.':
@@ -226,14 +227,14 @@ size_t first_ident_length_or_npos(const vespalib::string& expr) {
             continue;
         }
     }
-    return vespalib::string::npos;
+    return std::string::npos;
 }
 
 }
 
 // TODO remove this pile of fun in favor of actually parsed AST nodes...!
-vespalib::string
-FieldValueNode::extractFieldName(const vespalib::string & fieldExpression) {
+std::string
+FieldValueNode::extractFieldName(const std::string & fieldExpression) {
     // When we get here the actual contents of the field expression shall already
     // have been structurally and syntactically verified by the parser.
     return fieldExpression.substr(0, first_ident_length_or_npos(fieldExpression));
@@ -389,7 +390,7 @@ FieldValueNode::initFieldPath(const DocumentType& type) const {
 
 namespace {
 
-bool looks_like_complex_field_path(const vespalib::string& expr) {
+bool looks_like_complex_field_path(const std::string& expr) {
     for (const char c : expr) {
         switch (c) {
         case '.':
@@ -402,7 +403,7 @@ bool looks_like_complex_field_path(const vespalib::string& expr) {
     return false;
 }
 
-bool is_simple_imported_field(const vespalib::string& expr, const DocumentType& doc_type) {
+bool is_simple_imported_field(const std::string& expr, const DocumentType& doc_type) {
     if (looks_like_complex_field_path(expr)) {
         return false;
     }
@@ -573,7 +574,7 @@ IdValueNode::getValue(const Context& context) const
 std::unique_ptr<Value>
 IdValueNode::getValue(const DocumentId& id) const
 {
-    vespalib::string value;
+    std::string value;
     switch (_type) {
     case BUCKET:
         return std::make_unique<IntegerValue>(_bucketIdFactory.getBucketId(id).getId(), true);
@@ -636,7 +637,7 @@ IdValueNode::traceValue(const Context& context,
 std::unique_ptr<Value>
 IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
 {
-    vespalib::string value;
+    std::string value;
     switch (_type) {
     case BUCKET:
         {
@@ -1126,7 +1127,7 @@ std::unique_ptr<FieldValueNode> FieldExprNode::convert_to_field_value() const {
     const auto& doctype = resolve_doctype();
     // FIXME deprecate manual post-parsing of field expressions in favor of
     // actually using the structural parser in the way nature intended.
-    vespalib::string mangled_expression;
+    std::string mangled_expression;
     build_mangled_expression(mangled_expression);
     return std::make_unique<FieldValueNode>(doctype, mangled_expression);
 }
@@ -1143,7 +1144,7 @@ std::unique_ptr<FunctionValueNode> FieldExprNode::convert_to_function_call() con
     return std::make_unique<FunctionValueNode>(function_name, std::move(lhs));
 }
 
-void FieldExprNode::build_mangled_expression(vespalib::string& dest) const {
+void FieldExprNode::build_mangled_expression(std::string& dest) const {
     // Leftmost node is doctype, which should not be emitted as part of mangled expression.
     if (_left_expr && _left_expr->_left_expr) {
         _left_expr->build_mangled_expression(dest);
@@ -1152,7 +1153,7 @@ void FieldExprNode::build_mangled_expression(vespalib::string& dest) const {
     dest.append(_right_expr);
 }
 
-const vespalib::string& FieldExprNode::resolve_doctype() const {
+const std::string& FieldExprNode::resolve_doctype() const {
     const auto* leftmost = this;
     while (leftmost->_left_expr) {
         leftmost = leftmost->_left_expr.get();

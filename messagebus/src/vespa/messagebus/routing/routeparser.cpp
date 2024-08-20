@@ -105,7 +105,7 @@ RouteParser::createHop(string_view str)
             return Hop().addDirective(createErrorDirective(
                             vespalib::make_string(
                                     "Failed to completely parse '%s'.",
-                                    vespalib::string(str).c_str())));
+                                    std::string(str).c_str())));
         } else if (str[at] == '[') {
             ++depth;
         } else if (str[at] == ']') {

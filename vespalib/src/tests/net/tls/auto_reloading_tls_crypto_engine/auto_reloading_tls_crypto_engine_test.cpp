@@ -143,7 +143,7 @@ struct Fixture {
         }
     }
 
-    vespalib::string current_cert_chain() const {
+    std::string current_cert_chain() const {
         return engine->acquire_current_engine()->tls_context()->transport_security_options().cert_chain_pem();
     }
 

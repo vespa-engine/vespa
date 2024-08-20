@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <cstring>
+#include <string>
 
 namespace vespalib {
 
@@ -42,7 +44,7 @@ public:
     asciistream & operator << (signed char v)         { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
-    asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
+    asciistream & operator << (const std::string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (std::string_view v)    { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (short v)    { return *this << static_cast<long long>(v); }
     asciistream & operator << (unsigned short v)   { return *this << static_cast<unsigned long long>(v); }
@@ -65,7 +67,7 @@ public:
     asciistream & operator >> (char & v);
     asciistream & operator >> (signed char & v);
     asciistream & operator >> (unsigned char & v);
-    asciistream & operator >> (string & v);
+    asciistream & operator >> (std::string & v);
     asciistream & operator >> (short & v);
     asciistream & operator >> (unsigned short & v);
     asciistream & operator >> (int & v);
@@ -76,7 +78,7 @@ public:
     asciistream & operator >> (unsigned long long & v);
     asciistream & operator >> (float & v);
     asciistream & operator >> (double & v);
-    vespalib::string  str() const { return vespalib::string(c_str(), size()); }
+    std::string  str() const { return std::string(c_str(), size()); }
     std::string_view view() const { return std::string_view(c_str(), size()); }
     const char * c_str() const { return _rbuf.data() + _rPos; }
     size_t        size() const { return length() - _rPos; }
@@ -150,7 +152,7 @@ public:
     void eatWhite();
     static asciistream createFromFile(std::string_view fileName);
     static asciistream createFromDevice(std::string_view fileName);
-    string getline(char delim='\n');
+    std::string getline(char delim='\n');
     char getFill() const noexcept { return _fill; }
     size_t getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
     Base getBase() const noexcept { return _base; }
@@ -170,7 +172,7 @@ private:
     void write(const void * buf, size_t len);
     size_t length() const { return _rbuf.size(); }
     size_t           _rPos;
-    string           _wbuf;
+    std::string      _wbuf;
     std::string_view _rbuf;
     Base             _base;
     FloatSpec        _floatSpec;
@@ -180,7 +182,7 @@ private:
     uint8_t          _precision;
 };
 
-ssize_t getline(asciistream & is, vespalib::string & line, char delim='\n');
+ssize_t getline(asciistream & is, std::string & line, char delim='\n');
 
 inline asciistream::Width setw(size_t v)             { return asciistream::Width(v); }
 inline asciistream::Fill setfill(char v)             { return asciistream::Fill(v); }

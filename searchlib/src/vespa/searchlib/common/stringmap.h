@@ -5,6 +5,6 @@
 
 namespace search {
 
-using StringStringMap = vespalib::hash_map<vespalib::string, vespalib::string>;
+using StringStringMap = vespalib::hash_map<std::string, std::string>;
 
 }

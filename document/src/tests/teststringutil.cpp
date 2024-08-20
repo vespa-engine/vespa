@@ -4,7 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace document;
-using vespalib::string;
+using std::string;
 
 TEST(StringUtilTest, test_escape)
 {

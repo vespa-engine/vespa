@@ -5,7 +5,7 @@ namespace config {
 
 template <typename... ConfigTypes>
 ConfigKeySet &
-ConfigKeySet::add(const vespalib::string & configId)
+ConfigKeySet::add(const std::string & configId)
 {
     addImpl<ConfigTypes...>(configId);
     return *this;
@@ -13,7 +13,7 @@ ConfigKeySet::add(const vespalib::string & configId)
 
 template <typename ConfigType, typename... ConfigTypes>
 void
-ConfigKeySet::addImpl(const vespalib::string & configId)
+ConfigKeySet::addImpl(const std::string & configId)
 {
     insert(ConfigKey::create<ConfigType>(configId));
     if constexpr(sizeof...(ConfigTypes) > 0) {

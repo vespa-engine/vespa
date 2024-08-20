@@ -6,7 +6,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/ref_counted.h>
 
-vespalib::string spec;
+std::string spec;
 
 class TestErrors : public ::testing::Test
 {

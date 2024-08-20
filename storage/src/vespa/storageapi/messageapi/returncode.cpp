@@ -12,7 +12,7 @@ ReturnCode::ReturnCode(Result result, std::string_view msg)
       _message()
 {
     if ( ! msg.empty()) {
-        _message = std::make_unique<vespalib::string>(msg);
+        _message = std::make_unique<std::string>(msg);
     }
 }
 
@@ -21,7 +21,7 @@ ReturnCode::ReturnCode(const ReturnCode & rhs)
       _message()
 {
     if (rhs._message) {
-        _message = std::make_unique<vespalib::string>(*rhs._message);
+        _message = std::make_unique<std::string>(*rhs._message);
     }
 }
 
@@ -30,14 +30,14 @@ ReturnCode::operator = (const ReturnCode & rhs) {
     return operator=(ReturnCode(rhs));
 }
 
-vespalib::string
+std::string
 ReturnCode::getResultString(Result result) {
     return documentapi::DocumentProtocol::getErrorName(result);
 }
 
-vespalib::string
+std::string
 ReturnCode::toString() const {
-    vespalib::string ret = "ReturnCode(";
+    std::string ret = "ReturnCode(";
     ret += getResultString(_result);
     if ( _message && ! _message->empty()) {
         ret += ", ";

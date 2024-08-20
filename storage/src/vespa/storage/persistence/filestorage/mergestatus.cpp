@@ -124,7 +124,7 @@ MergeStatus::print(std::ostream& out, bool verbose,
 }
 
 void
-MergeStatus::set_delayed_error(std::future<vespalib::string>&& delayed_error_in)
+MergeStatus::set_delayed_error(std::future<std::string>&& delayed_error_in)
 {
     delayed_error = std::move(delayed_error_in);
 }
@@ -136,7 +136,7 @@ MergeStatus::check_delayed_error(api::ReturnCode &return_code)
         // Wait for pending writes to local node to complete and check error
         auto& future_error = delayed_error.value();
         future_error.wait();
-        vespalib::string fail_message = future_error.get();
+        std::string fail_message = future_error.get();
         delayed_error.reset();
         if (!fail_message.empty()) {
             return_code = api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, std::move(fail_message));

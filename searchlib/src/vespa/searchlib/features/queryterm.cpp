@@ -33,7 +33,7 @@ QueryTermHelper::QueryTermHelper(const IQueryEnvironment &env)
 namespace {
 
 using QueryTermVectorWrapper = AnyWrapper<QueryTermVector>;
-const vespalib::string QUERY_TERMS_KEY("querytermhelper.queryterms");
+const std::string QUERY_TERMS_KEY("querytermhelper.queryterms");
 
 }
 const QueryTermVector &

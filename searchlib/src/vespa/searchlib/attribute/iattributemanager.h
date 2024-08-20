@@ -21,7 +21,7 @@ public:
     IAttributeManager(const IAttributeManager &) = delete;
     IAttributeManager & operator = (const IAttributeManager &) = delete;
     using SP = std::shared_ptr<IAttributeManager>;
-    using string = vespalib::string;
+    using string = std::string;
 
     /**
      * Returns a view of the attribute vector with the given name.

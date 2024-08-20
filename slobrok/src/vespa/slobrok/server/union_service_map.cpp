@@ -21,7 +21,7 @@ ServiceMappingList UnionServiceMap::currentConsensus() const {
 }
 
 bool UnionServiceMap::wouldConflict(const ServiceMapping &mapping) const {
-    const vespalib::string &key = mapping.name;
+    const std::string &key = mapping.name;
     auto iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         return false;
@@ -35,7 +35,7 @@ bool UnionServiceMap::wouldConflict(const ServiceMapping &mapping) const {
 
 void UnionServiceMap::add(const ServiceMapping &mapping)
 {
-    const vespalib::string &key = mapping.name;
+    const std::string &key = mapping.name;
     auto iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         _mappings[key].emplace_back(mapping.spec, 1u);
@@ -62,7 +62,7 @@ void UnionServiceMap::add(const ServiceMapping &mapping)
 
 void UnionServiceMap::remove(const ServiceMapping &mapping)
 {
-    const vespalib::string &key = mapping.name;
+    const std::string &key = mapping.name;
     auto iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         LOG(error, "Broken invariant: did not find %s in mappings", key.c_str());

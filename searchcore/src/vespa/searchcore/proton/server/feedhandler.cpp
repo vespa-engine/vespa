@@ -394,7 +394,7 @@ FeedHandler::doChangeFeedState(FeedStateSP newState)
 }
 
 FeedHandler::FeedHandler(IThreadingService &writeService,
-                         const vespalib::string &tlsSpec,
+                         const std::string &tlsSpec,
                          const DocTypeName &docTypeName,
                          IFeedHandlerOwner &owner,
                          const IResourceWriteFilter &writeFilter,
@@ -591,8 +591,8 @@ namespace {
 
 template <typename ResultType>
 void
-feedOperationRejected(FeedToken & token, const vespalib::string &opType, const vespalib::string &docId,
-                           const DocTypeName & docTypeName, const vespalib::string &rejectMessage)
+feedOperationRejected(FeedToken & token, const std::string &opType, const std::string &docId,
+                           const DocTypeName & docTypeName, const std::string &rejectMessage)
 {
     if (token) {
         auto message = make_string("%s operation rejected for document '%s' of type '%s': '%s'",
@@ -604,13 +604,13 @@ feedOperationRejected(FeedToken & token, const vespalib::string &opType, const v
 
 void
 notifyFeedOperationRejected(FeedToken & token, const FeedOperation &op,
-                            const DocTypeName & docTypeName, const vespalib::string &rejectMessage)
+                            const DocTypeName & docTypeName, const std::string &rejectMessage)
 {
     if ((op.getType() == FeedOperation::UPDATE_42) || (op.getType() == FeedOperation::UPDATE)) {
-        vespalib::string docId = (static_cast<const UpdateOperation &>(op)).getUpdate()->getId().toString();
+        std::string docId = (static_cast<const UpdateOperation &>(op)).getUpdate()->getId().toString();
         feedOperationRejected<UpdateResult>(token, "Update", docId, docTypeName, rejectMessage);
     } else if (op.getType() == FeedOperation::PUT) {
-        vespalib::string docId = (static_cast<const PutOperation &>(op)).getDocument()->getId().toString();
+        std::string docId = (static_cast<const PutOperation &>(op)).getDocument()->getId().toString();
         feedOperationRejected<Result>(token, "Put", docId, docTypeName, rejectMessage);
     } else {
         feedOperationRejected<Result>(token, "Feed", "", docTypeName, rejectMessage);

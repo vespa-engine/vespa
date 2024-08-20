@@ -9,7 +9,7 @@ namespace storage::api {
 
 namespace {
 
-size_t hash_of(const vespalib::string & cluster, const lib::NodeType& type, uint16_t index) {
+size_t hash_of(const std::string & cluster, const lib::NodeType& type, uint16_t index) {
     return StorageMessageAddress(&cluster, type, index).internal_storage_hash();
 }
 

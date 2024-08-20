@@ -72,7 +72,7 @@ public:
     StringAttribute & asString(AttributePtr &v);
     FloatingPointAttribute & asFloat(AttributePtr &v);
 
-    AttributePtr make(Config cfg, const vespalib::string &pref, bool fastSearch, bool filter);
+    AttributePtr make(Config cfg, const std::string &pref, bool fastSearch, bool filter);
 
     void addDocs(const AttributePtr &v, size_t sz);
 
@@ -82,10 +82,10 @@ public:
     template <typename VectorType>
     void populateAll(VectorType &v, uint32_t low, uint32_t high, bool set);
 
-    void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const vespalib::string & term, bool prefix);
+    void buildTermQuery(std::vector<char> & buffer, const std::string & index, const std::string & term, bool prefix);
 
     template <typename V>
-    vespalib::string getSearchStr();
+    std::string getSearchStr();
 
     template <typename V, typename T>
     SearchContextPtr getSearch(const V & vec, const T & term, bool prefix, bool useBitVector);
@@ -114,7 +114,7 @@ public:
 
     template <typename VectorType>
     void
-    test(BasicType bt, CollectionType ct, const vespalib::string &pref, bool fastSearch, bool filter);
+    test(BasicType bt, CollectionType ct, const std::string &pref, bool fastSearch, bool filter);
 };
 
 BitVectorTest::BitVectorTest() = default;
@@ -154,8 +154,8 @@ BitVectorTest::asFloat(AttributePtr &v)
 
 void
 BitVectorTest::buildTermQuery(std::vector<char> &buffer,
-                                   const vespalib::string &index,
-                                   const vespalib::string &term,
+                                   const std::string &index,
+                                   const std::string &term,
                                    bool prefix)
 {
     uint32_t indexLen = index.size();
@@ -175,21 +175,21 @@ BitVectorTest::buildTermQuery(std::vector<char> &buffer,
 
 
 template <>
-vespalib::string
+std::string
 BitVectorTest::getSearchStr<IntegerAttribute>()
 {
     return "[-42;-42]";
 }
 
 template <>
-vespalib::string
+std::string
 BitVectorTest::getSearchStr<FloatingPointAttribute>()
 {
     return "[-42.0;-42.0]";
 }
 
 template <>
-vespalib::string
+std::string
 BitVectorTest::getSearchStr<StringAttribute>()
 {
     return "foo";
@@ -230,12 +230,12 @@ template <>
 SearchContextPtr
 BitVectorTest::getSearch<StringAttribute>(const StringAttribute &v, bool useBitVector)
 {
-    return getSearch<StringAttribute, const vespalib::string &>(v, "foo", false, useBitVector);
+    return getSearch<StringAttribute, const std::string &>(v, "foo", false, useBitVector);
 }
 
 
 BitVectorTest::AttributePtr
-BitVectorTest::make(Config cfg, const vespalib::string &pref, bool fastSearch, bool filter)
+BitVectorTest::make(Config cfg, const std::string &pref, bool fastSearch, bool filter)
 {
     cfg.setFastSearch(fastSearch);
     cfg.setIsFilter(filter);
@@ -435,7 +435,7 @@ BitVectorTest::checkSearch(AttributePtr v,
 
 template <typename VectorType>
 void
-BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pref, bool fastSearch, bool filter)
+BitVectorTest::test(BasicType bt, CollectionType ct, const std::string &pref, bool fastSearch, bool filter)
 {
     Config cfg(bt, ct);
     AttributePtr v = make(cfg, pref, fastSearch, filter);

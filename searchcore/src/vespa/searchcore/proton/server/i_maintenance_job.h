@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
-#include <memory>
 #include <atomic>
+#include <memory>
+#include <string>
 
 namespace proton {
 
@@ -19,7 +19,7 @@ struct DocumentDBTaggedMetrics;
 class IMaintenanceJob
 {
 private:
-    const vespalib::string     _name;
+    const std::string     _name;
     const vespalib::duration   _delay;
     const vespalib::duration   _interval;
     std::atomic<bool>          _stopped;
@@ -29,7 +29,7 @@ public:
     using UP = std::unique_ptr<IMaintenanceJob>;
     using SP = std::shared_ptr<IMaintenanceJob>;
 
-    IMaintenanceJob(const vespalib::string &name,
+    IMaintenanceJob(const std::string &name,
                     vespalib::duration delay,
                     vespalib::duration interval)
         : _name(name),
@@ -40,7 +40,7 @@ public:
 
     virtual ~IMaintenanceJob() = default;
 
-    virtual const vespalib::string &getName() const { return _name; }
+    virtual const std::string &getName() const { return _name; }
     virtual vespalib::duration getDelay() const { return _delay; }
     virtual vespalib::duration getInterval() const { return _interval; }
     virtual bool isBlocked() const { return false; }

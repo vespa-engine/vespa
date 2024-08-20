@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace search::attribute { class ReadableAttributeVector; }
 
@@ -30,7 +30,7 @@ public:
     virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) = 0;
     virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const = 0;
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() = 0;
-    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) = 0;
+    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &docTypeName) = 0;
 };
 
 } // namespace proton

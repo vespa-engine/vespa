@@ -12,8 +12,8 @@ static_assert(FixedBucketSpaces::global_space() != FixedBucketSpaces::default_sp
 
 namespace {
 
-vespalib::string DEFAULT = "default";
-vespalib::string GLOBAL = "global";
+std::string DEFAULT = "default";
+std::string GLOBAL = "global";
 
 }
 
@@ -23,11 +23,11 @@ BucketSpace FixedBucketSpaces::from_string(std::string_view name) {
     } else if (name == GLOBAL) {
         return global_space();
     } else {
-        throw UnknownBucketSpaceException("Unknown bucket space name: " + vespalib::string(name), VESPA_STRLOC);
+        throw UnknownBucketSpaceException("Unknown bucket space name: " + std::string(name), VESPA_STRLOC);
     }
 }
 
-const vespalib::string &
+const std::string &
 FixedBucketSpaces::to_string(BucketSpace space) {
     if (space == default_space()) {
         return DEFAULT;

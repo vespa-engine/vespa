@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -11,18 +10,19 @@
 #include <sstream>
 #include <openssl/evp.h>
 #include <cassert>
-#include <getopt.h>
-#include <vector>
-#include <limits>
 #include <filesystem>
+#include <getopt.h>
+#include <limits>
+#include <string>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");
 
-using StringSet = vespalib::hash_set<vespalib::string>;
-using StringArray = std::vector<vespalib::string>;
+using StringSet = vespalib::hash_set<std::string>;
+using StringArray = std::vector<std::string>;
 using namespace vespalib::alloc;
-using vespalib::string;
+using std::string;
 
 namespace {
 

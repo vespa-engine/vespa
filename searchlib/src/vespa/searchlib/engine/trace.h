@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/static_string.h>
 #include <vespa/vespalib/util/time.h>
 #include <memory>
+#include <string>
 
 namespace vespalib { class Slime; }
 namespace vespalib::slime { struct Cursor; }
@@ -106,7 +106,7 @@ public:
      */
     void done();
 
-    vespalib::string toString() const;
+    std::string toString() const;
     bool hasTrace() const { return static_cast<bool>(_trace); }
     Cursor & getRoot() const { return root(); }
     Cursor & getTraces() const { return traces(); }

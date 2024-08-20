@@ -2,25 +2,25 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <filesystem>
+#include <string>
 
 namespace search::test {
 
 class DirectoryHandler
 {
 private:
-    vespalib::string _mkdir;
-    vespalib::string _rmdir;
+    std::string _mkdir;
+    std::string _rmdir;
     bool             _cleanup;
 
 public:
-    DirectoryHandler(const vespalib::string &mkdir)
+    DirectoryHandler(const std::string &mkdir)
         : DirectoryHandler(mkdir, mkdir)
     {
     }
-    DirectoryHandler(const vespalib::string &mkdir,
-                     const vespalib::string &rmdir)
+    DirectoryHandler(const std::string &mkdir,
+                     const std::string &rmdir)
         : _mkdir(mkdir),
           _rmdir(rmdir),
           _cleanup(true)
@@ -33,7 +33,7 @@ public:
         }
     }
     void cleanup(bool v) { _cleanup = v; }
-    const  vespalib::string & getDir() const { return _mkdir; }
+    const  std::string & getDir() const { return _mkdir; }
 };
 
 }

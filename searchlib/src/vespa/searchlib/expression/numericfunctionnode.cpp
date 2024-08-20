@@ -35,7 +35,7 @@ void NumericFunctionNode::onPrepare(bool preserveAccurateTypes)
         } else if (getArg(0).getResult()->getClass().inherits(StringResultNodeVector::classId)) {
             _handler.reset(new FlattenStringHandler(*this));
         } else {
-            throw std::runtime_error(vespalib::string("No FlattenHandler for ") + getArg(0).getResult()->getClass().name());
+            throw std::runtime_error(std::string("No FlattenHandler for ") + getArg(0).getResult()->getClass().name());
         }
     } else {
         if (getResult()->getClass().inherits(IntegerResultNodeVector::classId)) {

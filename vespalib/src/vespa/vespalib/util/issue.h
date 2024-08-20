@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
@@ -34,10 +34,10 @@ namespace vespalib {
 class Issue
 {
 private:
-    vespalib::string _message;
+    std::string _message;
 public:
-    Issue(vespalib::string message);
-    const vespalib::string &message() const { return _message; }
+    Issue(std::string message);
+    const std::string &message() const { return _message; }
     struct Handler {
         virtual void handle(const Issue &issue) = 0;
         virtual ~Handler() = default;
@@ -61,7 +61,7 @@ public:
     };
     static void report(const Issue &issue);
     static Binding listen(Handler &handler);
-    static void report(vespalib::string msg);
+    static void report(std::string msg);
     static void report(const std::exception &e);
     static void report(const char *format, ...) __attribute__ ((format (printf,1,2)));
 };

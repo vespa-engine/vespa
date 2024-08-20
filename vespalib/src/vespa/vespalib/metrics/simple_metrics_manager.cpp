@@ -50,7 +50,7 @@ SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
 }
 
 Counter
-SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::string &)
+SimpleMetricsManager::counter(const std::string &name, const std::string &)
 {
     MetricId mi = MetricId::from_name(name);
     _metricTypes.check(mi.id(), name, MetricTypes::MetricType::COUNTER);
@@ -59,7 +59,7 @@ SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::stri
 }
 
 Gauge
-SimpleMetricsManager::gauge(const vespalib::string &name, const vespalib::string &)
+SimpleMetricsManager::gauge(const std::string &name, const std::string &)
 {
     MetricId mi = MetricId::from_name(name);
     _metricTypes.check(mi.id(), name, MetricTypes::MetricType::GAUGE);
@@ -124,7 +124,7 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
         MetricId mi = entry.idx.first;
         Point p = entry.idx.second;
         size_t pi = p.id();
-        const vespalib::string &name = mi.as_name();
+        const std::string &name = mi.as_name();
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
@@ -132,7 +132,7 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
         MetricId mi = entry.idx.first;
         Point p = entry.idx.second;
         size_t pi = p.id();
-        const vespalib::string &name = mi.as_name();
+        const std::string &name = mi.as_name();
         GaugeSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
@@ -173,7 +173,7 @@ SimpleMetricsManager::collectCurrentSamples(TimeStamp prev,
 }
 
 Dimension
-SimpleMetricsManager::dimension(const vespalib::string &name)
+SimpleMetricsManager::dimension(const std::string &name)
 {
     Dimension dim = Dimension::from_name(name);
     LOG(debug, "dimension name %s -> %zu", name.c_str(), dim.id());
@@ -181,7 +181,7 @@ SimpleMetricsManager::dimension(const vespalib::string &name)
 }
 
 Label
-SimpleMetricsManager::label(const vespalib::string &value)
+SimpleMetricsManager::label(const std::string &value)
 {
     Label l = Label::from_value(value);
     LOG(debug, "label value %s -> %zu", value.c_str(), l.id());

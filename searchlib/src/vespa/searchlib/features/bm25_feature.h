@@ -57,8 +57,8 @@ private:
     double _b_param;
     std::optional<double> _avg_field_length;
 
-    vespalib::Trinary lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const;
-    vespalib::Trinary lookup_param(const fef::Properties& props, const vespalib::string& param, std::optional<double>& result) const;
+    vespalib::Trinary lookup_param(const fef::Properties& props, const std::string& param, double& result) const;
+    vespalib::Trinary lookup_param(const fef::Properties& props, const std::string& param, std::optional<double>& result) const;
 
 public:
     Bm25Blueprint();

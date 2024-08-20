@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -11,6 +10,7 @@
 #include <vespa/searchlib/fef/verify_feature.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
+#include <string>
 
 using namespace search::fef;
 using namespace search::fef::test;
@@ -46,17 +46,17 @@ struct ProxyExecutor : FeatureExecutor {
 };
 
 struct ProxyBlueprint : Blueprint {
-    vespalib::string name;
+    std::string name;
     AcceptInput accept_input;
     bool object_input;
     bool object_output;
-    ProxyBlueprint(const vespalib::string &name_in, AcceptInput accept_input_in, bool object_output_in)
+    ProxyBlueprint(const std::string &name_in, AcceptInput accept_input_in, bool object_output_in)
         : Blueprint(name_in), name(name_in), accept_input(accept_input_in), object_input(false), object_output(object_output_in) {}
     void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
     Blueprint::UP createInstance() const override {
         return Blueprint::UP(new ProxyBlueprint(name, accept_input, object_output));
     }
-    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override {
+    bool setup(const IIndexEnvironment &, const std::vector<std::string> &params) override {
         ASSERT_EQUAL(1u, params.size());
         if (auto input = defineInput(params[0], accept_input)) {
             object_input = input.value().is_object();
@@ -84,7 +84,7 @@ struct Fixture {
         factory.addPrototype(std::make_shared<ProxyBlueprint>("maybe_unbox", Blueprint::AcceptInput::ANY,    false));
     }
 
-    double eval(const vespalib::string &feature) {
+    double eval(const std::string &feature) {
         BlueprintResolver::SP resolver(new BlueprintResolver(factory, indexEnv));
         resolver->addSeed(feature);
         ASSERT_TRUE(resolver->compile());
@@ -100,7 +100,7 @@ struct Fixture {
         return result.resolve(0).as_number(1);
     }
 
-    bool verify(const vespalib::string &feature) {
+    bool verify(const std::string &feature) {
         std::vector<search::fef::Message> errors;
         return verifyFeature(factory, indexEnv, feature, "unit test", errors);
     }

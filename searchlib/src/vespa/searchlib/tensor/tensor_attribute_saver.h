@@ -38,7 +38,7 @@ public:
 
     ~TensorAttributeSaver() override;
 
-    static vespalib::string index_file_suffix();
+    static std::string index_file_suffix();
 };
 
 }

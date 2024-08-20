@@ -4,6 +4,7 @@
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/persistence/spi/docentry.h>
+#include <vespa/vespalib/stllike/string.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.reindexing_visitor");
@@ -45,8 +46,8 @@ bool ReindexingVisitor::remap_docapi_message_error_code(api::ReturnCode& in_out_
     return Visitor::remap_docapi_message_error_code(in_out_code);
 }
 
-vespalib::string ReindexingVisitor::make_lock_access_token() const {
-    vespalib::string prefix = reindexing_bucket_lock_bypass_prefix();
+std::string ReindexingVisitor::make_lock_access_token() const {
+    std::string prefix = reindexing_bucket_lock_bypass_prefix();
     std::string_view passed_token = visitor_parameters().get(
             reindexing_bucket_lock_visitor_parameter_key(),
             std::string_view(""));

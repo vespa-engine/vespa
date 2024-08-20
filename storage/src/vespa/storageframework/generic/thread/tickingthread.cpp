@@ -109,7 +109,7 @@ private:
 };
 
 class TickingThreadPoolImpl final : public TickingThreadPool {
-    const vespalib::string               _name;
+    const std::string               _name;
     const vespalib::duration             _waitTime;
     const vespalib::duration             _maxProcessTime;
     const uint32_t                       _ticksBeforeWait;
@@ -187,8 +187,8 @@ public:
         }
     }
 
-    vespalib::string getStatus() override {
-        vespalib::string result(_tickers.size(), ' ');
+    std::string getStatus() override {
+        std::string result(_tickers.size(), ' ');
         for (uint32_t i=0, n=_tickers.size(); i<n; ++i) {
             result[i] = _tickers[i]->getState();
         }

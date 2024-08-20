@@ -26,20 +26,20 @@ using LookupKey = IDirectPostingStore::LookupKey;
 struct IntegerKey : public LookupKey {
     int64_t _value;
     IntegerKey(int64_t value_in) : _value(value_in) {}
-    IntegerKey(const vespalib::string&) : _value() { abort(); }
+    IntegerKey(const std::string&) : _value() { abort(); }
     std::string_view asString() const override { abort(); }
     bool asInteger(int64_t& value) const override { value = _value; return true; }
 };
 
 struct StringKey : public LookupKey {
-    vespalib::string _value;
+    std::string _value;
     StringKey(int64_t value_in) : _value(std::to_string(value_in)) {}
-    StringKey(const vespalib::string& value_in) : _value(value_in) {}
+    StringKey(const std::string& value_in) : _value(value_in) {}
     std::string_view asString() const override { return _value; }
     bool asInteger(int64_t&) const override { abort(); }
 };
 
-const vespalib::string field_name = "test";
+const std::string field_name = "test";
 constexpr uint32_t field_id = 3;
 uint32_t doc_id_limit = 500;
 
@@ -98,7 +98,7 @@ make_attribute(CollectionType col_type, BasicType type, bool field_is_filter)
     uint32_t num_docs = doc_id_limit - 1;
     auto attr = test::AttributeBuilder(field_name, cfg).docs(num_docs).get();
     if (type == BasicType::STRING) {
-        populate_attribute<StringAttribute, vespalib::string>(dynamic_cast<StringAttribute&>(*attr),
+        populate_attribute<StringAttribute, std::string>(dynamic_cast<StringAttribute&>(*attr),
                                                               {"1", "3", "100", "300", "foo", "Foo"});
     } else {
         populate_attribute<IntegerAttribute, int64_t>(dynamic_cast<IntegerAttribute&>(*attr),
@@ -162,9 +162,9 @@ using MultiInBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingSto
 using SingleWSetBlueprintType = DirectMultiTermBlueprint<IDocidPostingStore, WeightedSetTermSearch>;
 using MultiWSetBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
 
-vespalib::string iterator_unpack_docid_and_weights = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)0";
-vespalib::string iterator_unpack_docid = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)1";
-vespalib::string iterator_unpack_none = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)2";
+std::string iterator_unpack_docid_and_weights = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)0";
+std::string iterator_unpack_docid = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)1";
+std::string iterator_unpack_none = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)2";
 
 class DirectMultiTermBlueprintTest : public ::testing::TestWithParam<TestParam> {
 public:
@@ -257,7 +257,7 @@ public:
             add_term(value);
         }
     }
-    void add_terms(const std::vector<vespalib::string>& term_values) {
+    void add_terms(const std::vector<std::string>& term_values) {
         for (auto value : term_values) {
             add_term(value);
         }
@@ -266,7 +266,7 @@ public:
         blueprint->basic_plan(strict, doc_id_limit);
         return blueprint->createLeafSearch(tfmda);
     }
-    vespalib::string resolve_iterator_with_unpack() const {
+    std::string resolve_iterator_with_unpack() const {
         if (in_operator) {
             return iterator_unpack_docid;
         }
@@ -291,7 +291,7 @@ expect_or_iterator(SearchIterator& itr, size_t exp_children)
 }
 
 void
-expect_or_child(SearchIterator& itr, size_t child, const vespalib::string& exp_child_itr)
+expect_or_child(SearchIterator& itr, size_t child, const std::string& exp_child_itr)
 {
     auto& real = dynamic_cast<OrSearch&>(itr);
     EXPECT_THAT(real.getChildren()[child]->asString(), StartsWith(exp_child_itr));

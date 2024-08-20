@@ -127,7 +127,7 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
 
 template <typename B, typename M>
 MultiValueEnumAttribute<B, M>::
-MultiValueEnumAttribute(const vespalib::string &baseFileName,
+MultiValueEnumAttribute(const std::string &baseFileName,
                         const AttributeVector::Config & cfg)
     : MultiValueAttribute<B, M>(baseFileName, cfg)
 {

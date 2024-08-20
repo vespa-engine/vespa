@@ -5,12 +5,12 @@
 namespace vespalib::metrics {
 
 Label
-Label::from_value(const vespalib::string& value)
+Label::from_value(const std::string& value)
 {
     return NameRepo::instance.label(value);
 }
 
-const vespalib::string&
+const std::string&
 Label::as_value() const
 {
     return NameRepo::instance.labelValue(*this);

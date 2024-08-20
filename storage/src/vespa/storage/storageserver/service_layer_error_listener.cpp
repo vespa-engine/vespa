@@ -15,21 +15,21 @@ void ServiceLayerErrorListener::on_fatal_error(std::string_view message) {
         LOG(info,
             "Received FATAL_ERROR from persistence provider, "
             "shutting down node: %s",
-            vespalib::string(message).c_str());
+            std::string(message).c_str());
         _component.requestShutdown(message); // Thread safe
     } else {
         LOG(debug,
             "Received FATAL_ERROR from persistence provider: %s. "
             "Node has already been instructed to shut down so "
             "not doing anything now.",
-            vespalib::string(message).c_str());
+            std::string(message).c_str());
     }
 }
 
 void ServiceLayerErrorListener::on_resource_exhaustion_error(std::string_view message) {
     LOG(debug, "SPI reports resource exhaustion ('%s'). "
                 "Applying back-pressure to merge throttler",
-        vespalib::string(message).c_str());
+        std::string(message).c_str());
     _merge_throttler.apply_timed_backpressure(); // Thread safe
 }
 

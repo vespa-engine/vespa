@@ -3,8 +3,8 @@
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <variant>
 #include <string>
+#include <variant>
 
 using namespace vespalib;
 

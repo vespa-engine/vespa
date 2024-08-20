@@ -32,10 +32,10 @@ struct MyError : public std::exception {
         msg(m)
     {}
     const char * what() const noexcept override { return msg.c_str(); }
-    vespalib::string msg;
+    std::string msg;
 };
 
-bool read_line(FilePointer &file, vespalib::string &line) {
+bool read_line(FilePointer &file, std::string &line) {
     char line_buffer[1024];
     char *res = fgets(line_buffer, sizeof(line_buffer), file.fp());
     if (res == nullptr) {
@@ -49,7 +49,7 @@ bool read_line(FilePointer &file, vespalib::string &line) {
     return true;
 }
 
-void extract(const vespalib::string &str, const vespalib::string &prefix, vespalib::string &dst) {
+void extract(const std::string &str, const std::string &prefix, std::string &dst) {
     if (str.starts_with(prefix)) {
         size_t pos = prefix.size();
         while ((str.size() > pos) && std::isspace(static_cast<unsigned char>(str[pos]))) {
@@ -66,9 +66,9 @@ struct MemoryUsage {
 };
 
 #ifdef __linux__
-static const vespalib::string UNKNOWN = "unknown";
+static const std::string UNKNOWN = "unknown";
 
-size_t convert(const vespalib::string & s) {
+size_t convert(const std::string & s) {
     if (s == UNKNOWN) return 0;
     size_t v(0);
     size_t end = s.find("kB");
@@ -76,18 +76,18 @@ size_t convert(const vespalib::string & s) {
     if (ec != std::errc()) {
         throw std::runtime_error(fmt("Bad format : '%s' at '%s'", s.c_str(), ptr));
     }
-    if (end == vespalib::string::npos) {
+    if (end == std::string::npos) {
         throw std::runtime_error(fmt("Bad format : %s", s.c_str()));
     }
     return v * 1024;
 }
 
 MemoryUsage extract_memory_usage() {
-    vespalib::string vm_size = UNKNOWN;
-    vespalib::string vm_rss = UNKNOWN;
+    std::string vm_size = UNKNOWN;
+    std::string vm_rss = UNKNOWN;
     FilePointer file(fopen("/proc/self/status", "r"));
     if (file.valid()) {
-        vespalib::string line;
+        std::string line;
         while (read_line(file, line)) {
             extract(line, "VmSize:", vm_size);
             extract(line, "VmRSS:", vm_rss);
@@ -121,7 +121,7 @@ MemoryUsage extract_memory_usage() {
 }
 #endif
 
-void report_memory_usage(const vespalib::string &desc) {
+void report_memory_usage(const std::string &desc) {
     MemoryUsage m = extract_memory_usage();
     fprintf(stderr, "vm_size: %zu kB, vm_rss: %zu kB, malloc_peak: %zu kb, malloc_curr: %zu (%s)\n",
             m.vm_size/1_Ki, m.rss_size/1_Ki, m.malloc_peak/1_Ki, m.malloc_current/1_Ki, desc.c_str());
@@ -129,12 +129,12 @@ void report_memory_usage(const vespalib::string &desc) {
 
 struct Options {
     size_t pos = 0;
-    std::vector<vespalib::string> opt_list;
-    void add_option(const vespalib::string &opt) {
+    std::vector<std::string> opt_list;
+    void add_option(const std::string &opt) {
         opt_list.push_back(opt);
     }
-    vespalib::string get_option(const vespalib::string &desc, const vespalib::string &fallback) {
-        vespalib::string opt;
+    std::string get_option(const std::string &desc, const std::string &fallback) {
+        std::string opt;
         if (pos < opt_list.size()) {
             opt = opt_list[pos];
             fprintf(stderr, "option[%zu](%s): %s\n",
@@ -147,12 +147,12 @@ struct Options {
         ++pos;
         return opt;
     }
-    bool get_bool_opt(const vespalib::string &desc, const vespalib::string &fallback) {
+    bool get_bool_opt(const std::string &desc, const std::string &fallback) {
         auto opt = get_option(desc, fallback);
         REQUIRE((opt == "true") || (opt == "false"));
         return (opt == "true");
     }
-    size_t get_size_opt(const vespalib::string &desc, const vespalib::string &fallback) {
+    size_t get_size_opt(const std::string &desc, const std::string &fallback) {
         auto opt = get_option(desc, fallback);
         size_t value = atoi(opt.c_str());
         REQUIRE(value > 0);
@@ -184,7 +184,7 @@ void dump_wire_info(const Onnx::WireInfo &wire) {
 
 struct MakeInputType {
     Options &opts;
-    std::map<vespalib::string,int> symbolic_sizes;
+    std::map<std::string,int> symbolic_sizes;
     explicit MakeInputType(Options &opts_in) : opts(opts_in), symbolic_sizes() {}
     ValueType operator()(const Onnx::TensorInfo &info) {
         int d = 0;
@@ -210,8 +210,8 @@ struct MakeInputType {
     }
 };
 
-vespalib::string make_bound_str(const std::map<vespalib::string,size_t> &bound) {
-    vespalib::string result;
+std::string make_bound_str(const std::map<std::string,size_t> &bound) {
+    std::string result;
     if (!bound.empty()) {
         for (const auto &[name, size]: bound) {
             if (result.empty()) {
@@ -332,7 +332,7 @@ int my_main(int argc, char **argv) {
     if (argc < 2) {
         return usage(argv[0]);
     }
-    if ((argc == 2) && (vespalib::string(argv[1]) == "--probe-types")) {
+    if ((argc == 2) && (std::string(argv[1]) == "--probe-types")) {
         return probe_types();
     }
     Options opts;

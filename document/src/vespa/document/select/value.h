@@ -16,12 +16,12 @@
 
 #pragma once
 
-#include <memory>
+#include "resultlist.h"
+#include <iosfwd>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <iosfwd>
-#include "resultlist.h"
 
 namespace document::select {
 
@@ -86,12 +86,12 @@ public:
 
 class StringValue : public Value
 {
-    vespalib::string _value;
+    std::string _value;
 
 public:
     StringValue(std::string_view val);
 
-    const vespalib::string& getValue() const { return _value; }
+    const std::string& getValue() const { return _value; }
     ResultList operator<(const Value& value) const override;
     ResultList operator==(const Value& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -228,7 +228,7 @@ private:
 class StructValue : public Value
 {
 public:
-    using ValueMap = std::map<vespalib::string, Value::SP>;
+    using ValueMap = std::map<std::string, Value::SP>;
     StructValue(ValueMap values);
     StructValue(const StructValue &) = delete;
     StructValue & operator = (const StructValue &) = delete;

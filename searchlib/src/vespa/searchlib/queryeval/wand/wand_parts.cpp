@@ -16,7 +16,7 @@ VectorizedIteratorTerms::~VectorizedIteratorTerms() = default;
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::queryeval::wand::Term &obj)
 {
     self.openStruct(name, "search::queryeval::wand::Term");

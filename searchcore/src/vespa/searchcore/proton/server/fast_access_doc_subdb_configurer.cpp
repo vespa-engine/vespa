@@ -39,7 +39,7 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(FastAccessFeedView & curr,
 }
 
 FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
-                                                           const vespalib::string &subDbName)
+                                                           const std::string &subDbName)
     : _feedView(feedView),
       _subDbName(subDbName)
 {

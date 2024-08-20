@@ -21,7 +21,7 @@ public:
 
 private:
     const AttributesConfig &_live;
-    std::map<vespalib::string, uint32_t> _map;
+    std::map<std::string, uint32_t> _map;
     
     static void
     adjust(AttributesConfig::Attribute &attr,

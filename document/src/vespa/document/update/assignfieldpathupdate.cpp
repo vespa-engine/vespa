@@ -85,7 +85,7 @@ public:
     AssignExpressionIteratorHandler(
             const DocumentTypeRepo& repo,
             Document& doc,
-            const vespalib::string& expression,
+            const std::string& expression,
             bool removeIfZero,
             bool createMissingPath_)
             : _calc(repo, expression),
@@ -109,7 +109,7 @@ ModificationStatus
 AssignValueIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
     if (!(*fv.getDataType() == *_newValue.getDataType())) {
-        vespalib::string err = vespalib::make_string(
+        std::string err = vespalib::make_string(
                 "Trying to assign \"%s\" of type %s to an instance of type %s",
                 _newValue.toString().c_str(), _newValue.className(), fv.className());
         throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);

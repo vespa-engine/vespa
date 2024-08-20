@@ -829,7 +829,7 @@ AuxTest::TestSpecialTokenRegistry()
 void
 AuxTest::TestWhiteSpacePreserved()
 {
-    vespalib::string input = "\x1f"
+    std::string input = "\x1f"
         "best"
         "\x1f"
         "  "
@@ -858,8 +858,8 @@ AuxTest::TestWhiteSpacePreserved()
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
-    vespalib::string expected = "<hi>best</hi>  of  \nmetallica";
-    vespalib::string actual(sum->Text(), sum->Length());
+    std::string expected = "<hi>best</hi>  of  \nmetallica";
+    std::string actual(sum->Text(), sum->Length());
     _test(actual == expected);
 }
 

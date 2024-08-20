@@ -31,13 +31,13 @@ TEST(DimSpecTest, mapped_dimension) {
 
 TEST(DimSpecTest, simple_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 1, "");
-    std::vector<vespalib::string> expect = {"1", "2", "3", "4", "5"};
+    std::vector<std::string> expect = {"1", "2", "3", "4", "5"};
     EXPECT_EQ(dict, expect);
 }
 
 TEST(DimSpecTest, advanced_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 3, "str_");
-    std::vector<vespalib::string> expect = {"str_3", "str_6", "str_9", "str_12", "str_15"};
+    std::vector<std::string> expect = {"str_3", "str_6", "str_9", "str_12", "str_15"};
     EXPECT_EQ(dict, expect);
 }
 

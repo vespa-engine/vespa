@@ -152,7 +152,7 @@ verifyFastValueSize(TensorSpec spec, uint32_t elems, size_t expected) {
 TEST(FastValueTest, document_fast_value_memory_usage) {
     EXPECT_EQ(232, sizeof(FastValue<float,true>));
     FastValue<float,true> test(ValueType::from_spec("tensor<float>(country{})"), 1, 1, 1);
-    constexpr size_t BASE_SZ = 348 + sizeof(vespalib::string);
+    constexpr size_t BASE_SZ = 348 + sizeof(std::string);
     EXPECT_EQ(BASE_SZ, test.get_memory_usage().allocatedBytes());
 
 

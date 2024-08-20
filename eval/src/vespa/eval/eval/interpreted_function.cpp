@@ -80,7 +80,7 @@ InterpretedFunction::ProfiledContext::ProfiledContext(const InterpretedFunction 
 
 InterpretedFunction::ProfiledContext::~ProfiledContext() = default;
 
-vespalib::string
+std::string
 InterpretedFunction::Instruction::resolve_symbol() const
 {
     if (function == nullptr) {

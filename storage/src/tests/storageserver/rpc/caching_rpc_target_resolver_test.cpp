@@ -13,12 +13,12 @@ using storage::lib::NodeType;
 
 class MockMirror : public IMirrorAPI {
 public:
-    using Mappings = std::map<vespalib::string, IMirrorAPI::SpecList>;
+    using Mappings = std::map<std::string, IMirrorAPI::SpecList>;
     Mappings mappings;
     uint32_t gen;
     MockMirror() : mappings(), gen(1) {}
     SpecList lookup(std::string_view pattern) const override {
-        auto itr = mappings.find(vespalib::string(pattern));
+        auto itr = mappings.find(std::string(pattern));
         if (itr != mappings.end()) {
             return itr->second;
         }
@@ -36,7 +36,7 @@ public:
     MockRpcTarget(bool& valid) : _valid(valid) {}
     FRT_Target* get() noexcept override { return nullptr; }
     bool is_valid() const noexcept override { return _valid; }
-    const vespalib::string& spec() const noexcept override { abort(); }
+    const std::string& spec() const noexcept override { abort(); }
 };
 
 class MockTargetFactory : public RpcTargetFactory {
@@ -44,12 +44,12 @@ public:
     mutable bool valid_target;
 
     MockTargetFactory() : valid_target(true) {}
-    std::unique_ptr<RpcTarget> make_target([[maybe_unused]] const vespalib::string& connection_spec) const override {
+    std::unique_ptr<RpcTarget> make_target([[maybe_unused]] const std::string& connection_spec) const override {
         return std::make_unique<MockRpcTarget>(valid_target);
     }
 };
 
-vespalib::string _my_cluster("my_cluster");
+std::string _my_cluster("my_cluster");
 
 class CachingRpcTargetResolverTest : public ::testing::Test {
 public:
@@ -58,8 +58,8 @@ public:
     CachingRpcTargetResolver resolver;
     StorageMessageAddress address_0;
     StorageMessageAddress address_1;
-    vespalib::string spec_0;
-    vespalib::string spec_1;
+    std::string spec_0;
+    std::string spec_1;
     uint64_t bucket_id_0;
     uint64_t bucket_id_1;
     uint64_t bucket_id_2;
@@ -78,10 +78,10 @@ public:
     {
         add_mapping(address_0, spec_0);
     }
-    void add_mapping(const StorageMessageAddress& address, const vespalib::string& connection_spec) {
+    void add_mapping(const StorageMessageAddress& address, const std::string& connection_spec) {
         mirror.mappings[to_slobrok_id(address)] = {{to_slobrok_id(address), connection_spec}};
     }
-    static vespalib::string to_slobrok_id(const storage::api::StorageMessageAddress& address) {
+    static std::string to_slobrok_id(const storage::api::StorageMessageAddress& address) {
         return CachingRpcTargetResolver::address_to_slobrok_id(address);
     }
     std::shared_ptr<RpcTarget> resolve_rpc_target(const StorageMessageAddress& address) {

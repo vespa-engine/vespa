@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::linguistics {
 
-extern const vespalib::string SPANTREE_NAME;
+extern const std::string SPANTREE_NAME;
 
 }

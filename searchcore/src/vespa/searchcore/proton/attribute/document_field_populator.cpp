@@ -14,18 +14,18 @@ namespace proton {
 
 namespace {
 
-vespalib::string
-getFieldName(const vespalib::string &subDbName,
-             const vespalib::string &fieldName)
+std::string
+getFieldName(const std::string &subDbName,
+             const std::string &fieldName)
 {
     return subDbName + ".documentfield." + fieldName;
 }
 
 }
 
-DocumentFieldPopulator::DocumentFieldPopulator(const vespalib::string &fieldName,
+DocumentFieldPopulator::DocumentFieldPopulator(const std::string &fieldName,
                                                AttributeVectorSP attr,
-                                               const vespalib::string &subDbName)
+                                               const std::string &subDbName)
     : _fieldName(fieldName),
       _attr(attr),
       _subDbName(subDbName),

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::fef {
 
@@ -20,7 +20,7 @@ public:
      *
      * @param name full feature name
      **/
-    virtual void visitDumpFeature(const vespalib::string &name) = 0;
+    virtual void visitDumpFeature(const std::string &name) = 0;
     virtual ~IDumpFeatureVisitor() = default;
 };
 

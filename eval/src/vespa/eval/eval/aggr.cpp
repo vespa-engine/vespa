@@ -25,7 +25,7 @@ struct Wrapper final : Aggregator {
 const AggrNames AggrNames::_instance;
 
 void
-AggrNames::add(Aggr aggr, const vespalib::string &name)
+AggrNames::add(Aggr aggr, const std::string &name)
 {
     _name_aggr_map[name] = aggr;
     _aggr_name_map[aggr] = name;
@@ -44,7 +44,7 @@ AggrNames::AggrNames()
     add(Aggr::MIN,    "min");
 }
 
-const vespalib::string *
+const std::string *
 AggrNames::name_of(Aggr aggr)
 {
     const auto &map = _instance._aggr_name_map;
@@ -56,7 +56,7 @@ AggrNames::name_of(Aggr aggr)
 }
 
 const Aggr *
-AggrNames::from_name(const vespalib::string &name)
+AggrNames::from_name(const std::string &name)
 {
     const auto &map = _instance._name_aggr_map;
     auto result = map.find(name);

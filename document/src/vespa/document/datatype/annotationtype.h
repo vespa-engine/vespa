@@ -12,7 +12,7 @@ namespace document {
 
 class AnnotationType {
     int _id;
-    vespalib::string _name;
+    std::string _name;
     const DataType *_type;
 
 public:
@@ -23,7 +23,7 @@ public:
         : _id(id), _name(name), _type(0) {}
     void setDataType(const DataType &type) { _type = &type; }
 
-    const vespalib::string & getName() const { return _name; }
+    const std::string & getName() const { return _name; }
     int getId() const { return _id; }
     const DataType *getDataType() const { return _type; }
     bool operator==(const AnnotationType &a2) const {
@@ -32,7 +32,7 @@ public:
     bool operator!=(const AnnotationType &a2) const {
         return ! (*this == a2);
     }
-    vespalib::string toString() const;
+    std::string toString() const;
 
     static const AnnotationType *const TERM;
     static const AnnotationType *const TOKEN_TYPE;

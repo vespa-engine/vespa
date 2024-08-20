@@ -119,7 +119,7 @@ BmFeed::make_get_or_remove_feed(BmRange range, BucketSelector bucket_selector, b
         serialized_feed << static_cast<uint8_t>(operation);
         serialized_feed << make_bucket_id(n);
         auto document_id = make_document_id(n, i);
-        vespalib::string raw_id = document_id.toString();
+        std::string raw_id = document_id.toString();
         serialized_feed.write(raw_id.c_str(), raw_id.size() + 1);
     }
     return serialized_feed;
@@ -138,7 +138,7 @@ BmFeed::make_remove_feed(BmRange range, BucketSelector bucket_selector)
 }
 
 std::vector<vespalib::nbostream>
-BmFeed::make_feed(vespalib::ThreadStackExecutor& executor, const BmFeedParams& params, std::function<vespalib::nbostream(BmRange,BucketSelector)> func, uint32_t num_buckets, const vespalib::string &label)
+BmFeed::make_feed(vespalib::ThreadStackExecutor& executor, const BmFeedParams& params, std::function<vespalib::nbostream(BmRange,BucketSelector)> func, uint32_t num_buckets, const std::string &label)
 {
     LOG(info, "make_feed %s %u small documents", label.c_str(), params.get_documents());
     std::vector<vespalib::nbostream> serialized_feed_v;

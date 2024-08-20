@@ -25,7 +25,7 @@ AttributeContext::getAttribute(AttributeMap & map, std::string_view name, bool s
         if (readGuard) {
             attribute = readGuard->attribute();
         }
-        map[vespalib::string(name)] = std::move(readGuard);
+        map[std::string(name)] = std::move(readGuard);
         return attribute;
     }
 }

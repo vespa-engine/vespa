@@ -126,7 +126,7 @@ RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) cons
 }
 
 ResultList
-RegexOperator::match(const vespalib::string& val, std::string_view expr) const
+RegexOperator::match(const std::string& val, std::string_view expr) const
 {
     if (expr.empty()) {
         return ResultList(Result::True); // Should we catch this in parsing?
@@ -167,7 +167,7 @@ GlobOperator::compareImpl(const Value& a, const Value& b) const
     if (left == nullptr) {
         return ResultList(Result::Invalid);
     }
-    vespalib::string regex(convertToRegex(right->getValue()));
+    std::string regex(convertToRegex(right->getValue()));
     return match(left->getValue(), regex);
 }
 
@@ -187,7 +187,7 @@ GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
             << "returning invalid.\n";
         return ResultList(Result::Invalid);
     }
-    vespalib::string regex(convertToRegex(right->getValue()));
+    std::string regex(convertToRegex(right->getValue()));
     ost << "Operator(" << getName() << ") - Converted glob expression '"
         << right->getValue() << "' to regex '"  << regex << "'.\n";
     return match(left->getValue(), regex);
@@ -205,7 +205,7 @@ size_t wildcard_run_length(size_t i, std::string_view str) {
 
 }
 
-vespalib::string
+std::string
 GlobOperator::convertToRegex(std::string_view globpattern)
 {
     if (globpattern.empty()) {

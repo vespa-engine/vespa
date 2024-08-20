@@ -27,11 +27,11 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/memory.h>
 #include <unistd.h>
 #include <memory>
+#include <string>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/memory.h>
 
 namespace vespalib {
 
@@ -58,7 +58,7 @@ struct FileInfo {
 class File {
 private:
     int         _fd;
-    string      _filename;
+    std::string _filename;
 
     void sync();
     /**
@@ -81,7 +81,7 @@ public:
     /** Closes the file if not instructed to do otherwise. */
     ~File();
 
-    const string& getFilename() const { return _filename; }
+    const std::string& getFilename() const { return _filename; }
 
     void open(int flags, bool autoCreateDirectories = false);
 
@@ -143,7 +143,7 @@ public:
      * @throw   IoException If we failed to read from file.
      * @return  The content of the file.
      */
-    string readAll() const;
+    std::string readAll() const;
 
     /**
      * Read a file into a string.
@@ -154,7 +154,7 @@ public:
      * @throw   IoException If we failed to read from file.
      * @return  The content of the file.
      */
-    static string readAll(std::string_view path);
+    static std::string readAll(std::string_view path);
 
     /**
      * Sync file or directory.
@@ -173,9 +173,9 @@ public:
 /**
  * List the contents of the given directory.
  */
-using DirectoryList = std::vector<string>;
-extern DirectoryList listDirectory(const string & path);
-string dirname(std::string_view name);
-string getOpenErrorString(const int osError, std::string_view name);
+using DirectoryList = std::vector<std::string>;
+extern DirectoryList listDirectory(const std::string & path);
+std::string dirname(std::string_view name);
+std::string getOpenErrorString(const int osError, std::string_view name);
 
 } // vespalib

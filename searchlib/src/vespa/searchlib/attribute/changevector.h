@@ -77,7 +77,7 @@ public:
 
 class StringChangeData {
 public:
-    using DataType = vespalib::string;
+    using DataType = std::string;
 
     StringChangeData(std::string_view s) noexcept : StringChangeData(DataType(s)) {}
     StringChangeData(DataType s) noexcept;

@@ -70,9 +70,9 @@ test::GenSpec GS(double bias) { return test::GenSpec(bias).cells_float(); }
 // helper class used to set up peek instructions
 struct MyPeekSpec {
     bool is_dynamic;
-    std::map<vespalib::string,size_t> spec;
+    std::map<std::string,size_t> spec;
     MyPeekSpec(bool is_dynamic_in) : is_dynamic(is_dynamic_in), spec() {}
-    MyPeekSpec &add(const vespalib::string &dim, size_t index) {
+    MyPeekSpec &add(const std::string &dim, size_t index) {
         auto [ignore, was_inserted] = spec.emplace(dim, index);
         assert(was_inserted);
         return *this;
@@ -111,11 +111,11 @@ Instruction compile_op1_chain(const TensorFunction &node, const ValueBuilderFact
 
 struct Impl {
     size_t order;
-    vespalib::string name;
-    vespalib::string short_name;
+    std::string name;
+    std::string short_name;
     const ValueBuilderFactory &factory;
     bool optimize;
-    Impl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, const ValueBuilderFactory &factory_in, bool optimize_in)
+    Impl(size_t order_in, const std::string &name_in, const std::string &short_name_in, const ValueBuilderFactory &factory_in, bool optimize_in)
         : order(order_in), name(name_in), short_name(short_name_in), factory(factory_in), optimize(optimize_in) {}
     Value::UP create_value(const TensorSpec &spec) const { return value_from_spec(spec, factory); }
     TensorSpec create_spec(const Value &value) const { return spec_from_value(value); }
@@ -127,7 +127,7 @@ struct Impl {
         const auto &node = optimize ? optimize_tensor_function(factory, join_node, stash) : join_node;
         return node.compile_self(factory, stash);
     }
-    Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const {
+    Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<std::string> &dims, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &reduce_node = tensor_function::reduce(lhs_node, aggr, dims, stash);
@@ -137,7 +137,7 @@ struct Impl {
         // instructions into a single compound instruction.
         return compile_op1_chain(node, factory, stash);
     }
-    Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const {
+    Instruction create_rename(const ValueType &lhs, const std::vector<std::string> &from, const std::vector<std::string> &to, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rename_node = tensor_function::rename(lhs_node, from, to, stash);
@@ -183,7 +183,7 @@ struct Impl {
         std::vector<ValueType> arg_types(type.dimensions().size(), ValueType::double_type());
         arg_types.push_back(p0_type);
         NodeTypes types(function, arg_types);
-        EXPECT_EQ(types.errors(), std::vector<vespalib::string>());
+        EXPECT_EQ(types.errors(), std::vector<std::string>());
         const auto &tensor_lambda_node = tensor_function::lambda(type, {0}, function, std::move(types), stash);
         const auto &node = optimize ? optimize_tensor_function(factory, tensor_lambda_node, stash) : tensor_lambda_node;
         return node.compile_self(factory, stash);
@@ -191,7 +191,7 @@ struct Impl {
     Instruction create_tensor_peek(const ValueType &type, const MyPeekSpec &my_spec, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &my_param = tensor_function::inject(type, 0, stash);
-        std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
+        std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
         if (my_spec.is_dynamic) {
             const auto &my_double = tensor_function::inject(ValueType::double_type(), 1, stash);
             for (const auto &entry: my_spec.spec) {
@@ -219,9 +219,9 @@ struct Impl {
 Impl             optimized_fast_value_impl(0, "          Optimized FastValue", "NEW PROD", FastValueBuilderFactory::get(), true);
 Impl                       fast_value_impl(1, "                    FastValue", "   FastV", FastValueBuilderFactory::get(), false);
 Impl                     simple_value_impl(2, "                  SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
-vespalib::string                                                  short_header("--------");
-vespalib::string                   ghost_name("       loaded from ghost.json");
-vespalib::string                                              ghost_short_name("   ghost");
+std::string                                                  short_header("--------");
+std::string                   ghost_name("       loaded from ghost.json");
+std::string                                              ghost_short_name("   ghost");
 
 double budget = 5.0;
 constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
@@ -239,7 +239,7 @@ Slime prod_result; // saved to 'result.json'
 //-----------------------------------------------------------------------------
 
 struct BenchmarkHeader {
-    std::vector<vespalib::string> short_names;
+    std::vector<std::string> short_names;
     BenchmarkHeader() : short_names() {
         short_names.resize(impl_list.size());
         for (const Impl &impl: impl_list) {
@@ -249,7 +249,7 @@ struct BenchmarkHeader {
             short_names.push_back(ghost_short_name);
         }
     }
-    void print_header(const vespalib::string &desc) const {
+    void print_header(const std::string &desc) const {
         for (const auto &name: short_names) {
             fprintf(stderr, "|%s", name.c_str());
         }
@@ -264,11 +264,11 @@ struct BenchmarkHeader {
 };
 
 struct BenchmarkResult {
-    vespalib::string desc;
+    std::string desc;
     std::optional<double> ref_time;
     std::vector<double> relative_perf;
     double star_rating;
-    BenchmarkResult(const vespalib::string &desc_in, size_t num_values)
+    BenchmarkResult(const std::string &desc_in, size_t num_values)
         : desc(desc_in), ref_time(std::nullopt), relative_perf(num_values, 0.0) {}
     BenchmarkResult(const BenchmarkResult&);
     BenchmarkResult(BenchmarkResult&&) noexcept = default;
@@ -322,12 +322,12 @@ std::vector<BenchmarkResult> benchmark_results;
 
 //-----------------------------------------------------------------------------
 
-void load_ghost(const vespalib::string &file_name) {
+void load_ghost(const std::string &file_name) {
     MappedFileInput input(file_name);
     has_ghost = JsonFormat::decode(input, ghost);
 }
 
-void save_result(const vespalib::string &file_name) {
+void save_result(const std::string &file_name) {
     SmartBuffer output(4_Ki);
     JsonFormat::encode(prod_result, output, false);
     Memory memory = output.obtain();
@@ -432,7 +432,7 @@ struct EvalOp {
 
 //-----------------------------------------------------------------------------
 
-void benchmark(const vespalib::string &desc, const std::vector<EvalOp::UP> &list) {
+void benchmark(const std::string &desc, const std::vector<EvalOp::UP> &list) {
     fprintf(stderr, "--------------------------------------------------------\n");
     fprintf(stderr, "Benchmark Case: [%s]\n", desc.c_str());
     std::optional<TensorSpec> expect = std::nullopt;
@@ -461,7 +461,7 @@ void benchmark(const vespalib::string &desc, const std::vector<EvalOp::UP> &list
 
 //-----------------------------------------------------------------------------
 
-void benchmark_join(const vespalib::string &desc, const TensorSpec &lhs,
+void benchmark_join(const std::string &desc, const TensorSpec &lhs,
                     const TensorSpec &rhs, operation::op2_t function)
 {
     Stash stash;
@@ -483,8 +483,8 @@ void benchmark_join(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
-void benchmark_reduce(const vespalib::string &desc, const TensorSpec &lhs,
-                      Aggr aggr, const std::vector<vespalib::string> &dims)
+void benchmark_reduce(const std::string &desc, const TensorSpec &lhs,
+                      Aggr aggr, const std::vector<std::string> &dims)
 {
     Stash stash;
     ValueType lhs_type = ValueType::from_spec(lhs.type());
@@ -503,9 +503,9 @@ void benchmark_reduce(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
-void benchmark_rename(const vespalib::string &desc, const TensorSpec &lhs,
-                      const std::vector<vespalib::string> &from,
-                      const std::vector<vespalib::string> &to)
+void benchmark_rename(const std::string &desc, const TensorSpec &lhs,
+                      const std::vector<std::string> &from,
+                      const std::vector<std::string> &to)
 {
     Stash stash;
     ValueType lhs_type = ValueType::from_spec(lhs.type());
@@ -524,7 +524,7 @@ void benchmark_rename(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
-void benchmark_merge(const vespalib::string &desc, const TensorSpec &lhs,
+void benchmark_merge(const std::string &desc, const TensorSpec &lhs,
                      const TensorSpec &rhs, operation::op2_t function)
 {
     Stash stash;
@@ -546,7 +546,7 @@ void benchmark_merge(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
-void benchmark_map(const vespalib::string &desc, const TensorSpec &lhs, operation::op1_t function)
+void benchmark_map(const std::string &desc, const TensorSpec &lhs, operation::op1_t function)
 {
     Stash stash;
     ValueType lhs_type = ValueType::from_spec(lhs.type());
@@ -563,7 +563,7 @@ void benchmark_map(const vespalib::string &desc, const TensorSpec &lhs, operatio
 
 //-----------------------------------------------------------------------------
 
-void benchmark_concat(const vespalib::string &desc, const TensorSpec &lhs,
+void benchmark_concat(const std::string &desc, const TensorSpec &lhs,
                       const TensorSpec &rhs, const std::string &dimension)
 {
     Stash stash;
@@ -585,7 +585,7 @@ void benchmark_concat(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
-void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &proto) {
+void benchmark_tensor_create(const std::string &desc, const TensorSpec &proto) {
     Stash stash;
     ValueType proto_type = ValueType::from_spec(proto.type());
     ASSERT_FALSE(proto_type.is_error());
@@ -604,7 +604,7 @@ void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &pro
 
 //-----------------------------------------------------------------------------
 
-void benchmark_tensor_lambda(const vespalib::string &desc, const ValueType &type, const TensorSpec &p0, const Function &function) {
+void benchmark_tensor_lambda(const std::string &desc, const ValueType &type, const TensorSpec &p0, const Function &function) {
     Stash stash;
     ValueType p0_type = ValueType::from_spec(p0.type());
     ASSERT_FALSE(p0_type.is_error());
@@ -619,7 +619,7 @@ void benchmark_tensor_lambda(const vespalib::string &desc, const ValueType &type
 
 //-----------------------------------------------------------------------------
 
-void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, const MyPeekSpec &peek_spec) {
+void benchmark_tensor_peek(const std::string &desc, const TensorSpec &lhs, const MyPeekSpec &peek_spec) {
     Stash stash;
     ValueType type = ValueType::from_spec(lhs.type());
     ASSERT_FALSE(type.is_error());
@@ -656,7 +656,7 @@ TEST(MakeInputTest, print_some_test_input) {
 
 //-----------------------------------------------------------------------------
 
-void benchmark_encode_decode(const vespalib::string &desc, const TensorSpec &proto) {
+void benchmark_encode_decode(const std::string &desc, const TensorSpec &proto) {
     ValueType proto_type = ValueType::from_spec(proto.type());
     ASSERT_FALSE(proto_type.is_error());
     for (const Impl &impl: impl_list) {
@@ -1073,7 +1073,7 @@ TEST(TensorPeekBench, mixed_peek) {
 
 //-----------------------------------------------------------------------------
 
-void print_results(const vespalib::string &desc, const std::vector<BenchmarkResult> &results) {
+void print_results(const std::string &desc, const std::vector<BenchmarkResult> &results) {
     if (results.empty()) {
         return;
     }

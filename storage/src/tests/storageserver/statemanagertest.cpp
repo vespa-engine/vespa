@@ -75,7 +75,7 @@ struct StateManagerTest : Test, NodeStateReporter {
 
     void extract_cluster_state_version_from_host_info(uint32_t& version_out);
 
-    static vespalib::string to_string(const lib::Distribution::DistributionConfig& cfg) {
+    static std::string to_string(const lib::Distribution::DistributionConfig& cfg) {
         return lib::Distribution(cfg).serialized();
     }
 };

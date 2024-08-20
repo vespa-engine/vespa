@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace search::fef::test {
 
@@ -13,7 +13,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    using RankScores = std::map<vespalib::string, feature_t>;
+    using RankScores = std::map<std::string, feature_t>;
 
 public:
     /**
@@ -28,7 +28,7 @@ public:
      * @param score       The score of that feature.
      * @return            This, to allow chaining.
      */
-    RankResult &addScore(const vespalib::string & featureName, feature_t score);
+    RankResult &addScore(const std::string & featureName, feature_t score);
 
     /**
      * Returns the score of a given feature.
@@ -36,7 +36,7 @@ public:
      * @param featureName The name of the feature.
      * @return            The score of that feature.
      */
-    feature_t getScore(const vespalib::string & featureName) const;
+    feature_t getScore(const std::string & featureName) const;
 
     /**
      * Implements equality operator.
@@ -67,14 +67,14 @@ public:
      * @param ret The vector to fill.
      * @return    Reference to the 'ret' param.
      */
-    std::vector<vespalib::string> &getKeys(std::vector<vespalib::string> &ret);
+    std::vector<std::string> &getKeys(std::vector<std::string> &ret);
 
     /**
      * Creates and returns a vector with the key strings of this.
      *
      * @return List of all key strings.
      */
-    std::vector<vespalib::string> getKeys();
+    std::vector<std::string> getKeys();
 
     /**
      * Sets the epsilon used when comparing this rank result to another.

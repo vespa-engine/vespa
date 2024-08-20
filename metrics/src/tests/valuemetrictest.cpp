@@ -172,7 +172,7 @@ TEST(ValueMetricTest, test_add_value_batch)
 
 namespace {
 
-vespalib::string extractMetricJson(std::string_view s) {
+std::string extractMetricJson(std::string_view s) {
     vespalib::StringTokenizer st(s, "\n", "");
     for (uint32_t i = st.size() - 1; i < st.size(); --i) {
         if (st[i].find("\"name\":\"") != std::string::npos) {
@@ -188,7 +188,7 @@ vespalib::string extractMetricJson(std::string_view s) {
     throw vespalib::IllegalArgumentException("Didn't find metric");
 }
 
-vespalib::string getJson(MetricManager& mm) {
+std::string getJson(MetricManager& mm) {
     vespalib::asciistream as;
     vespalib::JsonStream stream(as, true);
     JsonWriter writer(stream);
@@ -206,7 +206,7 @@ TEST(ValueMetricTest, test_json)
     DoubleValueMetric m("test", {{"tag"}}, "description");
     mm.registerMetric(mm.getMetricLock(), m);
 
-    vespalib::string expected("'\n"
+    std::string expected("'\n"
         "{\n"
         "  \"name\":\"test\",\n"
         "  \"description\":\"description\",\n"

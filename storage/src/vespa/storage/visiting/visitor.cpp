@@ -557,7 +557,7 @@ Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
 }
 
 bool
-Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
+Visitor::addBoundedTrace(uint32_t level, const std::string &message) {
     mbus::Trace tempTrace;
     tempTrace.trace(level, message);
     return _trace.add(std::move(tempTrace));

@@ -5,7 +5,7 @@
 
 namespace search::attribute {
 
-RawAttribute::RawAttribute(const vespalib::string& name, const Config& config)
+RawAttribute::RawAttribute(const std::string& name, const Config& config)
     : NotImplementedAttribute(name, config)
 {
 }

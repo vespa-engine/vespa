@@ -24,7 +24,7 @@ ThreadedFlushTarget::ThreadedFlushTarget(vespalib::Executor &executor,
 ThreadedFlushTarget::ThreadedFlushTarget(vespalib::Executor &executor,
                                          const IGetSerialNum &getSerialNum,
                                          const IFlushTarget::SP &target,
-                                         const vespalib::string & prefix)
+                                         const std::string & prefix)
     : FlushTargetProxy(target, prefix),
       _executor(executor),
       _getSerialNum(getSerialNum)

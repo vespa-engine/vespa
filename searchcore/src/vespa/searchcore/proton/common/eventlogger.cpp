@@ -15,7 +15,7 @@ using vespalib::count_ms;
 namespace {
 
 using search::SerialNum;
-using vespalib::string;
+using std::string;
 
 void
 doTransactionLogReplayStart(const string &domainName, SerialNum first, SerialNum last, const string &eventName)
@@ -250,7 +250,7 @@ EventLogger::reprocessDocumentsComplete(const string &subDb, double visitCost, v
 }
 
 void
-EventLogger::loadAttributeStart(const vespalib::string &subDbName, const vespalib::string &attrName)
+EventLogger::loadAttributeStart(const std::string &subDbName, const std::string &attrName)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -261,8 +261,8 @@ EventLogger::loadAttributeStart(const vespalib::string &subDbName, const vespali
 }
 
 void
-EventLogger::loadAttributeComplete(const vespalib::string &subDbName,
-                                   const vespalib::string &attrName, vespalib::duration elapsedTime)
+EventLogger::loadAttributeComplete(const std::string &subDbName,
+                                   const std::string &attrName, vespalib::duration elapsedTime)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -276,7 +276,7 @@ EventLogger::loadAttributeComplete(const vespalib::string &subDbName,
 namespace {
 
 void
-loadComponentStart(const vespalib::string &subDbName, const vespalib::string &componentName)
+loadComponentStart(const std::string &subDbName, const std::string &componentName)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -286,7 +286,7 @@ loadComponentStart(const vespalib::string &subDbName, const vespalib::string &co
 }
 
 void
-loadComponentComplete(const vespalib::string &subDbName, const vespalib::string &componentName, vespalib::duration elapsedTime)
+loadComponentComplete(const std::string &subDbName, const std::string &componentName, vespalib::duration elapsedTime)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -299,25 +299,25 @@ loadComponentComplete(const vespalib::string &subDbName, const vespalib::string 
 }
 
 void
-EventLogger::loadDocumentMetaStoreStart(const vespalib::string &subDbName)
+EventLogger::loadDocumentMetaStoreStart(const std::string &subDbName)
 {
     loadComponentStart(subDbName, "documentmetastore");
 }
 
 void
-EventLogger::loadDocumentMetaStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime)
+EventLogger::loadDocumentMetaStoreComplete(const std::string &subDbName, vespalib::duration elapsedTime)
 {
     loadComponentComplete(subDbName, "documentmetastore", elapsedTime);
 }
 
 void
-EventLogger::loadDocumentStoreStart(const vespalib::string &subDbName)
+EventLogger::loadDocumentStoreStart(const std::string &subDbName)
 {
     loadComponentStart(subDbName, "documentstore");
 }
 
 void
-EventLogger::loadDocumentStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime)
+EventLogger::loadDocumentStoreComplete(const std::string &subDbName, vespalib::duration elapsedTime)
 {
     loadComponentComplete(subDbName, "documentstore", elapsedTime);
 }

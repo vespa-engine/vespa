@@ -37,8 +37,8 @@ std::vector<double> as_vector(std::span<const double> value) {
     return {value.data(), value.data() + value.size()};
 }
 
-vespalib::string vec_2d_spec("tensor(x[2])");
-vespalib::string vec_mixed_2d_spec("tensor(a{},x[2])");
+std::string vec_2d_spec("tensor(x[2])");
+std::string vec_mixed_2d_spec("tensor(a{},x[2])");
 
 TensorSpec
 vec_2d(double x0, double x1)
@@ -53,7 +53,7 @@ vec_mixed_2d(std::vector<std::vector<double>> val)
     for (uint32_t a = 0; a < val.size(); ++a) {
         vespalib::asciistream a_stream;
         a_stream << a;
-        vespalib::string a_as_string = a_stream.str();
+        std::string a_as_string = a_stream.str();
         for (uint32_t x = 0; x < val[a].size(); ++x) {
             spec.add({{"a", a_as_string.c_str()},{"x", x}}, val[a][x]);
 	}

@@ -12,7 +12,7 @@
  */
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace metrics {
     class Metric;
@@ -29,7 +29,7 @@ struct Clock;
 struct ManagedComponent {
     virtual ~ManagedComponent() = default;
 
-    [[nodiscard]] virtual const vespalib::string& getName() const = 0;
+    [[nodiscard]] virtual const std::string& getName() const = 0;
     virtual metrics::Metric* getMetric() = 0;
     virtual const StatusReporter* getStatusReporter() = 0;
 

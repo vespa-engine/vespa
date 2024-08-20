@@ -10,7 +10,7 @@ LOG_SETUP(".search.docstore.randreaders");
 
 namespace search {
 
-DirectIORandRead::DirectIORandRead(const vespalib::string & fileName)
+DirectIORandRead::DirectIORandRead(const std::string & fileName)
     : _file(std::make_unique<FastOS_File>(fileName.c_str())),
       _alignment(1),
       _granularity(1),
@@ -54,7 +54,7 @@ DirectIORandRead::getSize() const {
 }
 
 
-MMapRandRead::MMapRandRead(const vespalib::string & fileName, int mmapFlags, int fadviseOptions)
+MMapRandRead::MMapRandRead(const std::string & fileName, int mmapFlags, int fadviseOptions)
     : _file(std::make_unique<FastOS_File>(fileName.c_str()))
 {
     _file->enableMemoryMap(mmapFlags);
@@ -65,7 +65,7 @@ MMapRandRead::MMapRandRead(const vespalib::string & fileName, int mmapFlags, int
 }
 
 
-NormalRandRead::NormalRandRead(const vespalib::string & fileName)
+NormalRandRead::NormalRandRead(const std::string & fileName)
     : _file(std::make_unique<FastOS_File>(fileName.c_str()))
 {
     if ( ! _file->OpenReadOnly()) {
@@ -93,7 +93,7 @@ MMapRandRead::getMapping() {
     return _file->MemoryMapPtr(0);
 }
 
-MMapRandReadDynamic::MMapRandReadDynamic(const vespalib::string &fileName, int mmapFlags, int fadviseOptions)
+MMapRandReadDynamic::MMapRandReadDynamic(const std::string &fileName, int mmapFlags, int fadviseOptions)
     : _fileName(fileName),
       _holder(),
       _mmapFlags(mmapFlags),

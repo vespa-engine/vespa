@@ -20,7 +20,7 @@ struct ImpureValueExecutor : FeatureExecutor {
 };
 
 bool
-ImpureValueBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
+ImpureValueBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &params)
 {
     bool failed = false;
     EXPECT_EQ(1u, params.size()) << (failed = true, "");
@@ -45,7 +45,7 @@ struct DocidExecutor : FeatureExecutor {
 };
 
 bool
-DocidBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &)
+DocidBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &)
 {
     describeOutput("out", "the local document id");
     return true;
@@ -70,7 +70,7 @@ struct BoxingExecutor : FeatureExecutor {
 };
 
 bool
-BoxingBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
+BoxingBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &params)
 {
     bool failed = false;
     EXPECT_EQ(1u, params.size()) << (failed = true, "");
@@ -101,7 +101,7 @@ struct TrackingExecutor : FeatureExecutor {
 };
 
 bool
-TrackingBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
+TrackingBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &params)
 {
     bool failed = false;
     EXPECT_EQ(1u, params.size()) << (failed = true, "");

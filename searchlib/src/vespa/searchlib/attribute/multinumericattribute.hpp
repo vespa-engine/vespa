@@ -34,7 +34,7 @@ bool MultiValueNumericAttribute<B, M>::findEnum(T value, EnumHandle & e) const
 
 template <typename B, typename M>
 MultiValueNumericAttribute<B, M>::
-MultiValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c) :
+MultiValueNumericAttribute(const std::string & baseFileName, const AttributeVector::Config & c) :
     MultiValueAttribute<B, M>(baseFileName, c)
 {
 }

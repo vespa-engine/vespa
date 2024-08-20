@@ -17,7 +17,7 @@ class GrowStrategy;
 class SingleBoolAttribute final : public IntegerAttributeTemplate<int8_t>
 {
 public:
-    SingleBoolAttribute(const vespalib::string & baseFileName, const GrowStrategy & grow, bool paged);
+    SingleBoolAttribute(const std::string & baseFileName, const GrowStrategy & grow, bool paged);
     ~SingleBoolAttribute() override;
 
     void onCommit() override;

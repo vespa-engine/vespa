@@ -36,9 +36,9 @@ protected:
     BetaFeaturesTest();
     ~BetaFeaturesTest() override;
 
-    void assertJaroWinklerDistance(const vespalib::string &query, const vespalib::string &field, feature_t expected);
+    void assertJaroWinklerDistance(const std::string &query, const std::string &field, feature_t expected);
     void assertQueryCompleteness(FtFeatureTest & ft, uint32_t firstOcc, uint32_t hits, uint32_t miss);
-    void assertTermEditDistance(const vespalib::string &query, const vespalib::string &field,
+    void assertTermEditDistance(const std::string &query, const std::string &field,
                                 uint32_t expectedDel, uint32_t expectedIns, uint32_t expectedSub);
 };
 
@@ -120,7 +120,7 @@ TEST_F(BetaFeaturesTest, test_jaro_winkler_distance)
 }
 
 void
-BetaFeaturesTest::assertJaroWinklerDistance(const vespalib::string &query, const vespalib::string &field, feature_t expected)
+BetaFeaturesTest::assertJaroWinklerDistance(const std::string &query, const std::string &field, feature_t expected)
 {
     FtFeatureTest ft(_factory, "jaroWinklerDistance(foo)");
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -166,7 +166,7 @@ TEST_F(BetaFeaturesTest, test_proximity)
 #ifdef VISIT_BETA_FEATURES
             for (uint32_t a = 0; a < 5; ++a) {
                 for (uint32_t b = a + 1; b < 6; ++b) {
-                    vespalib::string bn = vespalib::make_string("proximity(bar,%u,%u)", a, b);
+                    std::string bn = vespalib::make_string("proximity(bar,%u,%u)", a, b);
                     dump.add(bn + ".out");
                     dump.add(bn + ".posA");
                     dump.add(bn + ".posB");
@@ -387,7 +387,7 @@ TEST_F(BetaFeaturesTest, test_flow_completeness)
 
         StringList expDump;
         for (size_t i = 0; i < out.size(); ++i) {
-            vespalib::string fn = "flowCompleteness(foo).";
+            std::string fn = "flowCompleteness(foo).";
             fn.append(out[i]);
             expDump.push_back(fn);
         }
@@ -532,7 +532,7 @@ TEST_F(BetaFeaturesTest, test_reverse_proximity)
 #ifdef VISIT_BETA_FEATURES
             for (uint32_t a = 0; a < 5; ++a) {
                 for (uint32_t b = a + 1; b < 6; ++b) {
-                    vespalib::string bn = vespalib::make_string("reverseProximity(bar,%u,%u)", a, b);
+                    std::string bn = vespalib::make_string("reverseProximity(bar,%u,%u)", a, b);
                     dump.add(bn + ".out");
                     dump.add(bn + ".posA");
                     dump.add(bn + ".posB");
@@ -641,7 +641,7 @@ TEST_F(BetaFeaturesTest, test_term_edit_distance)
             StringList dump;
 #ifdef VISIT_BETA_FEATURES
             ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
-            vespalib::string bn = "termEditDistance(bar)";
+            std::string bn = "termEditDistance(bar)";
             dump.add(bn + ".out");
             dump.add(bn + ".del");
             dump.add(bn + ".ins");
@@ -665,11 +665,11 @@ TEST_F(BetaFeaturesTest, test_term_edit_distance)
 }
 
 void
-BetaFeaturesTest::assertTermEditDistance(const vespalib::string &query, const vespalib::string &field,
+BetaFeaturesTest::assertTermEditDistance(const std::string &query, const std::string &field,
                              uint32_t expectedDel, uint32_t expectedIns, uint32_t expectedSub)
 {
     // Setup feature test.
-    vespalib::string feature = "termEditDistance(foo)";
+    std::string feature = "termEditDistance(foo)";
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
     StringMap foo;

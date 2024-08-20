@@ -5,7 +5,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace search::diskindex {
@@ -43,7 +43,7 @@ public:
      * @return true if the files could be opened.
      **/
     bool
-    open(const vespalib::string &pathPrefix,
+    open(const std::string &pathPrefix,
          const TuneFileRandRead &tuneFileRead,
          BitVectorKeyScope scope);
 

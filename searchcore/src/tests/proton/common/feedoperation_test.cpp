@@ -54,9 +54,9 @@ struct MyStreamHandler : NewConfigOperation::IStreamHandler {
 
 
 const int32_t doc_type_id = 787121340;
-const vespalib::string type_name = "test";
-const vespalib::string header_name = type_name + ".header";
-const vespalib::string body_name = type_name + ".body";
+const std::string type_name = "test";
+const std::string header_name = type_name + ".header";
+const std::string body_name = type_name + ".body";
 
 const DocumentOperation::Timestamp TS_10(10);
 
@@ -333,7 +333,7 @@ TEST_F("require that we can serialize and deserialize remove by gid operations",
     GlobalId gid = docId.getGlobalId();
     BucketId bucket(toBucket(gid));
     uint32_t expSerializedDocSize = 25;
-    vespalib::string expDocType = "testdoc_type";
+    std::string expDocType = "testdoc_type";
     EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
     {
         RemoveOperationWithGid op(bucket, TS_10 , gid, expDocType);

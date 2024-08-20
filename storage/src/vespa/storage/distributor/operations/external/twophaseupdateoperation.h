@@ -136,7 +136,7 @@ private:
     [[nodiscard]] bool replica_set_unchanged_after_get_operation() const;
     void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorStripeMessageSender& sender);
     // Precondition: reply has not yet been sent.
-    [[nodiscard]] vespalib::string update_doc_id() const;
+    [[nodiscard]] std::string update_doc_id() const;
 
     using ReplicaState = std::vector<std::pair<document::BucketId, uint16_t>>;
 

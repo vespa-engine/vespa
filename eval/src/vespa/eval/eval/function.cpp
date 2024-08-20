@@ -21,7 +21,7 @@ using nodes::Call_UP;
 
 namespace {
 
-bool has_duplicates(const std::vector<vespalib::string> &list) {
+bool has_duplicates(const std::vector<std::string> &list) {
     for (size_t i = 0; i < list.size(); ++i) {
         for (size_t j = (i + 1); j < list.size(); ++j) {
             if (list[i] == list[j]) {
@@ -36,13 +36,13 @@ bool has_duplicates(const std::vector<vespalib::string> &list) {
 
 class Params {
 private:
-    std::map<vespalib::string,size_t> _params;
+    std::map<std::string,size_t> _params;
 protected:
-    size_t lookup(const vespalib::string &token) const {
+    size_t lookup(const std::string &token) const {
         auto result = _params.find(token);
         return (result == _params.end()) ? UNDEF : result->second;
     }
-    size_t lookup_add(const vespalib::string &token) {
+    size_t lookup_add(const std::string &token) {
         size_t result = lookup(token);
         if (result == UNDEF) {
             result = _params.size();
@@ -53,9 +53,9 @@ protected:
 public:
     static const size_t UNDEF = -1;
     virtual bool implicit() const = 0;
-    virtual size_t resolve(const vespalib::string &token) const = 0;
-    std::vector<vespalib::string> extract() const {
-        std::vector<vespalib::string> params_out;
+    virtual size_t resolve(const std::string &token) const = 0;
+    std::vector<std::string> extract() const {
+        std::vector<std::string> params_out;
         params_out.resize(_params.size());
         for (const auto &item: _params) {
             params_out[item.second] = item.first;
@@ -66,28 +66,28 @@ public:
 };
 
 struct ExplicitParams : Params {
-    explicit ExplicitParams(const std::vector<vespalib::string> &params_in) {
+    explicit ExplicitParams(const std::vector<std::string> &params_in) {
         for (const auto &param: params_in) {
             assert(lookup(param) == UNDEF);
             lookup_add(param);
         }
     }
     bool implicit() const override { return false; }
-    size_t resolve(const vespalib::string &token) const override {
+    size_t resolve(const std::string &token) const override {
         return lookup(token);
     }
 };
 
 struct ImplicitParams : Params {
     ImplicitParams() = default;
-    explicit ImplicitParams(const std::vector<vespalib::string> &params_in) {
+    explicit ImplicitParams(const std::vector<std::string> &params_in) {
         for (const auto &param: params_in) {
             assert(lookup(param) == UNDEF);
             lookup_add(param);
         }
     }
     bool implicit() const override { return true; }
-    size_t resolve(const vespalib::string &token) const override {
+    size_t resolve(const std::string &token) const override {
         return const_cast<ImplicitParams*>(this)->lookup_add(token);
     }
 };
@@ -108,8 +108,8 @@ private:
     const char                  *_pos;
     const char                  *_end;
     char                         _curr;
-    vespalib::string             _scratch;
-    vespalib::string             _failure;
+    std::string             _scratch;
+    std::string             _failure;
     std::vector<Node_UP>         _expression_stack;
     std::vector<Operator_UP>     _operator_stack;
     size_t                       _operator_mark;
@@ -159,7 +159,7 @@ public:
         assert(!_resolve_stack.empty());
     }
 
-    void fail(const vespalib::string &msg) {
+    void fail(const std::string &msg) {
         if (_failure.empty()) {
             _failure = msg;
             _curr = 0;
@@ -196,11 +196,11 @@ public:
             next();
         }
     }
-    vespalib::string &scratch() {
+    std::string &scratch() {
         _scratch.clear();
         return _scratch;
     }
-    vespalib::string &peek(vespalib::string &str, size_t n) {
+    std::string &peek(std::string &str, size_t n) {
         const char *p = _pos;
         for (size_t i = 0; i < n; ++i, ++p) {
             if (_curr != 0 && p < _end) {
@@ -217,11 +217,11 @@ public:
         }
     }
 
-    size_t resolve_parameter(const vespalib::string &name) const {
+    size_t resolve_parameter(const std::string &name) const {
         return resolver().params.resolve(name);
     }
 
-    void extract_symbol(vespalib::string &symbol_out, InputMark before_symbol) {
+    void extract_symbol(std::string &symbol_out, InputMark before_symbol) {
         if (resolver().symbol_extractor == nullptr) {
             return;
         }
@@ -244,8 +244,8 @@ public:
             fail("incomplete parse");
         }
         if (!_failure.empty()) {
-            vespalib::string before(_begin, (_pos - _begin));
-            vespalib::string after(_pos, (_end - _pos));
+            std::string before(_begin, (_pos - _begin));
+            std::string after(_pos, (_end - _pos));
             return Node_UP(new nodes::Error(make_string("[%s]...[%s]...[%s]",
                                     before.c_str(), _failure.c_str(), after.c_str())));
         }
@@ -342,7 +342,7 @@ int unhex(char c) {
     return -1;
 }
 
-void extract_quoted_string(ParseContext &ctx, vespalib::string &str, char quote) {
+void extract_quoted_string(ParseContext &ctx, std::string &str, char quote) {
     ctx.eat(quote);
     while (!ctx.eos() && (ctx.get() != quote)) {
         if (ctx.get() == '\\') {
@@ -377,13 +377,13 @@ void extract_quoted_string(ParseContext &ctx, vespalib::string &str, char quote)
 }
 
 void parse_string(ParseContext &ctx, char quote) {
-    vespalib::string &str = ctx.scratch();
+    std::string &str = ctx.scratch();
     extract_quoted_string(ctx, str, quote);
     ctx.push_expression(Node_UP(new nodes::String(str)));
 }
 
 void parse_number(ParseContext &ctx) {
-    vespalib::string &str = ctx.scratch();
+    std::string &str = ctx.scratch();
     str.push_back(ctx.get());
     ctx.next();
     while (ctx.get() >= '0' && ctx.get() <= '9') {
@@ -429,9 +429,9 @@ bool is_ident(char c, bool first) {
             (c == '$' && !first));
 }
 
-vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
+std::string get_ident(ParseContext &ctx, bool allow_empty) {
     ctx.skip_spaces();
-    vespalib::string ident;
+    std::string ident;
     if (is_ident(ctx.get(), true)) {
         ident.push_back(ctx.get());
         for (ctx.next(); is_ident(ctx.get(), false); ctx.next()) {
@@ -446,7 +446,7 @@ vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
 
 size_t get_size_t(ParseContext &ctx) {
     ctx.skip_spaces();
-    vespalib::string num;
+    std::string num;
     for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
         num.push_back(ctx.get());
     }
@@ -461,9 +461,9 @@ bool is_label_end(char c) {
             (c == ':') || (c == ',') || (c == '}'));
 }
 
-vespalib::string get_label(ParseContext &ctx) {
+std::string get_label(ParseContext &ctx) {
     ctx.skip_spaces();
-    vespalib::string label;
+    std::string label;
     if (ctx.get() == '"') {
         extract_quoted_string(ctx, label, '"');
     } else if (ctx.get() == '\'') {
@@ -510,8 +510,8 @@ void parse_call(ParseContext &ctx, Call_UP call) {
 
 // (a,b,c)     wrapped
 // ,a,b,c -> ) not wrapped
-std::vector<vespalib::string> get_ident_list(ParseContext &ctx, bool wrapped) {
-    std::vector<vespalib::string> list;
+std::vector<std::string> get_ident_list(ParseContext &ctx, bool wrapped) {
+    std::vector<std::string> list;
     if (wrapped) {
         ctx.skip_spaces();
         ctx.eat('(');
@@ -533,8 +533,8 @@ std::vector<vespalib::string> get_ident_list(ParseContext &ctx, bool wrapped) {
 // a
 // (a,b,c)
 // cannot be empty
-std::vector<vespalib::string> get_idents(ParseContext &ctx) {
-    std::vector<vespalib::string> list;
+std::vector<std::string> get_idents(ParseContext &ctx) {
+    std::vector<std::string> list;
     ctx.skip_spaces();
     if (ctx.get() == '(') {
         list = get_ident_list(ctx, true);
@@ -770,7 +770,7 @@ void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
 
 bool maybe_parse_tensor_generator(ParseContext &ctx) {
     ParseContext::InputMark my_mark = ctx.get_input_mark();
-    vespalib::string type_spec("tensor");
+    std::string type_spec("tensor");
     while(!ctx.eos() && (ctx.get() != ')')) {
         type_spec.push_back(ctx.get());
         ctx.next();
@@ -851,7 +851,7 @@ void parse_tensor_cell_cast(ParseContext &ctx) {
     }
 }
 
-bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
+bool maybe_parse_call(ParseContext &ctx, const std::string &name) {
     ctx.skip_spaces();
     if (ctx.get() == '(') {
         ctx.eat('(');
@@ -890,7 +890,7 @@ bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
 
 void parse_symbol_or_call(ParseContext &ctx) {
     ParseContext::InputMark before_name = ctx.get_input_mark();
-    vespalib::string name = get_ident(ctx, true);
+    std::string name = get_ident(ctx, true);
     bool was_tensor_generate = ((name == "tensor") && maybe_parse_tensor_generator(ctx));
     if (!was_tensor_generate && !maybe_parse_call(ctx, name)) {
         ctx.extract_symbol(name, before_name);
@@ -970,7 +970,7 @@ void parse_value(ParseContext &ctx) {
 bool parse_operator(ParseContext &ctx) {
     bool expect_value = true;
     ctx.skip_spaces();
-    vespalib::string &str = ctx.peek(ctx.scratch(), nodes::OperatorRepo::instance().max_size());
+    std::string &str = ctx.peek(ctx.scratch(), nodes::OperatorRepo::instance().max_size());
     Operator_UP op = nodes::OperatorRepo::instance().create(str);
     if (op.get() != nullptr) {
         ctx.push_operator(std::move(op));
@@ -979,7 +979,7 @@ bool parse_operator(ParseContext &ctx) {
         parse_tensor_peek(ctx);
         expect_value = false;
     } else {
-        vespalib::string ident = get_ident(ctx, true);
+        std::string ident = get_ident(ctx, true);
         if (ident == "in") {
             parse_in(ctx);
             expect_value = false;
@@ -1014,7 +1014,7 @@ auto parse_function(const Params &params, std::string_view expression,
     ParseContext ctx(params, expression.data(), expression.size(), symbol_extractor);
     parse_expression(ctx);
     if (ctx.failed() && params.implicit()) {
-        return Function::create(ctx.get_result(), std::vector<vespalib::string>());
+        return Function::create(ctx.get_result(), std::vector<std::string>());
     }
     return Function::create(ctx.get_result(), params.extract());
 }
@@ -1030,7 +1030,7 @@ Function::has_error() const
     return error;
 }
 
-vespalib::string
+std::string
 Function::get_error() const
 {
     auto error = nodes::as<nodes::Error>(*_root);
@@ -1038,7 +1038,7 @@ Function::get_error() const
 }
 
 std::shared_ptr<Function const>
-Function::create(nodes::Node_UP root_in, std::vector<vespalib::string> params_in)
+Function::create(nodes::Node_UP root_in, std::vector<std::string> params_in)
 {
     return std::make_shared<Function const>(std::move(root_in), std::move(params_in), ctor_tag());
 }
@@ -1056,13 +1056,13 @@ Function::parse(std::string_view expression, const SymbolExtractor &symbol_extra
 }
 
 std::shared_ptr<Function const>
-Function::parse(const std::vector<vespalib::string> &params, std::string_view expression)
+Function::parse(const std::vector<std::string> &params, std::string_view expression)
 {
     return parse_function(ExplicitParams(params), expression, nullptr);
 }
 
 std::shared_ptr<Function const>
-Function::parse(const std::vector<vespalib::string> &params, std::string_view expression,
+Function::parse(const std::vector<std::string> &params, std::string_view expression,
                 const SymbolExtractor &symbol_extractor)
 {
     return parse_function(ExplicitParams(params), expression, &symbol_extractor);
@@ -1070,10 +1070,10 @@ Function::parse(const std::vector<vespalib::string> &params, std::string_view ex
 
 //-----------------------------------------------------------------------------
 
-vespalib::string
+std::string
 Function::dump_as_lambda() const
 {
-    vespalib::string lambda = "f(";
+    std::string lambda = "f(";
     for (size_t i = 0; i < _params.size(); ++i) {
         if (i > 0) {
             lambda += ",";
@@ -1081,7 +1081,7 @@ Function::dump_as_lambda() const
         lambda += _params[i];
     }
     lambda += ")";
-    vespalib::string expr = dump();
+    std::string expr = dump();
     if (expr.starts_with("(")) {
         lambda += expr;
     } else {
@@ -1094,9 +1094,9 @@ Function::dump_as_lambda() const
 
 bool
 Function::unwrap(std::string_view input,
-                 vespalib::string &wrapper,
-                 vespalib::string &body,
-                 vespalib::string &error)
+                 std::string &wrapper,
+                 std::string &body,
+                 std::string &error)
 {
     size_t pos = 0;
     for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos);
@@ -1128,7 +1128,7 @@ Function::unwrap(std::string_view input,
 //-----------------------------------------------------------------------------
 
 void
-Function::Issues::add_nested_issues(const vespalib::string &context, const Issues &issues)
+Function::Issues::add_nested_issues(const std::string &context, const Issues &issues)
 {
     for (const auto &issue: issues.list) {
         list.push_back(context + ": " + issue);

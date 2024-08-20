@@ -76,19 +76,19 @@ using vespalib::eval::ValueType;
 using DoubleVector = std::vector<double>;
 using generation_t = vespalib::GenerationHandler::generation_t;
 
-vespalib::string sparseSpec("tensor(x{},y{})");
-vespalib::string denseSpec("tensor(x[2],y[3])");
-vespalib::string vec_2d_spec("tensor(x[2])");
-vespalib::string vec_mixed_2d_spec("tensor(a{},x[2])");
+std::string sparseSpec("tensor(x{},y{})");
+std::string denseSpec("tensor(x[2],y[3])");
+std::string vec_2d_spec("tensor(x[2])");
+std::string vec_mixed_2d_spec("tensor(a{},x[2])");
 
 Value::UP createTensor(const TensorSpec &spec) {
     return value_from_spec(spec, FastValueBuilderFactory::get());
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 to_string_labels(std::span<const vespalib::string_id> labels)
 {
-    std::vector<vespalib::string> result;
+    std::vector<std::string> result;
     for (auto& label : labels) {
         result.emplace_back(SharedStringRepo::Handle::string_from_id(label));
     }
@@ -108,7 +108,7 @@ vec_mixed_2d(std::vector<std::vector<double>> val)
     for (uint32_t a = 0; a < val.size(); ++a) {
         vespalib::asciistream a_stream;
         a_stream << a;
-        vespalib::string a_as_string = a_stream.str();
+        std::string a_as_string = a_stream.str();
         for (uint32_t x = 0; x < val[a].size(); ++x) {
             spec.add({{"a", a_as_string.c_str()},{"x", x}}, val[a][x]);
         }
@@ -353,10 +353,10 @@ class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
     }
 };
 
-const vespalib::string test_dir = "test_data/";
-const vespalib::string attr_name = test_dir + "my_attr";
+const std::string test_dir = "test_data/";
+const std::string attr_name = test_dir + "my_attr";
 
-const vespalib::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
+const std::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
 
 struct FixtureTraits {
     bool use_dense_tensor_attribute = false;
@@ -421,8 +421,8 @@ struct Fixture {
 
     search::test::DirectoryHandler _dir_handler;
     Config _cfg;
-    vespalib::string _name;
-    vespalib::string _typeSpec;
+    std::string _name;
+    std::string _typeSpec;
     bool _use_mock_index;
     std::unique_ptr<NearestNeighborIndexFactory> _index_factory;
     std::shared_ptr<TensorAttribute> _tensorAttr;
@@ -430,9 +430,9 @@ struct Fixture {
     vespalib::ThreadStackExecutor _executor;
     bool _denseTensors;
     FixtureTraits _traits;
-    vespalib::string _mmap_allocator_base_dir;
+    std::string _mmap_allocator_base_dir;
 
-    explicit Fixture(const vespalib::string &typeSpec, FixtureTraits traits = FixtureTraits());
+    explicit Fixture(const std::string &typeSpec, FixtureTraits traits = FixtureTraits());
 
     ~Fixture();
 
@@ -597,7 +597,7 @@ struct Fixture {
         return {denseSpec};
     }
 
-    vespalib::string expEmptyDenseTensorSpec() const {
+    std::string expEmptyDenseTensorSpec() const {
         return denseSpec;
     }
 
@@ -617,7 +617,7 @@ struct Fixture {
     void test_mmap_file_allocator();
 };
 
-Fixture::Fixture(const vespalib::string &typeSpec, FixtureTraits traits)
+Fixture::Fixture(const std::string &typeSpec, FixtureTraits traits)
     : _dir_handler(test_dir),
       _cfg(BasicType::TENSOR, CollectionType::SINGLE),
       _name(attr_name),
@@ -783,7 +783,7 @@ Fixture::get_file_header()
 {
     vespalib::FileHeader header;
     FastOS_File file;
-    vespalib::string file_name = attr_name + ".dat";
+    std::string file_name = attr_name + ".dat";
     EXPECT_TRUE(file.OpenReadOnly(file_name.c_str()));
     (void) header.readFile(file);
     return header;
@@ -811,7 +811,7 @@ Fixture::testEmptyTensor()
     const TensorAttribute &tensorAttr = *_tensorAttr;
     Value::UP emptyTensor = tensorAttr.getEmptyTensor();
     if (_denseTensors) {
-        vespalib::string expSpec = expEmptyDenseTensorSpec();
+        std::string expSpec = expEmptyDenseTensorSpec();
         EXPECT_EQUAL(emptyTensor->type(), ValueType::from_spec(expSpec));
     } else {
         EXPECT_EQUAL(emptyTensor->type(), tensorAttr.getConfig().tensorType());
@@ -847,11 +847,11 @@ Fixture::testSerializedTensorRef()
         EXPECT_EQUAL(2u, vectors.subspaces());
         auto cells = vectors.cells(0).typify<double>();
         auto labels = ref.get_labels(0);
-        EXPECT_EQUAL((std::vector<vespalib::string>{"one", "two"}), to_string_labels(labels));
+        EXPECT_EQUAL((std::vector<std::string>{"one", "two"}), to_string_labels(labels));
         EXPECT_EQUAL((std::vector<double>{11.0}), (std::vector<double>{ cells.begin(), cells.end() }));
         cells = vectors.cells(1).typify<double>();
         labels = ref.get_labels(1);
-        EXPECT_EQUAL((std::vector<vespalib::string>{"three", "four"}), to_string_labels(labels));
+        EXPECT_EQUAL((std::vector<std::string>{"three", "four"}), to_string_labels(labels));
         EXPECT_EQUAL((std::vector<double>{17.0}), (std::vector<double>{ cells.begin(), cells.end() }));
     }
     TEST_DO(clearTensor(3));
@@ -964,7 +964,7 @@ template <HnswIndexType type>
 class TensorAttributeHnswIndex : public Fixture
 {
 public:
-    TensorAttributeHnswIndex(const vespalib::string &type_spec, FixtureTraits traits)
+    TensorAttributeHnswIndex(const std::string &type_spec, FixtureTraits traits)
         : Fixture(type_spec, traits)
     {
     }

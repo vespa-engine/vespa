@@ -87,11 +87,11 @@ ExchangeManager::lookupPartner(const std::string & name) const {
     return (found == _partners.end()) ? nullptr : found->second.get();
 }
 
-vespalib::string
+std::string
 ExchangeManager::diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs)
 {
     using namespace vespalib;
-    vespalib::string result;
+    std::string result;
     auto visitor = overload
         {
             [&result](visit_ranges_first, const auto &m) {
@@ -116,7 +116,7 @@ ExchangeManager::healthCheck()
         auto remoteList = partner->remoteMap().allMappings();
         // 0 is expected (when remote is down)
         if (remoteList.size() != 0) {
-            vespalib::string diff = diffLists(newWorldList, remoteList);
+            std::string diff = diffLists(newWorldList, remoteList);
             if (! diff.empty()) {
                 LOG(warning, "Peer slobrok at %s may have problems, differences from consensus map: %s",
                     partner->getName().c_str(), diff.c_str());

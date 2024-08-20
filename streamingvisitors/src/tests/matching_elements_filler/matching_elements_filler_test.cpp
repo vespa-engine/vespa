@@ -65,27 +65,27 @@ StructDataType make_elem_type(const Field& name_field, const Field& weight_field
 }
 
 struct BoundTerm {
-    vespalib::string _bound_term;
-    BoundTerm(vespalib::string bound_term)
+    std::string _bound_term;
+    BoundTerm(std::string bound_term)
         : _bound_term(std::move(bound_term))
     {
     }
     BoundTerm(const char* bound_term)
-        : BoundTerm(vespalib::string(bound_term))
+        : BoundTerm(std::string(bound_term))
     {
     }
-    vespalib::string index() const {
+    std::string index() const {
         auto pos = _bound_term.find(':');
-        return _bound_term.substr(0, pos != vespalib::string::npos ? pos : 0);
+        return _bound_term.substr(0, pos != std::string::npos ? pos : 0);
     }
-    vespalib::string term() const {
+    std::string term() const {
         auto pos = _bound_term.find(':');
-        return _bound_term.substr(pos != vespalib::string::npos ? (pos + 1) : 0);
+        return _bound_term.substr(pos != std::string::npos ? (pos + 1) : 0);
     }
 };
 
 Query make_query(std::unique_ptr<search::query::Node> root) {
-    vespalib::string stack_dump = StackDumpCreator::create(*root);
+    std::string stack_dump = StackDumpCreator::create(*root);
     QueryNodeResultFactory empty;
     Query query(empty, stack_dump);
     return query;
@@ -102,14 +102,14 @@ struct MyQueryBuilder : public search::query::QueryBuilder<search::query::Simple
             addStringTerm(term.term(), term.index(), id, Weight(0));
         }
     }
-    void make_same_element(vespalib::string field, BoundTerm term1, int32_t id1, BoundTerm term2, int32_t id2) {
+    void make_same_element(std::string field, BoundTerm term1, int32_t id1, BoundTerm term2, int32_t id2) {
         addSameElement(2, field, 0, Weight(0));
         add_term(term1, id1);
         add_term(term2, id2);
     }
 };
 
-Query make_same_element(vespalib::string field, BoundTerm term1, BoundTerm term2) {
+Query make_same_element(std::string field, BoundTerm term1, BoundTerm term2) {
     MyQueryBuilder builder;
     builder.make_same_element(field, term1, 0, term2, 1);
     return make_query(builder.build());
@@ -135,11 +135,11 @@ struct MyDocType {
 
     MyDocType();
     ~MyDocType();
-    std::unique_ptr<StructFieldValue> make_elem(const vespalib::string& name, int weight) const;
+    std::unique_ptr<StructFieldValue> make_elem(const std::string& name, int weight) const;
     std::unique_ptr<ArrayFieldValue> make_elem_array(std::vector<std::pair<std::string, int>> values) const;
     std::unique_ptr<MapFieldValue> make_elem_map(std::map<std::string, std::pair<std::string, int>> values) const;
     std::unique_ptr<MapFieldValue> make_str_int_map(std::map<std::string, int> values) const;
-    FieldPath make_field_path(vespalib::string path) const;
+    FieldPath make_field_path(std::string path) const;
     std::unique_ptr<document::Document> make_test_doc() const;
 };
 
@@ -163,7 +163,7 @@ MyDocType::MyDocType()
 MyDocType::~MyDocType() = default;
 
 std::unique_ptr<StructFieldValue>
-MyDocType::make_elem(const vespalib::string& name, int weight) const
+MyDocType::make_elem(const std::string& name, int weight) const
 {
     auto ret = std::make_unique<StructFieldValue>(_elem_type);
     ret->setValue(_name_field, StringFieldValue(name));
@@ -202,7 +202,7 @@ MyDocType::make_str_int_map(std::map<std::string, int> values) const
 }
 
 FieldPath
-MyDocType::make_field_path(vespalib::string path) const
+MyDocType::make_field_path(std::string path) const
 {
     FieldPath ret;
     _document_type.buildFieldPath(ret, path);
@@ -286,9 +286,9 @@ public:
     MatchingElementsFillerTest();
     ~MatchingElementsFillerTest();
     void fill_matching_elements(Query &&query);
-    void assert_elements(uint32_t doc_lid, const vespalib::string& field, const ElementVector& exp_elements);
-    void assert_same_element(const vespalib::string& field, const vespalib::string& term1, const vespalib::string& term2, const ElementVector& exp_elements);
-    void assert_same_element_single(const vespalib::string& field, const vespalib::string& term, const ElementVector& exp_elements);
+    void assert_elements(uint32_t doc_lid, const std::string& field, const ElementVector& exp_elements);
+    void assert_same_element(const std::string& field, const std::string& term1, const std::string& term2, const ElementVector& exp_elements);
+    void assert_same_element_single(const std::string& field, const std::string& term, const ElementVector& exp_elements);
 };
 
 MatchingElementsFillerTest::MatchingElementsFillerTest()
@@ -326,21 +326,21 @@ MatchingElementsFillerTest::fill_matching_elements(Query &&query)
 }
 
 void
-MatchingElementsFillerTest::assert_elements(uint32_t doc_lid, const vespalib::string& field, const ElementVector& exp_elements)
+MatchingElementsFillerTest::assert_elements(uint32_t doc_lid, const std::string& field, const ElementVector& exp_elements)
 {
     auto act_elements = _matching_elements->get_matching_elements(doc_lid, field);
     EXPECT_EQ(exp_elements, act_elements);
 }
 
 void
-MatchingElementsFillerTest::assert_same_element(const vespalib::string& field, const vespalib::string& term1, const vespalib::string& term2, const ElementVector& exp_elements)
+MatchingElementsFillerTest::assert_same_element(const std::string& field, const std::string& term1, const std::string& term2, const ElementVector& exp_elements)
 {
     fill_matching_elements(make_same_element(field, term1, term2));
     assert_elements(1, field, exp_elements);
 }
 
 void
-MatchingElementsFillerTest::assert_same_element_single(const vespalib::string& field, const vespalib::string& term, const ElementVector& exp_elements)
+MatchingElementsFillerTest::assert_same_element_single(const std::string& field, const std::string& term, const ElementVector& exp_elements)
 {
     fill_matching_elements(make_same_element_single(field + "." + term));
     assert_elements(1, field, exp_elements);

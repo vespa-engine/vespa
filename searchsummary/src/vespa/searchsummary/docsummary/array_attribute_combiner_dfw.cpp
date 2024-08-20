@@ -26,15 +26,15 @@ class ArrayAttributeFieldWriterState : public DocsumFieldWriterState
 {
     // AttributeFieldWriter instances are owned by stash passed to constructor
     std::vector<AttributeFieldWriter*>                 _writers;
-    const vespalib::string&                            _field_name;
+    const std::string&                            _field_name;
     const MatchingElements* const                      _matching_elements;
 
 public:
-    ArrayAttributeFieldWriterState(const std::vector<vespalib::string> &fieldNames,
-                                   const std::vector<vespalib::string> &attributeNames,
+    ArrayAttributeFieldWriterState(const std::vector<std::string> &fieldNames,
+                                   const std::vector<std::string> &attributeNames,
                                    IAttributeContext &context,
                                    vespalib::Stash& stash,
-                                   const vespalib::string &field_name,
+                                   const std::string &field_name,
                                    const MatchingElements* matching_elements,
                                    bool is_map_of_scalar);
     ~ArrayAttributeFieldWriterState() override;
@@ -42,11 +42,11 @@ public:
     void insertField(uint32_t docId, vespalib::slime::Inserter &target) override;
 };
 
-ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector<vespalib::string> &fieldNames,
-                                                               const std::vector<vespalib::string> &attributeNames,
+ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector<std::string> &fieldNames,
+                                                               const std::vector<std::string> &attributeNames,
                                                                IAttributeContext &context,
                                                                vespalib::Stash& stash,
-                                                               const vespalib::string &field_name,
+                                                               const std::string &field_name,
                                                                const MatchingElements *matching_elements,
                                                                bool is_map_of_scalar)
     : DocsumFieldWriterState(),
@@ -109,7 +109,7 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
 
 }
 
-ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
+ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const std::string &fieldName,
                                                      const StructFieldsResolver& fields_resolver,
                                                      bool filter_elements,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields)

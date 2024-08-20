@@ -5,7 +5,7 @@
 
 namespace vespalib::eval::nodes {
 
-Operator::Operator(const vespalib::string &op_str_in, int priority_in, Order order_in)
+Operator::Operator(const std::string &op_str_in, int priority_in, Order order_in)
     : _op_str(op_str_in),
       _priority(priority_in),
       _order(order_in),

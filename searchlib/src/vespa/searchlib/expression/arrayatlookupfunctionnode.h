@@ -18,7 +18,7 @@ public:
 
     ArrayAtLookup() noexcept;
     ~ArrayAtLookup() override;
-    ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP arg);
+    ArrayAtLookup(const std::string &attribute, ExpressionNode::UP arg);
     ArrayAtLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP indexArg);
     ArrayAtLookup(const ArrayAtLookup &rhs);
     ArrayAtLookup & operator= (const ArrayAtLookup &rhs);

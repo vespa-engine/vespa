@@ -119,9 +119,9 @@ private:
 
     StorageNodeContext& _context;
     ApplicationGenerationFetcher& _generationFetcher;
-    vespalib::string _rootFolder;
+    std::string _rootFolder;
     std::atomic<bool> _attemptedStopped;
-    vespalib::string _pidFile;
+    std::string _pidFile;
 
     // First components that doesn't depend on others
     std::unique_ptr<StatusWebServer>           _statusWebServer;

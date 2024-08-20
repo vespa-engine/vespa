@@ -26,7 +26,7 @@ AttributeAccessRecorder::getAttribute(std::string_view name) const
 {
     auto ret = _ctx->getAttribute(name);
     if (ret != nullptr) {
-        _accessed_attributes.insert(vespalib::string(name));
+        _accessed_attributes.insert(std::string(name));
     }
     return ret;
 }
@@ -36,7 +36,7 @@ AttributeAccessRecorder::getAttributeStableEnum(std::string_view name) const
 {
     auto ret = _ctx->getAttributeStableEnum(name);
     if (ret != nullptr) {
-        _accessed_attributes.insert(vespalib::string(name));
+        _accessed_attributes.insert(std::string(name));
     }
     return ret;
 }
@@ -53,10 +53,10 @@ AttributeAccessRecorder::releaseEnumGuards()
     _ctx->releaseEnumGuards();
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 AttributeAccessRecorder::get_accessed_attributes() const
 {
-    std::vector<vespalib::string> result;
+    std::vector<std::string> result;
     result.reserve(_accessed_attributes.size());
     for (auto& attr : _accessed_attributes) {
         result.emplace_back(attr);

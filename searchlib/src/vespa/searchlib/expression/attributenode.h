@@ -54,7 +54,7 @@ public:
     const attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
     }
-    const vespalib::string & getAttributeName() const noexcept { return _attributeName; }
+    const std::string & getAttributeName() const noexcept { return _attributeName; }
 
     void enableEnumOptimization(bool enable) noexcept { _useEnumOptimization = enable; }
 public:
@@ -91,7 +91,7 @@ protected:
     }
     virtual void cleanup();
     bool onExecute() const override;
-    vespalib::string                  _attributeName;
+    std::string                  _attributeName;
 };
 
 }

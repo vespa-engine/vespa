@@ -6,7 +6,7 @@
 namespace proton::test {
 
 std::unique_ptr<Int32Attribute>
-createInt32Attribute(const vespalib::string &name) {
+createInt32Attribute(const std::string &name) {
     return std::make_unique<Int32Attribute>(name, AttributeUtils::getInt32Config());
 }
 

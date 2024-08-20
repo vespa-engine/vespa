@@ -17,7 +17,7 @@ private:
     HitEstimate                _estimate;
     fef::MatchDataLayout       _layout;
     std::vector<Blueprint::UP> _terms;
-    vespalib::string           _field_name;
+    std::string           _field_name;
 
 public:
     SameElementBlueprint(const FieldSpec &field, bool expensive);
@@ -29,7 +29,7 @@ public:
     bool isWhiteList() const noexcept final { return true; }
 
     // used by create visitor
-    FieldSpec getNextChildField(const vespalib::string &field_name, uint32_t field_id);
+    FieldSpec getNextChildField(const std::string &field_name, uint32_t field_id);
 
     // used by create visitor
     void addTerm(Blueprint::UP term);
@@ -45,7 +45,7 @@ public:
     SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::vector<Blueprint::UP> &terms() const { return _terms; }
-    const vespalib::string &field_name() const { return _field_name; }
+    const std::string &field_name() const { return _field_name; }
 };
 
 }

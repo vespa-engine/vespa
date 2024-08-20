@@ -11,8 +11,8 @@
  */
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/fieldset/fieldset.h>
+#include <string>
 #include <vector>
 
 namespace document {
@@ -22,7 +22,7 @@ class DataType;
 
 class Field final : public FieldSet
 {
-    vespalib::string _name;
+    std::string _name;
     const DataType *_dataType;
     int             _fieldId;
 public:
@@ -98,9 +98,9 @@ public:
     const DataType &getDataType() const { return *_dataType; }
 
     int getId() const noexcept { return _fieldId; }
-    const vespalib::string & getName() const noexcept { return _name; }
+    const std::string & getName() const noexcept { return _name; }
 
-    vespalib::string toString(bool verbose=false) const;
+    std::string toString(bool verbose=false) const;
     bool contains(const FieldSet& fields) const override;
     Type getType() const override { return Type::FIELD; }
     bool valid() const noexcept { return _fieldId != 0; }

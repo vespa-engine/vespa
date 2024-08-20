@@ -11,7 +11,7 @@ namespace vespalib { class MemoryUsage; }
 namespace storage::distributor {
 
 struct BucketDbMetrics : metrics::MetricSet {
-    BucketDbMetrics(const vespalib::string& db_type, metrics::MetricSet* owner);
+    BucketDbMetrics(const std::string& db_type, metrics::MetricSet* owner);
     ~BucketDbMetrics() override;
 
     metrics::MemoryUsageMetrics memory_usage;

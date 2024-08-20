@@ -13,7 +13,7 @@ LOG_SETUP(".wrapper");
 
 namespace {
 
-vespalib::string fixDir(const vespalib::string &parent, const vespalib::string &subdir) {
+std::string fixDir(const std::string &parent, const std::string &subdir) {
     auto dirname = parent + "/" + subdir;
     DIR *dp = opendir(dirname.c_str());
     if (dp == NULL) {
@@ -27,15 +27,15 @@ vespalib::string fixDir(const vespalib::string &parent, const vespalib::string &
     return dirname;
 }
 
-vespalib::string cfFilePath() {
-    vespalib::string path = vespa::Defaults::underVespaHome("var/db/vespa");
+std::string cfFilePath() {
+    std::string path = vespa::Defaults::underVespaHome("var/db/vespa");
     path = fixDir(path, "otelcol");
     return path + "/" + "config.yaml";
 }
 
-void  writeConfig(const vespalib::string &config, const vespalib::string &path) {
+void  writeConfig(const std::string &config, const std::string &path) {
     LOG(info, "got config, writing %s", path.c_str());
-    vespalib::string tmpPath = path + ".new";
+    std::string tmpPath = path + ".new";
     FILE *fp = fopen(tmpPath.c_str(), "w");
     if (fp == NULL) {
         LOG(warning, "could not open '%s' for write", tmpPath.c_str());

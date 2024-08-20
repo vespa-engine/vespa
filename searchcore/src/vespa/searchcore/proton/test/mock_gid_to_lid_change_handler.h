@@ -16,8 +16,8 @@ namespace proton::test {
  */
 class MockGidToLidChangeHandler : public IGidToLidChangeHandler {
 public:
-    using AddEntry = std::pair<vespalib::string, vespalib::string>;
-    using RemoveEntry = std::pair<vespalib::string, std::set<vespalib::string>>;
+    using AddEntry = std::pair<std::string, std::string>;
+    using RemoveEntry = std::pair<std::string, std::set<std::string>>;
 
 private:
     std::vector<AddEntry> _adds;
@@ -29,7 +29,7 @@ public:
     ~MockGidToLidChangeHandler() override;
 
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
-    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override;
+    void removeListeners(const std::string &docTypeName, const std::set<std::string> &keepNames) override;
 
     void notifyPut(IDestructorCallbackSP, document::GlobalId, uint32_t, SerialNum)  override { }
     void notifyRemoves(IDestructorCallbackSP, const std::vector<document::GlobalId> &, SerialNum)  override { }

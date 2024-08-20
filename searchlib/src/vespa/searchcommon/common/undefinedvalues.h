@@ -3,8 +3,9 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
 #include <limits>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::attribute {
 

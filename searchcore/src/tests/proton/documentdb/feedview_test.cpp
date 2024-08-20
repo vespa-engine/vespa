@@ -73,8 +73,8 @@ struct MyLidVector : public std::vector<DocumentIdT>
 
 
 const uint32_t subdb_id = 0;
-const vespalib::string indexAdapterTypeName = "index";
-const vespalib::string attributeAdapterTypeName = "attribute";
+const std::string indexAdapterTypeName = "index";
+const std::string attributeAdapterTypeName = "attribute";
 
 struct MyTracer
 {
@@ -103,20 +103,20 @@ struct MyTracer
         _os << ")";
     }
 
-    void tracePut(const vespalib::string &adapterType, SerialNum serialNum, uint32_t lid) {
+    void tracePut(const std::string &adapterType, SerialNum serialNum, uint32_t lid) {
         Guard guard(_mutex);
         addComma();
         _os << "put(adapter=" << adapterType <<
             ",serialNum=" << serialNum << ",lid=" << lid << ")";
     }
 
-    void traceRemove(const vespalib::string &adapterType, SerialNum serialNum, uint32_t lid) {
+    void traceRemove(const std::string &adapterType, SerialNum serialNum, uint32_t lid) {
         Guard guard(_mutex);
         addComma();
         _os << "remove(adapter=" << adapterType << ",serialNum=" << serialNum << ",lid=" << lid << ")";
     }
 
-    void traceCommit(const vespalib::string &adapterType, SerialNum serialNum) {
+    void traceCommit(const std::string &adapterType, SerialNum serialNum) {
         Guard guard(_mutex);
         addComma();
         _os << "commit(adapter=" << adapterType <<
@@ -129,12 +129,12 @@ struct ParamsContext
     DocTypeName                          _docTypeName;
     SearchableFeedView::PersistentParams _params;
 
-    ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir);
+    ParamsContext(const std::string &docType, const std::string &baseDir);
     ~ParamsContext();
     const SearchableFeedView::PersistentParams &getParams() const { return _params; }
 };
 
-ParamsContext::ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir)
+ParamsContext::ParamsContext(const std::string &docType, const std::string &baseDir)
     : _docTypeName(docType),
       _params(0, 0, _docTypeName, subdb_id, SubDbType::READY)
 {
@@ -329,9 +329,9 @@ struct MyAttributeWriter : public IAttributeWriter
     int _heartBeatCount;
     uint32_t _commitCount;
     uint32_t _wantedLidLimit;
-    using AttrMap = std::map<vespalib::string, std::shared_ptr<AttributeVector>>;
+    using AttrMap = std::map<std::string, std::shared_ptr<AttributeVector>>;
     AttrMap _attrMap;
-    std::set<vespalib::string> _attrs;
+    std::set<std::string> _attrs;
     proton::IAttributeManager::SP _mgr;
     MyTracer &_tracer;
 
@@ -342,7 +342,7 @@ struct MyAttributeWriter : public IAttributeWriter
     getWritableAttributes() const override {
         return std::vector<AttributeVector *>();
     }
-    AttributeVector *getWritableAttribute(const vespalib::string &attrName) const override {
+    AttributeVector *getWritableAttribute(const std::string &attrName) const override {
         if (_attrs.count(attrName) == 0) {
             return nullptr;
         }
@@ -464,16 +464,16 @@ struct DocumentContext
     BucketId           bid;
     Timestamp          ts;
     using List = std::vector<DocumentContext>;
-    DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder);
+    DocumentContext(const std::string &docId, uint64_t timestamp, DocBuilder &builder);
     ~DocumentContext();
-    void addFieldUpdate(DocBuilder &builder, const vespalib::string &fieldName) {
+    void addFieldUpdate(DocBuilder &builder, const std::string &fieldName) {
         const document::Field &field = builder.get_document_type().getField(fieldName);
         upd->addUpdate(document::FieldUpdate(field));
     }
     document::GlobalId gid() const { return doc->getId().getGlobalId(); }
 };
 
-DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder& builder)
+DocumentContext::DocumentContext(const std::string &docId, uint64_t timestamp, DocBuilder& builder)
     : doc(builder.make_document(docId)),
       upd(std::make_shared<DocumentUpdate>(builder.get_repo(), builder.get_document_type(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
@@ -555,7 +555,7 @@ struct FixtureBase
 
     DocBuilder &getBuilder() { return sc._builder; }
 
-    DocumentContext doc(const vespalib::string &docId, uint64_t timestamp) {
+    DocumentContext doc(const std::string &docId, uint64_t timestamp) {
         return DocumentContext(docId, timestamp, getBuilder());
     }
 
@@ -647,7 +647,7 @@ struct FixtureBase
         _writeService.master().sync();
     }
 
-    bool assertTrace(const vespalib::string &exp) {
+    bool assertTrace(const std::string &exp) {
         return EXPECT_EQUAL(exp, _tracer._os.view());
     }
 
@@ -1085,7 +1085,7 @@ TEST_F("require that heartbeat propagates to index- and attributeadapter",
 }
 
 template <typename Fixture>
-void putDocumentAndUpdate(Fixture &f, const vespalib::string &fieldName)
+void putDocumentAndUpdate(Fixture &f, const std::string &fieldName)
 {
     DocumentContext dc1 = f.doc1();
     f.putAndWait(dc1);
@@ -1100,7 +1100,7 @@ void putDocumentAndUpdate(Fixture &f, const vespalib::string &fieldName)
 
 template <typename Fixture>
 void requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(Fixture &f,
-                                                              const vespalib::string &fieldName)
+                                                              const std::string &fieldName)
 {
     putDocumentAndUpdate(f, fieldName);
 
@@ -1110,7 +1110,7 @@ void requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(Fixture &f,
 
 template <typename Fixture>
 void requireThatUpdateUpdatesAttributeAndDocumentStore(Fixture &f,
-                                                       const vespalib::string &fieldName)
+                                                       const std::string &fieldName)
 {
     putDocumentAndUpdate(f, fieldName);
 

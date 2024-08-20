@@ -16,7 +16,7 @@ namespace search::features {
  */
 class ConstantBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _key;  // 'foo'
+    std::string _key;  // 'foo'
     std::unique_ptr<vespalib::eval::ConstantValue> _value;
 
 public:

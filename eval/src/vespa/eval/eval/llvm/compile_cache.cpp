@@ -53,7 +53,7 @@ CompileCache::compile(const Function &function, PassParams pass_params)
     Token::UP token;
     Executor::Task::UP task;
     std::shared_ptr<Executor> executor;
-    vespalib::string key = gen_key(function, pass_params);
+    std::string key = gen_key(function, pass_params);
     {
         std::lock_guard<std::mutex> guard(_lock);
         auto pos = _cached.find(key);

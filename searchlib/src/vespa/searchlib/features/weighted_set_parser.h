@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::features {
 
@@ -17,7 +17,7 @@ class WeightedSetParser
 {
 public:
     template <typename OutputType>
-    static void parse(const vespalib::string &input, OutputType &output);
+    static void parse(const std::string &input, OutputType &output);
 };
 
 }

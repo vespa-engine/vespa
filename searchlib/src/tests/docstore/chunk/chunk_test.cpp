@@ -7,7 +7,7 @@
 #include <vespa/searchlib/docstore/chunkformat.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/vespalib/objects/hexdump.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <zstd.h>
 
 LOG_SETUP("chunk_test");
@@ -48,7 +48,7 @@ TEST("require that Chunk can produce unique list")
     EXPECT_EQUAL(3u, unique[2].netSize());
 }
 
-void testChunkFormat(ChunkFormat &cf, size_t expectedLen, const vespalib::string &expectedContent)
+void testChunkFormat(ChunkFormat &cf, size_t expectedLen, const std::string &expectedContent)
 {
     CompressionConfig cfg;
     uint64_t MAGIC_CONTENT(0xabcdef9876543210);

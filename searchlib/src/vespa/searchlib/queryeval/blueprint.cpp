@@ -367,7 +367,7 @@ Blueprint::create_default_filter(FilterConstraint constraint)
     }
 }
 
-vespalib::string
+std::string
 Blueprint::asString() const
 {
     vespalib::ObjectDumper dumper;
@@ -384,7 +384,7 @@ Blueprint::asSlime(const vespalib::slime::Inserter & inserter) const
     return cursor;
 }
 
-vespalib::string
+std::string
 Blueprint::getClassName() const
 {
     return vespalib::getClassName(*this);
@@ -828,7 +828,7 @@ LeafBlueprint::createSearch(fef::MatchData &md) const
 }
 
 bool
-LeafBlueprint::getRange(vespalib::string &, vespalib::string &) const {
+LeafBlueprint::getRange(std::string &, std::string &) const {
     return false;
 }
 

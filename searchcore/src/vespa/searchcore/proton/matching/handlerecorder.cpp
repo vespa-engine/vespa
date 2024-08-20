@@ -33,7 +33,7 @@ HandleRecorder::HandleRecorder() :
 
 namespace {
 
-vespalib::string
+std::string
 handles_to_string(const HandleRecorder::HandleMap& handles, MatchDataDetails requested_details)
 {
     vespalib::asciistream os;
@@ -55,7 +55,7 @@ handles_to_string(const HandleRecorder::HandleMap& handles, MatchDataDetails req
 
 }
 
-vespalib::string
+std::string
 HandleRecorder::to_string() const
 {
     vespalib::asciistream os;

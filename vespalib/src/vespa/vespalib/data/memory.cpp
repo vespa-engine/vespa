@@ -5,10 +5,10 @@
 
 namespace vespalib {
 
-vespalib::string
+std::string
 Memory::make_string() const
 {
-    return vespalib::string(data, size);
+    return std::string(data, size);
 }
 
 std::ostream &

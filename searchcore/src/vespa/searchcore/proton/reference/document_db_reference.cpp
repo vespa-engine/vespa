@@ -52,7 +52,7 @@ DocumentDBReference::getGidToLidMapperFactory()
 }
 
 std::unique_ptr<GidToLidChangeRegistrator>
-DocumentDBReference::makeGidToLidChangeRegistrator(const vespalib::string &docTypeName)
+DocumentDBReference::makeGidToLidChangeRegistrator(const std::string &docTypeName)
 {
     return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
 }

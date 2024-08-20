@@ -69,7 +69,7 @@ MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
       maxTimeGain(maxTimeGain_in)
 { }
 
-vespalib::string
+std::string
 MemoryFlush::Config::toString() const {
     vespalib::asciistream os;
     os << "maxGlobalMemory=" << maxGlobalMemory << " ";
@@ -110,7 +110,7 @@ MemoryFlush::setConfig(const Config &config)
 
 namespace {
 
-vespalib::string
+std::string
 getOrderName(MemoryFlush::OrderType &orderType)
 {
     switch (orderType) {

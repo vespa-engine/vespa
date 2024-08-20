@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/geo/zcurve.h>
-#include <string>
 #include <cstdint>
 #include <limits>
+#include <string>
 
 namespace search::common {
 

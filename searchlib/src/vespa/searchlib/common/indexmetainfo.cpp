@@ -15,18 +15,18 @@ namespace {
 
 class Parser {
 private:
-    vespalib::string      _name;
+    std::string      _name;
     vespalib::FilePointer _file;
     uint32_t              _line;
     char                  _buf[2048];
     bool                  _error;
-    vespalib::string      _lastKey;
-    vespalib::string      _lastValue;
+    std::string      _lastKey;
+    std::string      _lastValue;
     uint32_t              _lastIdx;
     bool                  _matched;
 
 public:
-    Parser(const vespalib::string &name)
+    Parser(const std::string &name)
         : _name(name),
           _file(fopen(name.c_str(), "r")),
           _line(0),
@@ -90,14 +90,14 @@ public:
         if (split == nullptr || (split - _buf) == 0) {
             return illegalLine();
         }
-        _lastKey = vespalib::string(_buf, split - _buf);
-        _lastValue = vespalib::string(split + 1, (_buf + len) - (split + 1));
+        _lastKey = std::string(_buf, split - _buf);
+        _lastValue = std::string(split + 1, (_buf + len) - (split + 1));
         _matched = false;
         return true;
     }
-    const vespalib::string key() const { return _lastKey; }
-    const vespalib::string value() const { return _lastValue; }
-    void parseBool(const vespalib::string &k, bool &v) {
+    const std::string key() const { return _lastKey; }
+    const std::string value() const { return _lastValue; }
+    void parseBool(const std::string &k, bool &v) {
         if (!_matched && !_error && _lastKey == k) {
             _matched = true;
             if (_lastValue == "true") {
@@ -109,13 +109,13 @@ public:
             }
         }
     }
-    void parseString(const vespalib::string &k, vespalib::string &v) {
+    void parseString(const std::string &k, std::string &v) {
         if (!_matched && !_error && _lastKey == k) {
             _matched = true;
             v = _lastValue;
         }
     }
-    void parseInt64(const vespalib::string &k, uint64_t &v) {
+    void parseInt64(const std::string &k, uint64_t &v) {
         if (!_matched && !_error && _lastKey == k) {
             _matched = true;
             char *end = nullptr;
@@ -128,7 +128,7 @@ public:
             v = val;
         }
     }
-    bool parseArray(const vespalib::string &name, uint32_t size) {
+    bool parseArray(const std::string &name, uint32_t size) {
         if (_matched || _error
             || _lastKey.length() < name.length() + 1
             || strncmp(_lastKey.c_str(), name.c_str(), name.length()) != 0
@@ -136,8 +136,8 @@ public:
         {
             return false;
         }
-        vespalib::string::size_type dot2 = _lastKey.find('.', name.length() + 1);
-        if (dot2 == vespalib::string::npos) {
+        std::string::size_type dot2 = _lastKey.find('.', name.length() + 1);
+        if (dot2 == std::string::npos) {
             return illegalArrayKey();
         }
         char *end = nullptr;
@@ -159,8 +159,8 @@ public:
 
 namespace search {
 
-vespalib::string
-IndexMetaInfo::makeFileName(const vespalib::string &baseName)
+std::string
+IndexMetaInfo::makeFileName(const std::string &baseName)
 {
     if (_path.length() == 0 || _path == ".") {
         return baseName;
@@ -193,7 +193,7 @@ IndexMetaInfo::findSnapshot(uint64_t syncToken)
 }
 
 
-IndexMetaInfo::IndexMetaInfo(const vespalib::string &path)
+IndexMetaInfo::IndexMetaInfo(const std::string &path)
     : _path(path),
       _snapshots()
 {
@@ -283,7 +283,7 @@ IndexMetaInfo::clear()
 
 
 bool
-IndexMetaInfo::load(const vespalib::string &baseName)
+IndexMetaInfo::load(const std::string &baseName)
 {
     clear();
     Parser parser(makeFileName(baseName));
@@ -302,10 +302,10 @@ IndexMetaInfo::load(const vespalib::string &baseName)
 
 
 bool
-IndexMetaInfo::save(const vespalib::string &baseName)
+IndexMetaInfo::save(const std::string &baseName)
 {
-    vespalib::string fileName = makeFileName(baseName);
-    vespalib::string newName = fileName + ".new";
+    std::string fileName = makeFileName(baseName);
+    std::string newName = fileName + ".new";
     std::filesystem::remove(std::filesystem::path(newName));
     vespalib::FilePointer f(fopen(newName.c_str(), "w"));
     if (!f.valid()) {

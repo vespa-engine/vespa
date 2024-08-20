@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <memory>
 #include <map>
+#include <memory>
+#include <string>
 
 namespace search::fef {
 
@@ -16,7 +16,7 @@ class RankingExpressions
 {
 private:
     // expression name -> full_path of expression file
-    std::map<vespalib::string,vespalib::string> _expressions;
+    std::map<std::string,std::string> _expressions;
 
 public:
     RankingExpressions();
@@ -29,8 +29,8 @@ public:
         return _expressions == rhs._expressions;
     }
     size_t size() const { return _expressions.size(); }
-    RankingExpressions &add(const vespalib::string &name, const vespalib::string &path);
-    vespalib::string loadExpression(const vespalib::string &name) const;
+    RankingExpressions &add(const std::string &name, const std::string &path);
+    std::string loadExpression(const std::string &name) const;
 };
 
 }

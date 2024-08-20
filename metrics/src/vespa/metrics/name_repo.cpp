@@ -42,25 +42,25 @@ NameRepo::tagValueId(std::string_view value)
     return TagValueId(id);
 }
 
-const vespalib::string&
+const std::string&
 NameRepo::metricName(MetricNameId id)
 {
     return metricNames.lookup(id.id());
 }
 
-const vespalib::string&
+const std::string&
 NameRepo::description(DescriptionId id)
 {
     return descriptions.lookup(id.id());
 }
 
-const vespalib::string&
+const std::string&
 NameRepo::tagKey(TagKeyId id)
 {
     return tagKeys.lookup(id.id());
 }
 
-const vespalib::string&
+const std::string&
 NameRepo::tagValue(TagValueId id)
 {
     return tagValues.lookup(id.id());

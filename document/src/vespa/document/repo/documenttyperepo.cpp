@@ -29,7 +29,7 @@ using std::vector;
 using vespalib::IllegalArgumentException;
 using vespalib::hash_map;
 using vespalib::make_string;
-using vespalib::string;
+using std::string;
 
 namespace document {
 

@@ -27,11 +27,11 @@ using namespace storage;
 
 namespace streaming {
 
-vespalib::string get_doc_id(int id) {
+std::string get_doc_id(int id) {
     return "id:test:test::" + std::to_string(id);
 }
 
-vespalib::string src_cfg(std::string_view prefix, std::string_view suffix) {
+std::string src_cfg(std::string_view prefix, std::string_view suffix) {
     return prefix + TEST_PATH("cfg") + suffix;
 }
 
@@ -51,11 +51,11 @@ struct MyDocument {
 using DocumentVector = std::vector<MyDocument>;
 
 struct MyHit {
-    vespalib::string doc_id;
+    std::string doc_id;
     double rank;
     MyHit(int id, double rank_in) noexcept : doc_id(get_doc_id(id)), rank(rank_in) {}
     MyHit(int id) noexcept : doc_id(get_doc_id(id)), rank(0.0) {}
-    MyHit(const vespalib::string& doc_id_in, double rank_in) noexcept : doc_id(doc_id_in), rank(rank_in) {}
+    MyHit(const std::string& doc_id_in, double rank_in) noexcept : doc_id(doc_id_in), rank(rank_in) {}
     bool operator==(const MyHit& rhs) const {
         return (doc_id == rhs.doc_id) &&
                 (rank == rhs.rank);
@@ -83,25 +83,25 @@ public:
         summary_class("default");
         summary_count(10);
     }
-    RequestBuilder& set_param(const vespalib::string& key, const vespalib::string& value) {
+    RequestBuilder& set_param(const std::string& key, const std::string& value) {
         _params.set(key, value);
         return *this;
     }
-    RequestBuilder& search_cluster(const vespalib::string& value) { return set_param("searchcluster", value); }
-    RequestBuilder& rank_profile(const vespalib::string& value) { return set_param("rankprofile", value); }
-    RequestBuilder& summary_class(const vespalib::string& value) { return set_param("summaryclass", value); }
+    RequestBuilder& search_cluster(const std::string& value) { return set_param("searchcluster", value); }
+    RequestBuilder& rank_profile(const std::string& value) { return set_param("rankprofile", value); }
+    RequestBuilder& summary_class(const std::string& value) { return set_param("summaryclass", value); }
     RequestBuilder& summary_count(uint32_t value) { return set_param("summarycount", std::to_string(value)); }
-    RequestBuilder& string_term(const vespalib::string& term, const vespalib::string& field) {
+    RequestBuilder& string_term(const std::string& term, const std::string& field) {
         _builder.addStringTerm(term, field, _term_id++, Weight(100));
         return *this;
     }
-    RequestBuilder& number_term(const vespalib::string& term, const vespalib::string& field) {
+    RequestBuilder& number_term(const std::string& term, const std::string& field) {
         _builder.addNumberTerm(term, field, _term_id++, Weight(100));
         return *this;
     }
     vdslib::Parameters build() {
         auto node = _builder.build();
-        vespalib::string query_stack_dump = StackDumpCreator::create(*node);
+        std::string query_stack_dump = StackDumpCreator::create(*node);
         _params.set("query", query_stack_dump);
         return _params;
     }
@@ -199,7 +199,7 @@ to_hit_vector(vdslib::SearchResult& res)
     double rank;
     for (size_t i = 0; i < res.getHitCount(); ++i) {
         res.getHit(i, doc_id, rank);
-        result.emplace_back(vespalib::string(doc_id), rank);
+        result.emplace_back(std::string(doc_id), rank);
     }
     return result;
 }
@@ -213,7 +213,7 @@ to_hit_vector(vdslib::DocumentSummary& sum)
     size_t sz;
     for (size_t i = 0; i < sum.getSummaryCount(); ++i) {
         sum.getSummary(i, doc_id, buf, sz);
-        result.emplace_back(vespalib::string(doc_id), 0.0);
+        result.emplace_back(std::string(doc_id), 0.0);
     }
     return result;
 }
@@ -233,7 +233,7 @@ expect_summary(const HitVector& exp_summary, documentapi::QueryResultMessage& re
 }
 
 void
-expect_match_features(const std::vector<vespalib::string>& exp_names,
+expect_match_features(const std::vector<std::string>& exp_names,
                       const std::vector<vespalib::FeatureSet::Value>& exp_values,
                       documentapi::QueryResultMessage& res)
 {

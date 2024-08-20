@@ -22,7 +22,7 @@ public:
      */
     std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 private:
-    vespalib::string _fileName;
+    std::string _fileName;
 };
 
 /**
@@ -38,7 +38,7 @@ public:
      */
     std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 private:
-    vespalib::string _dirName;
+    std::string _dirName;
     StringVector _fileNames;
 };
 

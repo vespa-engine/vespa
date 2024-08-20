@@ -18,7 +18,7 @@ ObjectStore::~ObjectStore()
 }
 
 void
-ObjectStore::add(const vespalib::string & key, Anything::UP value)
+ObjectStore::add(const std::string & key, Anything::UP value)
 {
     auto found = _objectMap.find(key);
     if (found != _objectMap.end()) {
@@ -29,14 +29,14 @@ ObjectStore::add(const vespalib::string & key, Anything::UP value)
 }
 
 const Anything *
-ObjectStore::get(const vespalib::string & key) const
+ObjectStore::get(const std::string & key) const
 {
     auto found = _objectMap.find(key);
     return (found != _objectMap.end()) ? found->second : NULL;
 }
 
 Anything *
-ObjectStore::get_mutable(const vespalib::string& key)
+ObjectStore::get_mutable(const std::string& key)
 {
     auto found = _objectMap.find(key);
     return (found != _objectMap.end()) ? found->second : nullptr;

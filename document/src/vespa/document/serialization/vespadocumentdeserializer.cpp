@@ -112,7 +112,7 @@ VespaDocumentDeserializer::readDocType(const DocumentType &guess)
     if (guess.getName() != type_name) {
         const DocumentType *type = _repo.getDocumentTypeRepo().getDocumentType(type_name);
         if (!type) {
-            throw DocumentTypeNotFoundException(vespalib::string(type_name), VESPA_STRLOC);
+            throw DocumentTypeNotFoundException(std::string(type_name), VESPA_STRLOC);
         }
         return type;
     }
@@ -191,7 +191,7 @@ template <> struct ValueType<BoolFieldValue> { using Type = bool; };
 template <> struct ValueType<ShortFieldValue> { using Type = uint16_t; };
 template <> struct ValueType<IntFieldValue> { using Type = uint32_t; };
 template <> struct ValueType<LongFieldValue> { using Type = uint64_t; };
-template <> struct ValueType<RawFieldValue> { using Type = vespalib::string; };
+template <> struct ValueType<RawFieldValue> { using Type = std::string; };
 
 template <typename T>
 void readFieldValue(nbostream &input, T &value) {

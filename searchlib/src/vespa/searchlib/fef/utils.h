@@ -28,17 +28,17 @@ struct Utils
     /**
      * Extract all seed feature values from the given rank program.
      **/
-    static std::map<vespalib::string, feature_t> getSeedFeatures(const RankProgram &rankProgram, uint32_t docid);
+    static std::map<std::string, feature_t> getSeedFeatures(const RankProgram &rankProgram, uint32_t docid);
 
     /**
      * Extract all feature values from the given rank program.
      **/
-    static std::map<vespalib::string, feature_t> getAllFeatures(const RankProgram &rankProgram, uint32_t docid);
+    static std::map<std::string, feature_t> getAllFeatures(const RankProgram &rankProgram, uint32_t docid);
 
     /*
      * Extract features names for the given feature resolver.
      */
-    std::vector<vespalib::string>
+    std::vector<std::string>
     static extract_feature_names(const FeatureResolver& resolver, const search::StringStringMap& renames);
 
     /*

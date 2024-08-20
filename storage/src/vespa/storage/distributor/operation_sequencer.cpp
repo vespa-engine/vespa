@@ -40,7 +40,7 @@ SequencingHandle OperationSequencer::try_acquire(document::BucketSpace bucket_sp
 }
 
 SequencingHandle OperationSequencer::try_acquire(const document::Bucket& bucket,
-                                                 const vespalib::string& token) {
+                                                 const std::string& token) {
     const auto inserted = _active_buckets.insert(std::make_pair(bucket, token));
     if (inserted.second) {
         return SequencingHandle(*this, bucket);

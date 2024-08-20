@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespa::config::search::internal {
     class InternalIndexschemaType;
@@ -51,7 +51,7 @@ public:
      *
      * @param configId the config id used to retrieve the relevant config.
      **/
-    SchemaConfigurer(Schema & schema, const vespalib::string &configId);
+    SchemaConfigurer(Schema & schema, const std::string &configId);
 };
 
 }

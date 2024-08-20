@@ -17,20 +17,20 @@ class IBmDistribution;
 class StorageApiBmFeedHandlerBase : public IBmFeedHandler
 {
 protected:
-    vespalib::string       _name;
+    std::string       _name;
     const IBmDistribution& _distribution;
     bool                   _distributor;
 
     virtual void send_cmd(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& tracker) = 0;
     uint32_t route_cmd(storage::api::StorageCommand& cmd);
 public:
-    StorageApiBmFeedHandlerBase(const vespalib::string& base_name, const IBmDistribution &distribution, bool distributor);
+    StorageApiBmFeedHandlerBase(const std::string& base_name, const IBmDistribution &distribution, bool distributor);
     ~StorageApiBmFeedHandlerBase();
     void put(const document::Bucket& bucket, std::unique_ptr<document::Document> document, uint64_t timestamp, PendingTracker& tracker) override;
     void update(const document::Bucket& bucket, std::unique_ptr<document::DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker) override;
     void remove(const document::Bucket& bucket, const document::DocumentId& document_id,  uint64_t timestamp, PendingTracker& tracker) override;
     void get(const document::Bucket& bucket, std::string_view field_set_string, const document::DocumentId& document_id, PendingTracker& tracker) override;
-    const vespalib::string &get_name() const override;
+    const std::string &get_name() const override;
     bool manages_timestamp() const override;
 };
 

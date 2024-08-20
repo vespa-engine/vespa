@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/issue.h>
-#include <climits>
 #include <cinttypes>
+#include <climits>
 #include <memory>
+#include <string>
 
 namespace search::predicate {
 
@@ -38,7 +38,7 @@ public:
     }
 
     template <typename Handler>
-    void expand(const vespalib::string &key, int64_t value, Handler &handler);
+    void expand(const std::string &key, int64_t value, Handler &handler);
 };
 
 
@@ -46,7 +46,7 @@ public:
  * Handler must implement handleRange(string) and handleEdge(string, uint64_t).
  */
 template <typename Handler>
-void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t signed_value, Handler &handler) {
+void PredicateRangeTermExpander::expand(const std::string &key, int64_t signed_value, Handler &handler) {
     if (signed_value < _lower_bound || signed_value > _upper_bound) {
         vespalib::Issue::report("predicate_range_term_expander: Search outside bounds should have been rejected by ValidatePredicateSearcher.");
         return;

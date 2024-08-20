@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::attribute {
 
-class BaseName : public vespalib::string
+class BaseName : public std::string
 {
 public:
-    using string = vespalib::string;
+    using string = std::string;
     BaseName(std::string_view s);
     BaseName(std::string_view base, std::string_view name);
     BaseName & operator = (std::string_view s);

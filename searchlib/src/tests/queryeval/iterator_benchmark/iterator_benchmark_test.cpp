@@ -23,7 +23,7 @@ using search::fef::MatchData;
 
 using vespalib::make_string_short::fmt;
 
-const vespalib::string field_name = "myfield";
+const std::string field_name = "myfield";
 double budget_sec = 1.0;
 
 double estimate_actual_cost(Blueprint &bp, InFlow in_flow) {
@@ -45,7 +45,7 @@ enum class PlanningAlgo {
     CostForceStrict
 };
 
-vespalib::string
+std::string
 to_string(PlanningAlgo algo)
 {
     switch (algo) {
@@ -63,11 +63,11 @@ struct BenchmarkResult {
     uint32_t hits;
     FlowStats flow;
     double actual_cost;
-    vespalib::string iterator_name;
-    vespalib::string blueprint_name;
+    std::string iterator_name;
+    std::string blueprint_name;
     BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, "", "") {}
     BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, FlowStats flow_in, double actual_cost_in,
-                    const vespalib::string& iterator_name_in, const vespalib::string& blueprint_name_in)
+                    const std::string& iterator_name_in, const std::string& blueprint_name_in)
         : time_ms(time_ms_in),
           seeks(seeks_in),
           hits(hits_in),
@@ -90,7 +90,7 @@ struct Stats {
     Stats(double average_in, double median_in, double std_dev_in)
         : average(average_in), median(median_in), std_dev(std_dev_in)
     {}
-    vespalib::string to_string() const {
+    std::string to_string() const {
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(3);
         oss << "{average=" << average << ", median=" << median << ", std_dev=" << std_dev << "}";
@@ -317,7 +317,7 @@ struct Sample {
     Sample(double v) noexcept : value(v), other(v), forced_strict(false) {}
     Sample(double v, double o, bool fs) noexcept : value(v), other(o), forced_strict(fs) {}
     bool operator<(const Sample &rhs) const noexcept { return value < rhs.value; }
-    vespalib::string str() const noexcept {
+    std::string str() const noexcept {
         if (other == value) {
             return fmt("%g", value);
         }
@@ -429,7 +429,7 @@ void analyze_crossover(BenchmarkBlueprintFactory &fixed, std::function<std::uniq
 
 //-----------------------------------------------------------------------------
 
-vespalib::string
+std::string
 to_string(bool val)
 {
     return val ? "true" : "false";
@@ -504,7 +504,7 @@ struct BenchmarkCase {
           force_strict(false),
           unpack_iterator(false)
     {}
-    vespalib::string to_string() const {
+    std::string to_string() const {
         return "op=" + search::queryeval::test::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
                ", strict_context=" + ::to_string(strict_context) + (force_strict ? (", force_strict=" + ::to_string(force_strict)) : "");
     }
@@ -765,7 +765,7 @@ struct BlueprintFactorySetup {
     std::shared_ptr<BenchmarkBlueprintFactory> make_factory_shared(size_t num_docs, double op_hit_ratio) const {
         return std::shared_ptr<BenchmarkBlueprintFactory>(make_factory(num_docs, op_hit_ratio));
     }
-    vespalib::string to_string() const {
+    std::string to_string() const {
         return "field=" + field_cfg.to_string() + ", query=" + test::to_string(query_op) + ", children=" + std::to_string(children);
     }
 };

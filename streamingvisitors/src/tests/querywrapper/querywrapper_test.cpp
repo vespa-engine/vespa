@@ -30,7 +30,7 @@ TEST(QueryWrapperTest, test_query_wrapper)
             builder.addStringTerm("e", "", 0, Weight(0));
         }
         Node::UP node = builder.build();
-        vespalib::string stackDump = StackDumpCreator::create(*node);
+        std::string stackDump = StackDumpCreator::create(*node);
         Query q(empty, stackDump);
         QueryWrapper wrap(q);
         QueryWrapper::TermList & tl = wrap.getTermList();

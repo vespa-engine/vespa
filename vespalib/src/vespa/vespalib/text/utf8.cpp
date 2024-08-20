@@ -12,7 +12,7 @@ namespace vespalib {
 
 void Utf8::throwX(const char *msg, unsigned int number)
 {
-    vespalib::string what = make_string("%s: \\x%02X", msg, number);
+    std::string what = make_string("%s: \\x%02X", msg, number);
     throw IllegalArgumentException(what);
 }
 
@@ -213,7 +213,7 @@ Utf8Writer<Target>::putChar(uint32_t codepoint)
     return *this;
 }
 
-template class Utf8Writer<vespalib::string>;
+template class Utf8Writer<std::string>;
 
 template <typename T>
 T Utf8::filter_invalid_sequences(const T& input) noexcept
@@ -228,6 +228,6 @@ T Utf8::filter_invalid_sequences(const T& input) noexcept
     return retval;
 }
 
-template vespalib::string Utf8::filter_invalid_sequences(const vespalib::string&);
+template std::string Utf8::filter_invalid_sequences(const std::string&);
 
 } // namespace

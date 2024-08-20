@@ -40,9 +40,9 @@ const char* iana_cipher_suite_to_openssl(std::string_view iana_name) {
     return ((iter != ciphers.end()) ? iter->second.data() : nullptr);
 }
 
-std::vector<vespalib::string> modern_iana_cipher_suites() {
+std::vector<std::string> modern_iana_cipher_suites() {
     const auto& ciphers = modern_cipher_suites_iana_to_openssl();
-    std::vector<vespalib::string> iana_cipher_names;
+    std::vector<std::string> iana_cipher_names;
     iana_cipher_names.reserve(ciphers.size());
     for (const auto& cipher : ciphers) {
         iana_cipher_names.emplace_back(cipher.first);

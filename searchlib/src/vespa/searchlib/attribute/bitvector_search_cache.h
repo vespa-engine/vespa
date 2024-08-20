@@ -4,10 +4,10 @@
 
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <atomic>
 #include <memory>
 #include <shared_mutex>
-#include <atomic>
+#include <string>
 
 namespace search { class BitVector; }
 namespace vespalib { class MemoryUsage; }
@@ -35,7 +35,7 @@ public:
     };
 
 private:
-    using Cache = vespalib::hash_map<vespalib::string, std::shared_ptr<Entry>>;
+    using Cache = vespalib::hash_map<std::string, std::shared_ptr<Entry>>;
 
     mutable std::shared_mutex _mutex;
     std::atomic<uint64_t>     _size;
@@ -45,8 +45,8 @@ private:
 public:
     BitVectorSearchCache();
     ~BitVectorSearchCache();
-    void insert(const vespalib::string &term, std::shared_ptr<Entry> entry);
-    std::shared_ptr<Entry> find(const vespalib::string &term) const;
+    void insert(const std::string &term, std::shared_ptr<Entry> entry);
+    std::shared_ptr<Entry> find(const std::string &term) const;
     size_t size() const { return _size.load(std::memory_order_relaxed); }
     vespalib::MemoryUsage get_memory_usage() const;
     void clear();

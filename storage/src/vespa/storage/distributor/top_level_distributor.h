@@ -107,7 +107,7 @@ public:
     void revert_distribution_source_of_truth_to_node_internal_config() override;
 
     // StatusReporter implementation
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     bool handleStatusRequest(const DelegatedStatusRequest& request) const override;

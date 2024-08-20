@@ -11,7 +11,7 @@ void
 SameElementModifier::visit(ProtonNodeTypes::SameElement &n) {
     if (n.getView().empty()) return;
 
-    vespalib::string prefix = n.getView() + ".";
+    std::string prefix = n.getView() + ".";
     for (search::query::Node * child : n.getChildren()) {
         search::query::TermNode * term  = dynamic_cast<search::query::TermNode *>(child);
         if (term != nullptr) {

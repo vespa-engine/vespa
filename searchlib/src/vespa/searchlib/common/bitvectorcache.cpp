@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
+#include <cstring>
 #include <mutex>
 
 #include <vespa/log/log.h>

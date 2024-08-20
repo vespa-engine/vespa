@@ -93,7 +93,7 @@ public:
 
     std::string make_forest(size_t num_trees, size_t tree_sizes) {
         assert(num_trees > 0);
-        vespalib::string forest = make_tree(tree_sizes);
+        std::string forest = make_tree(tree_sizes);
         for (size_t i = 1; i < num_trees; ++i) {
             forest.append("+");
             forest.append(make_tree(tree_sizes));

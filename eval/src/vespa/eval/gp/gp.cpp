@@ -201,7 +201,7 @@ Program::size_of(Ref ref) const
     return sizes.back();
 }
 
-vespalib::string
+std::string
 Program::as_string(Ref ref) const
 {
     assert_valid(ref, _program.size());

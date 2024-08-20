@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "asciistream.h"
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -20,9 +21,9 @@ namespace vespalib {
 
 namespace {
 
-std::vector<string>
+std::vector<std::string>
 getPrecisions(const char type) {
-    std::vector<string> result(VESPALIB_ASCIISTREAM_MAX_PRECISION + 1);
+    std::vector<std::string> result(VESPALIB_ASCIISTREAM_MAX_PRECISION + 1);
     for (uint32_t i=0; i<result.size(); ++i) {
         char buf[8];
         int count = snprintf(buf, sizeof(buf), "%%.%u%c", i, type);
@@ -32,9 +33,9 @@ getPrecisions(const char type) {
     }
     return result;
 }
-std::vector<string> fixedPrecisions = getPrecisions('f');
-std::vector<string> scientificPrecisions = getPrecisions('e');
-std::vector<string> autoPrecisions = getPrecisions('g');
+std::vector<std::string> fixedPrecisions = getPrecisions('f');
+std::vector<std::string> scientificPrecisions = getPrecisions('e');
+std::vector<std::string> autoPrecisions = getPrecisions('g');
 
 }
 
@@ -160,24 +161,24 @@ void
 throwInputError(int e, const char * t, const char * buf)
 {
     if (e == 0) {
-        throw IllegalArgumentException("Failed decoding a " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException("Failed decoding a " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
     } else if (errno == ERANGE) {
-        throw IllegalArgumentException(string(t) + " value '" + string(buf) + "' is outside of range.", VESPA_STRLOC);
+        throw IllegalArgumentException(std::string(t) + " value '" + std::string(buf) + "' is outside of range.", VESPA_STRLOC);
     } else if (errno == EINVAL) {
-        throw IllegalArgumentException("Illegal " + string(t) + " value '" + string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException("Illegal " + std::string(t) + " value '" + std::string(buf) + "'.", VESPA_STRLOC);
     } else {
-        throw IllegalArgumentException("Unknown error decoding an " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException("Unknown error decoding an " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
     }
 }
 
 void
 throwInputError(std::errc e, const char * t, const char * buf) {
     if (e == std::errc::invalid_argument) {
-        throw IllegalArgumentException("Illegal " + string(t) + " value '" + string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException("Illegal " + std::string(t) + " value '" + std::string(buf) + "'.", VESPA_STRLOC);
     } else if (e == std::errc::result_out_of_range) {
-        throw IllegalArgumentException(string(t) + " value '" + string(buf) + "' is outside of range.", VESPA_STRLOC);
+        throw IllegalArgumentException(std::string(t) + " value '" + std::string(buf) + "' is outside of range.", VESPA_STRLOC);
     } else {
-        throw IllegalArgumentException("Unknown error decoding an " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException("Unknown error decoding an " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
     }
 }
 
@@ -372,7 +373,7 @@ void asciistream::eatNonWhite()
 }
 
 asciistream &
-asciistream::operator >> (string & v)
+asciistream::operator >> (std::string & v)
 {
     eatWhite();
     size_t start(_rPos);
@@ -602,10 +603,10 @@ asciistream::write(const void * buf, size_t len)
     _rbuf = _wbuf;
 }
 
-string
+std::string
 asciistream::getline(char delim)
 {
-    string line;
+    std::string line;
     const size_t start(_rPos);
     const size_t end(_rbuf.size());
     for (; (_rPos < end) && (_rbuf[_rPos] != delim); _rPos++);
@@ -621,7 +622,7 @@ asciistream::getline(char delim)
 asciistream
 asciistream::createFromFile(std::string_view fileName)
 {
-    FastOS_File file(vespalib::string(fileName).c_str());
+    FastOS_File file(std::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
         ssize_t sz = file.getSize();
@@ -646,7 +647,7 @@ asciistream::createFromFile(std::string_view fileName)
 asciistream
 asciistream::createFromDevice(std::string_view fileName)
 {
-    FastOS_File file(vespalib::string(fileName).c_str());
+    FastOS_File file(std::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
         constexpr size_t SZ = 64_Ki;
@@ -659,7 +660,7 @@ asciistream::createFromDevice(std::string_view fileName)
 }
 
 ssize_t
-getline(asciistream & is, string & line, char delim)
+getline(asciistream & is, std::string & line, char delim)
 {
     line = is.getline(delim);
     return line.size();

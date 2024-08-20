@@ -3,8 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/memory.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/vespa_dll_local.h>
 #include <cstdint>
+#include <string>
 
 namespace document {
 
@@ -42,13 +43,13 @@ public:
     bool operator==(const IdString& other) const
         { return toString() == other.toString(); }
 
-    [[nodiscard]] const vespalib::string & toString() const { return _rawId; }
+    [[nodiscard]] const std::string & toString() const { return _rawId; }
 
 private:
     [[nodiscard]] uint16_t offset(uint32_t index) const { return _offsets[index]; }
     [[nodiscard]] uint16_t size(uint32_t index) const { return std::max(0, int(offset(index+1)) - int(offset(index)) - 1); }
     [[nodiscard]] std::string_view getComponent(size_t index) const { return {_rawId.c_str() + offset(index), size(index)}; }
-    [[nodiscard]] const vespalib::string & getRawId() const { return _rawId; }
+    [[nodiscard]] const std::string & getRawId() const { return _rawId; }
 
     class Offsets {
     public:
@@ -62,7 +63,7 @@ private:
         uint16_t _offsets[MAX_COMPONENTS];
     };
 
-    vespalib::string _rawId;
+    std::string _rawId;
     LocationType     _location;
     Offsets          _offsets;
     uint16_t         _groupOffset;

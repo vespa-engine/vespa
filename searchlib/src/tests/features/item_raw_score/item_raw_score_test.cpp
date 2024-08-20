@@ -18,7 +18,7 @@ using namespace search::fef::test;
 using namespace search::features;
 using CollectionType = FieldInfo::CollectionType;
 
-const vespalib::string featureName("itemRawScore(label)");
+const std::string featureName("itemRawScore(label)");
 
 struct BlueprintFactoryFixture {
     BlueprintFactory factory;
@@ -39,7 +39,7 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) override {
+    virtual void visitDumpFeature(const std::string &) override {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
@@ -113,7 +113,7 @@ TEST_FFF("require that no features are dumped", ItemRawScoreBlueprint, IndexFixt
 TEST_FF("require that setup can be done on random label", ItemRawScoreBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(random_label)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "random_label")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "random_label")));
 }
 
 TEST_FF("require that no label gives 0.0 item raw score", NoLabel(), RankFixture(2, 2, f1)) {

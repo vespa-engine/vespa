@@ -29,7 +29,7 @@ QueryEnvironmentBuilder::addAllFields()
 }
 
 SimpleTermData *
-QueryEnvironmentBuilder::addIndexNode(const std::vector<vespalib::string> &fieldNames)
+QueryEnvironmentBuilder::addIndexNode(const std::vector<std::string> &fieldNames)
 {
     _queryEnv.getTerms().push_back(SimpleTermData());
     SimpleTermData &td = _queryEnv.getTerms().back();
@@ -46,7 +46,7 @@ QueryEnvironmentBuilder::addIndexNode(const std::vector<vespalib::string> &field
 }
 
 SimpleTermData *
-QueryEnvironmentBuilder::addAttributeNode(const vespalib::string &attrName)
+QueryEnvironmentBuilder::addAttributeNode(const std::string &attrName)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(attrName);
     if (info == nullptr || info->type() != FieldType::ATTRIBUTE) {
@@ -56,7 +56,7 @@ QueryEnvironmentBuilder::addAttributeNode(const vespalib::string &attrName)
 }
 
 SimpleTermData *
-QueryEnvironmentBuilder::add_virtual_node(const vespalib::string &virtual_field)
+QueryEnvironmentBuilder::add_virtual_node(const std::string &virtual_field)
 {
     const auto *info = _queryEnv.getIndexEnv()->getFieldByName(virtual_field);
     if (info == nullptr || info->type() != FieldType::VIRTUAL) {
@@ -77,7 +77,7 @@ QueryEnvironmentBuilder::add_node(const FieldInfo &info)
 }
 
 QueryEnvironmentBuilder&
-QueryEnvironmentBuilder::set_avg_field_length(const vespalib::string& field_name, double avg_field_length)
+QueryEnvironmentBuilder::set_avg_field_length(const std::string& field_name, double avg_field_length)
 {
     _queryEnv.get_avg_field_lengths()[field_name] = avg_field_length;
     return *this;

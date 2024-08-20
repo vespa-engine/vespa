@@ -10,7 +10,7 @@ namespace search::bmcluster {
 
 namespace {
 
-vespalib::string _Storage("storage");
+std::string _Storage("storage");
 
 }
 

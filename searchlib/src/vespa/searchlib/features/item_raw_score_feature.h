@@ -43,7 +43,7 @@ class ItemRawScoreBlueprint : public fef::Blueprint
 {
 private:
     using HandleVector = std::vector<fef::TermFieldHandle>;
-    vespalib::string _label;
+    std::string _label;
 public:
     ItemRawScoreBlueprint() : Blueprint("itemRawScore"), _label() {}
     ~ItemRawScoreBlueprint() override;
@@ -57,7 +57,7 @@ public:
     bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
-    static HandleVector resolve(const fef::IQueryEnvironment &env, const vespalib::string &label);
+    static HandleVector resolve(const fef::IQueryEnvironment &env, const std::string &label);
 };
 
 }

@@ -16,12 +16,12 @@ using namespace search::fef::test;
 using namespace search::features;
 using CollectionType = FieldInfo::CollectionType;
 
-const vespalib::string DEFAULT   = "elementSimilarity(foo)";
-const vespalib::string PROXIMITY = "elementSimilarity(foo).proximity";
-const vespalib::string ORDER     = "elementSimilarity(foo).order";
-const vespalib::string QUERY     = "elementSimilarity(foo).query_coverage";
-const vespalib::string FIELD     = "elementSimilarity(foo).field_coverage";
-const vespalib::string WEIGHT    = "elementSimilarity(foo).weight";
+const std::string DEFAULT   = "elementSimilarity(foo)";
+const std::string PROXIMITY = "elementSimilarity(foo).proximity";
+const std::string ORDER     = "elementSimilarity(foo).order";
+const std::string QUERY     = "elementSimilarity(foo).query_coverage";
+const std::string FIELD     = "elementSimilarity(foo).field_coverage";
+const std::string WEIGHT    = "elementSimilarity(foo).weight";
 
 FtIndex indexFoo() {
     FtIndex idx;
@@ -55,7 +55,7 @@ struct IndexFixture {
         set("elementSimilarity(foo).output.weight", "max(w)");
         set("elementSimilarity(bar).output.default", "avg(1)");
     }
-    IndexFixture &set(const vespalib::string &key, const vespalib::string &value) {
+    IndexFixture &set(const std::string &key, const std::string &value) {
         Properties tmp;
         tmp.add(key, value);
         indexEnv.getProperties().import(tmp);
@@ -64,10 +64,10 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    std::vector<vespalib::string> actual;
+    std::vector<std::string> actual;
     FeatureDumpFixture() : IDumpFeatureVisitor(), actual() {}
     ~FeatureDumpFixture() override;
-    virtual void visitDumpFeature(const vespalib::string &name) override {
+    virtual void visitDumpFeature(const std::string &name) override {
         actual.push_back(name);
     }
 };
@@ -76,10 +76,10 @@ FeatureDumpFixture::~FeatureDumpFixture() = default;
 
 struct RankFixture : BlueprintFactoryFixture {
     RankFixture() : BlueprintFactoryFixture() {}
-    double get_feature(const vespalib::string &query, const FtIndex &index, const vespalib::string &select,
+    double get_feature(const std::string &query, const FtIndex &index, const std::string &select,
                        const IndexFixture &idx_env = IndexFixture())
     {
-        std::vector<vespalib::string> names({"elementSimilarity(foo).default", // use 'default' explicitly to verify default output name
+        std::vector<std::string> names({"elementSimilarity(foo).default", // use 'default' explicitly to verify default output name
                                                      "elementSimilarity(foo).proximity",
                                                      "elementSimilarity(foo).order",
                                                      "elementSimilarity(foo).query_coverage",
@@ -145,11 +145,11 @@ bool cmp_lists_impl(const A &a, const B &b) {
 }
 
 template <typename T>
-void dump_list(const vespalib::string &name, const T &list) {
+void dump_list(const std::string &name, const T &list) {
     fprintf(stderr, "list(name: '%s', size: %zu)\n", name.c_str(), list.size());
     std::vector<typename T::value_type> tmp(list.begin(), list.end());
     std::sort(tmp.begin(), tmp.end());
-    for (vespalib::string item: tmp) {
+    for (std::string item: tmp) {
         fprintf(stderr, "  '%s'\n", item.c_str());        
     }
 }
@@ -180,7 +180,7 @@ TEST(ElementSimilarityFeatureTest, require_that_appropriate_features_are_dumped)
     IndexFixture f2;
     FeatureDumpFixture f3;
     f1.visitDumpFeatures(f2.indexEnv, f3);
-    EXPECT_TRUE(cmp_lists(std::vector<vespalib::string>({"elementSimilarity(foo)",
+    EXPECT_TRUE(cmp_lists(std::vector<std::string>({"elementSimilarity(foo)",
                                 "elementSimilarity(foo).proximity",
                                 "elementSimilarity(foo).order",
                                 "elementSimilarity(foo).query_coverage",
@@ -190,10 +190,10 @@ TEST(ElementSimilarityFeatureTest, require_that_appropriate_features_are_dumped)
                           f3.actual));
 }
 
-bool try_setup(ElementSimilarityBlueprint &blueprint, const IndexFixture &index, const vespalib::string &field) {
+bool try_setup(ElementSimilarityBlueprint &blueprint, const IndexFixture &index, const std::string &field) {
     DummyDependencyHandler deps(blueprint);
     blueprint.setName(vespalib::make_string("%s(%s)", blueprint.getBaseName().c_str(), field.c_str()));
-    return ((Blueprint&)blueprint).setup(index.indexEnv, std::vector<vespalib::string>(1, field));    
+    return ((Blueprint&)blueprint).setup(index.indexEnv, std::vector<std::string>(1, field));    
 }
 
 TEST(ElementSimilarityFeatureTest, require_that_setup_can_be_done_on_weighted_set_index_field)

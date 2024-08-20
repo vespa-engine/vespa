@@ -73,17 +73,17 @@ private:
 
     class ProtonFileHeaderContext : public search::common::FileHeaderContext
     {
-        vespalib::string _hostName;
-        vespalib::string _creator;
-        vespalib::string _cluster;
+        std::string _hostName;
+        std::string _creator;
+        std::string _cluster;
         pid_t _pid;
 
     public:
-        explicit ProtonFileHeaderContext(const vespalib::string &creator);
+        explicit ProtonFileHeaderContext(const std::string &creator);
         ~ProtonFileHeaderContext() override;
 
-        void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
-        void setClusterName(const vespalib::string &clusterName, const vespalib::string &baseDir);
+        void addTags(vespalib::GenericHeader &header, const std::string &name) const override;
+        void setClusterName(const std::string &clusterName, const std::string &baseDir);
     };
 
     vespalib::CpuUtil                      _cpu_util;
@@ -133,7 +133,7 @@ private:
     std::set<BucketSpace>           _nodeUp;   // bucketspaces where node is up
 
     std::shared_ptr<DocumentDBConfigOwner>
-    addDocumentDB(const DocTypeName & docTypeName, BucketSpace bucketSpace, const vespalib::string & configid,
+    addDocumentDB(const DocTypeName & docTypeName, BucketSpace bucketSpace, const std::string & configid,
                   const BootstrapConfig::SP & bootstrapConfig, const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                   InitializeThreads initializeThreads) override;
 
@@ -156,7 +156,7 @@ public:
     using SP = std::shared_ptr<Proton>;
 
     Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
-           const vespalib::string &progName, vespalib::duration subscribeTimeout);
+           const std::string &progName, vespalib::duration subscribeTimeout);
     ~Proton() override;
 
     /**
@@ -210,7 +210,7 @@ public:
     search::engine::DocsumServer &get_docsum_server();
     search::engine::MonitorServer &get_monitor_server();
 
-    vespalib::string getDelayedConfigs() const;
+    std::string getDelayedConfigs() const;
 
     StatusReport::List getStatusReports() const override;
 
@@ -224,7 +224,7 @@ public:
     uint32_t getNumThreadsPerSearch() const override { return _numThreadsPerSearch; }
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
-    std::vector<vespalib::string> get_children_names() const override;
+    std::vector<std::string> get_children_names() const override;
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override;
 };
 

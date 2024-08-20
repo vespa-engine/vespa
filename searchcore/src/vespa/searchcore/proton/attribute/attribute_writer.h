@@ -81,7 +81,7 @@ public:
                           ExecutorId executor_id_in);
     };
 private:
-    using AttrMap = vespalib::hash_map<vespalib::string, AttributeWithInfo>;
+    using AttrMap = vespalib::hash_map<std::string, AttributeWithInfo>;
     std::vector<WriteContext> _writeContexts;
     bool                      _hasStructFieldAttribute;
     AttrMap                   _attrMap;
@@ -102,7 +102,7 @@ public:
      * Implements IAttributeWriter.
      */
     std::vector<search::AttributeVector *> getWritableAttributes() const override;
-    search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override;
+    search::AttributeVector *getWritableAttribute(const std::string &name) const override;
     void put(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone) override;
     void remove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone) override;
     void remove(const LidVector &lidVector, SerialNum serialNum, OnWriteDoneType onWriteDone) override;

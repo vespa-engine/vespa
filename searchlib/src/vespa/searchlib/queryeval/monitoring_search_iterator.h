@@ -59,14 +59,14 @@ public:
         uint32_t               _intFormatWidth;
         uint32_t               _floatFormatWidth;
         uint32_t               _floatFormatPrecision;
-        vespalib::string       _str;
+        std::string       _str;
         int                    _currIndent;
         std::stack<StructType> _stack;
 
         void addIndent();
         void addText(std::string_view value);
-        void addInt(int64_t value, const vespalib::string &desc);
-        void addFloat(double value, const vespalib::string &desc);
+        void addInt(int64_t value, const std::string &desc);
+        void addFloat(double value, const std::string &desc);
         void openScope();
         void closeScope();
 
@@ -78,7 +78,7 @@ public:
                uint32_t floatFormatPrecision = 2);
         ~Dumper() override;
 
-        vespalib::string toString() const { return _str; }
+        std::string toString() const { return _str; }
 
         void openStruct(std::string_view name, std::string_view type) override;
         void closeStruct() override;
@@ -93,7 +93,7 @@ public:
     using UP = std::unique_ptr<MonitoringSearchIterator>;
 
 private:
-    const vespalib::string   _name;
+    const std::string   _name;
     const SearchIterator::UP _search;
     const bool               _collectHitSkipStats;
     Stats                    _stats;
@@ -101,7 +101,7 @@ private:
     uint32_t countHitSkips(uint32_t docId);
 
 public:
-    MonitoringSearchIterator(const vespalib::string &name,
+    MonitoringSearchIterator(const std::string &name,
                              SearchIterator::UP search,
                              bool collectHitSkipStats);
     ~MonitoringSearchIterator() override;

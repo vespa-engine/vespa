@@ -1,22 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <mutex>
 #include <map>
+#include <mutex>
+#include <string>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::metrics {
 
 // internal
 class NameCollection {
 private:
-    using Map = std::map<vespalib::string, size_t>;
+    using Map = std::map<std::string, size_t>;
     mutable std::mutex _lock;
     Map _names;
     std::vector<Map::const_iterator> _names_by_id;
 public:
-    const vespalib::string &lookup(size_t id) const;
+    const std::string &lookup(size_t id) const;
     size_t resolve(std::string_view name);
     size_t size() const;
 

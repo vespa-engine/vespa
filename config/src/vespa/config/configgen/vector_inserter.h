@@ -3,7 +3,7 @@
 
 #include "value_converter.h"
 #include <vespa/vespalib/data/slime/array_traverser.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace config::internal {
 

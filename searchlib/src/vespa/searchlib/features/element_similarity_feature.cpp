@@ -62,7 +62,7 @@ struct SumAggregator : Aggregator {
 };
 
 Aggregator::UP
-create_aggregator(const vespalib::string &name) {
+create_aggregator(const std::string &name) {
     if (name == "max") {
         return Aggregator::UP(new MaxAggregator());
     }
@@ -323,16 +323,16 @@ ElementSimilarityExecutor::~ElementSimilarityExecutor() = default;
 
 //-----------------------------------------------------------------------------
 
-std::vector<std::pair<vespalib::string, vespalib::string> >
-extract_properties(const fef::Properties &props, const vespalib::string &ns,
-                   const vespalib::string &first_name, const vespalib::string &first_default)
+std::vector<std::pair<std::string, std::string> >
+extract_properties(const fef::Properties &props, const std::string &ns,
+                   const std::string &first_name, const std::string &first_default)
 {
     struct MyVisitor : fef::IPropertiesVisitor {
-        const vespalib::string &first_name;
-        std::vector<std::pair<vespalib::string, vespalib::string> > &result;
+        const std::string &first_name;
+        std::vector<std::pair<std::string, std::string> > &result;
 
-        MyVisitor(const vespalib::string &first_name_in,
-                  std::vector<std::pair<vespalib::string, vespalib::string> > &result_in)
+        MyVisitor(const std::string &first_name_in,
+                  std::vector<std::pair<std::string, std::string> > &result_in)
             : first_name(first_name_in), result(result_in)
         {}
 
@@ -342,15 +342,15 @@ extract_properties(const fef::Properties &props, const vespalib::string &ns,
             }
         }
     };
-    std::vector<std::pair<vespalib::string, vespalib::string> > result;
+    std::vector<std::pair<std::string, std::string> > result;
     result.emplace_back(first_name, props.lookup(ns, first_name).get(first_default));
     MyVisitor my_visitor(first_name, result);
     props.visitNamespace(ns, my_visitor);
     return result;
 }
 
-std::vector<std::pair<vespalib::string, vespalib::string> >
-get_outputs(const fef::Properties &props, const vespalib::string &feature) {
+std::vector<std::pair<std::string, std::string> >
+get_outputs(const fef::Properties &props, const std::string &feature) {
     return extract_properties(props, feature + ".output", "default", "max((0.35*p+0.15*o+0.30*q+0.20*f)*w)");
 }
 
@@ -407,9 +407,9 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::
     auto outputs = get_outputs(env.getProperties(), fnb.buildName());
     for (const auto &entry: outputs) {
         describeOutput(entry.first, entry.second);
-        vespalib::string aggr_name;
-        vespalib::string expr;
-        vespalib::string error;
+        std::string aggr_name;
+        std::string expr;
+        std::string error;
         if (!vespalib::eval::Function::unwrap(entry.second, aggr_name, expr, error)) {
             LOG(warning,
                 "'%s': could not extract aggregator and expression for output '%s' from config value '%s' (%s)",
@@ -421,7 +421,7 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::
             LOG(warning, "'%s': unknown aggregator '%s'", fnb.buildName().c_str(), aggr_name.c_str());
             return false;
         }
-        std::vector<vespalib::string> args({"p", "o", "q", "f", "w"});
+        std::vector<std::string> args({"p", "o", "q", "f", "w"});
         auto function = vespalib::eval::Function::parse(args, expr);
         if (function->has_error()) {
             LOG(warning, "'%s': per-element expression parse error: %s",

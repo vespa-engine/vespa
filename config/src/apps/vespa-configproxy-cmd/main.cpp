@@ -40,7 +40,7 @@ Application::parseOpts(int argc, char **argv)
     const Method method = methods::find(_flags.method);
     if (optind + method.args <= argc) {
         for (int i = 0; i < method.args; ++i) {
-            vespalib::string arg = argv[optind++];
+            std::string arg = argv[optind++];
             _flags.args.push_back(arg);
         }
     } else {

@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "handle.h"
+#include <string>
 
 namespace vespalib::metrics {
 
-using LabelValue = vespalib::string;
+using LabelValue = std::string;
 
 struct LabelTag {};
 
@@ -16,8 +16,8 @@ struct LabelTag {};
 struct Label : Handle<LabelTag>
 {
     explicit Label(size_t id) : Handle(id) {}
-    static Label from_value(const vespalib::string& value);
-    const vespalib::string& as_value() const;
+    static Label from_value(const std::string& value);
+    const std::string& as_value() const;
 };
 
 } // namespace vespalib::metrics

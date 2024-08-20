@@ -14,7 +14,7 @@ class LegacySubscriber
 public:
     LegacySubscriber();
     ~LegacySubscriber();
-    const vespalib::string & id() const { return _configId; }
+    const std::string & id() const { return _configId; }
 
     template <typename ConfigType>
     void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback);
@@ -22,7 +22,7 @@ public:
     void close();
 private:
     std::unique_ptr<ConfigFetcher> _fetcher;
-    vespalib::string _configId;
+    std::string _configId;
 };
 
 } // namespace config

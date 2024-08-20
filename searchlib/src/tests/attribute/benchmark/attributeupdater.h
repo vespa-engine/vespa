@@ -20,7 +20,7 @@ private:
 public:
     AttributeValidator() : _totalCnt(0) {}
     uint32_t getTotalCnt() const { return _totalCnt; }
-    bool reportAssert(bool rc, const vespalib::string & file, uint32_t line, const vespalib::string & str) {
+    bool reportAssert(bool rc, const std::string & file, uint32_t line, const std::string & str) {
         _totalCnt++;
         if (!rc) {
             std::cout << "Assert " << _totalCnt << " failed: \"" << str << "\" ("
@@ -30,8 +30,8 @@ public:
         return true;
     }
     template <class A, class B>
-    bool reportAssertEqual(const vespalib::string & file, uint32_t line,
-                           const vespalib::string & aStr, const vespalib::string & bStr,
+    bool reportAssertEqual(const std::string & file, uint32_t line,
+                           const std::string & aStr, const std::string & bStr,
                            const A & a, const B & b) {
         _totalCnt++;
         if (!(a == b)) {

@@ -21,7 +21,7 @@ using vespalib::getLastErrorString;
 
 namespace search::fileutil {
 
-LoadedMmap::LoadedMmap(const vespalib::string &fileName)
+LoadedMmap::LoadedMmap(const std::string &fileName)
     : LoadedBuffer(nullptr, 0),
       _mapBuffer(nullptr),
       _mapSize(0)
@@ -83,7 +83,7 @@ LoadedMmap::~LoadedMmap() {
 namespace search {
 
 std::unique_ptr<FastOS_FileInterface>
-FileUtil::openFile(const vespalib::string &fileName)
+FileUtil::openFile(const std::string &fileName)
 {
     auto file = std::make_unique<Fast_BufferedFile>();
     file->EnableDirectIO();
@@ -98,7 +98,7 @@ using fileutil::LoadedBuffer;
 using fileutil::LoadedMmap;
 
 LoadedBuffer::UP
-FileUtil::loadFile(const vespalib::string &fileName)
+FileUtil::loadFile(const std::string &fileName)
 {
     auto data = std::make_unique<LoadedMmap>(fileName);
     FastOS_File file(fileName.c_str());

@@ -55,7 +55,7 @@ public:
 
 api::StorageMessageAddress
 makeStorageAddress(uint16_t node) {
-    static vespalib::string _storage("storage");
+    static std::string _storage("storage");
     return {&_storage, lib::NodeType::STORAGE, node};
 }
 

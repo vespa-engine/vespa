@@ -167,13 +167,13 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     }
 }
 
-VSMConfigSnapshot::VSMConfigSnapshot(const vespalib::string & configId, const config::ConfigSnapshot & snapshot)
+VSMConfigSnapshot::VSMConfigSnapshot(const std::string & configId, const config::ConfigSnapshot & snapshot)
     : _configId(configId),
       _snapshot(std::make_unique<config::ConfigSnapshot>(snapshot))
 { }
 VSMConfigSnapshot::~VSMConfigSnapshot() = default;
 
-VSMAdapter::VSMAdapter(const vespalib::string & configId, const Fast_WordFolder& wordFolder)
+VSMAdapter::VSMAdapter(const std::string & configId, const Fast_WordFolder& wordFolder)
     : _configId(configId),
       _wordFolder(wordFolder),
       _fieldsCfg(),

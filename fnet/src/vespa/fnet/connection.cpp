@@ -745,7 +745,7 @@ FNET_Connection::HandleWriteEvent()
     return !broken;
 }
 
-vespalib::string
+std::string
 FNET_Connection::GetPeerSpec() const
 {
     return vespalib::SocketAddress::peer_address(_socket->get_fd()).spec();

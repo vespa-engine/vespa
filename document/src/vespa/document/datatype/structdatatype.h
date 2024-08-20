@@ -62,13 +62,13 @@ public:
 
     Field::Set getFieldSet() const override;
 private:
-    using StringFieldMap = vespalib::hash_map<vespalib::string, Field::SP>;
+    using StringFieldMap = vespalib::hash_map<std::string, Field::SP>;
     using IntFieldMap = vespalib::hash_map<int32_t, Field::SP>;
     StringFieldMap    _nameFieldMap;
     IntFieldMap       _idFieldMap;
 
     /** @return "" if not conflicting. Error message otherwise. */
-    vespalib::string containsConflictingField(const Field& field) const;
+    std::string containsConflictingField(const Field& field) const;
 };
 
 }

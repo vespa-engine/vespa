@@ -20,7 +20,7 @@ using search::queryeval::ISourceSelector;
 using search::diskindex::SelectorArray;
 using search::SerialNum;
 using std::vector;
-using vespalib::string;
+using std::string;
 
 namespace searchcorespi::index {
 

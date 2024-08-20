@@ -13,7 +13,7 @@ namespace {
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
 
-size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::string &name) {
+size_t my_dimension_index(const std::vector<Dimension> &list, const std::string &name) {
     for (size_t idx = 0; idx < list.size(); ++idx) {
         if (list[idx].name == name) {
             return idx;
@@ -22,7 +22,7 @@ size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::st
     return ValueType::Dimension::npos;
 }
 
-const Dimension *find_dimension(const std::vector<Dimension> &list, const vespalib::string &name) {
+const Dimension *find_dimension(const std::vector<Dimension> &list, const std::string &name) {
     size_t idx = my_dimension_index(list, name);
     return (idx != ValueType::Dimension::npos) ? &list[idx] : nullptr;
 }
@@ -47,7 +47,7 @@ bool verify_dimensions(const DimensionList &dimensions) {
 struct MyReduce {
     bool has_error;
     std::vector<Dimension> dimensions;
-    MyReduce(const std::vector<Dimension> &dim_list, const std::vector<vespalib::string> &rem_list)
+    MyReduce(const std::vector<Dimension> &dim_list, const std::vector<std::string> &rem_list)
         : has_error(false), dimensions()
     {
         if (!rem_list.empty()) {
@@ -69,10 +69,10 @@ struct MyReduce {
 struct MyJoin {
     bool mismatch;
     DimensionList dimensions;
-    vespalib::string concat_dim;
+    std::string concat_dim;
     MyJoin(const DimensionList &lhs, const DimensionList &rhs)
         : mismatch(false), dimensions(), concat_dim() { my_join(lhs, rhs); }
-    MyJoin(const DimensionList &lhs, const DimensionList &rhs, const vespalib::string & concat_dim_in)
+    MyJoin(const DimensionList &lhs, const DimensionList &rhs, const std::string & concat_dim_in)
         : mismatch(false), dimensions(), concat_dim(concat_dim_in) { my_join(lhs, rhs); }
     ~MyJoin();
 private:
@@ -121,13 +121,13 @@ private:
 MyJoin::~MyJoin() = default;
 
 struct Renamer {
-    const std::vector<vespalib::string> &from;
-    const std::vector<vespalib::string> &to;
+    const std::vector<std::string> &from;
+    const std::vector<std::string> &to;
     size_t match_cnt;
-    Renamer(const std::vector<vespalib::string> &from_in,
-            const std::vector<vespalib::string> &to_in)
+    Renamer(const std::vector<std::string> &from_in,
+            const std::vector<std::string> &to_in)
         : from(from_in), to(to_in), match_cnt(0) {}
-    const vespalib::string &rename(const vespalib::string &name) {
+    const std::string &rename(const std::string &name) {
         for (size_t i = 0; i < from.size(); ++i) {
             if (name == from[i]) {
                 ++match_cnt;
@@ -281,13 +281,13 @@ ValueType::mapped_dimensions() const
 }
 
 size_t
-ValueType::dimension_index(const vespalib::string &name) const
+ValueType::dimension_index(const std::string &name) const
 {
     return my_dimension_index(_dimensions, name);
 }
 
 size_t
-ValueType::stride_of(const vespalib::string &name) const
+ValueType::stride_of(const std::string &name) const
 {
     size_t stride = 0;
     for (const auto &dim: dimensions()) {
@@ -302,10 +302,10 @@ ValueType::stride_of(const vespalib::string &name) const
     return stride;
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 ValueType::dimension_names() const
 {
-    std::vector<vespalib::string> result;
+    std::vector<std::string> result;
     result.reserve(_dimensions.size());
     for (const auto &dimension: _dimensions) {
         result.push_back(dimension.name);
@@ -346,7 +346,7 @@ ValueType::map() const
 }
 
 ValueType
-ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
+ValueType::reduce(const std::vector<std::string> &dimensions_in) const
 {
     MyReduce result(_dimensions, dimensions_in);
     auto meta = cell_meta().reduce(result.dimensions.empty());
@@ -355,7 +355,7 @@ ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
 }
 
 ValueType
-ValueType::peek(const std::vector<vespalib::string> &dimensions_in) const
+ValueType::peek(const std::vector<std::string> &dimensions_in) const
 {
     MyReduce result(_dimensions, dimensions_in);
     auto meta = cell_meta().peek(result.dimensions.empty());
@@ -364,8 +364,8 @@ ValueType::peek(const std::vector<vespalib::string> &dimensions_in) const
 }
 
 ValueType
-ValueType::rename(const std::vector<vespalib::string> &from,
-                  const std::vector<vespalib::string> &to) const
+ValueType::rename(const std::vector<std::string> &from,
+                  const std::vector<std::string> &to) const
 {
     if (from.empty() || (from.size() != to.size())) {
         return error_type();
@@ -401,18 +401,18 @@ ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in)
 }
 
 ValueType
-ValueType::from_spec(const vespalib::string &spec)
+ValueType::from_spec(const std::string &spec)
 {
     return value_type::from_spec(spec);
 }
 
 ValueType
-ValueType::from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted)
+ValueType::from_spec(const std::string &spec, std::vector<ValueType::Dimension> &unsorted)
 {
     return value_type::from_spec(spec, unsorted);
 }
 
-vespalib::string
+std::string
 ValueType::to_spec() const
 {
     return value_type::to_spec(*this);
@@ -436,7 +436,7 @@ ValueType::merge(const ValueType &lhs, const ValueType &rhs)
 }
 
 ValueType
-ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension)
+ValueType::concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension)
 {
     MyJoin result(lhs._dimensions, rhs._dimensions, dimension);
     if (!find_dimension(result.dimensions, dimension)) {

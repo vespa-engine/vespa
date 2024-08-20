@@ -12,7 +12,7 @@ using search::util::LogUtil;
 namespace searchcorespi::index {
 
 void
-EventLogger::diskIndexLoadStart(const vespalib::string &indexDir)
+EventLogger::diskIndexLoadStart(const std::string &indexDir)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -23,7 +23,7 @@ EventLogger::diskIndexLoadStart(const vespalib::string &indexDir)
 }
 
 void
-EventLogger::diskIndexLoadComplete(const vespalib::string &indexDir,
+EventLogger::diskIndexLoadComplete(const std::string &indexDir,
                                    int64_t elapsedTimeMs)
 {
     JSONStringer jstr;
@@ -36,8 +36,8 @@ EventLogger::diskIndexLoadComplete(const vespalib::string &indexDir,
 }
 
 void
-EventLogger::diskFusionStart(const std::vector<vespalib::string> &sources,
-                             const vespalib::string &fusionDir)
+EventLogger::diskFusionStart(const std::vector<std::string> &sources,
+                             const std::string &fusionDir)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -54,7 +54,7 @@ EventLogger::diskFusionStart(const std::vector<vespalib::string> &sources,
 }
 
 void
-EventLogger::diskFusionComplete(const vespalib::string &fusionDir,
+EventLogger::diskFusionComplete(const std::string &fusionDir,
                                 int64_t elapsedTimeMs)
 {
     JSONStringer jstr;

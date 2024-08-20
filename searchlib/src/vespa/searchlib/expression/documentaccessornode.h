@@ -27,11 +27,11 @@ public:
 
     void setDoc(const document::Document & doc) { onDoc(doc); }
     void setDocType(const document::DocumentType & docType) { onDocType(docType); }
-    virtual const vespalib::string & getFieldName() const { return _S_docId; }
+    virtual const std::string & getFieldName() const { return _S_docId; }
 private:
     virtual void onDoc(const document::Document & doc) = 0;
     virtual void onDocType(const document::DocumentType & docType) = 0;
-    static const vespalib::string _S_docId;
+    static const std::string _S_docId;
 };
 
 }

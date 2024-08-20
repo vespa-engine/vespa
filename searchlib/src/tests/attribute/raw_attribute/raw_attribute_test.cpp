@@ -20,7 +20,7 @@ using search::attribute::SingleRawAttribute;
 using namespace std::literals;
 
 std::vector<char> empty;
-vespalib::string hello("hello");
+std::string hello("hello");
 std::span<const char> raw_hello(hello.c_str(), hello.size());
 
 std::filesystem::path attr_path("raw.dat");
@@ -90,7 +90,7 @@ TEST_F(RawAttributeTest, can_set_and_clear_value)
 
 TEST_F(RawAttributeTest, implements_serialize_for_sort) {
     std::vector<char> escapes{1, 0, char(0xff), char(0xfe), 1};
-    vespalib::string long_hello("hello, is there anybody out there");
+    std::string long_hello("hello, is there anybody out there");
     std::span<const char> raw_long_hello(long_hello.c_str(), long_hello.size());
     uint8_t buf[8];
     memset(buf, 0, sizeof(buf));

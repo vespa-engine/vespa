@@ -24,9 +24,10 @@
  */
 #pragma once
 
-#include <cstdint>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <cstdint>
+#include <cstring>
+#include <string>
 
 namespace document {
 
@@ -173,7 +174,7 @@ public:
     /**
      * Returns a string representation of this global id.
      */
-    vespalib::string toString() const;
+    std::string toString() const;
 
     /**
      * Parse the source string to generate a global id object.  The source is expected to contain exactly what

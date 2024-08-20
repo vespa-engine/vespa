@@ -75,7 +75,7 @@ ItemRawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespali
 
 ItemRawScoreBlueprint::HandleVector
 ItemRawScoreBlueprint::resolve(const IQueryEnvironment &env,
-                               const vespalib::string &label)
+                               const std::string &label)
 {
     HandleVector handles;
     const ITermData *term = util::getTermByLabel(env, label);

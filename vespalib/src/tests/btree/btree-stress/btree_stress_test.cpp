@@ -42,7 +42,7 @@ namespace {
 constexpr uint32_t value_offset = 1000000000;
 
 bool smoke_test = false;
-const vespalib::string smoke_test_option = "--smoke-test";
+const std::string smoke_test_option = "--smoke-test";
 
 class RealIntStore {
     using StoreType = vespalib::datastore::DataStore<uint32_t>;

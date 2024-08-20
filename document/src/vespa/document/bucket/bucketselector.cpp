@@ -84,7 +84,7 @@ using namespace document::select;
             if (node.getType() == IdValueNode::ALL) {
                 auto val = dynamic_cast<const StringValueNode*>(&valnode);
                 if (!val) return;
-                vespalib::string docId(val->getValue());
+                std::string docId(val->getValue());
                 if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(docId)) {
                     _buckets.emplace_back(58, IdString(docId).getLocation());
                     _unknown = false;
@@ -98,7 +98,7 @@ using namespace document::select;
             } else if (node.getType() == IdValueNode::GROUP) {
                 auto val = dynamic_cast<const StringValueNode*>(&valnode);
                 if (!val) return;
-                vespalib::string group(val->getValue());
+                std::string group(val->getValue());
                 if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(group)) {
                     _buckets.emplace_back(32, IdString::makeLocation(group));
                     _unknown = false;
@@ -106,7 +106,7 @@ using namespace document::select;
             } else if (node.getType() == IdValueNode::GID) {
                 auto val = dynamic_cast<const StringValueNode*>(&valnode);
 
-                vespalib::string gid(val->getValue());
+                std::string gid(val->getValue());
                 if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(gid)) {
                     BucketId bid = document::GlobalId::parse(gid).convertToBucketId();
                     _buckets.emplace_back(32, bid.getRawId());

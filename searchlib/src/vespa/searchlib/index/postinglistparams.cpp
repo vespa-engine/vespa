@@ -5,14 +5,14 @@
 
 namespace {
 
-vespalib::string empty;
+std::string empty;
 
 }
 
 namespace search::index {
 
 bool
-PostingListParams::isSet(const vespalib::string &key) const
+PostingListParams::isSet(const std::string &key) const
 {
     auto it = _map.find(key);
     if (it != _map.end()) {
@@ -22,14 +22,14 @@ PostingListParams::isSet(const vespalib::string &key) const
 }
 
 void
-PostingListParams::setStr(const vespalib::string &key,
-                          const vespalib::string &val)
+PostingListParams::setStr(const std::string &key,
+                          const std::string &val)
 {
     _map[key] = val;
 }
 
-const vespalib::string &
-PostingListParams::getStr(const vespalib::string &key) const
+const std::string &
+PostingListParams::getStr(const std::string &key) const
 {
     auto it = _map.find(key);
     if (it != _map.end()) {
@@ -51,7 +51,7 @@ PostingListParams::add(const PostingListParams & toAdd)
 }
 
 void
-PostingListParams::erase(const vespalib::string &key)
+PostingListParams::erase(const std::string &key)
 {
     _map.erase(key);
 }
@@ -64,7 +64,7 @@ PostingListParams::operator!=(const PostingListParams &rhs) const
 
 template <typename TYPE>
 void
-PostingListParams::set(const vespalib::string &key, const TYPE &val)
+PostingListParams::set(const std::string &key, const TYPE &val)
 {
     std::ostringstream os;
 
@@ -74,7 +74,7 @@ PostingListParams::set(const vespalib::string &key, const TYPE &val)
 
 template <typename TYPE>
 void
-PostingListParams::get(const vespalib::string &key, TYPE &val) const
+PostingListParams::get(const std::string &key, TYPE &val) const
 {
     std::istringstream is;
     auto it = _map.find(key);
@@ -85,33 +85,33 @@ PostingListParams::get(const vespalib::string &key, TYPE &val) const
 }
 
 template void
-PostingListParams::set<bool>(const vespalib::string &key, const bool &val);
+PostingListParams::set<bool>(const std::string &key, const bool &val);
 
 template void
-PostingListParams::get<bool>(const vespalib::string &key, bool &val) const;
+PostingListParams::get<bool>(const std::string &key, bool &val) const;
 
 template void
-PostingListParams::set<int>(const vespalib::string& key, const int& val);
+PostingListParams::set<int>(const std::string& key, const int& val);
 
 template void
-PostingListParams::get<int>(const vespalib::string& key, int& val) const;
+PostingListParams::get<int>(const std::string& key, int& val) const;
 
 template void
-PostingListParams::set<unsigned int>(const vespalib::string& key, const unsigned int& val);
+PostingListParams::set<unsigned int>(const std::string& key, const unsigned int& val);
 
 template void
-PostingListParams::get<unsigned int>(const vespalib::string& key, unsigned int& val) const;
+PostingListParams::get<unsigned int>(const std::string& key, unsigned int& val) const;
 
 template void
-PostingListParams::set<unsigned long>(const vespalib::string& key, const unsigned long& val);
+PostingListParams::set<unsigned long>(const std::string& key, const unsigned long& val);
 
 template void
-PostingListParams::get<unsigned long>(const vespalib::string& key, unsigned long& val) const;
+PostingListParams::get<unsigned long>(const std::string& key, unsigned long& val) const;
 
 template void
-PostingListParams::set<unsigned long long>(const vespalib::string& key, const unsigned long long& val);
+PostingListParams::set<unsigned long long>(const std::string& key, const unsigned long long& val);
 
 template void
-PostingListParams::get<unsigned long long>(const vespalib::string& key, unsigned long long& val) const;
+PostingListParams::get<unsigned long long>(const std::string& key, unsigned long long& val) const;
 
 }

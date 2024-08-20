@@ -4,6 +4,6 @@
 
 namespace search::linguistics {
 
-const vespalib::string SPANTREE_NAME("linguistics");
+const std::string SPANTREE_NAME("linguistics");
 
 }

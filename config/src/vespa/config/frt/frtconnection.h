@@ -16,14 +16,14 @@ public:
     typedef std::shared_ptr<FRTConnection> SP;
     enum ErrorType { TRANSIENT, FATAL };
 
-    FRTConnection(const vespalib::string & address, FRT_Supervisor & supervisor, const TimingValues & timingValues);
+    FRTConnection(const std::string & address, FRT_Supervisor & supervisor, const TimingValues & timingValues);
     FRTConnection(const FRTConnection&) = delete;
     FRTConnection& operator=(const FRTConnection&) = delete;
     ~FRTConnection() override;
 
     FRT_RPCRequest * allocRPCRequest() override;
     void invoke(FRT_RPCRequest * req, duration timeout, FRT_IRequestWait * waiter) override;
-    const vespalib::string & getAddress() const override { return _address; }
+    const std::string & getAddress() const override { return _address; }
     vespalib::steady_time getSuspendedUntil() const { return _suspendedUntil; }
     void setError(int errorCode) override;
     void setSuccess();
@@ -32,7 +32,7 @@ private:
 
     void calculateSuspension(ErrorType type);
 
-    const vespalib::string _address;
+    const std::string _address;
     const duration         _transientDelay;
     const duration         _fatalDelay;
     FRT_Supervisor&        _supervisor;

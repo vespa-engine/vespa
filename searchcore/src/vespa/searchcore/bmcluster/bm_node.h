@@ -51,7 +51,7 @@ public:
     virtual storage::spi::PersistenceProvider *get_persistence_provider() = 0;
     virtual void merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state) = 0;
     static unsigned int num_ports();
-    static std::unique_ptr<BmNode> create(const vespalib::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port);
+    static std::unique_ptr<BmNode> create(const std::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port);
 };
 
 }

@@ -189,7 +189,7 @@ void
 PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 {
     const auto &distribution = _bucket_space_states.get(bucketSpaceAndNode.bucketSpace).get_distribution();
-    vespalib::string distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
+    std::string distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
 
     LOG(debug,
         "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' and distribution hash '%s'",

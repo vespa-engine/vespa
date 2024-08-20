@@ -3,7 +3,7 @@
 #pragma once
 
 #include <memory>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search { class MatchingElementsFields; }
 
@@ -21,9 +21,9 @@ public:
     /**
      * Implementations can throw vespalib::IllegalArgumentException if setup of field writer fails.
      */
-    virtual std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& field_name,
-                                                                          const vespalib::string& command,
-                                                                          const vespalib::string& source,
+    virtual std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string& field_name,
+                                                                          const std::string& command,
+                                                                          const std::string& source,
                                                                           std::shared_ptr<MatchingElementsFields> matching_elems_fields) = 0;
 };
 

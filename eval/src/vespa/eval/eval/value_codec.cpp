@@ -113,7 +113,7 @@ ValueType decode_type(nbostream &input, const Format &format) {
     if (format.has_sparse) {
         size_t cnt = input.getInt1_4Bytes();
         for (size_t i = 0; i < cnt; ++i) {
-            vespalib::string name;
+            std::string name;
             input.readSmallString(name);
             dim_list.emplace_back(name);
         }
@@ -121,7 +121,7 @@ ValueType decode_type(nbostream &input, const Format &format) {
     if (format.has_dense) {
         size_t cnt = input.getInt1_4Bytes();
         for (size_t i = 0; i < cnt; ++i) {
-            vespalib::string name;
+            std::string name;
             input.readSmallString(name);
             dim_list.emplace_back(name, input.getInt1_4Bytes());
         }
@@ -143,7 +143,7 @@ size_t maybe_decode_num_blocks(nbostream &input, bool has_mapped_dims, const For
 
 void encode_mapped_labels(nbostream &output, size_t num_mapped_dims, const SmallVector<string_id> &addr) {
     for (size_t i = 0; i < num_mapped_dims; ++i) {
-        vespalib::string str = SharedStringRepo::Handle::string_from_id(addr[i]);
+        std::string str = SharedStringRepo::Handle::string_from_id(addr[i]);
         output.writeSmallString(str);
     }
 }

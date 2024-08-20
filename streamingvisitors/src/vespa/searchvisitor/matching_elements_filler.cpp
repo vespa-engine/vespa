@@ -33,15 +33,15 @@ namespace {
 
 struct SubFieldTerm
 {
-    vespalib::string _field_name;
+    std::string _field_name;
     const QueryTerm* _term;
 public:
-    SubFieldTerm(vespalib::string field_name, const QueryTerm* term) noexcept
+    SubFieldTerm(std::string field_name, const QueryTerm* term) noexcept
         : _field_name(std::move(field_name)),
           _term(term)
     {
     }
-    const vespalib::string& get_field_name() const { return _field_name; }
+    const std::string& get_field_name() const { return _field_name; }
     const QueryTerm& get_term() const { return *_term; }
 };
 
@@ -55,7 +55,7 @@ class Matcher
 
     void select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term);
     void select_query_nodes(const MatchingElementsFields& fields, const QueryNode& query_node);
-    void add_matching_elements(const vespalib::string& field_name, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements);
+    void add_matching_elements(const std::string& field_name, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements);
     void find_matching_elements(const SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements);
     void find_matching_elements(const SubFieldTerm& sub_field_term, uint32_t doc_lid, MatchingElements& matching_elements);
 public:
@@ -82,7 +82,7 @@ Matcher::~Matcher() = default;
 void
 Matcher::select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term)
 {
-    const vespalib::string* field = nullptr;
+    const std::string* field = nullptr;
     auto &multi_term_index = multi_term.getIndex();
     if (fields.has_struct_field(multi_term_index)) {
         field = &fields.get_enclosing_field(multi_term_index);
@@ -125,7 +125,7 @@ Matcher::select_query_nodes(const MatchingElementsFields& fields, const QueryNod
 }
 
 void
-Matcher::add_matching_elements(const vespalib::string& field_name, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements)
+Matcher::add_matching_elements(const std::string& field_name, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements)
 {
     _elements.clear();
     for (auto& hit : hit_list) {

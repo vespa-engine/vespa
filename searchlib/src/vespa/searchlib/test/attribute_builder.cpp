@@ -17,7 +17,7 @@ using vespalib::eval::TensorSpec;
 
 namespace search::attribute::test {
 
-AttributeBuilder::AttributeBuilder(const vespalib::string& name, const Config& cfg)
+AttributeBuilder::AttributeBuilder(const std::string& name, const Config& cfg)
     : _attr_ptr(AttributeFactory::createAttribute(name, cfg)),
       _attr(*_attr_ptr)
 {
@@ -158,23 +158,23 @@ AttributeBuilder::fill_wset(std::initializer_list<WeightedDoubleList> values)
 }
 
 AttributeBuilder&
-AttributeBuilder::fill(std::initializer_list<vespalib::string> values)
+AttributeBuilder::fill(std::initializer_list<std::string> values)
 {
-    fill_helper<StringAttribute, vespalib::string>(_attr, values);
+    fill_helper<StringAttribute, std::string>(_attr, values);
     return *this;
 }
 
 AttributeBuilder&
 AttributeBuilder::fill_array(std::initializer_list<StringList> values)
 {
-    fill_array_helper<StringAttribute, vespalib::string>(_attr, values);
+    fill_array_helper<StringAttribute, std::string>(_attr, values);
     return *this;
 }
 
 AttributeBuilder&
 AttributeBuilder::fill_wset(std::initializer_list<WeightedStringList> values)
 {
-    fill_wset_helper<StringAttribute, vespalib::string>(_attr, values);
+    fill_wset_helper<StringAttribute, std::string>(_attr, values);
     return *this;
 }
 
@@ -186,11 +186,11 @@ AttributeBuilder::fill(std::initializer_list<std::span<const char>> values)
 }
 
 AttributeBuilder&
-AttributeBuilder::fill_tensor(const std::vector<vespalib::string>& values)
+AttributeBuilder::fill_tensor(const std::vector<std::string>& values)
 {
     add_docs(_attr, values.size());
     auto& real = dynamic_cast<search::tensor::TensorAttribute&>(_attr);
-    vespalib::string tensor_type = real.getConfig().tensorType().to_spec();
+    std::string tensor_type = real.getConfig().tensorType().to_spec();
     uint32_t docid = 1;
     for (const auto& value : values) {
         if (!value.empty()) {

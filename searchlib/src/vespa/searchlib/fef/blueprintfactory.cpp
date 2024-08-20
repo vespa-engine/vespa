@@ -16,7 +16,7 @@ BlueprintFactory::BlueprintFactory()
 void
 BlueprintFactory::addPrototype(Blueprint::SP proto)
 {
-    vespalib::string name = proto->getBaseName();
+    std::string name = proto->getBaseName();
     if (_blueprintMap.find(name) != _blueprintMap.end()) {
         LOG(warning, "Blueprint prototype overwritten: %s", name.c_str());
     }
@@ -33,7 +33,7 @@ BlueprintFactory::visitDumpFeatures(const IIndexEnvironment &indexEnv,
 }
 
 Blueprint::SP
-BlueprintFactory::createBlueprint(const vespalib::string &name) const
+BlueprintFactory::createBlueprint(const std::string &name) const
 {
     auto itr = _blueprintMap.find(name);
     if (itr == _blueprintMap.end()) {

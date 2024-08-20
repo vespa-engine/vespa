@@ -4,8 +4,8 @@
 
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/engine/proto_rpc_adapter.h>
+#include <string>
 
 class FNET_Transport;
 
@@ -37,7 +37,7 @@ public:
     struct Params {
         Proton           &proton;
         config::ConfigUri slobrok_config;
-        vespalib::string  identity;
+        std::string  identity;
         uint32_t          rtcPort;
         uint32_t          numTranportThreads;
 

@@ -16,6 +16,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <cinttypes>
+#include <cstring>
 #include <optional>
 #include <sstream>
 
@@ -418,7 +419,7 @@ testWords(const std::string &logname,
                  ie = myrand.end();
              i != ie;
              ++i, ++wordNum) {
-            vespalib::string word;
+            std::string word;
             counts.clear();
             r.readCounts(word, checkWordNum, counts);
             checkCounts(word, counts, checkOffset, *i, chunkSize);
@@ -512,7 +513,7 @@ testWords(const std::string &logname,
         assert(openres);
         (void) openres;
         std::string lastWord;
-        vespalib::string checkWord;
+        std::string checkWord;
         PostingListCounts wCounts;
         PostingListCounts rCounts;
         uint64_t wordNum = 1;
@@ -558,7 +559,7 @@ testWords(const std::string &logname,
         assert(openres);
         (void) openres;
         std::string lastWord;
-        vespalib::string checkWord;
+        std::string checkWord;
         PostingListCounts wCounts;
         PostingListCounts rCounts;
         uint64_t wOffset;

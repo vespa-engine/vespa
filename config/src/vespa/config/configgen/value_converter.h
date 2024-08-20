@@ -2,8 +2,8 @@
 #pragma once
 
 #include "configpayload.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/slime/inspector.h>
+#include <string>
 
 namespace config::internal {
 
@@ -25,7 +25,7 @@ template<>
 bool convertValue(const ::vespalib::slime::Inspector & __inspector);
 
 template<>
-vespalib::string convertValue(const ::vespalib::slime::Inspector & __inspector);
+std::string convertValue(const ::vespalib::slime::Inspector & __inspector);
 
 template<typename T>
 struct ValueConverter {

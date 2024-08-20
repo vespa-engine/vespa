@@ -241,7 +241,7 @@ DistributorStripeComponent::node_supported_features_repo() const noexcept
 }
 
 std::unique_ptr<document::select::Node>
-DistributorStripeComponent::parse_selection(const vespalib::string& selection) const
+DistributorStripeComponent::parse_selection(const std::string& selection) const
 {
     document::select::Parser parser(*getTypeRepo()->documentTypeRepo, getBucketIdFactory());
     return parser.parse(selection);

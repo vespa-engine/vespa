@@ -9,7 +9,7 @@ namespace config {
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
-ConfigSnapshot::getConfig(const vespalib::string & configId) const
+ConfigSnapshot::getConfig(const std::string & configId) const
 {
     ConfigKey key(ConfigKey::create<ConfigType>(configId));
     return find(key)->second.second.newInstance<ConfigType>();
@@ -17,7 +17,7 @@ ConfigSnapshot::getConfig(const vespalib::string & configId) const
 
 template <typename ConfigType>
 bool
-ConfigSnapshot::isChanged(const vespalib::string & configId, int64_t currentGeneration) const
+ConfigSnapshot::isChanged(const std::string & configId, int64_t currentGeneration) const
 {
     ConfigKey key(ConfigKey::create<ConfigType>(configId));
     return currentGeneration < find(key)->second.first;
@@ -25,7 +25,7 @@ ConfigSnapshot::isChanged(const vespalib::string & configId, int64_t currentGene
 
 template <typename ConfigType>
 bool
-ConfigSnapshot::hasConfig(const vespalib::string & configId) const
+ConfigSnapshot::hasConfig(const std::string & configId) const
 {
     ConfigKey key(ConfigKey::create<ConfigType>(configId));
     return (_valueMap.find(key) != _valueMap.end());

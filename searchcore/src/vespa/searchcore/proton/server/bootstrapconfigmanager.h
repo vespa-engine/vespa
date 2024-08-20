@@ -17,7 +17,7 @@ class BootstrapConfig;
 class BootstrapConfigManager
 {
 public:
-    BootstrapConfigManager(const vespalib::string & configId);
+    BootstrapConfigManager(const std::string & configId);
     ~BootstrapConfigManager();
     const config::ConfigKeySet createConfigKeySet() const;
 
@@ -26,7 +26,7 @@ public:
 
 private:
     std::shared_ptr<BootstrapConfig> _pendingConfigSnapshot;
-    vespalib::string                 _configId;
+    std::string                 _configId;
     mutable std::mutex               _pendingConfigMutex;
 };
 

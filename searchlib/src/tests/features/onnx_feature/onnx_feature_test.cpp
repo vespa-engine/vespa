@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
@@ -13,6 +12,7 @@
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/test/test_features.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <string>
 
 using namespace search::fef;
 using namespace search::fef::test;
@@ -34,15 +34,15 @@ std::string fragile_model = source_dir + "/" + "fragile.onnx";
 
 uint32_t default_docid = 1;
 
-vespalib::string expr_feature(const vespalib::string &name) {
+std::string expr_feature(const std::string &name) {
     return fmt("rankingExpression(%s)", name.c_str());
 }
 
-vespalib::string onnx_feature(const vespalib::string &name) {
+std::string onnx_feature(const std::string &name) {
     return fmt("onnx(%s)", name.c_str());
 }
 
-vespalib::string onnx_feature_old(const vespalib::string &name) {
+std::string onnx_feature_old(const std::string &name) {
     return fmt("onnxModel(%s)", name.c_str());
 }
 
@@ -62,15 +62,15 @@ struct OnnxFeatureTest : ::testing::Test {
         factory.addPrototype(std::make_shared<OnnxBlueprint>("onnxModel"));
     }
     ~OnnxFeatureTest() override;
-    void add_expr(const vespalib::string &name, const vespalib::string &expr) {
-        vespalib::string feature_name = expr_feature(name);
-        vespalib::string expr_name = feature_name + ".rankingScript";
+    void add_expr(const std::string &name, const std::string &expr) {
+        std::string feature_name = expr_feature(name);
+        std::string expr_name = feature_name + ".rankingScript";
         indexEnv.getProperties().add(expr_name, expr);
     }
     void add_onnx(OnnxModel model) {
         indexEnv.addOnnxModel(std::move(model));
     }
-    bool try_compile(const vespalib::string &seed) {
+    bool try_compile(const std::string &seed) {
         resolver->addSeed(seed);
         if (!resolver->compile()) {
             return false;
@@ -81,10 +81,10 @@ struct OnnxFeatureTest : ::testing::Test {
         program.setup(*match_data, queryEnv, overrides);
         return true;
     }
-    void compile(const vespalib::string &seed) {
+    void compile(const std::string &seed) {
         ASSERT_TRUE(try_compile(seed));
     }
-    TensorSpec get(const vespalib::string &feature, uint32_t docid) const {
+    TensorSpec get(const std::string &feature, uint32_t docid) const {
         auto result = program.get_all_features(false);
         for (size_t i = 0; i < result.num_features(); ++i) {
             if (result.name_of(i) == feature) {
@@ -176,7 +176,7 @@ TEST_F(OnnxFeatureTest, fragile_model_can_be_evaluated) {
 }
 
 struct MyIssues : Issue::Handler {
-    std::vector<vespalib::string> list;
+    std::vector<std::string> list;
     Issue::Binding capture;
     MyIssues() : list(), capture(Issue::listen(*this)) {}
     ~MyIssues() override;

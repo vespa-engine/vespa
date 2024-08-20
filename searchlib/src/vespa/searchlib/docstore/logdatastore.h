@@ -87,7 +87,7 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDataStore(vespalib::Executor &executor, const vespalib::string &dirName, const Config & config,
+    LogDataStore(vespalib::Executor &executor, const std::string &dirName, const Config & config,
                  const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                  const search::common::FileHeaderContext &fileHeaderContext,
                  transactionlog::SyncProxy &tlSyncer, IBucketizer::SP bucketizer, bool readOnly = false);
@@ -200,10 +200,10 @@ private:
     NameIdSet eraseIncompleteCompactedFiles(NameIdSet partList);
     void internalFlushAll();
 
-    NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);
+    NameIdSet scanDir(const std::string &dir, const std::string &suffix);
     FileId allocateFileId(const MonitorGuard & guard);
     void setNewFileChunk(const MonitorGuard & guard, FileChunk::UP fileChunk);
-    vespalib::string ls(const NameIdSet & partList);
+    std::string ls(const NameIdSet & partList);
 
     WriteableFileChunk & getActive(const MonitorGuard & guard);
     const WriteableFileChunk & getActive(const MonitorGuard & guard) const;
@@ -215,9 +215,9 @@ private:
     FileChunk::UP createReadOnlyFile(FileId fileId, NameId nameId);
     FileChunk::UP createWritableFile(FileId fileId, SerialNum serialNum);
     FileChunk::UP createWritableFile(FileId fileId, SerialNum serialNum, NameId nameId);
-    vespalib::string createFileName(NameId id) const;
-    vespalib::string createDatFileName(NameId id) const;
-    vespalib::string createIdxFileName(NameId id) const;
+    std::string createFileName(NameId id) const;
+    std::string createDatFileName(NameId id) const;
+    std::string createIdxFileName(NameId id) const;
 
     void requireSpace(MonitorGuard guard, WriteableFileChunk & active, vespalib::CpuUsage::Category cpu_category);
     bool isReadOnly() const { return _readOnly; }

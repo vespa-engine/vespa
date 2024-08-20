@@ -55,10 +55,10 @@ SocketAddress::is_abstract() const
     return result;
 }
 
-vespalib::string
+std::string
 SocketAddress::ip_address() const
 {
-    vespalib::string result;
+    std::string result;
     if (is_ipv4()) {
         char buf[INET_ADDRSTRLEN];
         result = inet_ntop(AF_INET, &addr_in()->sin_addr, buf, sizeof(buf));
@@ -69,7 +69,7 @@ SocketAddress::ip_address() const
     return result;
 }
 
-vespalib::string
+std::string
 SocketAddress::reverse_lookup() const
 {
     std::vector<char> result(4_Ki, '\0');
@@ -77,10 +77,10 @@ SocketAddress::reverse_lookup() const
     return &result[0];
 }
 
-vespalib::string
+std::string
 SocketAddress::path() const
 {
-    vespalib::string result;
+    std::string result;
     if (is_ipc() && !is_abstract()) {
         const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
         const char *pos = &addr_un()->sun_path[0];
@@ -93,10 +93,10 @@ SocketAddress::path() const
     return result;
 }
 
-vespalib::string
+std::string
 SocketAddress::name() const
 {
-    vespalib::string result;
+    std::string result;
     if (is_ipc() && is_abstract()) {
         const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
         const char *pos = &addr_un()->sun_path[1];
@@ -129,7 +129,7 @@ SocketAddress::port() const
     return -1;
 }
 
-vespalib::string
+std::string
 SocketAddress::spec() const
 {
     if (is_wildcard()) {
@@ -227,7 +227,7 @@ SocketAddress::resolve(int port, const char *node) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = 0;
     hints.ai_flags = (AI_PASSIVE | AI_NUMERICSERV | AI_ADDRCONFIG);
-    vespalib::string service = make_string("%d", port);
+    std::string service = make_string("%d", port);
     addrinfo *list = nullptr;
     if (getaddrinfo(node, service.c_str(), &hints, &list) == 0) {
         for (const addrinfo *info = list; info != nullptr; info = info->ai_next) {
@@ -253,7 +253,7 @@ SocketAddress::select_remote(int port, const char *node)
 }
 
 SocketAddress
-SocketAddress::from_path(const vespalib::string &path)
+SocketAddress::from_path(const std::string &path)
 {
     SocketAddress result;
     sockaddr_un &addr_un = reinterpret_cast<sockaddr_un &>(result._addr);
@@ -266,7 +266,7 @@ SocketAddress::from_path(const vespalib::string &path)
 }
 
 SocketAddress
-SocketAddress::from_name(const vespalib::string &name)
+SocketAddress::from_name(const std::string &name)
 {
     SocketAddress result;
     sockaddr_un &addr_un = reinterpret_cast<sockaddr_un &>(result._addr);
@@ -295,10 +295,10 @@ SocketAddress::get_interfaces()
     return result;
 }
 
-vespalib::string
-SocketAddress::normalize(const vespalib::string &host_name)
+std::string
+SocketAddress::normalize(const std::string &host_name)
 {
-    vespalib::string result = host_name;
+    std::string result = host_name;
     addrinfo hints;
     memset(&hints, 0, sizeof(addrinfo));
     hints.ai_family = AF_UNSPEC;

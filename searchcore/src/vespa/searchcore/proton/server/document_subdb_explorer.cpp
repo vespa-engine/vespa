@@ -15,11 +15,11 @@ namespace proton {
 
 namespace {
 
-const vespalib::string DOCUMENT_META_STORE = "documentmetastore";
-const vespalib::string DOCUMENT_STORE = "documentstore";
-const vespalib::string ATTRIBUTE = "attribute";
-const vespalib::string ATTRIBUTE_WRITER = "attributewriter";
-const vespalib::string INDEX = "index";
+const std::string DOCUMENT_META_STORE = "documentmetastore";
+const std::string DOCUMENT_STORE = "documentstore";
+const std::string ATTRIBUTE = "attribute";
+const std::string ATTRIBUTE_WRITER = "attributewriter";
+const std::string INDEX = "index";
 
 }
 
@@ -35,10 +35,10 @@ DocumentSubDBExplorer::get_state(const Inserter &inserter, bool full) const
     inserter.insertObject();
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 DocumentSubDBExplorer::get_children_names() const
 {
-    std::vector<vespalib::string> children = {DOCUMENT_META_STORE, DOCUMENT_STORE};
+    std::vector<std::string> children = {DOCUMENT_META_STORE, DOCUMENT_STORE};
     if (_subDb.getAttributeManager()) {
         children.push_back(ATTRIBUTE);
     }

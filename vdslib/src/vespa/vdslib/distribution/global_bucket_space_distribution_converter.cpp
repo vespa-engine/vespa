@@ -28,7 +28,7 @@ void set_distribution_invariant_config_fields(DistributionConfigBuilder& builder
     builder.initialRedundancy = 0;
 }
 
-const Group& find_non_root_group_by_index(const vespalib::string& index, const Group& root) {
+const Group& find_non_root_group_by_index(const std::string& index, const Group& root) {
     auto path = lib::DistributionConfigUtil::getGroupPath(index);
     auto* node = &root;
     for (auto idx : path) {
@@ -39,7 +39,7 @@ const Group& find_non_root_group_by_index(const vespalib::string& index, const G
     return *node;
 }
 
-vespalib::string sub_groups_to_partition_spec(const Group& parent) {
+std::string sub_groups_to_partition_spec(const Group& parent) {
     if (parent.sub_groups.empty()) {
         return "*";
     }
@@ -165,13 +165,13 @@ GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distributio
 }
 
 std::unique_ptr<DistributionConfig>
-GlobalBucketSpaceDistributionConverter::string_to_config(const vespalib::string& cfg) {
+GlobalBucketSpaceDistributionConverter::string_to_config(const std::string& cfg) {
     vespalib::asciistream iss(cfg);
     config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(iss);
     return reader.read();
 }
 
-vespalib::string GlobalBucketSpaceDistributionConverter::config_to_string(const DistributionConfig& cfg) {
+std::string GlobalBucketSpaceDistributionConverter::config_to_string(const DistributionConfig& cfg) {
     vespalib::asciistream ost;
     config::AsciiConfigWriter writer(ost);
     writer.write(cfg);

@@ -640,7 +640,7 @@ TEST(ParallelWeakAndTest, require_that_asString_on_blueprint_works)
     BlueprintAsStringFixture f;
     Node::UP term = f.spec.createNode(57, 67);
     Blueprint::UP bp = f.blueprint(*term);
-    vespalib::string expStr = "search::queryeval::ParallelWeakAndBlueprint {\n"
+    std::string expStr = "search::queryeval::ParallelWeakAndBlueprint {\n"
                               "    isTermLike: true\n"
                               "    fields: FieldList {\n"
                               "        [0]: Field {\n"

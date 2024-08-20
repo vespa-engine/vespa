@@ -176,7 +176,7 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
     _params.resize(env.getNumFields());
     _params.slidingWindow = util::strToNum<uint32_t>(env.getProperties().lookup(getBaseName(), "slidingWindowSize").get("4"));
     FieldWrapper fields(env, params, FieldType::INDEX);
-    vespalib::string defaultProximityImportance  = env.getProperties().lookup(getBaseName(), "proximityImportance").get("0.5");
+    std::string defaultProximityImportance  = env.getProperties().lookup(getBaseName(), "proximityImportance").get("0.5");
     shared_state_key_builder << "fef.nativeProximity[";
     bool first_field = true;
     for (uint32_t i = 0; i < fields.getNumFields(); ++i) {

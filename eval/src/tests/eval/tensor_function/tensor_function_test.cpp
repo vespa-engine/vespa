@@ -52,8 +52,8 @@ struct EvalCtx {
     Value::UP make_false() {
         return value_from_spec(TensorSpec("double").add({}, 0.0), factory);
     }
-    Value::UP make_vector(std::initializer_list<double> cells, vespalib::string dim = "x", bool mapped = false) {
-        vespalib::string type_spec = mapped
+    Value::UP make_vector(std::initializer_list<double> cells, std::string dim = "x", bool mapped = false) {
+        std::string type_spec = mapped
                                      ? make_string("tensor(%s{})", dim.c_str())
                                      : make_string("tensor(%s[%zu])", dim.c_str(), cells.size());
         TensorSpec spec(type_spec);

@@ -31,7 +31,7 @@ class IsLogged
 {
 private:
     A           _a;
-    vespalib::string _name;
+    std::string _name;
 
 public:
     IsLogged(A a) : _a(a), _name(a.getName()) {}
@@ -48,7 +48,7 @@ class DoLog
 {
 private:
     A           _a;
-    vespalib::string _name;
+    std::string _name;
 
 public:
     DoLog(A a) : _a(a), _name(a.getName()) {}
@@ -83,13 +83,13 @@ DoLog<A> doLog(A a) {
 class ParseContext
 {
 private:
-    const vespalib::string &_str;   // the input string. TODO Use std::string_view
+    const std::string &_str;   // the input string. TODO Use std::string_view
     uint32_t           _pos;   // current position
     char               _curr;  // current character, 0 means eos
     bool               _error; // flag indicating whether we have a parse error
 
 public:
-    ParseContext(const vespalib::string &in) : _str(in), _pos(0),
+    ParseContext(const std::string &in) : _str(in), _pos(0),
                                           _curr((in.empty()) ? 0 : in[0]),
                                           _error(false) {}
     uint32_t pos() const { return _pos; }
@@ -155,7 +155,7 @@ public:
             return false;
         }
     }
-    vespalib::string getName() const { return "IsSpace"; }
+    std::string getName() const { return "IsSpace"; }
 };
 
 class Ident
@@ -185,7 +185,7 @@ public:
     bool operator()(char c) const {
         return _G_ident.isValid(c);
     }
-    vespalib::string getName() const { return "IsIdent"; }
+    std::string getName() const { return "IsIdent"; }
 };
 
 class IsChar
@@ -198,7 +198,7 @@ public:
     bool operator()(char c) const {
         return (c == _c);
     }
-    vespalib::string getName() const { return vespalib::make_string("IsChar(%c)", _c); }
+    std::string getName() const { return vespalib::make_string("IsChar(%c)", _c); }
 };
 
 template <typename A>
@@ -212,7 +212,7 @@ public:
     bool operator()(char c) {
         return !(_a(c));
     }
-    vespalib::string getName() const { return vespalib::make_string("IsNot(%s)", _a.getName().c_str()); }
+    std::string getName() const { return vespalib::make_string("IsNot(%s)", _a.getName().c_str()); }
 };
 
 template <typename A, typename B>
@@ -227,7 +227,7 @@ public:
     bool operator()(char c) {
         return (_a(c) || _b(c));
     }
-    vespalib::string getName() const { return vespalib::make_string("IsEither(%s,%s)",
+    std::string getName() const { return vespalib::make_string("IsEither(%s,%s)",
                                           _a.getName().c_str(), _b.getName().c_str()); }
 };
 
@@ -249,7 +249,7 @@ public:
         }
         return (c == '"');
     }
-    vespalib::string getName() const { return "IsEndQuote"; }
+    std::string getName() const { return "IsEndQuote"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -259,22 +259,22 @@ class DoIgnore
 public:
     bool operator()(char) { return true; }
     bool done() { return true; }
-    vespalib::string getName() const { return "doIgnore"; }
+    std::string getName() const { return "doIgnore"; }
 };
 
 class DoSave
 {
 private:
-    vespalib::string &_dst;
+    std::string &_dst;
 
 public:
-    DoSave(vespalib::string &str) : _dst(str) {}
+    DoSave(std::string &str) : _dst(str) {}
     bool operator()(char c) {
         _dst.push_back(c);
         return true;
     }
     bool done() { return !_dst.empty(); }
-    vespalib::string getName() const { return "doSave"; }
+    std::string getName() const { return "doSave"; }
 };
 
 class DoDequote
@@ -283,10 +283,10 @@ private:
     bool          _escape; // true means we are dequoting something
     int           _hex;    // how many hex numbers left to read
     unsigned char _c;      // save up hex decoded char here
-    vespalib::string  &_dst;    // where to save the dequoted string
+    std::string  &_dst;    // where to save the dequoted string
 
 public:
-    explicit DoDequote(vespalib::string &str) : _escape(false), _hex(0), _c(0), _dst(str) {}
+    explicit DoDequote(std::string &str) : _escape(false), _hex(0), _c(0), _dst(str) {}
     bool operator()(char c) {
         if (_escape) {
             if (_hex > 0) {
@@ -347,7 +347,7 @@ public:
         return true;
     }
     bool done() { return !_escape; }
-    vespalib::string getName() const { return "doDequote"; }
+    std::string getName() const { return "doDequote"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -372,23 +372,23 @@ IsEndQuote isEndQuote() { return IsEndQuote(); }
 
 DoIgnore doIgnore() { return DoIgnore(); }
 
-DoSave doSave(vespalib::string &str) { return DoSave(str); }
+DoSave doSave(std::string &str) { return DoSave(str); }
 
-DoDequote doDequote(vespalib::string &str) { return DoDequote(str); }
+DoDequote doDequote(std::string &str) { return DoDequote(str); }
 
 //-----------------------------------------------------------------------------
 
 // need forward declaration of this for recursive parsing
-bool normalizeFeatureName(ParseContext &ctx, vespalib::string &name);
+bool normalizeFeatureName(ParseContext &ctx, std::string &name);
 
-bool parseParameters(ParseContext &ctx, std::vector<vespalib::string> &parameters)
+bool parseParameters(ParseContext &ctx, std::vector<std::string> &parameters)
 {
     ctx.scan(isSpace(), doIgnore());
     if (!ctx.eatChar('(')) {
         return true; // no parameters = ok
     }
     for (;;) {
-        vespalib::string param;
+        std::string param;
         ctx.scan(isSpace(), doIgnore());
         switch (ctx.get()) {
         case ')':
@@ -419,7 +419,7 @@ bool parseParameters(ParseContext &ctx, std::vector<vespalib::string> &parameter
     }
 }
 
-bool parseOutput(ParseContext &ctx, vespalib::string &output)
+bool parseOutput(ParseContext &ctx, std::string &output)
 {
     ctx.scan(isSpace(), doIgnore());
     if (!ctx.eatChar('.')) {
@@ -429,18 +429,18 @@ bool parseOutput(ParseContext &ctx, vespalib::string &output)
     return ctx.scan(isEither(isIdent(), isChar('.')), doSave(output));
 }
 
-bool parseFeatureName(ParseContext &ctx, vespalib::string &baseName,
-                      std::vector<vespalib::string> &parameters, vespalib::string &output)
+bool parseFeatureName(ParseContext &ctx, std::string &baseName,
+                      std::vector<std::string> &parameters, std::string &output)
 {
     return (ctx.scan(isIdent(), doSave(baseName)) &&
             parseParameters(ctx, parameters) &&
             parseOutput(ctx, output));
 }
 
-bool normalizeFeatureName(ParseContext &ctx, vespalib::string &name) {
-    vespalib::string              baseName;
-    std::vector<vespalib::string> params;
-    vespalib::string              output;
+bool normalizeFeatureName(ParseContext &ctx, std::string &name) {
+    std::string              baseName;
+    std::vector<std::string> params;
+    std::string              output;
     if (!parseFeatureName(ctx, baseName, params, output)) {
         return false;
     }

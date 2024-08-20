@@ -23,12 +23,12 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr) {
+void verify_optimized(const std::string &expr) {
     CellTypeSpace all_types(CellTypeUtils::list_types(), 1);
     EvalFixture::verify<FunInfo>(expr, {FunInfo{}}, all_types);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     CellTypeSpace all_types(CellTypeUtils::list_types(), 1);
     EvalFixture::verify<FunInfo>(expr, {}, all_types);
 }
@@ -77,8 +77,8 @@ TEST(FastRenameTest, chained_optimized_renames_are_compacted_into_a_single_opera
     UNWIND_DO(verify_optimized("rename(rename(x5,x,y),y,z)"));
 }
 
-bool is_stable(const vespalib::string &from_spec, const vespalib::string &to_spec,
-               const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to)
+bool is_stable(const std::string &from_spec, const std::string &to_spec,
+               const std::vector<std::string> &from, const std::vector<std::string> &to)
 {
     auto from_type = ValueType::from_spec(from_spec);
     auto to_type = ValueType::from_spec(to_spec);

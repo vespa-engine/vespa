@@ -59,8 +59,8 @@ namespace proton {
 
 namespace documentmetastore {
 
-vespalib::string DOCID_LIMIT("docIdLimit");
-vespalib::string VERSION("version");
+std::string DOCID_LIMIT("docIdLimit");
+std::string VERSION("version");
 
 class Reader {
 private:
@@ -411,11 +411,11 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB)
     : DocumentMetaStore(std::move(bucketDB), getFixedName())
 {}
 
-DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const vespalib::string &name)
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string &name)
     : DocumentMetaStore(std::move(bucketDB), name, search::GrowStrategy())
 {}
 DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
-                                     const vespalib::string &name,
+                                     const std::string &name,
                                      const GrowStrategy &grow,
                                      SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),

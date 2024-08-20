@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
@@ -56,7 +56,7 @@ public:
         _deadBytes += rhs._deadBytes;
         _allocatedBytesOnHold += rhs._allocatedBytesOnHold;
     }
-    string toString() const;
+    std::string toString() const;
 };
 
 class asciistream;

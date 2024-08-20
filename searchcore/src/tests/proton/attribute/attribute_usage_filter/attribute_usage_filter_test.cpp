@@ -66,7 +66,7 @@ struct Fixture
         filter.set_listener(std::move(my_listener));
     }
 
-    void testWrite(const vespalib::string &exp) {
+    void testWrite(const std::string &exp) {
         if (exp.empty()) {
             EXPECT_TRUE(filter.acceptWriteOperation());
             State state = filter.getAcceptState();

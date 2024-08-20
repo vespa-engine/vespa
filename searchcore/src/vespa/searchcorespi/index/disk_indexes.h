@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
-#include <mutex>
 #include <memory>
+#include <mutex>
+#include <string>
 
 namespace searchcorespi::index {
 
@@ -35,9 +35,9 @@ public:
     ~DiskIndexes();
     DiskIndexes(const DiskIndexes &) = delete;
     DiskIndexes & operator = (const DiskIndexes &) = delete;
-    void setActive(const vespalib::string & index, uint64_t size_on_disk);
-    void notActive(const vespalib::string & index);
-    bool isActive(const vespalib::string & index) const;
+    void setActive(const std::string & index, uint64_t size_on_disk);
+    void notActive(const std::string & index);
+    bool isActive(const std::string & index) const;
     void add_not_active(IndexDiskDir index_disk_dir);
     bool remove(IndexDiskDir index_disk_dir);
     uint64_t get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const;

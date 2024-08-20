@@ -46,8 +46,8 @@ constexpr uint32_t merge_postings_heap_limit = 4;
 constexpr uint32_t merge_postings_merge_chunk = 50000;
 constexpr uint32_t scan_chunk = 80000;
 
-vespalib::string
-createTmpPath(const vespalib::string & base, uint32_t index) {
+std::string
+createTmpPath(const std::string & base, uint32_t index) {
     vespalib::asciistream os;
     os << base;
     os << "/tmpindex";
@@ -93,7 +93,7 @@ FieldMerger::clean_tmp_dirs()
 {
     uint32_t i = 0;
     for (;;) {
-        vespalib::string tmpindexpath = createTmpPath(_field_dir, i);
+        std::string tmpindexpath = createTmpPath(_field_dir, i);
         FastOS_StatInfo statInfo;
         if (!FastOS_File::Stat(tmpindexpath.c_str(), &statInfo)) {
             if (statInfo._error == FastOS_StatInfo::FileNotFound) {
@@ -106,7 +106,7 @@ FieldMerger::clean_tmp_dirs()
     }
     while (i > 0) {
         i--;
-        vespalib::string tmpindexpath = createTmpPath(_field_dir, i);
+        std::string tmpindexpath = createTmpPath(_field_dir, i);
         std::error_code ec;
         std::filesystem::remove_all(std::filesystem::path(tmpindexpath), ec);
         if (ec) {
@@ -125,11 +125,11 @@ FieldMerger::open_input_word_readers()
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
     for (auto & oi : _fusion_out_index.get_old_indexes()) {
         auto reader(std::make_unique<DictionaryWordReader>());
-        const vespalib::string &tmpindexpath = createTmpPath(_field_dir, oi.getIndex());
-        const vespalib::string &oldindexpath = oi.getPath();
-        vespalib::string wordMapName = tmpindexpath + "/old2new.dat";
-        vespalib::string fieldDir(oldindexpath + "/" + _field_name);
-        vespalib::string dictName(fieldDir + "/dictionary");
+        const std::string &tmpindexpath = createTmpPath(_field_dir, oi.getIndex());
+        const std::string &oldindexpath = oi.getPath();
+        std::string wordMapName = tmpindexpath + "/old2new.dat";
+        std::string fieldDir(oldindexpath + "/" + _field_name);
+        std::string dictName(fieldDir + "/dictionary");
         const Schema &oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
@@ -169,7 +169,7 @@ FieldMerger::read_mapping_files()
         }
 
         // Open word mapping file
-        vespalib::string old2newname = createTmpPath(_field_dir, oi.getIndex()) + "/old2new.dat";
+        std::string old2newname = createTmpPath(_field_dir, oi.getIndex()) + "/old2new.dat";
         wordNumMapping.readMappingFile(old2newname, _fusion_out_index.get_tune_file_indexing()._read);
     }
 
@@ -338,8 +338,8 @@ FieldMerger::select_cooked_or_raw_features(FieldReader& reader)
     bool cookedFormatOK = true;
     PostingListParams featureParams;
     PostingListParams outFeatureParams;
-    vespalib::string cookedFormat;
-    vespalib::string rawFormat;
+    std::string cookedFormat;
+    std::string rawFormat;
 
     if (!reader.isValid()) {
         return true;

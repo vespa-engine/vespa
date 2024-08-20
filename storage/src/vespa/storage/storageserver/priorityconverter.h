@@ -4,6 +4,7 @@
 
 #include <vespa/documentapi/messagebus/priority.h>
 #include <array>
+#include <cstdint>
 #include <vector>
 
 namespace storage {

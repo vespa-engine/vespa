@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib::assert {
 
@@ -18,7 +18,7 @@ size_t getNumAsserts(const char *key);
  * @param key
  * @return
  */
-vespalib::string getAssertLogFileName(const char *key);
+std::string getAssertLogFileName(const char *key);
 
 /**
  * If there is no record on file that this assert has failed, it will be recorded and aborted.

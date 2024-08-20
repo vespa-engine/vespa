@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/index/field_length_info.h>
+#include <cstdint>
+#include <string>
 
 namespace search::index {
 class PostingListParams;
@@ -33,18 +33,18 @@ public:
     bool    _hasElementWeights;
     uint32_t _avgElemLen;
     CollectionType _collectionType;
-    vespalib::string _name;
+    std::string _name;
     index::FieldLengthInfo _field_length_info;
 
     PosOccFieldParams();
 
     bool operator==(const PosOccFieldParams &rhs) const;
-    static vespalib::string getParamsPrefix(uint32_t idx);
+    static std::string getParamsPrefix(uint32_t idx);
     void getParams(PostingListParams &params, uint32_t idx) const;
     void setParams(const PostingListParams &params, uint32_t idx);
     void setSchemaParams(const Schema &schema, uint32_t fieldId);
-    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
-    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
+    void readHeader(const vespalib::GenericHeader &header, const std::string &prefix);
+    void writeHeader(vespalib::GenericHeader &header, const std::string &prefix) const;
     const index::FieldLengthInfo &get_field_length_info() const { return _field_length_info; }
     void set_field_length_info(const index::FieldLengthInfo &field_length_info) { _field_length_info = field_length_info; }
 };

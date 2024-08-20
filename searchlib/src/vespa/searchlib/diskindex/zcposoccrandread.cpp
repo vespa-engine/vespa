@@ -6,6 +6,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
+#include <cstring>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.zcposoccrandread");
@@ -25,9 +26,9 @@ using search::ComprFileReadContext;
 
 namespace {
 
-vespalib::string myId4("Zc.4");
-vespalib::string myId5("Zc.5");
-vespalib::string interleaved_features("interleaved_features");
+std::string myId4("Zc.4");
+std::string myId5("Zc.5");
+std::string interleaved_features("interleaved_features");
 
 }
 
@@ -153,7 +154,7 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
 
 bool
 ZcPosOccRandRead::
-open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead)
+open(const std::string &name, const TuneFileRandRead &tuneFileRead)
 {
     _file->setFAdviseOptions(tuneFileRead.getAdvise());
     if (tuneFileRead.getWantMemoryMap()) {
@@ -182,7 +183,7 @@ ZcPosOccRandRead::close()
 
 template <typename DecodeContext>
 void
-ZcPosOccRandRead::readHeader(const vespalib::string &identifier)
+ZcPosOccRandRead::readHeader(const std::string &identifier)
 {
     DecodeContext d(&_fieldsParams);
     ComprFileReadContext drc(d);
@@ -232,14 +233,14 @@ ZcPosOccRandRead::readHeader()
     readHeader<EGPosOccDecodeContext<true>>(myId5);
 }
 
-const vespalib::string &
+const std::string &
 ZcPosOccRandRead::getIdentifier()
 {
     return myId5;
 }
 
 
-const vespalib::string &
+const std::string &
 ZcPosOccRandRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;
@@ -267,13 +268,13 @@ Zc4PosOccRandRead::readHeader()
     readHeader<EG2PosOccDecodeContext<true> >(myId4);
 }
 
-const vespalib::string &
+const std::string &
 Zc4PosOccRandRead::getIdentifier()
 {
     return myId4;
 }
 
-const vespalib::string &
+const std::string &
 Zc4PosOccRandRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;

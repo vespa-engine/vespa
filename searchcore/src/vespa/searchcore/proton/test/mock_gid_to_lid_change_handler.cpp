@@ -22,7 +22,7 @@ MockGidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> 
 }
 
 void
-MockGidToLidChangeHandler::removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) {
+MockGidToLidChangeHandler::removeListeners(const std::string &docTypeName, const std::set<std::string> &keepNames) {
     _removes.emplace_back(docTypeName, keepNames);
 }
 

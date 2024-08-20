@@ -15,18 +15,18 @@ public:
     using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
     using Normalizing = search::Normalizing;
     FieldSearchSpec();
-    FieldSearchSpec(const FieldIdT & id, const vespalib::string & name, Searchmethod searchMethod,
+    FieldSearchSpec(const FieldIdT & id, const std::string & name, Searchmethod searchMethod,
                     Normalizing normalize_mode, std::string_view arg1, size_t maxLength);
     ~FieldSearchSpec();
     FieldSearchSpec(FieldSearchSpec&& rhs) noexcept;
     FieldSearchSpec& operator=(FieldSearchSpec&& rhs) noexcept;
     const FieldSearcher & searcher() const noexcept { return *_searcher; }
-    const vespalib::string &  name() const noexcept { return _name; }
+    const std::string &  name() const noexcept { return _name; }
     FieldIdT                    id() const noexcept { return _id; }
     bool                     valid() const noexcept { return static_cast<bool>(_searcher); }
     size_t               maxLength() const noexcept { return _maxLength; }
     Normalizing     normalize_mode() const noexcept { return _normalize_mode; }
-    const vespalib::string&   arg1() const noexcept { return _arg1; }
+    const std::string&   arg1() const noexcept { return _arg1; }
     bool uses_nearest_neighbor_search_method() const noexcept {
         return _searchMethod == Searchmethod::NEAREST_NEIGHBOR;
     }
@@ -47,12 +47,12 @@ private:
     void propagate_settings_to_searcher();
 
     FieldIdT               _id;
-    vespalib::string       _name;
+    std::string       _name;
     size_t                 _maxLength;
     FieldSearcherContainer _searcher;
     Searchmethod           _searchMethod;
     Normalizing            _normalize_mode;
-    vespalib::string       _arg1;
+    std::string       _arg1;
     bool                   _reconfigured;
 };
 
@@ -74,7 +74,7 @@ public:
     /**
      * Iterates over the given field name vector adding extra elements to the mapping from field name to field id.
      **/
-    void buildFromConfig(const std::vector<vespalib::string> & otherFieldsNeeded);
+    void buildFromConfig(const std::vector<std::string> & otherFieldsNeeded);
 
     /**
      * Reconfigures some of the field searchers based on information in the given query.
@@ -99,8 +99,8 @@ public:
     const StringFieldIdTMap & nameIdMap()                 const { return _nameIdMap; }
     friend vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & f);
 
-    static vespalib::string stripNonFields(std::string_view rawIndex);
-    search::attribute::DistanceMetric get_distance_metric(const vespalib::string& name) const;
+    static std::string stripNonFields(std::string_view rawIndex);
+    search::attribute::DistanceMetric get_distance_metric(const std::string& name) const;
     static search::Normalizing convert_normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode);
 
 private:

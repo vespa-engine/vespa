@@ -8,11 +8,11 @@
 
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/crypto_socket.h>
-#include <vespa/vespalib/stllike/string.h>
 
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 
 namespace vespalib {
@@ -58,13 +58,13 @@ public:
             rhs._conn = nullptr;
         }
         bool active() const { return (_conn != nullptr); }
-        const vespalib::string &get_header(const vespalib::string &name) const;
-        const vespalib::string &get_host() const;
-        const vespalib::string &get_uri() const;
-        const vespalib::string &get_path() const;
-        bool has_param(const vespalib::string &name) const;
-        const vespalib::string &get_param(const vespalib::string &name) const;
-        std::map<vespalib::string, vespalib::string> export_params() const;
+        const std::string &get_header(const std::string &name) const;
+        const std::string &get_host() const;
+        const std::string &get_uri() const;
+        const std::string &get_path() const;
+        bool has_param(const std::string &name) const;
+        const std::string &get_param(const std::string &name) const;
+        std::map<std::string, std::string> export_params() const;
         void respond_with_content(std::string_view content_type,
                                   std::string_view content);
         void respond_with_error(int code, std::string_view msg);
@@ -80,9 +80,9 @@ public:
 private:
     struct BindState {
         uint64_t handle;
-        vespalib::string prefix;
+        std::string prefix;
         GetHandler *handler;
-        BindState(uint64_t handle_in, vespalib::string prefix_in, GetHandler &handler_in) noexcept
+        BindState(uint64_t handle_in, std::string prefix_in, GetHandler &handler_in) noexcept
             : handle(handle_in), prefix(std::move(prefix_in)), handler(&handler_in) {}
         bool operator<(const BindState &rhs) const {
             if (prefix.size() == rhs.prefix.size()) {
@@ -99,12 +99,12 @@ private:
     portal::Listener::UP   _listener;
     std::mutex             _lock;
     std::vector<BindState> _bind_list;
-    vespalib::string       _my_host;
+    std::string       _my_host;
 
     Token::UP make_token();
     void cancel_token(Token &token);
 
-    portal::HandleGuard lookup_get_handler(const vespalib::string &uri, GetHandler *&handler);
+    portal::HandleGuard lookup_get_handler(const std::string &uri, GetHandler *&handler);
     void evict_handle(uint64_t handle);
 
     void handle_accept(portal::HandleGuard guard, SocketHandle socket);
@@ -115,8 +115,8 @@ public:
     ~Portal();
     static SP create(CryptoEngine::SP crypto, int port);
     int listen_port() const { return _listener->listen_port(); }
-    const vespalib::string &my_host() const { return _my_host; }
-    Token::UP bind(const vespalib::string &path_prefix, GetHandler &handler);
+    const std::string &my_host() const { return _my_host; }
+    Token::UP bind(const std::string &path_prefix, GetHandler &handler);
 };
 
 } // namespace vespalib

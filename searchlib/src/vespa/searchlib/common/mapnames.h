@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search {
 
@@ -12,25 +12,25 @@ namespace search {
 struct MapNames
 {
     /** name of rank feature property collection **/
-    static const vespalib::string RANK;
+    static const std::string RANK;
 
     /** name of feature override property collection **/
-    static const vespalib::string FEATURE;
+    static const std::string FEATURE;
 
     /** name of highlightterms property collection **/
-    static const vespalib::string HIGHLIGHTTERMS;
+    static const std::string HIGHLIGHTTERMS;
 
     /** name of match property collection **/
-    static const vespalib::string MATCH;
+    static const std::string MATCH;
 
     /** name of cache property collection **/
-    static const vespalib::string CACHES;
+    static const std::string CACHES;
 
     /** name of model property collection **/
-    static const vespalib::string MODEL;
+    static const std::string MODEL;
 
     /** name of trace property collection **/
-    static const vespalib::string TRACE;
+    static const std::string TRACE;
 };
 
 } // namespace search

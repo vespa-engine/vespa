@@ -19,7 +19,7 @@ namespace search::docsummary {
 class AttributeDFWFactory {
 public:
     static std::unique_ptr<DocsumFieldWriter> create(const IAttributeManager& attr_mgr,
-                                                     const vespalib::string& attr_name,
+                                                     const std::string& attr_name,
                                                      bool filter_elements = false,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields = std::shared_ptr<MatchingElementsFields>());
 };
@@ -27,12 +27,12 @@ public:
 class AttrDFW : public SimpleDFW
 {
 private:
-    vespalib::string _attrName;
+    std::string _attrName;
 protected:
     const attribute::IAttributeVector& get_attribute(const GetDocsumsState& s) const;
-    const vespalib::string & getAttributeName() const override { return _attrName; }
+    const std::string & getAttributeName() const override { return _attrName; }
 public:
-    explicit AttrDFW(const vespalib::string & attrName);
+    explicit AttrDFW(const std::string & attrName);
     bool isGenerated() const override { return true; }
 };
 

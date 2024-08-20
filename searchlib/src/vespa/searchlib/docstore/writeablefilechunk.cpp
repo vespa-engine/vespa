@@ -75,7 +75,7 @@ private:
 WriteableFileChunk::
 WriteableFileChunk(vespalib::Executor &executor,
                    FileId fileId, NameId nameId,
-                   const vespalib::string &baseName,
+                   const std::string &baseName,
                    uint64_t initialSerialNum,
                    uint32_t docIdLimit,
                    const Config &config,

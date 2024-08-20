@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <string>
 #include <vector>
 
 namespace search::fef {
@@ -23,7 +23,7 @@ class Properties;
 class Property
 {
 public:
-    using Value = vespalib::string;
+    using Value = std::string;
     using Values = std::vector<Value>;
 private:
     friend class Properties;
@@ -141,7 +141,7 @@ public:
 class Properties
 {
 private:
-    using Key = vespalib::string;
+    using Key = std::string;
     using Value =  Property::Values;
     using Map = vespalib::hash_map<Key, Value, vespalib::hash<Key>,
                                    std::equal_to<>, vespalib::hashtable_base::and_modulator>;

@@ -21,7 +21,7 @@ private:
     size_t            _pos;
     bool              _eof;
     bool              _failed;
-    vespalib::string  _reason;
+    std::string  _reason;
     LZ4F_dctx_s      *_ctx;
 
     void fail(const char *reason);
@@ -32,7 +32,7 @@ public:
     Memory obtain() override;
     Input &evict(size_t bytes) override;
     bool failed() const { return _failed; }
-    const vespalib::string &reason() const { return _reason; }
+    const std::string &reason() const { return _reason; }
 };
 
 } // namespace vespalib

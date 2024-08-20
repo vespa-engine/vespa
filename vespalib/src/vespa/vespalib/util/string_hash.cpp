@@ -2,6 +2,7 @@
 
 #include "string_hash.h"
 #include <vespa/vespalib/stllike/hash_fun.h>
+#include <cstring>
 
 namespace vespalib {
 

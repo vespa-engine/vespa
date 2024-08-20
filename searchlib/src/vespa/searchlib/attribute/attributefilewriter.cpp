@@ -37,7 +37,7 @@ writeDirectIOAligned(FastOS_FileInterface &file, const void *buf, size_t length)
 }
 
 void
-updateHeader(const vespalib::string &name, uint64_t fileBitSize)
+updateHeader(const std::string &name, uint64_t fileBitSize)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     FastOS_File f;
@@ -87,7 +87,7 @@ AttributeFileWriter::
 AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
                     const FileHeaderContext &fileHeaderContext,
                     const attribute::AttributeHeader &header,
-                    const vespalib::string &desc)
+                    const std::string &desc)
     : _file(new FastOS_File()),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
@@ -99,7 +99,7 @@ AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
 AttributeFileWriter::~AttributeFileWriter() = default;
 
 bool
-AttributeFileWriter::open(const vespalib::string &fileName)
+AttributeFileWriter::open(const std::string &fileName)
 {
     if (_tuneFileAttributes._write.getWantSyncWrites()) {
         _file->EnableSyncWrites();

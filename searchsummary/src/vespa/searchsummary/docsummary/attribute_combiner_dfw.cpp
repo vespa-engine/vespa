@@ -16,7 +16,7 @@ using search::attribute::IAttributeContext;
 
 namespace search::docsummary {
 
-AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements,
+AttributeCombinerDFW::AttributeCombinerDFW(const std::string &fieldName, bool filter_elements,
                                            std::shared_ptr<MatchingElementsFields> matching_elems_fields)
     : SimpleDFW(),
       _stateIndex(0),
@@ -36,7 +36,7 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 }
 
 std::unique_ptr<DocsumFieldWriter>
-AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeContext &attrCtx, bool filter_elements,
+AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &attrCtx, bool filter_elements,
                              std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     StructFieldsResolver structFields(fieldName, attrCtx, true);

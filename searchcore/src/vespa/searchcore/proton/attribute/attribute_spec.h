@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace search::attribute { class Config; }
 
@@ -17,14 +17,14 @@ class AttributeSpec
 {
 private:
     using Config = search::attribute::Config;
-    vespalib::string _name;
+    std::string _name;
     std::unique_ptr<Config> _cfg;
 public:
-    AttributeSpec(const vespalib::string &name, const search::attribute::Config &cfg);
+    AttributeSpec(const std::string &name, const search::attribute::Config &cfg);
     AttributeSpec(AttributeSpec &&) noexcept;
     AttributeSpec & operator=(AttributeSpec &&) noexcept;
     ~AttributeSpec();
-    const vespalib::string &getName() const { return _name; }
+    const std::string &getName() const { return _name; }
     const Config &getConfig() const { return *_cfg; }
     bool operator==(const AttributeSpec &rhs) const;
 };

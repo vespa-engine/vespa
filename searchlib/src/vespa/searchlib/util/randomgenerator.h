@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <cassert>
+#include <string>
+#include <vector>
 
 namespace search {
 class RandomGenerator
@@ -30,9 +30,9 @@ public:
         return (divider == 0 ? _rnd.lrand48() : min + _rnd.lrand48() % divider);
     }
 
-    vespalib::string getRandomString(uint32_t minLen, uint32_t maxLen) {
+    std::string getRandomString(uint32_t minLen, uint32_t maxLen) {
         uint32_t len = rand(minLen, maxLen);
-        vespalib::string retval;
+        std::string retval;
         for (uint32_t i = 0; i < len; ++i) {
             char c = static_cast<char>(rand('a', 'z'));
             retval.push_back(c);
@@ -40,7 +40,7 @@ public:
         return retval;
     }
 
-    void fillRandomStrings(std::vector<vespalib::string> & vec, uint32_t numStrings,
+    void fillRandomStrings(std::vector<std::string> & vec, uint32_t numStrings,
                            uint32_t minLen, uint32_t maxLen) {
         vec.clear();
         vec.reserve(numStrings);

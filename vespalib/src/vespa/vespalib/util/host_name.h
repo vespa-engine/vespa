@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
@@ -13,9 +13,9 @@ namespace vespalib {
 class HostName
 {
 private:
-    static const vespalib::string _host_name;
+    static const std::string _host_name;
 public:
-    static const vespalib::string &get() { return _host_name; }
+    static const std::string &get() { return _host_name; }
 };
 
 } // namespace vespalib

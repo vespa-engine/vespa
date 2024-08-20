@@ -58,7 +58,7 @@ public:
     GetDocsumsStateCallback    &_callback;
 
     class DynTeaserState {
-        vespalib::hash_map<vespalib::string, std::unique_ptr<juniper::QueryHandle>> _queries;  // juniper query representations
+        vespalib::hash_map<std::string, std::unique_ptr<juniper::QueryHandle>> _queries;  // juniper query representations
     public:
         DynTeaserState();
         ~DynTeaserState();

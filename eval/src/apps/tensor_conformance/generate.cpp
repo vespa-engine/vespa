@@ -17,9 +17,9 @@ namespace {
 struct IgnoreJava : TestBuilder {
     TestBuilder &dst;
     IgnoreJava(TestBuilder &dst_in) : TestBuilder(dst_in.full), dst(dst_in) {}
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs,
-             const std::set<vespalib::string> &ignore) override
+    void add(const std::string &expression,
+             const std::map<std::string,TensorSpec> &inputs,
+             const std::set<std::string> &ignore) override
     {
         auto my_ignore = ignore;
         my_ignore.insert("vespajlib");
@@ -29,14 +29,14 @@ struct IgnoreJava : TestBuilder {
 
 //-----------------------------------------------------------------------------
 
-const std::vector<vespalib::string> basic_layouts = {
+const std::vector<std::string> basic_layouts = {
     "",
     "a3", "a3c5", "a3c5e7",
     "b2_1", "b2_1d3_1", "b2_1d3_1f4_1",
     "a3b2_1c5d3_1", "b2_1c5d3_1e7"
 };
 
-const std::vector<std::pair<vespalib::string,vespalib::string>> join_layouts = {
+const std::vector<std::pair<std::string,std::string>> join_layouts = {
     {"", ""},
     {"", "a3"},
     {"", "b2_1"},
@@ -52,7 +52,7 @@ const std::vector<std::pair<vespalib::string,vespalib::string>> join_layouts = {
     {"a3b4_1c5", "b2_1c5d3_1"}
 };
 
-const std::vector<std::pair<vespalib::string,vespalib::string>> merge_layouts = {
+const std::vector<std::pair<std::string,std::string>> merge_layouts = {
     {"", ""},
     {"a3c5e7", "a3c5e7"},
     {"b15_2", "b10_3"},
@@ -60,11 +60,11 @@ const std::vector<std::pair<vespalib::string,vespalib::string>> merge_layouts = 
     {"a3b6_2c1d4_3e2f6_2", "a3b4_3c1d6_2e2f4_3"},
 };
 
-const std::vector<vespalib::string> concat_c_layouts_a = {
+const std::vector<std::string> concat_c_layouts_a = {
     "", "c3", "a3", "b6_2", "a3b6_2", "a3b6_2c3"
 };
 
-const std::vector<vespalib::string> concat_c_layouts_b = {
+const std::vector<std::string> concat_c_layouts_b = {
     "", "c5", "a3", "b4_3", "a3b4_3", "a3b4_3c5"
 };
 
@@ -92,14 +92,14 @@ Sequence my_seq(double x0, double delta, size_t n) {
 
 //-----------------------------------------------------------------------------
 
-void generate(const vespalib::string &expr, const GenSpec &a, TestBuilder &dst) {
+void generate(const std::string &expr, const GenSpec &a, TestBuilder &dst) {
     auto a_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
     for (auto a_ct: a_cell_types) {
         dst.add(expr, {{"a", a.cpy().cells(a_ct)}});
     }
 }
 
-void generate(const vespalib::string &expr, const GenSpec &a, const GenSpec &b, TestBuilder &dst) {
+void generate(const std::string &expr, const GenSpec &a, const GenSpec &b, TestBuilder &dst) {
     auto a_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
     auto b_cell_types = b.dims().empty() ? just_double : dst.full ? all_types : just_float;
     for (auto a_ct: a_cell_types) {
@@ -161,20 +161,20 @@ void generate_reduce(Aggr aggr, const Sequence &seq, TestBuilder &dst) {
     for (const auto &layout: basic_layouts) {
         GenSpec a = GenSpec::from_desc(layout).seq(seq);
         for (const auto &dim: a.dims()) {
-            vespalib::string expr = fmt("reduce(a,%s,%s)",
+            std::string expr = fmt("reduce(a,%s,%s)",
                                         AggrNames::name_of(aggr)->c_str(),
                                         dim.name().c_str());
             generate(expr, a, dst);
         }
         if (a.dims().size() > 1) {
-            vespalib::string expr = fmt("reduce(a,%s,%s,%s)",
+            std::string expr = fmt("reduce(a,%s,%s,%s)",
                                         AggrNames::name_of(aggr)->c_str(),
                                         a.dims().back().name().c_str(),
                                         a.dims().front().name().c_str());
             generate(expr, a, dst);
         }
         {
-            vespalib::string expr = fmt("reduce(a,%s)",
+            std::string expr = fmt("reduce(a,%s)",
                                         AggrNames::name_of(aggr)->c_str());
             generate(expr, a, dst);
         }
@@ -193,14 +193,14 @@ void generate_reduce(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_map_expr(const vespalib::string &expr, const Sequence &seq, TestBuilder &dst) {
+void generate_map_expr(const std::string &expr, const Sequence &seq, TestBuilder &dst) {
     for (const auto &layout: basic_layouts) {
         GenSpec a = GenSpec::from_desc(layout).seq(seq);
         generate(expr, a, dst);
     }
 }
 
-void generate_op1_map(const vespalib::string &op1_expr, const Sequence &seq, TestBuilder &dst) {
+void generate_op1_map(const std::string &op1_expr, const Sequence &seq, TestBuilder &dst) {
     generate_map_expr(op1_expr, seq, dst);
     generate_map_expr(fmt("map(a,f(a)(%s))", op1_expr.c_str()), seq, dst);
 }
@@ -242,10 +242,10 @@ void generate_map_subspaces(TestBuilder &dst) {
     auto sparse = GenSpec().from_desc("x8_1").seq(my_seq);
     auto mixed = GenSpec().from_desc("x4_1y4").seq(my_seq);
     auto dense = GenSpec().from_desc("y4").seq(my_seq);
-    vespalib::string map_a("map_subspaces(a,f(a)(a*3+2))");
-    vespalib::string unpack_a("map_subspaces(a,f(a)(tensor<int8>(y[8])(bit(a,7-y%8))))");
-    vespalib::string unpack_y4("map_subspaces(a,f(a)(tensor<int8>(y[32])(bit(a{y:(y/8)},7-y%8))))");
-    vespalib::string pack_y4("map_subspaces(a,f(a)(a{y:0}+a{y:1}-a{y:2}+a{y:3}))");
+    std::string map_a("map_subspaces(a,f(a)(a*3+2))");
+    std::string unpack_a("map_subspaces(a,f(a)(tensor<int8>(y[8])(bit(a,7-y%8))))");
+    std::string unpack_y4("map_subspaces(a,f(a)(tensor<int8>(y[32])(bit(a{y:(y/8)},7-y%8))))");
+    std::string pack_y4("map_subspaces(a,f(a)(a{y:0}+a{y:1}-a{y:2}+a{y:3}))");
     generate(map_a, scalar, dst);
     generate(map_a, sparse, dst);
     generate(unpack_a, scalar, dst);
@@ -258,7 +258,7 @@ void generate_map_subspaces(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_join_expr(const vespalib::string &expr, const Sequence &seq, TestBuilder &dst) {
+void generate_join_expr(const std::string &expr, const Sequence &seq, TestBuilder &dst) {
     for (const auto &layouts: join_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(skew(seq));
@@ -267,7 +267,7 @@ void generate_join_expr(const vespalib::string &expr, const Sequence &seq, TestB
     }
 }
 
-void generate_join_expr(const vespalib::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+void generate_join_expr(const std::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
     for (const auto &layouts: join_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq_a);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(seq_b);
@@ -275,12 +275,12 @@ void generate_join_expr(const vespalib::string &expr, const Sequence &seq_a, con
     }
 }
 
-void generate_op2_join(const vespalib::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
+void generate_op2_join(const std::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
     generate_join_expr(op2_expr, seq, dst);
     generate_join_expr(fmt("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
 }
 
-void generate_op2_join(const vespalib::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+void generate_op2_join(const std::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
     generate_join_expr(op2_expr, seq_a, seq_b, dst);
     generate_join_expr(fmt("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq_a, seq_b, dst);
 }
@@ -319,7 +319,7 @@ void generate_join(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_merge_expr(const vespalib::string &expr, const Sequence &seq, TestBuilder &dst) {
+void generate_merge_expr(const std::string &expr, const Sequence &seq, TestBuilder &dst) {
     for (const auto &layouts: merge_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(skew(seq));
@@ -328,7 +328,7 @@ void generate_merge_expr(const vespalib::string &expr, const Sequence &seq, Test
     }
 }
 
-void generate_merge_expr(const vespalib::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+void generate_merge_expr(const std::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
     for (const auto &layouts: merge_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq_a);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(seq_b);
@@ -336,12 +336,12 @@ void generate_merge_expr(const vespalib::string &expr, const Sequence &seq_a, co
     }
 }
 
-void generate_op2_merge(const vespalib::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
+void generate_op2_merge(const std::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
     generate_merge_expr(op2_expr, seq, dst);
     generate_merge_expr(fmt("merge(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
 }
 
-void generate_op2_merge(const vespalib::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+void generate_op2_merge(const std::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
     generate_merge_expr(op2_expr, seq_a, seq_b, dst);
     generate_merge_expr(fmt("merge(a,b,f(a,b)(%s))", op2_expr.c_str()), seq_a, seq_b, dst);
 }
@@ -457,7 +457,7 @@ void generate_rename(TestBuilder &dst) {
 //-----------------------------------------------------------------------------
 
 void generate_if(TestBuilder &dst) {
-    vespalib::string expr = "if(a,b,c)";
+    std::string expr = "if(a,b,c)";
     for (const auto &layout: basic_layouts) {
         GenSpec b = GenSpec::from_desc(layout).seq(N());
         GenSpec c = GenSpec::from_desc(layout).seq(skew(N()));
@@ -558,9 +558,9 @@ void generate_nan_existence(TestBuilder &dst) {
     auto mixed1 = GenSpec().from_desc("x4_1y4").seq(seq1);
     auto mixed2 = GenSpec().from_desc("x4_2y4").seq(seq2);
     // try to provoke differences between nan and non-existence
-    const vespalib::string inner_expr = "f(x,y)(if(isNan(x),11,x)+if(isNan(y),22,y))";
-    vespalib::string merge_expr = fmt("merge(a,b,%s)", inner_expr.c_str());
-    vespalib::string join_expr = fmt("join(a,b,%s)", inner_expr.c_str());
+    const std::string inner_expr = "f(x,y)(if(isNan(x),11,x)+if(isNan(y),22,y))";
+    std::string merge_expr = fmt("merge(a,b,%s)", inner_expr.c_str());
+    std::string join_expr = fmt("join(a,b,%s)", inner_expr.c_str());
     dst.add(merge_expr, {{"a", sparse1}, {"b", sparse2}});
     dst.add(merge_expr, {{"a",  mixed1}, {"b",  mixed2}});
     dst.add(join_expr, {{"a", sparse1}, {"b", sparse2}});

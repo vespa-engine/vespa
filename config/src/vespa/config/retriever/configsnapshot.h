@@ -48,7 +48,7 @@ public:
      * @throws IllegalConfigKeyException if the config does not exist.
      */
     template <typename ConfigType>
-    std::unique_ptr<ConfigType> getConfig(const vespalib::string & configId) const;
+    std::unique_ptr<ConfigType> getConfig(const std::string & configId) const;
 
     /**
      * Query snapshot to check if a config of type ConfigType and id configId is
@@ -61,7 +61,7 @@ public:
      * @throws IllegalConfigKeyException if the config does not exist.
      */
     template <typename ConfigType>
-    bool isChanged(const vespalib::string & configId, int64_t currentGeneration) const;
+    bool isChanged(const std::string & configId, int64_t currentGeneration) const;
 
     ConfigSnapshot & operator = (const ConfigSnapshot & rhs);
     void swap(ConfigSnapshot & rhs);
@@ -74,7 +74,7 @@ public:
      * @return true if exists, false if not.
      */
     template <typename ConfigType>
-    bool hasConfig(const vespalib::string & configId) const;
+    bool hasConfig(const std::string & configId) const;
 
     /**
      * Create a new snapshot as a subset of this snapshot based on a set of keys.

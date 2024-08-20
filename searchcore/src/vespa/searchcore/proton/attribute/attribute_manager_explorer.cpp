@@ -28,11 +28,11 @@ AttributeManagerExplorer::get_state(const Inserter &inserter, bool full) const
     inserter.insertObject();
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 AttributeManagerExplorer::get_children_names() const
 {
     auto& attributes = _mgr->getWritableAttributes();
-    std::vector<vespalib::string> names;
+    std::vector<std::string> names;
     for (const auto &attr : attributes) {
         names.push_back(attr->getName());
     }

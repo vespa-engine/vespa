@@ -9,7 +9,7 @@ LOG_SETUP(".searchlib.docsummary.copy_dfw");
 
 namespace search::docsummary {
 
-CopyDFW::CopyDFW(const vespalib::string& inputField)
+CopyDFW::CopyDFW(const std::string& inputField)
     : _input_field_name(inputField)
 {
 }

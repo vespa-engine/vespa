@@ -2,8 +2,8 @@
 #pragma once
 
 #include "capability_set.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <iosfwd>
+#include <string>
 
 namespace vespalib { class asciistream; }
 
@@ -52,6 +52,6 @@ public:
 
 asciistream& operator<<(asciistream&, const VerificationResult&);
 std::ostream& operator<<(std::ostream&, const VerificationResult&);
-string to_string(const VerificationResult&);
+std::string to_string(const VerificationResult&);
 
 }

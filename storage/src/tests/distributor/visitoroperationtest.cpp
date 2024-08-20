@@ -156,14 +156,14 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     addNodesToBucketDB(id, "0=1/1/1/t");
 
     // Send create visitor
-    vespalib::string instanceId("testParameterForwarding");
-    vespalib::string libraryName("dumpvisitor");
-    vespalib::string docSelection("");
+    std::string instanceId("testParameterForwarding");
+    std::string libraryName("dumpvisitor");
+    std::string docSelection("");
     auto msg = std::make_shared<api::CreateVisitorCommand>(
             makeBucketSpace(), libraryName, instanceId, docSelection);
-    vespalib::string controlDestination("controldestination");
+    std::string controlDestination("controldestination");
     msg->setControlDestination(controlDestination);
-    vespalib::string dataDestination("datadestination");
+    std::string dataDestination("datadestination");
     msg->setDataDestination(dataDestination);
     msg->setMaximumPendingReplyCount(VisitorOperationTest::MAX_PENDING);
     msg->setMaxBucketsPerVisitor(8);
@@ -218,9 +218,9 @@ TEST_F(VisitorOperationTest, shutdown) {
     addNodesToBucketDB(id, "0=1/1/1/t");
 
     // Send create visitor
-    vespalib::string instanceId("testShutdown");
-    vespalib::string libraryName("dumpvisitor");
-    vespalib::string docSelection("");
+    std::string instanceId("testShutdown");
+    std::string libraryName("dumpvisitor");
+    std::string docSelection("");
     auto msg = std::make_shared<api::CreateVisitorCommand>(
             makeBucketSpace(), libraryName, instanceId, docSelection);
     msg->addBucketToBeVisited(id);

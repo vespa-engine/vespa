@@ -17,61 +17,61 @@ ResultNode::onGetEnum(size_t index) const {
 uint64_t ResultNode::radixAsc(const void * buf) const
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::radixAsc(const void * buf) must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::radixAsc(const void * buf) must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 uint64_t ResultNode::radixDesc(const void * buf) const
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::radixDesc(const void * buf) must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::radixDesc(const void * buf) must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 size_t ResultNode::hash(const void * buf) const
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::hash(const void * buf) must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::hash(const void * buf) must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 void ResultNode::decode(const void * buf)
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::decode(const void * buf) must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::decode(const void * buf) must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 void ResultNode::encode(void * buf) const
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::encode(void * buf) const must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::encode(void * buf) const must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 void ResultNode::swap(void * buf)
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::swap(void * buf) must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::swap(void * buf) must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 void ResultNode::create(void * buf) const
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::create(void * buf) const must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::create(void * buf) const must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 void ResultNode::destroy(void * buf) const
 {
     (void) buf;
-    throw std::runtime_error("ResultNode::destroy(void * buf) const must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::destroy(void * buf) const must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 int ResultNode::cmpMem(const void * a, const void *b) const
 {
     (void) a;
     (void) b;
-    throw std::runtime_error("ResultNode::cmpMem(const void * a, const void *b) const must be overloaded by'" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::cmpMem(const void * a, const void *b) const must be overloaded by'" + std::string(getClass().name()) + "'.");
 }
 
 size_t ResultNode::getRawByteSize() const
 {
-    throw std::runtime_error("ResultNode::getRawByteSize() const must be overloaded by '" + vespalib::string(getClass().name()) + "'.");
+    throw std::runtime_error("ResultNode::getRawByteSize() const must be overloaded by '" + std::string(getClass().name()) + "'.");
 }
 
 const BucketResultNode&

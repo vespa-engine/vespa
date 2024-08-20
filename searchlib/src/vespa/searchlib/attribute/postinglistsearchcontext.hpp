@@ -444,11 +444,11 @@ StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toB
             auto comp = _enumStore.make_folded_comparator_prefix(this->queryTerm()->getTerm());
             this->lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
+            std::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
             auto comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
             this->lookupRange(comp, comp);
         } else if (this->isFuzzy()) {
-            vespalib::string prefix(this->getFuzzyMatcher().getPrefix());
+            std::string prefix(this->getFuzzyMatcher().getPrefix());
             auto comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
             this->lookupRange(comp, comp);
         } else {

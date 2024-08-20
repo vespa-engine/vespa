@@ -17,7 +17,7 @@ const char* MetricTypes::_typeNames[] = {
 };
 
 void
-MetricTypes::check(size_t id, const vespalib::string &name, MetricType ty)
+MetricTypes::check(size_t id, const std::string &name, MetricType ty)
 {
     std::lock_guard<std::mutex> guard(_lock);
     if (id < _seen.size()) {

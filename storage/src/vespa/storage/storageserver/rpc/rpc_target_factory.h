@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace storage::rpc {
 
@@ -14,7 +14,7 @@ class RpcTarget;
 class RpcTargetFactory {
 public:
     virtual ~RpcTargetFactory() = default;
-    virtual std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec) const = 0;
+    virtual std::unique_ptr<RpcTarget> make_target(const std::string& connection_spec) const = 0;
 };
 
 }

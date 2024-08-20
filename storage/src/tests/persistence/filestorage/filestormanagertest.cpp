@@ -71,8 +71,8 @@ namespace storage {
 
 namespace {
 
-vespalib::string _cluster("cluster");
-vespalib::string _storage("storage");
+std::string _cluster("cluster");
+std::string _storage("storage");
 api::StorageMessageAddress _storage2(&_storage, lib::NodeType::STORAGE, 2);
 api::StorageMessageAddress _storage3(&_storage, lib::NodeType::STORAGE, 3);
 api::StorageMessageAddress _cluster1(&_cluster, lib::NodeType::STORAGE, 1);

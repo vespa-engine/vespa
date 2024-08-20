@@ -6,13 +6,13 @@ namespace document {
 
 namespace {
 
-const vespalib::string ZCURVE("_zcurve");
+const std::string ZCURVE("_zcurve");
 
 }
 
-const vespalib::string PositionDataType::STRUCT_NAME("position");
-const vespalib::string PositionDataType::FIELD_X("x");
-const vespalib::string PositionDataType::FIELD_Y("y");
+const std::string PositionDataType::STRUCT_NAME("position");
+const std::string PositionDataType::FIELD_X("x");
+const std::string PositionDataType::FIELD_Y("y");
 
 StructDataType::UP
 PositionDataType::createInstance()
@@ -30,8 +30,8 @@ PositionDataType::getInstance()
     return *instance;
 }
 
-vespalib::string
-PositionDataType::getZCurveFieldName(const vespalib::string & fieldName)
+std::string
+PositionDataType::getZCurveFieldName(const std::string & fieldName)
 {
     return fieldName + ZCURVE;
 }

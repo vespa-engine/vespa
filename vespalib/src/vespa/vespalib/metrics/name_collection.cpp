@@ -18,7 +18,7 @@ NameCollection::NameCollection()
 
 NameCollection::~NameCollection() = default;
 
-const vespalib::string &
+const std::string &
 NameCollection::lookup(size_t id) const
 {
     Guard guard(_lock);

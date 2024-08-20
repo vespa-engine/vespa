@@ -44,7 +44,7 @@ TEST("testveryLongQueryResultingInBug6850778") {
         }
     }
     Node::UP node = builder.build();
-    vespalib::string stackDump = StackDumpCreator::create(*node);
+    std::string stackDump = StackDumpCreator::create(*node);
 
     QueryNodeResultFactory factory;
     Query q(factory, stackDump);

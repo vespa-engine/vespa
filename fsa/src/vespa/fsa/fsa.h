@@ -9,13 +9,13 @@
 
 #pragma once
 
-#include <string>
-#include <list>
-#include <iostream>
-#include <inttypes.h>
-
 #include "file.h" // for FileAccessMethod
 #include "unaligned.h"
+
+#include <cinttypes>
+#include <iostream>
+#include <list>
+#include <string>
 
 namespace fsa {
 

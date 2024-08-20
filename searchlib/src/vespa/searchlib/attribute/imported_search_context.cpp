@@ -335,7 +335,7 @@ ImportedSearchContext::queryTerm() const {
     return _target_search_context->queryTerm();
 }
 
-const vespalib::string&
+const std::string&
 ImportedSearchContext::attributeName() const {
     return _imported_attribute.getName();
 }

@@ -128,7 +128,7 @@ public:
      * @return Returns the wrapped value if it is a string or compatible type.
      * @throws document::InvalidDataTypeConversionException
      */
-    virtual vespalib::string getAsString() const;
+    virtual std::string getAsString() const;
 
     /**
      * @return Returns the wrapped value if it is a raw or compatible type.

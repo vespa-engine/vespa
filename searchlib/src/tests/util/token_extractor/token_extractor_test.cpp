@@ -17,15 +17,15 @@ using search::linguistics::TokenExtractor;
 using search::test::DocBuilder;
 using search::test::StringFieldBuilder;
 
-using AlternativeWords = std::vector<vespalib::string>;
-using AlternativeWordsOrWord = std::variant<AlternativeWords, vespalib::string>;
+using AlternativeWords = std::vector<std::string>;
+using AlternativeWordsOrWord = std::variant<AlternativeWords, std::string>;
 using Words = std::vector<AlternativeWordsOrWord>;
 
 namespace {
 
-vespalib::string corrupt_word = "corruptWord";
+std::string corrupt_word = "corruptWord";
 
-vespalib::string field_name("stringfield");
+std::string field_name("stringfield");
 
 std::unique_ptr<Document>
 make_corrupted_document(DocBuilder &b, size_t wordOffset)
@@ -103,7 +103,7 @@ TokenExtractorTest::process(const StringFieldValue& value)
                 alternatives.emplace_back(it->word);
             }
         } else {
-            result.emplace_back(vespalib::string(it->word));
+            result.emplace_back(std::string(it->word));
             ++it;
         }
     }

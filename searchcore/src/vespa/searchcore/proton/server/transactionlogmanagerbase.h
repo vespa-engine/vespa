@@ -29,7 +29,7 @@ protected:
 private:
     std::unique_ptr<TransLogClient> _tlc;
     std::unique_ptr<Session>        _tlcSession;
-    vespalib::string                _domainName;
+    std::string                _domainName;
     mutable std::mutex              _replayLock;
     mutable std::condition_variable _replayCond;
     volatile bool                   _replayDone;
@@ -49,7 +49,7 @@ protected:
     StatusResult init();
 
     void internalStartReplay();
-    virtual void doLogReplayComplete(const vespalib::string &domainName, vespalib::duration elapsedTime) const = 0;
+    virtual void doLogReplayComplete(const std::string &domainName, vespalib::duration elapsedTime) const = 0;
 
 public:
     TransactionLogManagerBase(const TransactionLogManagerBase &) = delete;
@@ -61,8 +61,8 @@ public:
      * @param domainName the name of the domain this manager should handle.
      **/
     TransactionLogManagerBase(FNET_Transport & transport,
-                              const vespalib::string &tlsSpec,
-                              const vespalib::string &domainName);
+                              const std::string &tlsSpec,
+                              const std::string &domainName);
     virtual ~TransactionLogManagerBase();
 
     void changeReplayDone();
@@ -73,11 +73,11 @@ public:
 
     TransLogClient &getClient() { return *_tlc; }
     Session *getSession() { return _tlcSession.get(); }
-    const vespalib::string &getDomainName() const { return _domainName; }
+    const std::string &getDomainName() const { return _domainName; }
     bool getReplayDone() const;
     bool isDoingReplay() const;
     void logReplayComplete() const;
-    const vespalib::string &getRpcTarget() const;
+    const std::string &getRpcTarget() const;
 };
 
 } // namespace proton

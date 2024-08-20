@@ -828,7 +828,7 @@ MergeThrottler::handleMessageUp(
     if (mergeReply.getResult().getResult() != api::ReturnCode::OK) {
         LOG(debug, "Merging failed for %s (%s)",
             mergeReply.toString().c_str(),
-            vespalib::string(mergeReply.getResult().getMessage()).c_str());
+            std::string(mergeReply.getResult().getMessage()).c_str());
     }
 
     processMergeReply(msg, true, msgGuard);

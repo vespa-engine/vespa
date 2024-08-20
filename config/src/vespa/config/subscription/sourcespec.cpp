@@ -40,7 +40,7 @@ FileSpec::FileSpec(std::string_view fileName)
 }
 
 void
-FileSpec::verifyName(const vespalib::string & fileName)
+FileSpec::verifyName(const std::string & fileName)
 {
     if (fileName.length() > 4) {
         std::string ending(fileName.substr(fileName.length() - 4, 4));
@@ -78,7 +78,7 @@ ServerSpec::ServerSpec()
 {
     char* cfgSourcesPtr = getenv("VESPA_CONFIG_SOURCES");
     if (cfgSourcesPtr != nullptr) {
-        vespalib::string cfgSourcesStr(cfgSourcesPtr);
+        std::string cfgSourcesStr(cfgSourcesPtr);
         initialize(cfgSourcesStr);
     } else {
         initialize("localhost");
@@ -91,7 +91,7 @@ ServerSpec::initialize(std::string_view hostSpec)
     typedef vespalib::StringTokenizer tokenizer;
     tokenizer tok(hostSpec, ",");
     for (tokenizer::Iterator it = tok.begin(); it != tok.end(); it++) {
-        vespalib::string srcHost(*it);
+        std::string srcHost(*it);
         vespalib::asciistream spec;
         if (srcHost.find("tcp/") == std::string::npos) {
             spec << "tcp/";
@@ -160,7 +160,7 @@ ConfigSet::createSourceFactory(const TimingValues & ) const
 }
 
 void
-ConfigSet::addBuilder(const vespalib::string & configId, ConfigInstance * builder)
+ConfigSet::addBuilder(const std::string & configId, ConfigInstance * builder)
 {
     assert(builder != nullptr);
     BuilderMap & builderMap(*_builderMap);

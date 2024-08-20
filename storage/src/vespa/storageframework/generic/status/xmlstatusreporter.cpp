@@ -35,7 +35,7 @@ XmlStatusReporter::finalizeXmlReport(vespalib::XmlOutputStream& xos,
     assert(xos.isFinalized());
 }
 
-vespalib::string
+std::string
 XmlStatusReporter::getReportContentType(const HttpUrlPath&) const
 {
     return "application/xml";

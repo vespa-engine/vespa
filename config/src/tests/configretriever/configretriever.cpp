@@ -150,7 +150,7 @@ FixedPayload::~FixedPayload() = default;
 
 }
 
-ConfigValue createKeyValueV2(const vespalib::string & key, const vespalib::string & value)
+ConfigValue createKeyValueV2(const std::string & key, const std::string & value)
 {
     auto payload = std::make_unique<FixedPayload>();
     payload->getData().setObject().setString(key, Memory(value));
@@ -175,7 +175,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
     {
         ConfigKeySet componentKeys;
         for (size_t i = 0; i < bootstrapConfig->component.size(); i++) {
-            const vespalib::string & configId(bootstrapConfig->component[i].configid);
+            const std::string & configId(bootstrapConfig->component[i].configid);
             componentKeys.add<FooConfig>(configId);
         }
         configs = ret.getConfigs(componentKeys);
@@ -186,7 +186,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
     {
         ConfigKeySet componentKeys;
         for (size_t i = 0; i < bootstrapConfig->component.size(); i++) {
-            const vespalib::string & configId(bootstrapConfig->component[i].configid);
+            const std::string & configId(bootstrapConfig->component[i].configid);
             componentKeys.add<BarConfig>(configId);
         }
         configs = ret.getConfigs(componentKeys);
@@ -197,7 +197,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
     {
         ConfigKeySet componentKeys;
         for (size_t i = 0; i < bootstrapConfig->component.size(); i++) {
-            const vespalib::string & configId(bootstrapConfig->component[i].configid);
+            const std::string & configId(bootstrapConfig->component[i].configid);
             componentKeys.add<FooConfig>(configId);
             componentKeys.add<BarConfig>(configId);
         }
@@ -339,7 +339,7 @@ TEST_FF("require that getConfigs throws exception when closed", ConfigTestFixtur
     std::unique_ptr<BootstrapConfig> bootstrapConfig = configs.getConfig<BootstrapConfig>(f1.configId);
     ConfigKeySet componentKeys;
     for (size_t i = 0; i < bootstrapConfig->component.size(); i++) {
-        const vespalib::string & configId(bootstrapConfig->component[i].configid);
+        const std::string & configId(bootstrapConfig->component[i].configid);
         componentKeys.add<FooConfig>(configId);
         componentKeys.add<BarConfig>(configId);
     }

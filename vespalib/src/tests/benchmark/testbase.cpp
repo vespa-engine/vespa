@@ -270,7 +270,7 @@ size_t CreateVespalibString::onRun()
     strcpy(text, text1);
     strcat(text, text2);
     for (size_t i=0; i < 1000; i++) {
-        string s(text);
+        std::string s(text);
         sum += s.size();
     }
     return sum;

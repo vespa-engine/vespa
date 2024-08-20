@@ -21,7 +21,7 @@ class NodeState : public document::Printable
 {
     const NodeType* _type;
     const State* _state;
-    vespalib::string _description;
+    std::string _description;
     vespalib::Double _capacity;
     vespalib::Double _initProgress;
     uint32_t _minUsedBits;
@@ -58,7 +58,7 @@ public:
     [[nodiscard]] vespalib::Double getCapacity() const { return _capacity; }
     [[nodiscard]] uint32_t getMinUsedBits() const { return _minUsedBits; }
     [[nodiscard]] vespalib::Double getInitProgress() const { return _initProgress; }
-    [[nodiscard]] const vespalib::string& getDescription() const { return _description; }
+    [[nodiscard]] const std::string& getDescription() const { return _description; }
     [[nodiscard]] uint64_t getStartTimestamp() const { return _startTimestamp; }
 
     void setState(const State& state);

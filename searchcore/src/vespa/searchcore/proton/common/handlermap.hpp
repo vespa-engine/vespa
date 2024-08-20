@@ -4,8 +4,8 @@
 #include "doctypename.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sequence.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <string>
 #include <vector>
 
 namespace proton {

@@ -15,7 +15,7 @@ FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target)
 }
 
 FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target,
-                                   const vespalib::string & prefix)
+                                   const std::string & prefix)
     : IFlushTarget(prefix + "." + target->getName(), target->getType(),
                    target->getComponent()),
       _target(target)

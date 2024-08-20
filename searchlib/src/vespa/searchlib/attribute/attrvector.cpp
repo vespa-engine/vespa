@@ -11,7 +11,7 @@ LOG_SETUP(".searchlib.attribute.attr_vector");
 namespace search {
 
 StringDirectAttribute::
-StringDirectAttribute(const vespalib::string & baseFileName, const Config & c)
+StringDirectAttribute(const std::string & baseFileName, const Config & c)
     : search::StringAttribute(baseFileName, c),
       _buffer(),
       _offsets(),

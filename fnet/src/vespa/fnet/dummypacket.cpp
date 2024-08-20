@@ -47,7 +47,7 @@ FNET_DummyPacket::Decode(FNET_DataBuffer *, uint32_t)
     LOG_ABORT("should not be reached");
 }
 
-vespalib::string
+std::string
 FNET_DummyPacket::Print(uint32_t indent)
 {
     return vespalib::make_string("%*sFNET_DummyPacket {}\n", indent, "");

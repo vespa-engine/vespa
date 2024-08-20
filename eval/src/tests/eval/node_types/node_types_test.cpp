@@ -10,7 +10,7 @@ using namespace vespalib::eval;
 
 struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     void extract_symbol(const char *pos_in, const char *end_in,
-                        const char *&pos_out, vespalib::string &symbol_out) const override
+                        const char *&pos_out, std::string &symbol_out) const override
     {
         ValueType type = value_type::parse_spec(pos_in, end_in, pos_out);
         if (pos_out != nullptr) {
@@ -27,7 +27,7 @@ void print_errors(const NodeTypes &types) {
     }
 }
 
-void verify(const vespalib::string &type_expr, const vespalib::string &type_spec) {
+void verify(const std::string &type_expr, const std::string &type_spec) {
     auto function = Function::parse(type_expr, TypeSpecExtractor());
     if (!EXPECT_TRUE(!function->has_error())) {
         fprintf(stderr, "parse error: %s\n", function->get_error().c_str());
@@ -129,11 +129,11 @@ TEST("require that rename resolves correct type") {
     TEST_DO(verify("rename(tensor<int8>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<int8>(a{},b[1],c[5])"));
 }
 
-vespalib::string strfmt(const char *pattern, const char *a) {
+std::string strfmt(const char *pattern, const char *a) {
     return vespalib::make_string(pattern, a);
 }
 
-vespalib::string strfmt(const char *pattern, const char *a, const char *b) {
+std::string strfmt(const char *pattern, const char *a, const char *b) {
     return vespalib::make_string(pattern, a, b);
 }
 

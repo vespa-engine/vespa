@@ -8,8 +8,8 @@
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/cache.h>
+#include <string>
 
 namespace search::diskindex {
 
@@ -60,9 +60,9 @@ public:
         }
         void push_back(uint32_t indexId) { _indexes.push_back(indexId); }
         const IndexList & getIndexes() const noexcept { return _indexes; }
-        const vespalib::string & getWord() const noexcept { return _word; }
+        const std::string & getWord() const noexcept { return _word; }
     private:
-        vespalib::string _word;
+        std::string _word;
         IndexList        _indexes;
     };
 
@@ -72,7 +72,7 @@ private:
     using DiskPostingFileDynamicKReal = ZcPosOccRandRead;
     using Cache = vespalib::cache<vespalib::CacheParam<vespalib::LruParam<Key, LookupResultVector>, DiskIndex>>;
 
-    vespalib::string                       _indexDir;
+    std::string                       _indexDir;
     size_t                                 _cacheSize;
     index::Schema                          _schema;
     std::vector<DiskPostingFile::SP>       _postingFiles;
@@ -85,7 +85,7 @@ private:
     void calculateSize();
     bool loadSchema();
     bool openDictionaries(const TuneFileSearch &tuneFileSearch);
-    bool openField(const vespalib::string &fieldDir, const TuneFileSearch &tuneFileSearch);
+    bool openField(const std::string &fieldDir, const TuneFileSearch &tuneFileSearch);
 
 public:
     /**
@@ -94,7 +94,7 @@ public:
      * @param indexDir the directory where the disk index is located.
      * @param cacheSize optional size (in bytes) of the disk dictionary lookup cache.
      */
-    explicit DiskIndex(const vespalib::string &indexDir, size_t cacheSize=0);
+    explicit DiskIndex(const std::string &indexDir, size_t cacheSize=0);
     ~DiskIndex() override;
 
     /**
@@ -147,14 +147,14 @@ public:
     uint64_t getSize() const { return _size; }
 
     const index::Schema &getSchema() const { return _schema; }
-    const vespalib::string &getIndexDir() const { return _indexDir; }
+    const std::string &getIndexDir() const { return _indexDir; }
 
     /**
      * Needed for the Cache::BackingStore interface.
      */
     bool read(const Key & key, LookupResultVector & result);
 
-    index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
+    index::FieldLengthInfo get_field_length_info(const std::string& field_name) const;
 };
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b);

@@ -18,7 +18,7 @@ public:
     void set(const ResultNode & rhs) override;
     StringResultNode & append(const ResultNode & rhs);
     StringResultNode & clear() { _value.clear(); return *this; }
-    const vespalib::string & get() const { return _value; }
+    const std::string & get() const { return _value; }
     void set(std::string_view value) { _value = value; }
     void min(const ResultNode & b) override;
     void max(const ResultNode & b) override;
@@ -28,24 +28,24 @@ public:
 
 private:
     int cmpMem(const void * a, const void *b) const override {
-        return static_cast<const vespalib::string *>(a)->compare(*static_cast<const vespalib::string *>(b));
+        return static_cast<const std::string *>(a)->compare(*static_cast<const std::string *>(b));
     }
     void create(void * buf)  const override {
-        new (buf) vespalib::string();
+        new (buf) std::string();
     }
     void destroy(void * buf) const override {
-        using string = vespalib::string;
+        using string = std::string;
         static_cast<string *>(buf)->string::~string();
     }
 
     void decode(const void * buf) override {
-        _value = *static_cast<const vespalib::string *>(buf);
+        _value = *static_cast<const std::string *>(buf);
     }
     void encode(void * buf) const override {
-        *static_cast<vespalib::string *>(buf) = _value;
+        *static_cast<std::string *>(buf) = _value;
     }
     void swap(void * buf) override {
-        std::swap(*static_cast<vespalib::string *>(buf), _value);
+        std::swap(*static_cast<std::string *>(buf), _value);
     }
     size_t hash(const void * buf) const override;
 
@@ -55,7 +55,7 @@ private:
     int64_t onGetInteger(size_t index) const override;
     double onGetFloat(size_t index)    const override;
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
-    vespalib::string _value;
+    std::string _value;
 };
 
 }

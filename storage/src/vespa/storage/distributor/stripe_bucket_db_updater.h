@@ -52,8 +52,8 @@ public:
     void resendDelayedMessages();
     [[nodiscard]] bool cancel_message_by_id(uint64_t msg_id);
 
-    vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const framework::HttpUrlPath&) const;
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    std::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const framework::HttpUrlPath&) const;
+    std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     // Functions used for state reporting when a StripeAccessGuard is held.

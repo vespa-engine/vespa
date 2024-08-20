@@ -17,7 +17,7 @@ using Config = HwInfoSampler::Config;
 
 namespace {
 
-const vespalib::string test_dir = "temp";
+const std::string test_dir = "temp";
 constexpr uint64_t sampleLen = 40_Mi;
 constexpr bool sharedDisk = false;
 

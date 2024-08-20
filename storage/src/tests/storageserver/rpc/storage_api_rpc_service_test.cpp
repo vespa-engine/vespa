@@ -91,11 +91,11 @@ LockingMockOperationDispatcher::LockingMockOperationDispatcher()  = default;
 LockingMockOperationDispatcher::~LockingMockOperationDispatcher() = default;
 
 api::StorageMessageAddress make_address(uint16_t node_index, bool is_distributor) {
-    static vespalib::string _coolcluster("coolcluster");
+    static std::string _coolcluster("coolcluster");
     return {&_coolcluster, (is_distributor ? lib::NodeType::DISTRIBUTOR : lib::NodeType::STORAGE), node_index};
 }
 
-vespalib::string to_slobrok_id(const api::StorageMessageAddress& address) {
+std::string to_slobrok_id(const api::StorageMessageAddress& address) {
     // TODO factor out slobrok ID generation code to be independent of resolver?
     return CachingRpcTargetResolver::address_to_slobrok_id(address);
 }
@@ -108,7 +108,7 @@ protected:
     std::unique_ptr<MessageCodecProvider>             _codec_provider;
     std::unique_ptr<SharedRpcResources>               _shared_rpc_resources;
     api::StorageMessageAddress                        _node_address;
-    vespalib::string                                  _slobrok_id;
+    std::string                                  _slobrok_id;
 public:
     RpcNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
         : _config(StorageConfigSet::make_node_config(!is_distributor)),
@@ -195,7 +195,7 @@ public:
 
     void send_raw_request_and_expect_error(StorageApiNode& node,
                                            FRT_RPCRequest* req,
-                                           const vespalib::string& expected_msg) {
+                                           const std::string& expected_msg) {
         auto spec = vespalib::make_string("tcp/localhost:%d", node.shared_rpc_resources().listen_port());
         auto* target = _shared_rpc_resources->supervisor().GetTarget(spec.c_str());
         target->InvokeSync(req, 60.0);

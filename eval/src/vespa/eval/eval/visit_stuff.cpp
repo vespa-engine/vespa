@@ -12,7 +12,7 @@
 namespace vespalib::eval::visit {
 namespace {
 
-vespalib::string name_of(map_fun_t fun) {
+std::string name_of(map_fun_t fun) {
     if (fun == operation::Neg::f) return "-";
     if (fun == operation::Not::f) return "!";
     if (fun == operation::Cos::f) return "cos";
@@ -39,7 +39,7 @@ vespalib::string name_of(map_fun_t fun) {
     return "[other map function]";
 }
 
-vespalib::string name_of(join_fun_t fun) {
+std::string name_of(join_fun_t fun) {
     if (fun == operation::Add::f) return "+";
     if (fun == operation::Sub::f) return "-";
     if (fun == operation::Mul::f) return "*";
@@ -67,7 +67,7 @@ vespalib::string name_of(join_fun_t fun) {
 } // namespace vespalib::eval::visit::<unnamed>
 } // namespace vespalib::eval::visit
 
-void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, const vespalib::eval::TensorFunction &value) {
+void visit(vespalib::ObjectVisitor &visitor, const std::string &name, const vespalib::eval::TensorFunction &value) {
     visitor.openStruct(name, vespalib::getClassName(value));
     {
         value.visit_self(visitor);
@@ -76,29 +76,29 @@ void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, const
     visitor.closeStruct();
 }
 
-void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, vespalib::eval::visit::map_fun_t value) {
+void visit(vespalib::ObjectVisitor &visitor, const std::string &name, vespalib::eval::visit::map_fun_t value) {
     visitor.visitString(name, vespalib::eval::visit::name_of(value));
 }
 
-void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, vespalib::eval::visit::join_fun_t value) {
+void visit(vespalib::ObjectVisitor &visitor, const std::string &name, vespalib::eval::visit::join_fun_t value) {
     visitor.visitString(name, vespalib::eval::visit::name_of(value));
 }
 
-void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, const vespalib::eval::Aggr &value) {
-    if (const vespalib::string *str_ptr = vespalib::eval::AggrNames::name_of(value)) {
+void visit(vespalib::ObjectVisitor &visitor, const std::string &name, const vespalib::eval::Aggr &value) {
+    if (const std::string *str_ptr = vespalib::eval::AggrNames::name_of(value)) {
         visitor.visitString(name, *str_ptr);
     } else {
         visitor.visitNull(name);
     }
 }
 
-void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, const vespalib::eval::visit::DimList &value) {
-    vespalib::string list = vespalib::eval::nodes::TensorRename::flatten(value.list);
+void visit(vespalib::ObjectVisitor &visitor, const std::string &name, const vespalib::eval::visit::DimList &value) {
+    std::string list = vespalib::eval::nodes::TensorRename::flatten(value.list);
     visitor.visitString(name, list);
 }
 
-void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, const vespalib::eval::visit::FromTo &value) {
-    vespalib::string from = vespalib::eval::nodes::TensorRename::flatten(value.from);
-    vespalib::string to = vespalib::eval::nodes::TensorRename::flatten(value.to);
+void visit(vespalib::ObjectVisitor &visitor, const std::string &name, const vespalib::eval::visit::FromTo &value) {
+    std::string from = vespalib::eval::nodes::TensorRename::flatten(value.from);
+    std::string to = vespalib::eval::nodes::TensorRename::flatten(value.to);
     visitor.visitString(name, vespalib::make_string("%s -> %s", from.c_str(), to.c_str()));
 }

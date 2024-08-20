@@ -10,9 +10,9 @@ using BTreeSet = vespalib::btree::BTree<uint32_t, vespalib::btree::BTreeNoLeafDa
 using ZeroConstraintDocs = BTreeSet::FrozenView;
 
 struct Constants {
-    static const vespalib::string z_star_attribute_name;
+    static const std::string z_star_attribute_name;
     static const uint64_t         z_star_hash;
-    static const vespalib::string z_star_compressed_attribute_name;
+    static const std::string z_star_compressed_attribute_name;
     static const uint64_t         z_star_compressed_hash;
 };
 

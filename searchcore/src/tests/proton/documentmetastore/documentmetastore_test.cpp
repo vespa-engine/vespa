@@ -198,7 +198,7 @@ assertWhiteList(const SimpleResult &exp, Blueprint::UP whiteListBlueprint, bool 
 
 void
 assertSearchResult(const SimpleResult &exp, const DocumentMetaStore &dms,
-                   const vespalib::string &term, const QueryTermSimple::Type &termType,
+                   const std::string &term, const QueryTermSimple::Type &termType,
                    bool strict, uint32_t docIdLimit = 100)
 {
     std::unique_ptr<SearchContext> sc =

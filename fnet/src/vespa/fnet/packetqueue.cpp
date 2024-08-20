@@ -4,6 +4,7 @@
 #include "packet.h"
 #include <cassert>
 #include <chrono>
+#include <cstring>
 
 void
 FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)

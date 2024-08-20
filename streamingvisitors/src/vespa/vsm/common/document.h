@@ -17,20 +17,20 @@ using FieldIdT = uint32_t;
 /// A type to represent a list of FieldIds.
 using FieldIdTList = std::vector<FieldIdT>;
 /// A type to represent all the fields contained in all the indexs.
-using IndexFieldMapT = vespalib::hash_map<vespalib::string, FieldIdTList>;
+using IndexFieldMapT = vespalib::hash_map<std::string, FieldIdTList>;
 /// A type to represent all the fields contained in all the indexs in an all the document types.
-using DocumentTypeIndexFieldMapT = vespalib::hash_map<vespalib::string, IndexFieldMapT>;
+using DocumentTypeIndexFieldMapT = vespalib::hash_map<std::string, IndexFieldMapT>;
 /// A type to represent a map from fieldname to fieldid.
-using StringFieldIdTMapT = std::map<vespalib::string, FieldIdT, std::less<>>;
+using StringFieldIdTMapT = std::map<std::string, FieldIdT, std::less<>>;
 
 class StringFieldIdTMap
 {
  public:
   enum { npos=0xFFFFFFFF };
   StringFieldIdTMap();
-  FieldIdT fieldNo(const vespalib::string & fName) const;
-  void add(const vespalib::string & s);
-  void add(const vespalib::string & s, FieldIdT fNo);
+  FieldIdT fieldNo(const std::string & fName) const;
+  void add(const std::string & s);
+  void add(const std::string & s, FieldIdT fNo);
   const StringFieldIdTMapT & map() const { return _map; }
   size_t highestFieldNo() const;
   friend vespalib::asciistream & operator << (vespalib::asciistream & os, const StringFieldIdTMap & f);

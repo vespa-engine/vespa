@@ -6,7 +6,7 @@
 namespace vespalib {
 
 class JsonStreamException : public Exception {
-    string _reason;
+    std::string _reason;
 public:
     JsonStreamException(std::string_view reason,
                         std::string_view history,

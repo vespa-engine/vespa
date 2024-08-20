@@ -4,7 +4,7 @@
 
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace document {
@@ -21,7 +21,7 @@ namespace search::linguistics {
  * Class used to extract tokens from annotated string field value.
  */
 class TokenExtractor {
-    const vespalib::string& _field_name;
+    const std::string& _field_name;
     size_t                  _max_word_len;
 
 public:
@@ -54,7 +54,7 @@ private:
     void consider_word(std::vector<SpanTerm>& terms, std::string_view text, const document::Span& span, const document::FieldValue* fv, const document::Document* doc) const;
 
 public:
-    TokenExtractor(const vespalib::string& field_name, size_t max_word_len);
+    TokenExtractor(const std::string& field_name, size_t max_word_len);
     ~TokenExtractor();
     void extract(std::vector<SpanTerm>& terms, const document::StringFieldValue::SpanTrees& trees, std::string_view text, const document::Document* doc) const;
     std::string_view sanitize_word(std::string_view word, const document::Document* doc) const;

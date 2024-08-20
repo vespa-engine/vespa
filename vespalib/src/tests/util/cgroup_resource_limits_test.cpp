@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/cgroup_resource_limits.h>
 #include <vespa/vespalib/util/size_literals.h>
 

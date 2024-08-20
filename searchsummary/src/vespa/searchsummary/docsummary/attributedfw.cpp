@@ -35,7 +35,7 @@ using vespalib::slime::Symbol;
 
 namespace search::docsummary {
 
-AttrDFW::AttrDFW(const vespalib::string & attrName) :
+AttrDFW::AttrDFW(const std::string & attrName) :
     _attrName(attrName)
 {
 }
@@ -51,7 +51,7 @@ namespace {
 class SingleAttrDFW : public AttrDFW
 {
 public:
-    explicit SingleAttrDFW(const vespalib::string & attrName) :
+    explicit SingleAttrDFW(const std::string & attrName) :
         AttrDFW(attrName)
     { }
     void insertField(uint32_t docid, GetDocsumsState& state, Inserter &target) const override;
@@ -133,18 +133,18 @@ make_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
 template <typename MultiValueType>
 class MultiAttrDFWState : public DocsumFieldWriterState
 {
-    const vespalib::string&                    _field_name;
+    const std::string&                    _field_name;
     const IMultiValueReadView<MultiValueType>* _read_view;
     const MatchingElements*                    _matching_elements;
 public:
-    MultiAttrDFWState(const vespalib::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements);
+    MultiAttrDFWState(const std::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements);
     ~MultiAttrDFWState() override;
     void insertField(uint32_t docid, Inserter& target) override;
 };
 
 
 template <typename MultiValueType>
-MultiAttrDFWState<MultiValueType>::MultiAttrDFWState(const vespalib::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements)
+MultiAttrDFWState<MultiValueType>::MultiAttrDFWState(const std::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements)
     : _field_name(field_name),
       _read_view(make_read_view<MultiValueType>(attr, stash)),
       _matching_elements(matching_elements)
@@ -240,7 +240,7 @@ private:
     std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
 
 public:
-    MultiAttrDFW(const vespalib::string& attr_name, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+    MultiAttrDFW(const std::string& attr_name, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
         : AttrDFW(attr_name),
           _filter_elements(filter_elements),
           _state_index(0),
@@ -263,7 +263,7 @@ MultiAttrDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 
 template <typename DataType>
 DocsumFieldWriterState*
-make_field_writer_state_helper(const vespalib::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements)
+make_field_writer_state_helper(const std::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements)
 {
     bool is_weighted_set = attr.hasWeightedSetType();
     if (is_weighted_set) {
@@ -274,7 +274,7 @@ make_field_writer_state_helper(const vespalib::string& field_name, const IAttrib
 }
 
 DocsumFieldWriterState*
-make_field_writer_state(const vespalib::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements)
+make_field_writer_state(const std::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash, const MatchingElements* matching_elements)
 {
     auto type = attr.getBasicType();
     switch (type) {
@@ -337,7 +337,7 @@ create_multi_writer(const IAttributeVector& attr, bool filter_elements, std::sha
 
 std::unique_ptr<DocsumFieldWriter>
 AttributeDFWFactory::create(const IAttributeManager& attr_mgr,
-                            const vespalib::string& attr_name,
+                            const std::string& attr_name,
                             bool filter_elements,
                             std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {

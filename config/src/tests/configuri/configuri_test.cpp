@@ -28,11 +28,11 @@ TEST("Require that URI can be created from std::string") {
     assertConfigId("", ConfigUri(std::string("dir:.")));
 }
 
-TEST("Require that URI can be created from vespalib::string") {
-    assertConfigId("foo/bar", ConfigUri(vespalib::string("foo/bar")));
-    assertConfigId("myfile", ConfigUri(vespalib::string("file:myfile.cfg")));
-    assertConfigId("", ConfigUri(vespalib::string("raw:myraw")));
-    assertConfigId("", ConfigUri(vespalib::string("dir:.")));
+TEST("Require that URI can be created from std::string") {
+    assertConfigId("foo/bar", ConfigUri(std::string("foo/bar")));
+    assertConfigId("myfile", ConfigUri(std::string("file:myfile.cfg")));
+    assertConfigId("", ConfigUri(std::string("raw:myraw")));
+    assertConfigId("", ConfigUri(std::string("dir:.")));
 }
 
 TEST("Require that URI can be created from  instance") {

@@ -11,7 +11,7 @@
 namespace search {
 
 template <typename B>
-SingleValueStringPostingAttributeT<B>::SingleValueStringPostingAttributeT(const vespalib::string & name,
+SingleValueStringPostingAttributeT<B>::SingleValueStringPostingAttributeT(const std::string & name,
                                                                           const AttributeVector::Config & c) :
     SingleValueStringAttributeT<B>(name, c),
     PostingParent(*this, this->getEnumStore()),
@@ -20,7 +20,7 @@ SingleValueStringPostingAttributeT<B>::SingleValueStringPostingAttributeT(const 
 }
 
 template <typename B>
-SingleValueStringPostingAttributeT<B>::SingleValueStringPostingAttributeT(const vespalib::string & name)
+SingleValueStringPostingAttributeT<B>::SingleValueStringPostingAttributeT(const std::string & name)
     : SingleValueStringPostingAttributeT<B>(name, AttributeVector::Config(AttributeVector::BasicType::STRING))
 {
 }

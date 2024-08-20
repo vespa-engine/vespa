@@ -41,7 +41,7 @@ ForeachExecutor<CO, OP>::execute(uint32_t)
 
 
 bool
-ForeachBlueprint::decideDimension(const vespalib::string & param)
+ForeachBlueprint::decideDimension(const std::string & param)
 {
     if (param == "terms") {
         _dimension = TERMS;
@@ -58,7 +58,7 @@ ForeachBlueprint::decideDimension(const vespalib::string & param)
 }
 
 bool
-ForeachBlueprint::decideCondition(const vespalib::string & condition, const vespalib::string & operation)
+ForeachBlueprint::decideCondition(const std::string & condition, const std::string & operation)
 {
     if (condition == "true") {
         return decideOperation(TrueCondition(), operation);
@@ -75,7 +75,7 @@ ForeachBlueprint::decideCondition(const vespalib::string & condition, const vesp
 
 template <typename CO>
 bool
-ForeachBlueprint::decideOperation(CO condition, const vespalib::string & operation)
+ForeachBlueprint::decideOperation(CO condition, const std::string & operation)
 {
     if (operation == "sum") {
         setExecutorCreator<CO, SumOperation>(condition);
@@ -140,8 +140,8 @@ ForeachBlueprint::setup(const IIndexEnvironment & env,
         return false;
     }
 
-    const vespalib::string & variable = params[1].getValue();
-    const vespalib::string & feature = params[2].getValue();
+    const std::string & variable = params[1].getValue();
+    const std::string & feature = params[2].getValue();
 
     if (_dimension == TERMS) {
         uint32_t maxTerms = util::strToNum<uint32_t>(env.getProperties().lookup(getBaseName(), "maxTerms").get("16"));

@@ -26,7 +26,7 @@ using namespace ::testing;
 
 namespace storage {
 
-vespalib::string _storage("storage");
+std::string _storage("storage");
 
 using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
 

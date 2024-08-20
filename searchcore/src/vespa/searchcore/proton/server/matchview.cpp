@@ -51,7 +51,7 @@ MatchView::MatchView(Matchers::SP matchers,
 MatchView::~MatchView() = default;
 
 std::shared_ptr<Matcher>
-MatchView::getMatcher(const vespalib::string & rankProfile) const
+MatchView::getMatcher(const std::string & rankProfile) const
 {
     return _matchers->lookup(rankProfile);
 }

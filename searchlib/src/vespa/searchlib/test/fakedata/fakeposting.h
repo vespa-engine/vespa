@@ -10,8 +10,8 @@ using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace search::fakedata {
 

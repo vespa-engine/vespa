@@ -58,25 +58,25 @@ void build_health_status(JSONStringer &json, const HealthProducer &healthProduce
     json.endObject();
 }
 
-vespalib::string get_param(const std::map<vespalib::string,vespalib::string> &params,
+std::string get_param(const std::map<std::string,std::string> &params,
                            std::string_view param_name,
                            std::string_view default_value)
 {
     auto maybe_value = params.find(std::string(param_name));
     if (maybe_value == params.end()) {
-        return vespalib::string(default_value);
+        return std::string(default_value);
     }
     return maybe_value->second;
 }
 
-void render_link(JSONStringer &json, const vespalib::string &host, const vespalib::string &path) {
+void render_link(JSONStringer &json, const std::string &host, const std::string &path) {
     json.beginObject();
     json.appendKey("url");
     json.appendString("http://" + host + path);
     json.endObject();
 }
 
-vespalib::string respond_root(const JsonHandlerRepo &repo, const vespalib::string &host) {
+std::string respond_root(const JsonHandlerRepo &repo, const std::string &host) {
     JSONStringer json;
     json.beginObject();
     json.appendKey("resources");
@@ -84,7 +84,7 @@ vespalib::string respond_root(const JsonHandlerRepo &repo, const vespalib::strin
     for (auto path: {"/state/v1/health", "/state/v1/metrics", "/state/v1/config"}) {
         render_link(json, host, path);
     }
-    for (const vespalib::string &path: repo.get_root_resources()) {
+    for (const std::string &path: repo.get_root_resources()) {
         render_link(json, host, path);
     }
     json.endArray();
@@ -92,7 +92,7 @@ vespalib::string respond_root(const JsonHandlerRepo &repo, const vespalib::strin
     return json.str();
 }
 
-vespalib::string respond_health(const HealthProducer &healthProducer) {
+std::string respond_health(const HealthProducer &healthProducer) {
     JSONStringer json;
     json.beginObject();
     build_health_status(json, healthProducer);
@@ -100,7 +100,7 @@ vespalib::string respond_health(const HealthProducer &healthProducer) {
     return json.str();
 }
 
-vespalib::string respond_json_metrics(const vespalib::string &consumer,
+std::string respond_json_metrics(const std::string &consumer,
                                       const HealthProducer &healthProducer,
                                       MetricsProducer &metricsProducer)
 {
@@ -108,7 +108,7 @@ vespalib::string respond_json_metrics(const vespalib::string &consumer,
     json.beginObject();
     build_health_status(json, healthProducer);
     { // metrics
-        vespalib::string metrics = metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::JSON);
+        std::string metrics = metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::JSON);
         if (!metrics.empty()) {
             json.appendKey("metrics");
             json.appendJSON(metrics);
@@ -120,9 +120,9 @@ vespalib::string respond_json_metrics(const vespalib::string &consumer,
 
 JsonGetHandler::Response cap_check_and_respond_metrics(
         const net::ConnectionAuthContext &auth_ctx,
-        const std::map<vespalib::string,vespalib::string> &params,
-        const vespalib::string& default_consumer,
-        std::function<JsonGetHandler::Response(const vespalib::string&, MetricsProducer::ExpositionFormat)> response_fn)
+        const std::map<std::string,std::string> &params,
+        const std::string& default_consumer,
+        std::function<JsonGetHandler::Response(const std::string&, MetricsProducer::ExpositionFormat)> response_fn)
 {
     if (!auth_ctx.capabilities().contains(Capability::content_metrics_api())) {
         return JsonGetHandler::Response::make_failure(403, "Forbidden");
@@ -134,7 +134,7 @@ JsonGetHandler::Response cap_check_and_respond_metrics(
     return response_fn(consumer, format);
 }
 
-vespalib::string respond_config(ComponentConfigProducer &componentConfigProducer) {
+std::string respond_config(ComponentConfigProducer &componentConfigProducer) {
     JSONStringer json;
     json.beginObject();
     { // config
@@ -156,7 +156,7 @@ vespalib::string respond_config(ComponentConfigProducer &componentConfigProducer
 
 JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
                                      CapabilitySet required_caps,
-                                     std::function<vespalib::string()> fn)
+                                     std::function<std::string()> fn)
 {
     if (!auth_ctx.capabilities().contains_all(required_caps)) {
         return JsonGetHandler::Response::make_failure(403, "Forbidden");
@@ -166,7 +166,7 @@ JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
 
 JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
                                      Capability required_cap,
-                                     std::function<vespalib::string()> fn)
+                                     std::function<std::string()> fn)
 {
     return cap_checked(auth_ctx, CapabilitySet::of({required_cap}), std::move(fn));
 }
@@ -178,9 +178,9 @@ constexpr const char* prometheus_content_type() noexcept {
 } // namespace vespalib::<unnamed>
 
 JsonGetHandler::Response
-StateApi::get(const vespalib::string &host,
-              const vespalib::string &path,
-              const std::map<vespalib::string,vespalib::string> &params,
+StateApi::get(const std::string &host,
+              const std::string &path,
+              const std::map<std::string,std::string> &params,
               const net::ConnectionAuthContext &auth_ctx) const
 {
     if (path == "/state/v1/" || path == "/state/v1") {

@@ -38,7 +38,7 @@ struct SetupFixture
         addAttribute("doublearray", CollectionType::ARRAY, DataType::DOUBLE);
     }
 
-    void addAttribute(const vespalib::string &name, const CollectionType &collType, const DataType &dataType) {
+    void addAttribute(const std::string &name, const CollectionType &collType, const DataType &dataType) {
         FieldInfo attrInfo(FieldType::ATTRIBUTE, collType, name, 0);
         attrInfo.set_data_type(dataType);
         indexEnv.getFields().push_back(attrInfo);
@@ -91,7 +91,7 @@ struct ExecFixture
 {
     BlueprintFactory factory;
     FtFeatureTest test;
-    ExecFixture(const vespalib::string &feature)
+    ExecFixture(const std::string &feature)
             : factory(),
               test(factory, feature)
     {
@@ -102,8 +102,8 @@ struct ExecFixture
     }
 
     void setupAttributeVectors() {
-        vespalib::string attrIntArray = "intarray";
-        vespalib::string attrLongArray = "longarray";
+        std::string attrIntArray = "intarray";
+        std::string attrLongArray = "longarray";
 
         test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, DataType::INT64, attrLongArray);
         test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, DataType::INT32, attrIntArray);

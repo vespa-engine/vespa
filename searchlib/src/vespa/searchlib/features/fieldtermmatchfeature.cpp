@@ -83,13 +83,13 @@ FieldTermMatchBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment 
                                            search::fef::IDumpFeatureVisitor &visitor) const
 {
     const search::fef::Properties &props = env.getProperties();
-    const vespalib::string &baseName = getBaseName();
+    const std::string &baseName = getBaseName();
     int baseNumTerms = atoi(props.lookup(baseName, "numTerms").get("5").c_str());
 
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const search::fef::FieldInfo& field = *env.getField(i);
         if (field.type() == search::fef::FieldType::INDEX) {
-            const vespalib::string &fieldName = field.name();
+            const std::string &fieldName = field.name();
             const search::fef::Property &prop = props.lookup(baseName, "numTerms", fieldName);
             int numTerms = prop.found() ? atoi(prop.get().c_str()) : baseNumTerms;
             for (int term = 0; term < numTerms; ++term) {

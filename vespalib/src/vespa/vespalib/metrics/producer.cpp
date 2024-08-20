@@ -15,7 +15,7 @@ Producer::~Producer() = default;
 
 namespace {
 
-vespalib::string
+std::string
 format_snapshot(const Snapshot &snapshot, MetricsProducer::ExpositionFormat format)
 {
     switch (format) {
@@ -29,15 +29,15 @@ format_snapshot(const Snapshot &snapshot, MetricsProducer::ExpositionFormat form
 
 }
 
-vespalib::string
-Producer::getMetrics(const vespalib::string &, ExpositionFormat format)
+std::string
+Producer::getMetrics(const std::string &, ExpositionFormat format)
 {
     Snapshot snap = _manager->snapshot();
     return format_snapshot(snap, format);
 }
 
-vespalib::string
-Producer::getTotalMetrics(const vespalib::string &, ExpositionFormat format)
+std::string
+Producer::getTotalMetrics(const std::string &, ExpositionFormat format)
 {
     Snapshot snap = _manager->totalSnapshot();
     return format_snapshot(snap, format);

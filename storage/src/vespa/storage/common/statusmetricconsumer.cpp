@@ -29,7 +29,7 @@ StatusMetricConsumer::StatusMetricConsumer(StorageComponentRegister& compReg, me
 
 StatusMetricConsumer::~StatusMetricConsumer() = default;
 
-vespalib::string
+std::string
 StatusMetricConsumer::getReportContentType(const framework::HttpUrlPath& path) const
 {
     if (!path.hasAttribute("format")) {

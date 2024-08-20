@@ -23,16 +23,16 @@ public:
  */
 class DistanceBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _field_name;
-    vespalib::string _label_name;
-    vespalib::string _attr_name;
+    std::string _field_name;
+    std::string _label_name;
+    std::string _attr_name;
     uint32_t _attr_id;
     bool _use_geo_pos;
     bool _use_nns_tensor;
     bool _use_item_label;
 
-    bool setup_geopos(const vespalib::string &attr);
-    bool setup_nns(const vespalib::string &attr);
+    bool setup_geopos(const std::string &attr);
+    bool setup_nns(const std::string &attr);
 
 public:
     DistanceBlueprint();

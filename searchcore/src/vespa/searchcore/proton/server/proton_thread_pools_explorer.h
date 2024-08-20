@@ -32,7 +32,7 @@ public:
                               vespalib::ISequencedTaskExecutor* field_writer);
 
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
-    std::vector<vespalib::string> get_children_names() const override;
+    std::vector<std::string> get_children_names() const override;
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override;
 };
 

@@ -23,12 +23,12 @@ public:
     /**
      * Builds a field info map for all registered document types.
      **/
-    void init(const vespalib::string & defaultDocumentType,
+    void init(const std::string & defaultDocumentType,
               const StringFieldIdTMapT & fieldList,
               const document::DocumentTypeRepo &repo);
 
     const document::DocumentType & getCurrentDocumentType() const;
-    const vespalib::string & getDefaultDocumentTypeName() const
+    const std::string & getDefaultDocumentTypeName() const
     { return _defaultDocumentTypeName; }
     const document::DocumentType *getDefaultDocumentType() const
     { return _defaultDocumentType; }
@@ -41,11 +41,11 @@ private:
      **/
     void buildFieldMap(const document::DocumentType *docType,
                        const StringFieldIdTMapT & fieldList,
-                       const vespalib::string & typeId);
-    using FieldPathMapMapT = vespalib::hash_map<vespalib::string, FieldPathMapT>;
+                       const std::string & typeId);
+    using FieldPathMapMapT = vespalib::hash_map<std::string, FieldPathMapT>;
     using DocumentTypeUsage = std::multimap<size_t, const document::DocumentType *>;
     FieldPathMapMapT        _fieldMap;
-    vespalib::string        _defaultDocumentTypeName;
+    std::string        _defaultDocumentTypeName;
     const document::DocumentType *_defaultDocumentType;
     DocumentTypeUsage       _documentTypeFreq;
 };

@@ -60,7 +60,7 @@ FieldSearchSpec::~FieldSearchSpec() = default;
 FieldSearchSpec::FieldSearchSpec(FieldSearchSpec&& rhs) noexcept = default;
 FieldSearchSpec& FieldSearchSpec::operator=(FieldSearchSpec&& rhs) noexcept = default;
 
-FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname, Searchmethod searchDef,
+FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const std::string & fname, Searchmethod searchDef,
                                  Normalizing normalize_mode, std::string_view arg1_in, size_t maxLength_in) :
     _id(fid),
     _name(fname),
@@ -179,30 +179,30 @@ namespace {
     const std::regex G_array("\\[[0-9]+\\]");
 }
 
-vespalib::string
+std::string
 FieldSearchSpecMap::stripNonFields(std::string_view rawIndex)
 {
-    if ((rawIndex.find('[') != vespalib::string::npos) || (rawIndex.find('{') != vespalib::string::npos)) {
+    if ((rawIndex.find('[') != std::string::npos) || (rawIndex.find('{') != std::string::npos)) {
         std::string index = std::regex_replace(std::string(rawIndex), G_map1, G_value);
         index = std::regex_replace(index, G_map2, G_value);
         index = std::regex_replace(index, G_array, G_empty);
         return index;
     }
-    return vespalib::string(rawIndex);
+    return std::string(rawIndex);
 }
 
 void
 FieldSearchSpecMap::addFieldsFromIndex(std::string_view rawIndex, StringFieldIdTMap & fieldIdMap) const {
     for (const auto & dtm : documentTypeMap()) {
         const IndexFieldMapT & fim = dtm.second;
-        vespalib::string index(stripNonFields(rawIndex));
+        std::string index(stripNonFields(rawIndex));
         auto fIt = fim.find(index);
         if (fIt != fim.end()) {
             for(FieldIdT fid : fIt->second) {
                 const FieldSearchSpec & spec = specMap().find(fid)->second;
                 LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", std::string(rawIndex).c_str(), index.c_str());
                 if ((rawIndex != index) && (spec.name().find(index) == 0)) {
-                    vespalib::string modIndex(rawIndex);
+                    std::string modIndex(rawIndex);
                     modIndex.append(spec.name().substr(index.size()));
                     // Note: Multiple raw index names might map to the same field id
                     fieldIdMap.add(modIndex, spec.id());
@@ -237,7 +237,7 @@ FieldSearchSpecMap::buildFieldsInQuery(const Query & query) const
 }
 
 void
-FieldSearchSpecMap::buildFromConfig(const std::vector<vespalib::string> & otherFieldsNeeded)
+FieldSearchSpecMap::buildFromConfig(const std::vector<std::string> & otherFieldsNeeded)
 {
     for (const auto & i : otherFieldsNeeded) {
         _nameIdMap.add(i);
@@ -356,7 +356,7 @@ FieldSearchSpecMap::buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, F
 }
 
 search::attribute::DistanceMetric
-FieldSearchSpecMap::get_distance_metric(const vespalib::string& name) const
+FieldSearchSpecMap::get_distance_metric(const std::string& name) const
 {
     auto dm = search::attribute::DistanceMetric::Euclidean;
     auto fid = _nameIdMap.fieldNo(name);

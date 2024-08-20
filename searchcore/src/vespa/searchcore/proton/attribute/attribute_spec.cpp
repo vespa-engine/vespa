@@ -5,7 +5,7 @@
 
 namespace proton {
 
-AttributeSpec::AttributeSpec(const vespalib::string &name, const Config &cfg)
+AttributeSpec::AttributeSpec(const std::string &name, const Config &cfg)
     : _name(name),
       _cfg(std::make_unique<Config>(cfg))
 {

@@ -47,11 +47,11 @@ public:
 class TextSimilarityBlueprint : public fef::Blueprint
 {
 private:
-    static const vespalib::string score_output;
-    static const vespalib::string proximity_output;
-    static const vespalib::string order_output;
-    static const vespalib::string query_coverage_output;
-    static const vespalib::string field_coverage_output;
+    static const std::string score_output;
+    static const std::string proximity_output;
+    static const std::string order_output;
+    static const std::string query_coverage_output;
+    static const std::string field_coverage_output;
 
     uint32_t _field_id;
 

@@ -58,7 +58,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::IAttributeContext;
 using search::attribute::test::MockAttributeManager;
-using vespalib::string;
+using std::string;
 
 using IATint32 = IntegerAttributeTemplate<int32_t>;
 using IntEnumAttribute = EnumAttribute<IATint32>;
@@ -219,14 +219,14 @@ class MyAttributeManager : public MockAttributeManager
 {
 public:
     using MockAttributeManager::addAttribute;
-    void addAttribute(const vespalib::string &name) {
+    void addAttribute(const std::string &name) {
         if (findAttribute(name).get() != nullptr) {
             return;
         }
         AttributeVector::SP av(new MyIntAv(name));
         MockAttributeManager::addAttribute(name, av);
     }
-    MyIntAv *getAsMyIntAttribute(const vespalib::string &name) const {
+    MyIntAv *getAsMyIntAttribute(const std::string &name) const {
         return (dynamic_cast<MyIntAv *>(findAttribute(name).get()));
     }
 };

@@ -117,10 +117,10 @@ bool has_pem_eof_on_stack() {
             && (ERR_GET_REASON(err) == PEM_R_NO_START_LINE));
 }
 
-vespalib::string ssl_error_from_stack() {
+std::string ssl_error_from_stack() {
     char buf[256];
     ::ERR_error_string_n(::ERR_get_error(), buf, sizeof(buf));
-    return vespalib::string(buf);
+    return std::string(buf);
 }
 
 // Several OpenSSL functions take a magical user passphrase argument with
@@ -376,7 +376,7 @@ struct GeneralNamesDeleter {
 };
 
 // Returns empty string if unsupported type or bad content.
-vespalib::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
+std::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
     if ((ia5_str->type == V_ASN1_IA5STRING) && (ia5_str->data != nullptr) && (ia5_str->length > 0)) {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
         const char* data  = reinterpret_cast<const char*>(::ASN1_STRING_get0_data(ia5_str));
@@ -509,8 +509,8 @@ void OpenSslTlsContextImpl::set_ssl_ctx_self_reference() {
     SSL_CTX_set_app_data(_ctx.get(), this);
 }
 
-void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers) {
-    vespalib::string openssl_ciphers;
+void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<std::string>& ciphers) {
+    std::string openssl_ciphers;
     size_t bad_ciphers = 0;
     for (const auto& iana_cipher : ciphers) {
         auto our_cipher = iana_cipher_suite_to_openssl(iana_cipher);

@@ -86,7 +86,7 @@ const uint64_t createSerialNum = 42u;
 
 class MyAttributeFunctor : public search::attribute::IConstAttributeFunctor
 {
-    std::vector<vespalib::string> _names;
+    std::vector<std::string> _names;
 
 public:
     void
@@ -97,7 +97,7 @@ public:
     std::string getSortedNames() {
         std::ostringstream os;
         std::sort(_names.begin(), _names.end());
-        for (const vespalib::string &name : _names) {
+        for (const std::string &name : _names) {
             if (!os.str().empty())
                 os << ",";
             os << name;
@@ -133,14 +133,14 @@ search::SerialNum getCreateSerialNum(const AttributeGuard::UP &guard)
     }
 }
 
-void assertCreateSerialNum(const AttributeManager &am, const vespalib::string &name, search::SerialNum expCreateSerialNum) {
+void assertCreateSerialNum(const AttributeManager &am, const std::string &name, search::SerialNum expCreateSerialNum) {
     EXPECT_EQUAL(expCreateSerialNum, getCreateSerialNum(am.getAttribute(name)));
 }
 
 struct ImportedAttributesRepoBuilder {
     ImportedAttributesRepo::UP _repo;
     ImportedAttributesRepoBuilder() : _repo(std::make_unique<ImportedAttributesRepo>()) {}
-    void add(const vespalib::string &name) {
+    void add(const std::string &name) {
         auto refAttr = std::make_shared<ReferenceAttribute>(name + "_ref");
         refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
@@ -187,10 +187,10 @@ struct AttributeManagerFixture
     ImportedAttributesRepoBuilder _builder;
     explicit AttributeManagerFixture(BaseFixture &bf);
     ~AttributeManagerFixture();
-    AttributeVector::SP addAttribute(const vespalib::string &name) {
+    AttributeVector::SP addAttribute(const std::string &name) {
         return _m.addAttribute({name, INT32_SINGLE}, createSerialNum);
     }
-    void addImportedAttribute(const vespalib::string &name) {
+    void addImportedAttribute(const std::string &name) {
         _builder.add(name);
     }
     void setImportedAttributes() {
@@ -710,7 +710,7 @@ TEST_F("require that attributes can be initialized and loaded in sequence", Base
 }
 
 AttributesConfigBuilder::Attribute
-createAttributeConfig(const vespalib::string &name)
+createAttributeConfig(const std::string &name)
 {
     AttributesConfigBuilder::Attribute result;
     result.name = name;
@@ -833,7 +833,7 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     TEST_DO(assertCreateSerialNum(am2.mgr, "a6", 20));
 }
 
-void assertShrinkTargetSerial(proton::AttributeManager &mgr, const vespalib::string &name, search::SerialNum expSerialNum)
+void assertShrinkTargetSerial(proton::AttributeManager &mgr, const std::string &name, search::SerialNum expSerialNum)
 {
     auto shrinker = mgr.getShrinker(name);
     EXPECT_EQUAL(expSerialNum, shrinker->getFlushedSerialNum());

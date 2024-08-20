@@ -7,7 +7,7 @@
 
 namespace config {
 
-ConfigValue::ConfigValue(StringVector lines, const vespalib::string & xxhash)
+ConfigValue::ConfigValue(StringVector lines, const std::string & xxhash)
     : _payload(),
       _lines(std::move(lines)),
       _xxhash64(xxhash)
@@ -25,7 +25,7 @@ ConfigValue::ConfigValue()
       _xxhash64()
 { }
 
-ConfigValue::ConfigValue(PayloadPtr payload, const vespalib::string & xxhash)
+ConfigValue::ConfigValue(PayloadPtr payload, const std::string & xxhash)
     : _payload(std::move(payload)),
       _lines(),
       _xxhash64(xxhash)
@@ -61,7 +61,7 @@ ConfigValue::getLegacyFormat() const
     return lines;
 }
 
-vespalib::string
+std::string
 ConfigValue::asJson() const {
     if (_payload) {
         const vespalib::slime::Inspector & payload(_payload->getSlimePayload());

@@ -13,7 +13,7 @@ using namespace vespalib::eval;
 
 //-----------------------------------------------------------------------------
 
-std::vector<vespalib::string> params_10({"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10"});
+std::vector<std::string> params_10({"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10"});
 
 const char *expr_10 = "p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10";
 
@@ -50,7 +50,7 @@ TEST("require that lazy parameter passing works") {
 
 //-----------------------------------------------------------------------------
 
-std::vector<vespalib::string> unsupported = {
+std::vector<std::string> unsupported = {
     "map(",
     "map_subspaces(",
     "join(",
@@ -62,8 +62,8 @@ std::vector<vespalib::string> unsupported = {
     "cell_cast("
 };
 
-bool is_unsupported(const vespalib::string &expression) {
-    if (expression.find("{") != vespalib::string::npos) {
+bool is_unsupported(const std::string &expression) {
+    if (expression.find("{") != std::string::npos) {
         return true;
     }
     for (const auto &prefix: unsupported) {
@@ -83,8 +83,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     bool print_fail = false;
 
     ~MyEvalTest() override;
-    virtual void next_expression(const std::vector<vespalib::string> &param_names,
-                                 const vespalib::string &expression) override
+    virtual void next_expression(const std::vector<std::string> &param_names,
+                                 const std::string &expression) override
     {
         auto function = Function::parse(param_names, expression);
         ASSERT_TRUE(!function->has_error());
@@ -98,9 +98,9 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
             ++fail_cnt;
         }
     }
-    virtual void handle_case(const std::vector<vespalib::string> &param_names,
+    virtual void handle_case(const std::vector<std::string> &param_names,
                              const std::vector<double> &param_values,
-                             const vespalib::string &expression,
+                             const std::string &expression,
                              double expected_result) override
     {
         auto function = Function::parse(param_names, expression);

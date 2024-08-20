@@ -4,9 +4,9 @@
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/stllike/string.h>
 #include <iostream>
 #include <map>
+#include <string>
 
 using namespace search;
 using namespace vespalib::datastore;
@@ -36,7 +36,7 @@ build(Iterator itr)
     return words;
 }
 
-vespalib::string
+std::string
 toStr(Iterator itr)
 {
     WordRefVector words = build(itr);

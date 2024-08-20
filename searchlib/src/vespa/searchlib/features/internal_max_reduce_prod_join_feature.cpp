@@ -173,9 +173,9 @@ selectExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &
     return stash.create<SingleZeroValueExecutor>();
 }
 
-vespalib::string
-make_queryvector_key(const vespalib::string & base, const vespalib::string & subKey) {
-    vespalib::string key(base);
+std::string
+make_queryvector_key(const std::string & base, const std::string & subKey) {
+    std::string key(base);
     key.append(".vector.");
     key.append(subKey);
     return key;

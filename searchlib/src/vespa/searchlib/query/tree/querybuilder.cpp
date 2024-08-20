@@ -6,7 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
 
-using vespalib::string;
+using std::string;
 using vespalib::make_string;
 using vespalib::getClassName;
 

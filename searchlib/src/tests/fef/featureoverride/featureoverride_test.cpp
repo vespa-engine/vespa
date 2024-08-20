@@ -164,7 +164,7 @@ TEST(FeatureOverriderTest, overrides)
     MatchData::UP match_data = mdl.createMatchData();
     rankProgram->setup(*match_data, queryEnv, overrides);
 
-    std::map<vespalib::string, feature_t> res = Utils::getAllFeatures(*rankProgram, 2);
+    std::map<std::string, feature_t> res = Utils::getAllFeatures(*rankProgram, 2);
 
     EXPECT_EQ(res.size(), 20u);
     EXPECT_NEAR(res["value(1)"],                               1.0, 1e-6);
@@ -198,7 +198,7 @@ struct SimpleRankFixture {
     Properties overrides;
     MatchData::UP match_data;
     RankProgram program;
-    static vespalib::string expr_feature(const vespalib::string &name) {
+    static std::string expr_feature(const std::string &name) {
         return fmt("rankingExpression(%s)", name.c_str());
     }
     SimpleRankFixture()
@@ -209,21 +209,21 @@ struct SimpleRankFixture {
         factory.addPrototype(std::make_shared<RankingExpressionBlueprint>());
     }
     ~SimpleRankFixture();
-    void add_expr(const vespalib::string &name, const vespalib::string &expr) {
-        vespalib::string feature_name = expr_feature(name);
-        vespalib::string expr_name = feature_name + ".rankingScript";
+    void add_expr(const std::string &name, const std::string &expr) {
+        std::string feature_name = expr_feature(name);
+        std::string expr_name = feature_name + ".rankingScript";
         indexEnv.getProperties().add(expr_name, expr);
     }
-    void add_override(const vespalib::string &name, const TensorSpec &spec) {
+    void add_override(const std::string &name, const TensorSpec &spec) {
         vespalib::nbostream data;
         auto tensor = vespalib::eval::value_from_spec(spec, FastValueBuilderFactory::get());
         vespalib::eval::encode_value(*tensor, data);
         overrides.add(name, std::string_view(data.peek(), data.size()));
     }
-    void add_override(const vespalib::string &name, const vespalib::string &str) {
+    void add_override(const std::string &name, const std::string &str) {
         overrides.add(name, str);
     }
-    bool try_compile(const vespalib::string &seed) {
+    bool try_compile(const std::string &seed) {
         resolver->addSeed(seed);
         if (!resolver->compile()) {
             return false;
@@ -234,7 +234,7 @@ struct SimpleRankFixture {
         program.setup(*match_data, queryEnv, overrides);
         return true;
     }
-    void compile(const vespalib::string &seed) {
+    void compile(const std::string &seed) {
         ASSERT_TRUE(try_compile(seed));
     }
     void get(uint32_t docid, std::optional<TensorSpec>& spec) {
@@ -250,7 +250,7 @@ bool spec_is_error(const TensorSpec& spec) {
 }
 
 struct MyIssues : Issue::Handler {
-    std::vector<vespalib::string> list;
+    std::vector<std::string> list;
     Issue::Binding capture;
     MyIssues() : list(), capture(Issue::listen(*this)) {}
     ~MyIssues() override;
@@ -325,7 +325,7 @@ TEST(FeatureOverriderTest, bad_format_binary_override_is_ignored)
     auto expect = TensorSpec::from_expr("tensor<float>(x[3]):[1,2,3]");
     ASSERT_FALSE(spec_is_error(expect));
     f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
-    f1.add_override(f1.expr_feature("foo"), vespalib::string("bad format"));
+    f1.add_override(f1.expr_feature("foo"), std::string("bad format"));
     f1.compile(f1.expr_feature("foo"));
     ASSERT_EQ(issues.list.size(), 1u);
     EXPECT_LT(issues.list[0].find("has invalid format"), issues.list[0].size());

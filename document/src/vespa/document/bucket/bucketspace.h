@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <cstdint>
 #include <functional>
+#include <string>
 
 namespace vespalib {
     class asciistream;
@@ -27,7 +27,7 @@ public:
 
     constexpr Type getId() const noexcept { return _id; }
     constexpr bool valid() const noexcept { return (_id != 0); }
-    vespalib::string toString() const;
+    std::string toString() const;
 
     struct hash {
         size_t operator () (const BucketSpace& bs) const noexcept {

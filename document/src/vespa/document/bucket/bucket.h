@@ -4,8 +4,8 @@
 
 #include "bucketspace.h"
 #include "bucketid.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <cstdint>
+#include <string>
 
 namespace document {
 
@@ -29,7 +29,7 @@ public:
 
     BucketSpace getBucketSpace() const noexcept { return _bucketSpace; }
     BucketId getBucketId() const noexcept { return _bucketId; }
-    vespalib::string toString() const;
+    std::string toString() const;
 
     struct hash {
         size_t operator () (const Bucket& b) const noexcept {

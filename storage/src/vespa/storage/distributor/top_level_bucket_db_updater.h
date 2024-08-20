@@ -56,7 +56,7 @@ public:
     bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd) override;
     bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
 
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     void resend_delayed_messages();
@@ -64,7 +64,7 @@ public:
     void bootstrap_distribution_config(std::shared_ptr<const lib::Distribution>);
     void propagate_distribution_config(const lib::BucketSpaceDistributionConfigs& configs);
 
-    vespalib::string report_xml_status(vespalib::xml::XmlOutputStream& xos, const framework::HttpUrlPath&) const;
+    std::string report_xml_status(vespalib::xml::XmlOutputStream& xos, const framework::HttpUrlPath&) const;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
 

@@ -15,9 +15,9 @@ namespace search {
 
 namespace {
 
-const vespalib::string versionTag = "version";
-const vespalib::string docIdLimitTag = "docIdLimit";
-const vespalib::string createSerialNumTag = "createSerialNum";
+const std::string versionTag = "version";
+const std::string docIdLimitTag = "docIdLimit";
+const std::string createSerialNumTag = "createSerialNum";
 
 uint64_t
 extractCreateSerialNum(const vespalib::GenericHeader &header)

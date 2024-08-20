@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <cassert>
+#include <cstring>
 
 // Simple default order that everybody has - pointer order:
 template <typename T>

@@ -11,8 +11,9 @@
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <cstring>
+#include <string>
 
 namespace search::memoryindex {
 

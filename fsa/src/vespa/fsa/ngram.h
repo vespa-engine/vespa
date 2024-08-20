@@ -9,15 +9,15 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-
 #include "unicode.h"
 #include "selector.h"
 #include "permuter.h"
 #include "tokenizer.h"
+
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <vector>
 
 namespace fsa {
 

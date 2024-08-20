@@ -19,7 +19,7 @@ using vespalib::ThreadStackExecutor;
 namespace {
 
 bool smoke_test = false;
-const vespalib::string smoke_test_option = "--smoke-test";
+const std::string smoke_test_option = "--smoke-test";
 
 }
 

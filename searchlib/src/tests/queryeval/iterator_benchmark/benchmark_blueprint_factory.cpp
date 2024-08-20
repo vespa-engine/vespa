@@ -26,8 +26,8 @@ namespace search::queryeval::test {
 
 namespace {
 
-const vespalib::string field_name = "myfield";
-const vespalib::string index_dir = "indexdir";
+const std::string field_name = "myfield";
+const std::string index_dir = "indexdir";
 
 uint32_t
 calc_hits_per_term(uint32_t num_docs, double op_hit_ratio, uint32_t children, QueryOperator query_op)
@@ -162,7 +162,7 @@ public:
               double op_hit_ratio, uint32_t children, bool disjunct_children);
 
     std::unique_ptr<Blueprint> make_blueprint() override;
-    vespalib::string get_name(Blueprint& blueprint) const override {
+    std::string get_name(Blueprint& blueprint) const override {
         return get_class_name(blueprint);
     }
 };

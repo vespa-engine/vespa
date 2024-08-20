@@ -100,7 +100,7 @@ std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
 } // namespace vespalib::eval::test
 
 ParamRepo &
-EvalFixture::ParamRepo::add(const vespalib::string &name, TensorSpec value)
+EvalFixture::ParamRepo::add(const std::string &name, TensorSpec value)
 {
     REQUIRE(map.find(name) == map.end());
     map.insert_or_assign(name, Param(std::move(value), false));
@@ -108,7 +108,7 @@ EvalFixture::ParamRepo::add(const vespalib::string &name, TensorSpec value)
 }
 
 ParamRepo &
-EvalFixture::ParamRepo::add_mutable(const vespalib::string &name, TensorSpec value)
+EvalFixture::ParamRepo::add_mutable(const std::string &name, TensorSpec value)
 {
     REQUIRE(map.find(name) == map.end());
     map.insert_or_assign(name, Param(std::move(value), true));
@@ -117,7 +117,7 @@ EvalFixture::ParamRepo::add_mutable(const vespalib::string &name, TensorSpec val
 
 // produce 4 variants: float/double * mutable/const
 EvalFixture::ParamRepo &
-EvalFixture::ParamRepo::add_variants(const vespalib::string &name_base,
+EvalFixture::ParamRepo::add_variants(const std::string &name_base,
                                      const GenSpec &spec)
 {
     auto name_f = name_base + "_f";
@@ -133,7 +133,7 @@ EvalFixture::ParamRepo::add_variants(const vespalib::string &name_base,
 }
 
 EvalFixture::ParamRepo &
-EvalFixture::ParamRepo::add(const vespalib::string &name, const vespalib::string &desc,
+EvalFixture::ParamRepo::add(const std::string &name, const std::string &desc,
                             CellType cell_type, GenSpec::seq_t seq)
 {
     bool is_mutable = ((!desc.empty()) && (desc[0] == '@'));
@@ -145,10 +145,10 @@ EvalFixture::ParamRepo::add(const vespalib::string &name, const vespalib::string
 }
 
 EvalFixture::ParamRepo &
-EvalFixture::ParamRepo::add(const vespalib::string &name_desc, CellType cell_type, GenSpec::seq_t seq)
+EvalFixture::ParamRepo::add(const std::string &name_desc, CellType cell_type, GenSpec::seq_t seq)
 {
     auto pos = name_desc.find('$');
-    vespalib::string desc = (pos < name_desc.size())
+    std::string desc = (pos < name_desc.size())
                             ? name_desc.substr(0, pos)
                             : name_desc;
     return add(name_desc, desc, cell_type, seq);
@@ -168,7 +168,7 @@ EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_muta
 }
 
 EvalFixture::EvalFixture(const ValueBuilderFactory &factory,
-                         const vespalib::string &expr,
+                         const std::string &expr,
                          const ParamRepo &param_repo,
                          bool optimized,
                          bool allow_mutable)
@@ -199,7 +199,7 @@ EvalFixture::num_params() const
 }
 
 TensorSpec
-EvalFixture::ref(const vespalib::string &expr, const ParamRepo &param_repo)
+EvalFixture::ref(const std::string &expr, const ParamRepo &param_repo)
 {
     auto fun = Function::parse(expr);
     std::vector<TensorSpec> params;

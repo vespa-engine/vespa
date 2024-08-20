@@ -94,7 +94,7 @@ using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 using vespalib::CacheStats;
 using vespalib::make_string;
-using vespalib::string;
+using std::string;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
@@ -116,12 +116,12 @@ const char dyn_field_n[] = "dynamic null field"; // not in document, not in attr
 const char dyn_field_nai[] = "dynamic null attr int field"; // in document, not in attribute
 const char dyn_field_nas[] = "dynamic null attr string field"; // in document, not in attribute
 const char position_field[] = "position_field";
-vespalib::string dyn_field_raw("dynamic_raw_field");
-vespalib::string dyn_field_tensor("dynamic_tensor_field");
-vespalib::string static_raw_backing("static raw");
-vespalib::string dynamic_raw_backing("dynamic raw");
+std::string dyn_field_raw("dynamic_raw_field");
+std::string dyn_field_tensor("dynamic_tensor_field");
+std::string static_raw_backing("static raw");
+std::string dynamic_raw_backing("dynamic raw");
 std::span<const char> dynamic_raw(dynamic_raw_backing.data(), dynamic_raw_backing.size());
-vespalib::string tensor_spec("tensor(x{})");
+std::string tensor_spec("tensor(x{})");
 std::unique_ptr<Value> static_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
 std::unique_ptr<Value> dynamic_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
 const char zcurve_field[] = "position_field_zcurve";
@@ -398,7 +398,7 @@ struct Fixture {
         build();
     }
 
-    void clearAttributes(const std::vector<vespalib::string> & names) const {
+    void clearAttributes(const std::vector<std::string> & names) const {
         for (const auto &name : names) {
             auto guard = *attr_manager.getAttribute(name);
             guard->clearDoc(lid);

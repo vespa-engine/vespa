@@ -3,8 +3,8 @@
 
 #include <vespa/log/log.h>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace ns_log {
 

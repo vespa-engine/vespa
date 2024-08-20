@@ -43,7 +43,7 @@ using CollectionType = FieldInfo::CollectionType;
 namespace
 {
 
-Value::UP make_empty(const vespalib::string &type) {
+Value::UP make_empty(const std::string &type) {
     return SimpleValue::from_spec(TensorSpec(type));
 }
 
@@ -53,7 +53,7 @@ struct ExecFixture
 {
     BlueprintFactory factory;
     FtFeatureTest test;
-    ExecFixture(const vespalib::string &feature)
+    ExecFixture(const std::string &feature)
         : factory(),
           test(factory, feature)
     {
@@ -62,15 +62,15 @@ struct ExecFixture
         setupQueryEnvironment();
         EXPECT_TRUE(test.setup());
     }
-    void addAttributeField(const vespalib::string &attrName) {
+    void addAttributeField(const std::string &attrName) {
         test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, attrName);
     }
-    AttributeVector::SP createStringAttribute(const vespalib::string &attrName) {
+    AttributeVector::SP createStringAttribute(const std::string &attrName) {
         addAttributeField(attrName);
         return AttributeFactory::createAttribute(attrName, AVC(AVBT::STRING, AVCT::SINGLE));
     }
-    AttributeVector::SP createTensorAttribute(const vespalib::string &attrName,
-                                              const vespalib::string &type,
+    AttributeVector::SP createTensorAttribute(const std::string &attrName,
+                                              const std::string &type,
                                               bool direct = false)
     {
         addAttributeField(attrName);
@@ -79,14 +79,14 @@ struct ExecFixture
         config.setFastSearch(direct);
         return AttributeFactory::createAttribute(attrName, config);
     }
-    void setAttributeTensorType(const vespalib::string &attrName, const vespalib::string &type) {
+    void setAttributeTensorType(const std::string &attrName, const std::string &type) {
         type::Attribute::set(test.getIndexEnv().getProperties(), attrName, type);
     }
-    void setQueryTensorType(const vespalib::string &queryFeatureName, const vespalib::string &type) {
+    void setQueryTensorType(const std::string &queryFeatureName, const std::string &type) {
         type::QueryFeature::set(test.getIndexEnv().getProperties(), queryFeatureName, type);
     }
-    void setQueryTensorDefault(const vespalib::string &tensorName, const vespalib::string &expr) {
-        vespalib::string key = "query(" + tensorName + ")";
+    void setQueryTensorDefault(const std::string &tensorName, const std::string &expr) {
+        std::string key = "query(" + tensorName + ")";
         test.getIndexEnv().getProperties().add(key, expr);
     }
     void setupAttributeVectors() {
@@ -126,8 +126,8 @@ struct ExecFixture
             attr->commit();
         }
     }
-    void setQueryTensor(const vespalib::string &tensorName,
-                        const vespalib::string &tensorTypeSpec,
+    void setQueryTensor(const std::string &tensorName,
+                        const std::string &tensorTypeSpec,
                         std::unique_ptr<Value> tensor)
     {
         vespalib::nbostream stream;

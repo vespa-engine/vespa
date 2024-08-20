@@ -8,7 +8,7 @@ namespace searchcorespi {
 
 using index::IDiskIndex;
 
-vespalib::string IIndexCollection::toString() const
+std::string IIndexCollection::toString() const
 {
     vespalib::asciistream s;
     s << "selector : " << &getSourceSelector() << "(baseId=" << getSourceSelector().getBaseId()

@@ -12,7 +12,7 @@ namespace search::attribute {
 class RawAttribute : public NotImplementedAttribute
 {
 public:
-    RawAttribute(const vespalib::string& name, const Config& config);
+    RawAttribute(const std::string& name, const Config& config);
     ~RawAttribute() override;
 
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const override;

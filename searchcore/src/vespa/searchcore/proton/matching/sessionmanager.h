@@ -9,7 +9,7 @@
 namespace vespalib { class ThreadExecutor; }
 namespace proton::matching {
 
-using SessionId = vespalib::string;
+using SessionId = std::string;
 
 struct GroupingSessionCache;
 struct SearchSessionCache;
@@ -32,10 +32,10 @@ public:
     };
 
     struct SearchSessionInfo {
-        vespalib::string id;
+        std::string id;
         vespalib::steady_time created;
         vespalib::steady_time doom;
-        SearchSessionInfo(const vespalib::string &id_in,
+        SearchSessionInfo(const std::string &id_in,
                           vespalib::steady_time created_in,
                           vespalib::steady_time doom_in) noexcept
             : id(id_in), created(created_in), doom(doom_in) {}

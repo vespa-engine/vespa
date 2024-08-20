@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tags.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <cctype>
+#include <string>
 
 namespace configdefinitions {
 
-vespalib::string upcase(const vespalib::string &orig)
+std::string upcase(const std::string &orig)
 {
-    vespalib::string upper(orig);
+    std::string upper(orig);
     for (size_t i = 0; i < orig.size(); ++i) {
         int l = (unsigned char)orig[i];
         upper[i] = (unsigned char)std::toupper(l);
@@ -16,14 +16,14 @@ vespalib::string upcase(const vespalib::string &orig)
     return upper;
 }
 
-bool tagsContain(const vespalib::string &tags, const vespalib::string &tag)
+bool tagsContain(const std::string &tags, const std::string &tag)
 {
-    vespalib::string allupper = upcase(tags);
-    vespalib::string tagupper = upcase(tag);
+    std::string allupper = upcase(tags);
+    std::string tagupper = upcase(tag);
 
     for (;;) {
         size_t pos = allupper.rfind(' ');
-        if (pos == vespalib::string::npos) {
+        if (pos == std::string::npos) {
             break;
         }
         if (allupper.substr(pos+1) == tagupper) {

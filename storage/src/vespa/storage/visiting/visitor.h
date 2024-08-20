@@ -325,7 +325,7 @@ protected:
      *
      * Returns true iff message was added to internal trace tree.
      */
-    bool addBoundedTrace(uint32_t level, const vespalib::string& message);
+    bool addBoundedTrace(uint32_t level, const std::string& message);
 
     [[nodiscard]] const vdslib::Parameters& visitor_parameters() const noexcept;
 

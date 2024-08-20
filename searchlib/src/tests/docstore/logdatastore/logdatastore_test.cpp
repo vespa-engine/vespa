@@ -391,7 +391,7 @@ TEST("test visit cache does not cache empty ones and is able to access some back
     EXPECT_EQUAL(1u, visitCache.read({1,3}).getBlobSet().getPositions().size());
 }
 
-using vespalib::string;
+using std::string;
 using document::DataType;
 using document::Document;
 using document::DocumentId;
@@ -566,7 +566,7 @@ TEST("Control static memory usage") {
     IDocumentStore &ds = vcs.getStore();
     vespalib::MemoryUsage usage = ds.getMemoryUsage();
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
-    constexpr size_t string_size = sizeof(vespalib::string);
+    constexpr size_t string_size = sizeof(std::string);
     EXPECT_EQUAL(74476 + mutex_size + 3 * string_size, usage.allocatedBytes());
     EXPECT_EQUAL(752u + mutex_size + 3 * string_size, usage.usedBytes());
 }
@@ -815,7 +815,7 @@ getBasicConfig(size_t maxFileSize)
     return LogDataStore::Config().setMaxFileSize(maxFileSize);
 }
 
-vespalib::string
+std::string
 genData(uint32_t lid, size_t numBytes)
 {
     assert(numBytes >= 6);
@@ -839,7 +839,7 @@ struct Fixture {
         return serialNum++;
     }
 
-    Fixture(const vespalib::string &dirName = "tmp",
+    Fixture(const std::string &dirName = "tmp",
             bool dirCleanup = true,
             size_t maxFileSize = 4_Ki * 2)
         : executor(1),
@@ -858,7 +858,7 @@ struct Fixture {
         store.flush(serialNum);
     }
     Fixture &write(uint32_t lid, size_t numBytes = 1024) {
-        vespalib::string data = genData(lid, numBytes);
+        std::string data = genData(lid, numBytes);
         store.write(nextSerialNum(), lid, data.c_str(), data.size());
         return *this;
     }
@@ -893,11 +893,11 @@ struct Fixture {
             vespalib::DataBuffer buffer;
             size_t size = store.read(lid, buffer);
             if (lids.find(lid) != lids.end()) {
-                vespalib::string expData = genData(lid, numBytesPerEntry);
-                EXPECT_EQUAL(expData, vespalib::string(buffer.getData(), buffer.getDataLen()));
+                std::string expData = genData(lid, numBytesPerEntry);
+                EXPECT_EQUAL(expData, std::string(buffer.getData(), buffer.getDataLen()));
                 EXPECT_GREATER(size, 0u);
             } else {
-                EXPECT_EQUAL("", vespalib::string(buffer.getData(), buffer.getDataLen()));
+                EXPECT_EQUAL("", std::string(buffer.getData(), buffer.getDataLen()));
                 EXPECT_EQUAL(0u, size);
             }
         }
@@ -1007,9 +1007,9 @@ TEST_F("require that lid space can be increased after being compacted and then s
 TEST_F("require that there is control of static memory usage", Fixture)
 {
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQUAL(456u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(vespalib::string), sizeof(LogDataStore));
-    EXPECT_EQUAL(73916u + 3 * sizeof(vespalib::string), usage.allocatedBytes());
-    EXPECT_EQUAL(192u + 3 * sizeof(vespalib::string), usage.usedBytes());
+    EXPECT_EQUAL(456u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
+    EXPECT_EQUAL(73916u + 3 * sizeof(std::string), usage.allocatedBytes());
+    EXPECT_EQUAL(192u + 3 * sizeof(std::string), usage.usedBytes());
 }
 
 TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)

@@ -3,10 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <memory>
 #include <optional>
+#include <string>
 
 namespace document { class DocumentTypeRepo; }
 namespace search::index { class Schema; }
@@ -32,7 +32,7 @@ public:
 
 private:
     FeedViewVarHolder           &_feedView;
-    vespalib::string             _subDbName;
+    std::string             _subDbName;
 
     void reconfigureFeedView(FastAccessFeedView & curr,
                              std::shared_ptr<search::index::Schema> schema,
@@ -41,7 +41,7 @@ private:
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
-                                 const vespalib::string &subDbName);
+                                 const std::string &subDbName);
     ~FastAccessDocSubDBConfigurer();
 
     std::unique_ptr<DocumentSubDBReconfig>

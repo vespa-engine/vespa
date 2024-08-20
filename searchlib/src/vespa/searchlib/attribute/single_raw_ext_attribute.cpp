@@ -8,7 +8,7 @@ LOG_SETUP(".searchlib.attribute.single_raw_ext_attribute");
 
 namespace search::attribute {
 
-SingleRawExtAttribute::SingleRawExtAttribute(const vespalib::string& name)
+SingleRawExtAttribute::SingleRawExtAttribute(const std::string& name)
     : RawAttribute(name, Config(BasicType::RAW, CollectionType::SINGLE)),
       IExtendAttribute(),
       _buffer(),

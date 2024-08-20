@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace proton {
 
@@ -15,18 +15,18 @@ struct IResourceWriteFilter
     {
     private:
         bool _acceptWriteOperation;
-        vespalib::string _message;
+        std::string _message;
     public:
         State()
             : _acceptWriteOperation(true),
               _message()
         {}
-        State(bool acceptWriteOperation_, const vespalib::string &message_)
+        State(bool acceptWriteOperation_, const std::string &message_)
             : _acceptWriteOperation(acceptWriteOperation_),
               _message(message_)
         {}
         bool acceptWriteOperation() const { return _acceptWriteOperation; }
-        const vespalib::string &message() const { return _message; }
+        const std::string &message() const { return _message; }
     };
 
     virtual ~IResourceWriteFilter() {}

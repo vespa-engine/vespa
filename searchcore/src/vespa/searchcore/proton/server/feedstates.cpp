@@ -190,7 +190,7 @@ PacketDispatcher::handleEntry(const Packet::Entry &entry) {
 }  // namespace
 
 ReplayTransactionLogState::ReplayTransactionLogState(
-        const vespalib::string &name,
+        const std::string &name,
         IFeedView *& feed_view_ptr,
         IBucketDBHandler &bucketDBHandler,
         IReplayConfig &replay_config,

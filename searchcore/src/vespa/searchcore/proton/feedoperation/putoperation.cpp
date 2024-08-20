@@ -52,7 +52,7 @@ PutOperation::deserializeDocument(const DocumentTypeRepo &repo)
     _doc = std::move(fixedDoc);
 }
 
-vespalib::string
+std::string
 PutOperation::toString() const
 {
     return make_string("Put(%s, %s)",

@@ -8,7 +8,7 @@ namespace vespalib {
 namespace metrics {
 
 MetricId
-NameRepo::metric(const vespalib::string &name)
+NameRepo::metric(const std::string &name)
 {
     size_t id = _metricNames.resolve(name);
     LOG(debug, "metric name %s -> %zu", name.c_str(), id);
@@ -16,7 +16,7 @@ NameRepo::metric(const vespalib::string &name)
 }
 
 Dimension
-NameRepo::dimension(const vespalib::string &name)
+NameRepo::dimension(const std::string &name)
 {
     size_t id = _dimensionNames.resolve(name);
     LOG(debug, "dimension name %s -> %zu", name.c_str(), id);
@@ -24,26 +24,26 @@ NameRepo::dimension(const vespalib::string &name)
 }
 
 Label
-NameRepo::label(const vespalib::string &value)
+NameRepo::label(const std::string &value)
 {
     size_t id = _labelValues.resolve(value);
     LOG(debug, "label value %s -> %zu", value.c_str(), id);
     return Label(id);
 }
 
-const vespalib::string&
+const std::string&
 NameRepo::metricName(MetricId metric) const
 {
     return _metricNames.lookup(metric.id());
 }
 
-const vespalib::string&
+const std::string&
 NameRepo::dimensionName(Dimension dim) const
 {
     return _dimensionNames.lookup(dim.id());
 }
 
-const vespalib::string&
+const std::string&
 NameRepo::labelValue(Label l) const
 {
     return _labelValues.lookup(l.id());

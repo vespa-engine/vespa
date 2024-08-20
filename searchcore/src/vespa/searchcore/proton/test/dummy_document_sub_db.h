@@ -34,7 +34,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     ~DummyDocumentSubDb() override;
     void close() override { }
     uint32_t getSubDbId() const override { return _subDbId; }
-    vespalib::string getName() const override { return "dummysubdb"; }
+    std::string getName() const override { return "dummysubdb"; }
     DocumentSubDbInitializer::UP
     createInitializer(const DocumentDBConfig &, SerialNum,const index::IndexConfig &) const override {
         return std::make_unique<DocumentSubDbInitializer>
@@ -80,7 +80,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override {
         return {};
     }
-    matching::MatchingStats getMatcherStats(const vespalib::string &) const override {
+    matching::MatchingStats getMatcherStats(const std::string &) const override {
         return {};
     }
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override {

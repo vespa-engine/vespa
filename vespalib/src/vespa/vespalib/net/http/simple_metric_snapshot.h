@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <string>
 
 namespace vespalib {
 
@@ -20,7 +20,7 @@ public:
     void addCount(const char *name, const char *desc, uint32_t count);
     void addGauge(const char *name, const char *desc, long gauge);
 
-    vespalib::string asString() const {
+    std::string asString() const {
         return _data.toString();
     }
 };

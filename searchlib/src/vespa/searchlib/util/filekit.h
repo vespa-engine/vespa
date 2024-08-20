@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
+#include <string>
 
 namespace search {
 
@@ -14,7 +14,7 @@ public:
      * Returns the modification time of the given file/directory,
      * or time stamp 0 if stating of file/directory fails.
      **/
-    static vespalib::system_time getModificationTime(const vespalib::string &name);
+    static vespalib::system_time getModificationTime(const std::string &name);
 };
 
 }

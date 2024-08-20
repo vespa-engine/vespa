@@ -2,9 +2,9 @@
 #pragma once
 
 #include "i_document_db_reference_resolver.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <map>
+#include <string>
 
 namespace document {
     class DocumentType;
@@ -47,10 +47,10 @@ private:
     vespalib::MonitoredRefCount        &_refCount;
     vespalib::ISequencedTaskExecutor     &_attributeFieldWriter;
     bool                                _useReferences;
-    std::map<vespalib::string, std::unique_ptr<GidToLidChangeRegistrator>> _registrators;
+    std::map<std::string, std::unique_ptr<GidToLidChangeRegistrator>> _registrators;
 
-    GidToLidChangeRegistrator &getRegistrator(const vespalib::string &docTypeName);
-    std::shared_ptr<IDocumentDBReference> getTargetDocumentDB(const vespalib::string &refAttrName) const;
+    GidToLidChangeRegistrator &getRegistrator(const std::string &docTypeName);
+    std::shared_ptr<IDocumentDBReference> getTargetDocumentDB(const std::string &refAttrName) const;
     void connectReferenceAttributesToGidMapper(const search::IAttributeManager &attrMgr);
     std::unique_ptr<ImportedAttributesRepo> createImportedAttributesRepo(const search::IAttributeManager &attrMgr,
                                                                          const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,

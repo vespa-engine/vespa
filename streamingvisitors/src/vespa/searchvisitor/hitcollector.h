@@ -7,9 +7,9 @@
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/common/storagedocument.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <algorithm>
+#include <string>
 
 namespace search::fef { class FeatureResolver; }
 
@@ -41,7 +41,7 @@ private:
         const vsm::StorageDocument & getDocument() const noexcept { return *_document; }
         const std::vector<TermFieldMatchData> &getMatchData() const noexcept { return _matchData; }
         search::feature_t getRankScore() const noexcept { return _score; }
-        const vespalib::string & getSortBlob() const noexcept { return _sortBlob; }
+        const std::string & getSortBlob() const noexcept { return _sortBlob; }
         bool operator < (const Hit & b) const noexcept { return getDocId() < b.getDocId(); }
         int cmpDocId(const Hit & b) const noexcept { return getDocId() - b.getDocId(); }
         int cmpRank(const Hit & b) const noexcept {
@@ -64,7 +64,7 @@ private:
         double   _score;
         vsm::StorageDocument::SP        _document;
         std::vector<TermFieldMatchData> _matchData;
-        vespalib::string                _sortBlob;
+        std::string                _sortBlob;
     };
     using HitVector = std::vector<Hit>;
     using Lids = std::vector<uint32_t>;

@@ -16,7 +16,7 @@ namespace search {
 //******************** CollectionType::SINGLE ********************//
 
 
-SingleStringExtAttribute::SingleStringExtAttribute(const vespalib::string & name) :
+SingleStringExtAttribute::SingleStringExtAttribute(const std::string & name) :
     StringDirectAttrVector< AttrVector::Features<false> >(name, Config(BasicType::STRING, CollectionType::SINGLE))
 {
     setEnum(false);
@@ -67,14 +67,14 @@ MultiExtAttribute<T>::make_read_view(attribute::IMultiValueAttribute::WeightedSe
     return &stash.create<attribute::ExtendableNumericArrayMultiValueReadView<multivalue::WeightedValue<T>, T>>(this->_data, this->_idx);
 }
 
-MultiStringExtAttribute::MultiStringExtAttribute(const vespalib::string & name, const CollectionType & ctype) :
+MultiStringExtAttribute::MultiStringExtAttribute(const std::string & name, const CollectionType & ctype) :
     StringDirectAttrVector< AttrVector::Features<true> >
     (name,  Config(BasicType::STRING, ctype))
 {
     setEnum(false);
 }
 
-MultiStringExtAttribute::MultiStringExtAttribute(const vespalib::string & name) :
+MultiStringExtAttribute::MultiStringExtAttribute(const std::string & name) :
     StringDirectAttrVector< AttrVector::Features<true> >
     (name,  Config(BasicType::STRING, CollectionType::ARRAY))
 {
@@ -124,7 +124,7 @@ MultiStringExtAttribute::make_read_view(attribute::IMultiValueAttribute::Weighte
 
 //******************** CollectionType::WSET ********************//
 
-WeightedSetIntegerExtAttribute::WeightedSetIntegerExtAttribute(const vespalib::string & name) :
+WeightedSetIntegerExtAttribute::WeightedSetIntegerExtAttribute(const std::string & name) :
     WeightedSetExtAttributeBase<MultiIntegerExtAttribute>(name)
 {
 }
@@ -164,7 +164,7 @@ WeightedSetIntegerExtAttribute::make_read_view(attribute::IMultiValueAttribute::
     return &stash.create<attribute::ExtendableNumericWeightedSetMultiValueReadView<multivalue::WeightedValue<int64_t>, int64_t>>(this->_data, this->_idx, this->get_weights());
 }
 
-WeightedSetFloatExtAttribute::WeightedSetFloatExtAttribute(const vespalib::string & name) :
+WeightedSetFloatExtAttribute::WeightedSetFloatExtAttribute(const std::string & name) :
     WeightedSetExtAttributeBase<MultiFloatExtAttribute>(name)
 {
 }
@@ -204,7 +204,7 @@ WeightedSetFloatExtAttribute::make_read_view(attribute::IMultiValueAttribute::We
     return &stash.create<attribute::ExtendableNumericWeightedSetMultiValueReadView<multivalue::WeightedValue<double>, double>>(this->_data, this->_idx, this->get_weights());
 }
 
-WeightedSetStringExtAttribute::WeightedSetStringExtAttribute(const vespalib::string & name) :
+WeightedSetStringExtAttribute::WeightedSetStringExtAttribute(const std::string & name) :
     WeightedSetExtAttributeBase<MultiStringExtAttribute>(name)
 {
     setEnum(false);

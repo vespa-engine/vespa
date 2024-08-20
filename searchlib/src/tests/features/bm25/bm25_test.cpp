@@ -15,7 +15,7 @@ using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::objectstore;
 using CollectionType = FieldInfo::CollectionType;
-using StringVector = std::vector<vespalib::string>;
+using StringVector = std::vector<std::string>;
 
 struct Bm25BlueprintTest : public ::testing::Test {
     BlueprintFactory factory;
@@ -146,7 +146,7 @@ struct Bm25ExecutorTest : public ::testing::Test {
         add_query_term("bar", 45);
         test.getQueryEnv().getBuilder().set_avg_field_length("foo", 10);
     }
-    void add_query_term(const vespalib::string& field_name, uint32_t matching_doc_count) {
+    void add_query_term(const std::string& field_name, uint32_t matching_doc_count) {
         auto* term = test.getQueryEnv().getBuilder().addIndexNode({field_name});
         term->field(0).setDocFreq(matching_doc_count, total_doc_count);
         term->setUniqueId(test.getQueryEnv().getNumTerms() - 1);

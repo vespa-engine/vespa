@@ -70,7 +70,7 @@ struct NoMatchPhaseLimiter : MaybeMatchPhaseLimiter {
 struct DiversityParams {
     using CutoffStrategy = AttributeLimiter::DiversityCutoffStrategy;
     DiversityParams() : DiversityParams("", 0, 0, CutoffStrategy::LOOSE) { }
-    DiversityParams(const vespalib::string & attribute_, uint32_t min_groups_,
+    DiversityParams(const std::string & attribute_, uint32_t min_groups_,
                     double cutoff_factor_, CutoffStrategy cutoff_strategy_)
         : attribute(attribute_),
           min_groups(min_groups_),
@@ -78,14 +78,14 @@ struct DiversityParams {
           cutoff_strategy(cutoff_strategy_)
     { }
     bool enabled() const { return !attribute.empty() && (min_groups > 0); }
-    vespalib::string  attribute;
+    std::string  attribute;
     uint32_t          min_groups;
     double            cutoff_factor;
     CutoffStrategy    cutoff_strategy;
 };
 
 struct DegradationParams {
-    DegradationParams(const vespalib::string &attribute_, size_t max_hits_, bool descending_,
+    DegradationParams(const std::string &attribute_, size_t max_hits_, bool descending_,
                       double max_filter_coverage_, double sample_percentage_, double post_filter_multiplier_)
         : attribute(attribute_),
           descending(descending_),
@@ -95,7 +95,7 @@ struct DegradationParams {
           post_filter_multiplier(post_filter_multiplier_)
     { }
     bool enabled() const { return !attribute.empty() && (max_hits > 0); }
-    vespalib::string attribute;
+    std::string attribute;
     bool             descending;
     size_t           max_hits;
     double           max_filter_coverage;

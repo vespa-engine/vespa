@@ -48,7 +48,7 @@ public:
         return locations;
     }
     const search::attribute::IAttributeContext &getAttributeContext() const override { return *_attrCtx; }
-    double get_average_field_length(const vespalib::string& field_name) const override {
+    double get_average_field_length(const std::string& field_name) const override {
         auto itr = _avg_field_lengths.find(field_name);
         if (itr != _avg_field_lengths.end()) {
             return itr->second;

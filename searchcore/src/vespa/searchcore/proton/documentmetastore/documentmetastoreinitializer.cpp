@@ -16,9 +16,9 @@ using vespalib::make_string;
 namespace proton::documentmetastore {
 
 DocumentMetaStoreInitializer::
-DocumentMetaStoreInitializer(const vespalib::string baseDir,
-                             const vespalib::string &subDbName,
-                             const vespalib::string &docTypeName,
+DocumentMetaStoreInitializer(const std::string baseDir,
+                             const std::string &subDbName,
+                             const std::string &docTypeName,
                              std::shared_ptr<DocumentMetaStore> dms)
     : _baseDir(baseDir),
       _subDbName(subDbName),
@@ -27,7 +27,7 @@ DocumentMetaStoreInitializer(const vespalib::string baseDir,
 { }
 
 namespace {
-vespalib::string
+std::string
 failedMsg(const char * msg) {
     return make_string("Failed to load document meta store for document type '%s' from disk", msg);
 }
@@ -36,12 +36,12 @@ failedMsg(const char * msg) {
 void
 DocumentMetaStoreInitializer::run()
 {
-    vespalib::string name = DocumentMetaStore::getFixedName();
+    std::string name = DocumentMetaStore::getFixedName();
     IndexMetaInfo info(_baseDir);
     if (info.load()) {
         IndexMetaInfo::Snapshot snap = info.getBestSnapshot();
         if (snap.valid) {
-            vespalib::string attrFileName = _baseDir + "/" + snap.dirName + "/" + name;
+            std::string attrFileName = _baseDir + "/" + snap.dirName + "/" + name;
             _dms->setBaseFileName(attrFileName);
             assert(_dms->hasLoadData());
             vespalib::Timer stopWatch;

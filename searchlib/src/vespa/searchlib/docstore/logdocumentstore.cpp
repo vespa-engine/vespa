@@ -14,7 +14,7 @@ LogDocumentStore::Config::operator == (const Config & rhs) const {
 }
 
 LogDocumentStore::LogDocumentStore(vespalib::Executor & executor,
-                                   const vespalib::string & baseDir,
+                                   const std::string & baseDir,
                                    const Config & config,
                                    const GrowStrategy & growStrategy,
                                    const TuneFileSummary & tuneFileSummary,

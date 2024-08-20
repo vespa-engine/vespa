@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/stllike/small_string.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <algorithm>
 
 using string = vespalib::vespa_string;
@@ -163,7 +164,7 @@ TEST("testString") {
     TEST_FLUSH();
 
     std::string::size_type exp = std::string::npos;
-    std::string::size_type act = vespalib::string::npos;
+    std::string::size_type act = std::string::npos;
     EXPECT_EQUAL(exp, act);
     std::string::size_type idx = a.find('a');
     EXPECT_EQUAL(0u, idx);
@@ -174,7 +175,7 @@ TEST("testString") {
     EXPECT_EQUAL(1u, a.find('b', 1));
     EXPECT_EQUAL(std::string::npos, a.find('b', 2));
     // causes warning:
-    EXPECT_TRUE(vespalib::string::npos == idx);
+    EXPECT_TRUE(std::string::npos == idx);
 
     EXPECT_EQUAL(6u, c.size());
     EXPECT_TRUE(strcmp("dfajsg", c.c_str()) == 0);
@@ -351,8 +352,8 @@ TEST("require that vespalib::resize works") {
     EXPECT_EQUAL("abcdeXXYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY", s);
 }
 
-TEST("require that you can format a number into a vespalib::string easily") {
-    vespalib::string str = vespalib::stringify(0);
+TEST("require that you can format a number into a std::string easily") {
+    std::string str = vespalib::stringify(0);
     EXPECT_EQUAL(str, "0");
     EXPECT_EQUAL(vespalib::stringify(1), "1");
     EXPECT_EQUAL(vespalib::stringify(123), "123");
@@ -363,7 +364,7 @@ TEST("require that you can format a number into a vespalib::string easily") {
 
 using vespalib::contains;
 TEST("require that contains works") {
-    vespalib::string s("require that contains works");
+    std::string s("require that contains works");
     EXPECT_TRUE(contains(s, "require"));
     EXPECT_TRUE(contains(s, "require that contains work"));
     EXPECT_TRUE(contains(s, "require that contains works"));
@@ -373,7 +374,7 @@ TEST("require that contains works") {
 }
 
 TEST("require that starts_with works") {
-    vespalib::string s("require that starts_with works");
+    std::string s("require that starts_with works");
     EXPECT_TRUE(s.starts_with("require"));
     EXPECT_TRUE(s.starts_with("require that starts_with work"));
     EXPECT_TRUE(s.starts_with("require that starts_with works"));
@@ -382,7 +383,7 @@ TEST("require that starts_with works") {
 }
 
 TEST("require that ends_with works") {
-    vespalib::string s("require that ends_with works");
+    std::string s("require that ends_with works");
     EXPECT_FALSE(s.ends_with("require"));
     EXPECT_TRUE(s.ends_with("works"));
     EXPECT_TRUE(s.ends_with("equire that ends_with works"));
@@ -392,7 +393,7 @@ TEST("require that ends_with works") {
 }
 
 TEST("test that small_string::pop_back works") {
-    vespalib::string s("string");
+    std::string s("string");
     EXPECT_EQUAL(s.size(), 6u);
     s.pop_back();
     EXPECT_EQUAL(s.size(), 5u);
@@ -405,9 +406,9 @@ TEST("test that small_string::pop_back works") {
 
 TEST("test that operator<() works with std::string_view versus string") {
     std::string_view sra("a");
-    vespalib::string sa("a");
+    std::string sa("a");
     std::string_view srb("b");
-    vespalib::string sb("b");
+    std::string sb("b");
     EXPECT_FALSE(sra < sra);
     EXPECT_FALSE(sra < sa);
     EXPECT_TRUE(sra < srb);
@@ -432,7 +433,7 @@ TEST("test that empty_string is shared and empty") {
 }
 
 TEST("starts_with has expected semantics for small_string") {
-    vespalib::string a("foobar");
+    std::string a("foobar");
     EXPECT_TRUE(a.starts_with(""));
     EXPECT_TRUE(a.starts_with("foo"));
     EXPECT_TRUE(a.starts_with("foobar"));
@@ -441,7 +442,7 @@ TEST("starts_with has expected semantics for small_string") {
 }
 
 TEST("starts_with has expected semantics for std::string_view") {
-    vespalib::string a("foobar");
+    std::string a("foobar");
     std::string_view ar(a);
     EXPECT_TRUE(ar.starts_with(""));
     EXPECT_TRUE(ar.starts_with("foo"));
@@ -451,7 +452,7 @@ TEST("starts_with has expected semantics for std::string_view") {
 }
 
 TEST("test allowed nullptr construction - legal, but not legitimate use.") {
-    EXPECT_TRUE(vespalib::string(nullptr, 0).empty());
+    EXPECT_TRUE(std::string(nullptr, 0).empty());
     EXPECT_TRUE(std::string(nullptr, 0).empty());
     EXPECT_TRUE(std::string_view(nullptr, 0).empty());
 }

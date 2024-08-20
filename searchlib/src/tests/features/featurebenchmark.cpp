@@ -42,46 +42,46 @@ using CollectionType = FieldInfo::CollectionType;
 class Benchmark : public ::testing::Test,
                   public FtTestAppBase {
 public:
-    using KeyValueVector = std::vector<std::pair<vespalib::string, vespalib::string> >;
+    using KeyValueVector = std::vector<std::pair<std::string, std::string> >;
 
     class Config {
     private:
-        using StringMap = std::map<vespalib::string, vespalib::string>;
+        using StringMap = std::map<std::string, std::string>;
         StringMap _config;
 
-        bool isKnown(const vespalib::string & key) const;
+        bool isKnown(const std::string & key) const;
 
     public:
         Config() : _config() {}
-        Config(const vespalib::string & fileName) : _config() {
+        Config(const std::string & fileName) : _config() {
             init(fileName);
         }
-        void init(const vespalib::string & fileName);
+        void init(const std::string & fileName);
 
-        void add(const vespalib::string & key, const vespalib::string & value) {
+        void add(const std::string & key, const std::string & value) {
             _config[key] = value;
         }
 
-        void addIfNotFound(const vespalib::string & key, const vespalib::string & value) {
+        void addIfNotFound(const std::string & key, const std::string & value) {
             if (_config.count(key) == 0) {
                 add(key, value);
             }
         }
 
         // known config values
-        vespalib::string getCase(const vespalib::string & fallback = "") const {
+        std::string getCase(const std::string & fallback = "") const {
             return getAsStr("case", fallback);
         }
-        vespalib::string getFeature(const vespalib::string & fallback = "") const {
+        std::string getFeature(const std::string & fallback = "") const {
             return getAsStr("feature", fallback);
         }
-        vespalib::string getIndex(const vespalib::string & fallback = "") const {
+        std::string getIndex(const std::string & fallback = "") const {
             return getAsStr("index", fallback);
         }
-        vespalib::string getQuery(const vespalib::string & fallback = "") const {
+        std::string getQuery(const std::string & fallback = "") const {
             return getAsStr("query", fallback);
         }
-        vespalib::string getField(const vespalib::string & fallback = "") const {
+        std::string getField(const std::string & fallback = "") const {
             return getAsStr("field", fallback);
         }
         uint32_t getNumRuns(uint32_t fallback = 1000) const {
@@ -89,17 +89,17 @@ public:
         }
 
         // access "unknown" config values
-        vespalib::string getAsStr(const vespalib::string & key, const vespalib::string & fallback = "") const {
+        std::string getAsStr(const std::string & key, const std::string & fallback = "") const {
             StringMap::const_iterator itr = _config.find(key);
             if (itr != _config.end()) {
-                return vespalib::string(itr->second);
+                return std::string(itr->second);
             }
-            return vespalib::string(fallback);
+            return std::string(fallback);
         }
-        uint32_t getAsUint32(const vespalib::string & key, uint32_t fallback = 0) const {
+        uint32_t getAsUint32(const std::string & key, uint32_t fallback = 0) const {
             return util::strToNum<uint32_t>(getAsStr(key, vespalib::make_string("%u", fallback)));
         }
-        double getAsDouble(const vespalib::string & key, double fallback = 0) const {
+        double getAsDouble(const std::string & key, double fallback = 0) const {
             return util::strToNum<double>(getAsStr(key, vespalib::make_string("%f", fallback)));
         }
 
@@ -121,12 +121,12 @@ private:
     void runFieldMatch(Config & cfg);
     void runRankingExpression(Config & cfg);
 
-    AttributePtr createAttributeVector(AVBT dt, const vespalib::string & name, const vespalib::string & ctype, uint32_t numDocs,
+    AttributePtr createAttributeVector(AVBT dt, const std::string & name, const std::string & ctype, uint32_t numDocs,
                                        AttributeVector::largeint_t value, uint32_t valueCount);
-    AttributePtr createAttributeVector(const vespalib::string & name, const vespalib::string & ctype, uint32_t numDocs,
+    AttributePtr createAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
                                        AttributeVector::largeint_t value, uint32_t valueCount);
-    AttributePtr createStringAttributeVector(const vespalib::string & name, const vespalib::string & ctype, uint32_t numDocs,
-                                             const std::vector<vespalib::string> & values);
+    AttributePtr createStringAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
+                                             const std::vector<std::string> & values);
     void runAttributeMatch(Config & cfg);
     void runAttribute(Config & cfg);
     void runDotProduct(Config & cfg);
@@ -155,14 +155,14 @@ Benchmark::Benchmark(int argc, char **argv)
 Benchmark::~Benchmark() = default;
 
 bool
-Benchmark::Config::isKnown(const vespalib::string & key) const
+Benchmark::Config::isKnown(const std::string & key) const
 {
-    if (key == vespalib::string("case") ||
-        key == vespalib::string("feature") ||
-        key == vespalib::string("index") ||
-        key == vespalib::string("query") ||
-        key == vespalib::string("field") ||
-        key == vespalib::string("numruns"))
+    if (key == std::string("case") ||
+        key == std::string("feature") ||
+        key == std::string("index") ||
+        key == std::string("query") ||
+        key == std::string("field") ||
+        key == std::string("numruns"))
     {
         return true;
     }
@@ -170,7 +170,7 @@ Benchmark::Config::isKnown(const vespalib::string & key) const
 }
 
 void
-Benchmark::Config::init(const vespalib::string & fileName)
+Benchmark::Config::init(const std::string & fileName)
 {
     std::ifstream is(fileName.c_str());
     if (is.fail()) {
@@ -181,7 +181,7 @@ Benchmark::Config::init(const vespalib::string & fileName)
         std::string line;
         std::getline(is, line);
         if (!line.empty()) {
-            std::vector<vespalib::string> values = FtUtil::tokenize(line, "=");
+            std::vector<std::string> values = FtUtil::tokenize(line, "=");
             assert(values.size() == 2);
             add(values[0], values[1]);
         }
@@ -239,10 +239,10 @@ Benchmark::runFieldMatch(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
-    vespalib::string index = cfg.getIndex();
-    vespalib::string query = cfg.getQuery();
-    vespalib::string field = cfg.getField();
+    std::string feature = cfg.getFeature();
+    std::string index = cfg.getIndex();
+    std::string query = cfg.getQuery();
+    std::string field = cfg.getField();
     uint32_t numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
@@ -268,7 +268,7 @@ Benchmark::runRankingExpression(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
+    std::string feature = cfg.getFeature();
     uint32_t numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
@@ -284,14 +284,14 @@ Benchmark::runRankingExpression(Config & cfg)
 }
 
 AttributePtr
-Benchmark::createAttributeVector(const vespalib::string & name, const vespalib::string & ctype, uint32_t numDocs,
+Benchmark::createAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
                                  AttributeVector::largeint_t value, uint32_t valueCount)
 {
     return createAttributeVector(AVBT::INT32, name, ctype, numDocs, value, valueCount);
 }
 
 AttributePtr
-Benchmark::createAttributeVector(AVBT dt, const vespalib::string & name, const vespalib::string & ctype, uint32_t numDocs,
+Benchmark::createAttributeVector(AVBT dt, const std::string & name, const std::string & ctype, uint32_t numDocs,
                                  AttributeVector::largeint_t value, uint32_t valueCount)
 {
     AttributePtr a;
@@ -327,8 +327,8 @@ Benchmark::createAttributeVector(AVBT dt, const vespalib::string & name, const v
 }
 
 AttributePtr
-Benchmark::createStringAttributeVector(const vespalib::string & name, const vespalib::string & ctype, uint32_t numDocs,
-                                       const std::vector<vespalib::string> & values)
+Benchmark::createStringAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
+                                       const std::vector<std::string> & values)
 {
     AttributePtr a;
     if (ctype == "single") {
@@ -367,7 +367,7 @@ Benchmark::runAttributeMatch(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
+    std::string feature = cfg.getFeature();
     uint32_t numRuns = 1000000;
     uint32_t numDocs = 1000000;
 
@@ -406,7 +406,7 @@ Benchmark::runAttribute(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
+    std::string feature = cfg.getFeature();
     uint32_t numRuns = cfg.getNumRuns();
     uint32_t numDocs = cfg.getAsUint32("numdocs", 1000);
     StringList values;
@@ -439,9 +439,9 @@ Benchmark::runDotProduct(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
-    vespalib::string collectionType = cfg.getAsStr("collectiontype", "wset");
-    vespalib::string dataType = cfg.getAsStr("datatype", "string");
+    std::string feature = cfg.getFeature();
+    std::string collectionType = cfg.getAsStr("collectiontype", "wset");
+    std::string dataType = cfg.getAsStr("datatype", "string");
     uint32_t numRuns = cfg.getNumRuns();
     uint32_t numDocs = cfg.getAsUint32("numdocs", 1000);
     uint32_t numValues = cfg.getAsUint32("numvalues", 10);
@@ -490,7 +490,7 @@ Benchmark::runNativeAttributeMatch(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
+    std::string feature = cfg.getFeature();
     uint32_t numRuns = cfg.getNumRuns();
     uint32_t numDocs = cfg.getAsUint32("numdocs");
 
@@ -531,13 +531,13 @@ Benchmark::runNativeFieldMatch(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
+    std::string feature = cfg.getFeature();
     uint32_t numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
     ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
-    std::vector<vespalib::string> searchedFields;
+    std::vector<std::string> searchedFields;
     searchedFields.push_back("foo");
     ft.getQueryEnv().getBuilder().addIndexNode(searchedFields);
     setupPropertyMap(ft.getIndexEnv().getProperties(), cfg.getUnknown());
@@ -570,13 +570,13 @@ Benchmark::runNativeProximity(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    vespalib::string feature = cfg.getFeature();
+    std::string feature = cfg.getFeature();
     uint32_t numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
     ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
-    std::vector<vespalib::string> searchedFields;
+    std::vector<std::string> searchedFields;
     searchedFields.push_back("foo");
     ft.getQueryEnv().getBuilder().addIndexNode(searchedFields); // termId 0
     ft.getQueryEnv().getBuilder().addIndexNode(searchedFields); // termId 1
@@ -611,8 +611,8 @@ Benchmark::TestBody()
 
     int opt;
     bool optError = false;
-    vespalib::string file;
-    vespalib::string feature;
+    std::string file;
+    std::string feature;
     while ((opt = getopt(_argc, _argv, "c:f:")) != -1) {
         switch (opt) {
         case 'c':
@@ -639,21 +639,21 @@ Benchmark::TestBody()
         cfg.init(file);
     }
 
-    if (cfg.getCase() == vespalib::string("fieldMatch")) {
+    if (cfg.getCase() == std::string("fieldMatch")) {
         runFieldMatch(cfg);
-    } else if (cfg.getCase() == vespalib::string("rankingExpression")) {
+    } else if (cfg.getCase() == std::string("rankingExpression")) {
         runRankingExpression(cfg);
-    } else if (cfg.getCase() == vespalib::string("attributeMatch")) {
+    } else if (cfg.getCase() == std::string("attributeMatch")) {
         runAttributeMatch(cfg);
-    } else if (cfg.getCase() == vespalib::string("attribute")) {
+    } else if (cfg.getCase() == std::string("attribute")) {
         runAttribute(cfg);
-    } else if (cfg.getCase() == vespalib::string("dotProduct")) {
+    } else if (cfg.getCase() == std::string("dotProduct")) {
         runDotProduct(cfg);
-    } else if (cfg.getCase() == vespalib::string("nativeAttributeMatch")) {
+    } else if (cfg.getCase() == std::string("nativeAttributeMatch")) {
         runNativeAttributeMatch(cfg);
-    } else if (cfg.getCase() == vespalib::string("nativeFieldMatch")) {
+    } else if (cfg.getCase() == std::string("nativeFieldMatch")) {
         runNativeFieldMatch(cfg);
-    } else if (cfg.getCase() == vespalib::string("nativeProximity")) {
+    } else if (cfg.getCase() == std::string("nativeProximity")) {
         runNativeProximity(cfg);
     } else {
         std::cout << "feature case '" << cfg.getCase() << "' is not known" << std::endl;

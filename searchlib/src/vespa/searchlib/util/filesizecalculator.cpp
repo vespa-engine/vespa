@@ -11,7 +11,7 @@ namespace search {
 
 namespace {
 
-const vespalib::string fileBitSizeTag = "fileBitSize";
+const std::string fileBitSizeTag = "fileBitSize";
 
 bool byteAligned(uint64_t bitSize)
 {
@@ -23,7 +23,7 @@ bool byteAligned(uint64_t bitSize)
 bool
 FileSizeCalculator::extractFileSize(const vespalib::GenericHeader &header,
                                     size_t headerLen,
-                                    vespalib::string fileName, uint64_t &fileSize)
+                                    std::string fileName, uint64_t &fileSize)
 {
     if (!header.hasTag(fileBitSizeTag)) {
         return true;

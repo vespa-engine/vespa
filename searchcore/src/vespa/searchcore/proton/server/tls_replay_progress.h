@@ -3,16 +3,16 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <atomic>
 #include <memory>
+#include <string>
 
 namespace proton {
 
 class TlsReplayProgress
 {
 private:
-    const vespalib::string  _domainName;
+    const std::string  _domainName;
     const search::SerialNum _first;
     const search::SerialNum _last;
     std::atomic<search::SerialNum> _current;
@@ -20,7 +20,7 @@ private:
 public:
     using UP = std::unique_ptr<TlsReplayProgress>;
 
-    TlsReplayProgress(const vespalib::string &domainName,
+    TlsReplayProgress(const std::string &domainName,
                       search::SerialNum first,
                       search::SerialNum last)
         : _domainName(domainName),
@@ -29,7 +29,7 @@ public:
           _current(first)
     {
     }
-    const vespalib::string &getDomainName() const noexcept { return _domainName; }
+    const std::string &getDomainName() const noexcept { return _domainName; }
     search::SerialNum getFirst() const noexcept { return _first; }
     search::SerialNum getLast() const noexcept { return _last; }
     search::SerialNum getCurrent() const noexcept { return _current.load(std::memory_order_relaxed); }

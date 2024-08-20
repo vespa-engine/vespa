@@ -348,7 +348,7 @@ private:
 };
 
 fef::FeatureExecutor &
-createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
+createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const std::string &attrName, const std::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
         Issue::report("attribute feature: The attribute vector '%s' was not found, returning default values.",
@@ -433,7 +433,7 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
 }
 
 fef::FeatureExecutor &
-createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName,
+createTensorAttributeExecutor(const IAttributeVector *attribute, const std::string &attrName,
                               const ValueType &tensorType,
                               vespalib::Stash &stash)
 {
@@ -509,7 +509,7 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
     if (params.size() == 2) {
         _extra = params[1].getValue();
     }
-    vespalib::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
+    std::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
     if (!attrType.empty()) {
         _tensorType = ValueType::from_spec(attrType);
         if (_tensorType.is_error()) {

@@ -11,9 +11,9 @@
 #include "interpreted_function.h"
 #include "wrap_param.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/overload.h>
 #include <span>
+#include <string>
 #include <variant>
 
 namespace vespalib {
@@ -110,7 +110,7 @@ struct TensorFunction
     virtual InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const = 0;
 
     // for debug dumping
-    vespalib::string as_string() const;
+    std::string as_string() const;
     virtual void visit_self(vespalib::ObjectVisitor &visitor) const;
     virtual void visit_children(vespalib::ObjectVisitor &visitor) const;
 
@@ -215,15 +215,15 @@ class Reduce : public Op1
     using Super = Op1;
 private:
     Aggr _aggr;
-    std::vector<vespalib::string> _dimensions;
+    std::vector<std::string> _dimensions;
 public:
     Reduce(const ValueType &result_type_in,
            const TensorFunction &child_in,
            Aggr aggr_in,
-           const std::vector<vespalib::string> &dimensions_in)
+           const std::vector<std::string> &dimensions_in)
         : Super(result_type_in, child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
     Aggr aggr() const { return _aggr; }
-    const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
+    const std::vector<std::string> &dimensions() const { return _dimensions; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
@@ -314,14 +314,14 @@ class Concat : public Op2
 {
     using Super = Op2;
 private:
-    vespalib::string _dimension;
+    std::string _dimension;
 public:
     Concat(const ValueType &result_type_in,
            const TensorFunction &lhs_in,
            const TensorFunction &rhs_in,
-           const vespalib::string &dimension_in)
+           const std::string &dimension_in)
         : Super(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
-    const vespalib::string &dimension() const { return _dimension; }
+    const std::string &dimension() const { return _dimension; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
@@ -401,10 +401,10 @@ public:
     using MyLabel = std::variant<TensorSpec::Label, Child>;
 private:
     Child _param;
-    std::map<vespalib::string, MyLabel> _map;
+    std::map<std::string, MyLabel> _map;
 public:
     Peek(const ValueType &result_type_in, const TensorFunction &param,
-         const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec)
+         const std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec)
         : Super(result_type_in), _param(param), _map()
     {
         for (const auto &dim: spec) {
@@ -419,11 +419,11 @@ public:
                        }, dim.second);
         }
     }
-    const std::map<vespalib::string, MyLabel> &map() const { return _map; }
+    const std::map<std::string, MyLabel> &map() const { return _map; }
     // a verbatim label or the index of a child that computes the label value:
     using LabelOrChildIndex = std::variant<TensorSpec::Label, size_t>;
     // mapping from dimension name to verbatim label or child index:
-    using Spec = std::map<vespalib::string, LabelOrChildIndex>;
+    using Spec = std::map<std::string, LabelOrChildIndex>;
     Spec make_spec() const;
     const TensorFunction &param() const { return _param.get(); }
     const ValueType &param_type() const { return _param.get().result_type(); }
@@ -439,16 +439,16 @@ class Rename : public Op1
 {
     using Super = Op1;
 private:
-    std::vector<vespalib::string> _from;
-    std::vector<vespalib::string> _to;
+    std::vector<std::string> _from;
+    std::vector<std::string> _to;
 public:
     Rename(const ValueType &result_type_in,
            const TensorFunction &child_in,
-           const std::vector<vespalib::string> &from_in,
-           const std::vector<vespalib::string> &to_in)
+           const std::vector<std::string> &from_in,
+           const std::vector<std::string> &to_in)
         : Super(result_type_in, child_in), _from(from_in), _to(to_in) {}
-    const std::vector<vespalib::string> &from() const { return _from; }
-    const std::vector<vespalib::string> &to() const { return _to; }
+    const std::vector<std::string> &from() const { return _from; }
+    const std::vector<std::string> &to() const { return _to; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
@@ -484,17 +484,17 @@ public:
 
 const TensorFunction &const_value(const Value &value, Stash &stash);
 const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &stash);
-const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
+const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<std::string> &dimensions, Stash &stash);
 const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash);
 const TensorFunction &map_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash);
 const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
 const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
-const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const vespalib::string &dimension, Stash &stash);
+const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const std::string &dimension, Stash &stash);
 const TensorFunction &create(const ValueType &type, const std::map<TensorSpec::Address, TensorFunction::CREF> &spec, Stash &stash);
 const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash);
 const TensorFunction &cell_cast(const TensorFunction &child, CellType cell_type, Stash &stash);
-const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash);
-const TensorFunction &rename(const TensorFunction &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
+const TensorFunction &peek(const TensorFunction &param, const std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash);
+const TensorFunction &rename(const TensorFunction &child, const std::vector<std::string> &from, const std::vector<std::string> &to, Stash &stash);
 const TensorFunction &if_node(const TensorFunction &cond, const TensorFunction &true_child, const TensorFunction &false_child, Stash &stash);
 
 } // namespace vespalib::eval::tensor_function

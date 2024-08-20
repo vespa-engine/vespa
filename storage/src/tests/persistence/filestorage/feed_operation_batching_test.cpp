@@ -48,7 +48,7 @@ struct FeedOperationBatchingTest : FileStorTestFixture {
         FileStorTestFixture::TearDown();
     }
 
-    [[nodiscard]] static vespalib::string id_str_of(uint32_t bucket_idx, uint32_t doc_idx) {
+    [[nodiscard]] static std::string id_str_of(uint32_t bucket_idx, uint32_t doc_idx) {
         return vespalib::make_string("id:foo:testdoctype1:n=%u:%u", bucket_idx, doc_idx);
     }
 

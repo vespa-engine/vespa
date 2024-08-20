@@ -43,7 +43,7 @@ class SingleExtAttribute
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
     IExtendAttribute * getExtendInterface() override { return this; }
 public:
-    SingleExtAttribute(const vespalib::string &name);
+    SingleExtAttribute(const std::string &name);
 
     bool addDoc(typename Super::DocId &docId) override;
     bool add(typename AddValueType<T>::Type v, int32_t = 1) override;
@@ -66,7 +66,7 @@ class SingleStringExtAttribute
 {
     IExtendAttribute * getExtendInterface() override { return this; }
 public:
-    SingleStringExtAttribute(const vespalib::string & name);
+    SingleStringExtAttribute(const std::string & name);
     bool addDoc(DocId & docId) override;
     bool add(const char * v, int32_t w = 1) override;
     bool onLoad(vespalib::Executor *) override {
@@ -89,14 +89,14 @@ protected:
     using BasicType = typename Super::BasicType;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
-    MultiExtAttribute(const vespalib::string &name, const attribute::CollectionType &ctype);
+    MultiExtAttribute(const std::string &name, const attribute::CollectionType &ctype);
 private:
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
     IExtendAttribute * getExtendInterface() override { return this; }
 
 public:
-    MultiExtAttribute(const vespalib::string &name);
+    MultiExtAttribute(const std::string &name);
     ~MultiExtAttribute() override;
 
     bool addDoc(typename Super::DocId &docId) override;
@@ -126,10 +126,10 @@ class MultiStringExtAttribute :
 {
     IExtendAttribute * getExtendInterface() override { return this; }
 protected:
-    MultiStringExtAttribute(const vespalib::string & name, const attribute::CollectionType & ctype);
+    MultiStringExtAttribute(const std::string & name, const attribute::CollectionType & ctype);
 
 public:
-    MultiStringExtAttribute(const vespalib::string & name);
+    MultiStringExtAttribute(const std::string & name);
     bool addDoc(DocId & docId) override;
     bool add(const char * v, int32_t w = 1) override;
     bool onLoad(vespalib::Executor *) override {
@@ -156,7 +156,7 @@ protected:
     int32_t getWeightHelper(AttributeVector::DocId docId, uint32_t idx) const {
         return _weights[this->_idx[docId] + idx];
     }
-    WeightedSetExtAttributeBase(const vespalib::string & name);
+    WeightedSetExtAttributeBase(const std::string & name);
     ~WeightedSetExtAttributeBase();
     const std::vector<int32_t>& get_weights() const noexcept { return _weights; }
 };
@@ -167,7 +167,7 @@ class WeightedSetIntegerExtAttribute
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 public:
-    WeightedSetIntegerExtAttribute(const vespalib::string & name);
+    WeightedSetIntegerExtAttribute(const std::string & name);
     ~WeightedSetIntegerExtAttribute();
     bool add(int64_t v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedInt * v, uint32_t sz) const override;
@@ -181,7 +181,7 @@ class WeightedSetFloatExtAttribute
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 public:
-    WeightedSetFloatExtAttribute(const vespalib::string & name);
+    WeightedSetFloatExtAttribute(const std::string & name);
     ~WeightedSetFloatExtAttribute();
     bool add(double v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedFloat * v, uint32_t sz) const override;
@@ -208,7 +208,7 @@ private:
     }
 
 public:
-    WeightedSetStringExtAttribute(const vespalib::string & name);
+    WeightedSetStringExtAttribute(const std::string & name);
     ~WeightedSetStringExtAttribute();
     bool add(const char * v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedString * v, uint32_t sz) const override;

@@ -40,7 +40,7 @@ MatchDataBuilder::getTermFieldMatchData(uint32_t termId, uint32_t fieldId)
 
 
 bool
-MatchDataBuilder::setFieldLength(const vespalib::string &fieldName, uint32_t length)
+MatchDataBuilder::setFieldLength(const std::string &fieldName, uint32_t length)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
@@ -52,7 +52,7 @@ MatchDataBuilder::setFieldLength(const vespalib::string &fieldName, uint32_t len
 }
 
 bool
-MatchDataBuilder::addElement(const vespalib::string &fieldName, int32_t weight, uint32_t length)
+MatchDataBuilder::addElement(const std::string &fieldName, int32_t weight, uint32_t length)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
@@ -64,7 +64,7 @@ MatchDataBuilder::addElement(const vespalib::string &fieldName, int32_t weight, 
 }
 
 bool
-MatchDataBuilder::addOccurence(const vespalib::string &fieldName, uint32_t termId, uint32_t pos, uint32_t element)
+MatchDataBuilder::addOccurence(const std::string &fieldName, uint32_t termId, uint32_t pos, uint32_t element)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
@@ -85,7 +85,7 @@ MatchDataBuilder::addOccurence(const vespalib::string &fieldName, uint32_t termI
 }
 
 bool
-MatchDataBuilder::setWeight(const vespalib::string &fieldName, uint32_t termId, int32_t weight)
+MatchDataBuilder::setWeight(const std::string &fieldName, uint32_t termId, int32_t weight)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
@@ -135,7 +135,7 @@ MatchDataBuilder::apply(uint32_t docId)
 
             // For log, attempt to lookup field name.
             const FieldInfo *info = _queryEnv.getIndexEnv()->getField(fieldId);
-            vespalib::string name = info != nullptr ? info->name() : vespalib::make_string("%d", fieldId).c_str();
+            std::string name = info != nullptr ? info->name() : vespalib::make_string("%d", fieldId).c_str();
 
             // For each occurence of that term, in that field, do
             for (const auto& occ : field_elem.second) {

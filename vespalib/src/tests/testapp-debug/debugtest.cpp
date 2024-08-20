@@ -5,25 +5,25 @@ using namespace vespalib;
 
 void testDebug() {
     TEST_DEBUG("lhs.out", "rhs.out");
-    EXPECT_EQUAL(string("a\n"
-                        "b\n"
-                        "c\n"),
+    EXPECT_EQUAL(std::string("a\n"
+                             "b\n"
+                             "c\n"),
 
-                string("a\n"
-                       "b\n"
-                       "c\n"
-                       "d\n"));
-    EXPECT_EQUAL(string("a\n"
-                        "d\n"
-                        "b\n"
-                        "c\n"),
+                 std::string("a\n"
+                             "b\n"
+                             "c\n"
+                             "d\n"));
+    EXPECT_EQUAL(std::string("a\n"
+                             "d\n"
+                             "b\n"
+                             "c\n"),
 
-                 string("a\n"
-                        "b\n"
-                        "c\n"
-                        "d\n"));
+                 std::string("a\n"
+                             "b\n"
+                             "c\n"
+                             "d\n"));
     EXPECT_EQUAL(1, 2);
-    EXPECT_EQUAL(string("foo"), string("bar"));
+    EXPECT_EQUAL(std::string("foo"), std::string("bar"));
 }
 
 TEST_MAIN() {

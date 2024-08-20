@@ -13,11 +13,11 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/identifiable.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <set>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/util/exceptions.h>
+#include <set>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("doctype_config_test");
@@ -27,7 +27,7 @@ using std::set;
 using std::vector;
 using vespalib::Identifiable;
 using vespalib::IllegalArgumentException;
-using vespalib::string;
+using std::string;
 
 using namespace document::config_builder;
 using namespace document;

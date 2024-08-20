@@ -11,7 +11,7 @@ class IDocumentTypeRepo;
 
 class DocumentCalculator {
 public:
-    DocumentCalculator(const IDocumentTypeRepo& repo, const vespalib::string& expression);
+    DocumentCalculator(const IDocumentTypeRepo& repo, const std::string& expression);
     ~DocumentCalculator();
     double evaluate(const Document& doc, std::unique_ptr<select::VariableMap> variables);
 

@@ -32,7 +32,7 @@ public:
           _active(copy.active())
     { }
 
-    vespalib::string getReason() const;
+    std::string getReason() const;
     friend std::ostream& operator<<(std::ostream& out, const ActiveCopy& e);
 
     static ActiveList calculate(const Node2Index & idealState, const lib::Distribution&,

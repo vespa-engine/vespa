@@ -2,8 +2,8 @@
 #pragma once
 
 #include "forwarder.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace logdemon {
 

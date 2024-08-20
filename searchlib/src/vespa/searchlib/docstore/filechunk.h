@@ -77,7 +77,7 @@ public:
     public:
         explicit NameId(size_t id) noexcept : _id(id) { }
         uint64_t getId() const { return _id; }
-        vespalib::string createName(const vespalib::string &baseName) const;
+        std::string createName(const std::string &baseName) const;
         bool operator == (const NameId & rhs) const { return _id == rhs._id; }
         bool operator != (const NameId & rhs) const { return _id != rhs._id; }
         bool operator < (const NameId & rhs) const { return _id < rhs._id; }
@@ -105,7 +105,7 @@ public:
     using LidBufferMap = vespalib::hash_map<uint32_t, std::unique_ptr<vespalib::DataBuffer>>;
     using UP = std::unique_ptr<FileChunk>;
     using SubChunkId = uint32_t;
-    FileChunk(FileId fileId, NameId nameId, const vespalib::string &baseName, const TuneFileSummary &tune,
+    FileChunk(FileId fileId, NameId nameId, const std::string &baseName, const TuneFileSummary &tune,
               const IBucketizer *bucketizer);
     virtual ~FileChunk();
 
@@ -162,7 +162,7 @@ public:
     uint32_t getDocIdLimit() const { return _docIdLimit; }
     virtual vespalib::system_time getModificationTime() const;
     virtual bool frozen() const { return true; }
-    const vespalib::string & getName() const { return _name; }
+    const std::string & getName() const { return _name; }
     void appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
                   uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress,
                   vespalib::CpuUsage::Category cpu_category);
@@ -194,11 +194,11 @@ public:
      */
     static uint64_t readIdxHeader(FastOS_FileInterface &idxFile, uint32_t &docIdLimit);
     static uint64_t readDataHeader(FileRandRead &idxFile);
-    static bool isIdxFileEmpty(const vespalib::string & name);
-    static void eraseIdxFile(const vespalib::string & name);
-    static void eraseDatFile(const vespalib::string & name);
-    static vespalib::string createIdxFileName(const vespalib::string & name);
-    static vespalib::string createDatFileName(const vespalib::string & name);
+    static bool isIdxFileEmpty(const std::string & name);
+    static void eraseIdxFile(const std::string & name);
+    static void eraseDatFile(const std::string & name);
+    static std::string createIdxFileName(const std::string & name);
+    static std::string createDatFileName(const std::string & name);
 private:
     class TmpChunkMeta : public ChunkMeta,
                          public std::vector<LidMeta>
@@ -213,7 +213,7 @@ private:
     using File = std::unique_ptr<FileRandRead>;
     const FileId           _fileId;
     const NameId           _nameId;
-    const vespalib::string _name;
+    const std::string _name;
     std::atomic<size_t>    _erasedCount;
     std::atomic<size_t>    _erasedBytes;
     std::atomic<size_t>    _diskFootprint;
@@ -251,8 +251,8 @@ protected:
     const IBucketizer    * _bucketizer;
     std::atomic<size_t>    _addedBytes;
     TuneFileSummary        _tune;
-    vespalib::string       _dataFileName;
-    vespalib::string       _idxFileName;
+    std::string       _dataFileName;
+    std::string       _idxFileName;
     ChunkInfoVector        _chunkInfo;
     std::atomic<uint64_t>  _lastPersistedSerialNum;
     uint32_t               _dataHeaderLen;

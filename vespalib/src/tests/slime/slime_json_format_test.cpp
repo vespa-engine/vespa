@@ -406,7 +406,7 @@ TEST_F("decode bytes not null-terminated", Slime) {
 }
 
 TEST("require that multiple adjacent values can be decoded from a single input") {
-    vespalib::string data("true{}false[]null\"foo\"'bar'1.5null");
+    std::string data("true{}false[]null\"foo\"'bar'1.5null");
     MemoryInput input(data);
     EXPECT_EQUAL(std::string("true"), normalize(input));
     EXPECT_EQUAL(std::string("{}"), normalize(input));

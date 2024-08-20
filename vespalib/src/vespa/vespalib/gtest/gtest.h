@@ -7,8 +7,8 @@
 #include <iostream>
 
 namespace vespalib {
-// Tell google test how to print vespalib::string values:
-static inline void PrintTo(const vespalib::string & value, std::ostream * os) {
+// Tell google test how to print std::string values:
+static inline void PrintTo(const std::string & value, std::ostream * os) {
     *os << value;
 }
 }

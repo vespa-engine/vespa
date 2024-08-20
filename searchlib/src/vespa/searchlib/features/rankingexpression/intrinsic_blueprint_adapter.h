@@ -3,7 +3,7 @@
 #pragma once
 
 #include "intrinsic_expression.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace search::fef { class Blueprint; }
@@ -19,7 +19,7 @@ struct IntrinsicBlueprintAdapter
 {
     static IntrinsicExpression::UP try_create(const search::fef::Blueprint &proto,
                                               const search::fef::IIndexEnvironment &env,
-                                              const std::vector<vespalib::string> &params);
+                                              const std::vector<std::string> &params);
 };
 
 } // namespace search::features::rankingexpression

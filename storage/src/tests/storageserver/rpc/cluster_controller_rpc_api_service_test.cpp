@@ -129,7 +129,7 @@ std::shared_ptr<const lib::ClusterState> state_of(std::string_view state) {
     return std::make_shared<const lib::ClusterState>(state);
 }
 
-vespalib::string make_compressable_state_string() {
+std::string make_compressable_state_string() {
     vespalib::asciistream ss;
     for (int i = 0; i < 99; ++i) {
         ss << " ." << i << ".s:d";

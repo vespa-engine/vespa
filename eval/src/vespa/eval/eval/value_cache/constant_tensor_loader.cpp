@@ -86,13 +86,13 @@ struct Target {
 };
 
 struct AddressExtractor : ObjectTraverser {
-    const std::set<vespalib::string> &indexed;
+    const std::set<std::string> &indexed;
     TensorSpec::Address &address;
-    AddressExtractor(const std::set<vespalib::string> &indexed_in,
+    AddressExtractor(const std::set<std::string> &indexed_in,
                      TensorSpec::Address &address_out)
         : indexed(indexed_in), address(address_out) {}
     void field(const Memory &symbol, const Inspector &inspector) override {
-        vespalib::string dimension = symbol.make_string();
+        std::string dimension = symbol.make_string();
         if (dimension.empty()) {
             LOG(warning, "missing 'dimension' in address");
             throw std::exception();
@@ -107,7 +107,7 @@ struct AddressExtractor : ObjectTraverser {
             }
             return;
         }
-        vespalib::string label = inspector.asString().make_string();
+        std::string label = inspector.asString().make_string();
         if (label.empty()) {
             auto got = inspector.toString();
             int sz = got.size();
@@ -131,14 +131,14 @@ struct AddressExtractor : ObjectTraverser {
 };
 
 struct SingleMappedExtractor : ObjectTraverser {
-    const vespalib::string &dimension;
+    const std::string &dimension;
     Target &target;
-    SingleMappedExtractor(const vespalib::string &dimension_in, Target &target_in)
+    SingleMappedExtractor(const std::string &dimension_in, Target &target_in)
         : dimension(dimension_in),
           target(target_in)
     {}
     void field(const Memory &symbol, const Inspector &inspector) override {
-        vespalib::string label = symbol.make_string();
+        std::string label = symbol.make_string();
         double value = decodeDouble(inspector);
         TensorSpec::Address address;
         address.emplace(dimension, label);
@@ -201,9 +201,9 @@ void decodeSingleMappedBlocks(const Inspector &blocks, const ValueType &value_ty
     if (value_type.count_mapped_dimensions() != 1) {
         return; // TODO handle mismatch
     }
-    vespalib::string dim_name = value_type.mapped_dimensions()[0].name;
+    std::string dim_name = value_type.mapped_dimensions()[0].name;
     DenseValuesDecoder decoder{value_type.indexed_dimensions(), target};
-    auto lambda = [&](vespalib::string label, const Inspector &input) {
+    auto lambda = [&](std::string label, const Inspector &input) {
         TensorSpec::Address address;
         address.emplace(dim_name, std::move(label));
         decoder.decode(input, std::move(address), 0);
@@ -214,7 +214,7 @@ void decodeSingleMappedBlocks(const Inspector &blocks, const ValueType &value_ty
 
 void decodeAddressedBlocks(const Inspector &blocks, const ValueType &value_type, Target &target) {
     const auto & idims = value_type.indexed_dimensions();
-    std::set<vespalib::string> indexed;
+    std::set<std::string> indexed;
     for (const auto &dimension: idims) {
         indexed.insert(dimension.name);
     }
@@ -228,7 +228,7 @@ void decodeAddressedBlocks(const Inspector &blocks, const ValueType &value_type,
 }
 
 void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, Target &target) {
-    std::set<vespalib::string> indexed;
+    std::set<std::string> indexed;
     for (const auto &dimension: value_type.dimensions()) {
         if (dimension.is_indexed()) {
             indexed.insert(dimension.name);
@@ -242,13 +242,13 @@ void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, Targ
     }
 }
 
-void decode_json(const vespalib::string &path, Input &input, Slime &slime) {
+void decode_json(const std::string &path, Input &input, Slime &slime) {
     if (slime::JsonFormat::decode(input, slime) == 0) {
         LOG(warning, "file contains invalid json: %s", path.c_str());
     }
 }
 
-void decode_json(const vespalib::string &path, Slime &slime) {
+void decode_json(const std::string &path, Slime &slime) {
     MappedFileInput file(path);
     if (!file.valid()) {
         LOG(warning, "could not read file: %s", path.c_str());
@@ -272,7 +272,7 @@ void decode_json(const vespalib::string &path, Slime &slime) {
 ConstantTensorLoader::~ConstantTensorLoader() = default;
 
 ConstantValue::UP
-ConstantTensorLoader::create(const vespalib::string &path, const vespalib::string &type) const
+ConstantTensorLoader::create(const std::string &path, const std::string &type) const
 {
     ValueType value_type = ValueType::from_spec(type);
     if (value_type.is_error()) {

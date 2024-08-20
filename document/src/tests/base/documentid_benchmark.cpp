@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     if (argc < 3) {
         fprintf(stderr, "Usage %s <docid> <count>\n", argv[0]);
     }
-    vespalib::string s(argv[1]);
+    std::string s(argv[1]);
     uint64_t n = strtoul(argv[2], nullptr, 0);
     printf("Creating documentid '%s' %" PRIu64 " times\n", s.c_str(), n);
     printf("sizeof(IdString)=%ld,  sizeof(IdIdString)=%ld\n", sizeof(IdString), sizeof(IdString));

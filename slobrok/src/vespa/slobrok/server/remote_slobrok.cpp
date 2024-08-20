@@ -75,7 +75,7 @@ void RemoteSlobrok::handleFetchResult() {
         FRT_StringValue *s = answer[3]._string_array._pt;
         uint32_t diff_to   = answer[4]._intval32;
 
-        std::vector<vespalib::string> removed;
+        std::vector<std::string> removed;
         for (uint32_t idx = 0; idx < numRemove; ++idx) {
             removed.emplace_back(r[idx]._str);
         }

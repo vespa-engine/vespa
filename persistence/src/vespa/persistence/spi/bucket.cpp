@@ -6,7 +6,7 @@
 
 namespace storage::spi {
 
-vespalib::string
+std::string
 Bucket::toString() const {
     vespalib::asciistream ost;
     ost << *this;

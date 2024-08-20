@@ -22,14 +22,14 @@ namespace {
  * Assumes that cleanup has removed all obsolete index dirs.
  **/
 void
-scanForIndexes(const vespalib::string &baseDir,
-               std::vector<vespalib::string> &flushDirs,
-               vespalib::string &fusionDir)
+scanForIndexes(const std::string &baseDir,
+               std::vector<std::string> &flushDirs,
+               std::string &fusionDir)
 {
     std::filesystem::directory_iterator dir_scan{std::filesystem::path(baseDir)};
     for (auto& entry : dir_scan) {
         if (entry.is_directory()) {
-            vespalib::string name = entry.path().filename().string();
+            std::string name = entry.path().filename().string();
             if (name.find(IndexDiskLayout::FlushDirPrefix) == 0) {
                 flushDirs.push_back(name);
             }
@@ -47,10 +47,10 @@ scanForIndexes(const vespalib::string &baseDir,
 }
 
 FusionSpec
-IndexReadUtilities::readFusionSpec(const vespalib::string &baseDir)
+IndexReadUtilities::readFusionSpec(const std::string &baseDir)
 {
-    std::vector<vespalib::string> flushDirs;
-    vespalib::string fusionDir;
+    std::vector<std::string> flushDirs;
+    std::string fusionDir;
     scanForIndexes(baseDir, flushDirs, fusionDir);
 
     uint32_t fusionId = 0;
@@ -70,9 +70,9 @@ IndexReadUtilities::readFusionSpec(const vespalib::string &baseDir)
 }
 
 SerialNum
-IndexReadUtilities::readSerialNum(const vespalib::string &dir)
+IndexReadUtilities::readSerialNum(const std::string &dir)
 {
-    const vespalib::string fileName = IndexDiskLayout::getSerialNumFileName(dir);
+    const std::string fileName = IndexDiskLayout::getSerialNumFileName(dir);
     Fast_BufferedFile file(16_Ki);
     file.ReadOpen(fileName.c_str());
 

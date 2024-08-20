@@ -30,7 +30,7 @@ using vespalib::datastore::CompactionSpec;
 
 namespace {
 
-const vespalib::string uniqueValueCountTag = "uniqueValueCount";
+const std::string uniqueValueCountTag = "uniqueValueCount";
 
 uint64_t
 extractUniqueValueCount(const vespalib::GenericHeader &header)

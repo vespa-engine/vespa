@@ -4,11 +4,11 @@
 
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
-#include <vespa/vespalib/stllike/string.h>
 
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <string>
 #include <thread>
 
 namespace vespalib::net::tls {
@@ -23,7 +23,7 @@ private:
     std::condition_variable _thread_cond;
     mutable std::mutex      _engine_mutex;
     bool                    _shutdown;
-    const vespalib::string  _config_file_path;
+    const std::string  _config_file_path;
     EngineSP                _current_engine; // Access must be under _engine_mutex
     TimeInterval            _reload_interval;
     std::thread             _reload_thread;
@@ -33,7 +33,7 @@ private:
     std::chrono::steady_clock::time_point make_future_reload_time_point() const noexcept;
 
 public:
-    explicit AutoReloadingTlsCryptoEngine(vespalib::string config_file_path,
+    explicit AutoReloadingTlsCryptoEngine(std::string config_file_path,
                                           AuthorizationMode mode,
                                           TimeInterval reload_interval = std::chrono::seconds(3600));
     ~AutoReloadingTlsCryptoEngine() override;

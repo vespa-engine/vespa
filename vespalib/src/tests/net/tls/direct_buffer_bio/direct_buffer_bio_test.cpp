@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/net/tls/impl/direct_buffer_bio.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <cassert>
+#include <string>
 
 using namespace vespalib;
 using namespace vespalib::crypto;
@@ -11,7 +11,7 @@ using namespace vespalib::net::tls::impl;
 struct Fixture {
     BioPtr mutable_bio;
     BioPtr const_bio;
-    vespalib::string tmp_buf;
+    std::string tmp_buf;
 
     Fixture()
         : mutable_bio(new_mutable_direct_buffer_bio()),
@@ -28,7 +28,7 @@ TEST_F("BIOs without associated buffers return zero pending", Fixture) {
 }
 
 TEST_F("Const BIO has initial pending equal to size of associated buffer", Fixture) {
-    vespalib::string to_read = "I sure love me some data";
+    std::string to_read = "I sure love me some data";
     ConstBufferViewGuard g(*f.const_bio, &to_read[0], to_read.size());
     EXPECT_EQUAL(static_cast<int>(to_read.size()), BIO_pending(f.const_bio.get()));
 }
@@ -40,7 +40,7 @@ TEST_F("Mutable BIO has initial pending of 0 with associated buffer (pending == 
 
 TEST_F("Mutable BIO_write writes to associated buffer", Fixture) {
     MutableBufferViewGuard g(*f.mutable_bio, &f.tmp_buf[0], f.tmp_buf.size());
-    vespalib::string to_write = "hello world!";
+    std::string to_write = "hello world!";
     int ret = ::BIO_write(f.mutable_bio.get(), to_write.data(), static_cast<int>(to_write.size()));
     EXPECT_EQUAL(static_cast<int>(to_write.size()), ret);
     EXPECT_EQUAL(to_write, std::string_view(f.tmp_buf.data(), to_write.size()));
@@ -49,7 +49,7 @@ TEST_F("Mutable BIO_write writes to associated buffer", Fixture) {
 
 TEST_F("Mutable BIO_write moves write cursor per invocation", Fixture) {
     MutableBufferViewGuard g(*f.mutable_bio, &f.tmp_buf[0], f.tmp_buf.size());
-    vespalib::string to_write = "hello world!";
+    std::string to_write = "hello world!";
 
     int ret = ::BIO_write(f.mutable_bio.get(), to_write.data(), 3); // 'hel'
     ASSERT_EQUAL(3, ret);
@@ -65,7 +65,7 @@ TEST_F("Mutable BIO_write moves write cursor per invocation", Fixture) {
 }
 
 TEST_F("Const BIO_read reads from associated buffer", Fixture) {
-    vespalib::string to_read = "look at this fancy data!";
+    std::string to_read = "look at this fancy data!";
     ConstBufferViewGuard g(*f.const_bio, &to_read[0], to_read.size());
 
     int ret = ::BIO_read(f.const_bio.get(), &f.tmp_buf[0], static_cast<int>(f.tmp_buf.size()));
@@ -76,7 +76,7 @@ TEST_F("Const BIO_read reads from associated buffer", Fixture) {
 }
 
 TEST_F("Const BIO_read moves read cursor per invocation", Fixture) {
-    vespalib::string to_read = "look at this fancy data!";
+    std::string to_read = "look at this fancy data!";
     ConstBufferViewGuard g(*f.const_bio, &to_read[0], to_read.size());
 
     EXPECT_EQUAL(24, BIO_pending(f.const_bio.get()));
@@ -108,8 +108,8 @@ TEST_F("Can invoke BIO_(set|get)_close", Fixture) {
 }
 
 TEST_F("BIO_write on const BIO returns failure", Fixture) {
-    vespalib::string data = "safe and cozy data :3";
-    vespalib::string to_read = data;
+    std::string data = "safe and cozy data :3";
+    std::string to_read = data;
     ConstBufferViewGuard g(*f.const_bio, &to_read[0], to_read.size());
 
     int ret = ::BIO_write(f.const_bio.get(), "unsafe", 6);
@@ -121,7 +121,7 @@ TEST_F("BIO_write on const BIO returns failure", Fixture) {
 TEST_F("BIO_read on mutable BIO returns failure", Fixture) {
     MutableBufferViewGuard g(*f.mutable_bio, &f.tmp_buf[0], f.tmp_buf.size());
 
-    vespalib::string dummy_buf;
+    std::string dummy_buf;
     dummy_buf.reserve(128);
     int ret = ::BIO_read(f.mutable_bio.get(), &dummy_buf[0], static_cast<int>(dummy_buf.size()));
     EXPECT_EQUAL(-1, ret);

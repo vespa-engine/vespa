@@ -29,7 +29,7 @@ public:
     const ConfigState & getConfigState() const override { return _state; }
     const Trace & getTrace() const override { return _trace; }
 
-    vespalib::string getHostName() const;
+    std::string getHostName() const;
 
     void fill() override;
 

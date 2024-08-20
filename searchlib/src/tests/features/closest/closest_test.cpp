@@ -25,12 +25,12 @@ using vespalib::eval::Value;
 using vespalib::eval::spec_from_value;
 using vespalib::eval::value_from_spec;
 
-const vespalib::string field_and_label_feature_name("closest(bar,nns)");
-const vespalib::string field_feature_name("closest(bar)");
+const std::string field_and_label_feature_name("closest(bar,nns)");
+const std::string field_feature_name("closest(bar)");
 
-const vespalib::string dense_tensor_type("tensor(x[2])");
-const vespalib::string mixed_tensor_type("tensor(a{},x[2])");
-const vespalib::string sparse_tensor_type("tensor(a{})");
+const std::string dense_tensor_type("tensor(x[2])");
+const std::string mixed_tensor_type("tensor(a{},x[2])");
+const std::string sparse_tensor_type("tensor(a{})");
 
 TensorSpec no_subspace(sparse_tensor_type);
 TensorSpec subspace_a = TensorSpec::from_expr("tensor(a{}):{{a:\"a\"}:1}");
@@ -46,9 +46,9 @@ TensorSpec get_spec(RankFixture& f, uint32_t docid) {
 
 struct TestParam
 {
-    vespalib::string _name;
+    std::string _name;
     bool             _direct_tensor;
-    TestParam(vespalib::string name, bool direct_tensor)
+    TestParam(std::string name, bool direct_tensor)
         : _name(std::move(name)),
           _direct_tensor(direct_tensor)
     {
@@ -65,13 +65,13 @@ std::ostream& operator<<(std::ostream& os, const TestParam param)
 }
 
 void
-assert_setup(vespalib::string field_name,
+assert_setup(std::string field_name,
              bool exp_setup_result,
-             std::optional<vespalib::string> attr_type_spec,
-             std::optional<vespalib::string> label)
+             std::optional<std::string> attr_type_spec,
+             std::optional<std::string> label)
 {
     vespalib::asciistream feature_name;
-    std::vector<vespalib::string> setup_args;
+    std::vector<std::string> setup_args;
     ClosestBlueprint f1;
     IndexEnvironmentFixture f2;
     DummyDependencyHandler deps(f1);
@@ -95,8 +95,8 @@ protected:
     ClosestTest();
     ~ClosestTest();
     bool direct_tensor() const noexcept { return GetParam()._direct_tensor; }
-    void assert_closest(const Labels& labels, const vespalib::string& feature_name, const vespalib::string& query_tensor, const TensorSpec& exp_spec);
-    void assert_closest(const Labels& labels, const vespalib::string& feature_name, const std::vector<TensorSpec>& exp_specs);
+    void assert_closest(const Labels& labels, const std::string& feature_name, const std::string& query_tensor, const TensorSpec& exp_spec);
+    void assert_closest(const Labels& labels, const std::string& feature_name, const std::vector<TensorSpec>& exp_specs);
 };
 
 ClosestTest::ClosestTest()
@@ -107,7 +107,7 @@ ClosestTest::ClosestTest()
 ClosestTest::~ClosestTest() = default;
 
 void
-ClosestTest::assert_closest(const Labels& labels, const vespalib::string& feature_name, const vespalib::string& query_tensor, const TensorSpec& exp_spec)
+ClosestTest::assert_closest(const Labels& labels, const std::string& feature_name, const std::string& query_tensor, const TensorSpec& exp_spec)
 {
     RankFixture f(mixed_tensor_type, direct_tensor(), 0, 1, labels, feature_name,
                   dense_tensor_type + ":" + query_tensor);
@@ -118,7 +118,7 @@ ClosestTest::assert_closest(const Labels& labels, const vespalib::string& featur
 }
 
 void
-ClosestTest::assert_closest(const Labels& labels, const vespalib::string& feature_name, const std::vector<TensorSpec>& exp_specs)
+ClosestTest::assert_closest(const Labels& labels, const std::string& feature_name, const std::vector<TensorSpec>& exp_specs)
 {
     assert_closest(labels, feature_name, "[9,10]", exp_specs[0]);
     assert_closest(labels, feature_name, "[1,10]", exp_specs[1]);

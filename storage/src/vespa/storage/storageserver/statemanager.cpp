@@ -346,7 +346,7 @@ StateManager::enableNextClusterState()
 namespace {
 
 using BucketSpaceToTransitionString = std::unordered_map<document::BucketSpace,
-                                                         vespalib::string,
+                                                         std::string,
                                                          document::BucketSpace::hash>;
 
 void
@@ -387,7 +387,7 @@ calculateDerivedClusterStateTransitions(const ClusterStateBundle& currentState,
     return result;
 }
 
-vespalib::string
+std::string
 transitionsToString(const BucketSpaceToTransitionString& transitions)
 {
     if (transitions.empty()) {

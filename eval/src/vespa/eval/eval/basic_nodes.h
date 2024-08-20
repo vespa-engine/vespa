@@ -5,7 +5,6 @@
 #include "value.h"
 #include "string_stuff.h"
 #include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <memory>
@@ -13,6 +12,7 @@
 #include <vector>
 #include <cassert>
 #include <limits>
+#include <string>
 
 namespace vespalib::eval {
 
@@ -37,8 +37,8 @@ namespace nodes {
  * the names of bound values.
  **/
 struct DumpContext {
-    const std::vector<vespalib::string> &param_names;
-    DumpContext(const std::vector<vespalib::string> &param_names_in)
+    const std::vector<std::string> &param_names;
+    DumpContext(const std::vector<std::string> &param_names_in)
         : param_names(param_names_in) {}
 };
 
@@ -54,7 +54,7 @@ struct Node {
     virtual double get_const_double_value() const;
     Value::UP get_const_value() const;
     void traverse(NodeTraverser &traverser) const;
-    virtual vespalib::string dump(DumpContext &ctx) const = 0;
+    virtual std::string dump(DumpContext &ctx) const = 0;
     virtual void accept(NodeVisitor &visitor) const = 0;
     virtual size_t num_children() const = 0;
     virtual const Node &get_child(size_t idx) const = 0;
@@ -97,7 +97,7 @@ public:
     virtual bool is_const_double() const override { return true; }
     double get_const_double_value() const override { return value(); }
     double value() const { return _value; }
-    vespalib::string dump(DumpContext &) const override;
+    std::string dump(DumpContext &) const override;
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -108,7 +108,7 @@ public:
     explicit Symbol(size_t id_in) : _id(id_in) {}
     bool is_param() const override { return true; }
     size_t id() const { return _id; }
-    vespalib::string dump(DumpContext &ctx) const override {
+    std::string dump(DumpContext &ctx) const override {
         assert(size_t(_id) < ctx.param_names.size());
         return ctx.param_names[_id];
     }
@@ -117,13 +117,13 @@ public:
 
 class String : public Leaf {
 private:
-    vespalib::string _value;
+    std::string _value;
 public:
-    String(const vespalib::string &value_in) : _value(value_in) {}
+    String(const std::string &value_in) : _value(value_in) {}
     bool is_const_double() const override { return true; }
     double get_const_double_value() const override { return hash2d(_value); }
-    const vespalib::string &value() const { return _value; }
-    vespalib::string dump(DumpContext &) const override {
+    const std::string &value() const { return _value; }
+    std::string dump(DumpContext &) const override {
         return as_quoted_string(_value);
     }
     void accept(NodeVisitor &visitor) const override;
@@ -151,8 +151,8 @@ public:
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
+    std::string dump(DumpContext &ctx) const override {
+        std::string str;
         str += "(";
         str += _child->dump(ctx);
         str += " in [";
@@ -184,8 +184,8 @@ public:
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
+    std::string dump(DumpContext &ctx) const override {
+        std::string str;
         str += "(-";
         str += _child->dump(ctx);
         str += ")";
@@ -211,8 +211,8 @@ public:
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
+    std::string dump(DumpContext &ctx) const override {
+        std::string str;
         str += "(!";
         str += _child->dump(ctx);
         str += ")";
@@ -253,17 +253,17 @@ public:
         handler.handle(std::move(_true_expr));
         handler.handle(std::move(_false_expr));
     }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
 };
 
 class Error : public Leaf {
 private:
-    vespalib::string _message;
+    std::string _message;
 public:
-    Error(const vespalib::string &message_in) : _message(message_in) {}
-    const vespalib::string &message() const { return _message; }
-    vespalib::string dump(DumpContext &) const override { return _message; }
+    Error(const std::string &message_in) : _message(message_in) {}
+    const std::string &message() const { return _message; }
+    std::string dump(DumpContext &) const override { return _message; }
     void accept(NodeVisitor &visitor) const override;
 };
 

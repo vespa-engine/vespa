@@ -830,9 +830,9 @@ struct TensorUpdateFixture {
     TestDocMan docMan;
     Document::UP emptyDoc;
     Document updatedDoc;
-    vespalib::string fieldName;
+    std::string fieldName;
     const TensorDataType &tensorDataType;
-    vespalib::string tensorType;
+    std::string tensorType;
 
     const TensorDataType &extractTensorDataType() {
         const auto &dataType = emptyDoc->getField(fieldName).getDataType();
@@ -843,7 +843,7 @@ struct TensorUpdateFixture {
         return emptyDoc->getField("title");
     }
 
-    TensorUpdateFixture(const vespalib::string &fieldName_ = "sparse_tensor")
+    TensorUpdateFixture(const std::string &fieldName_ = "sparse_tensor")
         : docMan(),
           emptyDoc(docMan.createDocument()),
           updatedDoc(*emptyDoc),
@@ -1125,7 +1125,7 @@ TEST_F(DocumentUpdateTest, tensor_modify_update_on_float_tensor_can_be_roundtrip
 TEST_F(DocumentUpdateTest, tensor_modify_update_on_dense_tensor_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f("dense_tensor");
-    vespalib::string sparseType("tensor(x{})");
+    std::string sparseType("tensor(x{})");
     TensorDataType sparseTensorType(ValueType::from_spec(sparseType));
     auto sparseTensor = makeTensorFieldValue(TensorSpec(sparseType).add({{"x","0"}}, 2), sparseTensorType);
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::move(sparseTensor)));
@@ -1171,7 +1171,7 @@ struct TensorUpdateSerializeFixture {
     std::unique_ptr<DocumentTypeRepo> repo;
     const DocumentType &docType;
 
-    const TensorDataType &extractTensorDataType(const vespalib::string &fieldName) {
+    const TensorDataType &extractTensorDataType(const std::string &fieldName) {
         const auto &dataType = docType.getField(fieldName).getDataType();
         return dynamic_cast<const TensorDataType &>(dataType);
     }
@@ -1198,7 +1198,7 @@ struct TensorUpdateSerializeFixture {
                                     extractTensorDataType("sparse_tensor"));
     }
 
-    const Field &getField(const vespalib::string &name) {
+    const Field &getField(const std::string &name) {
         return docType.getField(name);
     }
 
@@ -1220,12 +1220,12 @@ struct TensorUpdateSerializeFixture {
         return result;
     }
 
-    void serializeUpdateToFile(const DocumentUpdate &update, const vespalib::string &fileName) {
+    void serializeUpdateToFile(const DocumentUpdate &update, const std::string &fileName) {
         nbostream buf = serializeHEAD(update);
         TestDataBase::write_buffer_to_file(buf, fileName);
     }
 
-    DocumentUpdate::UP deserializeUpdateFromFile(const vespalib::string &fileName) {
+    DocumentUpdate::UP deserializeUpdateFromFile(const std::string &fileName) {
         auto stream = TestDataBase::read_buffer_from_file(fileName);
         return DocumentUpdate::createHEAD(*repo, stream);
     }
@@ -1362,9 +1362,9 @@ TEST_F(DocumentUpdateTest, array_element_update_applies_to_specified_element)
 
     auto result_array = f.doc->getAs<ArrayFieldValue>(f.array_field);
     ASSERT_EQ(size_t(3), result_array->size());
-    EXPECT_EQ(vespalib::string("foo"), (*result_array)[0].getAsString());
-    EXPECT_EQ(vespalib::string("bar"), (*result_array)[1].getAsString());
-    EXPECT_EQ(vespalib::string("blarg"), (*result_array)[2].getAsString());
+    EXPECT_EQ(std::string("foo"), (*result_array)[0].getAsString());
+    EXPECT_EQ(std::string("bar"), (*result_array)[1].getAsString());
+    EXPECT_EQ(std::string("blarg"), (*result_array)[2].getAsString());
 }
 
 TEST_F(DocumentUpdateTest, array_element_update_for_invalid_index_is_ignored)

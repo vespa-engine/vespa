@@ -28,7 +28,7 @@ namespace search::diskindex {
 
 namespace {
 
-vespalib::string
+std::string
 getName(uint32_t indexId)
 {
     return vespalib::make_string("fieldId(%u)", indexId);
@@ -38,7 +38,7 @@ getName(uint32_t indexId)
 
 DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
                                      const DiskIndex & diskIndex,
-                                     const vespalib::string& query_term,
+                                     const std::string& query_term,
                                      DiskIndex::LookupResult::UP lookupRes,
                                      bool useBitVector) :
     SimpleLeafBlueprint(field),

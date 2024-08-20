@@ -46,7 +46,7 @@ public:
     ThreadedFlushTarget(vespalib::Executor &executor,
                         const IGetSerialNum &getSerialNum,
                         const IFlushTarget::SP &target,
-                        const vespalib::string & prefix);
+                        const std::string & prefix);
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 };

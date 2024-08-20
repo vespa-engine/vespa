@@ -47,7 +47,7 @@ private:
     matching::QueryLimiter      &_queryLimiter;
     const vespalib::eval::ConstantValueFactory& _constant_value_factory;
     const std::atomic<steady_time> & _now_ref;
-    vespalib::string             _subDbName;
+    std::string             _subDbName;
     uint32_t                     _distributionKey;
 
     void reconfigureFeedView(std::shared_ptr<IAttributeWriter> attrWriter,
@@ -73,7 +73,7 @@ public:
                                  matching::QueryLimiter &queryLimiter,
                                  const vespalib::eval::ConstantValueFactory& constant_value_factory,
                                  const std::atomic<steady_time> & now_ref,
-                                 const vespalib::string &subDbName,
+                                 const std::string &subDbName,
                                  uint32_t distributionKey);
     ~SearchableDocSubDBConfigurer();
 

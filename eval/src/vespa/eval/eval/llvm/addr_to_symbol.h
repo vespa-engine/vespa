@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib::eval {
 
 // Map an address to a symbolic name.
 // Intended for function pointers.
 
-vespalib::string addr_to_symbol(const void *addr);
+std::string addr_to_symbol(const void *addr);
 
 // Return the address of a local symbol.
 // Used for testing.

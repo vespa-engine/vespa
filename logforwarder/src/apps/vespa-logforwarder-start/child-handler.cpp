@@ -2,13 +2,13 @@
 
 #include "child-handler.h"
 
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <string>
-#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".child-handler");
@@ -18,9 +18,9 @@ ChildHandler::ChildHandler() : _childRunning(false) {}
 namespace {
 
 void
-runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
+runSplunk(const std::string &prefix, std::vector<const char *> args)
 {
-    vespalib::string path = prefix + "/bin/splunk";
+    std::string path = prefix + "/bin/splunk";
     args.insert(args.begin(), path.c_str());
     std::string dbg = "";
     for (const char *arg : args) {
@@ -37,7 +37,7 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
         return;
     }
     if (child == 0) {
-        vespalib::string env = "SPLUNK_HOME=" + prefix;
+        std::string env = "SPLUNK_HOME=" + prefix;
         char *cenv = const_cast<char *>(env.c_str()); // safe cast
         putenv(cenv);
         LOG(debug, "added to environment: '%s'", cenv);
@@ -74,7 +74,7 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
 
 
 void
-ChildHandler::startChild(const vespalib::string &prefix)
+ChildHandler::startChild(const std::string &prefix)
 {
     LOG(debug, "startChild '%s'", prefix.c_str());
     if (_childRunning && prefix == _runningPrefix) {
@@ -103,7 +103,7 @@ void ChildHandler::stopChild() {
 }
 
 void
-ChildHandler::stopChild(const vespalib::string &prefix) {
+ChildHandler::stopChild(const std::string &prefix) {
     stopChild();
     _runningPrefix = prefix;
     stopChild();

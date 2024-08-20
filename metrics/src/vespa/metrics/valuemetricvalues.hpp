@@ -54,7 +54,7 @@ T ValueMetricValues<AvgVal, TotVal>::getValue(string_view id) const {
     if (id == "total") return static_cast<T>(_total);
     if (id == "min") return static_cast<T>(_count > 0 ? _min : 0);
     if (id == "max") return static_cast<T>( _count > 0 ? _max : 0);
-    throw IllegalArgumentException("No value " + vespalib::string(id) + " in value metric.", VESPA_STRLOC);
+    throw IllegalArgumentException("No value " + std::string(id) + " in value metric.", VESPA_STRLOC);
 }
 
 template<typename AvgVal, typename TotVal>

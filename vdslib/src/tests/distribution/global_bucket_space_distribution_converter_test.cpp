@@ -14,13 +14,13 @@ using DistributionConfig = vespa::config::content::StorDistributionConfig;
 
 namespace {
 
-vespalib::string default_to_global_config(const vespalib::string& default_config) {
+std::string default_to_global_config(const std::string& default_config) {
     auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
     auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
     return GlobalBucketSpaceDistributionConverter::config_to_string(*as_global);
 }
 
-vespalib::string default_flat_config(
+std::string default_flat_config(
 R"(redundancy 1
 group[1]
 group[0].name "invalid"
@@ -32,7 +32,7 @@ group[0].nodes[1].index 1
 group[0].nodes[2].index 2
 )");
 
-vespalib::string expected_flat_global_config(
+std::string expected_flat_global_config(
 R"(redundancy 3
 initial_redundancy 0
 ensure_primary_persisted true
@@ -58,7 +58,7 @@ TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_flat_cluster_conf
 
 
 TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_single_level_multi_group_config) {
-    vespalib::string default_config(
+    std::string default_config(
 R"(redundancy 2
 group[3]
 group[0].name "invalid"
@@ -85,7 +85,7 @@ group[2].nodes[2].index 5
     // Most crucial parts of the transformed config is the root redundancy
     // and the new partition config. We test _all_ config fields here so that
     // we catch anything we miss transferring state of.
-    vespalib::string expected_global_config(
+    std::string expected_global_config(
 R"(redundancy 6
 initial_redundancy 0
 ensure_primary_persisted true
@@ -120,7 +120,7 @@ group[2].nodes[2].retired false
 }
 
 TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_multi_level_multi_group_config) {
-    vespalib::string default_config(
+    std::string default_config(
 R"(redundancy 2
 group[5]
 group[0].name "invalid"
@@ -154,7 +154,7 @@ group[6].nodes[0].index 3
 )");
 
     // Note: leaf groups do not have a partition spec, only inner groups.
-    vespalib::string expected_global_config(
+    std::string expected_global_config(
 R"(redundancy 4
 initial_redundancy 0
 ensure_primary_persisted true
@@ -204,7 +204,7 @@ group[6].nodes[0].retired false
 // setups will not produce the expected replica distribution.
 // TODO Consider disallowing entirely when using global docs.
 TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_heterogenous_multi_group_config) {
-    vespalib::string default_config(
+    std::string default_config(
 R"(redundancy 2
 ready_copies 2
 group[3]
@@ -223,7 +223,7 @@ group[2].nodes[1]
 group[2].nodes[1].index 2
 )");
 
-    vespalib::string expected_global_config(
+    std::string expected_global_config(
 R"(redundancy 3
 initial_redundancy 0
 ensure_primary_persisted true
@@ -259,7 +259,7 @@ TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_concrete_distribu
 }
 
 TEST(GlobalBucketSpaceDistributionConverterTest, config_retired_state_is_propagated) {
-    vespalib::string default_config(
+    std::string default_config(
 R"(redundancy 1
 group[1]
 group[0].name "invalid"
@@ -285,7 +285,7 @@ group[0].nodes[2].retired true
 }
 
 TEST(GlobalBucketSpaceDistributionConverterTest, group_capacities_are_propagated) {
-    vespalib::string default_config(
+    std::string default_config(
 R"(redundancy 2
 group[3]
 group[0].name "invalid"
@@ -314,7 +314,7 @@ group[2].nodes[0].index 1
 }
 
 TEST(GlobalBucketSpaceDistributionConverterTest, global_distribution_has_same_owner_distributors_as_default) {
-    vespalib::string default_config(
+    std::string default_config(
 R"(redundancy 2
 ready_copies 2
 group[3]

@@ -5,6 +5,7 @@
 #include "i_enum_store.h"
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/datastore/entryref.h>
+#include <cstring>
 
 namespace search
 {

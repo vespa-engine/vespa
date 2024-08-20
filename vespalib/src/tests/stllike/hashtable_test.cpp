@@ -85,7 +85,7 @@ TEST("require that getModuloStl always return a larger number in 32 bit integer 
 }
 
 TEST("require that you can insert duplicates") {
-    using Pair = std::pair<int, vespalib::string>;
+    using Pair = std::pair<int, std::string>;
     using Map = hashtable<int, Pair, vespalib::hash<int>, std::equal_to<>, Select1st<Pair>>;
 
     Map m(1);

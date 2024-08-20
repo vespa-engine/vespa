@@ -45,7 +45,7 @@ protected:
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
     long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
 public:
-    MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
+    MultiValueNumericEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
 
     bool onLoad(vespalib::Executor *executor) override;
 

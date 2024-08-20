@@ -136,10 +136,10 @@ FieldPathEntry::stealFieldValueToSet() const
     return std::move(_fillInVal);
 }
 
-vespalib::string
+std::string
 FieldPathEntry::parseKey(std::string_view & key)
 {
-    vespalib::string v;
+    std::string v;
     const char *c = key.data();
     const char *e = c + key.size();
     for(;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
@@ -158,7 +158,7 @@ FieldPathEntry::parseKey(std::string_view & key)
                 c++;
             } else {
                 throw IllegalArgumentException(make_string("Escaped key '%s' is incomplete. No matching '\"'",
-                                                           vespalib::string(key).c_str()), VESPA_STRLOC);
+                                                           std::string(key).c_str()), VESPA_STRLOC);
             }
         } else {
             const char * start = c;
@@ -172,11 +172,11 @@ FieldPathEntry::parseKey(std::string_view & key)
             key = std::string_view(c + 1, e - (c + 1));
         } else {
             throw IllegalArgumentException(make_string("Key '%s' is incomplete. No matching '}'",
-                                                       vespalib::string(key).c_str()), VESPA_STRLOC);
+                                                       std::string(key).c_str()), VESPA_STRLOC);
         }
     } else {
         throw IllegalArgumentException(make_string("key '%s' does not start with '{'",
-                                                   vespalib::string(key).c_str()), VESPA_STRLOC);
+                                                   std::string(key).c_str()), VESPA_STRLOC);
     }
     return v;
 }

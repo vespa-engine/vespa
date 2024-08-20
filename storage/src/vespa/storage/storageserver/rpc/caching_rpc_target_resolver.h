@@ -41,13 +41,13 @@ class CachingRpcTargetResolver {
                                              uint32_t curr_slobrok_gen);
     std::shared_ptr<RpcTarget> consider_update_target_pool(const api::StorageMessageAddress& address,
                                                            uint64_t bucket_id,
-                                                           const vespalib::string& connection_spec,
+                                                           const std::string& connection_spec,
                                                            uint32_t curr_slobrok_gen,
                                                            const UniqueLock& targets_lock);
 
     std::shared_ptr<RpcTarget> insert_new_target_mapping(const api::StorageMessageAddress& address,
                                                          uint64_t bucket_id,
-                                                         const vespalib::string& connection_spec,
+                                                         const std::string& connection_spec,
                                                          uint32_t curr_slobrok_gen,
                                                          const UniqueLock& targets_lock);
 
@@ -57,7 +57,7 @@ public:
                              size_t num_targets_per_node);
     ~CachingRpcTargetResolver();
 
-    static vespalib::string address_to_slobrok_id(const api::StorageMessageAddress& address);
+    static std::string address_to_slobrok_id(const api::StorageMessageAddress& address);
 
     std::shared_ptr<RpcTarget> resolve_rpc_target(const api::StorageMessageAddress& address,
                                                   uint64_t bucket_id);

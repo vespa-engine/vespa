@@ -20,7 +20,7 @@ using FileInterfaceUP = LoadUtils::FileInterfaceUP;
 using LoadedBufferUP = LoadUtils::LoadedBufferUP;
 
 FileInterfaceUP
-LoadUtils::openFile(const AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::openFile(const AttributeVector& attr, const std::string& suffix)
 {
     return FileUtil::openFile(attr.getBaseFileName() + "." + suffix);
 }
@@ -44,13 +44,13 @@ LoadUtils::openWeight(const AttributeVector& attr)
 }
 
 bool
-LoadUtils::file_exists(const AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::file_exists(const AttributeVector& attr, const std::string& suffix)
 {
     return std::filesystem::exists(std::filesystem::path(attr.getBaseFileName() + "." + suffix));
 }
 
 LoadedBufferUP
-LoadUtils::loadFile(const AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::loadFile(const AttributeVector& attr, const std::string& suffix)
 {
     return FileUtil::loadFile(attr.getBaseFileName() + "." + suffix);
 }

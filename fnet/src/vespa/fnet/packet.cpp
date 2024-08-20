@@ -3,7 +3,7 @@
 #include "packet.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
-vespalib::string
+std::string
 FNET_Packet::Print(uint32_t indent)
 {
     return vespalib::make_string("%*sFNET_Packet[subclass] { regular=%s, control=%s, "

@@ -41,8 +41,8 @@ IMPLEMENT_RESULTNODE(FloatResultNode,            NumericResultNode);
 
 namespace {
 
-const vespalib::string TRUE = "true";
-const vespalib::string FALSE = "false";
+const std::string TRUE = "true";
+const std::string FALSE = "false";
 
 size_t hashBuf(const void *s, size_t sz)
 {
@@ -341,7 +341,7 @@ size_t StringResultNode::hash() const { return hashBuf(_value.c_str(),  _value.s
 size_t
 StringResultNode::hash(const void * buf) const
 {
-    const vespalib::string & s = *static_cast<const vespalib::string *>(buf);
+    const std::string & s = *static_cast<const std::string *>(buf);
     return hashBuf(s.c_str(), s.size());
 }
 

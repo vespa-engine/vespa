@@ -43,7 +43,7 @@ namespace {
 
 void
 throw_if_nullptr(const std::unique_ptr<DocsumFieldWriter>& writer,
-                 const vespalib::string& command)
+                 const std::string& command)
 {
     if ( ! writer) {
         throw IllegalArgumentException("Failed to create docsum field writer for command '" + command + "'.");
@@ -53,15 +53,15 @@ throw_if_nullptr(const std::unique_ptr<DocsumFieldWriter>& writer,
 }
 
 void
-DocsumFieldWriterFactory::throw_missing_source(const vespalib::string& command)
+DocsumFieldWriterFactory::throw_missing_source(const std::string& command)
 {
     throw IllegalArgumentException("Missing source for command '" + command + "'.");
 }
 
 std::unique_ptr<DocsumFieldWriter>
-DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& field_name,
-                                                     const vespalib::string& command,
-                                                     const vespalib::string& source,
+DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
+                                                     const std::string& command,
+                                                     const std::string& source,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
@@ -127,12 +127,12 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
     } else if (command == command::attribute_combiner) {
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
-            const vespalib::string& source_field = source.empty() ? field_name : source;
+            const std::string& source_field = source.empty() ? field_name : source;
             fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, false, std::shared_ptr<MatchingElementsFields>());
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::matched_attribute_elements_filter) {
-        const vespalib::string& source_field = source.empty() ? field_name : source;
+        const std::string& source_field = source.empty() ? field_name : source;
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
             if (attr_ctx->getAttribute(source_field) != nullptr) {
@@ -143,7 +143,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::matched_elements_filter) {
-        const vespalib::string& source_field = source.empty() ? field_name : source;
+        const std::string& source_field = source.empty() ? field_name : source;
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
             fieldWriter = MatchedElementsFilterDFW::create(source_field,*attr_ctx, matching_elems_fields);

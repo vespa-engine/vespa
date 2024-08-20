@@ -46,7 +46,7 @@ DiskIndex::Key::Key(const Key &) = default;
 DiskIndex::Key & DiskIndex::Key::operator = (const Key &) = default;
 DiskIndex::Key::~Key() = default;
 
-DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
+DiskIndex::DiskIndex(const std::string &indexDir, size_t cacheSize)
     : _indexDir(indexDir),
       _cacheSize(cacheSize),
       _schema(),
@@ -65,7 +65,7 @@ DiskIndex::~DiskIndex() = default;
 bool
 DiskIndex::loadSchema()
 {
-    vespalib::string schemaName = _indexDir + "/schema.txt";
+    std::string schemaName = _indexDir + "/schema.txt";
     if (!_schema.loadFromFile(schemaName)) {
         LOG(error, "Could not open schema '%s'", schemaName.c_str());
         return false;
@@ -81,7 +81,7 @@ bool
 DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
 {
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
-        vespalib::string dictName = _indexDir + "/" + itr.getName() + "/dictionary";
+        std::string dictName = _indexDir + "/" + itr.getName() + "/dictionary";
         auto dict = std::make_unique<PageDict4RandRead>();
         if (!dict->open(dictName, tuneFileSearch._read)) {
             LOG(warning, "Could not open disk dictionary '%s'", dictName.c_str());
@@ -94,10 +94,10 @@ DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
 }
 
 bool
-DiskIndex::openField(const vespalib::string &fieldDir,
+DiskIndex::openField(const std::string &fieldDir,
                      const TuneFileSearch &tuneFileSearch)
 {
-    vespalib::string postingName = fieldDir + "posocc.dat.compressed";
+    std::string postingName = fieldDir + "posocc.dat.compressed";
 
     DiskPostingFile::SP pFile;
     BitVectorDictionary::SP bDict;
@@ -152,7 +152,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch)
         return false;
     }
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
-        vespalib::string fieldDir = _indexDir + "/" + itr.getName() + "/";
+        std::string fieldDir = _indexDir + "/" + itr.getName() + "/";
         if (!openField(fieldDir, tuneFileSearch)) {
             return false;
         }
@@ -172,7 +172,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
     }
     const Schema &oldSchema = old._schema;
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
-        vespalib::string fieldDir = _indexDir + "/" + itr.getName() + "/";
+        std::string fieldDir = _indexDir + "/" + itr.getName() + "/";
         SchemaUtil::IndexSettings settings = itr.getIndexSettings();
         if (settings.hasError()) {
             return false;
@@ -333,7 +333,7 @@ public:
           _cache()
     { }
     const DiskIndex::LookupResult &
-    lookup(const vespalib::string & word, uint32_t fieldId) {
+    lookup(const std::string & word, uint32_t fieldId) {
         auto it = _cache.find(word);
         if (it == _cache.end()) {
             _cache[word] = _diskIndex.lookup(_fieldIds, word);
@@ -348,7 +348,7 @@ public:
     }
 private:
 
-    using Cache = vespalib::hash_map<vespalib::string, DiskIndex::LookupResultVector>;
+    using Cache = vespalib::hash_map<std::string, DiskIndex::LookupResultVector>;
     DiskIndex &                   _diskIndex;
     const std::vector<uint32_t> & _fieldIds;
     Cache                         _cache;
@@ -376,7 +376,7 @@ public:
 
     template <class TermNode>
     void visitTerm(TermNode &n) {
-        const vespalib::string termStr = termAsString(n);
+        const std::string termStr = termAsString(n);
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
             bool useBitVector = _field.isFilter();
@@ -457,7 +457,7 @@ DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSp
 }
 
 FieldLengthInfo
-DiskIndex::get_field_length_info(const vespalib::string& field_name) const
+DiskIndex::get_field_length_info(const std::string& field_name) const
 {
     uint32_t fieldId = _schema.getIndexFieldId(field_name);
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {

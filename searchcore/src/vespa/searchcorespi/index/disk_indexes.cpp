@@ -8,7 +8,7 @@
 #include <cassert>
 #include <vector>
 
-using vespalib::string;
+using std::string;
 
 namespace searchcorespi::index {
 

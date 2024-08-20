@@ -4,8 +4,8 @@
 
 using namespace vespalib;
 
-bool runPrint(const vespalib::string &cmd) {
-    vespalib::string out;
+bool runPrint(const std::string &cmd) {
+    std::string out;
     bool res = Process::run(cmd, out);
     fprintf(stderr, "%s", out.c_str());
     return res;
@@ -15,7 +15,7 @@ TEST("make fixture macros") {
     EXPECT_FALSE(runPrint("../../apps/make_fixture_macros/vespalib_make_fixture_macros_app"));
     EXPECT_TRUE(runPrint("../../apps/make_fixture_macros/vespalib_make_fixture_macros_app 9 > macros.tmp"));
 
-    vespalib::string diffCmd("diff -u ");
+    std::string diffCmd("diff -u ");
     diffCmd += TEST_PATH("../../vespa/vespalib/testkit/generated_fixture_macros.h macros.tmp");
     EXPECT_TRUE(runPrint(diffCmd.c_str()));
 }

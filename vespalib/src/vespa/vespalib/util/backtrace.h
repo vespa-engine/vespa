@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
@@ -12,7 +12,7 @@ namespace vespalib {
  * @param ignoreTop number of frames to skip from the top of the stack
  * @return Stacktrace complete with resolved (although still mangled) symbols
  */
-string getStackTrace(int ignoreTop);
+std::string getStackTrace(int ignoreTop);
 
 /**
  * Gets a textual stack trace from an existing buffer of stack frames.
@@ -23,7 +23,7 @@ string getStackTrace(int ignoreTop);
  * @param size number of valid frame addresses in the buffer
  * @return Stacktrace complete with resolved (although still mangled) symbols
  */
-string getStackTrace(int ignoreTop, void* const* stack, int size);
+std::string getStackTrace(int ignoreTop, void* const* stack, int size);
 
 /**
  * Get the stack frame addresses from the current frame of execution.

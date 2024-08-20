@@ -17,8 +17,8 @@ AttributeUsageStats::~AttributeUsageStats() = default;
 
 void
 AttributeUsageStats::merge(const search::AddressSpaceUsage &usage,
-                           const vespalib::string &attributeName,
-                           const vespalib::string &subDbName)
+                           const std::string &attributeName,
+                           const std::string &subDbName)
 {
     for (const auto& entry : usage.get_all()) {
         _max_usage.merge(entry.second, attributeName, entry.first, subDbName);

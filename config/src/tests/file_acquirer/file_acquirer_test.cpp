@@ -12,7 +12,7 @@ struct ServerFixture : FRT_Invokable {
     fnet::frt::StandaloneFRT server;
     FNET_Transport transport;
     FRT_Supervisor &orb;
-    vespalib::string spec;
+    std::string spec;
 
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);

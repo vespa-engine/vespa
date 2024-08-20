@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "dummy_cluster_context.h"
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <tests/common/message_sender_stub.h>
 #include <cassert>
 #include <string>
-#include "dummy_cluster_context.h"
 
 namespace storage {
 

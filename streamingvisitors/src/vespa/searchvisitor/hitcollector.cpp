@@ -149,7 +149,7 @@ HitCollector::fillSearchResult(vdslib::SearchResult & searchResult, FeatureValue
 {
     for (uint32_t lid : bestLids()) {
         const Hit & hit = _hits[lid];
-        vespalib::string documentId(hit.getDocument().docDoc().getId().toString());
+        std::string documentId(hit.getDocument().docDoc().getId().toString());
         search::DocumentIdT docId = hit.getDocId();
         SearchResult::RankType rank = hit.getRankScore();
 

@@ -13,7 +13,7 @@ namespace search::diskindex {
 class WordAggregator
 {
 private:
-    vespalib::string _word;
+    std::string _word;
     uint64_t _wordNum;
 
 public:
@@ -41,7 +41,7 @@ public:
 class DictionaryWordReader
 {
 public:
-    vespalib::string _word;
+    std::string _word;
     uint64_t _wordNum;
     index::PostingListCounts _counts;
 
@@ -76,8 +76,8 @@ public:
         _dictFile->readWord(_word, _wordNum, _counts);
     }
 
-    bool open(const vespalib::string & dictionaryName,
-              const vespalib::string & wordMapName,
+    bool open(const std::string & dictionaryName,
+              const std::string & wordMapName,
               const TuneFileSeqRead &tuneFileRead);
 
     void close();

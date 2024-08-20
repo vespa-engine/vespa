@@ -437,7 +437,7 @@ AttributeUpdater::updateValue(FloatingPointAttribute & vec, uint32_t lid, const 
 
 namespace {
 
-const vespalib::string &
+const std::string &
 getString(const search::StringAttribute & attr, uint32_t lid, const FieldValue & val) {
     if ( ! val.isLiteral() ) {
         throw UpdateException(make_string("Can not update a string attribute '%s' for lid=%d from a non-literal fieldvalue: %s",
@@ -451,7 +451,7 @@ getString(const search::StringAttribute & attr, uint32_t lid, const FieldValue &
 void
 AttributeUpdater::appendValue(StringAttribute & vec, uint32_t lid, const FieldValue & val, int weight)
 {
-    const vespalib::string & s = getString(vec, lid, val);
+    const std::string & s = getString(vec, lid, val);
     if (!vec.append(lid, s, weight)) {
         throw UpdateException(make_string("attribute append failed: %s[%u] = %s",
                                           vec.getName().c_str(), lid, s.c_str()));
@@ -461,7 +461,7 @@ AttributeUpdater::appendValue(StringAttribute & vec, uint32_t lid, const FieldVa
 void
 AttributeUpdater::removeValue(StringAttribute & vec, uint32_t lid, const FieldValue & val)
 {
-    const vespalib::string & v = getString(vec, lid, val);
+    const std::string & v = getString(vec, lid, val);
     if (!vec.remove(lid, v, 1)) {
         throw UpdateException(make_string("attribute remove failed: %s[%u] = %s",
                                           vec.getName().c_str(), lid, v.c_str()));
@@ -471,7 +471,7 @@ AttributeUpdater::removeValue(StringAttribute & vec, uint32_t lid, const FieldVa
 void
 AttributeUpdater::updateValue(StringAttribute & vec, uint32_t lid, const FieldValue & val)
 {
-    const vespalib::string & v = getString(vec, lid, val);
+    const std::string & v = getString(vec, lid, val);
     if (!vec.update(lid, v)) {
         throw UpdateException(make_string("attribute update failed: %s[%u] = %s",
                                           vec.getName().c_str(), lid, v.c_str()));
@@ -481,7 +481,7 @@ AttributeUpdater::updateValue(StringAttribute & vec, uint32_t lid, const FieldVa
 namespace {
 
 void
-validate_field_value_type(FieldValue::Type expectedType, const FieldValue& val, const vespalib::string& attr_type, const vespalib::string& value_type)
+validate_field_value_type(FieldValue::Type expectedType, const FieldValue& val, const std::string& attr_type, const std::string& value_type)
 {
     if (!val.isA(expectedType)) {
         throw UpdateException(

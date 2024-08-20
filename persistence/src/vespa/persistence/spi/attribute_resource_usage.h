@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace storage::spi {
 
@@ -13,10 +13,10 @@ namespace storage::spi {
 class AttributeResourceUsage
 {
     double _usage;
-    vespalib::string _name; // document_type.subdb.attribute.component
+    std::string _name; // document_type.subdb.attribute.component
 public:
     
-    AttributeResourceUsage(double usage, const vespalib::string& name)
+    AttributeResourceUsage(double usage, const std::string& name)
         : _usage(usage),
           _name(name)
     {
@@ -28,7 +28,7 @@ public:
     }
 
     double get_usage() const noexcept { return _usage; }
-    const vespalib::string& get_name() const noexcept { return _name; }
+    const std::string& get_name() const noexcept { return _name; }
     bool valid() const noexcept { return !_name.empty(); }
 
     bool operator==(const AttributeResourceUsage& rhs) const noexcept {

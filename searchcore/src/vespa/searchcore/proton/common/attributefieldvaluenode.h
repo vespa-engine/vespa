@@ -13,8 +13,8 @@ class AttributeFieldValueNode : public document::select::FieldValueNode
 
 public:
     // Precondition: attribute must be of a single-value type.
-    AttributeFieldValueNode(const vespalib::string& doctype,
-                            const vespalib::string& field,
+    AttributeFieldValueNode(const std::string& doctype,
+                            const std::string& field,
                             uint32_t attr_guard_index);
 
     std::unique_ptr<document::select::Value> getValue(const Context &context) const override;

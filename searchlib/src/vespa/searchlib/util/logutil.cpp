@@ -8,13 +8,13 @@ using vespalib::JSONStringer;
 
 namespace search::util {
 
-vespalib::string
-LogUtil::extractLastElements(const vespalib::string & path, size_t numElems)
+std::string
+LogUtil::extractLastElements(const std::string & path, size_t numElems)
 {
-    std::vector<vespalib::string> elems;
+    std::vector<std::string> elems;
     for (size_t pos = 0; pos < path.size(); ) {
         size_t fpos = path.find('/', pos);
-        if (fpos == vespalib::string::npos) {
+        if (fpos == std::string::npos) {
             fpos = path.size();
         }
         size_t len = fpos - pos;
@@ -23,7 +23,7 @@ LogUtil::extractLastElements(const vespalib::string & path, size_t numElems)
         }
         pos = fpos + 1;
     }
-    vespalib::string retval;
+    std::string retval;
     if (numElems >= elems.size() && path[0] == '/') {
         retval.append("/");
     }
@@ -37,7 +37,7 @@ LogUtil::extractLastElements(const vespalib::string & path, size_t numElems)
 }
 
 void
-LogUtil::logDir(JSONStringer & jstr, const vespalib::string & path, size_t numElems)
+LogUtil::logDir(JSONStringer & jstr, const std::string & path, size_t numElems)
 {
     jstr.beginObject();
     jstr.appendKey("dir").appendString(LogUtil::extractLastElements(path, numElems));

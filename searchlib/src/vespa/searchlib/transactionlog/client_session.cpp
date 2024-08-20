@@ -13,7 +13,7 @@ using namespace std::chrono_literals;
 
 namespace search::transactionlog::client {
 
-SessionKey::SessionKey(const vespalib::string & domain, int sessionId)
+SessionKey::SessionKey(const std::string & domain, int sessionId)
     : _domain(domain),
       _sessionId(sessionId)
 { }
@@ -29,7 +29,7 @@ SessionKey::cmp(const SessionKey & b) const
     return diff;
 }
 
-Session::Session(const vespalib::string & domain, TransLogClient & tlc)
+Session::Session(const std::string & domain, TransLogClient & tlc)
     : _tlc(tlc),
       _domain(domain),
       _sessionId(0)
@@ -56,7 +56,7 @@ Session::commit(const vespalib::ConstBufferRef & buf)
         if (retval) {
             req->internal_subref();
         } else {
-            vespalib::string msg;
+            std::string msg;
             if (req->GetReturn() != nullptr) {
                 msg = req->GetReturn()->GetValue(1)._string._str;
             } else {
@@ -128,7 +128,7 @@ Session::clear()
     _sessionId = 0;
 }
 
-Visitor::Visitor(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack) :
+Visitor::Visitor(const std::string & domain, TransLogClient & tlc, Callback & callBack) :
     Session(domain, tlc),
     _callback(callBack)
 {

@@ -11,11 +11,11 @@ namespace search::features {
  * Implements the blueprint for the closest executor.
  */
 class ClosestBlueprint : public fef::Blueprint {
-    vespalib::string                       _field_name;
+    std::string                       _field_name;
     vespalib::eval::ValueType              _field_tensor_type;
     vespalib::eval::ValueType              _output_tensor_type;
     uint32_t                               _field_id;
-    std::optional<vespalib::string>        _item_label;
+    std::optional<std::string>        _item_label;
     std::unique_ptr<vespalib::eval::Value> _empty_output;
     std::vector<char>                      _identity_space;
     vespalib::eval::TypedCells             _identity_cells;

@@ -147,7 +147,7 @@ public:
 
 private:
     static std::map<Id, MessageType*> _codes;
-    const vespalib::string _name;
+    const std::string _name;
     Id _id;
     MessageType *_reply;
     const MessageType *_replyOf;
@@ -228,7 +228,7 @@ public:
     ~MessageType();
     Id getId() const noexcept { return _id; }
     static Id getMaxId() noexcept { return MESSAGETYPE_MAX_ID; }
-    const vespalib::string& getName() const noexcept { return _name; }
+    const std::string& getName() const noexcept { return _name; }
     bool isReply() const noexcept { return (_replyOf != 0); }
     /** Only valid to call on replies. */
     const MessageType& getCommandType() const noexcept { return *_replyOf; }
@@ -251,7 +251,7 @@ public:
     enum class Protocol : uint8_t { STORAGE, DOCUMENT };
 
 private:
-    const vespalib::string  *_cluster;
+    const std::string  *_cluster;
     // Used for internal VDS addresses only
     uint32_t                 _precomputed_storage_hash;
     lib::NodeType::Type      _type;
@@ -260,8 +260,8 @@ private:
 
 public:
     StorageMessageAddress() noexcept; // Only to be used when transient default ctor semantics are needed by containers
-    StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept;
-    StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index, Protocol protocol) noexcept;
+    StorageMessageAddress(const std::string * cluster, const lib::NodeType& type, uint16_t index) noexcept;
+    StorageMessageAddress(const std::string * cluster, const lib::NodeType& type, uint16_t index, Protocol protocol) noexcept;
     ~StorageMessageAddress();
 
     void setProtocol(Protocol p) noexcept { _protocol = p; }
@@ -270,7 +270,7 @@ public:
     Protocol getProtocol() const noexcept { return _protocol; }
     uint16_t getIndex() const noexcept { return _index; }
     lib::NodeType::Type getNodeType() const noexcept { return _type; }
-    const vespalib::string& getCluster() const noexcept { return *_cluster; }
+    const std::string& getCluster() const noexcept { return *_cluster; }
 
     // Returns precomputed hash over <type, index> pair. Other fields not included.
     [[nodiscard]] uint32_t internal_storage_hash() const noexcept {
@@ -278,12 +278,12 @@ public:
     }
 
     bool operator==(const StorageMessageAddress& other) const noexcept;
-    vespalib::string toString() const;
+    std::string toString() const;
     friend std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr);
-    static StorageMessageAddress create(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
+    static StorageMessageAddress create(const std::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
         return api::StorageMessageAddress(cluster, type, index);
     }
-    static StorageMessageAddress createDocApi(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
+    static StorageMessageAddress createDocApi(const std::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
         return api::StorageMessageAddress(cluster, type, index, Protocol::DOCUMENT);
     }
 private:
@@ -437,7 +437,7 @@ public:
     /**
      * Cheap version of tostring().
      */
-    virtual vespalib::string getSummary() const;
+    virtual std::string getSummary() const;
 
     virtual document::Bucket getBucket() const { return getDummyBucket(); }
     document::BucketId getBucketId() const noexcept { return getBucket().getBucketId(); }

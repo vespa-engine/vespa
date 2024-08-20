@@ -42,7 +42,7 @@ public:
     const QueryTermUCS4* queryTerm() const override {
         return static_cast<const QueryTermUCS4*>(nullptr);
     }
-    const vespalib::string& attributeName() const override;
+    const std::string& attributeName() const override;
 
     const AttributeVector& attribute() const { return _attr; }
 

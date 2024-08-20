@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <stdlib.h>
-#include <iostream>
+#include <cstdlib>
 #include <iomanip>
+#include <iostream>
 #include <string>
 
 #include <vespa/fsa/fsa.h>

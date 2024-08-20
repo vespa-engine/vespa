@@ -24,7 +24,7 @@ const BasicType::TypeInfo BasicType::_typeTable[BasicType::MAX_TYPE] = {
 };
 
 BasicType::Type
-BasicType::asType(const vespalib::string &t)
+BasicType::asType(const std::string &t)
 {
     for (size_t i(0); i < sizeof(_typeTable)/sizeof(_typeTable[0]); i++) {
         if (t == _typeTable[i]._name) {

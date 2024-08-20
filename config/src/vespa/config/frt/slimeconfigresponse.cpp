@@ -2,7 +2,8 @@
 #include "slimeconfigresponse.h"
 #include <vespa/config/common/misc.h>
 #include <vespa/fnet/frt/values.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.slimeconfigresponse");
 
@@ -71,7 +72,7 @@ SlimeConfigResponse::readState() const
                        data.get()[RESPONSE_APPLY_ON_RESTART].asBool());
 }
 
-vespalib::string
+std::string
 SlimeConfigResponse::getHostName() const
 {
     Inspector & root(_data->get());

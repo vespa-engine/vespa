@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/juniper/IJuniperProperties.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <string>
 
 namespace vespa::config::search::summary::internal {
     class InternalJuniperrcType;
@@ -12,7 +12,7 @@ namespace search::docsummary {
 
 class JuniperProperties : public IJuniperProperties {
 private:
-    std::map<vespalib::string, vespalib::string> _properties;
+    std::map<std::string, std::string> _properties;
 
     /**
      * Resets the property map to all default values. This is used for the empty constructor and also called before

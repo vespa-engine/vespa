@@ -2,17 +2,17 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
 
 struct ComponentConfigProducer {
     struct Config {
-        vespalib::string name;
+        std::string name;
         size_t gen;
-        vespalib::string msg;
-        Config(const vespalib::string &n, size_t g) : name(n), gen(g), msg() {}
-        Config(const vespalib::string &n, size_t g, const vespalib::string &m)
+        std::string msg;
+        Config(const std::string &n, size_t g) : name(n), gen(g), msg() {}
+        Config(const std::string &n, size_t g, const std::string &m)
             : name(n), gen(g), msg(m) {}
         ~Config();
     };

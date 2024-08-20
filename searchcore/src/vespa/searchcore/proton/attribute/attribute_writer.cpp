@@ -61,7 +61,7 @@ AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
       _structFieldAttribute(false),
       _use_two_phase_put(use_two_phase_put_for_attribute(attribute))
 {
-    const vespalib::string &name = attribute.getName();
+    const std::string &name = attribute.getName();
     _structFieldAttribute = search::attribute::isStructFieldAttribute(name);
 }
 
@@ -70,7 +70,7 @@ AttributeWriter::WriteField::~WriteField() = default;
 void
 AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType) const
 {
-    const vespalib::string &name = _attribute.getName();
+    const std::string &name = _attribute.getName();
     FieldPath fp;
     try {
         docType.buildFieldPath(fp, name);
@@ -303,7 +303,7 @@ BatchUpdateTask::~BatchUpdateTask() = default;
 
 class FieldContext
 {
-    vespalib::string   _name;
+    std::string   _name;
     ExecutorId         _executorId;
     AttributeVector   *_attr;
     bool               _use_two_phase_put;
@@ -693,7 +693,7 @@ AttributeWriter::getWritableAttributes() const
 
 
 search::AttributeVector *
-AttributeWriter::getWritableAttribute(const vespalib::string &name) const
+AttributeWriter::getWritableAttribute(const std::string &name) const
 {
     return _mgr->getWritableAttribute(name);
 }

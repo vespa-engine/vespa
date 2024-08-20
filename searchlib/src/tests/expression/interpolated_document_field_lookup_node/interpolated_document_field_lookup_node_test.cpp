@@ -19,7 +19,7 @@ using search::expression::FloatResultNode;
 using search::expression::InterpolatedDocumentFieldLookupNode;
 using search::test::DocBuilder;
 
-const vespalib::string field_name("f");
+const std::string field_name("f");
 
 struct Fixture {
     DocBuilder                            _builder;

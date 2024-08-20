@@ -12,6 +12,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>

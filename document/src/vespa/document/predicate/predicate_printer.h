@@ -3,7 +3,7 @@
 #pragma once
 
 #include "predicate_slime_visitor.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib {
     class Slime;
@@ -24,12 +24,12 @@ class PredicatePrinter : PredicateSlimeVisitor {
     void visitTrue(const Inspector &i) override;
     void visitFalse(const Inspector &i) override;
 
-    vespalib::string str() const;
+    std::string str() const;
 
     PredicatePrinter();
     ~PredicatePrinter();
 public:
-    static vespalib::string print(const vespalib::Slime &slime);
+    static std::string print(const vespalib::Slime &slime);
 };
 
 }  // namespace document

@@ -29,7 +29,7 @@ using document::select::Node;
 using document::select::Result;
 using document::select::ResultSet;
 using proton::SelectPruner;
-using vespalib::string;
+using std::string;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::test::MockAttributeManager;

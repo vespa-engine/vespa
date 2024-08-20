@@ -28,7 +28,7 @@ ContentBucketDbMetrics::ContentBucketDbMetrics(metrics::MetricSet* owner)
 
 ContentBucketDbMetrics::~ContentBucketDbMetrics() = default;
 
-BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metrics::MetricSet* owner)
+BucketSpaceMetrics::BucketSpaceMetrics(const std::string& space_name, metrics::MetricSet* owner)
     : metrics::MetricSet("bucket_space", {{"bucketSpace", space_name}}, "", owner),
       buckets_total("buckets_total", {}, "Total number buckets present in the bucket space (ready + not ready)", this),
       entries("entries", {}, "Number of entries (documents + tombstones) stored in the bucket space", this),

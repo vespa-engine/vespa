@@ -28,8 +28,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
 
     ~MyEvalTest() override;
 
-    virtual void next_expression(const std::vector<vespalib::string> &param_names,
-                                 const vespalib::string &expression) override
+    virtual void next_expression(const std::vector<std::string> &param_names,
+                                 const std::string &expression) override
     {
         auto function = Function::parse(param_names, expression);
         ASSERT_TRUE(!function->has_error());
@@ -44,9 +44,9 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         }
     }
 
-    virtual void handle_case(const std::vector<vespalib::string> &param_names,
+    virtual void handle_case(const std::vector<std::string> &param_names,
                              const std::vector<double> &param_values,
-                             const vespalib::string &expression,
+                             const std::string &expression,
                              double expected_result) override
     {
         auto function = Function::parse(param_names, expression);
@@ -54,14 +54,14 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         bool is_supported = true;
         bool has_issues = InterpretedFunction::detect_issues(*function);
         if (is_supported && !has_issues) {
-            vespalib::string desc = as_string(param_names, param_values, expression);
+            std::string desc = as_string(param_names, param_values, expression);
             SimpleParams params(param_values);
             verify_result(SimpleValueBuilderFactory::get(), *function, "[simple] "+desc, params, expected_result);
             verify_result(FastValueBuilderFactory::get(),   *function, "[prod]   "+desc, params, expected_result);
         }
     }
 
-    void report_result(bool is_double, double result, double expect, const vespalib::string &desc)
+    void report_result(bool is_double, double result, double expect, const std::string &desc)
     {
         if (is_double && is_same(expect, result)) {
             print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",
@@ -76,7 +76,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
 
     void verify_result(const ValueBuilderFactory &factory,
                        const Function &function,
-                       const vespalib::string &description,
+                       const std::string &description,
                        const SimpleParams &params,
                        double expected_result)
     {
@@ -101,14 +101,14 @@ TEST_FF("require that interpreted evaluation passes all conformance tests", MyEv
 //-----------------------------------------------------------------------------
 
 TEST("require that invalid function is tagged with error") {
-    std::vector<vespalib::string> params({"x", "y", "z", "w"});
+    std::vector<std::string> params({"x", "y", "z", "w"});
     auto function = Function::parse(params, "x & y");
     EXPECT_TRUE(function->has_error());
 }
 
 //-----------------------------------------------------------------------------
 
-size_t count_ifs(const vespalib::string &expr, std::initializer_list<double> params_in) {
+size_t count_ifs(const std::string &expr, std::initializer_list<double> params_in) {
     auto fun = Function::parse(expr);
     auto node_types = NodeTypes(*fun, std::vector<ValueType>(params_in.size(), ValueType::double_type()));
     InterpretedFunction ifun(SimpleValueBuilderFactory::get(), *fun, node_types);

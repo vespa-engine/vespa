@@ -19,7 +19,7 @@ class PredicateRangeExpander {
     template <typename InsertIt>
     static void addEdgePartition(const char *label, uint64_t value,
                                  bool negative, InsertIt out) {
-        vespalib::string to_hash =
+        std::string to_hash =
             vespalib::make_string("%s%s%" PRIu64, label,
                                   negative? "=-" : "=", value);
         debugLog("Hashing edge partition %s", to_hash.c_str());
@@ -36,7 +36,7 @@ class PredicateRangeExpander {
             if (negative) {
                 std::swap(to, from);
             }
-            vespalib::string to_hash =
+            std::string to_hash =
                 vespalib::make_string("%s%s%" PRIu64 "-%" PRIu64, label,
                                       negative? "=-" : "=", from, to);
             debugLog("Hashing partition %s", to_hash.c_str());

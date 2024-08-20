@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
@@ -8,6 +7,8 @@
 #include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <map>
+#include <string>
+
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_registrator_test");
 
@@ -15,10 +16,10 @@ namespace proton {
 
 class MyListener : public IGidToLidChangeListener
 {
-    vespalib::string _docTypeName;
-    vespalib::string _name;
+    std::string _docTypeName;
+    std::string _name;
 public:
-    MyListener(const vespalib::string &docTypeName, const vespalib::string &name)
+    MyListener(const std::string &docTypeName, const std::string &name)
         : _docTypeName(docTypeName),
           _name(name)
     {
@@ -27,8 +28,8 @@ public:
     void notifyPutDone(IDestructorCallbackSP, document::GlobalId, uint32_t) override { }
     void notifyRemove(IDestructorCallbackSP, document::GlobalId) override { }
     void notifyRegistered(const std::vector<document::GlobalId>&) override { }
-    const vespalib::string &getName() const override { return _name; }
-    const vespalib::string &getDocTypeName() const override { return _docTypeName; }
+    const std::string &getName() const override { return _name; }
+    const std::string &getDocTypeName() const override { return _docTypeName; }
 };
 
 
@@ -49,7 +50,7 @@ struct Fixture
     ~Fixture() { }
 
     std::unique_ptr<GidToLidChangeRegistrator>
-    getRegistrator(const vespalib::string &docTypeName) {
+    getRegistrator(const std::string &docTypeName) {
         return std::make_unique<GidToLidChangeRegistrator>(_handler, docTypeName);
     }
 

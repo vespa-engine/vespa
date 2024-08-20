@@ -18,8 +18,8 @@ typedef std::shared_ptr<const protocol::Payload> PayloadPtr;
 class ConfigValue {
 public:
     explicit ConfigValue(StringVector lines);
-    ConfigValue(StringVector lines, const vespalib::string & xxhash);
-    ConfigValue(PayloadPtr data, const vespalib::string & xxhash);
+    ConfigValue(StringVector lines, const std::string & xxhash);
+    ConfigValue(PayloadPtr data, const std::string & xxhash);
     ConfigValue();
     ConfigValue(ConfigValue &&) noexcept = default;
     ConfigValue & operator = (ConfigValue &&) noexcept = default;
@@ -31,11 +31,11 @@ public:
     int operator!=(const ConfigValue & rhs) const;
 
     size_t numLines() const { return _lines.size();  }
-    const vespalib::string & getLine(int i) const { return _lines.at(i);  }
+    const std::string & getLine(int i) const { return _lines.at(i);  }
     const StringVector & getLines() const { return _lines;  }
     StringVector getLegacyFormat() const;
-    vespalib::string asJson() const;
-    const vespalib::string& getXxhash64() const { return _xxhash64; }
+    std::string asJson() const;
+    const std::string& getXxhash64() const { return _xxhash64; }
 
     void serializeV1(::vespalib::slime::Cursor & cursor) const;
     void serializeV2(::vespalib::slime::Cursor & cursor) const;
@@ -46,7 +46,7 @@ public:
 private:
     PayloadPtr       _payload;
     StringVector     _lines;
-    vespalib::string _xxhash64;
+    std::string _xxhash64;
 };
 
 } //namespace config

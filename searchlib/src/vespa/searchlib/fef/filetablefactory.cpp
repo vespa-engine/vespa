@@ -8,15 +8,15 @@ LOG_SETUP(".fef.filetablefactory");
 
 namespace search::fef {
 
-FileTableFactory::FileTableFactory(const vespalib::string & path) :
+FileTableFactory::FileTableFactory(const std::string & path) :
     _path(path)
 {
 }
 
 Table::SP
-FileTableFactory::createTable(const vespalib::string & name) const
+FileTableFactory::createTable(const std::string & name) const
 {
-    vespalib::string completeName(_path);
+    std::string completeName(_path);
     completeName.append("/");
     completeName.append(name);
     std::ifstream file(completeName.c_str(), std::ifstream::in);

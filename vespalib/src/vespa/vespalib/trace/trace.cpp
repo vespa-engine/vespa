@@ -16,7 +16,7 @@ Trace::Trace(const Trace &rhs)
 }
 
 bool
-Trace::trace(uint32_t level, const string &note, bool addTime)
+Trace::trace(uint32_t level, const std::string &note, bool addTime)
 {
     if (!shouldTrace(level)) {
         return false;
@@ -31,12 +31,12 @@ Trace::trace(uint32_t level, const string &note, bool addTime)
     return true;
 }
 
-string
+std::string
 Trace::toString(size_t limit) const {
     return _root ? _root->toString(limit) : "";
 }
 
-string
+std::string
 Trace::encode() const {
     return isEmpty() ? "" : getRoot().encode();
 }

@@ -37,7 +37,7 @@ private:
     void registerListener(MapListener &listener) override;
     void unregisterListener(MapListener &listener) override;
 
-    using Map = std::map<vespalib::string, vespalib::string>;
+    using Map = std::map<std::string, std::string>;
     Map _map;
     Generation _currGen;
     std::set<MapListener *> _listeners;

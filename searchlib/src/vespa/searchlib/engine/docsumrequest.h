@@ -15,7 +15,7 @@ public:
     using UP = std::unique_ptr<DocsumRequest>;
     using SP = std::shared_ptr<DocsumRequest>;
     using Source = LazySource<DocsumRequest>;
-    using FieldList = std::vector<vespalib::string>;
+    using FieldList = std::vector<std::string>;
 
     class Hit {
     public:
@@ -26,7 +26,7 @@ public:
         mutable uint32_t  docid; // converted in backend
     };
 
-    vespalib::string  resultClassName;
+    std::string  resultClassName;
     std::vector<Hit>  hits;
 
     DocsumRequest();

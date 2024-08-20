@@ -39,8 +39,8 @@ public:
         return ! (*this == other);
     }
 
-    const vespalib::string& getOriginalFieldPath() const { return _originalFieldPath; }
-    const vespalib::string& getOriginalWhereClause() const { return _originalWhereClause; }
+    const std::string& getOriginalFieldPath() const { return _originalFieldPath; }
+    const std::string& getOriginalWhereClause() const { return _originalWhereClause; }
 
     /**
      * Check that a given field value is of the type inferred by
@@ -78,8 +78,8 @@ private:
     virtual std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const = 0;
 
     FieldPathUpdateType _type;
-    vespalib::string    _originalFieldPath;
-    vespalib::string    _originalWhereClause;
+    std::string    _originalFieldPath;
+    std::string    _originalWhereClause;
 };
 
 }

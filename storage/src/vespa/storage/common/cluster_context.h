@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace storage {
 
@@ -20,10 +20,10 @@ public:
     // lifetime of all the components that may ask for it.
     // This API is for the benefit of StorageMessageAddress
     // which wants to contain the pointer returned here.
-    virtual const vespalib::string * cluster_name_ptr() const noexcept = 0;
+    virtual const std::string * cluster_name_ptr() const noexcept = 0;
 
     // convenience method
-    const vespalib::string &cluster_name() const noexcept {
+    const std::string &cluster_name() const noexcept {
         return *cluster_name_ptr();
     }
 };
@@ -32,12 +32,12 @@ public:
  * Simple ClusterContext with an exposed string.
  **/
 struct SimpleClusterContext : ClusterContext {
-    vespalib::string my_cluster_name;
-    const vespalib::string * cluster_name_ptr() const noexcept override {
+    std::string my_cluster_name;
+    const std::string * cluster_name_ptr() const noexcept override {
         return &my_cluster_name;
     }
     SimpleClusterContext() : my_cluster_name("") {}
-    explicit SimpleClusterContext(const vespalib::string& value)
+    explicit SimpleClusterContext(const std::string& value)
       : my_cluster_name(value)
     {}
     ~SimpleClusterContext() override = default;

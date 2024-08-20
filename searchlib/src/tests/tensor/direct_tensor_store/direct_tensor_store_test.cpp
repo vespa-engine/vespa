@@ -18,7 +18,7 @@ using vespalib::eval::ValueType;
 using vespalib::eval::TypedCells;
 using vespalib::MemoryUsage;
 
-vespalib::string tensor_type_spec("tensor(x{})");
+std::string tensor_type_spec("tensor(x{})");
 
 class MockBigTensor : public Value
 {

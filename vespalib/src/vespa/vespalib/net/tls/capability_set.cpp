@@ -8,7 +8,7 @@
 
 namespace vespalib::net::tls {
 
-string CapabilitySet::to_string() const {
+std::string CapabilitySet::to_string() const {
     asciistream os;
     os << "CapabilitySet({";
     bool emit_comma = false;
@@ -25,8 +25,8 @@ string CapabilitySet::to_string() const {
     return os.str();
 }
 
-std::optional<CapabilitySet> CapabilitySet::find_capability_set(const string& cap_set_name) noexcept {
-    static const hash_map<string, CapabilitySet> name_to_cap_set({
+std::optional<CapabilitySet> CapabilitySet::find_capability_set(const std::string& cap_set_name) noexcept {
+    static const hash_map<std::string, CapabilitySet> name_to_cap_set({
         {"vespa.all",                     all()},
         {"vespa.content_node",            content_node()},
         {"vespa.container_node",          container_node()},
@@ -39,7 +39,7 @@ std::optional<CapabilitySet> CapabilitySet::find_capability_set(const string& ca
     return (iter != name_to_cap_set.end()) ? std::optional<CapabilitySet>(iter->second) : std::nullopt;
 }
 
-bool CapabilitySet::resolve_and_add(const string& set_or_cap_name) noexcept {
+bool CapabilitySet::resolve_and_add(const std::string& set_or_cap_name) noexcept {
     if (auto cap_set = find_capability_set(set_or_cap_name)) {
         _capability_mask |= cap_set->_capability_mask;
         return true;

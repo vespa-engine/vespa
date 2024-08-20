@@ -54,7 +54,7 @@ MoveOperation::deserialize(vespalib::nbostream &is,
     _serializedDocSize = oldSize - is.size();
 }
 
-vespalib::string MoveOperation::toString() const {
+std::string MoveOperation::toString() const {
     return make_string("Move(%s, %s)",
                        _doc.get() ?
                        _doc->getId().getScheme().toString().c_str() : "NULL",

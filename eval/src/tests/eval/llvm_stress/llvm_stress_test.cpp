@@ -62,7 +62,7 @@ struct Rnd {
     }
 };
 
-vespalib::string make_expr(size_t size, Rnd &rnd) {
+std::string make_expr(size_t size, Rnd &rnd) {
     if (size < 2) {
         auto x = rnd.get_int(0, 99);
         if (x < 2) {
@@ -74,7 +74,7 @@ vespalib::string make_expr(size_t size, Rnd &rnd) {
         } else if (x < 26) {
             return "1.25";
         } else {
-            static vespalib::string params("abcdefghijk");
+            static std::string params("abcdefghijk");
             auto idx = rnd.get_int(0, params.size() - 1);
             return params.substr(idx, 1);
         }

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <chrono>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <sys/time.h>
 
 // Guidelines:
@@ -75,8 +75,8 @@ constexpr duration from_timespec(const timespec & ts) {
     return duration(ts.tv_sec*1000000000L + ts.tv_nsec);
 }
 
-vespalib::string to_string(system_time time);
-vespalib::string to_string(file_time time);
+std::string to_string(system_time time);
+std::string to_string(file_time time);
 
 steady_time saturated_add(steady_time time, duration diff);
 

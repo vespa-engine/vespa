@@ -444,7 +444,7 @@ VisitorTest::fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_
 std::shared_ptr<api::CreateVisitorCommand>
 VisitorTest::makeCreateVisitor(const VisitorOptions& options)
 {
-    static vespalib::string _storage("storage");
+    static std::string _storage("storage");
     api::StorageMessageAddress address(&_storage, lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(
             makeBucketSpace(), options.visitorType, "testvis", "");

@@ -39,13 +39,13 @@ using namespace slime::convenience;
 
 namespace {
 
-void verify_referenced_file_exists(const vespalib::string& file_path) {
+void verify_referenced_file_exists(const std::string& file_path) {
     if (!std::filesystem::exists(std::filesystem::path(file_path))) {
         throw IllegalArgumentException(make_string("File '%s' referenced by TLS config does not exist", file_path.c_str()));
     }
 }
 
-vespalib::string load_file_referenced_by_field(const Inspector& cursor, const char* field) {
+std::string load_file_referenced_by_field(const Inspector& cursor, const char* field) {
     auto file_path = cursor[field].asString().make_string();
     if (file_path.empty()) {
         throw IllegalArgumentException(make_string("TLS config field '%s' has not been set", field));
@@ -123,11 +123,11 @@ AuthorizedPeers parse_authorized_peers(const Inspector& authorized_peers) {
     return AuthorizedPeers(std::move(policies));
 }
 
-std::vector<vespalib::string> parse_accepted_ciphers(const Inspector& accepted_ciphers) {
+std::vector<std::string> parse_accepted_ciphers(const Inspector& accepted_ciphers) {
     if (!accepted_ciphers.valid()) {
         return {};
     }
-    std::vector<vespalib::string> ciphers;
+    std::vector<std::string> ciphers;
     for (size_t i = 0; i < accepted_ciphers.children(); ++i) {
         ciphers.emplace_back(accepted_ciphers[i].asString().make_string());
     }
@@ -173,12 +173,12 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
 
 } // anon ns
 
-std::unique_ptr<TransportSecurityOptions> read_options_from_json_string(const vespalib::string& json_data) {
+std::unique_ptr<TransportSecurityOptions> read_options_from_json_string(const std::string& json_data) {
     MemoryInput file_input(json_data);
     return load_from_input(file_input);
 }
 
-std::unique_ptr<TransportSecurityOptions> read_options_from_json_file(const vespalib::string& file_path) {
+std::unique_ptr<TransportSecurityOptions> read_options_from_json_file(const std::string& file_path) {
     MappedFileInput file_input(file_path);
     if (!file_input.valid()) {
         throw IllegalArgumentException(make_string("TLS config file '%s' could not be read", file_path.c_str()));

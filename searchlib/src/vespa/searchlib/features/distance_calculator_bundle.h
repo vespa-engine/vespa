@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/fef/handle.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace search::tensor { class DistanceCalculator; }
@@ -39,12 +39,12 @@ private:
 public:
     DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
                              uint32_t field_id,
-                             const vespalib::string& feature_name);
+                             const std::string& feature_name);
 
     DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
                              std::optional<uint32_t> field_id,
-                             const vespalib::string& label,
-                             const vespalib::string& feature_name);
+                             const std::string& label,
+                             const std::string& feature_name);
 
     const std::vector<Element>& elements() const { return _elems; }
 
@@ -53,12 +53,12 @@ public:
     static void prepare_shared_state(const fef::IQueryEnvironment& env,
                                      fef::IObjectStore& store,
                                      uint32_t field_id,
-                                     const vespalib::string& feature_name);
+                                     const std::string& feature_name);
 
     static void prepare_shared_state(const fef::IQueryEnvironment& env,
                                      fef::IObjectStore& store,
-                                     const vespalib::string& label,
-                                     const vespalib::string& feature_name);
+                                     const std::string& label,
+                                     const std::string& feature_name);
 };
 
 }

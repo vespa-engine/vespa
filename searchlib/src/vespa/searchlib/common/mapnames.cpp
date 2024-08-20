@@ -4,12 +4,12 @@
 
 namespace search {
 
-const vespalib::string MapNames::RANK("rank");
-const vespalib::string MapNames::FEATURE("feature");
-const vespalib::string MapNames::HIGHLIGHTTERMS("highlightterms");
-const vespalib::string MapNames::MATCH("match");
-const vespalib::string MapNames::CACHES("caches");
-const vespalib::string MapNames::MODEL("model");
-const vespalib::string MapNames::TRACE("trace");
+const std::string MapNames::RANK("rank");
+const std::string MapNames::FEATURE("feature");
+const std::string MapNames::HIGHLIGHTTERMS("highlightterms");
+const std::string MapNames::MATCH("match");
+const std::string MapNames::CACHES("caches");
+const std::string MapNames::MODEL("model");
+const std::string MapNames::TRACE("trace");
 
 } // namespace search

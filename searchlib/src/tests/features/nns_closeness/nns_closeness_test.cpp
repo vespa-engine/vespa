@@ -19,8 +19,8 @@ using namespace search::fef;
 using search::attribute::DistanceMetric;
 using vespalib::eval::TensorSpec;
 
-const vespalib::string labelFeatureName("closeness(label,nns)");
-const vespalib::string fieldFeatureName("closeness(bar)");
+const std::string labelFeatureName("closeness(label,nns)");
+const std::string fieldFeatureName("closeness(bar)");
 
 using RankFixture = DistanceClosenessFixture;
 
@@ -46,7 +46,7 @@ TEST(NnsClosenessTest, require_that_setup_can_be_done_on_random_label)
     IndexEnvironmentFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(label,random_label)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"label", "random_label"}));
+    EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<std::string>{"label", "random_label"}));
 }
 
 TEST(NnsClosenessTest, require_that_no_label_gives_0_closeness)

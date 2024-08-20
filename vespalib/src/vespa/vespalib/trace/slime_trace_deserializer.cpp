@@ -43,7 +43,7 @@ SlimeTraceDeserializer::hasPayload(const Inspector & inspector)
     return inspector[SlimeTraceSerializer::PAYLOAD].valid();
 }
 
-vespalib::string
+std::string
 SlimeTraceDeserializer::decodePayload(const Inspector & inspector)
 {
     return inspector[SlimeTraceSerializer::PAYLOAD].asString().make_string();

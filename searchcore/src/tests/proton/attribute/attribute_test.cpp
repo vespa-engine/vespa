@@ -169,7 +169,7 @@ public:
     void allocAttributeWriter() {
         _aw = std::make_unique<AttributeWriter>(_mgr);
     }
-    AttributeVector::SP addAttribute(const vespalib::string &name) {
+    AttributeVector::SP addAttribute(const std::string &name) {
         return addAttribute({name, AVConfig(AVBasicType::INT32)});
     }
     AttributeVector::SP addAttribute(const AttributeSpec &spec) {
@@ -536,7 +536,7 @@ public:
         addAttribute("a1", false);
         addAttribute("a2", true);
     }
-    void addAttribute(const vespalib::string &name, bool fastAccess) {
+    void addAttribute(const std::string &name, bool fastAccess) {
         AttributesConfigBuilder::Attribute attr;
         attr.name = name;
         attr.fastaccess = fastAccess;
@@ -645,7 +645,7 @@ Value::UP make_tensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);
 }
 
-const vespalib::string sparse_tensor = "tensor(x{},y{})";
+const std::string sparse_tensor = "tensor(x{},y{})";
 
 AttributeVector::SP
 createTensorAttribute(AttributeWriterTest &t) {
@@ -736,9 +736,9 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     // Since executor distribution depends on the unspecified hash function in vespalib,
     // decouple attribute names from their usage to allow for picking names that hash
     // more evenly for a particular implementation.
-    vespalib::string a1_name = "a1";
-    vespalib::string a2_name = "a2x";
-    vespalib::string a3_name = "a3y";
+    std::string a1_name = "a1";
+    std::string a2_name = "a2x";
+    std::string a3_name = "a3y";
 
     DocBuilder db([&](auto& header)
                   { header.addField(a1_name, DataType::T_INT)
@@ -823,7 +823,7 @@ public:
     }
 };
 
-const vespalib::string dense_tensor = "tensor(x[2])";
+const std::string dense_tensor = "tensor(x[2])";
 
 AVConfig
 get_tensor_config(bool multi_threaded_indexing)
@@ -835,7 +835,7 @@ get_tensor_config(bool multi_threaded_indexing)
 }
 
 std::shared_ptr<MockDenseTensorAttribute>
-make_mock_tensor_attribute(const vespalib::string& name, bool multi_threaded_indexing)
+make_mock_tensor_attribute(const std::string& name, bool multi_threaded_indexing)
 {
     auto cfg = get_tensor_config(multi_threaded_indexing);
     return std::make_shared<MockDenseTensorAttribute>(name, cfg);
@@ -866,7 +866,7 @@ TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separat
 class TwoPhasePutTest : public AttributeWriterTest {
 public:
     DocBuilder builder;
-    vespalib::string doc_id;
+    std::string doc_id;
     std::shared_ptr<MockDenseTensorAttribute> attr;
     std::unique_ptr<Value> tensor;
 
@@ -983,7 +983,7 @@ TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_fo
 
 
 ImportedAttributeVector::SP
-createImportedAttribute(const vespalib::string &name)
+createImportedAttribute(const std::string &name)
 {
     auto result = ImportedAttributeVectorFactory::create(name, {}, {}, {}, {}, true);
     result->getSearchCache()->insert("foo", {});

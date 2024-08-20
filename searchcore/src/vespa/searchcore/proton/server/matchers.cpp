@@ -29,7 +29,7 @@ Matchers::Matchers(const std::atomic<vespalib::steady_time> & now_ref,
 Matchers::~Matchers() = default;
 
 void
-Matchers::add(const vespalib::string &name, std::shared_ptr<Matcher> matcher)
+Matchers::add(const std::string &name, std::shared_ptr<Matcher> matcher)
 {
     if ((name == "default") || ! _default) {
         _default = matcher;
@@ -48,14 +48,14 @@ Matchers::getStats() const
 }
 
 MatchingStats
-Matchers::getStats(const vespalib::string &name) const
+Matchers::getStats(const std::string &name) const
 {
     auto it = _rpmap.find(name);
     return it != _rpmap.end() ? it->second->getStats() : MatchingStats();
 }
 
 std::shared_ptr<Matcher>
-Matchers::lookup(const vespalib::string &name) const
+Matchers::lookup(const std::string &name) const
 {
     auto found = _rpmap.find(name);
     if (found == _rpmap.end()) {

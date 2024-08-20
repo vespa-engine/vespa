@@ -84,7 +84,7 @@ BucketInfo::operator==(const BucketInfo& info) const noexcept
 }
 
 // TODO: add ready/active to printing
-vespalib::string
+std::string
 BucketInfo::toString() const
 {
     vespalib::asciistream out;

@@ -9,7 +9,7 @@ namespace search::predicate {
 
 namespace simpleindex {
     bool log_enabled();
-    void log_debug(vespalib::string &str);
+    void log_debug(std::string &str);
 }
 
 template <typename Posting, typename Key, typename DocId>

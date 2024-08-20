@@ -14,28 +14,28 @@ SimpleMetricsProducer::SimpleMetricsProducer()
 SimpleMetricsProducer::~SimpleMetricsProducer() = default;
 
 void
-SimpleMetricsProducer::setMetrics(const vespalib::string &metrics, ExpositionFormat format)
+SimpleMetricsProducer::setMetrics(const std::string &metrics, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
     _metrics[format] = metrics;
 }
 
-vespalib::string
-SimpleMetricsProducer::getMetrics(const vespalib::string &, ExpositionFormat format)
+std::string
+SimpleMetricsProducer::getMetrics(const std::string &, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
     return _metrics[format]; // May implicitly create entry, but that's fine here.
 }
 
 void
-SimpleMetricsProducer::setTotalMetrics(const vespalib::string &metrics, ExpositionFormat format)
+SimpleMetricsProducer::setTotalMetrics(const std::string &metrics, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
     _total_metrics[format] = metrics;
 }
 
-vespalib::string
-SimpleMetricsProducer::getTotalMetrics(const vespalib::string &, ExpositionFormat format)
+std::string
+SimpleMetricsProducer::getTotalMetrics(const std::string &, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
     return _total_metrics[format];

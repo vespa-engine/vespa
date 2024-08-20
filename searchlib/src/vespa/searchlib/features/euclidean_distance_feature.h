@@ -36,8 +36,8 @@ public:
  */
 class EuclideanDistanceBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _attributeName;
-    vespalib::string _queryVector;
+    std::string _attributeName;
+    std::string _queryVector;
 
 public:
     EuclideanDistanceBlueprint();

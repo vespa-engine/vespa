@@ -22,7 +22,7 @@ namespace document {
 
 class LiteralFieldValueB : public FieldValue {
 public:
-    using string = vespalib::string;
+    using string = std::string;
     using string_view = std::string_view;
     using UP = std::unique_ptr<LiteralFieldValueB>;
     using value_type = string;
@@ -57,7 +57,7 @@ public:
     int compare(const FieldValue& other) const override;
     int fastCompare(const FieldValue& other) const override final;
 
-    vespalib::string getAsString() const override;
+    std::string getAsString() const override;
     std::pair<const char*, size_t> getAsRaw() const override;
 
     void printXml(XmlOutputStream& out) const override;

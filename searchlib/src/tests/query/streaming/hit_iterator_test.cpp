@@ -25,7 +25,7 @@ make_hit_list()
 }
 
 void
-check_seek_to_field_elem(HitIterator& it, const FieldElement& field_element, const Hit* exp_ptr, const vespalib::string& label)
+check_seek_to_field_elem(HitIterator& it, const FieldElement& field_element, const Hit* exp_ptr, const std::string& label)
 {
     SCOPED_TRACE(label);
     EXPECT_TRUE(it.seek_to_field_element(field_element));
@@ -34,7 +34,7 @@ check_seek_to_field_elem(HitIterator& it, const FieldElement& field_element, con
 }
 
 void
-check_seek_to_field_elem_failure(HitIterator& it, const FieldElement& field_element, const vespalib::string& label)
+check_seek_to_field_elem_failure(HitIterator& it, const FieldElement& field_element, const std::string& label)
 {
     SCOPED_TRACE(label);
     EXPECT_FALSE(it.seek_to_field_element(field_element));
@@ -42,7 +42,7 @@ check_seek_to_field_elem_failure(HitIterator& it, const FieldElement& field_elem
 }
 
 void
-check_step_in_field_element(HitIterator& it, FieldElement& field_element, bool exp_success, const Hit* exp_ptr, const vespalib::string& label)
+check_step_in_field_element(HitIterator& it, FieldElement& field_element, bool exp_success, const Hit* exp_ptr, const std::string& label)
 {
     SCOPED_TRACE(label);
     EXPECT_EQ(exp_success, it.step_in_field_element(field_element));
@@ -56,7 +56,7 @@ check_step_in_field_element(HitIterator& it, FieldElement& field_element, bool e
 }
 
 void
-check_seek_in_field_element(HitIterator& it, uint32_t position, FieldElement& field_element, bool exp_success, const Hit* exp_ptr, const vespalib::string& label)
+check_seek_in_field_element(HitIterator& it, uint32_t position, FieldElement& field_element, bool exp_success, const Hit* exp_ptr, const std::string& label)
 {
     SCOPED_TRACE(label);
     EXPECT_EQ(exp_success, it.seek_in_field_element(position, field_element));

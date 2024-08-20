@@ -4,8 +4,8 @@
 #include "indexsearchable.h"
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <string>
 
 namespace document { class Document; }
 namespace vespalib { class IDestructorCallback; }
@@ -73,7 +73,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
      * @param docIdLimit the largest local document id used + 1
      * @param serialNum the serial number of the last operation to the memory index.
      */
-    virtual void flushToDisk(const vespalib::string &flushDir,
+    virtual void flushToDisk(const std::string &flushDir,
                              uint32_t docIdLimit,
                              search::SerialNum serialNum) = 0;
 

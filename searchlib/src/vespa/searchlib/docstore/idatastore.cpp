@@ -4,7 +4,7 @@
 
 namespace search {
 
-IDataStore::IDataStore(const vespalib::string& dirName) :
+IDataStore::IDataStore(const std::string& dirName) :
     _docIdLimit(0),
     _dirName(dirName)
 {

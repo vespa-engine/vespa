@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <string>
-#include <set>
 #include "querynode.h"
+#include <set>
+#include <string>
 
 class Matcher;
 class key_occ;

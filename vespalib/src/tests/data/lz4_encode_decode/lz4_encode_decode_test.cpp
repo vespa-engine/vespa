@@ -38,7 +38,7 @@ TEST("require that lz4 encode-decode works") {
         Lz4InputDecoder input_decoder(chunked_input, 10);
         transfer(input_decoder, decoded);
         EXPECT_TRUE(!input_decoder.failed());
-        EXPECT_EQUAL(input_decoder.reason(), vespalib::string());
+        EXPECT_EQUAL(input_decoder.reason(), std::string());
     }
     EXPECT_NOT_EQUAL(data.get(), encoded.get());
     EXPECT_EQUAL(data.get(), decoded.get());

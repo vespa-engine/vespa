@@ -110,7 +110,7 @@ MyQuery::~MyQuery() {}
 
 class NearSearchTest : public ::testing::Test {
 protected:
-    void testNearSearch(MyQuery &query, uint32_t matchId, const vespalib::string& label);
+    void testNearSearch(MyQuery &query, uint32_t matchId, const std::string& label);
 
     NearSearchTest();
     ~NearSearchTest() override;
@@ -209,7 +209,7 @@ TEST_F(NearSearchTest, repeated_terms)
 }
 
 void
-NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const vespalib::string& label)
+NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const std::string& label)
 {
     SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
     search::queryeval::IntermediateBlueprint *near_b = nullptr;

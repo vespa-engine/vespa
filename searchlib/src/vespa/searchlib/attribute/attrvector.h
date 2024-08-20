@@ -40,7 +40,7 @@ protected:
     using largeint_t = typename B::largeint_t;
     using Config = typename B::Config;
 
-    NumericDirectAttribute(const vespalib::string & baseFileName, const Config & c);
+    NumericDirectAttribute(const std::string & baseFileName, const Config & c);
     ~NumericDirectAttribute() override;
 
     bool findEnum(BaseType value, EnumHandle & e) const override;
@@ -63,8 +63,8 @@ protected:
 private:
     using largeint_t = typename B::largeint_t;
 public:
-    NumericDirectAttrVector(const vespalib::string & baseFileName);
-    NumericDirectAttrVector(const vespalib::string & baseFileName, const AttributeVector::Config & c);
+    NumericDirectAttrVector(const std::string & baseFileName);
+    NumericDirectAttrVector(const std::string & baseFileName, const AttributeVector::Config & c);
     largeint_t getInt(DocId doc)   const override { return static_cast<largeint_t>(getHelper(doc, 0)); }
     double getFloat(DocId doc)     const override { return getHelper(doc, 0); }
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz)     const override { return getAllHelper<largeint_t, largeint_t>(doc, v, sz); }
@@ -143,7 +143,7 @@ private:
     const char * getStringFromEnum(EnumHandle e) const override { return &_buffer[e]; }
     std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 protected:
-    StringDirectAttribute(const vespalib::string & baseFileName, const Config & c);
+    StringDirectAttribute(const std::string & baseFileName, const Config & c);
     ~StringDirectAttribute() override;
     bool findEnum(const char * value, EnumHandle & e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *) const override;
@@ -164,14 +164,14 @@ class StringDirectAttrVector : public search::StringDirectAttribute
 {
 
 public:
-    StringDirectAttrVector(const vespalib::string & baseFileName);
-    StringDirectAttrVector(const vespalib::string & baseFileName, const Config & c);
+    StringDirectAttrVector(const std::string & baseFileName);
+    StringDirectAttrVector(const std::string & baseFileName, const Config & c);
     uint32_t get(DocId doc, const char ** v, uint32_t sz)  const override {
         return getAllHelper(doc, v, sz);
     }
     const char * get(DocId doc)  const override { return getHelper(doc, 0); }
 private:
-    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz)  const override { return getAllHelper(doc, v, sz); }
+    uint32_t get(DocId doc, std::string * v, uint32_t sz)  const override { return getAllHelper(doc, v, sz); }
     uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override { return getAllEnumHelper(doc, e, sz); }
     EnumHandle getEnum(DocId doc)  const override { return getEnumHelper(doc, 0); }
     uint32_t getValueCount(DocId doc) const override { return getValueCountHelper(doc); }

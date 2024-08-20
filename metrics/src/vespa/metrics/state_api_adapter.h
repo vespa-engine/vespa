@@ -21,8 +21,8 @@ private:
 public:
     explicit StateApiAdapter(MetricManager &manager) : _manager(manager) {}
 
-    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
+    std::string getMetrics(const std::string &consumer, ExpositionFormat format) override;
+    std::string getTotalMetrics(const std::string &consumer, ExpositionFormat format) override;
 };
 
 } // namespace metrics

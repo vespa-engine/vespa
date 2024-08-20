@@ -76,7 +76,7 @@ public:
     // inherited from search::fef::IQueryEnvironment
     const search::attribute::IAttributeContext & getAttributeContext() const override;
 
-    double get_average_field_length(const vespalib::string &field_name) const override;
+    double get_average_field_length(const std::string &field_name) const override;
 
     // inherited from search::fef::IQueryEnvironment
     const search::fef::IIndexEnvironment & getIndexEnvironment() const override;

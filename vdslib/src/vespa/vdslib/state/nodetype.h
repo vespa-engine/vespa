@@ -9,7 +9,8 @@
  */
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib {
     class asciistream;
@@ -30,12 +31,12 @@ public:
     /** Throws vespalib::IllegalArgumentException if invalid state given. */
     static const NodeType& get(std::string_view serialized);
     static const NodeType& get(Type type) noexcept;
-    const vespalib::string& serialize() const noexcept { return _name; }
+    const std::string& serialize() const noexcept { return _name; }
 
     Type getType() const noexcept { return _type; }
     operator uint16_t() const noexcept { return static_cast<uint16_t>(_type); }
 
-    const vespalib::string & toString() const noexcept { return _name; }
+    const std::string & toString() const noexcept { return _name; }
     bool operator==(const NodeType& other) const noexcept { return (&other == this); }
     bool operator!=(const NodeType& other) const noexcept { return (&other != this); }
 
@@ -44,7 +45,7 @@ public:
     }
 private:
     Type             _type;
-    vespalib::string _name;
+    std::string _name;
 
     NodeType(std::string_view name, Type type) noexcept;
 };

@@ -4,9 +4,9 @@
 
 #include "time.h"
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <functional>
+#include <string>
 
 namespace vespalib {
 
@@ -32,20 +32,20 @@ public:
         virtual void track_complete() = 0;
         virtual void report(slime::Cursor &obj, ReportContext &ctx) const = 0;
     };
-    using NameMapper = std::function<vespalib::string(const vespalib::string &)>;
+    using NameMapper = std::function<std::string(const std::string &)>;
 
 private:
     size_t _level;
     size_t _max_depth;
-    std::vector<vespalib::string> _names;
-    vespalib::hash_map<vespalib::string,size_t> _name_map;
+    std::vector<std::string> _names;
+    vespalib::hash_map<std::string,size_t> _name_map;
     std::unique_ptr<Impl> _impl;
 
 public:
     ExecutionProfiler(int32_t profile_depth);
     ~ExecutionProfiler();
-    TaskId resolve(const vespalib::string &name);
-    const vespalib::string &name_of(TaskId task) const { return _names[task]; }
+    TaskId resolve(const std::string &name);
+    const std::string &name_of(TaskId task) const { return _names[task]; }
     void start(TaskId task) {
         if (++_level <= _max_depth) {
             _impl->track_start(task);
@@ -57,7 +57,7 @@ public:
         }
     }
     void report(slime::Cursor &obj, const NameMapper &name_mapper =
-                [](const vespalib::string &name) noexcept { return name; }) const;
+                [](const std::string &name) noexcept { return name; }) const;
 };
 
 }

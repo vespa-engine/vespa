@@ -51,10 +51,10 @@ public:
         IMemoryIndex::SP createMemoryIndex(const Schema& schema,
                                            const IFieldLengthInspector& inspector,
                                            SerialNum serialNum) override;
-        IDiskIndex::SP loadDiskIndex(const vespalib::string &indexDir) override;
+        IDiskIndex::SP loadDiskIndex(const std::string &indexDir) override;
         IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex) override;
-        bool runFusion(const Schema &schema, const vespalib::string &outputDir,
-                       const std::vector<vespalib::string> &sources,
+        bool runFusion(const Schema &schema, const std::string &outputDir,
+                       const std::vector<std::string> &sources,
                        const SelectorArray &docIdSelector,
                        search::SerialNum lastSerialNum,
                        std::shared_ptr<search::IFlushToken> flush_token) override;
@@ -67,7 +67,7 @@ private:
 public:
     IndexManager(const IndexManager &) = delete;
     IndexManager & operator = (const IndexManager &) = delete;
-    IndexManager(const vespalib::string &baseDir,
+    IndexManager(const std::string &baseDir,
                  const IndexConfig & indexConfig,
                  const Schema &schema,
                  SerialNum serialNum,

@@ -21,7 +21,7 @@ PageDict4MemSeqReader::PageDict4MemSeqReader(uint32_t chunkSize, uint64_t numWor
 PageDict4MemSeqReader::~PageDict4MemSeqReader() = default;
 
 void
-PageDict4MemSeqReader::readCounts(vespalib::string &word,
+PageDict4MemSeqReader::readCounts(std::string &word,
                                   uint64_t &wordNum,
                                   PostingListCounts &counts)
 {

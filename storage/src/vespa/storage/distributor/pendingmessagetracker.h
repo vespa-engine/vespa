@@ -142,7 +142,7 @@ private:
 
         MessageEntry(TimePoint timeStamp, uint32_t msgType, uint32_t priority,
                      uint64_t msgId, document::Bucket bucket, uint16_t nodeIdx) noexcept;
-        [[nodiscard]] vespalib::string toHtml() const;
+        [[nodiscard]] std::string toHtml() const;
     };
 
     struct MessageIdKey : boost::multi_index::member<MessageEntry, uint64_t, &MessageEntry::msgId> {};

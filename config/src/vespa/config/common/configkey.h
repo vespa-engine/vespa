@@ -29,10 +29,10 @@ public:
     bool operator>(const ConfigKey & rhs) const;
     bool operator==(const ConfigKey & rhs) const;
 
-    const vespalib::string & getDefName() const;
-    const vespalib::string & getConfigId() const;
-    const vespalib::string & getDefNamespace() const;
-    const vespalib::string & getDefMd5() const;
+    const std::string & getDefName() const;
+    const std::string & getConfigId() const;
+    const std::string & getDefNamespace() const;
+    const std::string & getDefMd5() const;
     const StringVector & getDefSchema() const;
 
     template <typename ConfigType>
@@ -44,14 +44,14 @@ public:
                                    ConfigType::CONFIG_DEF_SCHEMA);
     }
 
-    const vespalib::string toString() const;
+    const std::string toString() const;
 private:
-    vespalib::string _configId;
-    vespalib::string _defName;
-    vespalib::string _defNamespace;
-    vespalib::string _defMd5;
+    std::string _configId;
+    std::string _defName;
+    std::string _defNamespace;
+    std::string _defMd5;
     StringVector     _defSchema;
-    vespalib::string _key;
+    std::string _key;
 };
 
 } //namespace config

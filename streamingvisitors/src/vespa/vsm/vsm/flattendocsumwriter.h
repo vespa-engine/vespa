@@ -14,16 +14,16 @@ namespace vsm {
 class FlattenDocsumWriter : public document::fieldvalue::IteratorHandler {
 private:
     CharBuffer       _output;
-    vespalib::string _separator;
+    std::string _separator;
     bool             _useSeparator;
 
     void considerSeparator();
     void onPrimitive(uint32_t, const Content & c) override;
 
 public:
-    FlattenDocsumWriter(const vespalib::string & separator = " ");
+    FlattenDocsumWriter(const std::string & separator = " ");
     ~FlattenDocsumWriter();
-    void setSeparator(const vespalib::string & separator) { _separator = separator; }
+    void setSeparator(const std::string & separator) { _separator = separator; }
     const CharBuffer & getResult() const { return _output; }
     void clear() {
         _output.reset();

@@ -579,7 +579,7 @@ void StripeBucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::
     _distributor_interface.enableClusterStateBundle(activated_state);
 }
 
-vespalib::string
+std::string
 StripeBucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) const
 {
     return "text/xml";
@@ -587,9 +587,9 @@ StripeBucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) const
 
 namespace {
 
-const vespalib::string ALL = "all";
-const vespalib::string BUCKETDB = "bucketdb";
-const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
+const std::string ALL = "all";
+const std::string BUCKETDB = "bucketdb";
+const std::string BUCKETDB_UPDATER = "Bucket Database Updater";
 
 }
 
@@ -625,7 +625,7 @@ StripeBucketDBUpdater::reportStatus(std::ostream& out,
     return true;
 }
 
-vespalib::string
+std::string
 StripeBucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
                                  const framework::HttpUrlPath&) const
 {

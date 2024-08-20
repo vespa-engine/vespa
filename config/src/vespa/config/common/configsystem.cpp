@@ -10,7 +10,7 @@ namespace config {
 
 namespace {
 
-vespalib::string getConfigProxyFileName() {
+std::string getConfigProxyFileName() {
     return vespa::Defaults::underVespaHome("var/run/configproxy.pid");
 }
 

@@ -209,7 +209,7 @@ AVConfig getInt32ArrayConfig()
     return AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY);
 }
 
-const string test_dir = "flush";
+const std::string test_dir = "flush";
 
 struct BaseFixture
 {
@@ -245,15 +245,15 @@ struct AttributeManagerFixture
     AttributeManager &_m;
     AttributeManagerFixture(BaseFixture &bf);
     ~AttributeManagerFixture();
-    AttributeVector::SP addAttribute(const vespalib::string &name) {
+    AttributeVector::SP addAttribute(const std::string &name) {
         return _m.addAttribute({name, getInt32Config()}, createSerialNum);
     }
-    AttributeVector::SP addPostingAttribute(const vespalib::string &name) {
+    AttributeVector::SP addPostingAttribute(const std::string &name) {
         AVConfig cfg(getInt32Config());
         cfg.setFastSearch(true);
         return _m.addAttribute({name, cfg}, createSerialNum);
     }
-    AttributeVector::SP addIntArrayPostingAttribute(const vespalib::string &name) {
+    AttributeVector::SP addIntArrayPostingAttribute(const std::string &name) {
         AVConfig cfg(getInt32ArrayConfig());
         cfg.setFastSearch(true);
         return _m.addAttribute({name, cfg}, createSerialNum);
@@ -544,12 +544,12 @@ TEST(AttributeFlushTest, require_that_shrink_works)
 }
 
 void
-require_that_flushed_attribute_can_be_loaded(const HwInfo &hwInfo, const vespalib::string& label)
+require_that_flushed_attribute_can_be_loaded(const HwInfo &hwInfo, const std::string& label)
 {
     SCOPED_TRACE(label);
     constexpr uint32_t numDocs = 100;
     BaseFixture f(hwInfo);
-    vespalib::string attrName(hwInfo.disk().slow() ? "a11slow" : "a11fast");
+    std::string attrName(hwInfo.disk().slow() ? "a11slow" : "a11fast");
     {
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;

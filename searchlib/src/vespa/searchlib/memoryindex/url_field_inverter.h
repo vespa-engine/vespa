@@ -31,7 +31,7 @@ class UrlFieldInverter {
 
     void processUrlField(const document::FieldValue &url_field, const document::Document& doc);
 
-    void processUrlOldStyle(const vespalib::string &s, const document::Document& doc);
+    void processUrlOldStyle(const std::string &s, const document::Document& doc);
 
     void processArrayUrlField(const document::ArrayFieldValue &field, const document::Document& doc);
 

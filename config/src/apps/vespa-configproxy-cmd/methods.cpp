@@ -18,7 +18,7 @@ const Method methods[] = {
     { 0, 0, 0}
 };
 
-const Method find(const vespalib::string &name) {
+const Method find(const std::string &name) {
     for (size_t i = 0; methods[i].shortName != 0; ++i) {
         if (name == methods[i].shortName) {
             return methods[i];

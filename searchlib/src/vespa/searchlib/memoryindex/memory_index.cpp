@@ -155,7 +155,7 @@ public:
 
     template <class TermNode>
     void visitTerm(TermNode &n) {
-        const vespalib::string termStr = queryeval::termAsString(n);
+        const std::string termStr = queryeval::termAsString(n);
         LOG(debug, "searching for '%s' in '%s'",
             termStr.c_str(), _field.getName().c_str());
         IFieldIndex* fieldIndex = _fieldIndexes.getFieldIndex(_fieldId);
@@ -244,7 +244,7 @@ MemoryIndex::getPrunedSchema() const
 }
 
 FieldLengthInfo
-MemoryIndex::get_field_length_info(const vespalib::string& field_name) const
+MemoryIndex::get_field_length_info(const std::string& field_name) const
 {
     uint32_t field_id = _schema.getIndexFieldId(field_name);
     if (field_id != Schema::UNKNOWN_FIELD_ID) {

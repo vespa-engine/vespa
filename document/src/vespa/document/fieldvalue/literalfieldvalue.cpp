@@ -80,7 +80,7 @@ void
 LiteralFieldValueB::
 print(std::ostream& out, bool, const std::string&) const
 {
-    vespalib::string escaped;
+    std::string escaped;
     out << StringUtil::escape(getValue(), escaped);
 }
 
@@ -91,7 +91,7 @@ LiteralFieldValueB::operator=(std::string_view value)
     return *this;
 }
 
-vespalib::string
+std::string
 LiteralFieldValueB::getAsString() const
 {
     return getValue();

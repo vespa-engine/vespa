@@ -268,7 +268,7 @@ public:
     using Node = MergeBucketCommand::Node;
     struct Entry : public document::Printable {
         GetBucketDiffCommand::Entry _entry;
-        vespalib::string _docName;
+        std::string _docName;
         std::vector<char> _headerBlob;
         // TODO: In theory the body blob could be removed now as all is in one blob
         // That will enable simplification of code in document.
@@ -349,7 +349,7 @@ class RequestBucketInfoCommand : public StorageCommand {
     std::vector<document::BucketId> _buckets;
     std::unique_ptr<lib::ClusterState> _state;
     uint16_t _distributor;
-    vespalib::string _distributionHash;
+    std::string _distributionHash;
 
 public:
     RequestBucketInfoCommand(document::BucketSpace bucketSpace,
@@ -370,7 +370,7 @@ public:
     uint16_t getDistributor() const { return _distributor; }
     const lib::ClusterState& getSystemState() const { return *_state; }
 
-    const vespalib::string& getDistributionHash() const { return _distributionHash; }
+    const std::string& getDistributionHash() const { return _distributionHash; }
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     document::Bucket getBucket() const override;
     document::BucketId super_bucket_id() const;
@@ -486,7 +486,7 @@ public:
     static BUCKET_STATE toState(bool active) noexcept { return active ? ACTIVE : INACTIVE; }
     DECLARE_STORAGECOMMAND(SetBucketStateCommand, onSetBucketState);
 private:
-    vespalib::string getSummary() const override;
+    std::string getSummary() const override;
     BUCKET_STATE _state;
 };
 

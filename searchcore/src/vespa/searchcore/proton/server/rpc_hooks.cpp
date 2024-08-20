@@ -18,9 +18,9 @@ using vespalib::compression::CompressionConfig;
 
 namespace {
 
-string delayed_configs_string("delayedConfigs");
+std::string delayed_configs_string("delayedConfigs");
 
-using Pair = std::pair<string, string>;
+using Pair = std::pair<std::string, std::string>;
 
 }
 
@@ -107,7 +107,7 @@ RPCHooksBase::initRPC()
 RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const config::ConfigUri & configUri,
                              std::string_view slobrokId, uint32_t transportThreads)
     : proton(parent),
-      slobrok_config(configUri.createWithNewId(vespalib::string(slobrokId))),
+      slobrok_config(configUri.createWithNewId(std::string(slobrokId))),
       identity(configUri.getConfigId()),
       rtcPort(port),
       numTranportThreads(transportThreads)

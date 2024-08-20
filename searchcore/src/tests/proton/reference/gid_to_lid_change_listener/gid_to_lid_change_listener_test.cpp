@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
@@ -10,6 +9,8 @@
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <map>
+#include <string>
+
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_listener_test");
 
@@ -32,9 +33,9 @@ GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
-vespalib::string doc1("id:test:music::1");
-vespalib::string doc2("id:test:music::2");
-vespalib::string doc3("id:test:music::3");
+std::string doc1("id:test:music::1");
+std::string doc2("id:test:music::2");
+std::string doc3("id:test:music::3");
 VESPA_THREAD_STACK_TAG(test_executor)
 
 struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory

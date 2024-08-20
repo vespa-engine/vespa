@@ -26,7 +26,7 @@
     int64_t i64_val;
     double double_val;
     const char* const_str_val;
-    vespalib::string* string_val;
+    std::string* string_val;
     Constant* constant_node;
     ValueNode* value_node;
     FieldExprNode* field_expr_node;
@@ -103,8 +103,8 @@
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/valuenodes.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace document {
 class BucketIdFactory;
@@ -137,12 +137,12 @@ class ValueNode;
 #include <vespa/document/select/valuenodes.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <string>
 #include <iostream>
-#include <sstream>
 #include <memory>
+#include <sstream>
+#include <string>
 
-using string = vespalib::string;
+using string = std::string;
 
 // Wrap grabbing pointers from sub-rules in a way that nulls out the
 // stored attribute from the Bison stack. Otherwise, exception cleanup

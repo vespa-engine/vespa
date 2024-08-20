@@ -8,9 +8,9 @@
  *
  */
 
-#include <string>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <string>
 
 #include <vespa/fsa/vectorizer.h>
 #include <vespa/fsa/timestamp.h>

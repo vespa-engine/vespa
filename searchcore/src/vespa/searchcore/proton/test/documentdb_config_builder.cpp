@@ -27,8 +27,8 @@ namespace proton::test {
 
 DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
                                                  const search::index::Schema::SP &schema,
-                                                 const vespalib::string &configId,
-                                                 const vespalib::string &docTypeName)
+                                                 const std::string &configId,
+                                                 const std::string &docTypeName)
     : _generation(generation),
       _rankProfiles(std::make_shared<RankProfilesConfig>()),
       _rankingConstants(std::make_shared<search::fef::RankingConstants>()),

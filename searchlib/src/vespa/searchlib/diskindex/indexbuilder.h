@@ -28,10 +28,10 @@ public:
     ~IndexBuilder() override;
 
     std::unique_ptr<index::FieldIndexBuilder> startField(uint32_t fieldId) override;
-    vespalib::string appendToPrefix(std::string_view name) const;
+    std::string appendToPrefix(std::string_view name) const;
 private:
     std::vector<int>          _fields;
-    const vespalib::string    _prefix;
+    const std::string    _prefix;
     const uint32_t            _docIdLimit;
     const uint32_t            _numWordIds;
     const index::IFieldLengthInspector       &_field_length_inspector;
