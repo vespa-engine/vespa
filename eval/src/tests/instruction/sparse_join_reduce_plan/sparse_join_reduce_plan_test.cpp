@@ -50,7 +50,7 @@ struct Trace {
     std::vector<Event> events;
     Trace(size_t estimate_in)
       : estimate(estimate_in), events() {}
-    void add_raw(size_t lhs_idx, size_t rhs_idx, ConstArrayRef<string_id> res_addr) {
+    void add_raw(size_t lhs_idx, size_t rhs_idx, std::span<const string_id> res_addr) {
         events.emplace_back(lhs_idx, rhs_idx, res_addr);
     }
     Trace &add(size_t lhs_idx, size_t rhs_idx, std::vector<vespalib::string> res_addr) {
@@ -98,7 +98,7 @@ Trace trace(const vespalib::string &a_desc, const vespalib::string &b_desc,
     SparseJoinReducePlan plan(a->type(), b->type(), res_type);
     Trace trace(plan.estimate_result_size(a->index(), b->index()));
     plan.execute(a->index(), b->index(),
-                 [&trace](size_t lhs_idx, size_t rhs_idx, ConstArrayRef<string_id> res_addr) {
+                 [&trace](size_t lhs_idx, size_t rhs_idx, std::span<const string_id> res_addr) {
                      trace.add_raw(lhs_idx, rhs_idx, res_addr);
                  });
     return trace;

@@ -33,10 +33,10 @@ public:
     void reclaim_memory(generation_t oldest_used_gen) override;
     void before_inc_generation(generation_t current_gen) override;
     bool addDoc(DocId &docId) override;
-    vespalib::ConstArrayRef<char> get_raw(DocId docid) const override;
-    void set_raw(DocId docid, vespalib::ConstArrayRef<char> raw);
-    bool update(DocId docid, vespalib::ConstArrayRef<char> raw) { set_raw(docid, raw); return true; }
-    bool append(DocId docid, vespalib::ConstArrayRef<char> raw, int32_t weight) {
+    std::span<const char> get_raw(DocId docid) const override;
+    void set_raw(DocId docid, std::span<const char> raw);
+    bool update(DocId docid, std::span<const char> raw) { set_raw(docid, raw); return true; }
+    bool append(DocId docid, std::span<const char> raw, int32_t weight) {
         (void) docid;
         (void) raw;
         (void) weight;

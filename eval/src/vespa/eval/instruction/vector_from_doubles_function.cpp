@@ -14,7 +14,7 @@ struct CallVectorFromDoubles {
     template <typename CT>
     static TypedCells
     invoke(InterpretedFunction::State &state, size_t numCells) {
-        ArrayRef<CT> outputCells = state.stash.create_uninitialized_array<CT>(numCells);
+        std::span<CT> outputCells = state.stash.create_uninitialized_array<CT>(numCells);
         for (size_t i = numCells; i-- > 0; ) {
             outputCells[i] = (CT) state.peek(0).as_double();
             state.stack.pop_back();

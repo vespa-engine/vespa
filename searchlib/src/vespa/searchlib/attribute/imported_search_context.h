@@ -7,7 +7,7 @@
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace search::fef { class TermFieldMatchData; }
 namespace search { class QueryTermSimple; }
@@ -28,7 +28,7 @@ class SearchContextParams;
  */
 class ImportedSearchContext : public ISearchContext {
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
-    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
+    using TargetLids = std::span<const AtomicTargetLid>;
     const ImportedAttributeVector&                  _imported_attribute;
     vespalib::string                                _queryTerm;
     bool                                            _useSearchCache;

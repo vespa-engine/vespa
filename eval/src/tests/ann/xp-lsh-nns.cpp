@@ -9,7 +9,7 @@
 #include <set>
 #include <vespa/vespalib/util/priority_queue.h>
 
-using V = vespalib::ConstArrayRef<float>;
+using V = std::span<const float>;
 
 #define NUM_HASH_WORDS 4
 #define IGNORE_BITS 32
@@ -203,7 +203,7 @@ RpLshNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVect
     result.reserve(k);
 
     std::vector<float> tmp(_numDims);
-    vespalib::ArrayRef<float> tmpArr(tmp);
+    std::span<float> tmpArr(tmp);
 
     LsMaskHash query_hash = mask_hash_from_pv(vector, _transformationMatrix);
     LshHitHeap heap(std::max(k, search_k));
@@ -235,7 +235,7 @@ RpLshNns::topK(uint32_t k, Vector vector, uint32_t search_k)
     result.reserve(k);
 
     std::vector<float> tmp(_numDims);
-    vespalib::ArrayRef<float> tmpArr(tmp);
+    std::span<float> tmpArr(tmp);
 
     LsMaskHash query_hash = mask_hash_from_pv(vector, _transformationMatrix);
     LshHitHeap heap(std::max(k, search_k));

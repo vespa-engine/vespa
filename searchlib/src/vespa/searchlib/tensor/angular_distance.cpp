@@ -19,7 +19,7 @@ private:
     using FloatType = VectorStoreType::FloatType;
     const vespalib::hwaccelerated::IAccelerated & _computer;
     mutable VectorStoreType _tmpSpace;
-    const vespalib::ConstArrayRef<FloatType> _lhs;
+    const std::span<const FloatType> _lhs;
     double _lhs_norm_sq;
 public:
     explicit BoundAngularDistance(TypedCells lhs)
@@ -32,7 +32,7 @@ public:
     }
     double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs.size();
-        vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
+        std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         auto a = _lhs.data();
         auto b = rhs_vector.data();
         double b_norm_sq = _computer.dotProduct(cast(b), cast(b), sz);

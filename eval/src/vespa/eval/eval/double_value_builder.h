@@ -16,9 +16,9 @@ private:
 public:
     DoubleValueBuilder() : _value(0.0) {}
     ~DoubleValueBuilder() override;
-    ArrayRef<double>
-    add_subspace(ConstArrayRef<std::string_view>) override {
-        return ArrayRef<double>(&_value, 1);
+    std::span<double>
+    add_subspace(std::span<const std::string_view>) override {
+        return std::span<double>(&_value, 1);
     }
     std::unique_ptr<Value>
     build(std::unique_ptr<ValueBuilder<double>>) override {

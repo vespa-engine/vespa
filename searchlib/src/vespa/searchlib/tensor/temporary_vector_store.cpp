@@ -3,8 +3,6 @@
 #include "temporary_vector_store.h"
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
-using vespalib::ConstArrayRef;
-using vespalib::ArrayRef;
 using vespalib::eval::CellType;
 using vespalib::eval::TypedCells;
 using vespalib::hwaccelerated::IAccelerated;
@@ -14,12 +12,12 @@ namespace search::tensor {
 namespace {
 
 template<typename FromType, typename ToType>
-ConstArrayRef<ToType>
-convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept __attribute__((noinline));
+std::span<const ToType>
+convert_cells(std::span<ToType> space, TypedCells cells) noexcept __attribute__((noinline));
 
 template<typename FromType, typename ToType>
-ConstArrayRef<ToType>
-convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept
+std::span<const ToType>
+convert_cells(std::span<ToType> space, TypedCells cells) noexcept
 {
     auto old_cells = cells.unsafe_typify<FromType>();
     ToType *p = space.data();
@@ -30,8 +28,8 @@ convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept
 }
 
 template<>
-ConstArrayRef<float>
-convert_cells<vespalib::BFloat16, float>(ArrayRef<float> space, TypedCells cells) noexcept
+std::span<const float>
+convert_cells<vespalib::BFloat16, float>(std::span<float> space, TypedCells cells) noexcept
 {
     static const IAccelerated & accelerator = IAccelerated::getAccelerator();
     accelerator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(cells.data), space.data(), space.size());
@@ -41,7 +39,7 @@ convert_cells<vespalib::BFloat16, float>(ArrayRef<float> space, TypedCells cells
 template <typename ToType>
 struct ConvertCellsSelector
 {
-    template <typename FromType> static auto invoke(ArrayRef<ToType> dst, TypedCells src) noexcept {
+    template <typename FromType> static auto invoke(std::span<ToType> dst, TypedCells src) noexcept {
         return convert_cells<FromType, ToType>(dst, src);
     }
 };
@@ -49,12 +47,12 @@ struct ConvertCellsSelector
 } // namespace
 
 template <typename FloatType>
-ConstArrayRef<FloatType>
+std::span<const FloatType>
 TemporaryVectorStore<FloatType>::internal_convert(TypedCells cells, size_t offset) noexcept {
-    ArrayRef<FloatType> where(_tmpSpace.data() + offset, cells.size);
+    std::span<FloatType> where(_tmpSpace.data() + offset, cells.size);
     using MyTypify = vespalib::eval::TypifyCellType;
     using MySelector = ConvertCellsSelector<FloatType>;
-    ConstArrayRef<FloatType> result = vespalib::typify_invoke<1,MyTypify,MySelector>(cells.type, where, cells);
+    std::span<const FloatType> result = vespalib::typify_invoke<1,MyTypify,MySelector>(cells.type, where, cells);
     return result;
 }
 

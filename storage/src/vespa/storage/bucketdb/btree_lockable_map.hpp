@@ -27,7 +27,6 @@
 namespace storage::bucketdb {
 
 using vespalib::datastore::EntryRef;
-using vespalib::ConstArrayRef;
 using document::BucketId;
 
 template <typename T>

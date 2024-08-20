@@ -5,12 +5,6 @@
 
 namespace vespalib {
 
-template <typename T>
-using ArrayRef = std::span<T>;
-
-template <typename T>
-using ConstArrayRef = std::span<const T>;
-
 // const-cast for array references; use with care
 template <typename T>
 std::span<T> unconstify(const std::span<const T>& ref) {

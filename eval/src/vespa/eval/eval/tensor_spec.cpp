@@ -196,12 +196,12 @@ struct NormalizeTensorSpec {
             }
             REQUIRE(binding == entry.first.end());
             REQUIRE(dense_key < map.values_per_entry());
-            auto [tag, ignore] = map.lookup_or_add_entry(ConstArrayRef<std::string_view>(sparse_key));
+            auto [tag, ignore] = map.lookup_or_add_entry(std::span<const std::string_view>(sparse_key));
             map.get_values(tag)[dense_key] = entry.second;
         }
         // if spec is missing the required dense space, add it here:
         if ((map.keys_per_entry() == 0) && (map.size() == 0)) {
-            map.add_entry(ConstArrayRef<std::string_view>());
+            map.add_entry(std::span<const std::string_view>());
         }
         TensorSpec result(type.to_spec());
         map.each_entry([&](const auto &keys, const auto &values)

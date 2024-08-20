@@ -19,7 +19,6 @@ LOG_SETUP("unique_store_test");
 enum class DictionaryType { BTREE, HASH, BTREE_AND_HASH };
 
 using namespace vespalib::datastore;
-using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
@@ -128,7 +127,7 @@ struct TestBase : public ::testing::Test {
         }
         refs.push_back(AtomicEntryRef());
         std::vector<AtomicEntryRef> compactedRefs = refs;
-        remapper->remap(ArrayRef<AtomicEntryRef>(compactedRefs));
+        remapper->remap(std::span<AtomicEntryRef>(compactedRefs));
         remapper->done();
         remapper.reset();
         ASSERT_FALSE(refs.back().load_relaxed().valid());

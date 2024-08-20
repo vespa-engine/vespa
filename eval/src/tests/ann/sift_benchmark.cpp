@@ -92,7 +92,7 @@ size_t search_with_filter(uint32_t sk, NNS_API &nns, uint32_t qid,
                           const BitVector &skipDocIds)
 {
     const PointVector &qv = generatedQueries[qid];
-    vespalib::ConstArrayRef<float> query(qv.v, NUM_DIMS);
+    std::span<const float> query(qv.v, NUM_DIMS);
     auto rv = nns.topKfilter(100, query, sk, skipDocIds);
     return rv.size();
 }
@@ -105,7 +105,7 @@ void verify_with_filter(uint32_t sk, NNS_API &nns, uint32_t qid,
 {
     const PointVector &qv = generatedQueries[qid];
     auto expected = bruteforce_nns_filter(qv, skipDocIds);
-    vespalib::ConstArrayRef<float> query(qv.v, NUM_DIMS);
+    std::span<const float> query(qv.v, NUM_DIMS);
     auto rv = nns.topKfilter(expected.K, query, sk, skipDocIds);
     TopK actual;
     for (size_t i = 0; i < actual.K; ++i) {

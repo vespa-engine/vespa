@@ -64,7 +64,7 @@ class NativeFieldMatchExecutor : public fef::FeatureExecutor
 private:
     using MyQueryTerm = NativeFieldMatchExecutorSharedState::MyQueryTerm;
     const NativeFieldMatchParams & _params;
-    vespalib::ConstArrayRef<MyQueryTerm> _queryTerms;
+    std::span<const MyQueryTerm> _queryTerms;
     feature_t                      _divisor;
     const fef::MatchData          *_md;
 

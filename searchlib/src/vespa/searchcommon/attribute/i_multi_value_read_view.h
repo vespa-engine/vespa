@@ -4,7 +4,7 @@
 
 #include "multivalue.h"
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace search::attribute {
 
@@ -16,7 +16,7 @@ template <typename MultiValueType>
 class IMultiValueReadView {
 public:
     virtual ~IMultiValueReadView() = default;
-    virtual vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t docid) const = 0;
+    virtual std::span<const MultiValueType> get_values(uint32_t docid) const = 0;
 };
 
 /**

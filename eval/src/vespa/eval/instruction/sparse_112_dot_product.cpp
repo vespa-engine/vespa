@@ -16,17 +16,17 @@ using namespace instruction;
 namespace {
 
 template <typename T, size_t N>
-ConstArrayRef<T> as_car(std::array<T, N> &array) noexcept {
+std::span<const T> as_car(std::array<T, N> &array) noexcept {
     return {array.data(), array.size()};
 }
 
 template <typename T, size_t N>
-ConstArrayRef<const T *> as_ccar(std::array<T *, N> &array) noexcept {
+std::span<const T* const> as_ccar(std::array<T *, N> &array) noexcept {
     return {array.data(), array.size()};
 }
 
 template <typename T>
-ConstArrayRef<T> as_car(T &value) noexcept {
+std::span<const T> as_car(T &value) noexcept {
     return {&value, 1};
 }
 

@@ -3,7 +3,6 @@
 #include "fast_value_view.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-using vespalib::ConstArrayRef;
 using vespalib::MemoryUsage;
 using vespalib::string_id;
 using vespalib::eval::FastAddrMap;
@@ -14,7 +13,7 @@ using vespalib::eval::self_memory_usage;
 
 namespace search::tensor {
 
-FastValueView::FastValueView(const ValueType& type, ConstArrayRef<string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces)
+FastValueView::FastValueView(const ValueType& type, std::span<const string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces)
     : Value(),
       _type(type),
       _labels(labels.begin(), labels.end()),
@@ -22,7 +21,7 @@ FastValueView::FastValueView(const ValueType& type, ConstArrayRef<string_id> lab
       _cells(cells)
 {
     for (size_t i = 0; i < num_subspaces; ++i) {
-        ConstArrayRef<string_id> addr(_labels.data() + (i * num_mapped_dimensions), num_mapped_dimensions);
+        std::span<const string_id> addr(_labels.data() + (i * num_mapped_dimensions), num_mapped_dimensions);
         _index.map.add_mapping(FastAddrMap::hash_labels(addr));
     }
     assert(_index.map.size() == num_subspaces);

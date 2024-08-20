@@ -38,7 +38,7 @@ bool BitVector::_enable_range_check = false;
 
 struct BitVector::OrParts : vespalib::Runnable
 {
-    OrParts(vespalib::ConstArrayRef<BitVector *> vectors, BitVector::Index offset, BitVector::Index size) noexcept
+    OrParts(std::span<BitVector* const> vectors, BitVector::Index offset, BitVector::Index size) noexcept
         : _vectors(vectors),
           _offset(offset),
           _byte_size((size + 7)/8)
@@ -51,13 +51,13 @@ struct BitVector::OrParts : vespalib::Runnable
             accelrator.orBit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
         }
     }
-    vespalib::ConstArrayRef<BitVector *> _vectors;
+    std::span<BitVector* const> _vectors;
     BitVector::Index _offset;
     BitVector::Index _byte_size;
 };
 
 void
-BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors) {
+BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors) {
     constexpr uint32_t MIN_BITS_PER_THREAD = 128_Ki;
     constexpr uint32_t ALIGNMENT_BITS = 8_Ki;
     if (vectors.size() < 2) return;

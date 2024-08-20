@@ -5,7 +5,7 @@
 #include "datastorebase.h"
 #include "entryref.h"
 #include "handle.h"
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace vespalib::datastore {
 
@@ -16,7 +16,7 @@ template <typename EntryT, typename RefT>
 class Allocator
 {
 public:
-    using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
+    using ConstArrayRef = std::span<const EntryT>;
     using HandleType = Handle<EntryT>;
 
 protected:

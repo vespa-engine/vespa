@@ -53,7 +53,7 @@ double ImportedAttributeVectorReadGuard::getFloat(DocId doc) const {
     return _target_attribute.getFloat(getTargetLid(doc));
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 ImportedAttributeVectorReadGuard::get_raw(DocId doc) const
 {
     return _target_attribute.get_raw(getTargetLid(doc));

@@ -25,7 +25,7 @@ class ExtendableStringArrayMultiValueReadView : public attribute::IMultiValueRea
 public:
     ExtendableStringArrayMultiValueReadView(const std::vector<char>& buffer, const Offsets & offsets, const std::vector<uint32_t>& idx);
     ~ExtendableStringArrayMultiValueReadView() override;
-    vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t doc_id) const override;
+    std::span<const MultiValueType> get_values(uint32_t doc_id) const override;
 };
 
 }

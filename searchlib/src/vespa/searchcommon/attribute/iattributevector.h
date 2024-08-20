@@ -6,8 +6,8 @@
 #include "basictype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <ostream>
+#include <span>
 #include <vector>
 
 namespace search {
@@ -76,7 +76,7 @@ public:
     using WeightedEnum = WeightedType<EnumHandle>;
     using WeightedConstChar = WeightedType<const char *>;
     using WeightedString = WeightedType<vespalib::string>;
-    using EnumRefs = vespalib::ConstArrayRef<vespalib::datastore::AtomicEntryRef>;
+    using EnumRefs = std::span<const vespalib::datastore::AtomicEntryRef>;
 
     /**
      * Returns the name of this attribute vector.
@@ -133,7 +133,7 @@ public:
      *
      * TODO: Consider accessing via new IRawAttribute interface class.
      */
-    virtual vespalib::ConstArrayRef<char> get_raw(DocId doc) const = 0;
+    virtual std::span<const char> get_raw(DocId doc) const = 0;
 
     /**
      * Returns the first value stored for the given document as an enum value.

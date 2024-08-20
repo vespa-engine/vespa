@@ -8,7 +8,7 @@
 #include <queue>
 #include <set>
 
-using V = vespalib::ConstArrayRef<float>;
+using V = std::span<const float>;
 class AnnoyLikeNns;
 inline namespace xpannoynns { struct Node; }
 
@@ -378,7 +378,7 @@ AnnoyLikeNns::topK(uint32_t k, Vector vector, uint32_t search_k)
     ++find_top_k_cnt;
     std::vector<float> tmp;
     tmp.resize(_numDims);
-    vespalib::ArrayRef<float> tmpArr(tmp);
+    std::span<float> tmpArr(tmp);
 
     std::vector<NnsHit> r;
     r.reserve(k);

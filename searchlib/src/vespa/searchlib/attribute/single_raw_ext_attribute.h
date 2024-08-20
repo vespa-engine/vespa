@@ -21,8 +21,8 @@ public:
     void onCommit() override;
     void onUpdateStat() override;
     bool addDoc(DocId& docId) override;
-    bool add(vespalib::ConstArrayRef<char> v, int32_t) override;
-    vespalib::ConstArrayRef<char> get_raw(DocId docid) const override;
+    bool add(std::span<const char> v, int32_t) override;
+    std::span<const char> get_raw(DocId docid) const override;
     IExtendAttribute* getExtendInterface() override;
 };
 

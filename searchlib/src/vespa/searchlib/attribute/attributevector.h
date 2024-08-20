@@ -87,7 +87,7 @@ public:
     virtual bool add(int64_t, int32_t = 1) { return false; }
     virtual bool add(double, int32_t = 1) { return false; }
     virtual bool add(const char *, int32_t = 1) { return false; }
-    virtual bool add(vespalib::ConstArrayRef<char>, int32_t = 1) { return false; }
+    virtual bool add(std::span<const char>, int32_t = 1) { return false; }
     virtual bool add(const vespalib::eval::Value&, int32_t = 1) { return false; }
 
     virtual ~IExtendAttribute() = default;

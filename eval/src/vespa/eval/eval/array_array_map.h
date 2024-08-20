@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vector>
 #include <cassert>
+#include <span>
 #include <type_traits>
 
 namespace vespalib::eval {
@@ -42,9 +42,9 @@ public:
         bool valid() const { return (id != npos()); }
     };
 
-    ConstArrayRef<K> get_keys(Tag tag) const { return {_keys.data() + (tag.id * _keys_per_entry), _keys_per_entry}; }
-    ArrayRef<V> get_values(Tag tag) { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
-    ConstArrayRef<V> get_values(Tag tag) const { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
+    std::span<const K> get_keys(Tag tag) const { return {_keys.data() + (tag.id * _keys_per_entry), _keys_per_entry}; }
+    std::span<V> get_values(Tag tag) { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
+    std::span<const V> get_values(Tag tag) const { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
 
     struct MyKey {
         Tag tag;
@@ -52,13 +52,13 @@ public:
     };
 
     template <typename T> struct AltKey {
-        ConstArrayRef<T> key;
+        std::span<const T> key;
         uint32_t hash;
     };
 
     struct Hash {
         H hash_fun;
-        template <typename T> uint32_t operator()(ConstArrayRef<T> key) const {
+        template <typename T> uint32_t operator()(std::span<const T> key) const {
             uint32_t h = 0;
             for (const T &k: key) {
                 if constexpr (std::is_pointer_v<T>) {
@@ -108,7 +108,7 @@ private:
     Hash _hasher;
 
     template <typename T>
-    Tag add_entry(ConstArrayRef<T> key, uint32_t hash) {
+    Tag add_entry(std::span<const T> key, uint32_t hash) {
         uint32_t tag_id = _map.size();
         for (const auto &k: key) {
             if constexpr (std::is_pointer_v<T>) {
@@ -132,7 +132,7 @@ public:
     size_t size() const { return _map.size(); }
 
     template <typename T>
-    Tag lookup(ConstArrayRef<T> key) const {
+    Tag lookup(std::span<const T> key) const {
         auto pos = _map.find(AltKey<T>{key, _hasher(key)});
         if (pos == _map.end()) {
             return Tag::make_invalid();
@@ -141,12 +141,12 @@ public:
     }
 
     template <typename T>
-    Tag add_entry(ConstArrayRef<T> key) {
+    Tag add_entry(std::span<const T> key) {
         return add_entry(key, _hasher(key));
     }
 
     template <typename T>
-    std::pair<Tag,bool> lookup_or_add_entry(ConstArrayRef<T> key) {
+    std::pair<Tag,bool> lookup_or_add_entry(std::span<const T> key) {
         uint32_t hash = _hasher(key);
         auto pos = _map.find(AltKey<T>{key, hash});
         if (pos == _map.end()) {

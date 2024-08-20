@@ -13,8 +13,6 @@
 
 VESPALIB_HASH_SET_INSTANTIATE(std::string_view);
 
-using vespalib::ArrayRef;
-using vespalib::ConstArrayRef;
 using vespalib::asciistream;
 
 namespace metrics {
@@ -61,11 +59,11 @@ namespace {
     return os.str();
 }
 
-[[nodiscard]] bool arrays_eq(ConstArrayRef<std::string_view> lhs, ConstArrayRef<std::string_view> rhs) noexcept {
+[[nodiscard]] bool arrays_eq(std::span<const std::string_view> lhs, std::span<const std::string_view> rhs) noexcept {
     return std::ranges::equal(lhs, rhs);
 }
 
-[[nodiscard]] bool arrays_lt(ConstArrayRef<std::string_view> lhs, ConstArrayRef<std::string_view> rhs) noexcept {
+[[nodiscard]] bool arrays_lt(std::span<const std::string_view> lhs, std::span<const std::string_view> rhs) noexcept {
     return std::ranges::lexicographical_compare(lhs, rhs);
 }
 
@@ -115,7 +113,7 @@ std::string_view PrometheusWriter::stable_name_string_ref(std::string_view raw_n
     }
 }
 
-ConstArrayRef<std::string_view> PrometheusWriter::metric_to_path_ref(std::string_view leaf_metric_name) {
+std::span<const std::string_view> PrometheusWriter::metric_to_path_ref(std::string_view leaf_metric_name) {
     vespalib::SmallVector<std::string_view, 16> path_refs;
     // _path strings are already in canonical (sanitized) form and arena-allocated
     for (const auto& p :_path) {
@@ -163,7 +161,7 @@ void PrometheusWriter::build_labels_upto_root(vespalib::SmallVector<std::string_
     } while (current != nullptr);
 }
 
-ConstArrayRef<std::string_view> PrometheusWriter::as_prometheus_labels(const Metric& m) {
+std::span<const std::string_view> PrometheusWriter::as_prometheus_labels(const Metric& m) {
     if (!any_metric_in_path_has_nonempty_tag(m)) {
         return {};
     }
@@ -219,13 +217,13 @@ bool PrometheusWriter::visitValueMetric(const AbstractValueMetric& m, bool) {
     return true;
 }
 
-void PrometheusWriter::render_path_as_metric_name_prefix(asciistream& out, ConstArrayRef<std::string_view> path) {
+void PrometheusWriter::render_path_as_metric_name_prefix(asciistream& out, std::span<const std::string_view> path) {
     for (const auto& p : path) {
         out << p << '_';
     }
 }
 
-void PrometheusWriter::render_label_pairs(asciistream& out, ConstArrayRef<std::string_view> labels) {
+void PrometheusWriter::render_label_pairs(asciistream& out, std::span<const std::string_view> labels) {
     if (!labels.empty()) {
         assert((labels.size() % 2) == 0);
         out << '{';
@@ -264,7 +262,7 @@ void PrometheusWriter::doneVisiting() {
     _out << "# NOTE: THIS API IS NOT INTENDED FOR PUBLIC USE\n";
     // Sort and implicitly group all related metrics together, ordered by name -> aggregation -> dimensions
     std::sort(_samples.begin(), _samples.end());
-    ConstArrayRef<std::string_view> last_metric;
+    std::span<const std::string_view> last_metric;
     std::string_view last_aggr;
     for (const auto& s : _samples) {
         if ((s.aggr != last_aggr) || !arrays_eq(s.metric_path, last_metric)) {

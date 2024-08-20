@@ -603,7 +603,7 @@ SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
         attr.add(value.getAsString().c_str(), c.getWeight());
     } else if (_attribute.is_raw_type()) {
         auto raw_value = value.getAsRaw();
-        attr.add(vespalib::ConstArrayRef<char>(raw_value.first, raw_value.second), c.getWeight());
+        attr.add(std::span<const char>(raw_value.first, raw_value.second), c.getWeight());
     } else if (_attribute.isTensorType()) {
         auto tfvalue = dynamic_cast<const document::TensorFieldValue*>(&value);
         if (tfvalue != nullptr) {

@@ -5,11 +5,11 @@
 #include "bitword.h"
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/atomic.h>
-#include "vespa/vespalib/util/arrayref.h"
 #include <algorithm>
 #if VESPA_ENABLE_BITVECTOR_RANGE_CHECK
 #include <cassert>
 #endif
+#include <span>
 
 namespace vespalib {
     class nbostream;
@@ -288,7 +288,7 @@ public:
      * The result of the operation ends up in the first vector.
      * TODO: Extend to handle both AND/OR
      */
-    static void parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors);
+    static void parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
 protected:

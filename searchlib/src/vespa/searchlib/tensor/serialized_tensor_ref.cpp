@@ -11,7 +11,7 @@ SerializedTensorRef::SerializedTensorRef()
 {
 }
 
-SerializedTensorRef::SerializedTensorRef(VectorBundle vectors, uint32_t num_mapped_dimensions, vespalib::ConstArrayRef<vespalib::string_id> labels)
+SerializedTensorRef::SerializedTensorRef(VectorBundle vectors, uint32_t num_mapped_dimensions, std::span<const vespalib::string_id> labels)
     : _vectors(vectors),
       _num_mapped_dimensions(num_mapped_dimensions),
       _labels(labels)
@@ -20,7 +20,7 @@ SerializedTensorRef::SerializedTensorRef(VectorBundle vectors, uint32_t num_mapp
 
 SerializedTensorRef::~SerializedTensorRef() = default;
 
-vespalib::ConstArrayRef<vespalib::string_id>
+std::span<const vespalib::string_id>
 SerializedTensorRef::get_labels(uint32_t subspace) const
 {
     assert(subspace < _vectors.subspaces());

@@ -32,7 +32,7 @@ struct UseHammingDist {
 };
 
 template <typename CT, typename AGGR, typename DIST>
-float best_similarity(const CT *pri, ConstArrayRef<CT> sec_cells, size_t inner_size) {
+float best_similarity(const CT *pri, std::span<const CT> sec_cells, size_t inner_size) {
     AGGR aggr;
     for (const CT *sec = sec_cells.data(); sec < sec_cells.data() + sec_cells.size(); sec += inner_size) {
         aggr.sample(DIST::calc(pri, sec, inner_size));

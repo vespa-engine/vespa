@@ -41,24 +41,24 @@ public:
 
     ~StreamedValueBuilder();
 
-    ArrayRef<T> add_subspace(ConstArrayRef<std::string_view> addr) override {
+    std::span<T> add_subspace(std::span<const std::string_view> addr) override {
         for (auto label : addr) {
             _labels.add(label);
         }
         size_t old_sz = _cells.size();
         _cells.resize(old_sz + _dense_subspace_size);
         _num_subspaces++;
-        return ArrayRef<T>(&_cells[old_sz], _dense_subspace_size);
+        return std::span<T>(&_cells[old_sz], _dense_subspace_size);
     }
 
-    ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) override {
+    std::span<T> add_subspace(std::span<const string_id> addr) override {
         for (auto label : addr) {
             _labels.push_back(label);
         }
         size_t old_sz = _cells.size();
         _cells.resize(old_sz + _dense_subspace_size);
         _num_subspaces++;
-        return ArrayRef<T>(&_cells[old_sz], _dense_subspace_size);
+        return std::span<T>(&_cells[old_sz], _dense_subspace_size);
     }
 
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>>) override {

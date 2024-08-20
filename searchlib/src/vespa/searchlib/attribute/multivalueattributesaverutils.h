@@ -4,7 +4,7 @@
 
 #include "iattributesavetarget.h"
 #include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace search::multivalueattributesaver {
 
@@ -48,7 +48,7 @@ public:
 
     template <typename MultiValueT>
     void
-    writeWeights(vespalib::ConstArrayRef<MultiValueT> values) {
+    writeWeights(std::span<const MultiValueT> values) {
         for (const MultiValueT &valueRef : values) {
             int32_t weight = valueRef.weight();
             _weightWriter->write(&weight, sizeof(int32_t));
@@ -68,7 +68,7 @@ public:
     ~WeightWriter() {}
 
     template <typename MultiValueT>
-    void writeWeights(vespalib::ConstArrayRef<MultiValueT>) {}
+    void writeWeights(std::span<const MultiValueT>) {}
 };
 
 }

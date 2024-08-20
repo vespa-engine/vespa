@@ -148,7 +148,7 @@ public:
      * handle active per group feature.
      */
     using IndexList = vespalib::SmallVector<uint16_t, 4>;
-    std::vector<IndexList> splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodes) const;
+    std::vector<IndexList> splitNodesIntoLeafGroups(std::span<const uint16_t> nodes) const;
 
     static bool allDistributorsDown(const Group&, const ClusterState&);
 };

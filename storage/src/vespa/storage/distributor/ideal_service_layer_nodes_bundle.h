@@ -10,7 +10,7 @@ namespace storage::distributor {
  */
 class IdealServiceLayerNodesBundle {
 public:
-    using ConstNodesRef = vespalib::ConstArrayRef<uint16_t>;
+    using ConstNodesRef = std::span<const uint16_t>;
     class Index {
     public:
         constexpr explicit Index(uint16_t index) noexcept : _index(index) {}

@@ -37,7 +37,7 @@ protected:
 
     vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
-    vespalib::ConstArrayRef<char> get_raw(DocId) const override;
+    std::span<const char> get_raw(DocId) const override;
     uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;

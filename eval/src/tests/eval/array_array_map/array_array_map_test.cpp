@@ -9,7 +9,7 @@ using namespace vespalib::eval;
 std::vector<int> ints(std::vector<int> vec) { return vec; }
 
 template <typename T>
-ConstArrayRef<T> refs(const std::vector<T> &vec) { return ConstArrayRef<T>(vec); }
+std::span<const T> refs(const std::vector<T> &vec) { return std::span<const T>(vec); }
 
 //-----------------------------------------------------------------------------
 

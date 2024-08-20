@@ -85,7 +85,7 @@ using SmallActiveCopyList = vespalib::SmallVector<ActiveCopy, 2>;
 static_assert(sizeof(SmallActiveCopyList) == 40);
 
 SmallActiveCopyList
-buildNodeList(const BucketDatabase::Entry& e,vespalib::ConstArrayRef<uint16_t> nodeIndexes, const IdealServiceLayerNodesBundle::Node2Index & idealState)
+buildNodeList(const BucketDatabase::Entry& e,std::span<const uint16_t> nodeIndexes, const IdealServiceLayerNodesBundle::Node2Index & idealState)
 {
     SmallActiveCopyList result;
     result.reserve(nodeIndexes.size());

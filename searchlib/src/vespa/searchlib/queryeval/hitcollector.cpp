@@ -343,7 +343,7 @@ mixin_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, c
 }
 
 void
-add_bitvector_to_dropped(std::vector<uint32_t>& dropped, vespalib::ConstArrayRef<RankedHit> hits, const BitVector& bv)
+add_bitvector_to_dropped(std::vector<uint32_t>& dropped, std::span<const RankedHit> hits, const BitVector& bv)
 {
     auto hits_cur = hits.begin();
     auto hits_end = hits.end();

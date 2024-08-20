@@ -7,9 +7,9 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/datastore/aligner.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <span>
 
 namespace search::bitcompression {
 
@@ -258,7 +258,7 @@ writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
 
 template <bool bigEndian>
 void
-FeatureEncodeContext<bigEndian>::writeBytes(vespalib::ConstArrayRef<char> buf)
+FeatureEncodeContext<bigEndian>::writeBytes(std::span<const char> buf)
 {
     for (unsigned char c : buf) {
         writeBits(c, 8);

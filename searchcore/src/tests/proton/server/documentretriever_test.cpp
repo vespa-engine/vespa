@@ -120,7 +120,7 @@ vespalib::string dyn_field_raw("dynamic_raw_field");
 vespalib::string dyn_field_tensor("dynamic_tensor_field");
 vespalib::string static_raw_backing("static raw");
 vespalib::string dynamic_raw_backing("dynamic raw");
-vespalib::ConstArrayRef<char> dynamic_raw(dynamic_raw_backing.data(), dynamic_raw_backing.size());
+std::span<const char> dynamic_raw(dynamic_raw_backing.data(), dynamic_raw_backing.size());
 vespalib::string tensor_spec("tensor(x{})");
 std::unique_ptr<Value> static_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
 std::unique_ptr<Value> dynamic_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
@@ -334,7 +334,7 @@ struct Fixture {
         attr->commit();
     }
 
-    void add_raw_attribute(const char *name, vespalib::ConstArrayRef<char> val) {
+    void add_raw_attribute(const char *name, std::span<const char> val) {
         auto* attr = addAttribute<SingleRawAttribute>(name, schema::DataType::RAW, schema::CollectionType::SINGLE);
         attr->set_raw(lid, val);
         attr->commit();

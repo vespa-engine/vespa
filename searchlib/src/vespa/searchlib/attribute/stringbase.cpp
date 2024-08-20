@@ -72,7 +72,7 @@ StringAttribute::getFloat(DocId doc) const {
     return vespalib::locale::c::strtod(get(doc), nullptr);
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 StringAttribute::get_raw(DocId doc) const
 {
     const char * s = get(doc);

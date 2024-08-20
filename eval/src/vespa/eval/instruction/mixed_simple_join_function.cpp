@@ -6,12 +6,12 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 #include <optional>
 #include <algorithm>
 
 namespace vespalib::eval {
 
-using vespalib::ArrayRef;
 
 using namespace operation;
 using namespace tensor_function;
@@ -47,7 +47,7 @@ struct JoinParams {
 };
 
 template <typename OCT, bool pri_mut, typename PCT>
-ArrayRef<OCT> make_dst_cells(ConstArrayRef<PCT> pri_cells, Stash &stash) {
+std::span<OCT> make_dst_cells(std::span<const PCT> pri_cells, Stash &stash) {
     if constexpr (pri_mut && std::is_same<PCT,OCT>::value) {
         return unconstify(pri_cells);
     } else {

@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/arrayref.h>
 #include <cstdint>
+#include <span>
 
 template <typename FltType = float>
 struct DocVectorAccess
 {
-    virtual vespalib::ConstArrayRef<FltType> get(uint32_t docid) const = 0;
+    virtual std::span<const FltType> get(uint32_t docid) const = 0;
     virtual ~DocVectorAccess() = default;
 };

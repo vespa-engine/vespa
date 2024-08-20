@@ -33,13 +33,13 @@ struct Value {
             // partial address for the dimensions given to
             // create_view. Results from the lookup is extracted using
             // the next_result function.
-            virtual void lookup(ConstArrayRef<const string_id*> addr) = 0;
+            virtual void lookup(std::span<const string_id* const> addr) = 0;
 
             // Extract the next result (if any) from the previous
             // lookup into the given partial address and index. Only
             // the labels for the dimensions NOT specified in
             // create_view will be extracted here.
-            virtual bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) = 0;
+            virtual bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) = 0;
 
             virtual ~View() = default;
         };
@@ -49,7 +49,7 @@ struct Value {
 
         // create a view able to look up dense subspaces based on
         // labels from a subset of the mapped dimensions.
-        virtual std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const = 0;
+        virtual std::unique_ptr<View> create_view(std::span<const size_t> dims) const = 0;
 
         virtual ~Index() = default;
     };
@@ -70,7 +70,7 @@ private:
 public:
     static const EmptyIndex &get() { return _index; }
     size_t size() const override;
-    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
+    std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
 };
 
 /**
@@ -83,7 +83,7 @@ private:
 public:
     static const TrivialIndex &get() { return _index; }
     size_t size() const override;
-    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
+    std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
 };
 
 class DoubleValue final : public Value
@@ -93,7 +93,7 @@ private:
     static ValueType _type;
 public:
     DoubleValue(double value) : _value(value) {}
-    TypedCells cells() const final override { return TypedCells(ConstArrayRef<double>(&_value, 1)); }
+    TypedCells cells() const final override { return TypedCells(std::span<const double>(&_value, 1)); }
     const Index &index() const final override { return TrivialIndex::get(); }
     MemoryUsage get_memory_usage() const final override { return self_memory_usage<DoubleValue>(); }
     double as_double() const final override { return _value; }

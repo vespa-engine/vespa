@@ -3,7 +3,7 @@
 #include "pagedict4.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".pagedict4");
@@ -365,7 +365,7 @@ PageDict4SPWriter::flushPage()
                        _prevL3Size - wordsSize * 8;
     e.padBits(padding);
     if (wordsSize > 0) {
-        e.writeBytes(vespalib::ConstArrayRef<char>(_words.data(), wordsSize));
+        e.writeBytes(std::span<const char>(_words.data(), wordsSize));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l6Word = _l3Word;
@@ -676,7 +676,7 @@ PageDict4PWriter::flushPage()
                        _countsSize - _countsWordOffset * 8;
     e.padBits(padding);
     if (_countsWordOffset > 0) {
-        e.writeBytes(vespalib::ConstArrayRef<char>(_words.data(), _countsWordOffset));
+        e.writeBytes(std::span<const char>(_words.data(), _countsWordOffset));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l3Word = _pendingCountsWord;

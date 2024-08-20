@@ -109,7 +109,7 @@ void my_mixed_rename_dense_only_op(State &state, uint64_t param_in) {
     auto lhs_cells = state.peek(0).cells().typify<CT>();
     size_t num_subspaces = index.size();
     size_t num_out_cells = dense_plan.subspace_size * num_subspaces;
-    ArrayRef<CT> out_cells = state.stash.create_uninitialized_array<CT>(num_out_cells);
+    std::span<CT> out_cells = state.stash.create_uninitialized_array<CT>(num_out_cells);
     CT *dst = out_cells.data();
     const CT *lhs = lhs_cells.data();
     auto copy_cells = [&](size_t input_idx) { *dst++ = lhs[input_idx]; };

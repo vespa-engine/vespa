@@ -303,7 +303,7 @@ compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
     
     // generate add postings and remove postings
     for (const auto & docIndex : docIndices) {
-        vespalib::ConstArrayRef<WeightedIndex> oldIndices(mvm.get(docIndex.first));
+        std::span<const WeightedIndex> oldIndices(mvm.get(docIndex.first));
         added.clear(), changed.clear(), removed.clear();
         actualChange.compute(docIndex.second.data(), docIndex.second.size(), oldIndices.data(), oldIndices.size(),
                              added, changed, removed);

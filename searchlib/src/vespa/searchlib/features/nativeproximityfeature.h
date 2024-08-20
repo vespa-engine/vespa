@@ -79,7 +79,7 @@ public:
     using FieldSetup = NativeProximityExecutorSharedState::FieldSetup;
 private:
     const NativeProximityParams & _params;
-    vespalib::ConstArrayRef<FieldSetup> _setups;
+    std::span<const FieldSetup> _setups;
     uint32_t                      _totalFieldWeight;
     const fef::MatchData         *_md;
 

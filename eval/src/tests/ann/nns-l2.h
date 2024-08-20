@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
-#include <cstring>
-#include <vespa/vespalib/util/arrayref.h>
+
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <cstring>
+#include <span>
 
 template <typename T, size_t VLEN>
 static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)
@@ -38,8 +39,8 @@ struct L2DistCalc {
 
     L2DistCalc() : _hw(vespalib::hwaccelerated::IAccelerated::getAccelerator()) {}
 
-    using Arr = vespalib::ArrayRef<FltType>;
-    using ConstArr = vespalib::ConstArrayRef<FltType>;
+    using Arr = std::span<FltType>;
+    using ConstArr = std::span<const FltType>;
 
     double product(const FltType *v1, const FltType *v2, size_t sz) {
         return _hw.dotProduct(v1, v2, sz);

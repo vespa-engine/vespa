@@ -47,7 +47,7 @@ template <typename FloatType>
 class MyDocVectorAccess : public DocVectorAccess {
 private:
     using Vector = std::vector<FloatType>;
-    using ArrayRef = vespalib::ConstArrayRef<FloatType>;
+    using ArrayRef = std::span<const FloatType>;
     mutable std::vector<Vector> _vectors;
     SubspaceType                _subspace_type;
     EmptySubspace               _empty;
@@ -268,7 +268,7 @@ public:
         SCOPED_TRACE(label);
         uint32_t k = 3;
         uint32_t explore_k = 100;
-        vespalib::ArrayRef<float> qv_ref(qv);
+        std::span<float> qv_ref(qv);
         vespalib::eval::TypedCells qv_cells(qv_ref);
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?

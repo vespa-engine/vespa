@@ -19,12 +19,12 @@ template <class MultiValueType>
 ExtendableStringWeightedSetMultiValueReadView<MultiValueType>::~ExtendableStringWeightedSetMultiValueReadView() = default;
 
 template <class MultiValueType>
-vespalib::ConstArrayRef<MultiValueType>
+std::span<const MultiValueType>
 ExtendableStringWeightedSetMultiValueReadView<MultiValueType>::get_values(uint32_t doc_id) const
 {
     auto offset = _idx[doc_id];
     auto next_offset = _idx[doc_id + 1];
-    vespalib::ConstArrayRef<uint32_t> raw(&_offsets[offset], next_offset - offset);
+    std::span<const uint32_t> raw(&_offsets[offset], next_offset - offset);
     if (_copy.size() < raw.size()) {
         _copy.resize(raw.size());
     }
@@ -35,7 +35,7 @@ ExtendableStringWeightedSetMultiValueReadView<MultiValueType>::get_values(uint32
         ++src_weight;
         ++dst;
     }
-   return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
+   return std::span<const MultiValueType>(_copy.data(), raw.size());
 }
 
 template class ExtendableStringWeightedSetMultiValueReadView<multivalue::WeightedValue<const char*>>;

@@ -19,7 +19,7 @@ namespace search::tensor {
 class BoundGeoDistance final : public BoundDistanceFunction {
 private:
     mutable TemporaryVectorStore<double> _tmpSpace;
-    const vespalib::ConstArrayRef<double> _lh_vector;
+    const std::span<const double> _lh_vector;
 public:
     // in km, as defined by IUGG, see:
     // https://en.wikipedia.org/wiki/Earth_radius#Mean_radius
@@ -37,7 +37,7 @@ public:
           _lh_vector(_tmpSpace.storeLhs(lhs))
     {}
     double calc(TypedCells rhs) const noexcept override {
-        vespalib::ConstArrayRef<double> rhs_vector = _tmpSpace.convertRhs(rhs);
+        std::span<const double> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(2 == _lh_vector.size());
         assert(2 == rhs_vector.size());
         // convert to radians:

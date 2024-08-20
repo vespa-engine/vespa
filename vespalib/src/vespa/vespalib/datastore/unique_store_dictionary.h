@@ -82,9 +82,9 @@ public:
     void move_keys_on_compact(ICompactable& compactable, const EntryRefFilter& compacting_buffers) override;
     uint32_t get_num_uniques() const override;
     vespalib::MemoryUsage get_memory_usage() const override;
-    void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) override;
-    void build(vespalib::ConstArrayRef<EntryRef> refs) override;
-    void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<EntryRef> payloads) override;
+    void build(std::span<const EntryRef>, std::span<const uint32_t> ref_counts, std::function<void(EntryRef)> hold) override;
+    void build(std::span<const EntryRef> refs) override;
+    void build_with_payload(std::span<const EntryRef>, std::span<const EntryRef> payloads) override;
     std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const override;
     bool get_has_btree_dictionary() const override;
     bool get_has_hash_dictionary() const override;

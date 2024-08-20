@@ -5,15 +5,14 @@
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/sort.h>
+#include <span>
 
 using search::attribute::NumericSortBlobWriter;
 using search::attribute::SortBlobWriter;
 using search::attribute::StringSortBlobWriter;
 using search::common::BlobConverter;
 using search::common::LowercaseConverter;
-using vespalib::ConstArrayRef;
 
 namespace {
 
@@ -36,7 +35,7 @@ serialized_present_numeric(T value)
 SortData
 serialized_present_string(const char *value, bool asc)
 {
-    ConstArrayRef<unsigned char> src(reinterpret_cast<const unsigned char*>(value), strlen(value) + 1);
+    std::span<const unsigned char> src(reinterpret_cast<const unsigned char*>(value), strlen(value) + 1);
     SortData s;
     s.reserve(src.size() + 1);
     s.emplace_back(SortBlobWriter::has_value);
@@ -134,7 +133,7 @@ SortData
 switch_sort_order(SortData value)
 {
     assert(value.size() >= 1);
-    ConstArrayRef<unsigned char> src(value.data() + 1, value.size() - 1);
+    std::span<const unsigned char> src(value.data() + 1, value.size() - 1);
     SortData s;
     s.reserve(src.size() + 1);
     s.emplace_back(value[0]);

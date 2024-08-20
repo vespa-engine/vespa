@@ -86,7 +86,7 @@ Value::UP createTensor(const TensorSpec &spec) {
 }
 
 std::vector<vespalib::string>
-to_string_labels(vespalib::ConstArrayRef<vespalib::string_id> labels)
+to_string_labels(std::span<const vespalib::string_id> labels)
 {
     std::vector<vespalib::string> result;
     for (auto& label : labels) {

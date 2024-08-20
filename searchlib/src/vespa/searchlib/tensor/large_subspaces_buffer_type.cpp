@@ -5,7 +5,7 @@
 #include "tensor_buffer_type_mapper.h"
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 
 using vespalib::alloc::MemoryAllocator;
 
@@ -56,7 +56,7 @@ LargeSubspacesBufferType::fallback_copy(void *newBuffer, const void *oldBuffer, 
         auto& old_elem = old_elems[i];
         new (new_elems + i) ArrayType(old_elem);
         if (!old_elem.empty()) {
-            _ops.copied_labels(vespalib::unconstify(vespalib::ConstArrayRef<char>(old_elem.data(), old_elem.size())));
+            _ops.copied_labels(vespalib::unconstify(std::span<const char>(old_elem.data(), old_elem.size())));
         }
     }
 }

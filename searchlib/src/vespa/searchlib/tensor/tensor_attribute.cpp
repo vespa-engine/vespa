@@ -103,7 +103,7 @@ TensorAttribute::onCommit()
     if (_tensorStore.consider_compact()) {
         auto context = _tensorStore.start_compact(getConfig().getCompactionStrategy());
         if (context) {
-            context->compact(vespalib::ArrayRef<AtomicEntryRef>(&_refVector[0], _refVector.size()));
+            context->compact(std::span<AtomicEntryRef>(&_refVector[0], _refVector.size()));
         }
         _compactGeneration = getCurrentGeneration();
         incGeneration();

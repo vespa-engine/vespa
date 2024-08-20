@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/vespalib/util/generationholder.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <set>
+#include <span>
 
 namespace search {
 
@@ -14,7 +14,7 @@ public:
     using SP = std::shared_ptr<CondensedBitVector>;
     using Key = uint32_t;
     using KeySet = std::set<Key>;
-    using CountVector = vespalib::ArrayRef<uint8_t>;
+    using CountVector = std::span<uint8_t>;
 
     virtual ~CondensedBitVector();
 

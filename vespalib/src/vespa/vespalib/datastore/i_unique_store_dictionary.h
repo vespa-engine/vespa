@@ -3,10 +3,10 @@
 #pragma once
 
 #include "entryref.h"
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <functional>
+#include <span>
 
 namespace vespalib::datastore {
 
@@ -33,9 +33,9 @@ public:
     virtual void move_keys_on_compact(ICompactable& compactable, const EntryRefFilter& compacting_buffers) = 0;
     virtual uint32_t get_num_uniques() const = 0;
     virtual vespalib::MemoryUsage get_memory_usage() const = 0;
-    virtual void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) = 0;
-    virtual void build(vespalib::ConstArrayRef<EntryRef> refs) = 0;
-    virtual void build_with_payload(vespalib::ConstArrayRef<EntryRef> refs, vespalib::ConstArrayRef<EntryRef> payloads) = 0;
+    virtual void build(std::span<const EntryRef>, std::span<const uint32_t> ref_counts, std::function<void(EntryRef)> hold) = 0;
+    virtual void build(std::span<const EntryRef> refs) = 0;
+    virtual void build_with_payload(std::span<const EntryRef> refs, std::span<const EntryRef> payloads) = 0;
     virtual std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const = 0;
     virtual bool get_has_btree_dictionary() const = 0;
     virtual bool get_has_hash_dictionary() const = 0;

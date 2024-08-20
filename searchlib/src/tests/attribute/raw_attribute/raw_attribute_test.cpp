@@ -16,13 +16,12 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::SingleRawAttribute;
-using vespalib::ConstArrayRef;
 
 using namespace std::literals;
 
 std::vector<char> empty;
 vespalib::string hello("hello");
-vespalib::ConstArrayRef<char> raw_hello(hello.c_str(), hello.size());
+std::span<const char> raw_hello(hello.c_str(), hello.size());
 
 std::filesystem::path attr_path("raw.dat");
 
@@ -30,7 +29,7 @@ std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
 }
 
-std::vector<char> as_vector(vespalib::ConstArrayRef<char> value) {
+std::vector<char> as_vector(std::span<const char> value) {
     return {value.data(), value.data() + value.size()};
 }
 
@@ -92,7 +91,7 @@ TEST_F(RawAttributeTest, can_set_and_clear_value)
 TEST_F(RawAttributeTest, implements_serialize_for_sort) {
     std::vector<char> escapes{1, 0, char(0xff), char(0xfe), 1};
     vespalib::string long_hello("hello, is there anybody out there");
-    vespalib::ConstArrayRef<char> raw_long_hello(long_hello.c_str(), long_hello.size());
+    std::span<const char> raw_long_hello(long_hello.c_str(), long_hello.size());
     uint8_t buf[8];
     memset(buf, 0, sizeof(buf));
     _attr->addDocs(10);

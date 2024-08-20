@@ -26,7 +26,7 @@ public:
     virtual ~UniqueStoreRemapper();
 
     EntryRef remap(EntryRef ref) const;
-    void remap(vespalib::ArrayRef<AtomicEntryRef> refs) const;
+    void remap(std::span<AtomicEntryRef> refs) const;
     const EntryRefFilter& get_entry_ref_filter() const noexcept { return _filter; }
     virtual void done() = 0;
 };

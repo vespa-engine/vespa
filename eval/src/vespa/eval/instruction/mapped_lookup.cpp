@@ -14,10 +14,10 @@ using namespace instruction;
 namespace {
 
 template <typename CT>
-ConstArrayRef<CT> my_mapped_lookup_fallback(const Value::Index &key_idx, const Value::Index &map_idx,
+std::span<const CT> my_mapped_lookup_fallback(const Value::Index &key_idx, const Value::Index &map_idx,
                                             const CT *key_cells, const CT *map_cells, size_t res_size, Stash &stash) __attribute__((noinline));
 template <typename CT>
-ConstArrayRef<CT> my_mapped_lookup_fallback(const Value::Index &key_idx, const Value::Index &map_idx,
+std::span<const CT> my_mapped_lookup_fallback(const Value::Index &key_idx, const Value::Index &map_idx,
                                             const CT *key_cells, const CT * map_cells, size_t res_size, Stash &stash)
 {
     SparseJoinPlan plan(1);
@@ -41,7 +41,7 @@ ConstArrayRef<CT> my_mapped_lookup_fallback(const Value::Index &key_idx, const V
 
 template <typename CT>
 struct MappedLookupResult {
-    ArrayRef<CT> value;
+    std::span<CT> value;
     MappedLookupResult(size_t res_size, Stash &stash)
       : value(stash.create_array<CT>(res_size)) {}
     void process_match(CT factor, const CT *match) {
@@ -52,7 +52,7 @@ struct MappedLookupResult {
 };
 
 template <typename CT>
-ConstArrayRef<CT> my_fast_mapped_lookup(const FastAddrMap &key_map, const FastAddrMap &map_map,
+std::span<const CT> my_fast_mapped_lookup(const FastAddrMap &key_map, const FastAddrMap &map_map,
                                         const CT *key_cells, const CT *map_cells, size_t res_size, Stash &stash)
 {
     if ((key_map.size() == 1) && (key_cells[0] == 1.0)) {

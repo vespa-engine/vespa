@@ -17,7 +17,7 @@ template <typename MultiValueType>
 ImportedMultiValueReadView<MultiValueType>::~ImportedMultiValueReadView() = default;
 
 template <typename MultiValueType>
-vespalib::ConstArrayRef<MultiValueType>
+std::span<const MultiValueType>
 ImportedMultiValueReadView<MultiValueType>::get_values(uint32_t docid) const
 {
     auto target_lid = get_target_lid(docid);

@@ -13,7 +13,7 @@ template <typename CT>
 void my_cell_range_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &self = unwrap_param<DenseCellRangeFunction>(param);
     auto old_cells = state.peek(0).cells().typify<CT>();
-    ConstArrayRef<CT> new_cells(&old_cells[self.offset()], self.length());
+    std::span<const CT> new_cells(&old_cells[self.offset()], self.length());
     state.pop_push(state.stash.create<DenseValueView>(self.result_type(), TypedCells(new_cells)));
 }
 
