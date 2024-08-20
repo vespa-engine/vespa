@@ -52,12 +52,12 @@ public class DefLine {
             sb.delete(0, parsed);
         }
 
-        while (sb.length() > 0) {
+        while (!sb.isEmpty()) {
             parsed = parseOptions(sb);
             sb.delete(0, parsed);
         }
-        validateName();
-        validateReservedWords();
+        validateName(name);
+        validateReservedWords(name);
     }
 
     /**
@@ -227,7 +227,7 @@ public class DefLine {
 
     // A naive approach to imitate the checking previously done in make-config-preproc.pl
     // TODO: method too long
-    void validateName() {
+    private static void validateName(String name) {
         Matcher digitMatcher;
         Matcher nameMatcher;
         Matcher whitespaceMatcher;
@@ -260,7 +260,7 @@ public class DefLine {
                         throw new IllegalArgumentException(name + " Arrays cannot be multidimensional");
                     }
                     arrayOk = false;
-                    if ((i > (name.length() - 2)) || !(name.substring(i + 1, i + 2).equals("]"))) {
+                    if ((i > (name.length() - 2)) || name.charAt(i + 1) != ']') {
                         throw new IllegalArgumentException(name + " Expected ] to terminate array definition");
                     }
                     i++;
@@ -269,7 +269,7 @@ public class DefLine {
                         throw new IllegalArgumentException(name + " Maps cannot be multidimensional");
                     }
                     mapOk = false;
-                    if ((i > (name.length() - 2)) || !(name.substring(i + 1, i + 2).equals("}"))) {
+                    if ((i > (name.length() - 2)) || name.charAt(i + 1) != '}') {
                         throw new IllegalArgumentException(name + " Expected } to terminate map definition");
                     }
                     i++;
@@ -282,7 +282,7 @@ public class DefLine {
         }
     }
 
-    private void validateReservedWords() {
+    private static void validateReservedWords(String name) {
         String cleanName = (name.endsWith("[]") || name.endsWith("{}")) ?  name.substring(0, name.length()-2) : name;
 
         if (ReservedWords.isReservedWord(cleanName)) {
