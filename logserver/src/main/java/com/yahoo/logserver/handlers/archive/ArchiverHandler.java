@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  *
  * @author Bjorn Borud
  */
-public class ArchiverHandler extends AbstractLogHandler {
+public final class ArchiverHandler extends AbstractLogHandler {
     private static final Logger log = Logger.getLogger(ArchiverHandler.class.getName());
 
     /**

@@ -11,6 +11,7 @@ import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -22,13 +23,13 @@ import java.util.Set;
  * by char[] keys without the necessity of converting
  * to a String first.
  */
-public class CharArrayMap<V> extends AbstractMap<Object,V> {
+class CharArrayMap<V> extends AbstractMap<Object,V> {
 
   private static final CharArrayMap<?> EMPTY_MAP = new EmptyCharArrayMap<>();
 
   private final static int INIT_SIZE = 8;
   private final CharacterUtils charUtils;
-  private boolean ignoreCase;  
+  private final boolean ignoreCase;
   private int count;
   char[][] keys; // package private because used in CharArraySet's non Set-conform CharArraySetIterator
   V[] values; // package private because used in CharArraySet's non Set-conform CharArraySetIterator
@@ -97,9 +98,8 @@ public class CharArrayMap<V> extends AbstractMap<Object,V> {
 
   @Override
   public boolean containsKey(Object o) {
-    if (o instanceof char[]) {
-      final char[] text = (char[])o;
-      return containsKey(text, 0, text.length);
+    if (o instanceof char[] text) {
+        return containsKey(text, 0, text.length);
     } 
     return containsKey(o.toString());
   }
@@ -117,9 +117,8 @@ public class CharArrayMap<V> extends AbstractMap<Object,V> {
 
   @Override
   public V get(Object o) {
-    if (o instanceof char[]) {
-      final char[] text = (char[])o;
-      return get(text, 0, text.length);
+    if (o instanceof char[] text) {
+        return get(text, 0, text.length);
     } 
     return get(o.toString());
   }
@@ -484,7 +483,7 @@ public class CharArrayMap<V> extends AbstractMap<Object,V> {
       final Object key = e.getKey();
       final Object val = e.getValue();
       final Object v = get(key);
-      return v == null ? val == null : v.equals(val);
+      return Objects.equals(v, val);
     }
     
     @Override

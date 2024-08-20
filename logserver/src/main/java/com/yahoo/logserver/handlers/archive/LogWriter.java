@@ -14,7 +14,7 @@ import java.util.logging.Level;
  *
  * @author Bjorn Borud
  */
-public class LogWriter {
+public final class LogWriter {
     private static final Logger log = Logger.getLogger(LogWriter.class.getName());
 
     private long bytesWritten = 0;

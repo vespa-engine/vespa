@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * @author Gunnar Gauslaa Bergem
  * @author hmusum
  */
-public class JRTConnectionPool implements ConnectionPool {
+public final class JRTConnectionPool implements ConnectionPool {
 
     private static final Logger log = Logger.getLogger(JRTConnectionPool.class.getName());
 
@@ -47,7 +47,7 @@ public class JRTConnectionPool implements ConnectionPool {
         addSources(sourceSet);
     }
 
-    public void addSources(ConfigSourceSet sourceSet) {
+    private void addSources(ConfigSourceSet sourceSet) {
         this.sourceSet = sourceSet;
         synchronized (connections) {
             for (String address : sourceSet.getSources()) {

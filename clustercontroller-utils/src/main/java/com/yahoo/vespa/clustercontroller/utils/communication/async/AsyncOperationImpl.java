@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
 import java.util.logging.Logger;
 
-public class AsyncOperationImpl<T> implements AsyncOperation<T> {
+public final class AsyncOperationImpl<T> implements AsyncOperation<T> {
 
     private static final Logger log = Logger.getLogger(AsyncOperationImpl.class.getName());
     private final String name;
