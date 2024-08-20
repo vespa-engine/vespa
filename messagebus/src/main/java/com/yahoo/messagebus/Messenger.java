@@ -21,16 +21,17 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
-public class Messenger implements Runnable {
+public final class Messenger implements Runnable {
 
     private static final Logger log = Logger.getLogger(Messenger.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final List<Task> children = new ArrayList<>();
     private final Queue<Task> queue = new ArrayDeque<>();
 
-    private final Thread thread = new Thread(this, "Messenger");
+    private final Thread thread;
 
     public Messenger() {
+        thread = new Thread(this, "Messenger");
         thread.setDaemon(true);
     }
 
@@ -165,7 +166,7 @@ public class Messenger implements Runnable {
                         continue;
                     }
                 }
-                if (queue.size() > 0) {
+                if (!queue.isEmpty()) {
                     task = queue.poll();
                 }
             }

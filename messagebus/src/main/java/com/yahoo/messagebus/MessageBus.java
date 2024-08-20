@@ -61,7 +61,7 @@ import java.util.logging.Logger;
  * @author bratseth
  * @author Simon Thoresen Hult
  */
-public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, ReplyHandler {
+public final class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, ReplyHandler {
 
     private final static Logger log = Logger.getLogger(MessageBus.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
