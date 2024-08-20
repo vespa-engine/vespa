@@ -374,12 +374,12 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 metricUpdater.updateClusterStateMetrics(cluster, baselineState,
                         ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit(), stateBundle.getFeedBlock()),
                         systemStateBroadcaster.getLastStateBroadcastTimePoint());
-                lastMetricUpdateCycleCount = cycleCount;
             } else {
                 // If we're not the master we don't have any authoritative information about
                 // how out of sync the cluster nodes are, so reset the metric.
                 metricUpdater.updateClusterBucketsOutOfSyncRatio(0);
             }
+            lastMetricUpdateCycleCount = cycleCount;
             return true;
         } else {
             return false;
