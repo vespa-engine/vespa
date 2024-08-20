@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * @author Simon Thoresen Hult
  */
-public class SharedIntermediateSession extends AbstractResource
+public final class SharedIntermediateSession extends AbstractResource
         implements ClientSession, ServerSession, MessageHandler, ReplyHandler
 {
 

@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  * @author oyving
  * @author mpolden
  */
-public class RoutingGenerator extends AbstractComponent {
+public final class RoutingGenerator extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(RoutingGenerator.class.getName());
     private static final Duration configTimeout = Duration.ofSeconds(10);

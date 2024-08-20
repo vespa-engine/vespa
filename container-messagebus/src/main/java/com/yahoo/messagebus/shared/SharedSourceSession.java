@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 /**
  * @author Simon Thoresen Hult
  */
-public class SharedSourceSession extends AbstractResource implements ClientSession, ReplyHandler {
+public final class SharedSourceSession extends AbstractResource implements ClientSession, ReplyHandler {
 
     private static final Logger log = Logger.getLogger(SharedSourceSession.class.getName());
     private final SourceSession session;

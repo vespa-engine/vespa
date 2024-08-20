@@ -6,6 +6,7 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.messagebus.Message;
 
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -18,24 +19,21 @@ public class MbusRequest extends Request {
         this(current, uri, msg, true);
     }
     public MbusRequest(CurrentContainer current, URI uri, Message msg, boolean isServerRequest) {
-        super(current, uri, isServerRequest);
-        this.message = validateMessage(msg);
+        super(current, validateParams(msg, uri), isServerRequest);
+        this.message = msg;
     }
 
     public MbusRequest(Request parent, URI uri, Message msg) {
-        super(parent, uri);
-        this.message = validateMessage(msg);
+        super(parent, validateParams(msg, uri));
+        this.message = msg;
     }
 
     public Message getMessage() {
         return message;
     }
 
-    private Message validateMessage(Message msg) {
-        if (msg != null) {
-            return msg;
-        }
-        release();
-        throw new NullPointerException();
+    private static URI validateParams(Message msg, URI uri) {
+        Objects.requireNonNull(msg, "msg cannot be null");
+        return uri;
     }
 }
