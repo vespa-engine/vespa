@@ -8,12 +8,8 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.Charset;
-
-import com.yahoo.fsa.FSA;
-
 
 /**
  * Class for accessing meta-data (dat-files) used by FSA applications.
@@ -22,54 +18,46 @@ import com.yahoo.fsa.FSA;
  **/
 public class MetaData {
 
-  private boolean          _ok = false;
-  private MappedByteBuffer _header;
-  private MappedByteBuffer _data;
-  private Charset          _charset;
+  private final boolean          _ok;
+  private final MappedByteBuffer _header;
+  private final MappedByteBuffer _data;
+  private final Charset          _charset;
 
 
   public MetaData(String filename){
-    init(filename, "utf-8");
+    this(filename, "utf-8");
   }
 
-  public MetaData(String filename, String charsetname){
-    init(filename, charsetname);
-  }
-
-  public boolean isOk(){
-    return _ok;
-  }
-
-  private void init(String filename, String charsetname){
-
+  public MetaData(String filename, String charsetname) {
+    boolean ok = false;
+    MappedByteBuffer header = null;
+    MappedByteBuffer data = null;
     _charset = Charset.forName(charsetname);
 
-    FileInputStream file;
-    try {
-      file = new FileInputStream(filename);
+    try (FileInputStream file = new FileInputStream(filename)) {
+      header = file.getChannel().map(MapMode.READ_ONLY,0,256);
+      header.order(ByteOrder.LITTLE_ENDIAN);
+      if (h_magic()!=-2025936501){
+        System.out.print("MetaData bad magic " + h_magic() +"\n");
+      } else {
+        data = file.getChannel().map(MapMode.READ_ONLY, 256, h_size());
+        data.order(ByteOrder.LITTLE_ENDIAN);
+        ok = true;
+      }
     }
     catch (FileNotFoundException e) {
       System.out.print("MetaData file " + filename + " not found.\n");
-      return;
-    }
-
-    try {
-      _header = file.getChannel().map(MapMode.READ_ONLY,0,256);
-      _header.order(ByteOrder.LITTLE_ENDIAN);
-      if(h_magic()!=-2025936501){
-        System.out.print("MetaData bad magic " + h_magic() +"\n");
-        return;
-      }
-      _data = file.getChannel().map(MapMode.READ_ONLY,
-                                    256,
-                                    h_size());
-      _data.order(ByteOrder.LITTLE_ENDIAN);
-      _ok=true;
     }
     catch (IOException e) {
       System.out.print("MetaData IO exception.\n");
-      return;
     }
+    _ok = ok;
+    _header = header;
+    _data = data;
+  }
+
+  public boolean isOk() {
+    return _ok;
   }
 
   private int h_magic(){

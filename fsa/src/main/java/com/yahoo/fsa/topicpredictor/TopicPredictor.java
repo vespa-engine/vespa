@@ -4,17 +4,7 @@ package com.yahoo.fsa.topicpredictor;
 import java.util.logging.Logger;
 import java.util.List;
 import java.util.LinkedList;
-import java.util.Iterator;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
-import java.nio.charset.Charset;
 
 import com.yahoo.fsa.FSA;
 import com.yahoo.fsa.MetaData;
@@ -27,7 +17,7 @@ import com.yahoo.fsa.MetaData;
  *
  * @author Peter Boros
  */
-public class TopicPredictor extends MetaData {
+public final class TopicPredictor extends MetaData {
 
     private static final String packageName = "com.yahoo.fsa.topicpredictor";
 
@@ -75,19 +65,12 @@ public class TopicPredictor extends MetaData {
 
         int segIdx = getSegmentIndex(segment);
         int[][] topicArr = getTopicArray(segIdx, maxTopics);
-        int numTopics = topicArr.length;
-        int allTopics = getNumTopics(segIdx);
-        /*Logger.getLogger(packageName).
-            fine("Segment: '" + segment + "' has " + allTopics +
-                 " topics in automaton, fetched " + numTopics);
-        */
-        for(int i=0; i < numTopics; i++) {
-            int weight = topicArr[i][1];
-            String[] topicInfo= getTopicInfo(topicArr[i][0]);
+        for (int[] ints : topicArr) {
+            int weight = ints[1];
+            String[] topicInfo = getTopicInfo(ints[0]);
             String topic = topicInfo[0];
-            String vector= topicInfo[1];
-            PredictedTopic pt =
-                new PredictedTopic(topic, (double)weight, vector);
+            String vector = topicInfo[1];
+            PredictedTopic pt = new PredictedTopic(topic, weight, vector);
             predictedTopics.add(pt);
         }
 

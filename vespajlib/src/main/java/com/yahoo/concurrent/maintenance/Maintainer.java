@@ -164,7 +164,9 @@ public abstract class Maintainer implements Runnable {
 
         Instant now = clock.instant();
         long nodeOffset = clusterHostnames.indexOf(hostname) * interval.toMillis() / clusterHostnames.size();
-        long maintainerOffset = getClass().getName().hashCode() % interval.toMillis();
+        String c = getClass().getName();
+        System.out.println("class=" + c);
+        long maintainerOffset = c.hashCode() % interval.toMillis();
         long totalOffset = nodeOffset + maintainerOffset;
         return Duration.ofMillis(Math.floorMod(totalOffset - now.toEpochMilli(), interval.toMillis()));
     }
