@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/config.h>
-#include <vespa/vespalib/util/optimized.h>
 #include <cstring>
 
 namespace vespalib::hwaccelerated::helper {
@@ -14,13 +13,13 @@ populationCount(const uint64_t *a, size_t sz) {
     size_t count(0);
     size_t i(0);
     for (; (i + 3) < sz; i += 4) {
-        count += Optimized::popCount(a[i + 0]) +
-                 Optimized::popCount(a[i + 1]) +
-                 Optimized::popCount(a[i + 2]) +
-                 Optimized::popCount(a[i + 3]);
+        count += std::popcount(a[i + 0]) +
+                 std::popcount(a[i + 1]) +
+                 std::popcount(a[i + 2]) +
+                 std::popcount(a[i + 3]);
     }
     for (; i < sz; i++) {
-        count += Optimized::popCount(a[i]);
+        count += std::popcount(a[i]);
     }
     return count;
 }

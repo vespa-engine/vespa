@@ -19,7 +19,6 @@ LOG_SETUP(".searchlib.common.bitvector");
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::hwaccelerated::IAccelerated;
-using vespalib::Optimized;
 using vespalib::alloc::Alloc;
 
 namespace {
@@ -206,17 +205,17 @@ BitVector::countInterval(Range range_in) const
     Word *bitValues = _words;
 
     if (startw == endw) {
-        return Optimized::popCount(load(bitValues[startw]) & ~(startBits(range.start()) | endBits(last)));
+        return std::popcount(load(bitValues[startw]) & ~(startBits(range.start()) | endBits(last)));
     }
     Index res = 0;
     // Limit to full words
     if ((range.start() & (WordLen - 1)) != 0) {
-        res += Optimized::popCount(load(bitValues[startw]) & ~startBits(range.start()));
+        res += std::popcount(load(bitValues[startw]) & ~startBits(range.start()));
         ++startw;
     }
     // Align start to 16 bytes
     while (startw < endw && (startw & 3) != 0) {
-        res += Optimized::popCount(load(bitValues[startw]));
+        res += std::popcount(load(bitValues[startw]));
         ++startw;
     }
     bool partialEnd = (last & (WordLen - 1)) != (WordLen - 1);
@@ -227,7 +226,7 @@ BitVector::countInterval(Range range_in) const
         res += IAccelerated::getAccelerator().populationCount(bitValues + startw, endw - startw);
     }
     if (partialEnd) {
-        res += Optimized::popCount(load(bitValues[endw]) & ~endBits(last));
+        res += std::popcount(load(bitValues[endw]) & ~endBits(last));
     }
 
     return res;

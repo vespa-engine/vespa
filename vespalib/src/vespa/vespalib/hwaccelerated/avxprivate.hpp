@@ -3,6 +3,7 @@
 #pragma once
 
 #include "private_helpers.hpp"
+#include <vespa/vespalib/util/optimized.h>
 
 namespace vespalib::hwaccelerated::avx {
 

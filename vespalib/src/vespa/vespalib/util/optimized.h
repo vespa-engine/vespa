@@ -22,9 +22,6 @@ public:
     static int lsbIdx(unsigned int v) noexcept;
     static int lsbIdx(unsigned long v) noexcept;
     static int lsbIdx(unsigned long long v) noexcept;
-    static constexpr int popCount(unsigned int v) noexcept { return __builtin_popcount(v); }
-    static constexpr int popCount(unsigned long v) noexcept { return __builtin_popcountl(v); }
-    static constexpr int popCount(unsigned long long v) noexcept { return __builtin_popcountll(v); }
 };
 
 /**
