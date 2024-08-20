@@ -155,7 +155,7 @@ namespace {
 bool
 similar(uint64_t lhs, uint64_t rhs, double epsilon)
 {
-    uint64_t maxDiff = std::max(1_Mi, uint64_t(epsilon * (lhs+rhs)/2.0));
+    uint64_t maxDiff = std::max(uint64_t(1_Mi), uint64_t(epsilon * (lhs+rhs)/2.0));
     return (lhs < rhs) ? ((rhs - lhs) <= maxDiff) : ((lhs - rhs) <= maxDiff);
 }
 
