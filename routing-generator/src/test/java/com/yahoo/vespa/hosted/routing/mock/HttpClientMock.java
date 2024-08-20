@@ -60,7 +60,7 @@ public class HttpClientMock extends CloseableHttpClient {
         return method.toUpperCase(Locale.ENGLISH) + " " + url;
     }
 
-    public static class JsonResponse extends BasicHttpResponse implements CloseableHttpResponse {
+    public static final class JsonResponse extends BasicHttpResponse implements CloseableHttpResponse {
 
         public JsonResponse(Path jsonFile, int code) {
             this(Exceptions.uncheck(() -> Files.readString(jsonFile)), code);
