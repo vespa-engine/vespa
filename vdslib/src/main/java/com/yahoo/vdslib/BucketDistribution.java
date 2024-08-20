@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 /**
  * @author Simon Thoresen Hult
  */
-public class BucketDistribution {
+public final class BucketDistribution {
 
     // A logger object to enable proper logging.
     private static final Logger log = Logger.getLogger(BucketDistribution.class.getName());
@@ -37,17 +37,6 @@ public class BucketDistribution {
         bucketToColumn = new int[getNumBuckets()];
         reset();
         setNumColumns(numColumns);
-    }
-
-    /**
-     * Constructs a new bucket distribution object as a copy of another.
-     *
-     * @param other The distribution object to copy.
-     */
-    public BucketDistribution(BucketDistribution other) {
-        bucketToColumn = other.bucketToColumn.clone();
-        numColumns = other.numColumns;
-        numBucketBits = other.numBucketBits;
     }
 
     /**

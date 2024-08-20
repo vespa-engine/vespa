@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 
 // TODO: Use config builder instead of ConfigGetter to create test config.
-public class DistributionTestFactory extends CrossPlatformTestFactory {
+public final class DistributionTestFactory extends CrossPlatformTestFactory {
 
     final ObjectMapper mapper = new ObjectMapper();
 
