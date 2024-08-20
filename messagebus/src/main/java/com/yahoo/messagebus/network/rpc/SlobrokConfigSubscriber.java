@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
-public class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSubscriber<SlobroksConfig>{
+public final class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSubscriber<SlobroksConfig>{
 
     private static final Logger log = Logger.getLogger(SlobrokConfigSubscriber.class.getName());
     private final SlobrokList slobroks = new SlobrokList();
