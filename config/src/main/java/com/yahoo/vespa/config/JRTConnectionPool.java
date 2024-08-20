@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * @author Gunnar Gauslaa Bergem
  * @author hmusum
  */
-public final class JRTConnectionPool implements ConnectionPool {
+public class JRTConnectionPool implements ConnectionPool {
 
     private static final Logger log = Logger.getLogger(JRTConnectionPool.class.getName());
 
@@ -91,15 +91,15 @@ public final class JRTConnectionPool implements ConnectionPool {
         return currentConnection = newConnection;
     }
 
-    public synchronized JRTConnection initialize() {
+    private synchronized JRTConnection initialize() {
         return pickNewConnectionRandomly(getSources());
     }
 
-    protected JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
+    final protected JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
         return sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
     }
 
-    public List<JRTConnection> getSources() {
+    final public List<JRTConnection> getSources() {
         List<JRTConnection> ret;
         synchronized (connections) {
             ret = new ArrayList<>(connections.values());
