@@ -49,6 +49,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -349,10 +350,16 @@ public class SessionPreparer {
         void writeStateZK(FileReference filereference) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
 
-            // TODO: remove when tenant secret store integration test passes
+            // TODO: this can be removed when all existing tenant secret stores have externalId in zk
             var tenantSecretStores = params.tenantSecretStores();
+
             if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
-               tenantSecretStores.forEach(ss -> log.info("Tenant secret store:\n" + ss));
+                try {
+                    tenantSecretStores = SecretStoreExternalIdRetriever
+                            .populateExternalId(secretStore, applicationId.tenant(), zone.system(), params.tenantSecretStores());
+                } catch (InvalidApplicationException e) {
+                    log.warning(e.getMessage() + " Secret store was probably deleted.");
+                }
             }
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
@@ -366,7 +373,7 @@ public class SessionPreparer {
                                   prepareResult.allocatedHosts(),
                                   athenzDomain,
                                   params.quota(),
-                                  params.tenantSecretStores(),
+                                  tenantSecretStores,
                                   params.operatorCertificates(),
                                   params.cloudAccount(),
                                   params.dataplaneTokens(),

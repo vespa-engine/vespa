@@ -25,15 +25,18 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
+import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
 import java.net.URI;
@@ -43,6 +46,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -450,7 +454,7 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public List<TenantSecretStore> tenantSecretStores() {
-            return tenantSecretStores;
+            return SecretStoreExternalIdRetriever.populateExternalId(secretStore, applicationId.tenant(), zone.system(), tenantSecretStores);
         }
 
         @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) {
