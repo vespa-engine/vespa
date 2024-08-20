@@ -84,30 +84,49 @@ orChunks(size_t offset, const std::vector<std::pair<const void *, bool>> &src, v
     }
 }
 
-template<typename TemporaryT=int32_t>
-double squaredEuclideanDistanceT(const int8_t *a, const int8_t *b, size_t sz) __attribute__((noinline));
-
-template<typename TemporaryT>
-double squaredEuclideanDistanceT(const int8_t *a, const int8_t *b, size_t sz) {
-    //Note that this is 3 times faster with int32_t than with int64_t and 16x faster than float
-    TemporaryT sum = 0;
-    for (size_t i(0); i < sz; i++) {
-        int16_t d = int16_t(a[i]) - int16_t(b[i]);
-        sum += d * d;
+template <typename T, size_t UNROLL, typename PartialT = T, typename ConvertElementT = T>
+inline double squared_euclidean_distance_unrolled(const T* a, const T* b, size_t sz) noexcept {
+    // Note that this is 3 times faster with int32_t than with int64_t and 16x faster than float
+    PartialT partial[UNROLL];
+    for (size_t i = 0; i < UNROLL; ++i) {
+        partial[i] = 0;
+    }
+    size_t i = 0;
+    for (; i + UNROLL <= sz; i += UNROLL) {
+        for (size_t j = 0; j < UNROLL; ++j) {
+            ConvertElementT d = ConvertElementT(a[i+j]) - ConvertElementT(b[i+j]);
+            partial[j] += d * d;
+        }
+    }
+    for (; i < sz; ++i) {
+        ConvertElementT d = ConvertElementT(a[i]) - ConvertElementT(b[i]);
+        partial[i % UNROLL] += d * d;
+    }
+    double sum = 0;
+    for (size_t j = 0; j < UNROLL; ++j) {
+        sum += partial[j];
     }
     return sum;
 }
 
+template <typename T, size_t UNROLL, typename PartialT = T, typename ConvertElementT = T>
+double squared_euclidean_distance_unrolled_noinline(const T* a, const T* b, size_t sz) noexcept __attribute__((noinline));
+
+template <typename T, size_t UNROLL, typename PartialT, typename ConvertElementT>
+double squared_euclidean_distance_unrolled_noinline(const T* a, const T* b, size_t sz) noexcept {
+    return squared_euclidean_distance_unrolled<T, UNROLL, PartialT, ConvertElementT>(a, b, sz);
+}
+
 inline double
-squaredEuclideanDistance(const int8_t *a, const int8_t *b, size_t sz) {
+squaredEuclideanDistance(const int8_t *a, const int8_t *b, size_t sz) noexcept {
     constexpr size_t LOOP_COUNT = 0x100;
     double sum(0);
     size_t i = 0;
     for (; i + LOOP_COUNT <= sz; i += LOOP_COUNT) {
-        sum += squaredEuclideanDistanceT<int32_t>(a + i, b + i, LOOP_COUNT);
+        sum += squared_euclidean_distance_unrolled_noinline<int8_t, 2, int32_t, int16_t>(a + i, b + i, LOOP_COUNT);
     }
     if (sz > i) [[unlikely]] {
-        sum += squaredEuclideanDistanceT<int32_t>(a + i, b + i, sz - i);
+        sum += squared_euclidean_distance_unrolled_noinline<int8_t, 2, int32_t, int16_t>(a + i, b + i, sz - i);
     }
     return sum;
 }
