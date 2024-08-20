@@ -24,7 +24,7 @@ public class FeatureRange extends PredicateValue {
         Objects.requireNonNull(key, "key");
         this.key = key;
         if (from != null && to != null && from > to) {
-            throw new IllegalArgumentException("Expected 'from' less than or equal to " + to + ", got " + from + ".");
+            throw new IllegalArgumentException("Expected 'to' greater than or equal to " + from + ", got " + to + ".");
         }
         this.from = from;
         this.to = to;
