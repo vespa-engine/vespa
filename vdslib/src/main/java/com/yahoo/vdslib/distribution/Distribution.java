@@ -24,10 +24,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class Distribution {
+public final class Distribution {
 
-    private record Config(Group nodeGraph, int redundancy) {
-    }
+    private record Config(Group nodeGraph, int redundancy) { }
 
     private ConfigSubscriber configSub;
     private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1));

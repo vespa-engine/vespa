@@ -8,7 +8,7 @@ package com.yahoo.search.predicate.index;
  * @author Magnar Nedland
  * @author bjorncs
  */
-public class BoundsPostingList extends MultiIntervalPostingList {
+public final class BoundsPostingList extends MultiIntervalPostingList {
     private final int valueDiff;
     private final IntervalWithBounds intervalWithBounds = new IntervalWithBounds();
     private final PredicateIntervalStore store;
