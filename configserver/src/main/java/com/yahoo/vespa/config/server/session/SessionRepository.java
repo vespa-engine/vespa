@@ -43,6 +43,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -56,6 +57,7 @@ import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.KeeperException;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -716,8 +718,8 @@ public class SessionRepository {
                 if (session == null)
                     session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
 
-                var applicationId = session.getApplicationId();
-                try (var ignored = applicationRepo.lock(applicationId)) {
+                Optional<ApplicationId> applicationId = session.getOptionalApplicationId();
+                try (var ignored = lockApplication(applicationId)) {
                     Session.Status status = session.getStatus();
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
                     if (status == ACTIVATE && activeForApplication) continue;
@@ -744,8 +746,8 @@ public class SessionRepository {
 
                         // Defensive/paranoid: Check if session is active before deleting
                         if (! activeForApplication) {
-                            log.log(Level.FINE, () -> "Will delete expired session " + sessionId + " created " +
-                                    createTime + " for '" + applicationId + "'");
+                            log.log(Level.FINE, "Will delete expired session " + sessionId + " created " +
+                                    createTime + " for '" + applicationId.map(ApplicationId::toString).orElse("unknown") + "'");
                             deleteLocalSession(sessionId);
                             deleted++;
                         }
@@ -758,6 +760,18 @@ public class SessionRepository {
             }
         }
         log.log(Level.FINE, () -> "Done deleting expired sessions");
+    }
+
+    private record ApplicationLock(Optional<Lock> lock) implements Closeable {
+
+        @Override
+        public void close() { lock.ifPresent(Lock::close); }
+
+    }
+
+    private ApplicationLock lockApplication(Optional<ApplicationId> applicationId) {
+        return applicationId.map(id -> new ApplicationLock(Optional.of(applicationRepo.lock(id))))
+                .orElseGet(() -> new ApplicationLock(Optional.empty()));
     }
 
     private Optional<LocalSession> getOptionalSessionFromFileSystem(long sessionId) {
