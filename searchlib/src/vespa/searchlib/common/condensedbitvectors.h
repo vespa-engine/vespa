@@ -14,7 +14,6 @@ public:
     using SP = std::shared_ptr<CondensedBitVector>;
     using Key = uint32_t;
     using KeySet = std::set<Key>;
-    using CountVector = std::span<uint8_t>;
 
     virtual ~CondensedBitVector();
 

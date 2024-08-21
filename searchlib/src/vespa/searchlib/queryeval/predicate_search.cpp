@@ -132,10 +132,10 @@ SkipMinFeature::create(const uint8_t * min_feature, const uint8_t * kv, size_t s
 PredicateSearch::PredicateSearch(const uint8_t * minFeatureVector,
                                  const IntervalRange * interval_range_vector,
                                  IntervalRange max_interval_range,
-                                 CondensedBitVector::CountVector kV,
+                                 std::span<uint8_t> kV,
                                  vector<PredicatePostingList::UP> posting_lists,
                                  const fef::TermFieldMatchDataArray &tfmda)
-    : _skip(SkipMinFeature::create(minFeatureVector, &kV[0], kV.size())),
+    : _skip(SkipMinFeature::create(minFeatureVector, kV.data(), kV.size())),
       _posting_lists(std::move(posting_lists)),
       _sorted_indexes(_posting_lists.size()),
       _sorted_indexes_merge_buffer(_posting_lists.size()),

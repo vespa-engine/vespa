@@ -62,7 +62,7 @@ public:
     }
 
     // Exposed for testing
-    const BitVectorCache::CountVector &  getKV() const { return _kV; }
+    std::span<uint8_t>  getKV() const { return _kV; }
     const BitVectorCache::KeySet &       getCachedFeatures() const { return _cachedFeatures; }
 private:
     using BTreeIterator = predicate::SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
@@ -85,7 +85,7 @@ private:
     const PredicateAttribute        & _attribute;
     const predicate::PredicateIndex &_index;
     Alloc                            _kVBacking;
-    BitVectorCache::CountVector      _kV;
+    std::span<uint8_t>               _kV;
     BitVectorCache::KeySet           _cachedFeatures;
 
     std::vector<IntervalEntry>       _interval_dict_entries;
