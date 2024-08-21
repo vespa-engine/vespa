@@ -19,7 +19,7 @@ import java.util.TreeMap;
 import static com.yahoo.vdslib.state.NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result;
 
-public class ContentCluster {
+public final class ContentCluster {
 
     private static final int pollingFrequency = 5000;
 

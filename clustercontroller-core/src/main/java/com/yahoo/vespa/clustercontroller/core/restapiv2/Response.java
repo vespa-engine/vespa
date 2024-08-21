@@ -32,16 +32,16 @@ public class Response {
             this.reason = ns.getDescription();
         }
 
-        public String parseId(State id) throws StateRestApiException {
-            switch (id) {
-                case UP: return "up";
-                case DOWN: return "down";
-                case INITIALIZING: return "initializing";
-                case MAINTENANCE: return "maintenance";
-                case RETIRED: return "retired";
-                case STOPPING: return "stopping";
-            }
-            throw new InternalFailure("Unknown state '" + id + "' found.");
+        public static String parseId(State id) throws StateRestApiException {
+            return switch (id) {
+                case UP -> "up";
+                case DOWN -> "down";
+                case INITIALIZING -> "initializing";
+                case MAINTENANCE -> "maintenance";
+                case RETIRED -> "retired";
+                case STOPPING -> "stopping";
+                default -> throw new InternalFailure("Unknown state '" + id + "' found.");
+            };
         }
 
         @Override
