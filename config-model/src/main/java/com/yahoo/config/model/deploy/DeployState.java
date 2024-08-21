@@ -176,19 +176,19 @@ public class DeployState implements ConfigDefinitionStore {
 
     @Override
     public final Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) {
-        if (existingConfigDefs == null) {
-            existingConfigDefs = new LinkedHashMap<>();
-            configDefinitionRepo.ifPresent(definitionRepo -> existingConfigDefs.putAll(createLazyMapping(definitionRepo)));
-            existingConfigDefs.putAll(applicationPackage.getAllExistingConfigDefs());
+        if (configDefinitionSuppliers == null) {
+            configDefinitionSuppliers = new LinkedHashMap<>();
+            configDefinitionRepo.ifPresent(definitionRepo -> configDefinitionSuppliers.putAll(createLazyMapping(definitionRepo)));
+            configDefinitionSuppliers.putAll(applicationPackage.getAllExistingConfigDefs());
         }
-        if ( ! existingConfigDefs.containsKey(defKey)) return Optional.empty();
+        if ( ! configDefinitionSuppliers.containsKey(defKey)) return Optional.empty();
 
-        if (defArchive.get(defKey) != null)
-            return Optional.of(defArchive.get(defKey));
+        if (configDefinitionCache.get(defKey) != null)
+            return Optional.of(configDefinitionCache.get(defKey));
 
-        ConfigDefinition def = existingConfigDefs.get(defKey).parse();
+        ConfigDefinition def = configDefinitionSuppliers.get(defKey).parse();
 
-        defArchive.put(defKey, def);
+        configDefinitionCache.put(defKey, def);
         return Optional.of(def);
     }
 
@@ -225,10 +225,10 @@ public class DeployState implements ConfigDefinitionStore {
     private final RankProfileRegistry rankProfileRegistry;
 
     // Mapping from key to something that can create a config definition.
-    private Map<ConfigDefinitionKey, UnparsedConfigDefinition> existingConfigDefs = null;
+    private Map<ConfigDefinitionKey, UnparsedConfigDefinition> configDefinitionSuppliers = null;
 
     // Cache of config definitions looked up so far.
-    private final Map<ConfigDefinitionKey, ConfigDefinition> defArchive = new LinkedHashMap<>();
+    private final Map<ConfigDefinitionKey, ConfigDefinition> configDefinitionCache = new LinkedHashMap<>();
 
     public ApplicationPackage getApplicationPackage() {
         return applicationPackage;
