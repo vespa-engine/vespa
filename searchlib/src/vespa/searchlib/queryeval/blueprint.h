@@ -85,8 +85,7 @@ public:
 
 private:
     static Options &thread_opts() noexcept {
-        thread_local Options opts;
-        return opts;
+        return _opts;
     }
     struct BindOpts {
         Options prev;
@@ -244,6 +243,7 @@ private:
     uint32_t   _id;
     bool       _strict;
     bool       _frozen;
+    thread_local static Options _opts;
 
 protected:
     virtual void notifyChange() {
