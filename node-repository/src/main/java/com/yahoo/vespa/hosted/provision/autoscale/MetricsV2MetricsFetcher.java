@@ -17,6 +17,7 @@ import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.concurrent.FutureCallback;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -54,8 +55,11 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
         NodeList applicationNodes = nodeRepository.nodes().list().owner(application).state(Node.State.active);
 
         Optional<Node> metricsV2Container = applicationNodes.container()
-                                                            .matching(node -> expectedUp(node))
-                                                            .first();
+                .matching(this::expectedUp)
+                .stream()
+                .filter(node -> ! newNode(node)) // Skip newly added nodes, as they may not be reachable
+                .findFirst();
+
         if (metricsV2Container.isEmpty()) {
             return CompletableFuture.completedFuture(MetricsResponse.empty());
         }
@@ -65,6 +69,13 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
             return httpClient.get(url)
                              .thenApply(response -> new MetricsResponse(response, applicationNodes));
         }
+    }
+
+    /**
+     * Returns true if this a new node (oldest node history event is less than 3 minutes old)
+     */
+    private boolean newNode(Node node) {
+        return node.history().age(nodeRepository.clock().instant()).compareTo(Duration.ofMinutes(3)) <= 0;
     }
 
     @Override
