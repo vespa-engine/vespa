@@ -28,7 +28,7 @@ public class ConfigServerDB {
     public ConfigServerDB(ConfigserverConfig configserverConfig) {
         if (configserverConfig.configDefinitionsDir().equals(configserverConfig.configServerDBDir()))
             throw new IllegalArgumentException("configDefinitionsDir and configServerDBDir cannot be equal ('" +
-                    configserverConfig.configDefinitionsDir() + "')");
+                                               configserverConfig.configDefinitionsDir() + "')");
         this.configserverConfig = configserverConfig;
         this.serverDB = new File(Defaults.getDefaults().underVespaHome(configserverConfig.configServerDBDir()));
         createDirectory(serverdefs());
