@@ -34,6 +34,7 @@ public class NodeMetricsDbMaintainerTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         tester.clock().setInstant(Instant.ofEpochMilli(1400));
         tester.makeReadyNodes(2, resources);
+        tester.advanceTime(Duration.ofMinutes(5)); // Make sure these are not considered new nodes (metrics will not be fetched for them)
         tester.activateTenantHosts();
         tester.deploy(ProvisioningTester.applicationId("test"),
                       Capacity.from(new ClusterResources(2, 1, resources)));
