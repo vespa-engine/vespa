@@ -38,7 +38,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
@@ -607,15 +606,10 @@ public class SessionRepository {
 
     private void write(Session existingSession, LocalSession session, ApplicationId applicationId, Instant created) {
 
-        // TODO: this can be removed when all existing tenant secret stores have externalId in zk
+        // TODO: remove when tenant secret store integration test passes
         var tenantSecretStores = existingSession.getTenantSecretStores();
         if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
-            try {
-                tenantSecretStores = SecretStoreExternalIdRetriever
-                        .populateExternalId(secretStore, applicationId.tenant(), zone.system(), existingSession.getTenantSecretStores());
-            } catch (InvalidApplicationException e) {
-                log.warning(e.getMessage() + " Secret store was probably deleted.");
-            }
+            tenantSecretStores.forEach(ss -> log.info("Existing tenant secret store:\n" + ss));
         }
         SessionSerializer sessionSerializer = new SessionSerializer();
         sessionSerializer.write(session.getSessionZooKeeperClient(),
