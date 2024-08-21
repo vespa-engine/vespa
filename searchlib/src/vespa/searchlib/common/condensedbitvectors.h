@@ -18,8 +18,8 @@ public:
 
     virtual ~CondensedBitVector();
 
-    virtual void initializeCountVector(const KeySet & keys, CountVector & v) const = 0;
-    virtual void addCountVector(const KeySet & keys, CountVector & v) const = 0;
+    virtual void initializeCountVector(const KeySet & keys, std::span<uint8_t> v) const = 0;
+    virtual void addCountVector(const KeySet & keys, std::span<uint8_t> v) const = 0;
     virtual void set(Key key, uint32_t index, bool v) = 0;
     virtual bool get(Key key, uint32_t index) const = 0;
     virtual void clearIndex(uint32_t index) = 0;
