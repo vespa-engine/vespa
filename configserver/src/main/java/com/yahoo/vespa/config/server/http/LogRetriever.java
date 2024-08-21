@@ -24,15 +24,18 @@ public class LogRetriever {
                                                                          .socketTimeout(Timeout.ofSeconds(45))
                                                                          .buildClient();
 
+    /**
+     * Fetches logs from the log server for a given application.
+     * An empty response will be returned if we are unable to fetch logs and
+     * the deployment is less than 3 minutes old
+     */
     @SuppressWarnings("deprecation")
     public HttpResponse getLogs(HttpURL logServerUri, Optional<Instant> deployTime) {
         HttpGet get = new HttpGet(logServerUri.asURI());
         try {
             return new ProxyResponse(httpClient.execute(get));
         } catch (IOException e) {
-            // It takes some time before nodes are up after first-time deployment, return empty log for up to 2 minutes
-            // if getting logs fail
-            if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(2))))
+            if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(3))))
                 return new EmptyResponse();
 
             throw new RuntimeException("Failed to get logs from " + logServerUri, e);
