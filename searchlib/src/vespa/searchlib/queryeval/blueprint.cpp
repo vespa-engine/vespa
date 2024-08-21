@@ -50,6 +50,8 @@ void maybe_eliminate_self(Blueprint* &self, Blueprint::UP replacement) {
 
 //-----------------------------------------------------------------------------
 
+thread_local Blueprint::Options Blueprint::_opts;
+
 Blueprint::HitEstimate
 Blueprint::max(const std::vector<HitEstimate> &data)
 {
