@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "binary_hamming_distance.h"
 #include <cstdint>
+#include <bit>
 
 namespace vespalib {
 
@@ -21,11 +22,11 @@ binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) noexcept {
         const auto *words_b = static_cast<const uint64_t *>(rhs);
         for (; (i+UNROLL_CNT) * WORD_SZ <= sz; i += UNROLL_CNT) {
             for (uint8_t j=0; j < UNROLL_CNT; j++) {
-                sum += __builtin_popcountl(words_a[i+j] ^ words_b[i+j]);
+                sum += std::popcount(words_a[i+j] ^ words_b[i+j]);
             }
         }
         for (; (i + 1) * WORD_SZ <= sz; ++i) {
-            sum += __builtin_popcountl(words_a[i] ^ words_b[i]);
+            sum += std::popcount(words_a[i] ^ words_b[i]);
         }
     }
     if (__builtin_expect((i * WORD_SZ < sz), false)) {
@@ -33,7 +34,7 @@ binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) noexcept {
         const auto *bytes_b = static_cast<const uint8_t *>(rhs);
         for (i *= WORD_SZ; i < sz; ++i) {
             uint64_t xor_bits = bytes_a[i] ^ bytes_b[i];
-            sum += __builtin_popcountl(xor_bits);
+            sum += std::popcount(xor_bits);
         }
     }
     return sum;

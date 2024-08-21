@@ -29,7 +29,7 @@ static inline int hash_dist(const LsMaskHash &h1, const LsMaskHash &h2) {
     for (size_t o = 0; o < NUM_HASH_WORDS; ++o) {
         uint64_t hx = h1.bits[o] ^ h2.bits[o];
         hx &= (h1.mask[o] | h2.mask[o]);
-        cnt += __builtin_popcountl(hx);
+        cnt += std::popcount(hx);
     }
     return cnt;
 }
