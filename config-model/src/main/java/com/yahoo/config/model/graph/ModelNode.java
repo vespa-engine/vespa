@@ -82,18 +82,14 @@ public class ModelNode<MODEL extends ConfigModel> implements ConfigModelInstance
     }
 
     private boolean isCollectionOf(Type type, Class<?> nodeClazz) {
-        if (type instanceof ParameterizedType) {
-            ParameterizedType t = (ParameterizedType) type;
-            // Note: IntelliJ says the following cannot be equal but that is wrong
+        if (type instanceof ParameterizedType t) {
             return (t.getRawType().equals(java.util.Collection.class) && t.getActualTypeArguments().length == 1 && t.getActualTypeArguments()[0].equals(nodeClazz));
         }
         return false;
     }
 
     private boolean isCollection(Type type) {
-        if (type instanceof ParameterizedType) {
-            ParameterizedType t = (ParameterizedType) type;
-            // Note: IntelliJ says the following cannot be equal but that is wrong
+        if (type instanceof ParameterizedType t) {
             return (t.getRawType().equals(java.util.Collection.class) && t.getActualTypeArguments().length == 1);
         }
         return false;
@@ -114,7 +110,7 @@ public class ModelNode<MODEL extends ConfigModel> implements ConfigModelInstance
             if (params.length < 1 || ! params[0].equals(ConfigModelContext.class)) {
                 throw new IllegalArgumentException("Constructor for " + clazz.getName() + " must have as its first argument a " + ConfigModelContext.class.getName());
             }
-            Object arguments[] = new Object[params.length];
+            Object[] arguments = new Object[params.length];
             arguments[0] = context;
             for (int i = 1; i < params.length; i++)
                 arguments[i] = findArgument(params[i]);

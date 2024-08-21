@@ -26,7 +26,7 @@ import com.yahoo.schema.document.annotation.SDAnnotationType;
 import com.yahoo.schema.document.annotation.TemporaryAnnotationReferenceDataType;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.documentmodel.FieldView;
-import com.yahoo.vespa.documentmodel.SearchDef;
+import com.yahoo.vespa.documentmodel.SchemaDef;
 import com.yahoo.vespa.documentmodel.SearchField;
 
 import java.util.ArrayList;
@@ -129,62 +129,62 @@ public class DocumentModelBuilder {
 
     private void addToModel(Schema schema) {
         // Then we add the search specific stuff
-        SearchDef searchDef = new SearchDef(schema.getName());
-        addSearchFields(schema.extraFieldList(), searchDef);
+        SchemaDef schemaDef = new SchemaDef(schema.getName());
+        addSearchFields(schema.extraFieldList(), schemaDef);
         for (Field f : schema.getDocument().fieldSet()) {
-            addSearchField((SDField) f, searchDef);
+            addSearchField((SDField) f, schemaDef);
         }
         for (SDField field : schema.allConcreteFields()) {
             for (Attribute attribute : field.getAttributes().values()) {
-                if ( ! searchDef.getFields().containsKey(attribute.getName())) {
-                    searchDef.add(new SearchField(new Field(attribute.getName(), field), !field.getIndices().isEmpty(), true));
+                if ( ! schemaDef.getFields().containsKey(attribute.getName())) {
+                    schemaDef.add(new SearchField(new Field(attribute.getName(), field), !field.getIndices().isEmpty(), true));
                 }
             }
         }
 
         for (Field f : schema.getDocument().fieldSet()) {
-            addAlias((SDField) f, searchDef);
+            addAlias((SDField) f, schemaDef);
         }
-        model.getSearchManager().add(searchDef);
+        model.getSearchManager().add(schemaDef);
     }
 
-    private static void addSearchFields(Collection<SDField> fields, SearchDef searchDef) {
+    private static void addSearchFields(Collection<SDField> fields, SchemaDef schemaDef) {
         for (SDField field : fields) {
-            addSearchField(field, searchDef);
+            addSearchField(field, schemaDef);
         }
     }
 
-    private static void addSearchField(SDField field, SearchDef searchDef) {
+    private static void addSearchField(SDField field, SchemaDef schemaDef) {
         SearchField searchField =
             new SearchField(field,
                             field.getIndices().containsKey(field.getName()) && field.getIndices().get(field.getName()).getType().equals(Index.Type.VESPA),
                             field.getAttributes().containsKey(field.getName()));
-        searchDef.add(searchField);
+        schemaDef.add(searchField);
 
         // Add field to views
-        addToView(field.getIndices().keySet(), searchField, searchDef);
+        addToView(field.getIndices().keySet(), searchField, schemaDef);
     }
 
-    private static void addAlias(SDField field, SearchDef searchDef) {
+    private static void addAlias(SDField field, SchemaDef schemaDef) {
         for (Map.Entry<String, String> entry : field.getAliasToName().entrySet()) {
-            searchDef.addAlias(entry.getKey(), entry.getValue());
+            schemaDef.addAlias(entry.getKey(), entry.getValue());
         }
     }
 
-    private static void addToView(Collection<String> views, Field field, SearchDef searchDef) {
+    private static void addToView(Collection<String> views, Field field, SchemaDef schemaDef) {
         for (String viewName : views) {
-            addToView(viewName, field, searchDef);
+            addToView(viewName, field, schemaDef);
         }
     }
 
-    private static void addToView(String viewName, Field field, SearchDef searchDef) {
-        if (searchDef.getViews().containsKey(viewName)) {
-            searchDef.getViews().get(viewName).add(field);
+    private static void addToView(String viewName, Field field, SchemaDef schemaDef) {
+        if (schemaDef.getViews().containsKey(viewName)) {
+            schemaDef.getViews().get(viewName).add(field);
         } else {
-            if (!searchDef.getFields().containsKey(viewName)) {
+            if (!schemaDef.getFields().containsKey(viewName)) {
                 FieldView view = new FieldView(viewName);
                 view.add(field);
-                searchDef.add(view);
+                schemaDef.add(view);
             }
         }
     }

@@ -737,7 +737,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                                                                               .endpoints(Set.of(new ContainerEndpoint("search.indexing", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))));
             VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                     .withServices(hostedXml)
-                    .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
+                    .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
                     .build())
                     .create(deployStateBuilder);
             ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
@@ -764,7 +764,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         var deployStateBuilder = new DeployState.Builder().properties(props);
         var model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withServices(hostedXml)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
                 .build())
                 .create(deployStateBuilder);
         return getProtonConfig(model.getContentClusters().values().iterator().next());
@@ -834,7 +834,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         return new MockApplicationPackage.Builder()
                 .withHosts(hosts)
                 .withServices(services)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
                 .build();
     }
 
@@ -855,7 +855,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withHosts(getHosts())
                 .withServices(combined)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
                 .build())
                 .create(deployStateBuilder);
 

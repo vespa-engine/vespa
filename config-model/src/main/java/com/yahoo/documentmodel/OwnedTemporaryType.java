@@ -8,7 +8,7 @@ import com.yahoo.document.StructDataType;
  * Proxy for a struct type declared in a specific document
  *
  * @author arnej
- **/
+ */
 public final class OwnedTemporaryType extends StructDataType implements OwnedType {
 
     private final String ownerName;
@@ -38,4 +38,5 @@ public final class OwnedTemporaryType extends StructDataType implements OwnedTyp
     public String toString() {
         return "{OwnedTemporaryType "+uniqueName+" id="+getId()+" uid="+getUniqueId()+"}";
     }
+
 }

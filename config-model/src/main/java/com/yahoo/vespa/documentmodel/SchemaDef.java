@@ -9,45 +9,44 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * @author    baldersheim
- * @since     2010-02-19
+ * @author baldersheim
  */
-public class SearchDef {
-    private final static Logger log = Logger.getLogger(SearchDef.class.getName());
-    /// Name of the searchdefinition
-    private String name;
-    /// These are the real backing documenttypes
-    private DocumentTypeManager sources = new DocumentTypeManager();
-    /// Map of all search fields
-    private Map<String, SearchField> fields = new HashMap<>();
-    /// Map of all views that can be searched.
-    private Map<String, FieldView> views = new HashMap<>();
-    /// Map of all aliases <alias, realname>
-    private Map<String, String> aliases = new HashMap<>();
+public class SchemaDef {
 
-    /**
-     * Will create a SearchDef with the given name
-     * @param name The name of the searchdefinition
-     */
-    public SearchDef(String name) {
+    private final static Logger log = Logger.getLogger(SchemaDef.class.getName());
+
+    /** Name of the schema. */
+    private final String name;
+
+    /** These are the real backing document types. */
+    private final DocumentTypeManager sources = new DocumentTypeManager();
+
+    /** Map of all search fields. */
+    private final Map<String, SearchField> fields = new HashMap<>();
+
+    /** Map of all views that can be searched. */
+    private final Map<String, FieldView> views = new HashMap<>();
+
+    /// Map of all aliases <alias, realname>
+    private final Map<String, String> aliases = new HashMap<>();
+
+    /** Creates a SearchDef with the given name. */
+    public SchemaDef(String name) {
         this.name = name;
     }
 
-    /**
-     * This will provide you with the name of the searchdefinition.
-     * @return The name of the searchdefinition.
-     */
     public String getName() { return name; }
 
     public Map<String, SearchField> getFields() { return fields; }
     public Map<String, FieldView> getViews() { return views; }
 
     /**
-     * Adds a document that can be mapped to this search.
-     * @param source A document that can be mapped to this search.
+     * Adds a document that can be mapped to this schema.
+     *
+     * @param source a document that can be mapped to this schema.
      * @return Itself for chaining.
      */
-    public SearchDef add(DocumentType source) {
+    public SchemaDef add(DocumentType source) {
         sources.registerDocumentType(source);
         return this;
     }
@@ -59,7 +58,7 @@ public class SearchDef {
 
     private void noFieldShadowing(String name) {
         if (fields.containsKey(name)) {
-            throw new IllegalArgumentException("Searchdef '" + getName() + "' already contains the fields '" + fields.toString() +
+            throw new IllegalArgumentException("Schema '" + getName() + "' already contains the fields '" + fields +
                     "'. You are trying to add '" + name + "'. Shadowing is not supported");
         }
     }
@@ -72,11 +71,12 @@ public class SearchDef {
     }
 
     /**
-     * Adds a search field to the definition.
-     * @param field The field to add.
-     * @return Itself for chaining.
+     * Adds a search field to the schema.
+     *
+     * @param field the field to add.
+     * @return this, for chaining.
      */
-    public SearchDef add(SearchField field) {
+    public SchemaDef add(SearchField field) {
         try {
             noFieldShadowing(field.getName());
             fields.put(field.getName(), field);
@@ -88,7 +88,7 @@ public class SearchDef {
         return this;
     }
 
-    public SearchDef addAlias(String alias, String aliased) {
+    public SchemaDef addAlias(String alias, String aliased) {
         noShadowing(alias);
         if (!fields.containsKey(aliased) && !views.containsKey(aliased)) {
             if (aliased.contains(".")) {
@@ -114,7 +114,7 @@ public class SearchDef {
         return this;
     }
 
-    public SearchDef add(FieldView view) {
+    public SchemaDef add(FieldView view) {
         noViewShadowing(view.getName());
         if (views.containsKey(view.getName())) {
             views.get(view.getName()).add(view);
@@ -122,4 +122,5 @@ public class SearchDef {
         views.put(view.getName(), view);
         return this;
     }
+
 }

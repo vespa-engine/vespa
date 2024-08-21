@@ -55,9 +55,9 @@ public final class XmlHelper {
      */
     public static String getIdString(Element element) {
         String idString = element.getAttribute("id");
-        if (idString == null || idString.trim().equals(""))
+        if (idString.trim().isEmpty())
             idString = element.getAttribute(idReference);
-        if (idString == null || idString.trim().equals(""))
+        if (idString.trim().isEmpty())
             idString = element.getAttribute("ident");
         return idString;
     }
@@ -119,7 +119,7 @@ public final class XmlHelper {
     /**
      * Creates a new XML document builder.
      *
-     * @return A new DocumentBuilder instance, or null if we fail to get one.
+     * @return a new DocumentBuilder instance, or null if we fail to get one.
      */
     public static synchronized DocumentBuilder getDocumentBuilder() {
         try {
@@ -194,4 +194,5 @@ public final class XmlHelper {
             throw new RuntimeException(e);
         }
     }
+
 }

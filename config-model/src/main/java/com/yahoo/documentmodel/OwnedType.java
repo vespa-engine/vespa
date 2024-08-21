@@ -5,11 +5,13 @@ package com.yahoo.documentmodel;
  * API for a type declared in a specific document
  *
  * @author arnej
- **/
+ */
 public interface OwnedType {
+
     String getOwnerName();
     String getUniqueName();
     default int getUniqueId() {
         return getUniqueName().hashCode();
     }
+
 }

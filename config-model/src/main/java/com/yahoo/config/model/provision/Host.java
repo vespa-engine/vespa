@@ -50,8 +50,8 @@ public class Host {
 
     @Override
     public String toString() {
-        return hostname + (aliases.size() > 0 ? " (aliases: " + aliases + ")" : "" ) +
-                (flavor.map(value -> " (flavor: " + value + ")").orElse(""));
+        return hostname + (!aliases.isEmpty() ? " (aliases: " + aliases + ")" : "" ) +
+               (flavor.map(value -> " (flavor: " + value + ")").orElse(""));
     }
 
 }

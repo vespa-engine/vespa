@@ -72,10 +72,7 @@ public abstract class Derived {
      */
     protected void derive(ImmutableSDField field, Schema schema) {}
 
-    /**
-     * Derives the content of this configuration. This
-     * default does nothing.
-     */
+    /** Derives the content of this configuration. This default does nothing. */
     protected void derive(Index index, Schema schema) {
     }
 
