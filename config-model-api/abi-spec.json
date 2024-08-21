@@ -1233,7 +1233,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract void startDownload(java.lang.String, int, java.util.Set)"
+      "public void startDownload(java.lang.String, int, java.util.Set)",
+      "public abstract void triggerDownload(java.lang.String, int, java.util.Set)"
     ],
     "fields" : [ ]
   },
