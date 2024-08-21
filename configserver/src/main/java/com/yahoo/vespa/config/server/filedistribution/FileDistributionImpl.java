@@ -38,7 +38,7 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
      * @param fileReferences set of file references to start downloading
      */
     @Override
-    public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
+    public void triggerDownload(String hostName, int port, Set<FileReference> fileReferences) {
         Target target = supervisor.connect(new Spec(hostName, port));
         Request request = new Request("filedistribution.setFileReferencesToDownload");
         request.setContext(target);

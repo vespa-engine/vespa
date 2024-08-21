@@ -129,7 +129,8 @@ public class SessionPreparer {
     ExecutorService getExecutor() { return executor; }
 
     /**
-     * Prepares a session (validates, builds model, writes to zookeeper and distributes files)
+     * Prepares a session (validates, builds model, trigger distribution of application package
+     * to other config servers, writes to zookeeper)
      *
      * @param hostValidator               host validator
      * @param logger                      for storing logs returned in response to client.
@@ -150,7 +151,7 @@ public class SessionPreparer {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
-                FileReference fileReference = preparation.startDistributionOfApplicationPackage();
+                FileReference fileReference = preparation.triggerDistributionOfApplicationPackage();
                 preparation.writeStateZK(fileReference);
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
@@ -243,7 +244,7 @@ public class SessionPreparer {
             }
         }
 
-        FileReference startDistributionOfApplicationPackage() {
+        FileReference triggerDistributionOfApplicationPackage() {
             FileReference fileReference = fileRegistry.addApplicationPackage();
             FileDistribution fileDistribution = fileDistributionFactory.createFileDistribution();
             log.log(Level.FINE, () -> "Ask other config servers to download application package for " +
@@ -251,7 +252,7 @@ public class SessionPreparer {
             ConfigServerSpec.fromConfig(configserverConfig)
                       .stream()
                       .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
-                      .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
+                      .forEach(spec -> fileDistribution.triggerDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
             checkTimeout("startDistributionOfApplicationPackage");
             return fileReference;
