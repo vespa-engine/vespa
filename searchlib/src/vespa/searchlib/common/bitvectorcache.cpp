@@ -17,7 +17,7 @@ BitVectorCache::BitVectorCache(GenerationHolder &genHolder)
       _needPopulation(false),
       _mutex(),
       _keys(),
-      _chunks(),
+      _chunk(),
       _genHolder(genHolder)
 {
 }
@@ -25,21 +25,20 @@ BitVectorCache::BitVectorCache(GenerationHolder &genHolder)
 BitVectorCache::~BitVectorCache() = default;
 
 void
-BitVectorCache::computeCountVector(KeySet & keys, CountVector & v) const
+BitVectorCache::computeCountVector(KeySet & keys, std::span<uint8_t> v) const
 {
     std::vector<Key> notFound;
-    std::vector<CondensedBitVector::KeySet> keySets;
-    ChunkV chunks;
+    CondensedBitVector::KeySet keySet;
+    CondensedBitVector::SP chunk;
     {
         std::shared_lock guard(_mutex);
-        keySets.resize(_chunks.size());
         auto end = _keys.end();
         for (Key k : keys) {
             auto found = _keys.find(k);
             if (found != end) {
                 const KeyMeta & m = found->second;
                 if (m.isCached()) {
-                    keySets[m.chunkId()].insert(m.chunkIndex());
+                    keySet.insert(m.chunkIndex());
                 } else {
                     notFound.push_back(k);
                 }
@@ -47,21 +46,15 @@ BitVectorCache::computeCountVector(KeySet & keys, CountVector & v) const
                 notFound.push_back(k);
             }
         }
-        chunks = _chunks;
+        chunk = _chunk;
     }
     for (Key k : notFound) {
         keys.erase(k);
     }
-    size_t index(0);
-    if (chunks.empty()) {
+    if (!chunk) {
         memset(&v[0], 0, v.size());
-    }
-    for (const auto & chunk : chunks) {
-        if (index == 0) {
-            chunk->initializeCountVector(keySets[index++], v);
-        } else {
-            chunk->addCountVector(keySets[index++], v);
-        }
+    } else {
+        chunk->initializeCountVector(keySet, v);
     }
 }
 
@@ -117,7 +110,7 @@ bool
 BitVectorCache::hasCostChanged(const std::shared_lock<std::shared_mutex> & guard)
 {
     (void) guard;
-    if ( ! _chunks.empty()) {
+    if (_chunk) {
         SortedKeyMeta sorted(getSorted(_keys));
         double oldCached(0);
         for (auto & e : sorted) {
@@ -127,7 +120,7 @@ BitVectorCache::hasCostChanged(const std::shared_lock<std::shared_mutex> & guard
             }
         }
         double newCached(0);
-        for (size_t i(0); i < sorted.size() && i < _chunks[0]->getKeyCapacity(); i++) {
+        for (size_t i(0); i < sorted.size() && i < _chunk->getKeyCapacity(); i++) {
             const KeyMeta & m = *sorted[i].second;
             newCached += m.cost();
         }
@@ -182,15 +175,15 @@ void
 BitVectorCache::populate(uint32_t sz, const PopulateInterface & lookup)
 {
     if (!needPopulation()) return;
+    CondensedBitVector::UP chunk(CondensedBitVector::create(sz, _genHolder));
     std::unique_lock guard(_mutex);
     Key2Index newKeys(_keys);
     guard.unlock();
 
-    CondensedBitVector::UP chunk(CondensedBitVector::create(sz, _genHolder));
     populate(newKeys, *chunk, lookup);
 
     guard.lock();
-    _chunks.push_back(std::move(chunk));
+    _chunk = std::move(chunk);
     _keys.swap(newKeys);
     _needPopulation = false;
 }
@@ -203,24 +196,17 @@ BitVectorCache::set(Key key, uint32_t index, bool v)
     if (found != _keys.end()) {
         const KeyMeta & m(found->second);
         if (m.isCached()) {
-            _chunks[m.chunkId()]->set(m.chunkIndex(), index, v);
+            _chunk->set(m.chunkIndex(), index, v);
         }
     }
-}
-
-bool
-BitVectorCache::get(Key key, uint32_t index) const
-{
-    (void) key; (void) index;
-    return false;
 }
 
 void
 BitVectorCache::removeIndex(uint32_t index)
 {
     std::unique_lock guard(_mutex);
-    for (auto & chunk : _chunks) {
-        chunk->clearIndex(index);
+    if (_chunk) {
+        _chunk->clearIndex(index);
     }
 }
 
@@ -228,8 +214,9 @@ BitVectorCache::removeIndex(uint32_t index)
 void
 BitVectorCache::adjustDocIdLimit(uint32_t docId)
 {
-    for (auto &chunk : _chunks) {
-        chunk->adjustDocIdLimit(docId);
+    std::unique_lock guard(_mutex);
+    if (_chunk) {
+        _chunk->adjustDocIdLimit(docId);
     }
 }
 

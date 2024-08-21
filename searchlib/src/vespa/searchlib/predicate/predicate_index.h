@@ -98,7 +98,7 @@ public:
 
     void populateIfNeeded(size_t doc_id_limit);
     BitVectorCache::KeySet lookupCachedSet(const BitVectorCache::KeyAndCountSet & keys) const;
-    void computeCountVector(BitVectorCache::KeySet & keys, BitVectorCache::CountVector & v) const;
+    void computeCountVector(BitVectorCache::KeySet & keys, std::span<uint8_t> v) const;
 
     /*
      * Adjust size of structures to have space for docId.

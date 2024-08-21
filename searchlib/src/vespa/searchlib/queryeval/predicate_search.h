@@ -19,7 +19,7 @@ class SkipMinFeature
 {
 public:
     using UP = std::unique_ptr<SkipMinFeature>;
-    virtual ~SkipMinFeature() { }
+    virtual ~SkipMinFeature() = default;
     VESPA_DLL_LOCAL virtual uint32_t next() = 0;
     static SkipMinFeature::UP create(const uint8_t * min_feature, const uint8_t * kv, size_t sz);
 };
@@ -54,10 +54,10 @@ public:
     PredicateSearch(const uint8_t * minFeature,
                     const IntervalRange * interval_range_vector,
                     IntervalRange max_interval_range,
-                    CondensedBitVector::CountVector kV,
+                    std::span<uint8_t> kV,
                     std::vector<predicate::PredicatePostingList::UP> posting_lists,
                     const fef::TermFieldMatchDataArray &tfmda);
-    ~PredicateSearch();
+    ~PredicateSearch() override;
 
     void doSeek(uint32_t doc_id) override;
     void doUnpack(uint32_t doc_id) override;

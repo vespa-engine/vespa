@@ -27,15 +27,13 @@ public:
     using Key = uint64_t;
     using KeySet = vespalib::hash_set<Key>;
     using KeyAndCountSet = std::vector<std::pair<Key, size_t>>;
-    using CountVector = CondensedBitVector::CountVector;
     using GenerationHolder = vespalib::GenerationHolder;
 
     explicit BitVectorCache(GenerationHolder &genHolder);
     ~BitVectorCache();
-    void computeCountVector(KeySet & keys, CountVector & v) const;
+    void computeCountVector(KeySet & keys, std::span<uint8_t> v) const;
     KeySet lookupCachedSet(const KeyAndCountSet & keys);
     void set(Key key, uint32_t index, bool v);
-    bool get(Key key, uint32_t index) const;
     void removeIndex(uint32_t index);
     void adjustDocIdLimit(uint32_t docId);
     void populate(uint32_t count, const PopulateInterface &);
@@ -67,7 +65,6 @@ private:
         bool     isCached()  const { return _chunkId >= 0; }
         size_t   bitCount()  const { return _bitCount; }
         size_t chunkIndex()  const { return _chunkIndex; }
-        size_t    chunkId()  const { return _chunkId; }
         size_t lookupCount() const { return _lookupCount.load(std::memory_order_relaxed); }
         KeyMeta &  lookup() { _lookupCount++; return *this; }
         KeyMeta &   bitCount(uint32_t v) {   _bitCount = v; return *this; }
@@ -92,7 +89,7 @@ private:
     std::atomic<bool>         _needPopulation;
     mutable std::shared_mutex _mutex;
     Key2Index                 _keys;
-    ChunkV                    _chunks;
+    CondensedBitVector::SP    _chunk;
     GenerationHolder         &_genHolder;
 };
 

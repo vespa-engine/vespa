@@ -283,7 +283,7 @@ PredicateIndex::lookupCachedSet(const BitVectorCache::KeyAndCountSet & keys) con
 }
 
 void
-PredicateIndex::computeCountVector(BitVectorCache::KeySet & keys, BitVectorCache::CountVector & v) const
+PredicateIndex::computeCountVector(BitVectorCache::KeySet & keys, std::span<uint8_t> v) const
 {
     _cache.computeCountVector(keys, v);
 }
