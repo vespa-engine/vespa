@@ -39,7 +39,7 @@ public class UserConfigBuilder {
 
         Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
         if (def.isEmpty()) { // TODO: Fail instead of warn
-            logger.logApplicationPackage(Level.WARNING, "Config definition '" + key.asFileName() +
+            logger.logApplicationPackage(Level.WARNING, "Unable to find config definition '" + key.asFileName() +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }
         ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element);
