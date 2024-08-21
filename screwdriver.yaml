@@ -1,6 +1,5 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ---
-
 shared:
   image: docker.io/vespaengine/vespa-build-almalinux-8
   environment:
@@ -254,20 +253,6 @@ jobs:
                 .
             fi
           fi
-
-  publish-cli-release:
-    requires: [publish-release]
-    image: homebrew/brew:latest
-    secrets:
-      - HOMEBREW_GITHUB_API_TOKEN
-      - GH_TOKEN
-    steps:
-      - install-dependencies: |
-          export HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1
-          brew install --quiet gh zip go
-      - publish-github: make -C client/go clean dist-github
-      - publish-homebrew: make -C client/go clean dist-homebrew
-      - verify-brew-install: make -C client/go install-brew
 
   verify-opensource-release-7days:
     annotations:
