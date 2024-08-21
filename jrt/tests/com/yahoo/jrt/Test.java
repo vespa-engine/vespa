@@ -147,33 +147,25 @@ public class Test {
         if (a.type() != b.type()) {
             return false;
         }
-        switch (a.type()) {
-        case Value.INT8:         return (a.asInt8() == b.asInt8());
-        case Value.INT8_ARRAY:   return Arrays.equals(a.asInt8Array(),
-                                                      b.asInt8Array());
-        case Value.INT16:        return (a.asInt16() == b.asInt16());
-        case Value.INT16_ARRAY:  return Arrays.equals(a.asInt16Array(),
-                                                      b.asInt16Array());
-        case Value.INT32:        return (a.asInt32() == b.asInt32());
-        case Value.INT32_ARRAY:  return Arrays.equals(a.asInt32Array(),
-                                                      b.asInt32Array());
-        case Value.INT64:        return (a.asInt64() == b.asInt64());
-        case Value.INT64_ARRAY:  return Arrays.equals(a.asInt64Array(),
-                                                      b.asInt64Array());
-        case Value.FLOAT:        return (a.asFloat() == b.asFloat());
-        case Value.FLOAT_ARRAY:  return Arrays.equals(a.asFloatArray(),
-                                                      b.asFloatArray());
-        case Value.DOUBLE:       return (a.asDouble() == b.asDouble());
-        case Value.DOUBLE_ARRAY: return Arrays.equals(a.asDoubleArray(),
-                                                      b.asDoubleArray());
-        case Value.DATA:         return Arrays.equals(a.asData(), b.asData());
-        case Value.DATA_ARRAY:   return equals(a.asDataArray(),
-                                               b.asDataArray());
-        case Value.STRING:       return a.asString().equals(b.asString());
-        case Value.STRING_ARRAY: return Arrays.equals(a.asStringArray(),
-                                                      b.asStringArray());
-        default: return false;
-        }
+        return switch (a.type()) {
+            case Value.INT8 -> (a.asInt8() == b.asInt8());
+            case Value.INT8_ARRAY -> Arrays.equals(a.asInt8Array(), b.asInt8Array());
+            case Value.INT16 -> (a.asInt16() == b.asInt16());
+            case Value.INT16_ARRAY -> Arrays.equals(a.asInt16Array(), b.asInt16Array());
+            case Value.INT32 -> (a.asInt32() == b.asInt32());
+            case Value.INT32_ARRAY -> Arrays.equals(a.asInt32Array(), b.asInt32Array());
+            case Value.INT64 -> (a.asInt64() == b.asInt64());
+            case Value.INT64_ARRAY -> Arrays.equals(a.asInt64Array(), b.asInt64Array());
+            case Value.FLOAT -> (a.asFloat() == b.asFloat());
+            case Value.FLOAT_ARRAY -> Arrays.equals(a.asFloatArray(), b.asFloatArray());
+            case Value.DOUBLE -> (a.asDouble() == b.asDouble());
+            case Value.DOUBLE_ARRAY -> Arrays.equals(a.asDoubleArray(), b.asDoubleArray());
+            case Value.DATA -> Arrays.equals(a.asData(), b.asData());
+            case Value.DATA_ARRAY -> equals(a.asDataArray(), b.asDataArray());
+            case Value.STRING -> a.asString().equals(b.asString());
+            case Value.STRING_ARRAY -> Arrays.equals(a.asStringArray(), b.asStringArray());
+            default -> false;
+        };
     }
 
     public static boolean equals(Values a, Values b) {

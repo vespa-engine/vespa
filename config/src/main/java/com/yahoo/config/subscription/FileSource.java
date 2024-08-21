@@ -17,8 +17,7 @@ public class FileSource implements ConfigSource {
     private final File file;
 
     public FileSource(File file) {
-        this.file = file;
-        validateFile();
+        this.file = validateFile(file);
     }
 
     public long getLastModified() {
@@ -29,8 +28,12 @@ public class FileSource implements ConfigSource {
         return Files.readAllLines(file.toPath());
     }
 
-    public void validateFile() {
+    private static File validateFile(File file) {
         if ( ! file.isFile()) throw new IllegalArgumentException("Not a file: " + file);
+        return file;
+    }
+    public void validateFile() {
+        validateFile(file);
     }
 
 }

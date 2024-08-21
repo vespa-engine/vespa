@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * some additional helper threads. A single Transport object can back
  * multiple {@link Supervisor} objects.
  */
-public class Transport {
+public final class Transport {
 
     private static final Logger log = Logger.getLogger(Transport.class.getName());
 

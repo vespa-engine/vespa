@@ -34,7 +34,7 @@ import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
  *
  * @author Ulf Lilleengen
  */
-public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
+public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
 
     protected static final Logger log = Logger.getLogger(JRTClientConfigRequestV3.class.getName());
     protected final SlimeRequestData requestData;

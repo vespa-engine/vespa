@@ -10,7 +10,7 @@ import java.util.List;
  *
  * @author steinar
  */
-public class StemList extends AbstractList<String> {
+public final class StemList extends AbstractList<String> {
 
     private final List<String> stems;
 

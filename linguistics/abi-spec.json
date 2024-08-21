@@ -558,7 +558,8 @@
     "superClass" : "java.util.AbstractList",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",

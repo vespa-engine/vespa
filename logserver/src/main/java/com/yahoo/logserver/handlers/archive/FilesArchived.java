@@ -15,11 +15,7 @@ import java.util.zip.GZIPOutputStream;
 
 import com.yahoo.compress.ZstdOutputStream;
 import com.yahoo.io.NativeIO;
-import com.yahoo.log.LogFileDb;
-import com.yahoo.protect.Process;
-import com.yahoo.yolean.Exceptions;
 
-import java.io.BufferedOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -36,7 +32,7 @@ import java.nio.file.StandardCopyOption;
  *
  * @author Arne Juul
  */
-public class FilesArchived {
+public final class FilesArchived {
     private static final Logger log = Logger.getLogger(FilesArchived.class.getName());
 
     /**
