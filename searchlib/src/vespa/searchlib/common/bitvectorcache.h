@@ -79,7 +79,6 @@ private:
     };
     using Key2Index = vespalib::hash_map<Key, KeyMeta>;
     using SortedKeyMeta = std::vector<std::pair<Key, KeyMeta *>>;
-    using ChunkV = std::vector<CondensedBitVector::SP>;
 
     VESPA_DLL_LOCAL static SortedKeyMeta getSorted(Key2Index & keys);
     VESPA_DLL_LOCAL static void populate(Key2Index & newKeys, CondensedBitVector & chunk, const PopulateInterface & lookup);
