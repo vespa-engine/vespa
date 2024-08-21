@@ -13,7 +13,7 @@ import com.yahoo.document.datatypes.ReferenceFieldValue;
  * we want to end up with NewDocumentType as target type.
  *
  * @author arnej
- **/
+ */
 public final class NewDocumentReferenceDataType extends DataType {
 
     private final StructuredDataType target;
@@ -73,8 +73,7 @@ public final class NewDocumentReferenceDataType extends DataType {
     @Override
     public boolean isValueCompatible(FieldValue value) {
         var dt = value.getDataType();
-        if (dt instanceof ReferenceDataType) {
-            var refType = (ReferenceDataType) dt;
+        if (dt instanceof ReferenceDataType refType) {
             var docTypeName = refType.getTargetType().getName();
             return docTypeName.equals(target.getName());
         }
@@ -83,8 +82,7 @@ public final class NewDocumentReferenceDataType extends DataType {
 
     @Override
     public boolean equals(Object rhs) {
-        if (rhs instanceof NewDocumentReferenceDataType) {
-            var other = (NewDocumentReferenceDataType) rhs;
+        if (rhs instanceof NewDocumentReferenceDataType other) {
             return super.equals(other) && (temporary == other.temporary) && target.equals(other.target);
         }
         return false;

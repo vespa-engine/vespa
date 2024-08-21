@@ -195,7 +195,7 @@ public class Schema implements ImmutableSchema {
     /**
      * Sets the stemming default of fields. Default is ALL
      *
-     * @param stemming set default stemming for this searchdefinition
+     * @param stemming set default stemming for this schema
      * @throws NullPointerException if this is attempted set to null
      */
     public void setStemming(Stemming stemming) {

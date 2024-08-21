@@ -277,13 +277,13 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
-        public Builder withSearchDefinition(String searchDefinition) {
-            this.schemas = List.of(searchDefinition);
+        public Builder withSchema(String schema) {
+            this.schemas = List.of(schema);
             return this;
         }
 
-        public Builder withSchemas(List<String> searchDefinition) {
-            this.schemas = List.copyOf(searchDefinition);
+        public Builder withSchemas(List<String> schemas) {
+            this.schemas = List.copyOf(schemas);
             return this;
         }
 

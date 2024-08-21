@@ -8,7 +8,7 @@ import com.yahoo.document.StructDataType;
  * Model for StructDataType declared in a specific document
  *
  * @author arnej
- **/
+ */
 public final class OwnedStructDataType extends StructDataType implements OwnedType {
 
     private final String ownerName;
@@ -53,4 +53,5 @@ public final class OwnedStructDataType extends StructDataType implements OwnedTy
     public String toString() {
         return "{OwnedStructDataType "+uniqueName+" id="+getId()+" uid="+getUniqueId()+" enable override="+overrideId+"}";
     }
+
 }

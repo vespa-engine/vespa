@@ -53,7 +53,7 @@ public class AttributeProperties extends Processor {
     /**
      * Checks if the attribute has been created bye an indexing statement in this field.
      *
-     * @param field         a searchdefinition field
+     * @param field         a schema field
      * @param attributeName name of the attribute
      * @return true if the attribute has been created by this field, else false
      */
