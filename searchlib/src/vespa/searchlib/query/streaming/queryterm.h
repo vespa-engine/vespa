@@ -95,6 +95,7 @@ public:
     FieldInfo         & getFieldInfo(size_t fid)         { return _fieldInfo[fid]; }
     size_t              getFieldInfoSize()         const { return _fieldInfo.size(); }
     QueryNodeResultBase & getQueryItem() { return *_result; }
+    const QueryNodeResultBase & getQueryItem() const noexcept { return *_result; }
     const HitList &     getHitList() const { return _hitList; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void setIndex(std::string index_) override { _index = std::move(index_); }

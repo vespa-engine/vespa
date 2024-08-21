@@ -1320,7 +1320,8 @@ SearchVisitor::generateDocumentSummaries()
     auto& hit_collector = _rankController.getRankProcessor()->getHitCollector();
     _summaryGenerator.setDocsumCache(hit_collector);
     vdslib::SearchResult & searchResult(_queryResult->getSearchResult());
-    _summaryGenerator.getDocsumCallback().set_matching_elements_filler(std::make_unique<MatchingElementsFiller>(_fieldSearcherMap, _query, hit_collector, searchResult));
+    auto& index_env = _rankController.getRankProcessor()->get_query_env().getIndexEnvironment();
+    _summaryGenerator.getDocsumCallback().set_matching_elements_filler(std::make_unique<MatchingElementsFiller>(_fieldSearcherMap, index_env, _query, hit_collector, searchResult));
     vdslib::DocumentSummary & documentSummary(_queryResult->getDocumentSummary());
     for (size_t i(0), m(searchResult.getHitCount()); (i < m) && (i < searchResult.getWantedHitCount()); i++ ) {
         const char * docId(nullptr);
