@@ -47,15 +47,6 @@ mvn_install() {
     ${MAVEN_CMD} --batch-mode --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean ${MAVEN_TARGET} ${MAVEN_EXTRA_OPTS} "$@"
 }
 
-force_move() {
-    local src_dir=$1
-    local file=$2
-
-    rm -rf "./${file:?}"
-    cp -r "$src_dir/${file:?}" .
-    rm -rf "$src_dir/${file:?}"
-}
-
 # Generate vtag map
 top=$(dirname $0)
 $top/dist/getversionmap.sh $top > $top/dist/vtag.map
@@ -73,10 +64,7 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 
 # Set up maven wrapper.
 echo "Setting up maven wrapper in $(pwd)"
-mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml ${MAVEN_EXTRA_OPTS}
-force_move maven-plugins .mvn
-force_move maven-plugins mvnw
-rm -f maven-plugins/mvnw.cmd
+mvn -B wrapper:wrapper -Dmaven=3.8.8 -N ${MAVEN_EXTRA_OPTS}
 ${MAVEN_CMD} -v
 
 # must install parent poms first:
