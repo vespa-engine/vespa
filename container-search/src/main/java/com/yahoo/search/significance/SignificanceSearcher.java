@@ -132,14 +132,8 @@ public class SignificanceSearcher extends Searcher {
             return model.get();
         }
 
-        if (implicitLanguage == Language.UNKNOWN) {
-            return handleFallBackToUnknownLanguage();
-        }
         var model = significanceModelRegistry.getModel(implicitLanguage);
-        if (model.isEmpty()) {
-            throw new IllegalArgumentException("No significance model available for implicit language " + implicitLanguage);
-        }
-        return model.get();
+        return model.orElseGet(this::handleFallBackToUnknownLanguage);
     }
 
     private SignificanceModel handleFallBackToUnknownLanguage() throws IllegalArgumentException {

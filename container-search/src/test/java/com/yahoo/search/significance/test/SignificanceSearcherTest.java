@@ -2,13 +2,11 @@
 package com.yahoo.search.significance.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.detect.Hint;
-import com.yahoo.language.opennlp.OpenNlpLinguistics;
 import com.yahoo.language.process.*;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
@@ -24,13 +22,11 @@ import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.significance.SignificanceSearcher;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -305,50 +301,97 @@ public class SignificanceSearcherTest {
                      errorMessage.getDetailedMessage());
     }
 
-    @Test
-    public void testSignificanceSearcherWithExplictitAndImplictSetLanguages() {
-        Query q = new Query();
-        q.getModel().setLanguage(Language.UNKNOWN);
-        q.getRanking().setProfile("significance-ranking");
-        AndItem root = new AndItem();
-        WordItem tmp;
-        tmp = new WordItem("hello", true);
-        root.addItem(tmp);
+    // Naming convention for tests that follow:
+    // Explicit language - language set for a query
+    // Implicit language - automatically detected language
+    // Missing language - language without a model
+    // Unknown language - Language.UNKNOWN
+    // Missing word - word not in the model for specified language or fallback models
+    // Existing word - word in the model for a specified language or fallback models
 
-        q.getModel().getQueryTree().setRoot(root);
+    private Result searchWordWithLanguage(String word, Optional<Language> explicitLanguage, Optional<Language> implicitLanguage) {
+        var query = new Query();
+        explicitLanguage.ifPresent(language -> query.getModel().setLanguage(language));
+        query.getRanking().setProfile("significance-ranking");
+        var queryRoot = new AndItem();
+        var queryWord = new WordItem(word, true);
+        queryRoot.addItem(queryWord);
+        query.getModel().getQueryTree().setRoot(queryRoot);
 
+        var context = Execution.Context.createContextStub();
+        implicitLanguage.ifPresent(language -> context.setLinguistics(new MockLinguistics(language)));
+        var execution = new Execution(new Chain<>(searcher), context);
+        return execution.search(query);
+    }
+
+    private Optional<DocumentFrequency> getDocumentFrequencyWithEnglish(String word) {
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
-        Result r = createExecution(searcher).search(q);
+        return makeDocumentFrequency(model.documentFrequency(word));
+    }
 
-        root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
-        WordItem w0 = (WordItem) root.getItem(0);
-        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
+    @Test
+    public void testSignificanceSearcherWithMissingExplicitLanguageOnExistingWord() {
+        var existingWord = "hello";
+        var explicitLanguage = Language.ITALIAN;
+        var result = searchWordWithLanguage(existingWord, Optional.of(explicitLanguage), Optional.empty());
 
-        Query q2 = new Query();
-        q2.getModel().setLanguage(Language.FRENCH);
-        q2.getRanking().setProfile("significance-ranking");
-        AndItem root2 = new AndItem();
-        WordItem tmp2;
-        tmp2 = new WordItem("hello", true);
-        root2.addItem(tmp2);
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        var resultWord = (WordItem) resultRoot.getItem(0);
+        assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
 
-        q2.getModel().getQueryTree().setRoot(root2);
-        Result r2 = createExecution(searcher).search(q2);
+        var error = result.hits().getError().getDetailedMessage();
+        assertEquals("No significance model available for set language ITALIAN", error);
+    }
 
-        assertEquals(1, r2.hits().getErrorHit().errors().size());
+    @Test
+    public void testSignificanceSearcherWithUnknownExplicitLanguageOnExistingWord() {
+        var existingWord = "hello";
+        var explicitLanguage = Language.UNKNOWN;
+        var result = searchWordWithLanguage(existingWord, Optional.of(explicitLanguage), Optional.empty());
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        var resultWord = (WordItem) resultRoot.getItem(0);
+        var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
+        assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
+    }
 
+    @Test
+    public void testSignificanceSearcherWithMissingExplicitLanguageOnMissingWord() {
+        var missingWord = "ciao";
+        var explicitLanguage = Language.ITALIAN;
+        var result = searchWordWithLanguage(missingWord, Optional.of(explicitLanguage), Optional.empty());
 
-        Query q3 = new Query();
-        q3.getRanking().setProfile("significance-ranking");
-        WordItem root3 = new WordItem("Я с детства хотел завести собаку, но родители мне не разрешали.", true);
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        var resultWord = (WordItem) resultRoot.getItem(0);
+        assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
 
-        q3.getModel().getQueryTree().setRoot(root3);
-        Execution execution = createExecution(searcher, Language.RUSSIAN);
-        Result r3 = execution.search(q3);
+        var error = result.hits().getError().getDetailedMessage();
+        assertEquals("No significance model available for set language ITALIAN", error);
+    }
 
-        assertEquals(1, r3.hits().getErrorHit().errors().size());
+    @Test
+    public void testSignificanceSearcherWithMissingImplicitLanguageOnExistingWord() {
+        var existingWord = "hello";
+        var implicitLanguage = Language.ITALIAN;
+        var result = searchWordWithLanguage(existingWord, Optional.empty(), Optional.of(implicitLanguage));
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        var resultWord = (WordItem) resultRoot.getItem(0);
+        var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
+        assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
+    }
 
+    @Test
+    public void testSignificanceSearcherWithMissingImplicitLanguageOnMissingWord() {
+        var implicitLanguage = Language.ITALIAN;
+        var missingWord = "ciao";
+        var result = searchWordWithLanguage(missingWord, Optional.empty(), Optional.of(implicitLanguage));
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        var resultWord = (WordItem) resultRoot.getItem(0);
 
+        var existingWord = "hello";
+        var documentFrequency = getDocumentFrequencyWithEnglish(existingWord);
+        var count = documentFrequency.get().count();
+        var defaultDocumentFrequency = Optional.of(new DocumentFrequency(1, count));
+
+        assertEquals(defaultDocumentFrequency, resultWord.getDocumentFrequency());
     }
 }
