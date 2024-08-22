@@ -30,8 +30,6 @@ class VespaSchemaReferenceDocsParser(Visitor):
 
         self.results.append(mdFile)
 
-        print(mdFile)
-
     def handleNode(self, node: Node):
         if (node.getTag() == "h2"):
             self.readRelevantText(node)

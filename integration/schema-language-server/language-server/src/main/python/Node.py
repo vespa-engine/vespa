@@ -75,7 +75,7 @@ class Node:
         return ret
 
     def __repr__(self) -> str:
-        return f"Node({self.type}, {len(self.children)})"
+        return f"Node({self.type}, {self.getTag()}, {len(self.children)})"
     
     def addChild(self, node: 'Node'):
         self.children.append(node)

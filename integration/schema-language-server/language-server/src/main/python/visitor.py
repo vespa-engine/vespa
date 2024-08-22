@@ -1,5 +1,6 @@
 from Node import Node
 from urllib.parse import urljoin
+from MarkdownFile import MarkdownFile
 
 class Visitor:
 
@@ -14,6 +15,9 @@ class Visitor:
     
     def handleNode(self, node: Node):
         pass
+
+    def getResults(self) -> list[MarkdownFile]:
+        return []
 
 class SwitchInternalURL(Visitor):
 

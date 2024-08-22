@@ -6,16 +6,15 @@ from Node import Node
 from DocsHTMLParser import DocsHTMLParser
 import visitor
 from VespaSchemaReferenceDocsParser import VespaSchemaReferenceDocsParser
+from VespaRankFeatureDocsParser import VespaRankFeatureDocsParser
 
 BRANCH = "master"
 URL_PREFIX = f"https://raw.githubusercontent.com/vespa-engine/documentation/{BRANCH}/en"
 
 SCHEMA_URL = "/reference/schema-reference.html"
-RANK_EXPRESSION_URL = "/reference/rank-features.html"
+RANK_FEATURE_URL = "/reference/rank-features.html"
 
 LINK_BASE_URL = "https://docs.vespa.ai/en"
-
-# TODO: fix dictionary and attribute and index
 
 def fetchFile(file_url: str) -> str:
     URL = f"{URL_PREFIX}{file_url}"
@@ -36,6 +35,16 @@ def parseRawHTML(rawData: str, fileName: str) -> Node:
     urlVisitor.traverse(node)
 
     return node
+
+def parsePage(data: str, url: str, parser: visitor.Visitor, outputPath: pathlib.Path):
+
+    results = parseRawHTML(data, url)
+    
+    parser.traverse(results)
+    mdFiles = parser.getResults()
+
+    for file in mdFiles:
+        file.write(outputPath)
 
 def main():
 
@@ -65,15 +74,15 @@ def main():
     with open("/Users/theodorkl/Documents/github.com/vespa-engine/documentation/en/reference/schema-reference.html") as file:
         data = file.read()
 
-    results = parseRawHTML(data, SCHEMA_URL)
     schemaReferenceParser = VespaSchemaReferenceDocsParser(f"{LINK_BASE_URL}{SCHEMA_URL}")
-    schemaReferenceParser.traverse(results)
-    mdFiles = schemaReferenceParser.getResults()
+    parsePage(data, SCHEMA_URL, schemaReferenceParser, targetPath.joinpath(subPaths[0]))
 
-    for file in mdFiles:
-        file.write(targetPath.joinpath(subPaths[0]))
+    data = ""
+    with open("/Users/theodorkl/Documents/github.com/vespa-engine/documentation/en/reference/rank-features.html") as file:
+        data = file.read()
 
-    # print(schemaReferenceParser.results)
+    rankFeatureParser = VespaRankFeatureDocsParser()
+    parsePage(data, RANK_FEATURE_URL, rankFeatureParser, targetPath.joinpath(subPaths[1]))
 
 if __name__ == "__main__":
     main()
