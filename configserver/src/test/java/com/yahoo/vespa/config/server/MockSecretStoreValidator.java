@@ -17,7 +17,7 @@ import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 public class MockSecretStoreValidator extends SecretStoreValidator {
 
     public MockSecretStoreValidator() {
-        super(new SecretStoreProvider().get());
+        super();
     }
 
     public HttpResponse validateSecretStore(Application application, SystemName system, Slime slime) {
