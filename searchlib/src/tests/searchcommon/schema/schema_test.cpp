@@ -3,7 +3,6 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_path.h>
 #include <fstream>
 #include <string>
@@ -21,7 +20,7 @@ using SIAF = Schema::ImportedAttributeField;
 using SIF = Schema::IndexField;
 
 std::string src_path(std::string_view prefix, std::string_view path) {
-    return prefix + TEST_PATH(std::string(path));
+    return std::string(prefix) + TEST_PATH(std::string(path));
 }
 
 void

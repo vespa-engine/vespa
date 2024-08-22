@@ -4,9 +4,9 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exception.h>
 #include <cmath>
+#include <string>
 #include <gmock/gmock.h>
 
 using std::string;
@@ -24,7 +24,7 @@ namespace storage::lib {
                 + " format: " + std::string(e.what())); \
     } \
     EXPECT_EQ(std::string(typestr) + " \"" + std::string(result) + "\"", \
-              std::string(typestr) + " \"" + ost.view() + "\"") << state->toString(true); \
+              std::string(typestr) + " \"" + ost.str() + "\"") << state->toString(true); \
 }
 
 #define VERIFY2(serialized, result) { \

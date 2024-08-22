@@ -12,7 +12,7 @@
 #include <vespa/messagebus/error.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace {
     VESPA_THREAD_STACK_TAG(async_init_policy);
@@ -64,7 +64,7 @@ currentPolicyInitError(std::string_view error) {
                            "Waiting to initialize policy");
     } else {
         return mbus::Error(DocumentProtocol::ERROR_POLICY_FAILURE,
-                           "Error when creating policy: " + error);
+                           "Error when creating policy: " + std::string(error));
     }
 }
 

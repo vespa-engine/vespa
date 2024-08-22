@@ -2,9 +2,9 @@
 
 #include "blueprint.h"
 #include "parametervalidator.h"
-#include <cassert>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
+#include <string>
 
 namespace search::fef {
 
@@ -109,7 +109,7 @@ Blueprint::lookupAttribute(const std::string & key, std::string_view attrName, c
 
 std::string
 Blueprint::createAttributeKey(std::string_view attrName) {
-    return "fef.attribute.key." + attrName;
+    return "fef.attribute.key." + std::string(attrName);
 }
 
 }

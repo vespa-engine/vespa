@@ -4,7 +4,7 @@
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/persistence/spi/docentry.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.reindexing_visitor");
@@ -54,7 +54,7 @@ std::string ReindexingVisitor::make_lock_access_token() const {
     if (passed_token.empty()) {
         return prefix;
     }
-    return (prefix + "=" + passed_token);
+    return (prefix + "=" + std::string(passed_token));
 }
 
 }

@@ -277,12 +277,10 @@ TEST("testString") {
         EXPECT_EQUAL(string::npos, s2.rfind('d'));
     }
 
-    EXPECT_EQUAL("a" + std::string_view("b"), string("ab"));
     EXPECT_EQUAL("a" + string("b"), string("ab"));
     EXPECT_EQUAL(string("a") + string("b"), string("ab"));
     EXPECT_EQUAL(string("a") + std::string_view("b"), string("ab"));
     EXPECT_EQUAL(string("a") + "b", string("ab"));
-    EXPECT_EQUAL(std::string_view("a") + std::string_view("b"), string("ab"));
 
     // Test std::string conversion of empty string
     std::string_view sref;

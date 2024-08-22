@@ -15,8 +15,8 @@
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_path.h>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchvisitor_test");
@@ -33,7 +33,7 @@ std::string get_doc_id(int id) {
 }
 
 std::string src_cfg(std::string_view prefix, std::string_view suffix) {
-    return prefix + TEST_PATH("cfg") + suffix;
+    return std::string(prefix) + TEST_PATH("cfg") + std::string(suffix);
 }
 
 /**

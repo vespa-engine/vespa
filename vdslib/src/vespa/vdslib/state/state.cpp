@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vdslib/state/state.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
+#include <string>
 
 namespace storage::lib {
 
@@ -21,7 +21,7 @@ State::get(std::string_view serialized)
         default: break;
     }
     throw vespalib::IllegalArgumentException(
-            "Unknown state " + serialized + " given.", VESPA_STRLOC);
+            "Unknown state " + std::string(serialized) + " given.", VESPA_STRLOC);
 }
 
 State::State(std::string_view name, std::string_view serialized,

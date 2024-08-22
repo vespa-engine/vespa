@@ -3,10 +3,10 @@
 
 #include "valuemetric.h"
 #include "memoryconsumption.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
+#include <string>
 
 namespace metrics {
 
@@ -210,7 +210,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::getLongValue(string_view id) const
     if (id == "max") return static_cast<int64_t>(
             values._count > 0 ? values._max : 0);
     throw vespalib::IllegalArgumentException(
-            "No value " + id + " in average metric.", VESPA_STRLOC);
+            "No value " + std::string(id) + " in average metric.", VESPA_STRLOC);
 }
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>

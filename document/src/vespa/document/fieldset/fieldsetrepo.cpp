@@ -7,7 +7,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 using vespalib::StringTokenizer;
 using vespalib::IllegalArgumentException;
@@ -31,7 +31,7 @@ parseSpecialValues(std::string_view name)
         return std::make_shared<DocumentOnly>();
     } else {
         throw IllegalArgumentException("The only special names (enclosed in '[]') allowed are "
-                                       "id, all, none, docid, document; but not '" + name + "'.");
+                                       "id, all, none, docid, document; but not '" + std::string(name) + "'.");
     }
 }
 
@@ -40,7 +40,7 @@ parseFieldCollection(const DocumentTypeRepo& repo, std::string_view docType, std
 {
     const DocumentType* typePtr = repo.getDocumentType(docType);
     if (!typePtr) {
-        throw IllegalArgumentException("Unknown document type " + docType);
+        throw IllegalArgumentException("Unknown document type " + std::string(docType));
     }
     const DocumentType& type(*typePtr);
 

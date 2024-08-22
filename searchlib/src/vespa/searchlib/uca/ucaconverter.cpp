@@ -2,10 +2,11 @@
 
 #include "ucaconverter.h"
 #include <unicode/ustring.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <mutex>
+#include <string>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".search.common.sortspec");
 
@@ -50,11 +51,11 @@ UcaConverter::UcaConverter(std::string_view locale, std::string_view strength) :
         } else if (strength == "IDENTICAL") {
             _collator->setStrength(Collator::IDENTICAL);
         } else {
-            throw std::runtime_error("Illegal uca collation strength : " + strength);
+            throw std::runtime_error("Illegal uca collation strength : " + std::string(strength));
         }
     } else {
         delete coll;
-        throw std::runtime_error("Failed Collator::createInstance(Locale(locale.c_str()), status) with locale : " + locale);
+        throw std::runtime_error("Failed Collator::createInstance(Locale(locale.c_str()), status) with locale : " + std::string(locale));
     }
 }
 

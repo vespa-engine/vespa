@@ -2,11 +2,11 @@
 
 #include "documenttype.h"
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
 #include <ostream>
+#include <string>
 
 LOG_SETUP(".document.datatype.document");
 
@@ -42,7 +42,7 @@ DocumentType::FieldSet::~FieldSet() = default;
 DocumentType::DocumentType(string_view name, int32_t id)
     : StructuredDataType(name, id),
       _inheritedTypes(),
-      _ownedFields(std::make_shared<StructDataType>(name + ".header")),
+      _ownedFields(std::make_shared<StructDataType>(std::string(name) + ".header")),
       _fields(_ownedFields.get()),
       _fieldSets(),
       _imported_field_names()
@@ -67,7 +67,7 @@ DocumentType::DocumentType(string_view name, int32_t id, const StructDataType& f
 DocumentType::DocumentType(string_view name)
     : StructuredDataType(name),
       _inheritedTypes(),
-      _ownedFields(std::make_shared<StructDataType>(name + ".header")),
+      _ownedFields(std::make_shared<StructDataType>(std::string(name) + ".header")),
       _fields(_ownedFields.get()),
       _fieldSets(),
       _imported_field_names()

@@ -24,9 +24,9 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <filesystem>
 #include <set>
+#include <string>
 
 using document::Document;
 using document::FieldValue;
@@ -193,7 +193,7 @@ FusionRunnerTest::createIndex(const string &dir, uint32_t id, bool fusion)
         memory_index.dump(index_builder);
     }
 
-    _selector->extractSaveInfo(index_dir + "/selector")->save(tuneFileAttributes, _fileHeaderContext);
+    _selector->extractSaveInfo(std::string(index_dir) + "/selector")->save(tuneFileAttributes, _fileHeaderContext);
 }
 
 set<uint32_t>

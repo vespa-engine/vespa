@@ -72,30 +72,3 @@ safe_char_2_string(const char * p) {
 }
 
 }
-
-namespace std {
-
-std::string
-operator + (std::string_view a, const char * b) noexcept
-{
-    std::string t(a);
-    t += b;
-    return t;
-}
-
-std::string
-operator + (const char * a, std::string_view b) noexcept
-{
-    std::string t(a);
-    t += b;
-    return t;
-}
-
-std::string
-operator + (std::string_view a, std::string_view b) noexcept {
-    std::string t(a);
-    t += b;
-    return t;
-}
-
-}

@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "asciistream.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/fastos/file.h>
-#include <limits>
 #include <cassert>
 #include <cctype>
 #include <charconv>
+#include <limits>
+#include <string>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -627,7 +627,7 @@ asciistream::createFromFile(std::string_view fileName)
     if (file.OpenReadOnly()) {
         ssize_t sz = file.getSize();
         if (sz < 0) {
-            throw IoException("Failed getting size of  file " + fileName + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
+            throw IoException("Failed getting size of  file " + std::string(fileName) + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
         if (sz == 0) {
             return is;
@@ -637,7 +637,7 @@ asciistream::createFromFile(std::string_view fileName)
         if (actual != sz) {
             asciistream e;
             e << "Failed reading " << sz << " bytes from file " << fileName;
-            throw IoException(e.view() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
+            throw IoException(e.str() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
         is << std::string_view(static_cast<const char *>(buf.get()), sz);
     }

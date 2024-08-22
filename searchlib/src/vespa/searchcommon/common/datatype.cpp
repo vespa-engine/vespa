@@ -3,9 +3,9 @@
 #include "datatype.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arraysize.h>
 #include <ostream>
+#include <string>
 
 namespace search::index::schema {
 
@@ -29,7 +29,7 @@ dataTypeFromName(std::string_view name) {
     else if (name == "REFERENCE") { return DataType::REFERENCE; }
     else if (name == "COMBINED") { return DataType::COMBINED; }
     else {
-        throw InvalidConfigException("Illegal enum value '" + name + "'");
+        throw InvalidConfigException("Illegal enum value '" + std::string(name) + "'");
     }
 }
 
@@ -74,7 +74,7 @@ collectionTypeFromName(std::string_view name) {
     else if (name == "ARRAY") { return CollectionType::ARRAY; }
     else if (name == "WEIGHTEDSET") { return CollectionType::WEIGHTEDSET; }
     else {
-        throw InvalidConfigException("Illegal enum value '" + name + "'");
+        throw InvalidConfigException("Illegal enum value '" + std::string(name) + "'");
     }
 }
 
