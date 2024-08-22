@@ -2,7 +2,6 @@
 package com.yahoo.filedistribution.fileacquirer;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -39,16 +38,6 @@ public abstract class MockFileAcquirer implements FileAcquirer {
             @Override
             public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) {
                 throw new TimeoutException("Timed out");
-            }
-        };
-    }
-
-    /** Creates a FileAcquirer that throws FileReferenceDoesNotExistException **/
-    public static FileAcquirer throwFileReferenceDoesNotExistException() {
-        return new MockFileAcquirer() {
-            @Override
-            public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) {
-                throw new FileReferenceDoesNotExistException(null);
             }
         };
     }

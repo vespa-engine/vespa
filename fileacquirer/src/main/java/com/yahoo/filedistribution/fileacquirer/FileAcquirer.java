@@ -2,7 +2,6 @@
 package com.yahoo.filedistribution.fileacquirer;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -22,8 +21,6 @@ public interface FileAcquirer {
      * config system.
      *
      * @throws TimeoutException if the file or directory could not be retrieved in time.
-     * @throws FileReferenceDoesNotExistException if the file is no
-     *         longer available(due to reloading of config).
      */
     File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) throws InterruptedException;
 

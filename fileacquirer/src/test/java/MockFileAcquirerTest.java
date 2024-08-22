@@ -4,7 +4,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.TimeoutException;
-import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
 import org.junit.Test;
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -44,11 +43,6 @@ public class MockFileAcquirerTest {
     @Test(expected = TimeoutException.class)
     public void testThrowTimeoutException() throws Exception {
         waitFor(MockFileAcquirer.throwTimeoutException());
-    }
-
-    @Test(expected = FileReferenceDoesNotExistException.class)
-    public void testThrowFileReferenceDoesNotExistException() throws Exception {
-        waitFor(MockFileAcquirer.throwFileReferenceDoesNotExistException());
     }
 
     private File waitFor(FileAcquirer fileAcquirer) throws InterruptedException {
