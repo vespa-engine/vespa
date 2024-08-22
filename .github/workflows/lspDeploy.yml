@@ -80,6 +80,7 @@ jobs:
         run: |
           gh release create lsp-v${{ steps.retrieve_version.outputs.VERSION }} \
             --notes "Vespa language server." \
+            --latest=false \
             -t "Vespa Language Server ${{ steps.retrieve_version.outputs.VERSION }}" \
             './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar'
 
