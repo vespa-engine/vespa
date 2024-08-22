@@ -72,27 +72,26 @@ jobs:
           cp ./language-server/target/schema-language-server-jar-with-dependencies.jar ./clients/github-release/target/vespa-language-server_$VERSION.jar
         env:
           VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
-        
-      # Diasbling as it is disallowed by org for now
-      # - name: Create Github Release
-      #   uses: ncipollo/release-action@v1
-      #   with:
-      #     draft: true
-      #     tag: v${{ steps.retrieve_version.outputs.VERSION }}
-      #     name: Vespa Langauge Server ${{ steps.retrieve_version.outputs.VERSION }}
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     bodyFile: ./integration/schema-language-server/clients/github-release/README.md
-      #     artifacts: ./integration/schema-language-server/clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar
-      #     artifactContentType: application/java-archive
+      
+      - name: Create release
+        working-directory: ./integration/schema-language-server
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v${{ steps.retrieve_version.outputs.VERSION }} \
+            --notes "Vespa language server." --draft \
+            -t "Vespa Language Server ${{ steps.retrieve_version.outputs.VERSION }}" \
+            './target/schema-language-server-jar-with-dependencies.jar#Language Server Jar'
 
-      # Disabling as it is disallowed by org for now
-      # - name: Create PR to bump version
-      #   uses: peter-evans/create-pull-request@v6
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     commit-message: "Update Vespa Language Server VSCode extension version"
-      #     title: "Bump Vespa Language Server version"
-      #     body: "This PR updates the Vespa Language Server VSCode extension"
-      #     branch: "interns/languageserver-bump-version"
-      #     base: "master"
-      #     labels: "Language server"
+      - name: Commit and PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_BRANCH:  "update-language-server-version-${{ steps.retrieve_version.outputs.VERSION }}"
+        run: |
+          git checkout -b "${NEW_BRANCH}"
+          git commit -a -m "Update language server version to ${{ steps.retrieve_version.outputs.VERSION }}"
+          git push --set-upstream origin "${NEW_BRANCH}"
+          gh pr create -B master -H "${NEW_BRANCH}" \
+            -t "Update Language Server version to ${{ steps.retrieve_version.outputs.VERSION }}" \
+            -b ":robot: This PR updates the langauge server version to ${{ steps.retrieve_version.outputs.VERSION }}"
+          
