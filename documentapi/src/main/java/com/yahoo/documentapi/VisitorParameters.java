@@ -9,6 +9,7 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.text.Utf8;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -17,7 +18,7 @@ import java.util.TreeMap;
  *
  * @author Håkon Humberset
  */
-public class VisitorParameters extends Parameters {
+public final class VisitorParameters extends Parameters {
 
     private String documentSelection;
     private String bucketSpace = FixedBucketSpaces.defaultSpace();
@@ -156,11 +157,7 @@ public class VisitorParameters extends Parameters {
     public VisitorControlHandler getControlHandler() { return controlHandler; }
 
     public DocumentProtocol.Priority getPriority() {
-        if (priority != null) {
-            return priority;
-        } else {
-            return DocumentProtocol.Priority.NORMAL_3;
-        }
+        return Objects.requireNonNullElse(priority, DocumentProtocol.Priority.NORMAL_3);
     }
 
     // Set functions
@@ -300,7 +297,7 @@ public class VisitorParameters extends Parameters {
         if (visitInconsistentBuckets) {
             sb.append("  Visiting inconsistent buckets\n");
         }
-        if (libraryParameters.size() > 0) {
+        if (!libraryParameters.isEmpty()) {
             sb.append("  Visitor library parameters:\n");
             for (Map.Entry<String, byte[]> e : libraryParameters.entrySet()) {
                 sb.append("    ").append(e.getKey()).append(" : ");

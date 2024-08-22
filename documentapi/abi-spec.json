@@ -210,18 +210,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentVisitor" : {
-    "superClass" : "com.yahoo.documentapi.VisitorParameters",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(java.lang.String)",
-      "public java.lang.String getVisitorLibrary()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.documentapi.DumpVisitorDataHandler" : {
     "superClass" : "com.yahoo.documentapi.VisitorDataHandler",
     "interfaces" : [ ],
@@ -277,21 +265,23 @@
     "fields" : [ ]
   },
   "com.yahoo.documentapi.ProgressToken$BucketKeyWrapper" : {
-    "superClass" : "java.lang.Object",
+    "superClass" : "java.lang.Record",
     "interfaces" : [
       "java.lang.Comparable"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final",
+      "record"
     ],
     "methods" : [
       "public void <init>(long)",
       "public int compareTo(com.yahoo.documentapi.ProgressToken$BucketKeyWrapper)",
-      "public long getKey()",
       "public com.yahoo.document.BucketId toBucketId()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
+      "public long key()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields" : [ ]
@@ -317,7 +307,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -329,18 +320,12 @@
       "public static com.yahoo.documentapi.ProgressToken fromSerializedString(java.lang.String)",
       "public void addFailedBucket(com.yahoo.document.BucketId, com.yahoo.document.BucketId, java.lang.String)",
       "public java.util.Map getFailedBuckets()",
-      "protected void updateProgress(com.yahoo.document.BucketId, com.yahoo.document.BucketId)",
-      "protected void addBucket(com.yahoo.document.BucketId, com.yahoo.document.BucketId, com.yahoo.documentapi.ProgressToken$BucketState)",
       "public static long makeNthBucketKey(long, int)",
       "public int getDistributionBitCount()",
-      "protected void setDistributionBitCount(int)",
       "public long getActiveBucketCount()",
       "public long getBucketCursor()",
-      "protected void setBucketCursor(long)",
       "public long getFinishedBucketCount()",
-      "protected void setFinishedBucketCount(long)",
       "public long getTotalBucketCount()",
-      "protected void setTotalBucketCount(long)",
       "public long getPendingBucketCount()",
       "public boolean hasPending()",
       "public boolean hasActive()",
@@ -350,19 +335,11 @@
       "public boolean containsFailedBuckets()",
       "public boolean isInconsistentState()",
       "public void setInconsistentState(boolean)",
-      "protected java.util.TreeMap getBuckets()",
-      "protected void setActiveBucketCount(long)",
-      "protected void setPendingBucketCount(long)",
       "public synchronized java.lang.String toString()",
       "public synchronized double percentFinished()",
       "public static long bucketToKey(long)",
       "public static long keyToBucketId(long)",
-      "public synchronized double progressFraction(com.yahoo.document.BucketId, com.yahoo.document.BucketId)",
-      "protected synchronized boolean isBucketFinished(com.yahoo.document.BucketId)",
-      "protected void splitPendingBucket(com.yahoo.document.BucketId)",
-      "protected void mergePendingBucket(com.yahoo.document.BucketId)",
-      "protected void setAllBucketsToState(com.yahoo.documentapi.ProgressToken$BucketState)",
-      "protected void clearAllBuckets()"
+      "public synchronized double progressFraction(com.yahoo.document.BucketId, com.yahoo.document.BucketId)"
     ],
     "fields" : [
       "public static final com.yahoo.document.BucketId NULL_BUCKET",
@@ -843,7 +820,8 @@
     "superClass" : "com.yahoo.documentapi.Parameters",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
@@ -1015,7 +993,8 @@
       "com.yahoo.documentapi.VisitorSession"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.documentapi.local.LocalDocumentAccess, com.yahoo.documentapi.VisitorParameters)",
@@ -1065,7 +1044,8 @@
     "superClass" : "com.yahoo.documentapi.DocumentAccess",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1171,7 +1151,8 @@
       "com.yahoo.messagebus.MessageHandler"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.documentapi.VisitorDestinationParameters, com.yahoo.messagebus.MessageBus)",
@@ -1370,8 +1351,8 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.documentapi.messagebus.MessageBusVisitorSession, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State, java.lang.String)",
-      "public void <init>(com.yahoo.documentapi.messagebus.MessageBusVisitorSession, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State)",
+      "public void <init>(com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State, java.lang.String)",
+      "public void <init>(com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State)",
       "public com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State getState()",
       "public java.lang.String getDescription()",
       "public boolean failed()",
@@ -1413,7 +1394,8 @@
       "com.yahoo.documentapi.VisitorSession"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.documentapi.VisitorParameters, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$AsyncTaskExecutor, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$SenderFactory, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ReceiverFactory, com.yahoo.messagebus.routing.RoutingTable)",
@@ -1502,7 +1484,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void destroy()"
@@ -1547,8 +1530,7 @@
     ],
     "methods" : [
       "public void <init>(java.util.Map)",
-      "public java.lang.String getClusterName()",
-      "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostPatternGenerator createPatternGenerator()",
+      "public final java.lang.String getClusterName()",
       "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher createHostFetcher(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy, int)",
       "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy)",
       "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker createInstabilityChecker()"
@@ -1795,7 +1777,8 @@
       "com.yahoo.messagebus.Protocol"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriority(int)",
