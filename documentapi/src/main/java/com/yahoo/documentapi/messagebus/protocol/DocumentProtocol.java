@@ -30,7 +30,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author Simon Thoresen Hult
  */
-public class DocumentProtocol implements Protocol {
+public final class DocumentProtocol implements Protocol {
 
     private static final Logger log = Logger.getLogger(DocumentProtocol.class.getName());
     private final RoutingPolicyRepository routingPolicyRepository = new RoutingPolicyRepository();

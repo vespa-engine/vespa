@@ -28,12 +28,12 @@ import java.util.logging.Logger;
  *
  * @author Thomas Gundersen
  */
-public class MessageBusVisitorDestinationSession implements VisitorDestinationSession, MessageHandler
+public final class MessageBusVisitorDestinationSession implements VisitorDestinationSession, MessageHandler
 {
     private static final Logger log = Logger.getLogger(MessageBusVisitorDestinationSession.class.getName());
 
     private DestinationSession session;
-    private VisitorDestinationParameters params;
+    private final VisitorDestinationParameters params;
 
     /**
      * Creates a message bus visitor destination session.

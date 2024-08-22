@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * @author Einar Rosenvinge
  * @author bratseth
  */
-public class MessageBusDocumentAccess extends DocumentAccess {
+public final class MessageBusDocumentAccess extends DocumentAccess {
 
     private static final Logger log = Logger.getLogger(MessageBusDocumentAccess.class.getName());
 

@@ -239,7 +239,7 @@ public class VisitorIterator {
                 for (Map.Entry<ProgressToken.BucketKeyWrapper, ProgressToken.BucketEntry> entry
                         : buckets.entrySet()) {
                     assert(entry.getValue().getState() == ProgressToken.BucketState.BUCKET_PENDING);
-                    BucketId pending = new BucketId(ProgressToken.keyToBucketId(entry.getKey().getKey()));
+                    BucketId pending = new BucketId(ProgressToken.keyToBucketId(entry.getKey().key()));
                     if (pending.getUsedBits() < targetDistBits) {
                         if (pending.getUsedBits() + 1 < targetDistBits) {
                             maybeInconsistent = true; // Do another pass
@@ -254,7 +254,7 @@ public class VisitorIterator {
                 for (Map.Entry<ProgressToken.BucketKeyWrapper, ProgressToken.BucketEntry> entry
                         : buckets.entrySet()) {
                     assert(entry.getValue().getState() == ProgressToken.BucketState.BUCKET_PENDING);
-                    BucketId pending = new BucketId(ProgressToken.keyToBucketId(entry.getKey().getKey()));
+                    BucketId pending = new BucketId(ProgressToken.keyToBucketId(entry.getKey().key()));
                     if (pending.getUsedBits() > targetDistBits) {
                         // If this is the right sibling of an already merged left sibling,
                         // it's already been merged away, so we should skip it
@@ -298,7 +298,7 @@ public class VisitorIterator {
             for (ProgressToken.BucketKeyWrapper bucketKey
                     : progressToken.getBuckets().keySet()) {
                 BucketId bid = bucketKey.toBucketId();
-                long idx = bucketKey.getKey() >>> (64 - bid.getUsedBits());
+                long idx = bucketKey.key() >>> (64 - bid.getUsedBits());
                 if (bid.getUsedBits() == distributionBitCount
                         && idx >= progressToken.getBucketCursor()) {
                     progressToken.setBucketCursor(idx + 1);
@@ -604,7 +604,7 @@ public class VisitorIterator {
             for (Map.Entry<ProgressToken.BucketKeyWrapper, ProgressToken.BucketEntry> entry : buckets.entrySet()) {
                 if (entry.getValue().getState() == ProgressToken.BucketState.BUCKET_PENDING) {
                     pending = entry.getValue();
-                    superbucket = new BucketId(ProgressToken.keyToBucketId(entry.getKey().getKey()));
+                    superbucket = new BucketId(ProgressToken.keyToBucketId(entry.getKey().key()));
                     break;
                 }
             }

@@ -19,7 +19,7 @@ import com.yahoo.vespa.objects.BufferSerializer;
  * @author Thomas Gundersen
  * @author vekterli
  */
-public class ProgressToken {
+public final class ProgressToken {
 
     private static final Logger log = Logger.getLogger(ProgressToken.class.getName());
 
@@ -75,59 +75,49 @@ public class ProgressToken {
     }
 
     /**
-     * For consistent bucket key ordering, we need to ensure that reverse bucket
-     * IDs that have their MSB set actually are compared as being greater than
-     * those that don't. This is yet another issue caused by Java's lack of
-     * unsigned integers.
-     */
-    public static class BucketKeyWrapper implements Comparable<BucketKeyWrapper>
-    {
-        private long key;
-
-        public BucketKeyWrapper(long key) {
-            this.key = key;
-        }
+         * For consistent bucket key ordering, we need to ensure that reverse bucket
+         * IDs that have their MSB set actually are compared as being greater than
+         * those that don't. This is yet another issue caused by Java's lack of
+         * unsigned integers.
+         */
+        public record BucketKeyWrapper(long key) implements Comparable<BucketKeyWrapper> {
 
         public int compareTo(BucketKeyWrapper other) {
-            if ((key & 0x8000000000000000L) != (other.key & 0x8000000000000000L)) {
-                // MSBs differ
-                return ((key >>> 63) > (other.key >>> 63)) ? 1 : -1;
+                if ((key & 0x8000000000000000L) != (other.key & 0x8000000000000000L)) {
+                    // MSBs differ
+                    return ((key >>> 63) > (other.key >>> 63)) ? 1 : -1;
+                }
+                // Mask off MSBs since we've already checked them, and with MSB != 1
+                // we know the ordering will be consistent
+                if ((key & 0x7FFFFFFFFFFFFFFFL) < (other.key & 0x7FFFFFFFFFFFFFFFL)) {
+                    return -1;
+                } else if ((key & 0x7FFFFFFFFFFFFFFFL) > (other.key & 0x7FFFFFFFFFFFFFFFL)) {
+                    return 1;
+                }
+                return 0;
             }
-            // Mask off MSBs since we've already checked them, and with MSB != 1
-            // we know the ordering will be consistent
-            if ((key & 0x7FFFFFFFFFFFFFFFL) < (other.key & 0x7FFFFFFFFFFFFFFFL)) {
-                return -1;
-            } else if ((key & 0x7FFFFFFFFFFFFFFFL) > (other.key & 0x7FFFFFFFFFFFFFFFL)) {
-                return 1;
+
+            public BucketId toBucketId() {
+                return new BucketId(keyToBucketId(key));
             }
-            return 0;
-        }
 
-        public long getKey() {
-            return key;
-        }
+            @Override
+            public String toString() {
+                return Long.toHexString(key);
+            }
 
-        public BucketId toBucketId() {
-            return new BucketId(keyToBucketId(key));
-        }
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof BucketKeyWrapper wrapper)) return false;
+                return key == wrapper.key;
+            }
 
-        @Override
-        public String toString() {
-            return Long.toHexString(key);
+            @Override
+            public int hashCode() {
+                return Long.hashCode(key);
+            }
         }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || !(o instanceof BucketKeyWrapper)) return false;
-            return key == ((BucketKeyWrapper)o).key;
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) (key ^ (key >>> 32));
-        }
-    }
 
     /**
      * By default, a ProgressToken's distribution bit count is set to the VDS
@@ -136,12 +126,12 @@ public class ProgressToken {
      */
     private int distributionBits = 16;
 
-    private TreeMap<BucketKeyWrapper, BucketEntry> buckets = new TreeMap<BucketKeyWrapper, BucketEntry>();
+    private final TreeMap<BucketKeyWrapper, BucketEntry> buckets = new TreeMap<>();
     private long activeBucketCount = 0;
     private long pendingBucketCount = 0;
     private long finishedBucketCount = 0;
     private long totalBucketCount = 0;
-    private TreeMap<BucketId, BucketId> failedBuckets = new TreeMap<BucketId, BucketId>();
+    private final TreeMap<BucketId, BucketId> failedBuckets = new TreeMap<>();
     private String firstErrorMsg;
 
     /**
@@ -238,7 +228,7 @@ public class ProgressToken {
 
         // Append individual bucket progress
         for (Map.Entry<BucketKeyWrapper, ProgressToken.BucketEntry> entry : buckets.entrySet()) {
-            out.putLong(null, keyToBucketId(entry.getKey().getKey()));
+            out.putLong(null, keyToBucketId(entry.getKey().key()));
             out.putLong(null, entry.getValue().getProgress().getRawId());
         }
 
@@ -298,7 +288,7 @@ public class ProgressToken {
      * @param progress The sub-bucket progress that has been reached in the
      * superbucket
      */
-    protected void updateProgress(BucketId superbucket, BucketId progress) {
+    void updateProgress(BucketId superbucket, BucketId progress) {
         // There exists a valid case in which the progress bucket may actually contains
         // its superbucket from the POV of the storage code, so it has to be handled
         // appropriately.
@@ -360,7 +350,7 @@ public class ProgressToken {
      * @param progress Bucket progress thus far
      * @param state Initial bucket state. Only pending buckets may be returned
      */
-    protected void addBucket(BucketId superbucket, BucketId progress, BucketState state) {
+    void addBucket(BucketId superbucket, BucketId progress, BucketState state) {
         if (progress.equals(FINISHED_BUCKET)) {
             if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Trying to add already finished superbucket "
@@ -429,7 +419,7 @@ public class ProgressToken {
      *
      * @param distributionBits new distribution bit value
      */
-    protected void setDistributionBitCount(int distributionBits) {
+    void setDistributionBitCount(int distributionBits) {
         this.distributionBits = distributionBits;
     }
 
@@ -449,7 +439,7 @@ public class ProgressToken {
         return toBucketId(getBucketCursor(), getDistributionBitCount());
     }
 
-    protected void setBucketCursor(long bucketCursor) {
+    void setBucketCursor(long bucketCursor) {
         this.bucketCursor = bucketCursor;
     }
 
@@ -462,7 +452,7 @@ public class ProgressToken {
      *
      * @param finishedBucketCount Number of buckets the token has finished
      */
-    protected void setFinishedBucketCount(long finishedBucketCount) {
+    void setFinishedBucketCount(long finishedBucketCount) {
         this.finishedBucketCount = finishedBucketCount;
     }
 
@@ -475,7 +465,7 @@ public class ProgressToken {
      *
      * @param totalBucketCount Total number of buckets that the progress token spans
      */
-    protected void setTotalBucketCount(long totalBucketCount) {
+    void setTotalBucketCount(long totalBucketCount) {
         this.totalBucketCount = totalBucketCount;
     }
 
@@ -519,15 +509,15 @@ public class ProgressToken {
      * Get internal progress token bucket state map. <em>For internal use only!</em>
      * @return Map of superbuckets → sub buckets
      */
-    protected TreeMap<BucketKeyWrapper, BucketEntry> getBuckets() {
+    TreeMap<BucketKeyWrapper, BucketEntry> getBuckets() {
         return buckets;
     }
 
-    protected void setActiveBucketCount(long activeBucketCount) {
+    void setActiveBucketCount(long activeBucketCount) {
         this.activeBucketCount = activeBucketCount;
     }
 
-    protected void setPendingBucketCount(long pendingBucketCount) {
+    void setPendingBucketCount(long pendingBucketCount) {
         this.pendingBucketCount = pendingBucketCount;
     }
 
@@ -556,14 +546,14 @@ public class ProgressToken {
         sb.append('\n');
         sb.append(bucketCursor);
         sb.append('\n');
-        long doneBucketCount = Math.max(0l, finishedBucketCount - failedBuckets.size());
+        long doneBucketCount = Math.max(0L, finishedBucketCount - failedBuckets.size());
         sb.append(doneBucketCount);
         sb.append('\n');
         sb.append(totalBucketCount);
         sb.append('\n');
         // Append individual bucket progress
         for (Map.Entry<BucketKeyWrapper, ProgressToken.BucketEntry> entry : buckets.entrySet()) {
-            sb.append(Long.toHexString(keyToBucketId(entry.getKey().getKey())));
+            sb.append(Long.toHexString(keyToBucketId(entry.getKey().key())));
             sb.append(':');
             sb.append(Long.toHexString(entry.getValue().getProgress().getRawId()));
             sb.append('\n');
@@ -603,7 +593,7 @@ public class ProgressToken {
         // There are numerical precision issues here, but this hardly requires
         // aerospace engineering result-accuracy
         for (Map.Entry<BucketKeyWrapper, ProgressToken.BucketEntry> entry : buckets.entrySet()) {
-            BucketId superbucket = new BucketId(keyToBucketId(entry.getKey().getKey()));
+            BucketId superbucket = new BucketId(keyToBucketId(entry.getKey().key()));
             BucketId progress = entry.getValue().getProgress();
             // Prevent calculation of bucket progress on inconsistent buckets
             if (progress.getId() != 0 && superbucket.contains(progress)) {
@@ -715,7 +705,7 @@ public class ProgressToken {
      * @return <code>true</code> if <code>bucket</code>'s super-bucket is
      * finished, <code>false</code> otherwise.
      */
-    protected synchronized boolean isBucketFinished(BucketId bucket) {
+    synchronized boolean isBucketFinished(BucketId bucket) {
         if (inconsistentState) {
             return false;
         }
@@ -759,7 +749,7 @@ public class ProgressToken {
      * as it is assumed the client knows what it's doing and will bring the
      * token into a consistent state eventually.
      */
-    protected void splitPendingBucket(BucketId bucket) {
+    void splitPendingBucket(BucketId bucket) {
         BucketKeyWrapper bucketKey = bucketToKeyWrapper(bucket);
         BucketEntry entry = buckets.get(bucketKey);
         if (entry == null) {
@@ -787,7 +777,7 @@ public class ProgressToken {
         --pendingBucketCount;
     }
 
-    protected void mergePendingBucket(BucketId bucket) {
+    void mergePendingBucket(BucketId bucket) {
         BucketKeyWrapper bucketKey = bucketToKeyWrapper(bucket);
         BucketEntry entry = buckets.get(bucketKey);
         if (entry == null) {
@@ -837,14 +827,14 @@ public class ProgressToken {
         assert(pendingBucketCount > 0);
     }
 
-    protected void setAllBucketsToState(BucketState state) {
+    void setAllBucketsToState(BucketState state) {
         for (Map.Entry<BucketKeyWrapper, ProgressToken.BucketEntry> entry
                 : buckets.entrySet()) {
             entry.getValue().setState(state);
         }
     }
 
-    protected void clearAllBuckets() {
+    void clearAllBuckets() {
         buckets.clear();
         pendingBucketCount = 0;
         activeBucketCount = 0;
