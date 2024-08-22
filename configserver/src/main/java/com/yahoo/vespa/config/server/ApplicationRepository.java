@@ -586,7 +586,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      */
     public boolean delete(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
-        if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
         NestedTransaction transaction = new NestedTransaction();
@@ -716,7 +715,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Tenant getTenant(ApplicationId applicationId) {
-        return tenantRepository.getTenant(applicationId.tenant());
+        var tenant = tenantRepository.getTenant(applicationId.tenant());
+        if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
+
+        return tenant;
     }
 
     Application getApplication(ApplicationId applicationId) {
@@ -725,8 +727,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private Application getApplication(ApplicationId applicationId, Optional<Version> version) {
         Tenant tenant = getTenant(applicationId);
-        if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
-
         Optional<ApplicationVersions> activeApplicationVersions = tenant.getSessionRepository().activeApplicationVersions(applicationId);
         if (activeApplicationVersions.isEmpty()) throw new NotFoundException("Unknown application id '" + applicationId + "'");
 
@@ -905,15 +905,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return the active session, or null if there is no active session for the given application id.
      */
     public Optional<Session> getActiveSession(ApplicationId applicationId) {
-        Tenant tenant = getTenant(applicationId);
-        if (tenant == null) throw new IllegalArgumentException("Could not find any tenant for '" + applicationId + "'");
-        return getActiveSession(tenant, applicationId);
+        return getActiveSession(getTenant(applicationId), applicationId);
     }
 
     public long getSessionIdForApplication(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
-        if (tenant == null)
-            throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
         if (! tenant.getApplicationRepo().exists(applicationId))
             throw new NotFoundException("Unknown application id '" + applicationId + "'");
 
@@ -1037,11 +1033,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private ApplicationCuratorDatabase requireDatabase(ApplicationId id) {
-        Tenant tenant = getTenant(id);
-        if (tenant == null)
-            throw new NotFoundException("Tenant '" + id.tenant().value() + "' not found");
-
-        return tenant.getApplicationRepo().database();
+        return getTenant(id).getApplicationRepo().database();
     }
 
     public ApplicationReindexing getReindexing(ApplicationId id) {
@@ -1050,11 +1042,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void modifyReindexing(ApplicationId id, UnaryOperator<ApplicationReindexing> modifications) {
-        Tenant tenant = getTenant(id);
-        if (tenant == null)
-            throw new NotFoundException("Tenant '" + id.tenant().value() + "' not found");
-
-        tenant.getApplicationRepo().database().modifyReindexing(id, ApplicationReindexing.empty(), modifications);
+        getTenant(id).getApplicationRepo().database().modifyReindexing(id, ApplicationReindexing.empty(), modifications);
     }
 
     public PendingRestarts getPendingRestarts(ApplicationId id) {

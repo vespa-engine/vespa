@@ -787,7 +787,7 @@ public class ApplicationHandlerTest {
 
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {
         Tenant tenant = applicationRepository.getTenant(applicationId);
-        long sessionId = tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
+        tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, fullAppIdInUrl);
     }
 
