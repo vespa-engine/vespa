@@ -68,21 +68,13 @@ def main():
         if not os.path.exists(absoluteSubPath):
             os.makedirs(absoluteSubPath)
 
-    rawData = fetchFile(SCHEMA_URL)
-
-    data = ""
-    with open("/Users/theodorkl/Documents/github.com/vespa-engine/documentation/en/reference/schema-reference.html") as file:
-        data = file.read()
-
+    schemaFile = fetchFile(SCHEMA_URL)
     schemaReferenceParser = VespaSchemaReferenceDocsParser(f"{LINK_BASE_URL}{SCHEMA_URL}")
-    parsePage(data, SCHEMA_URL, schemaReferenceParser, targetPath.joinpath(subPaths[0]))
+    parsePage(schemaFile, SCHEMA_URL, schemaReferenceParser, targetPath.joinpath(subPaths[0]))
 
-    data = ""
-    with open("/Users/theodorkl/Documents/github.com/vespa-engine/documentation/en/reference/rank-features.html") as file:
-        data = file.read()
-
+    rankFeatureFile = fetchFile(RANK_FEATURE_URL)
     rankFeatureParser = VespaRankFeatureDocsParser(f"{LINK_BASE_URL}{RANK_FEATURE_URL}")
-    parsePage(data, RANK_FEATURE_URL, rankFeatureParser, targetPath.joinpath(subPaths[1]))
+    parsePage(rankFeatureFile, RANK_FEATURE_URL, rankFeatureParser, targetPath.joinpath(subPaths[1]))
 
 if __name__ == "__main__":
     main()
