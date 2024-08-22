@@ -350,11 +350,6 @@ public class SessionPreparer {
         void writeStateZK(FileReference filereference) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
 
-            // TODO: remove when tenant secret store integration test passes
-            var tenantSecretStores = params.tenantSecretStores();
-            if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
-               tenantSecretStores.forEach(ss -> log.info("Tenant secret store:\n" + ss));
-            }
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
