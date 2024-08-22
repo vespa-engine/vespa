@@ -12,6 +12,7 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.filedistribution.FileApiErrorCodes;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
@@ -36,11 +37,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
-import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.NOT_FOUND;
-import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.OK;
-import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.TRANSFER_FAILED;
+import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.NOT_FOUND;
+import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.OK;
+import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.TRANSFER_FAILED;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -51,7 +54,7 @@ public class FileServer {
 
     // Set this low, to make sure we don't wait for a long time trying to download file
     private static final Duration timeout = Duration.ofSeconds(10);
-    private static final List<CompressionType> compressionTypesToServe = compressionTypesAsList(List.of("zstd", "lz4", "gzip")); // In preferred order
+    private static final List<CompressionType> compressionTypesToServe = List.of(zstd, lz4, gzip); // In preferred order
     private static final String tempFilereferencedataPrefix = "filereferencedata";
     private static final Path tempFilereferencedataDir = Paths.get(System.getProperty("java.io.tmpdir"));
 
@@ -59,22 +62,6 @@ public class FileServer {
     private final ExecutorService executor;
     private final FileDownloader downloader;
     private final List<CompressionType> compressionTypes; // compression types to use, in preferred order
-
-    // TODO: Move to filedistribution module, so that it can be used by both clients and servers
-    enum FileApiErrorCodes {
-        OK(0, "OK"),
-        NOT_FOUND(1, "File reference not found"),
-        TIMEOUT(2, "Timeout"),
-        TRANSFER_FAILED(3, "Failed transferring file");
-        private final int code;
-        private final String description;
-        FileApiErrorCodes(int code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-        int getCode() { return code; }
-        String getDescription() { return description; }
-    }
 
     public static class ReplayStatus {
         private final int code;
@@ -165,8 +152,8 @@ public class FileServer {
         executor.execute(() -> {
             var result = serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, client, receiver, acceptedCompressionTypes);
             request.returnValues()
-                   .add(new Int32Value(result.getCode()))
-                   .add(new StringValue(result.getDescription()));
+                   .add(new Int32Value(result.code()))
+                   .add(new StringValue(result.description()));
             request.returnRequest();
         });
     }
@@ -233,12 +220,6 @@ public class FileServer {
     private static FileDownloader createFileDownloader(List<String> configServers) {
         Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
         return new FileDownloader(createConnectionPool(configServers, supervisor), supervisor, timeout);
-    }
-
-    private static List<CompressionType> compressionTypesAsList(List<String> compressionTypes) {
-        return compressionTypes.stream()
-                               .map(CompressionType::valueOf)
-                               .toList();
     }
 
     private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {

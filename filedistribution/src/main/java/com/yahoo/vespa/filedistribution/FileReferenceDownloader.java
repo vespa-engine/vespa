@@ -151,18 +151,21 @@ public class FileReferenceDownloader {
 
         Level logLevel = (retryCount > 3 ? Level.INFO : Level.FINE);
         FileReference fileReference = fileReferenceDownload.fileReference();
+        String address = connection.getAddress();
         if (validateResponse(request)) {
             log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
             int errorCode = request.returnValues().get(0).asInt32();
+
             if (errorCode == 0) {
-                log.log(Level.FINE, () -> "Found " + fileReference + " available at " + connection.getAddress());
+                log.log(Level.FINE, () -> "Found " + fileReference + " available at " + address);
                 return true;
             } else {
-                log.log(logLevel, fileReference + " not found or timed out (error code " +  errorCode + ") at " + connection.getAddress());
+                var error = FileApiErrorCodes.get(errorCode);
+                log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed (" + error + ")");
                 return false;
             }
         } else {
-            log.log(logLevel, "Downloading " + fileReference + " from " + connection.getAddress() + " failed:" +
+            log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed:" +
                     " error code " + request.errorCode() + " (" + request.errorMessage() + ")." +
                     " (retry " + retryCount + ", rpc timeout " + rpcTimeout + ")");
             return false;

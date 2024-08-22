@@ -8,7 +8,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
 
 import java.io.File;
 import java.time.Duration;
@@ -133,7 +132,6 @@ class FileAcquirerImpl implements FileAcquirer {
      * config system.
      *
      * @throws TimeoutException if the file or directory could not be retrieved in time.
-     * @throws FileReferenceDoesNotExistException if the file is no longer available (due to reloading of config).
      */
     public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) throws InterruptedException {
         Timer timer = new Timer(timeout, timeUnit);
