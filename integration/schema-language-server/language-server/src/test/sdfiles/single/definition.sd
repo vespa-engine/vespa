@@ -1,0 +1,32 @@
+schema definition {
+    document definition {
+        field myfield type string {
+        }
+
+        struct mystruct {
+            field a type int {}
+        }
+
+        field sfield type array<mystruct> {
+            struct-field a {
+                
+            }
+        }
+    }
+
+    fieldset default {
+        fields: myfield, sfield.a
+    }
+
+    rank-profile profile {
+        function foo() {
+            expression: 1 + 1
+        }
+    }
+
+    rank-profile child inherits profile {
+        function bar() {
+            expression: foo() + foo()
+        }
+    }
+}
