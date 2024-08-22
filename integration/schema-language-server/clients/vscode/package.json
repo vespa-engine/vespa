@@ -22,8 +22,11 @@
     "url": "https://github.com/vespa-engine/vespa"
   },
   "icon": "images/icon.png",
-  "activationEvents": [],
-  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:xml",
+    "onLanguage:vespaSchema"
+  ],
+  "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
@@ -37,6 +40,9 @@
         ],
         "configuration": "./language-configuration.json"
       }
+    ],
+    "xml.javaExtensions": [
+      "./server/lemminx-vespa-jar-with-dependencies.jar"
     ],
     "configuration": {
       "title": "Vespa Schema Language Support",
@@ -65,7 +71,8 @@
     "test": "vscode-test",
     "check-types": "tsc --noEmit",
     "copy-images": "cp ../../resources/* ./images",
-    "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/",
+    "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/ && npm run lemminx-install",
+    "lemminx-install": "mkdir -p server && cp ../../lemminx-vespa/target/lemminx-vespa-jar-with-dependencies.jar ./server/",
     "publish": "npm run compile && node out/publish.js"
   },
   "devDependencies": {

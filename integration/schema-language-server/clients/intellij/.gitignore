@@ -2,6 +2,7 @@
 .intellijPlatform/
 .run/
 build/
+bin/
 gradle/
 gradle.properties
 gradlew
