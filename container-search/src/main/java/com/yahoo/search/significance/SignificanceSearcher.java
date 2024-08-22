@@ -114,6 +114,15 @@ public class SignificanceSearcher extends Searcher {
     }
 
     private SignificanceModel getSignificanceModelFromQueryLanguage(Query query) throws IllegalArgumentException {
+        /*
+        Implements the following model resolving logic:
+        - When language is explicitly tagged on query
+            - Use language if available from the model registry, fail otherwise.
+            - If “un” try both “un” and “en”.
+        - When language is implicitly detected
+            - Use language if available from the model registry. Fallback to “un” then “en”, fail if none are available.
+         */
+
         Language explicitLanguage = query.getModel().getLanguage();
         Language implicitLanguage = query.getModel().getParsingLanguage();
 
