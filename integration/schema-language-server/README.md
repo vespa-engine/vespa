@@ -7,6 +7,13 @@ https://microsoft.github.io/language-server-protocol/
 
 This means that the bulk of the functionality lies inside /language-server. The clients are merely small bootstrapping wrappers for creating an extension/plugin and launching the language-server.
 
+## Release
+
+To release the language server, start the github action [Vespa Schema LSP - Deploy extension](https://github.com/vespa-engine/vespa/actions/workflows/lspDeploy.yml). Note that the action must be started manually. The action will publish the extension to all the supported marketplaces, including a github release. In addition the action will bump the version and create a PR with the updated version.
+
+To publish a new release from a branch other than master, use the following command:
+`gh workflow run "Vespa Schema LSP - Deploy extension" --ref <branch> -F version=<major | minor | patch>`
+
 ## File Structure
 
 ### ./clients
