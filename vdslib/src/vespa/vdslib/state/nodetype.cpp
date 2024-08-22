@@ -2,10 +2,10 @@
 
 #include "nodetype.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
 #include <ostream>
+#include <string>
 
 namespace storage::lib {
 
@@ -25,7 +25,7 @@ NodeType::get(std::string_view serialized)
         return DISTRIBUTOR;
     }
     throw vespalib::IllegalArgumentException(
-            "Unknown node type " + serialized + " given.", VESPA_STRLOC);
+            "Unknown node type " + std::string(serialized) + " given.", VESPA_STRLOC);
 }
 
 const NodeType&

@@ -9,9 +9,9 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
-#include <vespa/vespalib/stllike/string.h>
-#include <sstream>
 #include <cassert>
+#include <sstream>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vdslib.state.cluster");
@@ -77,7 +77,7 @@ ClusterState::ClusterState(std::string_view serialized)
     for (const auto & token : st) {
         std::string::size_type index = token.find(':');
         if (index == std::string::npos) {
-            throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);
+            throw IllegalArgumentException("Token " + std::string(token) + " does not contain ':': " + std::string(serialized), VESPA_STRLOC);
         }
         std::string key(token.substr(0, index));
         std::string_view value = token.substr(index + 1);

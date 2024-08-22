@@ -39,11 +39,3 @@ void chomp(std::string & s) noexcept;
 std::string safe_char_2_string(const char * p);
 
 } // namespace vespalib
-
-namespace std {
-
-std::string operator+(std::string_view a, std::string_view b) noexcept;
-std::string operator+(const char *a, std::string_view b) noexcept;
-std::string operator+(std::string_view a, const char *b) noexcept;
-
-}

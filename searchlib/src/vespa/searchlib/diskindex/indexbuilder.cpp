@@ -7,10 +7,10 @@
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/error.h>
 #include <filesystem>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.indexbuilder");
@@ -149,7 +149,7 @@ FileHandle::open(std::string_view dir,
 {
     assert( ! _fieldWriter);
 
-    _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds, dir + "/");
+    _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds, std::string(dir) + "/");
 
     if (!_fieldWriter->open(64, 262144u, false,
                             index.use_interleaved_features(),
@@ -294,7 +294,7 @@ IndexBuilder::appendToPrefix(std::string_view name) const
     if (_prefix.empty()) {
         return std::string(name);
     }
-    return _prefix + "/" + name;
+    return _prefix + "/" + std::string(name);
 }
 
 }

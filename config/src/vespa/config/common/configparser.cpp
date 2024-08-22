@@ -4,13 +4,13 @@
 #include "exceptions.h"
 #include "misc.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/locale/c.h>
+#include <string>
 
 namespace config {
 
 void ConfigParser::throwNoDefaultValue(std::string_view key) {
-    throw InvalidConfigException("Config parameter " + key + " has no "
+    throw InvalidConfigException("Config parameter " + std::string(key) + " has no "
             "default value and is not specified in config", VESPA_STRLOC);
 }
 

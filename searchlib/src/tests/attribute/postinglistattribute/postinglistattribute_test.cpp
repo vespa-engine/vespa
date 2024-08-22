@@ -16,7 +16,7 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
@@ -528,7 +528,7 @@ PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool 
 AttributePtr
 create_attribute(const std::string_view name, const Config& cfg)
 {
-    return AttributeFactory::createAttribute(tmp_dir + "/" + name, cfg);
+    return AttributeFactory::createAttribute(tmp_dir + "/" + std::string(name), cfg);
 }
 
 AttributePtr

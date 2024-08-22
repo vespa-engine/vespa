@@ -3,8 +3,8 @@
 #include "properties.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
-#include <vespa/vespalib/stllike/string.h>
 #include <cassert>
+#include <string>
 
 namespace search::fef {
 
@@ -152,7 +152,7 @@ void
 Properties::visitNamespace(std::string_view ns, IPropertiesVisitor &visitor) const
 {
     std::string tmp;
-    std::string prefix = ns + ".";
+    std::string prefix = std::string(ns) + ".";
     for (const auto& elem : _data) {
         if ((elem.first.find(prefix) == 0) &&
             (elem.first.size() > prefix.size()))

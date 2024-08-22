@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "redundancygroupdistribution.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <cassert>
+#include <string>
 
 namespace storage::lib {
 
@@ -20,7 +20,7 @@ namespace {
             if (i > firstAsterisk) {
                 if (st[i] != "*") {
                     throw vespalib::IllegalArgumentException(
-                            "Illegal distribution spec \"" + serialized + "\". "
+                            "Illegal distribution spec \"" + std::string(serialized) + "\". "
                             "Asterisk specifications must be tailing the "
                             "specification.", VESPA_STRLOC);
                 }
@@ -33,7 +33,7 @@ namespace {
             uint32_t number = atoi(std::string(st[i]).c_str());
             if (number <= 0 || number >= 256) {
                 throw vespalib::IllegalArgumentException(
-                    "Illegal distribution spec \"" + serialized + "\". "
+                    "Illegal distribution spec \"" + std::string(serialized) + "\". "
                     "Copy counts must be in the range 1-255.", VESPA_STRLOC);
             }
             for (vespalib::StringTokenizer::Token::const_iterator it
@@ -41,7 +41,7 @@ namespace {
             {
                 if (*it < '0' || *it > '9') {
                     throw vespalib::IllegalArgumentException(
-                        "Illegal distribution spec \"" + serialized + "\". "
+                        "Illegal distribution spec \"" + std::string(serialized) + "\". "
                         "Token isn't asterisk or number.", VESPA_STRLOC);
                 }
             }

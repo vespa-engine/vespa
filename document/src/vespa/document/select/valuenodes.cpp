@@ -8,12 +8,12 @@
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <cassert>
 #include <iomanip>
+#include <string>
 #include <sys/time.h>
 
 #include <vespa/log/log.h>
@@ -743,7 +743,7 @@ FunctionValueNode::FunctionValueNode(std::string_view name,
     } else if (name == "abs") {
         _function = ABS;
     } else {
-        throw ParsingFailedException("No function '"+name+"' exist.",
+        throw ParsingFailedException("No function '" + std::string(name) + "' exist.",
                                      VESPA_STRLOC);
     }
 }
@@ -905,7 +905,7 @@ ArithmeticValueNode::ArithmeticValueNode(
         case '%': _operator = MOD; return;
     }
     throw ParsingFailedException(
-            "Arithmetic operator '"+op+"' does not exist.", VESPA_STRLOC);
+            "Arithmetic operator '" + std::string(op) + "' does not exist.", VESPA_STRLOC);
 }
 
 const char*

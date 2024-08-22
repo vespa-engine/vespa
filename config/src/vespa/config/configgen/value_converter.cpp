@@ -2,8 +2,8 @@
 #include "value_converter.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/locale/c.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <string>
 
 using namespace vespalib;
 using namespace vespalib::slime;
@@ -57,7 +57,7 @@ std::string convertValue(const ::vespalib::slime::Inspector & __inspector) { ret
 void
 requireValid(std::string_view __fieldName, const ::vespalib::slime::Inspector & __inspector) {
     if (!__inspector.valid()) {
-        throw ::config::InvalidConfigException("Value for '" + __fieldName + "' required but not found");
+        throw ::config::InvalidConfigException("Value for '" + std::string(__fieldName) + "' required but not found");
     }
 }
 

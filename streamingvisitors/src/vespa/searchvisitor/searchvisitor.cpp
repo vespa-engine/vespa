@@ -28,8 +28,8 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <optional>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
@@ -86,7 +86,7 @@ get_search_environment_snapshot(VisitorEnvironment& v_env, const Parameters& par
         auto schema = extract_schema(params);
         return schema.empty()
             ? env.get_snapshot(std::string(search_cluster))
-            : env.get_snapshot(search_cluster + "/" + schema);
+            : env.get_snapshot(std::string(search_cluster) + "/" + std::string(schema));
     }
     return {};
 }

@@ -3,8 +3,8 @@
 
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 #include <vespa/vespalib/btree/btreestore.hpp>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <string>
 
 using search::predicate::PredicateRangeTermExpander;
 using std::vector;
@@ -21,12 +21,12 @@ struct MyRangeHandler {
         EXPECT_EQUAL(expected_labels.size(), i);
     }
     void handleRange(std::string_view label) {
-        TEST_STATE(("handleRange: " + label).c_str());
+        TEST_STATE(("handleRange: " + std::string(label)).c_str());
         ASSERT_TRUE(i < expected_labels.size());
         EXPECT_EQUAL(expected_labels[i++], label);
     }
     void handleEdge(std::string_view label, uint64_t value) {
-        TEST_STATE(("handleEdge: " + label).c_str());
+        TEST_STATE(("handleEdge: " + std::string(label)).c_str());
         EXPECT_EQUAL(expected_edge_label, label);
         EXPECT_EQUAL(expected_edge_value, value);
     }

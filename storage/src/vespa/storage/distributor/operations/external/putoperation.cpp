@@ -12,8 +12,8 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <algorithm>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.external.put");
@@ -302,7 +302,7 @@ PutOperation::on_completed_check_condition(CheckCondition::Outcome& outcome,
                                               "Document does not exist"));
     } else if (outcome.failed()) {
         api::ReturnCode wrapped_error(outcome.error_code().getResult(),
-                                      "Failed during write repair condition probe step. Reason: " + outcome.error_code().getMessage());
+                                      "Failed during write repair condition probe step. Reason: " + std::string(outcome.error_code().getMessage()));
         _tracker.fail(sender, wrapped_error);
     } else {
         _tracker.fail(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
