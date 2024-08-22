@@ -81,7 +81,7 @@ jobs:
           gh release create v${{ steps.retrieve_version.outputs.VERSION }} \
             --notes "Vespa language server." --draft \
             -t "Vespa Language Server ${{ steps.retrieve_version.outputs.VERSION }}" \
-            './target/schema-language-server-jar-with-dependencies.jar#Language Server Jar'
+            './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar'
 
       - name: Commit and PR
         env:
