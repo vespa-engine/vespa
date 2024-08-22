@@ -248,6 +248,10 @@ class Node:
         
         if (self.tagName == "em"):
             return self.markdownWrap("*", "*", content)
+        
+        if (self.tagName == "a" and self.getAttr("href") is not None):
+            link = self.getAttr("href")
+            return self.markdownWrap("[", f"]({link})", content)
 
         return content
 

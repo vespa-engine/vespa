@@ -81,7 +81,7 @@ def main():
     with open("/Users/theodorkl/Documents/github.com/vespa-engine/documentation/en/reference/rank-features.html") as file:
         data = file.read()
 
-    rankFeatureParser = VespaRankFeatureDocsParser()
+    rankFeatureParser = VespaRankFeatureDocsParser(f"{LINK_BASE_URL}{RANK_FEATURE_URL}")
     parsePage(data, RANK_FEATURE_URL, rankFeatureParser, targetPath.joinpath(subPaths[1]))
 
 if __name__ == "__main__":

@@ -6,12 +6,14 @@ import re
 class VespaRankFeatureDocsParser(Visitor):
 
     results: list[MarkdownFile] = []
+    readMoreLink = ""
 
     exceptions: list[Exception] = []
 
-    def __init__(self):
+    def __init__(self, readMoreLink: str):
         self.results = []
         self.exceptions = []
+        self.readMoreLink = readMoreLink
     
     def findTDNodes(self, node: Node) -> list[Node]:
 
@@ -59,6 +61,8 @@ class VespaRankFeatureDocsParser(Visitor):
         contentNode = tdChildren[2]
 
         mdFile.addContent(contentNode.toMarkdown())
+
+        mdFile.addContent(f"\n\n[Read more]({self.readMoreLink}#{mdFile.name})")
 
         self.enforceSimpleLintRules(mdFile, nameNode.getStartPosition())
 
