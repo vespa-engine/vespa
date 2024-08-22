@@ -79,7 +79,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create lsp-v${{ steps.retrieve_version.outputs.VERSION }} \
-            --notes "Vespa language server." \
+            --notes-file ./clients/github-release/README.md \
             --latest=false \
             -t "Vespa Language Server ${{ steps.retrieve_version.outputs.VERSION }}" \
             './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar'
