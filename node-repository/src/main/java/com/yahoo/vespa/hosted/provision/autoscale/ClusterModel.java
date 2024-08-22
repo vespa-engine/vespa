@@ -22,7 +22,7 @@ import java.util.OptionalDouble;
  *
  * @author bratseth
  */
-public class ClusterModel {
+public final class ClusterModel {
 
     /** Containers typically use more cpu right after generation change, so discard those metrics */
     public static final Duration warmupDuration = Duration.ofMinutes(7);

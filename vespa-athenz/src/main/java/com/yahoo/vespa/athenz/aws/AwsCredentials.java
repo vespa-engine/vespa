@@ -19,7 +19,7 @@ import java.util.Optional;
  *
  * @author tokle
  */
-public class AwsCredentials implements AutoCloseable {
+public final class AwsCredentials implements AutoCloseable {
 
     private final static Duration MIN_EXPIRY = Duration.ofMinutes(5);
     private final AthenzDomain athenzDomain;

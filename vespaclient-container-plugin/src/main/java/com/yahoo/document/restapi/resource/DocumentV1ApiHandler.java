@@ -133,7 +133,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  *
  * @author jonmv
  */
-public class DocumentV1ApiHandler extends AbstractRequestHandler {
+public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static final Duration defaultTimeout = Duration.ofSeconds(180); // Match document API default timeout.
     private static final Duration handlerTimeout = Duration.ofMillis(100); // Extra time to allow for handler, JDisc and jetty to complete.
@@ -576,7 +576,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     /** Dispatches enqueued requests until one is blocked. */
-    void dispatchVisitEnqueued() {
+    private void dispatchVisitEnqueued() {
         try {
             while (dispatchFirstVisit());
         }

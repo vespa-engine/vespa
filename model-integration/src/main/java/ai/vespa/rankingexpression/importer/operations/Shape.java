@@ -11,7 +11,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
 
-public class Shape extends IntermediateOperation {
+public final class Shape extends IntermediateOperation {
 
     public Shape(String modelName, String nodeName, List<IntermediateOperation> inputs) {
         super(modelName, nodeName, inputs);

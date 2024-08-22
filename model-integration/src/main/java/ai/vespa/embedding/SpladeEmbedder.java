@@ -79,7 +79,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         validateModel();
     }
 
-    public void validateModel() {
+    private void validateModel() {
         Map<String, TensorType> inputs = evaluator.getInputInfo();
         validateName(inputs, inputIdsName, "input");
         validateName(inputs, attentionMaskName, "input");
@@ -97,7 +97,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         return target.dimensions().size() == 1 && target.dimensions().get(0).isMapped();
     }
 
-    private void validateName(Map<String, TensorType> types, String name, String type) {
+    private static void validateName(Map<String, TensorType> types, String name, String type) {
         if (!types.containsKey(name)) {
             throw new IllegalArgumentException("Model does not contain required " + type + ": '" + name + "'. " +
                     "Model contains: " + String.join(",", types.keySet()));
