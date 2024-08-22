@@ -78,8 +78,6 @@ class DocsHTMLParser(HTMLParser):
 
         firstSplit = input.split("content=")
 
-        print(firstSplit)
-
         name = firstSplit[0].strip()
 
         node = Node.createNoteNode(name, "{%" + input + "%}")

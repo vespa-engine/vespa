@@ -89,6 +89,27 @@ class Node:
     
     def getChild(self, i: int) -> 'Node':
         return self.children[i]
+    
+    def getSiblingIndex(self) -> int:
+        if (self.parent is None):
+            return 0
+        
+        for i in range(len(self.parent.children)):
+            if (self.parent.getChild(i) == self):
+                return i
+        
+        raise Exception("Invalid AST, the a Node has a parent, but the parent has no reference to the node.")
+    
+    def getNext(self) -> 'Optional[Node]':
+        parent = self.parent
+        if (parent is None):
+            return None
+
+        siblingIndex = self.getSiblingIndex()
+        if (len(parent.children) <= siblingIndex + 1):
+            return None
+        return parent.getChild(siblingIndex + 1)
+        
 
     def getAttr(self, attribute: str) -> str | None:
         for attr in self.attrs:
@@ -155,6 +176,16 @@ class Node:
 
         return ret
     
+    def toText(self) -> str:
+        if (self.type == NodeType.PLAIN_TEXT):
+            return self.plainTextContent
+        
+        ret = ""
+        for child in self.children:
+            ret += child.toText()
+        
+        return ret
+    
     def toHTML(self) -> str:
 
         if (self.type == NodeType.PLAIN_TEXT):
@@ -207,6 +238,7 @@ class Node:
             return self.markdownInFront("## ", content)
         
         if (self.tagName == "pre" or self.tagName == "code"):
+
             if (content.count("\n") > 0):
                 return self.markdownWrap("```\n", "\n```", content)
             return self.markdownWrap("`", "`", content)
@@ -219,7 +251,7 @@ class Node:
 
         return content
 
-    def toMarkdown(self, entry = True) -> str:
+    def toMarkdown(self) -> str:
 
         if (self.type == NodeType.PLAIN_TEXT):
             return self.plainTextContent
@@ -227,9 +259,9 @@ class Node:
         content: str = ""
 
         for child in self.children:
-            content += child.toMarkdown(False)
+            content += child.toMarkdown()
         
-        if (self.type == NodeType.ROOT or entry):
+        if (self.type == NodeType.ROOT):
             lines = content.split("\n")
 
             ret = ""

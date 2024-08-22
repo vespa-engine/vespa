@@ -5,6 +5,7 @@ import pathlib
 from Node import Node
 from DocsHTMLParser import DocsHTMLParser
 import visitor
+from VespaSchemaReferenceDocsParser import VespaSchemaReferenceDocsParser
 
 BRANCH = "master"
 URL_PREFIX = f"https://raw.githubusercontent.com/vespa-engine/documentation/{BRANCH}/en"
@@ -13,15 +14,6 @@ SCHEMA_URL = "/reference/schema-reference.html"
 RANK_EXPRESSION_URL = "/reference/rank-features.html"
 
 LINK_BASE_URL = "https://docs.vespa.ai/en"
-
-REPLACE_FILENAME_MAP = {
-    "EXPRESSION": [ "EXPRESSION_SL", "EXPRESSION_ML" ],
-    "RANK_FEATURES": [ "RANKFEATURES_SL", "RANKFEATURES_ML" ],
-    "FUNCTION (INLINE)? [NAME]": [ "FUNCTION" ],
-    "SUMMARY_FEATURES": [ "SUMMARYFEATURES_SL", "SUMMARYFEATURES_ML", "SUMMARYFEATURES_ML_INHERITS" ],
-    "MATCH_FEATURES": [ "MATCHFEATURES_SL", "MATCHFEATURES_ML", "MATCHFEATURES_SL_INHERITS" ],
-    "IMPORT FIELD": [ "IMPORT" ]
-}
 
 # TODO: fix dictionary and attribute and index
 
@@ -74,8 +66,14 @@ def main():
         data = file.read()
 
     results = parseRawHTML(data, SCHEMA_URL)
+    schemaReferenceParser = VespaSchemaReferenceDocsParser(f"{LINK_BASE_URL}{SCHEMA_URL}")
+    schemaReferenceParser.traverse(results)
+    mdFiles = schemaReferenceParser.getResults()
 
-    print(results.toMarkdown())
+    for file in mdFiles:
+        file.write(targetPath.joinpath(subPaths[0]))
+
+    # print(schemaReferenceParser.results)
 
 if __name__ == "__main__":
     main()
