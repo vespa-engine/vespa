@@ -12,7 +12,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 import java.util.List;
 import java.util.Optional;
 
-public class OnnxConstant extends IntermediateOperation {
+public final class OnnxConstant extends IntermediateOperation {
 
     private final AttributeMap attributeMap;
     private final Value value;

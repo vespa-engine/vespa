@@ -10,7 +10,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 import java.util.List;
 import java.util.Optional;
 
-public class Constant extends IntermediateOperation {
+public final class Constant extends IntermediateOperation {
 
     public Constant(String modelName, String nodeName, OrderedTensorType type) {
         super(modelName, nodeName, List.of());

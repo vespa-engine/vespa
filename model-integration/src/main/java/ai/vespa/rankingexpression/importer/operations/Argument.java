@@ -10,9 +10,9 @@ import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
 
-public class Argument extends IntermediateOperation {
+public final class Argument extends IntermediateOperation {
 
-    private OrderedTensorType standardNamingType;  // using standard naming convention: d0, d1, ...
+    private final OrderedTensorType standardNamingType;  // using standard naming convention: d0, d1, ...
 
     public Argument(String modelName, String nodeName, OrderedTensorType type) {
         super(modelName, nodeName, List.of());
@@ -27,11 +27,11 @@ public class Argument extends IntermediateOperation {
 
     @Override
     protected TensorFunction<Reference> lazyGetFunction() {
-        TensorFunction<Reference> output = new VariableTensor<Reference>(vespaName(), standardNamingType.type());
+        TensorFunction<Reference> output = new VariableTensor<>(vespaName(), standardNamingType.type());
         if ( ! standardNamingType.equals(type)) {
             List<String> renameFrom = standardNamingType.dimensionNames();
             List<String> renameTo = type.dimensionNames();
-            output = new Rename<Reference>(output, renameFrom, renameTo);
+            output = new Rename<>(output, renameFrom, renameTo);
         }
         return output;
     }

@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author lesters
  */
-public class Softmax extends IntermediateOperation {
+public final class Softmax extends IntermediateOperation {
 
     private final AttributeMap attributeMap;
 

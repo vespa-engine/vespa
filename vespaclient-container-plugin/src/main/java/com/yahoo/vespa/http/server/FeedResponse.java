@@ -14,7 +14,7 @@ import java.util.concurrent.BlockingQueue;
  *
  * @author Steinar Knutsen
  */
-public class FeedResponse extends HttpResponse {
+public final class FeedResponse extends HttpResponse {
 
     BlockingQueue<OperationStatus> operations;
 

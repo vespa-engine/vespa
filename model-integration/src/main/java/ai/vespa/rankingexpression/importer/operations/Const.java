@@ -14,7 +14,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 import java.util.List;
 import java.util.Optional;
 
-public class Const extends IntermediateOperation {
+public final class Const extends IntermediateOperation {
 
     private final AttributeMap attributeMap;
 
@@ -39,7 +39,7 @@ public class Const extends IntermediateOperation {
         if (function == null) {
             function = lazyGetFunction();
         }
-        return Optional.ofNullable(function);
+        return Optional.of(function);
     }
 
     @Override
