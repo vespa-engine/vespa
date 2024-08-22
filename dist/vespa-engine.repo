@@ -10,13 +10,3 @@ sslcacert=/etc/pki/tls/certs/ca-bundle.crt
 pkg_gpgcheck=1
 enabled=1
 
-[copr:copr.fedorainfracloud.org:group_vespa:vespa]
-name=Copr repo for vespa owned by @vespa
-baseurl=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/epel-8-$basearch/
-type=rpm-md
-skip_if_unavailable=True
-gpgcheck=1
-gpgkey=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/pubkey.gpg
-repo_gpgcheck=0
-enabled_metadata=1
-enabled=0
