@@ -232,7 +232,7 @@ class Node:
     def markdownWrap(self, wrapStart: str, wrapEnd: str, content: str) -> str:
         return wrapStart + content + wrapEnd
     
-    def htmlToMarkdown(self, content: str) -> str:
+    def __htmlToMarkdown(self, content: str) -> str:
 
         if (self.tagName == "h2"):
             return self.markdownInFront("## ", content)
@@ -251,7 +251,25 @@ class Node:
 
         return content
 
-    def toMarkdown(self) -> str:
+    def __removeMulipleNewLines(self, content) -> str:
+        lines = content.split("\n")
+
+        ret = ""
+        lastLineEmpty = False
+        for line in lines:
+            linesStripped = line.strip()
+            if (linesStripped == ""):
+                if (not lastLineEmpty):
+                    ret += line + "\n"
+                lastLineEmpty = True
+            else:
+                ret += line + "\n"
+                lastLineEmpty = False
+
+        
+        return ret[:-1]
+
+    def __toMarkdown(self) -> str:
 
         if (self.type == NodeType.PLAIN_TEXT):
             return self.plainTextContent
@@ -259,30 +277,22 @@ class Node:
         content: str = ""
 
         for child in self.children:
-            content += child.toMarkdown()
+            content += child.__toMarkdown()
         
         if (self.type == NodeType.ROOT):
-            lines = content.split("\n")
-
-            ret = ""
-            lastLineEmpty = False
-            for line in lines:
-                linesStripped = line.strip()
-                if (linesStripped == ""):
-                    if (not lastLineEmpty):
-                        ret += linesStripped + "\n"
-                    lastLineEmpty = True
-                else:
-                    ret += linesStripped + "\n"
-                    lastLineEmpty = False
-
-            
-            return ret[:-1]
+            return self.__removeMulipleNewLines(content)
         
         if (self.type == NodeType.NOTE):
             return self.markdownInFront("> ", content)
         
         if (self.type == NodeType.DOM):
-            return self.htmlToMarkdown(content)
+            return self.__htmlToMarkdown(content)
 
         return ""
+
+    def toMarkdown(self, entry = True) -> str:
+        ret = self.__toMarkdown()
+        if (entry):
+            return self.__removeMulipleNewLines(ret)
+        
+        return ret

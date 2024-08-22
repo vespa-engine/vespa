@@ -35,7 +35,7 @@ class MarkdownFile:
 
     def write(self, path: pathlib.Path):
 
-        filename = self.name
+        filename = self.name + ".md"
 
         if filename in REPLACE_FILENAME_MAP:
             for fn in REPLACE_FILENAME_MAP[filename]:
