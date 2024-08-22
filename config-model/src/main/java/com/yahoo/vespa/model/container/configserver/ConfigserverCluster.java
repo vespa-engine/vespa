@@ -85,7 +85,9 @@ public class ConfigserverCluster extends TreeConfigProducer
             builder.vespaTlsConfigFile(Defaults.getDefaults().underVespaHome("var/zookeeper/conf/tls.conf.json"));
         }
 
-        builder.dynamicReconfiguration(options.hostedVespa().orElse(false));
+        boolean isHostedVespa = options.hostedVespa().orElse(false);
+        builder.dynamicReconfiguration(isHostedVespa);
+        builder.reconfigureEnsemble(!isHostedVespa);
         builder.snapshotMethod(options.zooKeeperSnapshotMethod());
         builder.juteMaxBuffer(options.zookeeperJuteMaxBuffer());
     }
