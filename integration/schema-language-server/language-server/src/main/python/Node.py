@@ -173,6 +173,9 @@ class Node:
             ret += ">"
         
         if (self.type == NodeType.NOTE):
+            if (self.tagName.find("highlight") != -1):
+                return ""
+            
             ret += f"(Note {self.tagName})"
         
         tabSize = 0 if self.type == NodeType.ROOT else 2
@@ -185,3 +188,69 @@ class Node:
             ret += f"\n</{self.tagName}>"
 
         return ret
+    
+    def markdownInFront(self, prefix: str, content: str) -> str:
+
+        lines = content.split("\n")
+        ret: str = ""
+        for line in lines:
+            ret += prefix + line.strip()
+
+        return ret
+
+    def markdownWrap(self, wrapStart: str, wrapEnd: str, content: str) -> str:
+        return wrapStart + content + wrapEnd
+    
+    def htmlToMarkdown(self, content: str) -> str:
+
+        if (self.tagName == "h2"):
+            return self.markdownInFront("## ", content)
+        
+        if (self.tagName == "pre" or self.tagName == "code"):
+            if (content.count("\n") > 0):
+                return self.markdownWrap("```\n", "\n```", content)
+            return self.markdownWrap("`", "`", content)
+        
+        if (self.tagName == "li"):
+            return self.markdownInFront("- ", content)
+        
+        if (self.tagName == "em"):
+            return self.markdownWrap("*", "*", content)
+
+        return content
+
+    def toMarkdown(self, entry = True) -> str:
+
+        if (self.type == NodeType.PLAIN_TEXT):
+            return self.plainTextContent
+
+        content: str = ""
+
+        for child in self.children:
+            content += child.toMarkdown(False)
+        
+        if (self.type == NodeType.ROOT or entry):
+            lines = content.split("\n")
+
+            ret = ""
+            lastLineEmpty = False
+            for line in lines:
+                linesStripped = line.strip()
+                if (linesStripped == ""):
+                    if (not lastLineEmpty):
+                        ret += linesStripped + "\n"
+                    lastLineEmpty = True
+                else:
+                    ret += linesStripped + "\n"
+                    lastLineEmpty = False
+
+            
+            return ret[:-1]
+        
+        if (self.type == NodeType.NOTE):
+            return self.markdownInFront("> ", content)
+        
+        if (self.type == NodeType.DOM):
+            return self.htmlToMarkdown(content)
+
+        return ""

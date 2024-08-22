@@ -75,7 +75,7 @@ def main():
 
     results = parseRawHTML(data, SCHEMA_URL)
 
-    print(results.toHTML())
+    print(results.toMarkdown())
 
 if __name__ == "__main__":
     main()
