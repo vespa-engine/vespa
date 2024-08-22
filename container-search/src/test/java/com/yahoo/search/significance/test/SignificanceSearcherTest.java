@@ -23,6 +23,8 @@ import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.significance.SignificanceSearcher;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -214,7 +216,7 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("Hello"));
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
         var worldDocumentFrequency = makeDocumentFrequency(model.documentFrequency("world"));
 
         Result r = createExecution(searcher).search(q);
@@ -394,5 +396,19 @@ public class SignificanceSearcherTest {
         var defaultDocumentFrequency = Optional.of(new DocumentFrequency(1, count));
 
         assertEquals(defaultDocumentFrequency, resultWord.getDocumentFrequency());
+    }
+
+    // Tests for upper case words in a query
+    @ParameterizedTest
+    @ValueSource(strings = {"Hello", "HeLlo", "HELLO"})
+    public void testSignificanceSearcherWithUpperCaseWord(String wordWithUpperCase) {
+        var result = searchWordWithLanguage(wordWithUpperCase, Optional.of(Language.ENGLISH), Optional.empty());
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        var resultWord = (WordItem) resultRoot.getItem(0);
+
+        var lowerCaseWord = "hello";
+        var documentFrequency = getDocumentFrequencyWithEnglish(lowerCaseWord);
+
+        assertEquals(documentFrequency, resultWord.getDocumentFrequency());
     }
 }

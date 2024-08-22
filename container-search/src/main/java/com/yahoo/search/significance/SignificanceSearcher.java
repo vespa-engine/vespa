@@ -161,7 +161,7 @@ public class SignificanceSearcher extends Searcher {
 
         if (root instanceof WordItem wi) {
             var word = wi.getWord();
-            var documentFrequency = significanceModel.documentFrequency(word);
+            var documentFrequency = significanceModel.documentFrequency(word.toLowerCase());
             long N                = documentFrequency.corpusSize();
             long nq_i             = documentFrequency.frequency();
             log.log(Level.FINE, () -> "Setting document frequency for " + word + " to {frequency: " + nq_i + ", count: " + N + "}");
