@@ -348,10 +348,6 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
-        Tenant tenant = applicationRepository.getTenant(applicationId);
-        if (tenant == null)
-            throw new NotFoundException("Tenant '" + applicationId.tenant().value() + "' not found");
-
         try {
             Map<String, Set<String>> documentTypes = getActiveModelOrThrow(applicationId).documentTypesByCluster();
             ApplicationReindexing reindexing = applicationRepository.getReindexing(applicationId);
