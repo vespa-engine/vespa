@@ -46,7 +46,9 @@ server[].retired bool default=false
 # TODO: Consider setting this to false by default (and override where appropriate)
 trustEmptySnapshot bool default=true
 
+# Whether to enable support for dynamic reconfiguration of the ZooKeeper ensemble.
 dynamicReconfiguration bool default=false
+
 # Set the snapshot compression method: "gz" for GZIP or "snappy" for Snappy. Any other value disables compression.
 snapshotMethod string default=""
 
@@ -55,3 +57,7 @@ vespaTlsConfigFile string default=""
 
 leaderCloseSocketAsync bool default=false
 learnerAsyncSending bool default=false
+
+# Whether the ZooKeeper ensemble should be reconfigured automatically if servers change. This only has an effect if
+# dynamicReconfiguration=true.
+reconfigureEnsemble bool default=true

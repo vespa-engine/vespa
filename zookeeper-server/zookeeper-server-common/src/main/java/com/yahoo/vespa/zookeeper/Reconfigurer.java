@@ -65,7 +65,7 @@ public class Reconfigurer extends AbstractComponent {
             zooKeeperRunner = startServer(newConfig, server);
         }
 
-        if (newConfig.dynamicReconfiguration()) {
+        if (newConfig.dynamicReconfiguration() && newConfig.reconfigureEnsemble()) {
             reconfigure(newConfig);
         }
         return peer;
