@@ -27,7 +27,7 @@ import static com.yahoo.vespa.zookeeper.Configurator.zookeeperServerHostnames;
  *
  * @author Harald Musum
  */
-public class ZooKeeperRunner implements Runnable {
+public final class ZooKeeperRunner implements Runnable {
 
     private static final Logger log = java.util.logging.Logger.getLogger(ZooKeeperRunner.class.getName());
     private static final Duration STOP_TIMEOUT = Duration.ofSeconds(10);

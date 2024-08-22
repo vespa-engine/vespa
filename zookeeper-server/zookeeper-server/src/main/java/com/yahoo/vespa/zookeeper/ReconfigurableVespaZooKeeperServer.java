@@ -19,7 +19,7 @@ import java.time.Duration;
  *
  * @author hmusum
  */
-public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implements VespaZooKeeperServer {
+public final class ReconfigurableVespaZooKeeperServer extends AbstractComponent implements VespaZooKeeperServer {
 
     private QuorumPeer peer;
 

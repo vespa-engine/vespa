@@ -41,7 +41,7 @@ import java.util.List;
  *
  * @author jonmv
  */
-public class ClientX509Util extends X509Util {
+public final class ClientX509Util extends X509Util {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientX509Util.class);
 

@@ -17,7 +17,7 @@ import java.time.Duration;
  * @author Ulf Lilleengen
  * @author Harald Musum
  */
-public class VespaZooKeeperServerImpl extends AbstractComponent implements VespaZooKeeperServer {
+public final class VespaZooKeeperServerImpl extends AbstractComponent implements VespaZooKeeperServer {
 
     private final VespaQuorumPeer peer;
     private final ZooKeeperRunner runner;
