@@ -225,9 +225,9 @@ class Node:
         lines = content.split("\n")
         ret: str = ""
         for line in lines:
-            ret += prefix + line.strip()
+            ret += prefix + line.strip() + "\n"
 
-        return ret
+        return ret[:-1]
 
     def markdownWrap(self, wrapStart: str, wrapEnd: str, content: str) -> str:
         return wrapStart + content + wrapEnd
