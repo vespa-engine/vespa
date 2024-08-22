@@ -301,8 +301,9 @@ public class SignificanceSearcherTest {
                      errorMessage.getDetailedMessage());
     }
 
-    // Naming convention for tests that follow:
-    // Explicit language - language set for a query
+    // Tests that follow verify model resolving logic in different scenarios.
+    // Test naming convention is as follows:
+    // Explicit language - language set in a query
     // Implicit language - automatically detected language
     // Missing language - language without a model
     // Unknown language - Language.UNKNOWN
