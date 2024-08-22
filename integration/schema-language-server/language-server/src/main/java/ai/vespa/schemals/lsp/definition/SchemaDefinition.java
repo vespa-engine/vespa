@@ -1,6 +1,7 @@
 package ai.vespa.schemals.lsp.definition;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Location;
@@ -16,8 +17,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  * Responsible for LSP textDocument/definition requests.
  */
 public class SchemaDefinition {
-    public static ArrayList<Location> getDefinition(EventPositionContext context) {
-
+    public static List<Location> getDefinition(EventPositionContext context) {
         ArrayList<Location> ret = new ArrayList<Location>();
 
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
