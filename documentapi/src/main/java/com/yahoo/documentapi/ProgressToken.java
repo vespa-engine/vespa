@@ -75,49 +75,49 @@ public final class ProgressToken {
     }
 
     /**
-         * For consistent bucket key ordering, we need to ensure that reverse bucket
-         * IDs that have their MSB set actually are compared as being greater than
-         * those that don't. This is yet another issue caused by Java's lack of
-         * unsigned integers.
-         */
-        public record BucketKeyWrapper(long key) implements Comparable<BucketKeyWrapper> {
+     * For consistent bucket key ordering, we need to ensure that reverse bucket
+     * IDs that have their MSB set actually are compared as being greater than
+     * those that don't. This is yet another issue caused by Java's lack of
+     * unsigned integers.
+     */
+    public record BucketKeyWrapper(long key) implements Comparable<BucketKeyWrapper> {
 
         public int compareTo(BucketKeyWrapper other) {
-                if ((key & 0x8000000000000000L) != (other.key & 0x8000000000000000L)) {
-                    // MSBs differ
-                    return ((key >>> 63) > (other.key >>> 63)) ? 1 : -1;
-                }
-                // Mask off MSBs since we've already checked them, and with MSB != 1
-                // we know the ordering will be consistent
-                if ((key & 0x7FFFFFFFFFFFFFFFL) < (other.key & 0x7FFFFFFFFFFFFFFFL)) {
-                    return -1;
-                } else if ((key & 0x7FFFFFFFFFFFFFFFL) > (other.key & 0x7FFFFFFFFFFFFFFFL)) {
-                    return 1;
-                }
-                return 0;
+            if ((key & 0x8000000000000000L) != (other.key & 0x8000000000000000L)) {
+                // MSBs differ
+                return ((key >>> 63) > (other.key >>> 63)) ? 1 : -1;
             }
-
-            public BucketId toBucketId() {
-                return new BucketId(keyToBucketId(key));
+            // Mask off MSBs since we've already checked them, and with MSB != 1
+            // we know the ordering will be consistent
+            if ((key & 0x7FFFFFFFFFFFFFFFL) < (other.key & 0x7FFFFFFFFFFFFFFFL)) {
+                return -1;
+            } else if ((key & 0x7FFFFFFFFFFFFFFFL) > (other.key & 0x7FFFFFFFFFFFFFFFL)) {
+                return 1;
             }
-
-            @Override
-            public String toString() {
-                return Long.toHexString(key);
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) return true;
-                if (!(o instanceof BucketKeyWrapper wrapper)) return false;
-                return key == wrapper.key;
-            }
-
-            @Override
-            public int hashCode() {
-                return Long.hashCode(key);
-            }
+            return 0;
         }
+
+        public BucketId toBucketId() {
+            return new BucketId(keyToBucketId(key));
+        }
+
+        @Override
+        public String toString() {
+            return Long.toHexString(key);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof BucketKeyWrapper wrapper)) return false;
+            return key == wrapper.key;
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(key);
+        }
+    }
 
     /**
      * By default, a ProgressToken's distribution bit count is set to the VDS
