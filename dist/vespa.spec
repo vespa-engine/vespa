@@ -319,7 +319,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
 
 %if 0%{?_use_mvn_wrapper}
-mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
+mvn -B wrapper:wrapper -Dmaven=3.8.8 -N
 %endif
 %{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=$(pwd)/mvnw }sh bootstrap.sh java
 %{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
