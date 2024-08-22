@@ -78,8 +78,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v${{ steps.retrieve_version.outputs.VERSION }} \
-            --notes "Vespa language server." --draft \
+          gh release create lsp-v${{ steps.retrieve_version.outputs.VERSION }} \
+            --notes "Vespa language server." \
             -t "Vespa Language Server ${{ steps.retrieve_version.outputs.VERSION }}" \
             './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar'
 
@@ -88,6 +88,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_BRANCH:  "update-language-server-version-${{ steps.retrieve_version.outputs.VERSION }}"
         run: |
+          git config user.email "noreply@vespa.ai"
+          git config user.name "Language Server Release Action"
           git checkout -b "${NEW_BRANCH}"
           git commit -a -m "Update language server version to ${{ steps.retrieve_version.outputs.VERSION }}"
           git push --set-upstream origin "${NEW_BRANCH}"
