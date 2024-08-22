@@ -255,21 +255,28 @@ class Node:
 
         return content
 
-    def __removeMulipleNewLines(self, content) -> str:
+    def __cleanupMarkdown(self, content) -> str:
         lines = content.split("\n")
 
         ret = ""
         lastLineEmpty = False
+        insideCodeBlock = False
         for line in lines:
-            linesStripped = line.strip()
-            if (linesStripped == ""):
-                if (not lastLineEmpty):
-                    ret += line + "\n"
-                lastLineEmpty = True
-            else:
+            if (line.find("```") != -1):
+                insideCodeBlock = not insideCodeBlock
+            
+            if (insideCodeBlock):
                 ret += line + "\n"
                 lastLineEmpty = False
-
+            else:
+                linesStripped = line.strip()
+                if (linesStripped == ""):
+                    if (not lastLineEmpty):
+                        ret += linesStripped + "\n"
+                    lastLineEmpty = True
+                else:
+                    ret += linesStripped + "\n"
+                    lastLineEmpty = False
         
         return ret[:-1]
 
@@ -284,7 +291,7 @@ class Node:
             content += child.__toMarkdown()
         
         if (self.type == NodeType.ROOT):
-            return self.__removeMulipleNewLines(content)
+            return self.__cleanupMarkdown(content)
         
         if (self.type == NodeType.NOTE):
             return self.markdownInFront("> ", content)
@@ -297,6 +304,6 @@ class Node:
     def toMarkdown(self, entry = True) -> str:
         ret = self.__toMarkdown()
         if (entry):
-            return self.__removeMulipleNewLines(ret)
+            return self.__cleanupMarkdown(ret)
         
         return ret

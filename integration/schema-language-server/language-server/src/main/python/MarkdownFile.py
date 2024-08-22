@@ -20,7 +20,7 @@ class MarkdownFile:
     def addContent(self, content: str):
         self.content += content
     
-    def getContent(self) -> str:
+    def getContent(self, stripped = False) -> str:
         return self.content
 
     def __repr__(self) -> str:

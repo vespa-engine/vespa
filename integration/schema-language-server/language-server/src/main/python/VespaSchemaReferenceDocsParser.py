@@ -28,6 +28,8 @@ class VespaSchemaReferenceDocsParser(Visitor):
 
         mdFile.addContent(f"\n\n[Read more]({self.readMoreLink}#{node.getAttr("id")})")
 
+        mdFile.content = mdFile.content.strip()
+
         self.results.append(mdFile)
 
     def handleNode(self, node: Node):

@@ -64,6 +64,8 @@ class VespaRankFeatureDocsParser(Visitor):
 
         mdFile.addContent(f"\n\n[Read more]({self.readMoreLink}#{mdFile.name})")
 
+        mdFile.content = mdFile.content.strip()
+
         self.enforceSimpleLintRules(mdFile, nameNode.getStartPosition())
 
         self.results.append(mdFile)
