@@ -14,7 +14,6 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("direct_posting_store_test");

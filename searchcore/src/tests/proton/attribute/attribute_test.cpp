@@ -48,7 +48,6 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
