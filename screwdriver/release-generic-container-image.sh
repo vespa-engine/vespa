@@ -11,7 +11,7 @@ fi
 readonly VESPA_VERSION=$1
 
 TMPDIR=$(mktemp -d)
-#trap "rm -rf $TMPDIR" EXIT
+trap "rm -rf $TMPDIR" EXIT
 
 pushd $TMPDIR
 git clone -q --filter tree:0 https://github.com/vespa-engine/vespa
@@ -24,9 +24,8 @@ rpmbuild --rebuild \
   --define="_topdir $TMPDIR/vespa-rpmbuild" \
   --define "debug_package %{nil}" \
   --define "_debugsource_template %{nil}" \
+  --define '_cmake_extra_opts "-DDEFAULT_VESPA_CPU_ARCH_FLAGS=-msse3 -mcx16 -mtune=intel"' \
   *.src.rpm
-
-#  --define '_cmake_extra_opts "-DDEFAULT_VESPA_CPU_ARCH_FLAGS=-msse3 -mcx16 -mtune=intel"' \
 
 rm -f *.src.rpm
 mv $TMPDIR/vespa-rpmbuild/RPMS/*/*.rpm .
