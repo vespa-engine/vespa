@@ -5,7 +5,6 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
 #include <iostream>
 
@@ -45,7 +44,7 @@ namespace document {
     ost << "Expression " << expression << " did not contain bucket " \
         << bucket.toString(); \
     if (buckets.get()) { \
-        ost << ". Buckets: " << std::hex << *buckets; \
+        ost << ". Buckets: " << testing::PrintToString(*buckets); \
     } else { \
         ost << ". Matches all buckets"; \
     } \
