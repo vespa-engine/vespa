@@ -347,11 +347,11 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         verifyInControllerThread();
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         newStates.add(stateBundle);
+        systemStateBroadcaster.handleNewClusterStates(stateBundle);
         metricUpdater.updateClusterStateMetrics(cluster, baselineState,
                 ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit(), stateBundle.getFeedBlock()),
                 systemStateBroadcaster.getLastStateBroadcastTimePoint());
         lastMetricUpdateCycleCount = cycleCount;
-        systemStateBroadcaster.handleNewClusterStates(stateBundle);
         // Iff master, always store new version in ZooKeeper _before_ publishing to any
         // nodes so that a cluster controller crash after publishing but before a successful
         // ZK store will not risk reusing the same version number.
