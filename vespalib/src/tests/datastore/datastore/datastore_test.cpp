@@ -3,7 +3,6 @@
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cinttypes>

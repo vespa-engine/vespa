@@ -4,7 +4,6 @@
 #include <vespa/searchlib/memoryindex/i_field_index_remove_listener.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -51,7 +50,16 @@ struct MockRemoveListener : public IFieldIndexRemoveListener {
     std::string getWords() {
         std::sort(_words.begin(), _words.end());
         std::ostringstream oss;
-        oss << _words;
+        oss << "[";
+        bool first = true;
+        for (auto& word : _words) {
+            if (!first) {
+                oss << ",";
+            }
+            first = false;
+            oss << word;
+        }
+        oss << "]";
         return oss.str();
     }
     void setFieldId(uint32_t fieldId) { _fieldId = fieldId; }

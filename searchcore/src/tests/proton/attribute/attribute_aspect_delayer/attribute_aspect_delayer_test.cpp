@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <string>
 
 #include <vespa/log/log.h>

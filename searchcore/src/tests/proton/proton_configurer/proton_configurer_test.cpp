@@ -21,7 +21,6 @@
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
