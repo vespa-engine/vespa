@@ -332,7 +332,7 @@ public class SignificanceSearcherTest {
         return makeDocumentFrequency(model.documentFrequency(word));
     }
 
-    private static WordItem getFistWord(Result result) {
+    private static WordItem getFirstWord(Result result) {
         var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
         return (WordItem) resultRoot.getItem(0);
     }
@@ -347,7 +347,7 @@ public class SignificanceSearcherTest {
         var explicitLanguage = Language.ITALIAN;
         var result = searchWord(existingWord, Optional.of(explicitLanguage), Optional.empty());
 
-        var resultWord = getFistWord(result);
+        var resultWord = getFirstWord(result);
         assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
 
         var errorMessage = getErrorMessage(result);
@@ -359,7 +359,7 @@ public class SignificanceSearcherTest {
         var existingWord = "hello";
         var explicitLanguage = Language.UNKNOWN;
         var result = searchWord(existingWord, Optional.of(explicitLanguage), Optional.empty());
-        var resultWord = getFistWord(result);
+        var resultWord = getFirstWord(result);
         var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
         assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
     }
@@ -370,7 +370,7 @@ public class SignificanceSearcherTest {
         var explicitLanguage = Language.ITALIAN;
         var result = searchWord(missingWord, Optional.of(explicitLanguage), Optional.empty());
 
-        var resultWord = getFistWord(result);
+        var resultWord = getFirstWord(result);
         assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
 
         var errorMessage = getErrorMessage(result);
@@ -382,7 +382,7 @@ public class SignificanceSearcherTest {
         var existingWord = "hello";
         var implicitLanguage = Language.ITALIAN;
         var result = searchWord(existingWord, Optional.empty(), Optional.of(implicitLanguage));
-        var resultWord = getFistWord(result);
+        var resultWord = getFirstWord(result);
         var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
         assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
     }
@@ -392,7 +392,7 @@ public class SignificanceSearcherTest {
         var implicitLanguage = Language.ITALIAN;
         var missingWord = "ciao";
         var result = searchWord(missingWord, Optional.empty(), Optional.of(implicitLanguage));
-        var resultWord = getFistWord(result);
+        var resultWord = getFirstWord(result);
 
         var existingWord = "hello";
         var documentFrequency = getDocumentFrequencyWithEnglish(existingWord);
@@ -407,7 +407,7 @@ public class SignificanceSearcherTest {
     @ValueSource(strings = {"Hello", "HeLlo", "HELLO"})
     public void testSignificanceSearcherWithUpperCaseWord(String wordWithUpperCase) {
         var result = searchWord(wordWithUpperCase, Optional.of(Language.ENGLISH), Optional.empty());
-        var resultWord = getFistWord(result);
+        var resultWord = getFirstWord(result);
 
         var lowerCaseWord = "hello";
         var documentFrequency = getDocumentFrequencyWithEnglish(lowerCaseWord);
