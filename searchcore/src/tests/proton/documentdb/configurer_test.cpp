@@ -36,12 +36,10 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <filesystem>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace config;
 using namespace document;
@@ -397,44 +395,44 @@ struct SearchViewComparer
     SearchViewComparer(SearchView::SP old, SearchView::SP new_);
     ~SearchViewComparer();
     void expect_equal() {
-        EXPECT_EQUAL(_old.get(), _new.get());
+        EXPECT_EQ(_old.get(), _new.get());
     }
     void expect_not_equal() {
-        EXPECT_NOT_EQUAL(_old.get(), _new.get());
+        EXPECT_NE(_old.get(), _new.get());
     }
     void expect_equal_summary_setup() {
-        EXPECT_EQUAL(_old->getSummarySetup().get(), _new->getSummarySetup().get());
+        EXPECT_EQ(_old->getSummarySetup().get(), _new->getSummarySetup().get());
     }
     void expect_not_equal_summary_setup() {
-        EXPECT_NOT_EQUAL(_old->getSummarySetup().get(), _new->getSummarySetup().get());
+        EXPECT_NE(_old->getSummarySetup().get(), _new->getSummarySetup().get());
     }
     void expect_equal_match_view() {
-        EXPECT_EQUAL(_old->getMatchView().get(), _new->getMatchView().get());
+        EXPECT_EQ(_old->getMatchView().get(), _new->getMatchView().get());
     }
     void expect_not_equal_match_view() {
-        EXPECT_NOT_EQUAL(_old->getMatchView().get(), _new->getMatchView().get());
+        EXPECT_NE(_old->getMatchView().get(), _new->getMatchView().get());
     }
     void expect_equal_matchers() {
-        EXPECT_EQUAL(_old->getMatchers().get(), _new->getMatchers().get());
+        EXPECT_EQ(_old->getMatchers().get(), _new->getMatchers().get());
     }
     void expect_not_equal_matchers() {
-        EXPECT_NOT_EQUAL(_old->getMatchers().get(), _new->getMatchers().get());
+        EXPECT_NE(_old->getMatchers().get(), _new->getMatchers().get());
     }
     void expect_equal_index_searchable() {
-        EXPECT_EQUAL(_old->getIndexSearchable().get(), _new->getIndexSearchable().get());
+        EXPECT_EQ(_old->getIndexSearchable().get(), _new->getIndexSearchable().get());
     }
     void expect_not_equal_index_searchable() {
-        EXPECT_NOT_EQUAL(_old->getIndexSearchable().get(), _new->getIndexSearchable().get());
+        EXPECT_NE(_old->getIndexSearchable().get(), _new->getIndexSearchable().get());
     }
     void expect_equal_attribute_manager() {
-        EXPECT_EQUAL(_old->getAttributeManager().get(), _new->getAttributeManager().get());
+        EXPECT_EQ(_old->getAttributeManager().get(), _new->getAttributeManager().get());
     }
     void expect_not_equal_attribute_manager() {
-        EXPECT_NOT_EQUAL(_old->getAttributeManager().get(), _new->getAttributeManager().get());
+        EXPECT_NE(_old->getAttributeManager().get(), _new->getAttributeManager().get());
     }
 
     void expect_equal_document_meta_store() {
-        EXPECT_EQUAL(_old->getDocumentMetaStore().get(), _new->getDocumentMetaStore().get());
+        EXPECT_EQ(_old->getDocumentMetaStore().get(), _new->getDocumentMetaStore().get());
     }
 };
 
@@ -452,22 +450,22 @@ struct FeedViewComparer
     FeedViewComparer(SearchableFeedView::SP old, SearchableFeedView::SP new_);
     ~FeedViewComparer();
     void expect_equal() {
-        EXPECT_EQUAL(_old.get(), _new.get());
+        EXPECT_EQ(_old.get(), _new.get());
     }
     void expect_not_equal() {
-        EXPECT_NOT_EQUAL(_old.get(), _new.get());
+        EXPECT_NE(_old.get(), _new.get());
     }
     void expect_equal_index_adapter() {
-        EXPECT_EQUAL(_old->getIndexWriter().get(), _new->getIndexWriter().get());
+        EXPECT_EQ(_old->getIndexWriter().get(), _new->getIndexWriter().get());
     }
     void expect_not_equal_attribute_writer() {
-        EXPECT_NOT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
+        EXPECT_NE(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
     }
     void expect_equal_summary_adapter() {
-        EXPECT_EQUAL(_old->getSummaryAdapter().get(), _new->getSummaryAdapter().get());
+        EXPECT_EQ(_old->getSummaryAdapter().get(), _new->getSummaryAdapter().get());
     }
     void expect_not_equal_schema() {
-        EXPECT_NOT_EQUAL(_old->getSchema().get(), _new->getSchema().get());
+        EXPECT_NE(_old->getSchema().get(), _new->getSchema().get());
     }
 };
 
@@ -484,16 +482,16 @@ struct FastAccessFeedViewComparer
     FastAccessFeedViewComparer(FastAccessFeedView::SP old, FastAccessFeedView::SP new_);
     ~FastAccessFeedViewComparer();
     void expect_not_equal() {
-        EXPECT_NOT_EQUAL(_old.get(), _new.get());
+        EXPECT_NE(_old.get(), _new.get());
     }
     void expect_not_equal_attribute_writer() {
-        EXPECT_NOT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
+        EXPECT_NE(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
     }
     void expect_equal_summary_adapter() {
-        EXPECT_EQUAL(_old->getSummaryAdapter().get(), _new->getSummaryAdapter().get());
+        EXPECT_EQ(_old->getSummaryAdapter().get(), _new->getSummaryAdapter().get());
     }
     void expect_not_equal_schema() {
-        EXPECT_NOT_EQUAL(_old->getSchema().get(), _new->getSchema().get());
+        EXPECT_NE(_old->getSchema().get(), _new->getSchema().get());
     }
 };
 
@@ -505,8 +503,9 @@ FastAccessFeedViewComparer::~FastAccessFeedViewComparer() = default;
 
 }
 
-TEST_F("require that we can reconfigure index searchable", Fixture)
+TEST(DocSubDBConfigurerTest, require_that_we_can_reconfigure_index_searchable)
 {
+    Fixture f;
     ViewPtrs o = f._views.getViewPtrs();
     f._configurer->reconfigureIndexSearchable();
 
@@ -527,16 +526,21 @@ TEST_F("require that we can reconfigure index searchable", Fixture)
     }
 }
 
+namespace {
+
 const AttributeManager *
 asAttributeManager(const proton::IAttributeManager::SP &attrMgr)
 {
     auto result = dynamic_cast<const AttributeManager *>(attrMgr.get());
-    ASSERT_TRUE(result != nullptr);
+    EXPECT_TRUE(result != nullptr);
     return result;
 }
 
-TEST_F("require that we can reconfigure attribute manager", Fixture)
+}
+
+TEST(DocSubDBConfigurerTest, require_that_we_can_reconfigure_attribute_manager)
 {
+    Fixture f;
     ViewPtrs o = f._views.getViewPtrs();
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
@@ -566,6 +570,8 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
     EXPECT_TRUE(asAttributeManager(f._views.getViewPtrs().fv.get()->getAttributeWriter()->getAttributeManager())->getImportedAttributes() != nullptr);
 }
 
+namespace {
+
 AttributeWriter::SP
 getAttributeWriter(Fixture &f)
 {
@@ -583,20 +589,24 @@ checkAttributeWriterChangeOnRepoChange(Fixture &f, bool docTypeRepoChanged)
                   params, f._resolver, 1, reconfig_serial_num);
     auto newAttributeWriter = getAttributeWriter(f);
     if (docTypeRepoChanged) {
-        EXPECT_NOT_EQUAL(oldAttributeWriter, newAttributeWriter);
+        EXPECT_NE(oldAttributeWriter, newAttributeWriter);
     } else {
-        EXPECT_EQUAL(oldAttributeWriter, newAttributeWriter);
+        EXPECT_EQ(oldAttributeWriter, newAttributeWriter);
     }
 }
 
-TEST_F("require that we get new attribute writer if document type repo changes", Fixture)
+}
+
+TEST(DocSubDBConfigurerTest, require_that_we_get_new_attribute_writer_if_document_type_repo_changes)
 {
+    Fixture f;
     checkAttributeWriterChangeOnRepoChange(f, false);
     checkAttributeWriterChangeOnRepoChange(f, true);
 }
 
-TEST_F("require that reconfigure returns reprocessing initializer when changing attributes", Fixture)
+TEST(DocSubDBConfigurerTest, require_that_reconfigure_returns_reprocessing_initializer_when_changing_attributes)
 {
+    Fixture f;
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     SerialNum reconfig_serial_num = 0;
     IReprocessingInitializer::UP init =
@@ -608,8 +618,9 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
     EXPECT_FALSE(init->hasReprocessors());
 }
 
-TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
+TEST(DocSubDBConfigurerTest, require_that_we_can_reconfigure_attribute_writer)
 {
+    FastAccessFixture f;
     FastAccessFeedView::SP o = f._view._feedView.get();
     SerialNum reconfig_serial_num = 0;
     f.reconfigure(*createConfig(), *createConfig(), 1, reconfig_serial_num);
@@ -622,8 +633,9 @@ TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
     cmp.expect_not_equal_schema();
 }
 
-TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFixture)
+TEST(DocSubDBConfigurerTest, require_that_reconfigure_returns_reprocessing_initializer)
 {
+    FastAccessFixture f;
     SerialNum reconfig_serial_num = 0;
     auto init = f.reconfigure(*createConfig(), *createConfig(), 1, reconfig_serial_num);
 
@@ -632,8 +644,9 @@ TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFi
     EXPECT_FALSE(init->hasReprocessors());
 }
 
-TEST_F("require that we can reconfigure summary manager", Fixture)
+TEST(DocSubDBConfigurerTest, require_that_we_can_reconfigure_summary_manager)
 {
+    Fixture f;
     ViewPtrs o = f._views.getViewPtrs();
     ReconfigParams params(CCR().setSummaryChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
@@ -653,8 +666,9 @@ TEST_F("require that we can reconfigure summary manager", Fixture)
     }
 }
 
-TEST_F("require that we can reconfigure matchers", Fixture)
+TEST(DocSubDBConfigurerTest, require_that_we_can_reconfigure_matchers)
 {
+    Fixture f;
     ViewPtrs o = f._views.getViewPtrs();
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     SerialNum reconfig_serial_num = 0;
@@ -678,59 +692,63 @@ TEST_F("require that we can reconfigure matchers", Fixture)
     }
 }
 
-TEST("require that attribute manager (imported attributes) should change when imported fields has changed")
+TEST(DocSubDBConfigurerTest, require_that_attribute_manager_should_change_when_imported_fields_have_changed)
 {
     ReconfigParams params(CCR().setImportedFieldsChanged(true));
     EXPECT_TRUE(params.shouldAttributeManagerChange());
 }
 
-TEST("require that attribute manager (imported attributes) should change when visibility delay has changed")
+TEST(DocSubDBConfigurerTest, require_that_attribute_manager_should_change_when_visibility_delay_has_changed)
 {
     ReconfigParams params(CCR().setVisibilityDelayChanged(true));
     EXPECT_TRUE(params.shouldAttributeManagerChange());
 }
 
-TEST("require that attribute manager should change when alloc config has changed")
+TEST(DocSubDBConfigurerTest, require_that_attribute_manager_should_change_when_alloc_config_has_changed)
 {
     ReconfigParams params(CCR().set_alloc_config_changed(true));
     EXPECT_TRUE(params.shouldAttributeManagerChange());
 }
 
+namespace {
+
 void
-assertMaintenanceControllerShouldNotChange(DocumentDBConfig::ComparisonResult result)
-{
+assertMaintenanceControllerShouldNotChange(DocumentDBConfig::ComparisonResult result) {
     ReconfigParams params(result);
     EXPECT_FALSE(params.configHasChanged());
     EXPECT_FALSE(params.shouldMaintenanceControllerChange());
 }
 
 void
-assertMaintenanceControllerShouldChange(DocumentDBConfig::ComparisonResult result)
-{
+assertMaintenanceControllerShouldChange(DocumentDBConfig::ComparisonResult result, std::string_view label) {
+    SCOPED_TRACE(label);
     ReconfigParams params(result);
     EXPECT_TRUE(params.configHasChanged());
     EXPECT_TRUE(params.shouldMaintenanceControllerChange());
 }
 
-TEST("require that maintenance controller should change if some config has changed")
-{
-    TEST_DO(assertMaintenanceControllerShouldNotChange(CCR()));
-
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankProfilesChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankingConstantsChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankingExpressionsChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setOnnxModelsChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setIndexschemaChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setAttributesChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setSummaryChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setJuniperrcChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setDocumenttypesChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setDocumentTypeRepoChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setImportedFieldsChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setTuneFileDocumentDBChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setSchemaChanged(true)));
-    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setMaintenanceChanged(true)));
 }
+
+TEST(DocSubDBConfigurerTest, require_that_maintenance_controller_should_change_if_some_config_has_changed)
+{
+    assertMaintenanceControllerShouldNotChange(CCR());
+    assertMaintenanceControllerShouldChange(CCR().setRankProfilesChanged(true), "rank profiles changed");
+    assertMaintenanceControllerShouldChange(CCR().setRankingConstantsChanged(true), "ranking constants changed");
+    assertMaintenanceControllerShouldChange(CCR().setRankingExpressionsChanged(true), "ranking expressions changed");
+    assertMaintenanceControllerShouldChange(CCR().setOnnxModelsChanged(true), "onnx models changed");
+    assertMaintenanceControllerShouldChange(CCR().setIndexschemaChanged(true), "index schema changed");
+    assertMaintenanceControllerShouldChange(CCR().setAttributesChanged(true), "attributes changed");
+    assertMaintenanceControllerShouldChange(CCR().setSummaryChanged(true), "summary changed");
+    assertMaintenanceControllerShouldChange(CCR().setJuniperrcChanged(true), "juniperrc changed");
+    assertMaintenanceControllerShouldChange(CCR().setDocumenttypesChanged(true), "document types changed");
+    assertMaintenanceControllerShouldChange(CCR().setDocumentTypeRepoChanged(true), "document types repo changed");
+    assertMaintenanceControllerShouldChange(CCR().setImportedFieldsChanged(true), "imported fields changed");
+    assertMaintenanceControllerShouldChange(CCR().setTuneFileDocumentDBChanged(true), "TuneFileDocumentCB changed");
+    assertMaintenanceControllerShouldChange(CCR().setSchemaChanged(true), "schema changed");
+    assertMaintenanceControllerShouldChange(CCR().setMaintenanceChanged(true), "maintenance changed");
+}
+
+namespace {
 
 void
 assertSubDbsShouldNotChange(DocumentDBConfig::ComparisonResult result)
@@ -741,34 +759,38 @@ assertSubDbsShouldNotChange(DocumentDBConfig::ComparisonResult result)
 }
 
 void
-assertSubDbsShouldChange(DocumentDBConfig::ComparisonResult result)
+assertSubDbsShouldChange(DocumentDBConfig::ComparisonResult result, std::string_view label)
 {
+    SCOPED_TRACE(label);
     ReconfigParams params(result);
     EXPECT_TRUE(params.configHasChanged());
     EXPECT_TRUE(params.shouldSubDbsChange());
 }
 
-
-TEST("require that subdbs should change if relevant config changed")
-{
-    TEST_DO(assertSubDbsShouldNotChange(CCR()));
-    EXPECT_FALSE(ReconfigParams(CCR().setMaintenanceChanged(true)).shouldSubDbsChange());
-    TEST_DO(assertSubDbsShouldChange(CCR().setFlushChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setStoreChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setDocumenttypesChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setDocumentTypeRepoChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setSummaryChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setJuniperrcChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setAttributesChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setImportedFieldsChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setVisibilityDelayChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setRankProfilesChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setRankingConstantsChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setRankingExpressionsChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setOnnxModelsChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().setSchemaChanged(true)));
-    TEST_DO(assertSubDbsShouldChange(CCR().set_alloc_config_changed(true)));
 }
+
+TEST(DocSubDBConfigurerTest, require_that_subdbs_should_change_if_relevant_config_changed)
+{
+    assertSubDbsShouldNotChange(CCR());
+    EXPECT_FALSE(ReconfigParams(CCR().setMaintenanceChanged(true)).shouldSubDbsChange());
+    assertSubDbsShouldChange(CCR().setFlushChanged(true), "flush cnanged");
+    assertSubDbsShouldChange(CCR().setStoreChanged(true), "store changed");
+    assertSubDbsShouldChange(CCR().setDocumenttypesChanged(true), "document types changed");
+    assertSubDbsShouldChange(CCR().setDocumentTypeRepoChanged(true), "document type repo changed");
+    assertSubDbsShouldChange(CCR().setSummaryChanged(true), "summary changed");
+    assertSubDbsShouldChange(CCR().setJuniperrcChanged(true), "juniperrc changed");
+    assertSubDbsShouldChange(CCR().setAttributesChanged(true), "attributes changed");
+    assertSubDbsShouldChange(CCR().setImportedFieldsChanged(true), "imported fields changed");
+    assertSubDbsShouldChange(CCR().setVisibilityDelayChanged(true), "visibility delay changed");
+    assertSubDbsShouldChange(CCR().setRankProfilesChanged(true), "rank profiles changed");
+    assertSubDbsShouldChange(CCR().setRankingConstantsChanged(true), "ranking constants changed");
+    assertSubDbsShouldChange(CCR().setRankingExpressionsChanged(true), "ranking expressions changed");
+    assertSubDbsShouldChange(CCR().setOnnxModelsChanged(true), "onnx models changed");
+    assertSubDbsShouldChange(CCR().setSchemaChanged(true), "schema changed");
+    assertSubDbsShouldChange(CCR().set_alloc_config_changed(true), "allocd config changed");
+}
+
+namespace {
 
 void
 assertSummaryManagerShouldNotChange(DocumentDBConfig::ComparisonResult result)
@@ -779,20 +801,23 @@ assertSummaryManagerShouldNotChange(DocumentDBConfig::ComparisonResult result)
 }
 
 void
-assertSummaryManagerShouldChange(DocumentDBConfig::ComparisonResult result)
+assertSummaryManagerShouldChange(DocumentDBConfig::ComparisonResult result, std::string_view label)
 {
+    SCOPED_TRACE(label);
     ReconfigParams params(result);
     EXPECT_TRUE(params.configHasChanged());
     EXPECT_TRUE(params.shouldSummaryManagerChange());
 }
 
-TEST("require that summary manager should change if relevant config changed")
+}
+
+TEST(DocSubDBConfigurerTest, require_that_summary_manager_should_change_if_relevant_config_changed)
 {
-    TEST_DO(assertSummaryManagerShouldNotChange(CCR()));
-    TEST_DO(assertSummaryManagerShouldChange(CCR().setSummaryChanged(true)));
-    TEST_DO(assertSummaryManagerShouldChange(CCR().setJuniperrcChanged(true)));
-    TEST_DO(assertSummaryManagerShouldChange(CCR().setDocumenttypesChanged(true)));
-    TEST_DO(assertSummaryManagerShouldChange(CCR().setDocumentTypeRepoChanged(true)));
-    TEST_DO(assertSummaryManagerShouldChange(CCR().setStoreChanged(true)));
-    TEST_DO(assertSummaryManagerShouldChange(CCR().setSchemaChanged(true)));
+    assertSummaryManagerShouldNotChange(CCR());
+    assertSummaryManagerShouldChange(CCR().setSummaryChanged(true), "summary changed");
+    assertSummaryManagerShouldChange(CCR().setJuniperrcChanged(true), "juniperrc changed");
+    assertSummaryManagerShouldChange(CCR().setDocumenttypesChanged(true), "document types changed");
+    assertSummaryManagerShouldChange(CCR().setDocumentTypeRepoChanged(true), "document type repo changed");
+    assertSummaryManagerShouldChange(CCR().setStoreChanged(true), "store changed");
+    assertSummaryManagerShouldChange(CCR().setSchemaChanged(true), "schema changed");
 }
