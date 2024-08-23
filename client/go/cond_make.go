@@ -86,7 +86,16 @@ func latestReleasedTag(mirror string) (string, error) {
 	switch mirror {
 	case "github":
 		url := "https://api.github.com/repos/vespa-engine/vespa/releases/latest"
-		resp, err := http.Get(url)
+		token := "Bearer " + os.Getenv("GH_TOKEN")
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			log.Println("Error on setting up http request.\n[ERROR] -", err)
+		}
+		req.Header.Add("Authorization", token)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
 		if err != nil {
 			return "", err
 		}
@@ -100,6 +109,7 @@ func latestReleasedTag(mirror string) (string, error) {
 			return "", err
 		}
 		return release.TagName, nil
+
 	case "homebrew":
 		cmd, stdout, _ := newCmd("brew", "info", "--json", "--formula", "vespa-cli")
 		cmd.Stdout = stdout // skip printing output to os.Stdout
