@@ -12,7 +12,6 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/featureset.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;

@@ -8,7 +8,6 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <array>
 
