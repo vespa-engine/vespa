@@ -19,7 +19,9 @@ public interface HostProvisioner {
 
     /** Allocates a single host for a service */
     // TODO: Remove
-    HostSpec allocateHost(String alias);
+    default HostSpec allocateHost(String alias) {
+        throw new UnsupportedOperationException("Allocating a single host is not supported");
+    }
 
     /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.

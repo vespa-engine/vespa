@@ -104,11 +104,6 @@ public class HostedDeployNodeAllocationTest {
         int invocation = 0;
 
         @Override
-        public HostSpec allocateHost(String alias) {
-            throw new RuntimeException();
-        }
-
-        @Override
         public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
             if (cluster.id().value().equals("container")) { // the container cluster from the app package: Use this to test
                 if (invocation == 0) { // Building the latest model version, 7.3: Always first
