@@ -82,7 +82,7 @@ jobs:
         working-directory: client/go
 
     env:
-      VERSION: ${{ needs.prepare.outputs.version }}
+      VERSION: ${{ needs.prepare.outputs.build-version }}
 
     steps:
       - uses: actions/checkout@v4
