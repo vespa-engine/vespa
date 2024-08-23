@@ -5,8 +5,6 @@
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 
 namespace proton::test {
 
@@ -35,9 +33,8 @@ public:
     void notifyRemoves(IDestructorCallbackSP, const std::vector<document::GlobalId> &, SerialNum)  override { }
     std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override { return {}; }
 
-    void assertAdds(const std::vector<AddEntry> &expAdds) const;
-    void assertRemoves(const std::vector<RemoveEntry> &expRemoves) const;
-
+    const std::vector<AddEntry> &get_adds() const noexcept { return _adds; }
+    const std::vector<RemoveEntry>& get_removes() const noexcept { return _removes; }
     const std::vector<std::unique_ptr<IGidToLidChangeListener>> &getListeners() const { return _listeners; }
 };
 

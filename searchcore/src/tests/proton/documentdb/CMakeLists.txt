@@ -27,12 +27,10 @@ vespa_add_executable(searchcore_proton_documentdb_vespatest_test_app TEST
     vespatest_runner.cpp
     buckethandler_test.cpp
     combiningfeedview_test.cpp
-    configurer_test.cpp
     document_scan_iterator_test.cpp
     document_subdbs_test.cpp
     documentdbconfig_test.cpp
     documentdbconfigscout_test.cpp
-    feedview_test.cpp
     job_tracked_maintenance_job_test.cpp
     maintenancecontroller_test.cpp
     storeonlyfeedview_test.cpp
@@ -48,9 +46,11 @@ vespa_add_executable(searchcore_proton_documentdb_gtest_test_app TEST
     gtest_runner.cpp
     clusterstatehandler_test.cpp
     bucketmover_common.cpp
+    configurer_test.cpp
     documentbucketmover_test.cpp
     documentmover_test.cpp
     executor_threading_service_test.cpp
+    feedview_test.cpp
     lid_space_common.cpp
     lid_space_compaction_test.cpp
     lid_space_handler_test.cpp
