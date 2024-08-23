@@ -76,6 +76,9 @@ jobs:
       - prepare
       - build-test
 
+    permissions:
+      contents: write
+
     defaults:
       run:
         # This workflow only interacts with the client/go directory, so we can set the working directory here.
