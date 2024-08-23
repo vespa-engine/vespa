@@ -1,15 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/test/eval_spec.h>
 #include <vespa/eval/eval/basic_nodes.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <iostream>
 
 using namespace vespalib::eval;
+using vespalib::test::Nexus;
 
 //-----------------------------------------------------------------------------
 
@@ -17,35 +18,38 @@ std::vector<std::string> params_10({"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p
 
 const char *expr_10 = "p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10";
 
-TEST("require that separate parameter passing works") {
+TEST(CompiledFunctionTest, require_that_separate_parameter_passing_works)
+{
     CompiledFunction cf_10(*Function::parse(params_10, expr_10), PassParams::SEPARATE);
     auto fun_10 = cf_10.get_function<10>();
-    EXPECT_EQUAL(10.0, fun_10(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0));
-    EXPECT_EQUAL(50.0, fun_10(5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0));
-    EXPECT_EQUAL(45.0, fun_10(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0));
-    EXPECT_EQUAL(45.0, fun_10(9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0));
+    EXPECT_EQ(10.0, fun_10(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0));
+    EXPECT_EQ(50.0, fun_10(5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0));
+    EXPECT_EQ(45.0, fun_10(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0));
+    EXPECT_EQ(45.0, fun_10(9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0));
 }
 
-TEST("require that array parameter passing works") {
+TEST(CompiledFunctionTest, require_that_array_parameter_passing_works)
+{
     CompiledFunction arr_cf(*Function::parse(params_10, expr_10), PassParams::ARRAY);
     auto arr_fun = arr_cf.get_function();
     auto eval_arr_fun = [&arr_fun](std::vector<double> args) { return arr_fun(&args[0]); };
-    EXPECT_EQUAL(10.0, eval_arr_fun({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}));
-    EXPECT_EQUAL(50.0, eval_arr_fun({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}));
-    EXPECT_EQUAL(45.0, eval_arr_fun({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}));
-    EXPECT_EQUAL(45.0, eval_arr_fun({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0}));
+    EXPECT_EQ(10.0, eval_arr_fun({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}));
+    EXPECT_EQ(50.0, eval_arr_fun({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}));
+    EXPECT_EQ(45.0, eval_arr_fun({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}));
+    EXPECT_EQ(45.0, eval_arr_fun({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0}));
 }
 
 double my_resolve(void *ctx, size_t idx) { return ((double *)ctx)[idx]; }
 
-TEST("require that lazy parameter passing works") {
+TEST(CompiledFunctionTest, require_that_lazy_parameter_passing_works)
+{
     CompiledFunction lazy_cf(*Function::parse(params_10, expr_10), PassParams::LAZY);
     auto lazy_fun = lazy_cf.get_lazy_function();
     auto eval_lazy_fun = [&lazy_fun](std::vector<double> args) { return lazy_fun(my_resolve, &args[0]); };
-    EXPECT_EQUAL(10.0, eval_lazy_fun({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}));
-    EXPECT_EQUAL(50.0, eval_lazy_fun({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}));
-    EXPECT_EQUAL(45.0, eval_lazy_fun({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}));
-    EXPECT_EQUAL(45.0, eval_lazy_fun({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0}));
+    EXPECT_EQ(10.0, eval_lazy_fun({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}));
+    EXPECT_EQ(50.0, eval_lazy_fun({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}));
+    EXPECT_EQ(45.0, eval_lazy_fun({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}));
+    EXPECT_EQ(45.0, eval_lazy_fun({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0}));
 }
 
 //-----------------------------------------------------------------------------
@@ -110,7 +114,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         if (is_supported && !has_issues) {
             CompiledFunction cfun(*function, PassParams::ARRAY);
             auto fun = cfun.get_function();
-            ASSERT_EQUAL(cfun.num_params(), param_values.size());
+            ASSERT_EQ(cfun.num_params(), param_values.size());
             double result = fun(param_values.data());
             if (is_same(expected_result, result)) {
                 print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",
@@ -129,17 +133,21 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
 
 MyEvalTest::~MyEvalTest() = default;
 
-TEST_FF("require that compiled evaluation passes all conformance tests", MyEvalTest(), test::EvalSpec()) {
+TEST(CompiledFunctionTest, require_that_compiled_evaluation_passes_all_conformance_tests)
+{
+    MyEvalTest f1;
+    test::EvalSpec f2;
     f1.print_fail = true;
     f2.add_all_cases();
     f2.each_case(f1);
-    EXPECT_GREATER(f1.pass_cnt, 1000u);
-    EXPECT_EQUAL(0u, f1.fail_cnt);
+    EXPECT_GT(f1.pass_cnt, 1000u);
+    EXPECT_EQ(0u, f1.fail_cnt);
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that large (plugin) set membership checks work") {
+TEST(CompiledFunctionTest, require_that_large_plugin_based_set_membership_checks_work)
+{
     auto my_in = std::make_unique<nodes::In>(std::make_unique<nodes::Symbol>(0));
     for(size_t i = 1; i <= 100; ++i) {
         my_in->add_entry(std::make_unique<nodes::Number>(i));
@@ -151,11 +159,11 @@ TEST("require that large (plugin) set membership checks work") {
     auto arr_fun = arr_cf.get_function();
     for (double value = 0.5; value <= 100.5; value += 0.5) {
         if (std::round(value) == value) {
-            EXPECT_EQUAL(1.0, fun(value));
-            EXPECT_EQUAL(1.0, arr_fun(&value));
+            EXPECT_EQ(1.0, fun(value));
+            EXPECT_EQ(1.0, arr_fun(&value));
         } else {
-            EXPECT_EQUAL(0.0, fun(value));
-            EXPECT_EQUAL(0.0, arr_fun(&value));
+            EXPECT_EQ(0.0, fun(value));
+            EXPECT_EQ(0.0, arr_fun(&value));
         }
     }
 }
@@ -164,72 +172,88 @@ TEST("require that large (plugin) set membership checks work") {
 
 CompiledFunction pass_fun(CompiledFunction cf) {
     auto fun = cf.get_function<2>();
-    EXPECT_EQUAL(5.0, fun(2.0, 3.0));
+    EXPECT_EQ(5.0, fun(2.0, 3.0));
     return cf;
 }
 
-TEST("require that compiled expression can be passed (moved) around") {
+TEST(CompiledFunctionTest, require_that_compiled_expression_can_be_moved_around)
+{
     CompiledFunction cf(*Function::parse("a+b"), PassParams::SEPARATE);
     auto fun = cf.get_function<2>();
-    EXPECT_EQUAL(4.0, fun(2.0, 2.0));
+    EXPECT_EQ(4.0, fun(2.0, 2.0));
     CompiledFunction cf2 = pass_fun(std::move(cf));
     EXPECT_TRUE(cf.get_function<2>() == nullptr);
     auto fun2 = cf2.get_function<2>();
     EXPECT_TRUE(fun == fun2);
-    EXPECT_EQUAL(10.0, fun(3.0, 7.0));
+    EXPECT_EQ(10.0, fun(3.0, 7.0));
 }
 
-TEST("require that expressions with constant sub-expressions evaluate correctly") {
+TEST(CompiledFunctionTest, require_that_expressions_with_constant_sub_expressions_evaluate_correctly)
+{
     CompiledFunction cf(*Function::parse("if(1,2,10)+a+b+max(1,2)/1"), PassParams::SEPARATE);
     auto fun = cf.get_function<2>();
-    EXPECT_EQUAL(7.0, fun(1.0, 2.0));
-    EXPECT_EQUAL(11.0, fun(3.0, 4.0));
+    EXPECT_EQ(7.0, fun(1.0, 2.0));
+    EXPECT_EQ(11.0, fun(3.0, 4.0));
 }
 
-TEST("dump ir code to verify lazy casting") {
+TEST(CompiledFunctionTest, dump_ir_code_to_verify_lazy_casting)
+{
     auto function = Function::parse({"a", "b"}, "12==2+if(a==3&&a<10||b,10,5)");
     LLVMWrapper wrapper;
     size_t id = wrapper.make_function(function->num_params(), PassParams::SEPARATE, function->root(), {});
     wrapper.compile(llvm::dbgs()); // dump module before compiling it
     using fun_type = double (*)(double, double);
     fun_type fun = (fun_type) wrapper.get_function_address(id);
-    EXPECT_EQUAL(0.0, fun(0.0, 0.0));
-    EXPECT_EQUAL(1.0, fun(0.0, 1.0));
-    EXPECT_EQUAL(1.0, fun(3.0, 0.0));
+    EXPECT_EQ(0.0, fun(0.0, 0.0));
+    EXPECT_EQ(1.0, fun(0.0, 1.0));
+    EXPECT_EQ(1.0, fun(3.0, 0.0));
 }
 
-TEST_MT("require that multithreaded compilation works", 32) {
+namespace {
+
+void verify_that_multithreaded_compilation_works()
+{
     for (size_t i = 0; i < 16; ++i) {
         {
             CompiledFunction cf(*Function::parse({"x", "y", "z", "w"}, "((x+1)*(y-1))/((z+1)/(w-1))"),
                                 PassParams::SEPARATE);
             auto fun = cf.get_function<4>();
-            EXPECT_EQUAL(1.0, fun(0.0, 2.0, 0.0, 2.0));
+            EXPECT_EQ(1.0, fun(0.0, 2.0, 0.0, 2.0));
         }
         {
             CompiledFunction cf(*Function::parse({"x", "y", "z", "w"}, "((x+1)*(y-1))/((z+1)/(w-1))"),
                                 PassParams::SEPARATE);
             auto fun = cf.get_function<4>();
-            EXPECT_EQUAL(4.0, fun(1.0, 3.0, 0.0, 2.0));
+            EXPECT_EQ(4.0, fun(1.0, 3.0, 0.0, 2.0));
         }
         {
             CompiledFunction cf(*Function::parse({"x", "y", "z", "w"}, "((x+1)*(y-1))/((z+1)/(w-1))"),
                                 PassParams::SEPARATE);
             auto fun = cf.get_function<4>();
-            EXPECT_EQUAL(2.0, fun(1.0, 3.0, 1.0, 2.0));
+            EXPECT_EQ(2.0, fun(1.0, 3.0, 1.0, 2.0));
         }
         {
             CompiledFunction cf(*Function::parse({"x", "y", "z", "w"}, "((x+1)*(y-1))/((z+1)/(w-1))"),
                                 PassParams::SEPARATE);
             auto fun = cf.get_function<4>();
-            EXPECT_EQUAL(8.0, fun(1.0, 3.0, 1.0, 5.0));
+            EXPECT_EQ(8.0, fun(1.0, 3.0, 1.0, 5.0));
         }
     }
 }
 
+}
+
+TEST(CompiledFunctionTest, require_that_multithreaded_compilation_works)
+{
+    constexpr size_t num_threads = 32;
+    auto task = [](Nexus&) { verify_that_multithreaded_compilation_works(); };
+    Nexus::run(num_threads, task);
+}
+
 //-----------------------------------------------------------------------------
 
-TEST("require that function issues can be detected") {
+TEST(CompiledFunctionTest, require_that_function_issues_can_be_detected)
+{
     auto simple = Function::parse("a+b");
     auto complex = Function::parse("join(a,b,f(a,b)(a+b))");
     EXPECT_FALSE(simple->has_error());
@@ -237,10 +261,10 @@ TEST("require that function issues can be detected") {
     EXPECT_FALSE(CompiledFunction::detect_issues(*simple));
     EXPECT_TRUE(CompiledFunction::detect_issues(*complex));
     std::cerr << "Example function issues:" << std::endl
-              << CompiledFunction::detect_issues(*complex).list
+              << testing::PrintToString(CompiledFunction::detect_issues(*complex).list)
               << std::endl;
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
