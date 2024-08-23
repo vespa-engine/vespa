@@ -254,9 +254,9 @@ public class SignificanceSearcherTest {
 
         q.getModel().getQueryTree().setRoot(root);
 
-        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
-        var testDocumentFrequency = makeDocumentFrequency(model.documentFrequency("test"));
+        var helloDocumentFrequency = getDocumentFrequencyWithEnglish("hello");
+        var testDocumentFrequency = getDocumentFrequencyWithEnglish("test");
+
         Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
@@ -294,25 +294,25 @@ public class SignificanceSearcherTest {
         var result = createExecution(searcher).search(query);
         assertEquals(1, result.hits().getErrorHit().errors().size());
 
-        var errorMessage = result.hits().getError();
+        var errorMessage = getErrorMessage(result);
         assertEquals("Inconsistent 'significance' configuration for the rank profile 'significance-ranking' in the schemas [music, album]. " +
                              "Use 'restrict' to limit the query to a subset of schemas " +
                              "(https://docs.vespa.ai/en/schemas.html#multiple-schemas). " +
                              "Specify same 'significance' configuration for all selected schemas " +
                              "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).",
-                     errorMessage.getDetailedMessage());
+                     errorMessage);
     }
 
     // Tests that follow verify model resolving logic in different scenarios.
     // Test naming convention is as follows:
     // Explicit language - language set in a query
-    // Implicit language - automatically detected language
+    // Implicit language - language detected automatically
     // Missing language - language without a model
     // Unknown language - Language.UNKNOWN
-    // Missing word - word not in the model for specified language or fallback models
-    // Existing word - word in the model for a specified language or fallback models
+    // Missing word - word not in a model for the specified language or fallback models
+    // Existing word - word in a model for the specified language or fallback models
 
-    private Result searchWordWithLanguage(String word, Optional<Language> explicitLanguage, Optional<Language> implicitLanguage) {
+    private Result searchWord(String word, Optional<Language> explicitLanguage, Optional<Language> implicitLanguage) {
         var query = new Query();
         explicitLanguage.ifPresent(language -> query.getModel().setLanguage(language));
         query.getRanking().setProfile("significance-ranking");
@@ -332,27 +332,34 @@ public class SignificanceSearcherTest {
         return makeDocumentFrequency(model.documentFrequency(word));
     }
 
+    private static WordItem getFistWord(Result result) {
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        return (WordItem) resultRoot.getItem(0);
+    }
+
+    private static String getErrorMessage(Result result) {
+        return result.hits().getError().getDetailedMessage();
+    }
+
     @Test
     public void testSignificanceSearcherWithMissingExplicitLanguageOnExistingWord() {
         var existingWord = "hello";
         var explicitLanguage = Language.ITALIAN;
-        var result = searchWordWithLanguage(existingWord, Optional.of(explicitLanguage), Optional.empty());
+        var result = searchWord(existingWord, Optional.of(explicitLanguage), Optional.empty());
 
-        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
-        var resultWord = (WordItem) resultRoot.getItem(0);
+        var resultWord = getFistWord(result);
         assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
 
-        var error = result.hits().getError().getDetailedMessage();
-        assertEquals("No significance model available for set language ITALIAN", error);
+        var errorMessage = getErrorMessage(result);
+        assertEquals("No significance model available for set language ITALIAN", errorMessage);
     }
 
     @Test
     public void testSignificanceSearcherWithUnknownExplicitLanguageOnExistingWord() {
         var existingWord = "hello";
         var explicitLanguage = Language.UNKNOWN;
-        var result = searchWordWithLanguage(existingWord, Optional.of(explicitLanguage), Optional.empty());
-        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
-        var resultWord = (WordItem) resultRoot.getItem(0);
+        var result = searchWord(existingWord, Optional.of(explicitLanguage), Optional.empty());
+        var resultWord = getFistWord(result);
         var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
         assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
     }
@@ -361,23 +368,21 @@ public class SignificanceSearcherTest {
     public void testSignificanceSearcherWithMissingExplicitLanguageOnMissingWord() {
         var missingWord = "ciao";
         var explicitLanguage = Language.ITALIAN;
-        var result = searchWordWithLanguage(missingWord, Optional.of(explicitLanguage), Optional.empty());
+        var result = searchWord(missingWord, Optional.of(explicitLanguage), Optional.empty());
 
-        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
-        var resultWord = (WordItem) resultRoot.getItem(0);
+        var resultWord = getFistWord(result);
         assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
 
-        var error = result.hits().getError().getDetailedMessage();
-        assertEquals("No significance model available for set language ITALIAN", error);
+        var errorMessage = getErrorMessage(result);
+        assertEquals("No significance model available for set language ITALIAN", errorMessage);
     }
 
     @Test
     public void testSignificanceSearcherWithMissingImplicitLanguageOnExistingWord() {
         var existingWord = "hello";
         var implicitLanguage = Language.ITALIAN;
-        var result = searchWordWithLanguage(existingWord, Optional.empty(), Optional.of(implicitLanguage));
-        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
-        var resultWord = (WordItem) resultRoot.getItem(0);
+        var result = searchWord(existingWord, Optional.empty(), Optional.of(implicitLanguage));
+        var resultWord = getFistWord(result);
         var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
         assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
     }
@@ -386,9 +391,8 @@ public class SignificanceSearcherTest {
     public void testSignificanceSearcherWithMissingImplicitLanguageOnMissingWord() {
         var implicitLanguage = Language.ITALIAN;
         var missingWord = "ciao";
-        var result = searchWordWithLanguage(missingWord, Optional.empty(), Optional.of(implicitLanguage));
-        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
-        var resultWord = (WordItem) resultRoot.getItem(0);
+        var result = searchWord(missingWord, Optional.empty(), Optional.of(implicitLanguage));
+        var resultWord = getFistWord(result);
 
         var existingWord = "hello";
         var documentFrequency = getDocumentFrequencyWithEnglish(existingWord);
@@ -402,9 +406,8 @@ public class SignificanceSearcherTest {
     @ParameterizedTest
     @ValueSource(strings = {"Hello", "HeLlo", "HELLO"})
     public void testSignificanceSearcherWithUpperCaseWord(String wordWithUpperCase) {
-        var result = searchWordWithLanguage(wordWithUpperCase, Optional.of(Language.ENGLISH), Optional.empty());
-        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
-        var resultWord = (WordItem) resultRoot.getItem(0);
+        var result = searchWord(wordWithUpperCase, Optional.of(Language.ENGLISH), Optional.empty());
+        var resultWord = getFistWord(result);
 
         var lowerCaseWord = "hello";
         var documentFrequency = getDocumentFrequencyWithEnglish(lowerCaseWord);
