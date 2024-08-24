@@ -38,7 +38,7 @@ Sample applications are downloaded from
 https://github.com/vespa-engine/sample-apps.
 
 By default sample applications are cached in the user's cache directory. This
-directory can be overriden by setting the VESPA_CLI_CACHE_DIR environment
+directory can be overridden by setting the VESPA_CLI_CACHE_DIR environment
 variable.`,
 		Example:           "$ vespa clone album-recommendation my-app",
 		DisableAutoGenTag: true,
