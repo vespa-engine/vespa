@@ -31,6 +31,7 @@ vespa_add_library(searchlib_test_gtest_migration OBJECT
     ft_test_app_base.cpp
     initrange.cpp
     searchiteratorverifier.cpp
+    weightedchildrenverifiers.cpp
 )
 
 target_compile_definitions(searchlib_test_gtest_migration PRIVATE ENABLE_GTEST_MIGRATION)

@@ -6,6 +6,16 @@
 
 namespace search::test {
 
+#ifdef ENABLE_GTEST_MIGRATION
+#define WeightedChildrenVerifier WeightedChildrenVerifierForGTest
+#define IteratorChildrenVerifier IteratorChildrenVerifierForGTest
+#define DwwIteratorChildrenVerifier DwwIteratorChildrenVerifierForGTest
+#else
+#define WeightedChildrenVerifier WeightedChildrenVerifierForVespaTest
+#define IteratorChildrenVerifier IteratorChildrenVerifierForVespaTest
+#define DwwIteratorChildrenVerifier DwwIteratorChildrenVerifierForVespaTest
+#endif
+
 class WeightedChildrenVerifier : public SearchIteratorVerifier {
 public:
     WeightedChildrenVerifier();

@@ -12,6 +12,8 @@
 
 #ifdef ENABLE_GTEST_MIGRATION
 #define FtTestAppBase FtTestAppBaseForGTest
+#else
+#define FtTestAppBase FtTestAppBaseForVespaTest
 #endif
 
 /*
