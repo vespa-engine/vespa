@@ -45,9 +45,8 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 
 using namespace cloud::config::filedistribution;
 using namespace document;
@@ -408,10 +407,9 @@ struct FixtureBase
     }
     const typename Traits::FeedView *getFeedView() {
         _tmpFeedView = _subDb.getFeedView();
-        const typename Traits::FeedView *retval =
-                dynamic_cast<typename Traits::FeedView *>(_tmpFeedView.get());
-        ASSERT_TRUE(retval != nullptr);
-        return retval;
+        const typename Traits::FeedView &retval =
+                dynamic_cast<typename Traits::FeedView &>(*_tmpFeedView.get());
+        return &retval;
     }
     const MyMetricsWireService &getWireService() const {
         return _ctx.getWireService();
@@ -483,31 +481,31 @@ using SearchableFixture = FixtureBase<SearchableTraits>;
 void
 assertAttributes1(const AttributeGuardList &attributes)
 {
-    EXPECT_EQUAL(1u, attributes.size());
-    EXPECT_EQUAL("attr1", attributes[0]->getName());
+    EXPECT_EQ(1u, attributes.size());
+    EXPECT_EQ("attr1", attributes[0]->getName());
 }
 
 void
 assertAttributes1(const std::vector<search::AttributeVector *> &attributes)
 {
-    EXPECT_EQUAL(1u, attributes.size());
-    EXPECT_EQUAL("attr1", attributes[0]->getName());
+    EXPECT_EQ(1u, attributes.size());
+    EXPECT_EQ("attr1", attributes[0]->getName());
 }
 
 void
 assertAttributes2(const AttributeGuardList &attributes)
 {
-    EXPECT_EQUAL(2u, attributes.size());
-    EXPECT_EQUAL("attr1", attributes[0]->getName());
-    EXPECT_EQUAL("attr2", attributes[1]->getName());
+    EXPECT_EQ(2u, attributes.size());
+    EXPECT_EQ("attr1", attributes[0]->getName());
+    EXPECT_EQ("attr2", attributes[1]->getName());
 }
 
 void
 assertAttributes2(const std::vector<search::AttributeVector *> &attributes)
 {
-    EXPECT_EQUAL(2u, attributes.size());
-    EXPECT_EQUAL("attr1", attributes[0]->getName());
-    EXPECT_EQUAL("attr2", attributes[1]->getName());
+    EXPECT_EQ(2u, attributes.size());
+    EXPECT_EQ("attr1", attributes[0]->getName());
+    EXPECT_EQ("attr2", attributes[1]->getName());
 }
 
 void
@@ -516,7 +514,7 @@ assertCacheCapacity(const StoreOnlyDocSubDB & db, size_t expected_cache_capacity
     EXPECT_TRUE(dynamic_cast<SummaryManager *>(summaryManager.get()) != nullptr);
     search::IDocumentStore & store = summaryManager->getBackingStore();
     auto & docStore = dynamic_cast<search::DocumentStore &>(store);
-    EXPECT_EQUAL(expected_cache_capacity, docStore.getCacheCapacity());
+    EXPECT_EQ(expected_cache_capacity, docStore.getCacheCapacity());
 }
 
 void
@@ -535,20 +533,23 @@ assertStoreOnly(StoreOnlyDocSubDB & db) {
 
 }
 
-TEST_F("require that managers and components are instantiated", StoreOnlyFixture)
+TEST(DocumentSubDBsTest, require_that_managers_and_components_are_instantiated_in_storeonly_document_subdb)
 {
+    StoreOnlyFixture f;
     assertStoreOnly(f._subDb);
     assertCacheCapacity(f._subDb, 687194767);
 }
 
-TEST_F("require that managers and components are instantiated", StoreOnlyFixtureRemoved)
+TEST(DocumentSubDBsTest, require_that_managers_and_components_are_instantiated_in_removed_document_subdb)
 {
+    StoreOnlyFixtureRemoved f;
     assertStoreOnly(f._subDb);
     assertCacheCapacity(f._subDb, 0);
 }
 
-TEST_F("require that managers and components are instantiated", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_managers_and_components_are_instantiated_in_fast_access_document_subdb)
 {
+    FastAccessFixture f;
     EXPECT_TRUE(f._subDb.getSummaryManager());
     EXPECT_TRUE(f._subDb.getSummaryAdapter());
     EXPECT_TRUE(f._subDb.getAttributeManager());
@@ -561,8 +562,9 @@ TEST_F("require that managers and components are instantiated", FastAccessFixtur
     EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != nullptr);
 }
 
-TEST_F("require that managers and components are instantiated", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_managers_and_components_are_instantiated_in_searchable_document_subdb)
 {
+    SearchableFixture f;
     EXPECT_TRUE(f._subDb.getSummaryManager());
     EXPECT_TRUE(f._subDb.getSummaryAdapter());
     EXPECT_TRUE(f._subDb.getAttributeManager());
@@ -584,13 +586,15 @@ requireThatAttributeManagerIsInstantiated(Fixture &f)
     assertAttributes1(attributes);
 }
 
-TEST_F("require that attribute manager is instantiated", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_manager_is_instantiated_in_fast_access_document_subdb)
 {
+    FastAccessFixture f;
     requireThatAttributeManagerIsInstantiated(f);
 }
 
-TEST_F("require that attribute manager is instantiated", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_manager_is_instantiated_searchable_document_subdb)
 {
+    SearchableFixture f;
     requireThatAttributeManagerIsInstantiated(f);
 }
 
@@ -601,13 +605,15 @@ requireThatAttributesAreAccessibleViaFeedView(Fixture &f)
     assertAttributes1(f.getFeedView()->getAttributeWriter()->getWritableAttributes());
 }
 
-TEST_F("require that attributes are accessible via feed view", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_attributes_are_accessible_via_fast_access_feed_view)
 {
+    FastAccessFixture f;
     requireThatAttributesAreAccessibleViaFeedView(f);
 }
 
-TEST_F("require that attributes are accessible via feed view", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_attributes_are_accessible_via_searchable_feed_view)
 {
+    SearchableFixture f;
     requireThatAttributesAreAccessibleViaFeedView(f);
 }
 
@@ -618,21 +624,24 @@ requireThatAttributeManagerCanBeReconfigured(Fixture &f)
     f.basicReconfig(10);
     std::vector<AttributeGuard> attributes;
     f.getAttributeManager()->getAttributeList(attributes);
-    TEST_DO(assertAttributes2(attributes));
+    assertAttributes2(attributes);
 }
 
-TEST_F("require that attribute manager can be reconfigured", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_manager_in_fast_access_document_subdb_can_be_reconfigured)
 {
+    FastAccessFixture f;
     requireThatAttributeManagerCanBeReconfigured(f);
 }
 
-TEST_F("require that attribute manager can be reconfigured", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_manager_in_searchable_document_subdb_can_be_reconfigured)
 {
+    SearchableFixture f;
     requireThatAttributeManagerCanBeReconfigured(f);
 }
 
-TEST_F("require that subdb reflect retirement or maintenance", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_subdb_reflect_retirement_or_maintenance)
 {
+    FastAccessFixture f;
     CompactionStrategy cfg(0.1, 0.3);
 
     EXPECT_FALSE(f._subDb.is_node_retired_or_maintenance());
@@ -659,31 +668,33 @@ TEST_F("require that subdb reflect retirement or maintenance", FastAccessFixture
     EXPECT_TRUE(cfg == unretired_cfg);
 }
 
-TEST_F("require that attribute compaction config reflect retirement or maintenance", FastAccessFixture) {
+TEST(DocumentSubDBsTest, require_that_attribute_compaction_config_reflect_retirement_or_maintenance)
+{
+    FastAccessFixture f;
     CompactionStrategy default_cfg(0.05, 0.2);
     CompactionStrategy retired_cfg(0.5, 0.5);
 
     auto guard = f._subDb.getAttributeManager()->getAttribute("attr1");
-    EXPECT_EQUAL(default_cfg, (*guard)->getConfig().getCompactionStrategy());
-    EXPECT_EQUAL(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+    EXPECT_EQ(default_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQ(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
     auto calc = std::make_shared<proton::test::BucketStateCalculator>();
     calc->setNodeRetired(true);
     f.setBucketStateCalculator(calc);
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
-    EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
-    EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+    EXPECT_EQ(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQ(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
     f.basicReconfig(10);
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
-    EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
-    EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+    EXPECT_EQ(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQ(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
     calc->setNodeRetired(false);
     f.setBucketStateCalculator(calc);
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
-    EXPECT_EQUAL(default_cfg, (*guard)->getConfig().getCompactionStrategy());
-    EXPECT_EQUAL(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+    EXPECT_EQ(default_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQ(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
 }
 
@@ -695,13 +706,15 @@ requireThatReconfiguredAttributesAreAccessibleViaFeedView(Fixture &f)
     assertAttributes2(f.getFeedView()->getAttributeWriter()->getWritableAttributes());
 }
 
-TEST_F("require that reconfigured attributes are accessible via feed view", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_reconfigured_attributes_are_accessible_via_fast_access_feed_view)
 {
+    FastAccessFixture f;
     requireThatReconfiguredAttributesAreAccessibleViaFeedView(f);
 }
 
-TEST_F("require that reconfigured attributes are accessible via feed view", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_reconfigured_attributes_are_accessible_via_searchable_feed_view)
 {
+    SearchableFixture f;
     requireThatReconfiguredAttributesAreAccessibleViaFeedView(f);
 }
 
@@ -709,19 +722,21 @@ template <typename Fixture>
 void
 requireThatAttributeMetricsAreRegistered(Fixture &f)
 {
-    EXPECT_EQUAL(2u, f.getWireService()._attributes.size());
+    EXPECT_EQ(2u, f.getWireService()._attributes.size());
     auto itr = f.getWireService()._attributes.begin();
-    EXPECT_EQUAL("[documentmetastore]", *itr++);
-    EXPECT_EQUAL("attr1", *itr);
+    EXPECT_EQ("[documentmetastore]", *itr++);
+    EXPECT_EQ("attr1", *itr);
 }
 
-TEST_F("require that attribute metrics are registered", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_metrics_are_registered_in_fast_access_document_subdb)
 {
+    FastAccessFixture f;
     requireThatAttributeMetricsAreRegistered(f);
 }
 
-TEST_F("require that attribute metrics are registered", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_metrics_are_registered_in_searchable_document_subdb)
 {
+    SearchableFixture f;
     requireThatAttributeMetricsAreRegistered(f);
 }
 
@@ -730,20 +745,22 @@ void
 requireThatAttributeMetricsCanBeReconfigured(Fixture &f)
 {
     f.basicReconfig(10);
-    EXPECT_EQUAL(3u, f.getWireService()._attributes.size());
+    EXPECT_EQ(3u, f.getWireService()._attributes.size());
     auto itr = f.getWireService()._attributes.begin();
-    EXPECT_EQUAL("[documentmetastore]", *itr++);
-    EXPECT_EQUAL("attr1", *itr++);
-    EXPECT_EQUAL("attr2", *itr);
+    EXPECT_EQ("[documentmetastore]", *itr++);
+    EXPECT_EQ("attr1", *itr++);
+    EXPECT_EQ("attr2", *itr);
 }
 
-TEST_F("require that attribute metrics can be reconfigured", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_metrics_can_be_reconfigured_in_fast_access_document_subdb)
 {
+    FastAccessFixture f;
     requireThatAttributeMetricsCanBeReconfigured(f);
 }
 
-TEST_F("require that attribute metrics can be reconfigured", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_attribute_metrics_can_be_reconfigured_in_searchable_document_subdb)
 {
+    SearchableFixture f;
     requireThatAttributeMetricsCanBeReconfigured(f);
 }
 
@@ -767,30 +784,39 @@ assertTarget(const std::string &name,
              FComponent component,
              const IFlushTarget &target)
 {
-    if (!EXPECT_EQUAL(name, target.getName())) return false;
-    if (!EXPECT_TRUE(type == target.getType())) return false;
-    if (!EXPECT_TRUE(component == target.getComponent())) return false;
-    return true;
+    bool failed = false;
+    EXPECT_EQ(name, target.getName()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
+    EXPECT_TRUE(type == target.getType()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
+    EXPECT_TRUE(component == target.getComponent()) << (failed = true, "");
+    return !failed;
 }
 
-TEST_F("require that flush targets can be retrieved", FastAccessFixture)
+TEST(DocumentSubDBsTest, require_that_flush_targets_can_be_retrieved_from_fast_access_document_subdb)
 {
+    FastAccessFixture f;
     IFlushTarget::List targets = getFlushTargets(f);
-    EXPECT_EQUAL(8u, targets.size());
-    EXPECT_EQUAL("subdb.attribute.flush.attr1", targets[0]->getName());
-    EXPECT_EQUAL("subdb.attribute.shrink.attr1", targets[1]->getName());
-    EXPECT_EQUAL("subdb.documentmetastore.flush", targets[2]->getName());
-    EXPECT_EQUAL("subdb.documentmetastore.shrink", targets[3]->getName());
-    EXPECT_EQUAL("subdb.summary.compact_bloat", targets[4]->getName());
-    EXPECT_EQUAL("subdb.summary.compact_spread", targets[5]->getName());
-    EXPECT_EQUAL("subdb.summary.flush", targets[6]->getName());
-    EXPECT_EQUAL("subdb.summary.shrink", targets[7]->getName());
+    EXPECT_EQ(8u, targets.size());
+    EXPECT_EQ("subdb.attribute.flush.attr1", targets[0]->getName());
+    EXPECT_EQ("subdb.attribute.shrink.attr1", targets[1]->getName());
+    EXPECT_EQ("subdb.documentmetastore.flush", targets[2]->getName());
+    EXPECT_EQ("subdb.documentmetastore.shrink", targets[3]->getName());
+    EXPECT_EQ("subdb.summary.compact_bloat", targets[4]->getName());
+    EXPECT_EQ("subdb.summary.compact_spread", targets[5]->getName());
+    EXPECT_EQ("subdb.summary.flush", targets[6]->getName());
+    EXPECT_EQ("subdb.summary.shrink", targets[7]->getName());
 }
 
-TEST_F("require that flush targets can be retrieved", SearchableFixture)
+TEST(DocumentSubDBsTest, require_that_flush_targets_can_be_retrieved_from_searchable_document_subdb)
 {
+    SearchableFixture f;
     IFlushTarget::List targets = getFlushTargets(f);
-    EXPECT_EQUAL(10u, targets.size());
+    EXPECT_EQ(10u, targets.size());
     EXPECT_TRUE(assertTarget("subdb.attribute.flush.attr1", FType::SYNC, FComponent::ATTRIBUTE, *targets[0]));
     EXPECT_TRUE(assertTarget("subdb.attribute.shrink.attr1", FType::GC, FComponent::ATTRIBUTE, *targets[1]));
     EXPECT_TRUE(assertTarget("subdb.documentmetastore.flush", FType::SYNC, FComponent::ATTRIBUTE, *targets[2]));
@@ -803,19 +829,21 @@ TEST_F("require that flush targets can be retrieved", SearchableFixture)
     EXPECT_TRUE(assertTarget("subdb.summary.shrink", FType::GC, FComponent::DOCUMENT_STORE, *targets[9]));
 }
 
-TEST_F("transient resource usage is zero in steady state", SearchableFixture)
+TEST(DocumentSubDBsTest, transient_resource_usage_is_zero_in_steady_state)
 {
+    SearchableFixture f;
     auto usage = f._subDb.get_transient_resource_usage();
-    EXPECT_EQUAL(0u, usage.disk());
-    EXPECT_EQUAL(0u, usage.memory());
+    EXPECT_EQ(0u, usage.disk());
+    EXPECT_EQ(0u, usage.memory());
 }
 
-TEST_F("require that only fast-access attributes are instantiated", FastAccessOnlyFixture)
+TEST(DocumentSubDBsTest, require_that_only_fast_access_attributes_are_instantiated_in_fast_access_document_subdb)
 {
+    FastAccessOnlyFixture f;
     std::vector<AttributeGuard> attrs;
     f.getAttributeManager()->getAttributeList(attrs);
-    EXPECT_EQUAL(1u, attrs.size());
-    EXPECT_EQUAL("attr1", attrs[0]->getName());
+    EXPECT_EQ(1u, attrs.size());
+    EXPECT_EQ("attr1", attrs[0]->getName());
 }
 
 template <typename FixtureType>
@@ -907,38 +935,40 @@ struct DocumentHandler
 
 void
 assertAttribute(const AttributeGuard &attr, const std::string &name, uint32_t numDocs,
-                int64_t doc1Value, int64_t doc2Value, SerialNum createSerialNum, SerialNum lastSerialNum)
+                int64_t doc1Value, int64_t doc2Value, SerialNum createSerialNum, SerialNum lastSerialNum, std::string_view label)
 {
-    EXPECT_EQUAL(name, attr->getName());
-    EXPECT_EQUAL(numDocs, attr->getNumDocs());
-    EXPECT_EQUAL(doc1Value, attr->getInt(1));
-    EXPECT_EQUAL(doc2Value, attr->getInt(2));
-    EXPECT_EQUAL(createSerialNum, attr->getCreateSerialNum());
-    EXPECT_EQUAL(lastSerialNum, attr->getStatus().getLastSyncToken());
+    SCOPED_TRACE(label);
+    EXPECT_EQ(name, attr->getName());
+    EXPECT_EQ(numDocs, attr->getNumDocs());
+    EXPECT_EQ(doc1Value, attr->getInt(1));
+    EXPECT_EQ(doc2Value, attr->getInt(2));
+    EXPECT_EQ(createSerialNum, attr->getCreateSerialNum());
+    EXPECT_EQ(lastSerialNum, attr->getStatus().getLastSyncToken());
 }
 
 void
-assertAttribute1(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
+assertAttribute1(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum, std::string_view label)
 {
-    TEST_DO(assertAttribute(attr, "attr1", 3, 22, 44, createSerialNum, lastSerialNum));
+    assertAttribute(attr, "attr1", 3, 22, 44, createSerialNum, lastSerialNum, label);
 }
 
 void
-assertAttribute2(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
+assertAttribute2(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum, std::string_view label)
 {
-    TEST_DO(assertAttribute(attr, "attr2", 3, 33, 55, createSerialNum, lastSerialNum));
+    assertAttribute(attr, "attr2", 3, 33, 55, createSerialNum, lastSerialNum, label);
 }
 
-TEST_F("require that fast-access attributes are populated during feed", FastAccessOnlyFixture)
+TEST(DocumentSubDBsTest, require_that_fast_access_attributes_are_populated_during_feed)
 {
+    FastAccessOnlyFixture f;
     f._subDb.onReplayDone();
     DocumentHandler<FastAccessOnlyFixture> handler(f);
     handler.putDocs();
 
     std::vector<AttributeGuard> attrs;
     f.getAttributeManager()->getAttributeList(attrs);
-    EXPECT_EQUAL(1u, attrs.size());
-    assertAttribute1(attrs[0], CFG_SERIAL, 20);
+    EXPECT_EQ(1u, attrs.size());
+    assertAttribute1(attrs[0], CFG_SERIAL, 20, "attr1");
 }
 
 template <typename FixtureType, typename ConfigDirT>
@@ -952,7 +982,7 @@ requireThatAttributesArePopulatedDuringReprocessing(FixtureType &f)
     {
         std::vector<AttributeGuard> attrs;
         f.getAttributeManager()->getAttributeList(attrs);
-        EXPECT_EQUAL(1u, attrs.size());
+        EXPECT_EQ(1u, attrs.size());
     }
 
     // Reconfig to 2 attribute fields
@@ -961,15 +991,15 @@ requireThatAttributesArePopulatedDuringReprocessing(FixtureType &f)
     {
         std::vector<AttributeGuard> attrs;
         f.getAttributeManager()->getAttributeList(attrs);
-        EXPECT_EQUAL(2u, attrs.size());
-        TEST_DO(assertAttribute1(attrs[0], CFG_SERIAL, 40));
-        TEST_DO(assertAttribute2(attrs[1], 40, 40));
+        EXPECT_EQ(2u, attrs.size());
+        assertAttribute1(attrs[0], CFG_SERIAL, 40, "attr1");
+        assertAttribute2(attrs[1], 40, 40, "attr2");
     }
 }
 
-TEST_F("require that fast-access attributes are populated during reprocessing",
-        FastAccessOnlyFixture)
+TEST(DocumentSubDBsTest, require_that_fast_access_attributes_are_populated_during_reprocessing)
 {
+    FastAccessOnlyFixture f;
     requireThatAttributesArePopulatedDuringReprocessing<FastAccessOnlyFixture, ConfigDir4>(f);
 }
 
@@ -977,9 +1007,9 @@ TEST_F("require that fast-access attributes are populated during reprocessing",
 using SearchableTraitsTwoField = SearchableTraitsBase<two_attr_schema, ConfigDir1>;
 using SearchableFixtureTwoField = FixtureBase<SearchableTraitsTwoField>;
 
-TEST_F("require that regular attributes are populated during reprocessing",
-        SearchableFixtureTwoField)
+TEST(DocumentSubDBsTest, require_that_regular_attributes_are_populated_during_reprocessing)
 {
+    SearchableFixtureTwoField f;
     requireThatAttributesArePopulatedDuringReprocessing<SearchableFixtureTwoField, ConfigDir2>(f);
 }
 
@@ -989,25 +1019,28 @@ bool
 assertOperation(DocumentOperation &op, uint32_t expPrevSubDbId, uint32_t expPrevLid,
                 uint32_t expSubDbId, uint32_t expLid)
 {
-    if (!EXPECT_EQUAL(expPrevSubDbId, op.getPrevSubDbId())) {
+    bool failed = false;
+    EXPECT_EQ(expPrevSubDbId, op.getPrevSubDbId()) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_EQUAL(expPrevLid, op.getPrevLid())) {
+    EXPECT_EQ(expPrevLid, op.getPrevLid()) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_EQUAL(expSubDbId, op.getSubDbId())) {
+    EXPECT_EQ(expSubDbId, op.getSubDbId()) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_EQUAL(expLid, op.getLid())) {
-        return false;
-    }
-    return true;
+    EXPECT_EQ(expLid, op.getLid()) << (failed = true, "");
+    return !failed;
 }
 
 }
 
-TEST_F("require that lid allocation uses lowest free lid", StoreOnlyFixture)
+TEST(DocumentSubDBsTest, require_that_lid_allocation_uses_lowest_free_lid)
 {
+    StoreOnlyFixture f;
     using Handler = DocumentHandler<StoreOnlyFixture>;
     f._subDb.onReplayDone();
     Handler handler(f);
@@ -1067,29 +1100,32 @@ assertExplorer(const StringVector &extraNames, const vespalib::StateExplorer &ex
 {
     StringVector allNames = {"documentmetastore", "documentstore"};
     allNames.insert(allNames.end(), extraNames.begin(), extraNames.end());
-    EXPECT_EQUAL(allNames, explorer.get_children_names());
+    EXPECT_EQ(allNames, explorer.get_children_names());
     EXPECT_TRUE(explorer.get_child("documentmetastore").get() != nullptr);
     EXPECT_TRUE(explorer.get_child("documentstore").get() != nullptr);
 }
 
-TEST_F("require that underlying components are explorable", StoreOnlyExplorerFixture)
+TEST(DocumentSubDBsTest, require_that_underlying_components_are_explorable_in_store_only_document_subdb)
 {
+    StoreOnlyExplorerFixture f;
     assertExplorer({}, f._explorer);
     EXPECT_TRUE(f._explorer.get_child("attribute").get() == nullptr);
     EXPECT_TRUE(f._explorer.get_child("attributewriter").get() == nullptr);
     EXPECT_TRUE(f._explorer.get_child("index").get() == nullptr);
 }
 
-TEST_F("require that underlying components are explorable", FastAccessExplorerFixture)
+TEST(DocumentSubDBsTest, require_that_underlying_components_are_explorable_in_fast_access_document_subdb)
 {
+    FastAccessExplorerFixture f;
     assertExplorer({"attribute", "attributewriter"}, f._explorer);
     EXPECT_TRUE(f._explorer.get_child("attribute").get() != nullptr);
     EXPECT_TRUE(f._explorer.get_child("attributewriter").get() != nullptr);
     EXPECT_TRUE(f._explorer.get_child("index").get() == nullptr);
 }
 
-TEST_F("require that underlying components are explorable", SearchableExplorerFixture)
+TEST(DocumentSubDBsTest, require_that_underlying_components_are_explorable_in_searchable_document_subdb)
 {
+    SearchableExplorerFixture f;
     assertExplorer({"attribute", "attributewriter", "index"}, f._explorer);
     EXPECT_TRUE(f._explorer.get_child("attribute").get() != nullptr);
     EXPECT_TRUE(f._explorer.get_child("attributewriter").get() != nullptr);
