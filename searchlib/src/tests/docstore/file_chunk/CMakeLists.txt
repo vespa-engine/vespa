@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_file_chunk_test_app TEST
     file_chunk_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_file_chunk_test_app COMMAND searchlib_file_chunk_test_app)
