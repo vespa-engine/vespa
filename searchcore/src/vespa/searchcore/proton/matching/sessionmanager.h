@@ -17,18 +17,35 @@ struct SearchSessionCache;
 class SessionManager {
 public:
     struct Stats {
-        Stats()
+        uint32_t numInsert;
+        uint32_t numPick;
+        uint32_t numDropped;
+        uint32_t numCached;
+        uint32_t numTimedout;
+
+        Stats() noexcept
             : numInsert(0),
               numPick(0),
               numDropped(0),
               numCached(0),
               numTimedout(0)
         {}
-        uint32_t numInsert;
-        uint32_t numPick;
-        uint32_t numDropped;
-        uint32_t numCached;
-        uint32_t numTimedout;
+        Stats(uint32_t numInsert_in, uint32_t numPick_in, uint32_t numDropped_in, uint32_t numCached_in,
+              uint32_t numTimedout_in) noexcept
+            : numInsert(numInsert_in),
+              numPick(numPick_in),
+              numDropped(numDropped_in),
+              numCached(numCached_in),
+              numTimedout(numTimedout_in)
+        {
+        }
+        bool operator==(const Stats& rhs) const noexcept {
+            return numInsert == rhs.numInsert &&
+                   numPick == rhs.numPick &&
+                   numDropped == rhs.numDropped &&
+                   numCached == rhs.numCached &&
+                   numTimedout == rhs.numTimedout;
+        }
     };
 
     struct SearchSessionInfo {
