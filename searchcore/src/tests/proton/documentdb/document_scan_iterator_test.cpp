@@ -2,11 +2,9 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/server/document_scan_iterator.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace document;
 using namespace proton;
@@ -41,7 +39,7 @@ struct Fixture
         DocumentId docId(make_string("id:test:test:n=%u:%u", 1, lid));
         const GlobalId &gid = docId.getGlobalId();
         DMSResult res = _metaStore.inspect(gid, 0u);
-        ASSERT_EQUAL(lid, res._lid);
+        EXPECT_EQ(lid, res._lid);
         uint32_t docSize = 1;
         _metaStore.put(gid, gid.convertToBucketId(), Timestamp(lid), docSize, lid, 0u);
         return *this;
@@ -56,7 +54,7 @@ struct Fixture
             retval.insert(lid);
             EXPECT_TRUE(_itr->valid() || lid <= compactLidLimit);
         }
-        EXPECT_EQUAL(0u, next(compactLidLimit));
+        EXPECT_EQ(0u, next(compactLidLimit));
         EXPECT_FALSE(_itr->valid());
         return retval;
     }
@@ -68,21 +66,36 @@ struct Fixture
     }
 };
 
+class DocumentScanIteratorTest : public ::testing::Test, public Fixture
+{
+protected:
+    DocumentScanIteratorTest();
+    ~DocumentScanIteratorTest() override;
+};
+
+DocumentScanIteratorTest::DocumentScanIteratorTest()
+    : ::testing::Test(),
+      Fixture()
+{
+}
+
+DocumentScanIteratorTest::~DocumentScanIteratorTest() = default;
+
 void
 assertLidSet(const LidSet &exp, const LidSet &act)
 {
-    EXPECT_EQUAL(exp, act);
+    EXPECT_EQ(exp, act);
 }
 
-TEST_F("require that an empty document meta store don't return any thing", Fixture)
+TEST_F(DocumentScanIteratorTest, require_that_an_empty_document_meta_store_doesnt_return_any_thing)
 {
-    assertLidSet({}, f.scan(0, 4));
+    assertLidSet({}, scan(0, 4));
 }
 
-TEST_F("require that only lids > lid limit are returned", Fixture)
+TEST_F(DocumentScanIteratorTest, require_that_only_lids_gt_lid_limit_are_returned)
 {
-    f.add({1,2,3,4,5,6,7,8});
-    assertLidSet({5,6,7,8}, f.scan(4, 4));
+    add({1,2,3,4,5,6,7,8});
+    assertLidSet({5,6,7,8}, scan(4, 4));
 }
 
 }
