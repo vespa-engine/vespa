@@ -407,8 +407,7 @@ struct FixtureBase
     }
     const typename Traits::FeedView *getFeedView() {
         _tmpFeedView = _subDb.getFeedView();
-        const typename Traits::FeedView &retval =
-                dynamic_cast<typename Traits::FeedView &>(*_tmpFeedView.get());
+        auto& retval = dynamic_cast<const typename Traits::FeedView &>(*_tmpFeedView.get());
         return &retval;
     }
     const MyMetricsWireService &getWireService() const {
