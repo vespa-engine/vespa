@@ -12,11 +12,9 @@
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <mutex>
 #include <thread>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("flushengine_test");
@@ -443,6 +441,8 @@ struct Fixture
         : Fixture(numThreads, idleInterval, std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF))
     { }
 
+    ~Fixture();
+
     void putFlushHandler(const std::string &docTypeName, IFlushHandler::SP handler) {
         engine.putFlushHandler(DocTypeName(docTypeName), handler);
     }
@@ -466,14 +466,17 @@ struct Fixture
                 break;
             }
         }
-        EXPECT_EQUAL(expOldestSerial, handler.oldest_serial());
+        EXPECT_EQ(expOldestSerial, handler.oldest_serial());
     }
 };
 
-TEST("require that leaf defaults are sane") {
+Fixture::~Fixture() = default;
+
+TEST(FlushEngineTest, require_that_leaf_defaults_are_sane)
+{
     test::DummyFlushTarget leaf("dummy");
     EXPECT_FALSE(leaf.needUrgentFlush());
-    EXPECT_EQUAL(0.0, leaf.get_replay_operation_cost());
+    EXPECT_EQ(0.0, leaf.get_replay_operation_cost());
     EXPECT_TRUE(IFlushTarget::Priority::NORMAL == leaf.getPriority());
     EXPECT_TRUE(50 == static_cast<int>(IFlushTarget::Priority::NORMAL));
     EXPECT_TRUE(100 == static_cast<int>(IFlushTarget::Priority::HIGH));
@@ -481,8 +484,9 @@ TEST("require that leaf defaults are sane") {
     EXPECT_TRUE(IFlushTarget::Priority::HIGH > IFlushTarget::Priority::NORMAL);
 }
 
-TEST_F("require that strategy controls flush target", Fixture(1, IINTERVAL))
+TEST(FlushEngineTest, require_that_strategy_controls_flush_target)
 {
+    Fixture f(1, IINTERVAL);
     vespalib::Gate fooG, barG;
     std::vector<std::string> order;
     auto foo = std::make_shared<SimpleTarget>(std::make_unique<AppendTask>("foo", order, fooG), "foo");
@@ -496,25 +500,28 @@ TEST_F("require that strategy controls flush target", Fixture(1, IINTERVAL))
 
     EXPECT_TRUE(fooG.await(LONG_TIMEOUT));
     EXPECT_TRUE(barG.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(2u, order.size());
-    EXPECT_EQUAL("foo", order[0]);
-    EXPECT_EQUAL("bar", order[1]);
+    EXPECT_EQ(2u, order.size());
+    EXPECT_EQ("foo", order[0]);
+    EXPECT_EQ("bar", order[1]);
 }
 
-TEST_F("require that zero handlers does not core", Fixture(2, 50ms))
+TEST(FlushEngineTest, require_that_zero_handlers_does_not_core)
 {
+    Fixture f(2, 50ms);
     f.engine.start();
 }
 
-TEST_F("require that zero targets does not core", Fixture(2, 50ms))
+TEST(FlushEngineTest, require_that_zero_targets_does_not_core)
 {
+    Fixture f(2, 50ms);
     f.putFlushHandler("foo", std::make_shared<SimpleHandler>(Targets(), "foo"));
     f.putFlushHandler("bar", std::make_shared<SimpleHandler>(Targets(), "bar"));
     f.engine.start();
 }
 
-TEST_F("require that oldest serial is found", Fixture(1, IINTERVAL))
+TEST(FlushEngineTest, require_that_oldest_serial_is_found)
 {
+    Fixture f(1, IINTERVAL);
     auto foo = std::make_shared<SimpleTarget>("foo", 10);
     auto bar = std::make_shared<SimpleTarget>("bar", 20);
     f.addTargetToStrategy(foo);
@@ -525,18 +532,19 @@ TEST_F("require that oldest serial is found", Fixture(1, IINTERVAL))
     f.engine.start();
 
     EXPECT_TRUE(handler->_done.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(25ul, handler->_oldestSerial);
+    EXPECT_EQ(25ul, handler->_oldestSerial);
     FlushDoneHistory handlerFlushDoneHistory(handler->getFlushDoneHistory());
     if (handlerFlushDoneHistory.size() == 2u) {
         // Lost sample of oldest serial might happen when system load is high
-        EXPECT_EQUAL(FlushDoneHistory({ 10, 25 }), handlerFlushDoneHistory);
+        EXPECT_EQ(FlushDoneHistory({ 10, 25 }), handlerFlushDoneHistory);
     } else {
-        EXPECT_EQUAL(FlushDoneHistory({ 10, 20, 25 }), handlerFlushDoneHistory);
+        EXPECT_EQ(FlushDoneHistory({ 10, 20, 25 }), handlerFlushDoneHistory);
     }
 }
 
-TEST_F("require that GC targets are not considered when oldest serial is found", Fixture(1, IINTERVAL))
+TEST(FlushEngineTest, require_that_GC_targets_are_not_considered_when_oldest_serial_is_found)
 {
+    Fixture f(1, IINTERVAL);
     auto foo = std::make_shared<SimpleTarget>("foo", 5);
     auto bar = std::make_shared<GCTarget>("bar", 10);
     auto baz = std::make_shared<SimpleTarget>("baz", 20);
@@ -550,7 +558,7 @@ TEST_F("require that GC targets are not considered when oldest serial is found",
 
     // The targets are flushed in sequence: 'foo', 'bar', 'baz'
     EXPECT_TRUE(handler->_done.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(25ul, handler->_oldestSerial);
+    EXPECT_EQ(25ul, handler->_oldestSerial);
 
     // Before anything is flushed the oldest serial is 5.
     // After 'foo' has been flushed the oldest serial is 20 as GC target 'bar' is not considered.
@@ -558,11 +566,12 @@ TEST_F("require that GC targets are not considered when oldest serial is found",
     EXPECT_TRUE(history.end() == std::find(history.begin(), history.end(), 10));
     auto last_unique = std::unique(history.begin(), history.end());
     history.erase(last_unique, history.end());
-    EXPECT_EQUAL(FlushDoneHistory({ 5, 20, 25 }), history);
+    EXPECT_EQ(FlushDoneHistory({ 5, 20, 25 }), history);
 }
 
-TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
+TEST(FlushEngineTest, require_that_oldest_serial_is_found_in_group)
 {
+    Fixture f(2, IINTERVAL);
     auto fooT1 = std::make_shared<SimpleTarget>("fooT1", 10);
     auto fooT2 = std::make_shared<SimpleTarget>("fooT2", 20);
     auto barT1 = std::make_shared<SimpleTarget>("barT1",  5);
@@ -581,29 +590,30 @@ TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
     f.engine.start();
 
     EXPECT_TRUE(fooH->_done.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(25ul, fooH->_oldestSerial);
+    EXPECT_EQ(25ul, fooH->_oldestSerial);
     // [ 10, 25 ], [10, 10, 25], [ 10, 25, 25 ] and [ 10, 20, 25 ] are
     // legal histories
     FlushDoneHistory fooHFlushDoneHistory(fooH->getFlushDoneHistory());
     if (fooHFlushDoneHistory != FlushDoneHistory({ 10, 25 }) &&
         fooHFlushDoneHistory != FlushDoneHistory({ 10, 10, 25 }) &&
         fooHFlushDoneHistory != FlushDoneHistory({ 10, 25, 25 })) {
-        EXPECT_EQUAL(FlushDoneHistory({ 10, 20, 25 }), fooHFlushDoneHistory);
+        EXPECT_EQ(FlushDoneHistory({ 10, 20, 25 }), fooHFlushDoneHistory);
     }
     EXPECT_TRUE(barH->_done.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(20ul, barH->_oldestSerial);
+    EXPECT_EQ(20ul, barH->_oldestSerial);
     // [ 5, 20 ], [5, 5, 20], [ 5, 20, 20 ] and [ 5, 15, 20 ] are
     // legal histories
     FlushDoneHistory barHFlushDoneHistory(barH->getFlushDoneHistory());
     if (barHFlushDoneHistory != FlushDoneHistory({ 5, 20 }) &&
         barHFlushDoneHistory != FlushDoneHistory({ 5, 5, 20 }) &&
         barHFlushDoneHistory != FlushDoneHistory({ 5, 20, 20 })) {
-        EXPECT_EQUAL(FlushDoneHistory({ 5, 15, 20 }), barHFlushDoneHistory);
+        EXPECT_EQ(FlushDoneHistory({ 5, 15, 20 }), barHFlushDoneHistory);
     }
 }
 
-TEST_F("require that target can refuse flush", Fixture(2, IINTERVAL))
+TEST(FlushEngineTest, require_that_target_can_refuse_flush)
 {
+    Fixture f(2, IINTERVAL);
     auto target = std::make_shared<SimpleTarget>();
     auto handler = std::make_shared<SimpleHandler>(Targets({target}));
     target->_task = searchcorespi::FlushTask::UP();
@@ -615,8 +625,9 @@ TEST_F("require that target can refuse flush", Fixture(2, IINTERVAL))
     EXPECT_TRUE(!handler->_done.await(SHORT_TIMEOUT));
 }
 
-TEST_F("require that targets are flushed when nothing new to flush", Fixture(2, IINTERVAL))
+TEST(FlushEngineTest, require_that_targets_are_flushed_when_nothing_new_to_flush)
 {
+    Fixture f(2, IINTERVAL);
     auto target = std::make_shared<SimpleTarget>("anon", 5); // oldest unflushed serial num = 5
     auto handler = std::make_shared<SimpleHandler>(Targets({target}), "anon", 4); // current serial num = 4
     f.putFlushHandler("anon", handler);
@@ -627,8 +638,9 @@ TEST_F("require that targets are flushed when nothing new to flush", Fixture(2, 
     EXPECT_TRUE(handler->_done.await(LONG_TIMEOUT));
 }
 
-TEST_F("require that flushing targets are skipped", Fixture(2, IINTERVAL))
+TEST(FlushEngineTest, require_that_flushing_targets_are_skipped)
 {
+    Fixture f(2, IINTERVAL);
     auto foo = std::make_shared<SimpleTarget>("foo");
     auto bar = std::make_shared<SimpleTarget>("bar");
     f.addTargetToStrategy(foo);
@@ -642,8 +654,9 @@ TEST_F("require that flushing targets are skipped", Fixture(2, IINTERVAL))
     EXPECT_TRUE(bar->_taskDone.await(LONG_TIMEOUT)); /* this is the key check */
 }
 
-TEST_F("require that updated targets are not skipped", Fixture(2, IINTERVAL))
+TEST(FlushEngineTest, require_that_updated_targets_are_not_skipped)
 {
+    Fixture f(2, IINTERVAL);
     auto target = std::make_shared<SimpleTarget>("target", 1);
     f.addTargetToStrategy(target);
 
@@ -654,7 +667,7 @@ TEST_F("require that updated targets are not skipped", Fixture(2, IINTERVAL))
     EXPECT_TRUE(target->_taskDone.await(LONG_TIMEOUT));
 }
 
-TEST("require that threaded target works")
+TEST(FlushEngineTest, require_that_threaded_target_works)
 {
     SimpleExecutor executor;
     SimpleGetSerialNum getSerialNum;
@@ -665,18 +678,19 @@ TEST("require that threaded target works")
     EXPECT_TRUE(executor._done.await(LONG_TIMEOUT));
 }
 
-TEST("require that cached target works")
+TEST(FlushEngineTest, require_that_cached_target_works)
 {
     auto target = std::make_shared<CachedFlushTarget>(std::make_shared<AssertedTarget>());
     for (uint32_t i = 0; i < 2; ++i) {
-        EXPECT_EQUAL(0l, target->getApproxMemoryGain().getBefore());
-        EXPECT_EQUAL(0l, target->getApproxMemoryGain().getAfter());
-        EXPECT_EQUAL(0ul, target->getFlushedSerialNum());
+        EXPECT_EQ(0l, target->getApproxMemoryGain().getBefore());
+        EXPECT_EQ(0l, target->getApproxMemoryGain().getAfter());
+        EXPECT_EQ(0ul, target->getFlushedSerialNum());
     }
 }
 
-TEST_F("require that trigger flush works", Fixture(2, IINTERVAL))
+TEST(FlushEngineTest, require_that_trigger_flush_works)
 {
+    Fixture f(2, IINTERVAL);
     auto target = std::make_shared<SimpleTarget>("target", 1);
     f.addTargetToStrategy(target);
 
@@ -713,8 +727,9 @@ assertThatHandlersInCurrentSet(FlushEngine & engine, const std::vector<const cha
     }
 }
 
-TEST_F("require that concurrency works", Fixture(2, 1ms))
+TEST(FlushEngineTest, require_that_concurrency_works)
 {
+    Fixture f(2, 1ms);
     auto target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto target3 = std::make_shared<SimpleTarget>("target3", 3, false);
@@ -734,9 +749,9 @@ TEST_F("require that concurrency works", Fixture(2, 1ms))
     target2->_proceed.countDown();
 }
 
-TEST_F("require that there is room for one and only one high pri target",
-       Fixture(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL)))
+TEST(FlushEngineTest, require_that_there_is_room_for_one_and_only_one_high_pri_target)
 {
+    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL));
     auto target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto target3 = std::make_shared<HighPriorityTarget>("target3", 3, false);
@@ -744,9 +759,9 @@ TEST_F("require that there is room for one and only one high pri target",
     auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
     f.putFlushHandler("handler", handler);
     f.engine.start();
-    EXPECT_EQUAL(2u, f.engine.maxConcurrentNormal());
-    EXPECT_EQUAL(3u, f.engine.maxConcurrentTotal());
-    EXPECT_EQUAL(f.engine.maxConcurrentTotal(), f.engine.get_executor().getNumThreads());
+    EXPECT_EQ(2u, f.engine.maxConcurrentNormal());
+    EXPECT_EQ(3u, f.engine.maxConcurrentTotal());
+    EXPECT_EQ(f.engine.maxConcurrentTotal(), f.engine.get_executor().getNumThreads());
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
     EXPECT_TRUE(target2->_initDone.await(LONG_TIMEOUT));
@@ -768,9 +783,9 @@ TEST_F("require that there is room for one and only one high pri target",
     assertThatHandlersInCurrentSet(f.engine, {});
 }
 
-TEST_F("require that high priority does not jump the queue",
-       Fixture(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL)))
+TEST(FlushEngineTest, require_that_high_priority_does_not_jump_the_queue)
 {
+    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL));
     auto target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto target3 = std::make_shared<SimpleTarget>("target3", 3, false);
@@ -778,9 +793,9 @@ TEST_F("require that high priority does not jump the queue",
     auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
     f.putFlushHandler("handler", handler);
     f.engine.start();
-    EXPECT_EQUAL(2u, f.engine.maxConcurrentNormal());
-    EXPECT_EQUAL(3u, f.engine.maxConcurrentTotal());
-    EXPECT_EQUAL(f.engine.maxConcurrentTotal(), f.engine.get_executor().getNumThreads());
+    EXPECT_EQ(2u, f.engine.maxConcurrentNormal());
+    EXPECT_EQ(3u, f.engine.maxConcurrentTotal());
+    EXPECT_EQ(f.engine.maxConcurrentTotal(), f.engine.get_executor().getNumThreads());
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
     EXPECT_TRUE(target2->_initDone.await(LONG_TIMEOUT));
@@ -803,14 +818,15 @@ TEST_F("require that high priority does not jump the queue",
     assertThatHandlersInCurrentSet(f.engine, {});
 }
 
-TEST_F("require that concurrency works with triggerFlush", Fixture(2, 1ms))
+TEST(FlushEngineTest, require_that_concurrency_works_with_triggerFlush)
 {
+    Fixture f(2, 1ms);
     auto target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto target3 = std::make_shared<SimpleTarget>("target3", 3, false);
     auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3}), "handler", 9);
     f.putFlushHandler("handler", handler);
-    std::thread thread([this]() { f.engine.triggerFlush(); });
+    std::thread thread([&f]() { f.engine.triggerFlush(); });
     std::this_thread::sleep_for(1s);
     f.engine.start();
     
@@ -827,8 +843,9 @@ TEST_F("require that concurrency works with triggerFlush", Fixture(2, 1ms))
     thread.join();
 }
 
-TEST_F("require that state explorer can list flush targets", Fixture(1, 1ms))
+TEST(FlushEngineTest, require_that_state_explorer_can_list_flush_targets)
 {
+    Fixture f(1, 1ms);
     auto target = std::make_shared<SimpleTarget>("target1", 100, false);
     f.putFlushHandler("handler",
                       std::make_shared<SimpleHandler>(
@@ -844,40 +861,42 @@ TEST_F("require that state explorer can list flush targets", Fixture(1, 1ms))
     explorer.get_state(inserter, true);
 
     Inspector &all = state.get()["allTargets"];
-    EXPECT_EQUAL(2u, all.children());
-    EXPECT_EQUAL("handler.target2", all[0]["name"].asString().make_string());
-    EXPECT_EQUAL(50, all[0]["flushedSerialNum"].asLong());
-    EXPECT_EQUAL("handler.target1", all[1]["name"].asString().make_string());
-    EXPECT_EQUAL(100, all[1]["flushedSerialNum"].asLong());
+    EXPECT_EQ(2u, all.children());
+    EXPECT_EQ("handler.target2", all[0]["name"].asString().make_string());
+    EXPECT_EQ(50, all[0]["flushedSerialNum"].asLong());
+    EXPECT_EQ("handler.target1", all[1]["name"].asString().make_string());
+    EXPECT_EQ(100, all[1]["flushedSerialNum"].asLong());
 
     Inspector &flushing = state.get()["flushingTargets"];
-    EXPECT_EQUAL(1u, flushing.children());
-    EXPECT_EQUAL("handler.target1", flushing[0]["name"].asString().make_string());
+    EXPECT_EQ(1u, flushing.children());
+    EXPECT_EQ("handler.target1", flushing[0]["name"].asString().make_string());
 
     target->_proceed.countDown();
     target->_taskDone.await(LONG_TIMEOUT);
 }
 
-TEST_F("require that oldest serial is updated when closing engine", Fixture(1, 100ms))
+TEST(FlushEngineTest, require_that_oldest_serial_is_updated_when_closing_engine)
 {
+    Fixture f(1, 100ms);
     auto target1 = std::make_shared<SimpleTarget>("target1", 10, false);
     auto handler = f.addSimpleHandler({ target1 });
-    TEST_DO(f.assertOldestSerial(*handler, 10));
+    f.assertOldestSerial(*handler, 10);
     target1->_proceed.countDown();
     f.engine.close();
-    EXPECT_EQUAL(20u, handler->_oldestSerial);
+    EXPECT_EQ(20u, handler->_oldestSerial);
 }
 
-TEST_F("require that oldest serial is updated when finishing priority flush strategy", Fixture(1, 100ms, std::make_shared<NoFlushStrategy>()))
+TEST(FlushEngineTest, require_that_oldest_serial_is_updated_when_finishing_priority_flush_strategy)
 {
+    Fixture f(1, 100ms, std::make_shared<NoFlushStrategy>());
     auto target1 = std::make_shared<SimpleTarget>("target1", 10, true);
     auto handler = f.addSimpleHandler({ target1 });
-    TEST_DO(f.assertOldestSerial(*handler, 10));
+    f.assertOldestSerial(*handler, 10);
     f.engine.setStrategy(std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF));
-    EXPECT_EQUAL(20u, handler->_oldestSerial);
+    EXPECT_EQ(20u, handler->_oldestSerial);
 }
 
-TEST("the oldest start time is tracked per flush handler in ActiveFlushStats")
+TEST(FlushEngineTest, the_oldest_start_time_is_tracked_per_flush_handler_in_ActiveFlushStats)
 {
     using seconds = std::chrono::seconds;
     using vespalib::system_time;
@@ -890,17 +909,14 @@ TEST("the oldest start time is tracked per flush handler in ActiveFlushStats")
     EXPECT_FALSE(stats.oldest_start_time("h1").has_value());
     stats.set_start_time("h1", t2);
     stats.set_start_time("h2", t4);
-    EXPECT_EQUAL(t2, stats.oldest_start_time("h1").value());
-    EXPECT_EQUAL(t4, stats.oldest_start_time("h2").value());
+    EXPECT_EQ(t2, stats.oldest_start_time("h1").value());
+    EXPECT_EQ(t4, stats.oldest_start_time("h2").value());
 
     stats.set_start_time("h1", t1);
-    EXPECT_EQUAL(t1, stats.oldest_start_time("h1").value());
+    EXPECT_EQ(t1, stats.oldest_start_time("h1").value());
     stats.set_start_time("h1", t3);
-    EXPECT_EQUAL(t1, stats.oldest_start_time("h1").value());
+    EXPECT_EQ(t1, stats.oldest_start_time("h1").value());
 }
 
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
