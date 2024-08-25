@@ -37,9 +37,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <optional>
 
 using namespace document;
 using document::config_builder::Array;
@@ -118,6 +117,7 @@ struct Fixture {
         : docType(repo->getDocumentType("testdoc"))
     {
     }
+    ~Fixture();
 
     void applyValueUpdate(AttributeVector & vec, uint32_t docId, std::unique_ptr<ValueUpdate> upd) {
         FieldUpdate fupd(docType->getField(vec.getName()));
@@ -148,25 +148,40 @@ struct Fixture {
     }
 };
 
+Fixture::~Fixture() = default;
+
 template <typename T>
 bool
 check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values)
 {
     uint32_t sz = vec->getValueCount(docId);
-    if (!EXPECT_EQUAL(sz, values.size())) return false;
+    bool failed = false;
+    EXPECT_EQ(sz, values.size()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     std::vector<T> buf(sz);
     uint32_t asz = vec->get(docId, buf.data(), sz);
-    if (!EXPECT_EQUAL(sz, asz)) return false;
+    EXPECT_EQ(sz, asz) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     std::vector<T> wanted(values.begin(), values.end());
     if (vec->hasWeightedSetType()) {
         std::sort(wanted.begin(), wanted.end(), value_then_weight_order());
         std::sort(buf.begin(), buf.end(), value_then_weight_order());
     }
     for (uint32_t i = 0; i < values.size(); ++i) {
-        if (!EXPECT_EQUAL(buf[i].getValue(), wanted[i].getValue())) return false;
-        if (!EXPECT_EQUAL(buf[i].getWeight(), wanted[i].getWeight())) return false;
+        EXPECT_EQ(buf[i].getValue(), wanted[i].getValue()) << (failed = true, "");
+        if (failed) {
+            return false;
+        }
+        EXPECT_EQ(buf[i].getWeight(), wanted[i].getWeight()) << (failed = true, "");
+        if (failed) {
+            return false;
+        }
     }
-    return true;
+    return !failed;
 }
 
 GlobalId toGid(std::string_view docId) {
@@ -181,20 +196,18 @@ ReferenceAttribute &asReferenceAttribute(AttributeVector &vec)
     return dynamic_cast<ReferenceAttribute &>(vec);
 }
 
-void assertNoRef(AttributeVector &vec, uint32_t doc)
+std::optional<GlobalId> get_ref(AttributeVector& vec, uint32_t doc)
 {
-    EXPECT_TRUE(asReferenceAttribute(vec).getReference(doc) == nullptr);
-}
-
-void assertRef(AttributeVector &vec, std::string_view str, uint32_t doc) {
     const Reference *ref = asReferenceAttribute(vec).getReference(doc);
-    EXPECT_TRUE(ref != nullptr);
-    const GlobalId &gid = ref->gid();
-    EXPECT_EQUAL(toGid(str), gid);
+    if (ref == nullptr) {
+        return std::nullopt;
+    }
+    return ref->gid();
 }
 
-TEST_F("require that single attributes are updated", Fixture)
+TEST(AttributeUpdaterTest, require_that_single_attributes_are_updated)
 {
+    Fixture f;
     using search::attribute::getUndefined;
     CollectionType ct(CollectionType::SINGLE);
     {
@@ -202,7 +215,7 @@ TEST_F("require that single attributes are updated", Fixture)
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(64)));
         f.applyValueUpdate(*vec, 2, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(4u, vec->getNumDocs());
+        EXPECT_EQ(4u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(64)}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(42)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{WeightedInt(getUndefined<int32_t>())}));
@@ -212,7 +225,7 @@ TEST_F("require that single attributes are updated", Fixture)
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<FloatFieldValue>(77.7f)));
         f.applyValueUpdate(*vec, 2, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(4u, vec->getNumDocs());
+        EXPECT_EQ(4u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{WeightedFloat(65.5f)}));
         EXPECT_TRUE(std::isnan(vec->getFloat(3)));
@@ -221,7 +234,7 @@ TEST_F("require that single attributes are updated", Fixture)
         auto vec = AttributeBuilder("in1/string", Config(BasicType::STRING)).fill({"first"s, "first"s, "first"s}).get();
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(StringFieldValue::make("second")));
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(4u, vec->getNumDocs());
+        EXPECT_EQ(4u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("second")}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("first")}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{WeightedString("")}));
@@ -234,18 +247,18 @@ TEST_F("require that single attributes are updated", Fixture)
         uint32_t startDoc = 0;
         uint32_t endDoc = 0;
         EXPECT_TRUE(vec->addDocs(startDoc, endDoc, 3));
-        EXPECT_EQUAL(1u, startDoc);
-        EXPECT_EQUAL(3u, endDoc);
+        EXPECT_EQ(1u, startDoc);
+        EXPECT_EQ(3u, endDoc);
         for (uint32_t docId = 1; docId < 4; ++docId) {
             asReferenceAttribute(*vec).update(docId, toGid(doc1));
         }
         vec->commit();
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<ReferenceFieldValue>(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(4u, vec->getNumDocs());
-        TEST_DO(assertRef(*vec, doc2, 1));
-        TEST_DO(assertRef(*vec, doc1, 2));
-        TEST_DO(assertNoRef(*vec, 3));
+        EXPECT_EQ(4u, vec->getNumDocs());
+        EXPECT_EQ(std::optional<GlobalId>(toGid(doc2)), get_ref(*vec, 1));
+        EXPECT_EQ(std::optional<GlobalId>(toGid(doc1)), get_ref(*vec, 2));
+        EXPECT_EQ(std::optional<GlobalId>(), get_ref(*vec, 3));
     }
     {
         std::string first_backing("first");
@@ -254,16 +267,17 @@ TEST_F("require that single attributes are updated", Fixture)
         f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<RawFieldValue>("second")));
         f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
         f.applyValue(*vec, 4, std::make_unique<RawFieldValue>("third"));
-        EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_EQUAL(as_vector("second"sv), as_vector(vec->get_raw(1)));
-        EXPECT_EQUAL(as_vector("first"sv), as_vector(vec->get_raw(2)));
-        EXPECT_EQUAL(as_vector(""sv), as_vector(vec->get_raw(3)));
-        EXPECT_EQUAL(as_vector("third"sv), as_vector(vec->get_raw(4)));
+        EXPECT_EQ(5u, vec->getNumDocs());
+        EXPECT_EQ(as_vector("second"sv), as_vector(vec->get_raw(1)));
+        EXPECT_EQ(as_vector("first"sv), as_vector(vec->get_raw(2)));
+        EXPECT_EQ(as_vector(""sv), as_vector(vec->get_raw(3)));
+        EXPECT_EQ(as_vector("third"sv), as_vector(vec->get_raw(4)));
     }
 }
 
-TEST_F("require that array attributes are updated", Fixture)
+TEST(AttributeUpdaterTest, require_that_array_attributes_are_updated)
 {
+    Fixture f;
     CollectionType ct(CollectionType::ARRAY);
     {
         using IL = AttributeBuilder::IntList;
@@ -274,7 +288,7 @@ TEST_F("require that array attributes are updated", Fixture)
         assign->add(*second);
         f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
-        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_EQ(6u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(64)}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(32), WeightedInt(64)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{}));
@@ -290,7 +304,7 @@ TEST_F("require that array attributes are updated", Fixture)
         assign->add(*second);
         f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
-        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_EQ(6u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{WeightedFloat(55.5f), WeightedFloat(77.7f)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedFloat>{}));
@@ -305,7 +319,7 @@ TEST_F("require that array attributes are updated", Fixture)
         assign->add(*second);
         f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
-        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_EQ(6u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("second")}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("first"), WeightedString("second")}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{}));
@@ -314,8 +328,9 @@ TEST_F("require that array attributes are updated", Fixture)
     }
 }
 
-TEST_F("require that weighted set attributes are updated", Fixture)
+TEST(AttributeUpdaterTest, require_that_weighted_set_attributes_are_updated)
 {
+    Fixture f;
     CollectionType ct(CollectionType::WSET);
     {
         using WIL = AttributeBuilder::WeightedIntList;
@@ -327,7 +342,7 @@ TEST_F("require that weighted set attributes are updated", Fixture)
         assign->add(*second, 20);
         f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
-        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_EQ(6u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(64, 20)}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(32, 100), WeightedInt(64, 20)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{}));
@@ -344,7 +359,7 @@ TEST_F("require that weighted set attributes are updated", Fixture)
         assign->add(*second, 20);
         f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
-        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_EQ(6u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(77.7f, 20)}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{WeightedFloat(55.5f, 100), WeightedFloat(77.7f, 20)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedFloat>{}));
@@ -360,7 +375,7 @@ TEST_F("require that weighted set attributes are updated", Fixture)
         assign->add(*second, 20);
         f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
-        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_EQ(6u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("second", 20)}));
         EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("first", 100), WeightedString("second", 20)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{}));
@@ -415,6 +430,7 @@ struct TensorFixture : public Fixture {
           attribute(makeTensorAttribute<TensorAttributeType>(name, type))
     {
     }
+    ~TensorFixture();
 
     void setTensor(const TensorSpec &spec) {
         auto tensor = makeTensor(spec);
@@ -424,13 +440,16 @@ struct TensorFixture : public Fixture {
 
     void assertTensor(const TensorSpec &expSpec) {
         auto actual = spec_from_value(*attribute->getTensor(1));
-        EXPECT_EQUAL(expSpec, actual);
+        EXPECT_EQ(expSpec, actual);
     }
 };
 
-TEST_F("require that tensor modify update is applied",
-        TensorFixture<DenseTensorAttribute>("tensor(x[2])", "dense_tensor"))
+template <typename TensorAttributeType>
+TensorFixture<TensorAttributeType>::~TensorFixture() = default;
+
+TEST(AttributeUpdaterTest, require_that_tensor_modify_update_is_applied)
 {
+    TensorFixture<DenseTensorAttribute> f("tensor(x[2])", "dense_tensor");
     f.setTensor(TensorSpec(f.type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
     f.applyValueUpdate(*f.attribute, 1,
                        std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE,
@@ -438,35 +457,35 @@ TEST_F("require that tensor modify update is applied",
     f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 7).add({{"x", 1}}, 5));
 }
 
-TEST_F("require that tensor modify update with 'create: true' is applied to non-existing tensor",
-       TensorFixture<DenseTensorAttribute>("tensor(x[2])", "dense_tensor"))
+TEST(AttributeUpdaterTest, require_that_tensor_modify_update_with_create_true_is_applied_to_non_existing_tensor)
 {
+    TensorFixture<DenseTensorAttribute> f("tensor(x[2])", "dense_tensor");
     f.applyValueUpdate(*f.attribute, 1,
                        std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD,
                                                             makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "1"}}, 3)), 0.0));
     f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 0).add({{"x", 1}}, 3));
 }
 
-TEST_F("require that tensor add update is applied",
-        TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
+TEST(AttributeUpdaterTest, require_that_tensor_add_update_is_applied)
 {
+TensorFixture<SerializedFastValueAttribute> f("tensor(x{})", "sparse_tensor");
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
     f.applyValueUpdate(*f.attribute, 1,
                        std::make_unique<TensorAddUpdate>(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
 }
 
-TEST_F("require that tensor add update to non-existing tensor creates empty tensor first",
-       TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
+TEST(AttributeUpdaterTest, require_that_tensor_add_update_to_non_existing_tensor_creates_empty_tensor_first)
 {
+TensorFixture<SerializedFastValueAttribute> f("tensor(x{})", "sparse_tensor");
     f.applyValueUpdate(*f.attribute, 1,
                        std::make_unique<TensorAddUpdate>(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
 }
 
-TEST_F("require that tensor remove update is applied",
-        TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
+TEST(AttributeUpdaterTest, require_that_tensor_remove_update_is_applied)
 {
+TensorFixture<SerializedFastValueAttribute> f("tensor(x{})", "sparse_tensor");
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2).add({{"x", "b"}}, 3));
     f.applyValueUpdate(*f.attribute, 1,
                        std::make_unique<TensorRemoveUpdate>(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "b"}}, 1))));

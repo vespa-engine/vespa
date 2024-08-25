@@ -10,9 +10,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <filesystem>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
-#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using search::index::DummyFileHeaderContext;
 using search::transactionlog::client::TransLogClient;
@@ -58,7 +56,7 @@ struct DiskLayoutFixture {
     std::set<std::string> listDomains() {
         std::vector<std::string> domainVector;
         TransLogClient tlc(_transport.transport(), _tlsSpec);
-        ASSERT_TRUE(tlc.listDomains(domainVector));
+        EXPECT_TRUE(tlc.listDomains(domainVector));
         std::set<std::string> domains;
         for (const auto &domain : domainVector) {
             domains.emplace(domain);
@@ -85,15 +83,6 @@ struct DiskLayoutFixture {
         }
         _diskLayout.initAndPruneUnused(docTypeNames);
     }
-
-    void assertDirs(const std::set<std::string> &expDirs) {
-        EXPECT_EQUAL(expDirs, listDirs());
-    }
-
-    void assertDomains(const std::set<std::string> &expDomains)
-    {
-        EXPECT_EQUAL(expDomains, listDomains());
-    }
 };
 
 DiskLayoutFixture::DiskLayoutFixture()
@@ -114,17 +103,23 @@ struct Fixture : public FixtureBase, public DiskLayoutFixture
           DiskLayoutFixture()
     {
     }
+    ~Fixture();
 };
 
+Fixture::~Fixture() = default;
+
 }
 
-TEST_F("require that empty config is ok", Fixture) {
-    TEST_DO(f.assertDirs({}));
-    TEST_DO(f.assertDomains({}));
-}
-
-TEST_F("require that disk layout is preserved", FixtureBase)
+TEST(ProtonDiskLayoutTest, require_that_empty_config_is_ok)
 {
+    Fixture f;
+    EXPECT_EQ((std::set<std::string>{}), f.listDirs());
+    EXPECT_EQ((std::set<std::string>{}), f.listDomains());
+}
+
+TEST(ProtonDiskLayoutTest, require_that_disk_layout_is_preserved)
+{
+    FixtureBase f;
     {
         DiskLayoutFixture diskLayout;
         diskLayout.createDirs({"foo", "bar"});
@@ -132,55 +127,60 @@ TEST_F("require that disk layout is preserved", FixtureBase)
     }
     {
         DiskLayoutFixture diskLayout;
-        TEST_DO(diskLayout.assertDirs({"foo", "bar"}));
-        TEST_DO(diskLayout.assertDomains({"bar", "baz"}));
+        EXPECT_EQ((std::set<std::string>{"foo", "bar"}), diskLayout.listDirs());
+        EXPECT_EQ((std::set<std::string>{"bar", "baz"}), diskLayout.listDomains());
     }
 }
 
-TEST_F("require that used dir is preserved", Fixture)
+TEST(ProtonDiskLayoutTest, require_that_used_dir_is_preserved)
 {
+    Fixture f;
     f.createDirs({"foo"});
     f.createDomains({"foo"});
     f.initAndPruneUnused({"foo"});
-    TEST_DO(f.assertDirs({"foo"}));
-    TEST_DO(f.assertDomains({"foo"}));
+    EXPECT_EQ((std::set<std::string>{"foo"}), f.listDirs());
+    EXPECT_EQ((std::set<std::string>{"foo"}), f.listDomains());
 }
 
-TEST_F("require that unused dir is removed", Fixture)
+TEST(ProtonDiskLayoutTest, require_that_unused_dir_is_removed)
 {
+    Fixture f;
     f.createDirs({"foo"});
     f.createDomains({"foo"});
     f.initAndPruneUnused({"bar"});
-    TEST_DO(f.assertDirs({}));
-    TEST_DO(f.assertDomains({}));
+    EXPECT_EQ((std::set<std::string>{}), f.listDirs());
+    EXPECT_EQ((std::set<std::string>{}), f.listDomains());
 }
 
-TEST_F("require that interrupted remove is completed", Fixture)
+TEST(ProtonDiskLayoutTest, require_that_interrupted_remove_is_completed)
 {
+    Fixture f;
     f.createDirs({"foo.removed"});
     f.createDomains({"foo"});
     f.initAndPruneUnused({"foo"});
-    TEST_DO(f.assertDirs({}));
-    TEST_DO(f.assertDomains({}));
+    EXPECT_EQ((std::set<std::string>{}), f.listDirs());
+    EXPECT_EQ((std::set<std::string>{}), f.listDomains());
 }
 
-TEST_F("require that early interrupted remove is completed", Fixture)
+TEST(ProtonDiskLayoutTest, require_that_early_interrupted_remove_is_completed)
 {
+    Fixture f;
     f.createDirs({"foo", "foo.removed"});
     f.createDomains({"foo"});
     f.initAndPruneUnused({"foo"});
-    TEST_DO(f.assertDirs({}));
-    TEST_DO(f.assertDomains({}));
+    EXPECT_EQ((std::set<std::string>{}), f.listDirs());
+    EXPECT_EQ((std::set<std::string>{}), f.listDomains());
 }
 
-TEST_F("require that live document db dir remove works", Fixture)
+TEST(ProtonDiskLayoutTest, require_that_live_document_db_dir_remove_works)
 {
+    Fixture f;
     f.createDirs({"foo"});
     f.createDomains({"foo"});
     f.initAndPruneUnused({"foo"});
-    TEST_DO(f.assertDirs({"foo"}));
-    TEST_DO(f.assertDomains({"foo"}));
+    EXPECT_EQ((std::set<std::string>{"foo"}), f.listDirs());
+    EXPECT_EQ((std::set<std::string>{"foo"}), f.listDomains());
     f._diskLayout.remove(DocTypeName("foo"));
-    TEST_DO(f.assertDirs({}));
-    TEST_DO(f.assertDomains({}));
+    EXPECT_EQ((std::set<std::string>{}), f.listDirs());
+    EXPECT_EQ((std::set<std::string>{}), f.listDomains());
 }
