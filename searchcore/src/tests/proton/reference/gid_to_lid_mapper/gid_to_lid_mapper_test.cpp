@@ -2,13 +2,11 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_mapper.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_mapper_factory.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <string>
 
 #include <vespa/log/log.h>
@@ -60,36 +58,33 @@ GidMap collectGids(const std::unique_ptr<search::IGidToLidMapper> &mapper)
     return result;
 }
 
-void assertGids(const GidMap &expGids, const GidMap &gids)
-{
-    EXPECT_EQUAL(expGids, gids);
-}
-
 void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, std::string_view docId, uint32_t lid) {
     auto gids = collectGids(mapper);
     auto itr = gids.find(toGid(docId));
     uint32_t foundLid = (itr != gids.end()) ? itr->second : 0u;
-    EXPECT_EQUAL(lid, foundLid);
+    EXPECT_EQ(lid, foundLid);
 }
 
 }
 
-struct Fixture
+class GidToLidMapperTest : public ::testing::Test
 {
-
+protected:
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     std::shared_ptr<DocumentMetaStore> _dms;
     std::shared_ptr<const DocumentMetaStoreContext> _dmsContext;
     Timestamp _timestamp;
     using generation_t = GenerationHandler::generation_t;
 
-    Fixture()
+    GidToLidMapperTest()
         : _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
           _dms(std::make_shared<DocumentMetaStore>(_bucketDB)),
           _dmsContext(std::make_shared<const DocumentMetaStoreContext>(_dms))
     {
         populate();
     }
+
+    ~GidToLidMapperTest() override;
 
     void bumpTimeStamp() {
         _timestamp = Timestamp(_timestamp.getValue() + 1);
@@ -128,53 +123,54 @@ struct Fixture
         return std::make_shared<GidToLidMapperFactory>(_dmsContext);
     }
 
-    void assertGenerations(generation_t currentGeneration, generation_t oldest_used_generation)
+    void assertGenerations(generation_t currentGeneration, generation_t oldest_used_generation, std::string_view label)
     {
+        SCOPED_TRACE(label);
         const GenerationHandler &handler = _dms->getGenerationHandler();
-        EXPECT_EQUAL(currentGeneration, handler.getCurrentGeneration());
-        EXPECT_EQUAL(oldest_used_generation, handler.get_oldest_used_generation());
+        EXPECT_EQ(currentGeneration, handler.getCurrentGeneration());
+        EXPECT_EQ(oldest_used_generation, handler.get_oldest_used_generation());
     }
 
     template <typename Function>
     void assertPut(std::string_view docId, uint32_t expLid,
                    generation_t currentGeneration, generation_t firstUsedGeneration,
-                   Function &&func)
+                   Function &&func, std::string_view label)
     {
+        SCOPED_TRACE(label);
         uint32_t lid = put(docId);
-        EXPECT_EQUAL(expLid, lid);
-        TEST_DO(assertLid(func(), docId, expLid));
-        TEST_DO(assertGenerations(currentGeneration, firstUsedGeneration));
+        EXPECT_EQ(expLid, lid);
+        assertLid(func(), docId, expLid);
+        assertGenerations(currentGeneration, firstUsedGeneration, "assertPut");
     }
 };
 
-TEST_F("Test that mapper holds read guard", Fixture)
+GidToLidMapperTest::~GidToLidMapperTest() = default;
+
+TEST_F(GidToLidMapperTest, test_that_mapper_holds_read_guard)
 {
-    TEST_DO(f.assertGenerations(3, 3));
-    auto factory = f.getGidToLidMapperFactory();
-    TEST_DO(f.assertPut(doc3, 1, 4, 4, [&]() { return factory->getMapper(); }));
+    assertGenerations(3, 3, "initial");
+    auto factory = getGidToLidMapperFactory();
+    assertPut(doc3, 1, 4, 4, [&]() { return factory->getMapper(); }, "put1");
     // Remove and readd withoug guard, old docid can be reused
-    f.remove(1);
-    TEST_DO(f.assertPut(doc3, 1, 7, 7, [&]() { return factory->getMapper(); }));
+    remove(1);
+    assertPut(doc3, 1, 7, 7, [&]() { return factory->getMapper(); }, "put2");
     // Remove and readd withoug guard, old docid cannot be reused
     auto mapper = factory->getMapper();
-    f.remove(1);
-    TEST_DO(f.assertPut(doc3, 2, 10, 7, [&]() -> auto & { return mapper; }));
+    remove(1);
+    assertPut(doc3, 2, 10, 7, [&]() -> auto & { return mapper; }, "put3");
 }
 
-TEST_F("Test that gid mapper can iterate over known gids", Fixture)
+TEST_F(GidToLidMapperTest, Test_that_gid_mapper_can_iterate_over_known_gids)
 {
-    auto factory = f.getGidToLidMapperFactory();
+    auto factory = getGidToLidMapperFactory();
     auto mapper = factory->getMapper();
-    TEST_DO(assertGids({{toGid(doc1), 4}, {toGid(doc2), 7}}, collectGids(mapper)));
-    f.put(doc3);
-    TEST_DO(assertGids({{toGid(doc1), 4}, {toGid(doc2), 7}, {toGid(doc3), 1}}, collectGids(mapper)));
-    f.remove(4);
-    TEST_DO(assertGids({{toGid(doc2), 7}, {toGid(doc3), 1}}, collectGids(mapper)));
+    EXPECT_EQ((GidMap{{toGid(doc1), 4}, {toGid(doc2), 7}}), collectGids(mapper));
+    put(doc3);
+    EXPECT_EQ((GidMap{{toGid(doc1), 4}, {toGid(doc2), 7}, {toGid(doc3), 1}}), collectGids(mapper));
+    remove(4);
+    EXPECT_EQ((GidMap{{toGid(doc2), 7}, {toGid(doc3), 1}}), collectGids(mapper));
 }
 
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

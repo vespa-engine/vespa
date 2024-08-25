@@ -6,5 +6,6 @@ vespa_add_executable(searchcore_gid_to_lid_mapper_test_app TEST
     searchcore_reference
     searchcore_documentmetastore
     searchcore_bucketdb
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_gid_to_lid_mapper_test_app COMMAND searchcore_gid_to_lid_mapper_test_app)
