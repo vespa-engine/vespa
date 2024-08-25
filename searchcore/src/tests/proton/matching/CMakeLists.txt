@@ -20,6 +20,7 @@ vespa_add_executable(searchcore_sessionmanager_test_app TEST
     DEPENDS
     searchcore_matching
     searchcore_grouping
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_sessionmanager_test_app COMMAND searchcore_sessionmanager_test_app)
 vespa_add_executable(searchcore_matching_stats_test_app TEST
