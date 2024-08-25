@@ -1,11 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/attribute/posting_list_merger.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::btree::BTreeNoLeafData;
 using search::attribute::PostingListMerger;
@@ -60,16 +58,17 @@ public:
 
 constexpr uint32_t docIdLimit = 16_Ki;
 
-struct WeightedFixture
+class PostingListMergerTest : public ::testing::Test
 {
+protected:
     PostingListMerger<int32_t> _merger;
 
-    WeightedFixture()
+    PostingListMergerTest()
         : _merger(docIdLimit)
     {
     }
 
-    ~WeightedFixture() = default;
+    ~PostingListMergerTest() override;
 
     void reserveArray(uint32_t postingsCount, size_t postingsSize) { _merger.reserveArray(postingsCount, postingsSize); }
 
@@ -93,67 +92,59 @@ struct WeightedFixture
         }
         return result;
     }
-
-    void assertArray(std::vector<Posting> exp)
-    {
-        EXPECT_EQUAL(exp, asArray());
-    }
-
-    void assertBitVector(std::vector<uint32_t> exp)
-    {
-        EXPECT_EQUAL(exp, bvAsArray());
-    }
 };
 
-TEST_F("Single weighted array", WeightedFixture)
+PostingListMergerTest::~PostingListMergerTest() = default;
+
+TEST_F(PostingListMergerTest, Single_weighted_array)
 {
-    f._merger.reserveArray(1, 4);
-    f._merger.addToArray(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
-    f._merger.merge();
-    TEST_DO(f.assertArray({{2, 102}, {3, 103}, {5, 105}, {9, 109}}));
+    _merger.reserveArray(1, 4);
+    _merger.addToArray(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
+    _merger.merge();
+    EXPECT_EQ((std::vector<Posting>{{2, 102}, {3, 103}, {5, 105}, {9, 109}}), asArray());
 }
 
-TEST_F("Merge array", WeightedFixture)
+TEST_F(PostingListMergerTest, Merge_array)
 {
-    f._merger.reserveArray(2, 8);
-    f._merger.addToArray(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
-    f._merger.addToArray(WeightedPostingList({{ 6, 106}, {8, 108}, { 14, 114}, {17, 117}}));
-    f._merger.merge();
-    TEST_DO(f.assertArray({{2, 102}, {3, 103}, {5, 105}, {6, 106}, {8, 108}, {9, 109}, {14, 114}, {17, 117}}));
+    _merger.reserveArray(2, 8);
+    _merger.addToArray(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
+    _merger.addToArray(WeightedPostingList({{ 6, 106}, {8, 108}, { 14, 114}, {17, 117}}));
+    _merger.merge();
+    EXPECT_EQ((std::vector<Posting>{{2, 102}, {3, 103}, {5, 105}, {6, 106}, {8, 108}, {9, 109}, {14, 114}, {17, 117}}), asArray());
 }
 
-TEST_F("Merge many arrays", WeightedFixture)
+TEST_F(PostingListMergerTest, Merge_many_arrays)
 {
     std::vector<Posting> res;
-    f._merger.reserveArray(10, 100);
+    _merger.reserveArray(10, 100);
     for (uint32_t i = 0; i < 10; ++i) {
         std::vector<Posting> fragment;
         for (uint32_t j = 0; j < 10; ++j) {
             fragment.emplace_back(j * 100 + i, j * 200 + i);
         }
-        f._merger.addToArray(WeightedPostingList(fragment));
+        _merger.addToArray(WeightedPostingList(fragment));
         res.insert(res.end(), fragment.begin(), fragment.end());
     }
-    f._merger.merge();
+    _merger.merge();
     std::sort(res.begin(), res.end());
-    TEST_DO(f.assertArray(res));
+    EXPECT_EQ(res, asArray());
 }
 
-TEST_F("Merge single posting list into bitvector", WeightedFixture)
+TEST_F(PostingListMergerTest, Merge_single_posting_list_into_bitvector)
 {
-    f._merger.allocBitVector();
-    f._merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
-    f._merger.merge();
-    TEST_DO(f.assertBitVector({2, 3, 5, 9}));
+    _merger.allocBitVector();
+    _merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
+    _merger.merge();
+    EXPECT_EQ((std::vector<uint32_t>{2, 3, 5, 9}), bvAsArray());
 }
 
-TEST_F("Merge multiple posting lists into bitvector", WeightedFixture)
+TEST_F(PostingListMergerTest, Merge_multiple_posting_lists_into_bitvector)
 {
-    f._merger.allocBitVector();
-    f._merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
-    f._merger.addToBitVector(WeightedPostingList({{ 6, 106}, {8, 108}, { 14, 114}, {17, 117}}));
-    f._merger.merge();
-    TEST_DO(f.assertBitVector({2, 3, 5, 6, 8, 9, 14, 17}));
+    _merger.allocBitVector();
+    _merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
+    _merger.addToBitVector(WeightedPostingList({{ 6, 106}, {8, 108}, { 14, 114}, {17, 117}}));
+    _merger.merge();
+    EXPECT_EQ((std::vector<uint32_t>{2, 3, 5, 6, 8, 9, 14, 17}), bvAsArray());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
