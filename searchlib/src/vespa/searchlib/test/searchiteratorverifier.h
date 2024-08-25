@@ -9,6 +9,8 @@ namespace search::test {
 
 #ifdef ENABLE_GTEST_MIGRATION
 #define SearchIteratorVerifier SearchIteratorVerifierForGTest
+#else
+#define SearchIteratorVerifier SearchIteratorVerifierForVespaTest
 #endif
 
 class SearchIteratorVerifier {
