@@ -492,7 +492,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(ApplicationMetadataConfig.Builder builder) {
         if (applicationMetaData != null)
             builder.name(applicationMetaData.getApplicationId().application().value()).
-                    path(applicationMetaData.getDeployPath()).
                     timestamp(applicationMetaData.getDeployTimestamp()).
                     checksum(applicationMetaData.getChecksum()).
                     generation(applicationMetaData.getGeneration());

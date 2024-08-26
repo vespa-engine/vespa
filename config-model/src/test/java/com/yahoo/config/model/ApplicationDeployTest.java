@@ -240,7 +240,6 @@ public class ApplicationDeployTest {
         app.writeMetaData();
         FilesApplicationPackage newApp = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
         ApplicationMetaData meta = newApp.getMetaData();
-        assertEquals("bar", meta.getDeployPath());
         assertEquals(applicationId, meta.getApplicationId());
         assertEquals(13L, (long) meta.getDeployTimestamp());
         assertEquals(1337L, (long) meta.getGeneration());
