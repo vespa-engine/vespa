@@ -230,8 +230,7 @@ public class ApplicationDeployTest {
         String appPkg = TESTDIR + "app1";
         IOUtils.copyDirectory(new File(appPkg), tmp);
         ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "instance1");
-        DeployData deployData = new DeployData("bar",
-                                               applicationId,
+        DeployData deployData = new DeployData(applicationId,
                                                13L,
                                                false,
                                                1337L,

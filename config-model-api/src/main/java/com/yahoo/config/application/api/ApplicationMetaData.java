@@ -103,7 +103,7 @@ public class ApplicationMetaData {
         Slime slime = new Slime();
         Cursor meta = slime.setObject();
         Cursor deploy = meta.setObject("deploy");
-        deploy.setString("from", "");
+        deploy.setString("from", "unknown");
         deploy.setLong("timestamp", deployTimestamp);
         deploy.setBool("internalRedeploy", internalRedeploy);
         Cursor app = meta.setObject("application");

@@ -843,15 +843,14 @@ public class SessionRepository {
         }
     }
 
-    private ApplicationPackage createApplication(File userDir,
-                                                 File configApplicationDir,
+    private ApplicationPackage createApplication(File configApplicationDir,
                                                  ApplicationId applicationId,
                                                  long sessionId,
                                                  Optional<Long> currentlyActiveSessionId,
                                                  boolean internalRedeploy,
                                                  Optional<DeployLogger> deployLogger) {
         long deployTimestamp = System.currentTimeMillis();
-        DeployData deployData = new DeployData(userDir.getAbsolutePath(), applicationId, deployTimestamp, internalRedeploy,
+        DeployData deployData = new DeployData(applicationId, deployTimestamp, internalRedeploy,
                                                sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
         validateFileExtensions(applicationId, deployLogger, app);
@@ -911,8 +910,7 @@ public class SessionRepository {
             Optional<Long> activeSessionId = getActiveSessionId(applicationId);
             File userApplicationDir = getSessionAppDir(sessionId);
             copyApp(applicationDirectory, userApplicationDir);
-            ApplicationPackage applicationPackage = createApplication(applicationDirectory,
-                                                                      userApplicationDir,
+            ApplicationPackage applicationPackage = createApplication(userApplicationDir,
                                                                       applicationId,
                                                                       sessionId,
                                                                       activeSessionId,
