@@ -254,7 +254,8 @@
     "superClass" : "com.yahoo.config.application.api.DeploymentSpec$Steps",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.util.Map, com.yahoo.config.application.api.Bcp, java.time.Instant)",
@@ -513,7 +514,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
@@ -569,7 +571,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.config.provision.RegionName, com.yahoo.config.provision.InstanceName, int)",
@@ -586,7 +589,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(java.lang.String, java.lang.String, com.yahoo.config.application.api.Endpoint$Level, java.util.List)",
