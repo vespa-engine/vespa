@@ -143,8 +143,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployedFromDir(),
-                                       deployData.getDeployTimestamp(),
+        return new ApplicationMetaData(deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
                                        deployData.getApplicationId(),
                                        computeCheckSum(appDir),
@@ -487,8 +486,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private static ApplicationMetaData readMetaData(File appDir) {
         String originalAppDir = preprocessed.equals(appDir.getName()) ? appDir.getParentFile().getName() : appDir.getName();
-        ApplicationMetaData defaultMetaData = new ApplicationMetaData("n/a",
-                                                                      0L,
+        ApplicationMetaData defaultMetaData = new ApplicationMetaData(0L,
                                                                       false,
                                                                       ApplicationId.from(TenantName.defaultName(),
                                                                                          ApplicationName.from(originalAppDir),

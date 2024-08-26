@@ -84,8 +84,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
-        applicationMetaData = new ApplicationMetaData("dir",
-                                                      0L,
+        applicationMetaData = new ApplicationMetaData(0L,
                                                       false,
                                                       ApplicationId.from(tenantName,
                                                                          ApplicationName.from(APPLICATION_NAME),
