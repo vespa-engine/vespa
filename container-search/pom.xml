@@ -192,8 +192,8 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.helger.maven</groupId>
-        <artifactId>ph-javacc-maven-plugin</artifactId>
+        <groupId>io.github.tulipcc</groupId>
+        <artifactId>tulipcc-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>com.yahoo.vespa</groupId>
