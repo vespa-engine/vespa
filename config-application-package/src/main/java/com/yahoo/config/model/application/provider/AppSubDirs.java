@@ -11,7 +11,7 @@ import java.io.File;
  *
  * @author hmusum
  */
-public class AppSubDirs {
+public final class AppSubDirs {
 
     private final Tuple2<File, String> root;
     private final Tuple2<File, String> routingtables;

@@ -11,9 +11,9 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author mortent
  */
-public class FeedClientBuilder extends FeedClientBuilderImpl {
+public final class FeedClientBuilder extends FeedClientBuilderImpl {
 
-    static AtomicReference<EndpointAuthenticator> endpointAuthenticator = new AtomicReference<>();
+    private static final AtomicReference<EndpointAuthenticator> endpointAuthenticator = new AtomicReference<>();
 
     public static void setEndpointAuthenticator(EndpointAuthenticator authenticator) {
         endpointAuthenticator.set(authenticator);
