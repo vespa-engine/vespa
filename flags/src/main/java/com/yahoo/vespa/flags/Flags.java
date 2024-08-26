@@ -548,7 +548,7 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
-            "tcp-shrink-window", false,
+            "tcp-shrink-window", true,
             List.of("hmusum"), "2024-08-14", "2024-09-14",
             "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default false",
             "Takes effect on next host-admin run");
