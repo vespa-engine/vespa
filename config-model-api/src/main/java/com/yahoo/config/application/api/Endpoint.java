@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @author ogronnesby
  * @author mpolden
  */
-public class Endpoint {
+public final class Endpoint {
 
     public static final String DEFAULT_ID = "default";
 
@@ -130,7 +130,7 @@ public class Endpoint {
     }
 
     /** A target of an endpoint */
-    public static class Target {
+    public static final class Target {
 
         private final RegionName region;
         private final InstanceName instance;
