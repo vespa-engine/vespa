@@ -194,7 +194,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              Clock.systemUTC(),
              testerClient,
              metric,
-             new SecretStoreValidator(secretStore),
+             new SecretStoreValidator(),
              new DefaultClusterReindexingStatusClient(),
              new ActiveTokenFingerprintsClient(),
              flagSource);
@@ -245,7 +245,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private LogRetriever logRetriever = new LogRetriever();
         private TesterClient testerClient = new TesterClient();
         private Metric metric = new NullMetric();
-        private SecretStoreValidator secretStoreValidator = new SecretStoreValidator(new SecretStoreProvider().get());
+        private SecretStoreValidator secretStoreValidator = new SecretStoreValidator();
         private FlagSource flagSource = new InMemoryFlagSource();
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
         private Map<String, List<Token>> activeTokens = Map.of();
