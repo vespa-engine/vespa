@@ -11,6 +11,7 @@ vespa_add_executable(vespalib_sequencedtaskexecutor_test_app TEST
     sequencedtaskexecutor_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_sequencedtaskexecutor_test_app COMMAND vespalib_sequencedtaskexecutor_test_app)
 
