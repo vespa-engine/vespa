@@ -140,7 +140,6 @@ public class ZooKeeperDeployerTest {
                 Utf8.toString(zk.getData(appPath.append(META_ZK_PATH)).get()));
         assertTrue(metaData.getChecksum().length() > 0);
         assertTrue(metaData.isInternalRedeploy());
-        assertEquals("/bar/baz", metaData.getDeployPath());
         assertEquals(1345, metaData.getDeployTimestamp().longValue());
         assertEquals(3, metaData.getGeneration().longValue());
         assertEquals(2, metaData.getPreviousActiveGeneration());

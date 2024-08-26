@@ -73,6 +73,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
       "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
       "public java.lang.String getDeployPath()",
       "public com.yahoo.config.provision.ApplicationId getApplicationId()",
