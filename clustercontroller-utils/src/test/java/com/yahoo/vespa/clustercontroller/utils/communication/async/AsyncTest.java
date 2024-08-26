@@ -103,12 +103,13 @@ public class AsyncTest {
     void testRedirectedOperation() {
         {
             final AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test", "desc");
-            AsyncOperation<Integer> deleteRequest = new RedirectedAsyncOperation<String, Integer>(op) {
+            var deleteRequest = new RedirectedAsyncOperation<String, Integer>(op) {
                 @Override
                 public Integer getResult() {
                     return Integer.valueOf(op.getResult());
                 }
             };
+            deleteRequest.listen();
             final LinkedList<Integer> result = new LinkedList<>();
             deleteRequest.register(new AsyncCallback<Integer>() {
                 @Override
@@ -134,12 +135,13 @@ public class AsyncTest {
         }
         {
             final AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test", "desc");
-            AsyncOperation<Integer> deleteRequest = new RedirectedAsyncOperation<String, Integer>(op) {
+            var deleteRequest = new RedirectedAsyncOperation<String, Integer>(op) {
                 @Override
                 public Integer getResult() {
                     return Integer.valueOf(op.getResult());
                 }
             };
+            deleteRequest.listen();
             op.setFailure(new Exception("foo"));
             assertTrue(deleteRequest.isDone());
             assertEquals("foo", deleteRequest.getCause().getMessage());
@@ -182,7 +184,7 @@ public class AsyncTest {
         }
     }
 
-    private abstract class StressThread implements Runnable {
+    private abstract static class StressThread implements Runnable {
         private final Object monitor;
         private boolean running = true;
 
@@ -210,20 +212,20 @@ public class AsyncTest {
         public abstract void doTask();
     }
 
-    private abstract class AsyncOpStressThread extends StressThread {
+    private abstract static class AsyncOpStressThread extends StressThread {
         public AsyncOperationImpl<String> op;
         public AsyncOpStressThread(Object monitor) { super(monitor); }
         @Override
         public boolean hasTask() { return op != null; }
     }
 
-    private class Completer extends AsyncOpStressThread {
+    private static class Completer extends AsyncOpStressThread {
         public Completer(Object monitor) { super(monitor); }
         @Override
         public void doTask() { op.setResult("foo"); op = null; }
     }
 
-    private class Listener extends AsyncOpStressThread implements AsyncCallback<String> {
+    private static class Listener extends AsyncOpStressThread implements AsyncCallback<String> {
         int counter = 0;
         int unset = 0;
         int priorReg = 0;
