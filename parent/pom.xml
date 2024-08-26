@@ -267,9 +267,9 @@
                     <version>${project.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>com.helger.maven</groupId>
-                    <artifactId>ph-javacc-maven-plugin</artifactId>
-                    <version>4.1.5</version>
+                    <groupId>io.github.tulipcc</groupId>
+                    <artifactId>tulipcc-maven-plugin</artifactId>
+                    <version>5.0.0</version>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
