@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class JsonHttpResult extends HttpResult {
+public final class JsonHttpResult extends HttpResult {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
