@@ -2,12 +2,10 @@
 package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.text.Utf8;
 
 import java.io.IOException;
 
@@ -36,29 +34,6 @@ public class ApplicationMetaData {
         this.generation = generation;
         this.previousActiveGeneration = previousActiveGeneration;
     }
-
-    @Deprecated // TODO: Remove on Vespa 9
-    public ApplicationMetaData(String deployedFromDir, Long deployTimestamp, boolean internalRedeploy, ApplicationId applicationId,
-                               Tags ignored, String checksum, Long generation, long previousActiveGeneration) {
-        this(deployedFromDir, deployTimestamp, internalRedeploy, applicationId, checksum, generation, previousActiveGeneration);
-    }
-
-    @Deprecated // TODO: Remove on Vespa 9
-    public ApplicationMetaData(String ignored, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
-                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
-        this(deployedFromDir, deployTimestamp, internalRedeploy, applicationId, Tags.empty(), checksum, generation, previousActiveGeneration);
-    }
-
-    /**
-     * Gets the user who deployed the application.
-     *
-     * @return username of the user who ran "deploy-application"
-     */
-    @Deprecated // TODO: Remove in Vespa 9
-    public String getDeployedByUser() { return "unknown"; }
-
-    @Deprecated // TODO: Remove in Vespa 9
-    public Tags getTags() { return Tags.empty(); }
 
     /**
      * Gets the directory where the application was deployed from.
@@ -139,10 +114,6 @@ public class ApplicationMetaData {
         Inspector value = object.field(fieldName);
         if ( ! value.valid()) return defaultValue;
         return value.asBool();
-    }
-
-    public String asJsonString() {
-        return Utf8.toString(asJsonBytes());
     }
 
     public byte[] asJsonBytes() {
