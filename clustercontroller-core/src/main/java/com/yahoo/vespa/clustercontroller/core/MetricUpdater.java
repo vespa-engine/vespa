@@ -56,6 +56,11 @@ public class MetricUpdater {
         dimensions.put("cluster", cluster.getName());
         dimensions.put("clusterid", cluster.getName());
         Instant now = timer.getCurrentWallClockTime();
+        // NodeInfo::getClusterStateVersionBundleAcknowledged() returns -1 if the node has not yet ACKed a
+        // cluster state version. Check for this version explicitly if we've yet to publish a state. This
+        // will prevent the node from being erroneously counted as divergent (can't reasonably diverge from
+        // something that doesn't exist...!).
+        int effectiveStateVersion = (state.getVersion() > 0) ? state.getVersion() : -1;
         boolean convergenceDeadlinePassed = lastStateBroadcastTimePoint.plus(stateVersionConvergenceGracePeriod).isBefore(now);
         for (NodeType type : NodeType.getTypes()) {
             dimensions.put("node-type", type.toString().toLowerCase());
@@ -72,7 +77,7 @@ public class MetricUpdater {
                 nodeCounts.put(s.getState(), count + 1);
                 var info = cluster.getNodeInfo(node);
                 if (info != null && convergenceDeadlinePassed && s.getState().oneOf("uir")) {
-                    if (info.getClusterStateVersionBundleAcknowledged() != state.getVersion()) {
+                    if (info.getClusterStateVersionBundleAcknowledged() != effectiveStateVersion) {
                         nodesNotConverged++;
                     }
                 }
