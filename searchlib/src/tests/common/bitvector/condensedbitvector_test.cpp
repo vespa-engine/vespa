@@ -110,7 +110,7 @@ TEST("Test repopulation of bitvector cache") {
     EXPECT_TRUE(keySet.contains(0));
     cache.computeCountVector(keySet, countVector);
 
-    std::vector<std::pair<uint64_t, uint64_t>> keys;
+    BitVectorCache::KeyAndCountSet keys;
     for (uint64_t i=0; i < 10; i++) {
         keys.emplace_back(i, 10+i);
     }
