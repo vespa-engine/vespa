@@ -67,6 +67,7 @@ public:
         : _map(m),
           _empty()
     {}
+    ~Populater() override;
     Iterator::UP lookup(uint64_t key) const override {
         return _map.contains(key)
                ? std::make_unique<DocIdIterator>(_map[key])
@@ -76,6 +77,8 @@ private:
     const KeyDocIdsMap & _map;
     DocIds _empty;
 };
+
+Populater::~Populater() = default;
 
 KeyDocIdsMap
 create(uint32_t numDocs, uint32_t numKeys, uint32_t seed) {
