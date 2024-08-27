@@ -174,6 +174,30 @@ public class NGramSearcherTestCase {
     }
 
     @Test
+    void testSettingGramMatching() {
+        assertEquals("WEAKAND(100) (AND gram2:en gram2:ng)", search("?query=gram2:eng"));
+        assertEquals("WEAKAND(100) (AND gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=all"));
+        assertEquals("WEAKAND(100) (OR gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=any"));
+        assertEquals("WEAKAND(100) (WEAKAND(100) gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=weakAnd"));
+        assertEquals("WEAKAND(100) gram2:\"en ng\"", search("?query=gram2:eng&gram.match=phrase"));
+        assertEquals("WEAKAND(100) (NEAR(2) gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=near"));
+        assertEquals("WEAKAND(100) (ONEAR(2) gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=onear"));
+        try {
+            search("?query=gram2:eng&gram.match=invalid");
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid gram.match value 'invalid'. Must be 'all', 'any', 'weakAnd', 'phrase', 'near' or 'onear'",
+                         e.getMessage());
+        }
+    }
+
+    String search(String query) {
+        Query q = new Query(query);
+        createExecution().search(q);
+        return q.getModel().getQueryTree().toString();
+    }
+
+    @Test
     void testNGramRewritingShortInMixes() {
         Query q = new Query("?query=test:a+gram3:en");
         createExecution().search(q);
@@ -335,19 +359,19 @@ public class NGramSearcherTestCase {
         Hit h1 = r.hits().get("hit1");
         assertEquals("Should be untouched,\u001feven if containing \u001f",
                      h1.getField("test").toString());
-        assertTrue(h1.getField("test") instanceof String);
+        assertInstanceOf(String.class, h1.getField("test"));
 
         assertEquals("Blue red Ed A", h1.getField("gram2").toString());
-        assertTrue(h1.getField("gram2") instanceof XMLString);
+        assertInstanceOf(XMLString.class, h1.getField("gram2"));
 
         assertEquals("Blue red ed a\u001f",
                      h1.getField("gram3").toString(),
                      "Separators on borders work");
-        assertTrue(h1.getField("gram3") instanceof String);
+        assertInstanceOf(String.class, h1.getField("gram3"));
 
         Hit h2 = r.hits().get("hit2");
         assertEquals("katt  i...morgen", h2.getField("gram3").toString());
-        assertTrue(h2.getField("gram3") instanceof JSONString);
+        assertInstanceOf(JSONString.class, h2.getField("gram3"));
 
         Hit h3 = r.hits().get("hit3");
         assertEquals("\u001ffin\u001f \u001fen\u001f \u001fa\u001f", h3.getField("gram2").toString());

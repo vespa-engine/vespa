@@ -15,11 +15,16 @@ import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.ONearItem;
+import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -43,6 +48,8 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  */
 @After(JUNIPER_TAG_REPLACING)
 public class NGramSearcher extends Searcher {
+
+    private static final CompoundName gramMatch = CompoundName.from("gram.match");
 
     private final GramSplitter gramSplitter;
 
@@ -151,7 +158,16 @@ public class NGramSearcher extends Searcher {
 
     /** Creates the root of the query subtree without access to the term being replaced. */
     protected CompositeItem createGramRoot(Query query) {
-        return new AndItem();
+        return switch (query.properties().getString(gramMatch, "all")) {
+            case "all" -> new AndItem();
+            case "any" -> new OrItem();
+            case "weakAnd" -> new WeakAndItem();
+            case "phrase" -> new PhraseItem();
+            case "near" -> new NearItem();
+            case "onear" -> new ONearItem();
+            default -> throw new IllegalArgumentException("Invalid gram.match value '" + query.properties().getString(gramMatch) +
+                                                          "'. Must be 'all', 'any', 'weakAnd', 'phrase', 'near' or 'onear'");
+        };
     }
 
     private void replaceItemByGrams(Item item, Item grams, int indexInParent) {
