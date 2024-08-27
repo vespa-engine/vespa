@@ -3,6 +3,8 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.MockModelContext;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -80,15 +83,6 @@ public class VespaModelFactoryTest {
     void hostedVespaZoneApplicationAllocatesNodesFromNodeRepo() {
         String hostName = "test-host-name";
         String routingClusterName = "routing-cluster";
-
-        String hosts =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<hosts>\n" +
-                        "  <host name='" + hostName + "'>\n" +
-                        "    <alias>proxy1</alias>\n" +
-                        "  </host>\n" +
-                        "</hosts>";
-
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services version='1.0' xmlns:deploy='vespa'>\n" +
@@ -100,25 +94,13 @@ public class VespaModelFactoryTest {
                         "    </container>\n" +
                         "</services>";
 
-        HostProvisioner provisionerToOverride = new HostProvisioner() {
-            @Override
-            public HostSpec allocateHost(String alias) {
-                return new HostSpec(hostName,
-                        NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                        ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
-                        Optional.empty(), Optional.empty(), Optional.empty());
-            }
+        HostProvisioner provisionerToOverride = (cluster, capacity, logger) ->
+                List.of(new HostSpec(hostName,
+                                     NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+                                     ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
+                                     Optional.empty(), Optional.empty(), Optional.empty()));
 
-            @Override
-            public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
-                return List.of(new HostSpec(hostName,
-                        NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                        ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
-                        Optional.empty(), Optional.empty(), Optional.empty()));
-            }
-        };
-
-        ModelContext modelContext = createMockModelContext(hosts, services, provisionerToOverride);
+        ModelContext modelContext = createMockModelContext(null, services, provisionerToOverride, routingClusterName);
         Model model = VespaModelFactory.createTestFactory().createModel(modelContext);
 
         List<HostInfo> allocatedHosts = new ArrayList<>(model.getHosts());
@@ -132,7 +114,7 @@ public class VespaModelFactoryTest {
                 "Routing service should run on host " + hostName);
     }
 
-    private ModelContext createMockModelContext(String hosts, String services, HostProvisioner provisionerToOverride) {
+    private ModelContext createMockModelContext(String hosts, String services, HostProvisioner provisionerToOverride, String clusterName) {
         return new MockModelContext() {
             @Override
             public ApplicationPackage applicationPackage() {
@@ -143,9 +125,9 @@ public class VespaModelFactoryTest {
             public HostProvisioner getHostProvisioner() { return provisionerToOverride; }
 
             @Override
-            public Properties properties() {
-                return new TestProperties();
-            }
+            public Properties properties() { return new TestProperties()
+                    .setHostedVespa(true)
+                    .setContainerEndpoints(Set.of(new ContainerEndpoint(clusterName, ApplicationClusterEndpoint.Scope.zone, List.of("tc.example.com")))); }
         };
     }
 

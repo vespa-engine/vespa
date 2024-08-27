@@ -37,7 +37,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<ConfigServerSpec> configServerSpecs = List.of();
     private boolean hostedVespa = false;
     private Zone zone = Zone.defaultZone();
-    private final Set<ContainerEndpoint> endpoints = Set.of();
+    private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
@@ -400,6 +400,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setDistributionConfigFromClusterController(boolean configFromCc) {
         this.distributionConfigFromClusterController = configFromCc;
+        return this;
+    }
+
+    public TestProperties setContainerEndpoints(Set<ContainerEndpoint> containerEndpoints) {
+        this.endpoints = containerEndpoints;
         return this;
     }
 

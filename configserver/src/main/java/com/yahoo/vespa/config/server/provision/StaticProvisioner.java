@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Host provisioning from an existing {@link AllocatedHosts} instance.
@@ -26,11 +25,6 @@ public class StaticProvisioner implements HostProvisioner {
     public StaticProvisioner(AllocatedHosts allocatedHosts, HostProvisioner fallback) {
         this.allocatedHosts = allocatedHosts;
         this.fallback = fallback;
-    }
-
-    @Override
-    public HostSpec allocateHost(String alias) {
-        throw new UnsupportedOperationException("Allocating a single host from provisioning info is not supported");
     }
 
     @Override
