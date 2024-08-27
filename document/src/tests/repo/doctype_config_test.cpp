@@ -39,7 +39,6 @@ const int32_t doc_type_id = 787121340;
 const string header_name = type_name + ".header";
 const int32_t header_id = 30;
 const string type_name_2 = "test_2";
-const string header_name_2 = type_name_2 + ".header";
 const string field_name = "field_name";
 const string derived_name = "derived";
 
