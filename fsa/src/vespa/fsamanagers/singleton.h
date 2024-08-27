@@ -145,14 +145,14 @@ template<typename T> Singleton<T>::~Singleton() {}
 template<typename T> void Singleton<T>::destroy()
 {
   delete _instance;
-  _instance = NULL;
+  _instance = nullptr;
 }
 
 template<typename T> T& Singleton<T>::instance()
 {
-  if (_instance == NULL) {
+  if (_instance == nullptr) {
     _lock.lock();
-    if (_instance == NULL) {
+    if (_instance == nullptr) {
       SingletonExitHandler::instance()->registerSingletonDestroyer(&destroy);
       _instance = new T();
     }
@@ -162,7 +162,7 @@ template<typename T> T& Singleton<T>::instance()
   return *_instance;
 }
 
-template<typename T> T* Singleton<T>::_instance = NULL;
+template<typename T> T* Singleton<T>::_instance = nullptr;
 
 template<typename T> Mutex Singleton<T>::_lock;
 
