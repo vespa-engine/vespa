@@ -4,6 +4,7 @@
 #include "bucketcopy.h"
 #include <vespa/vespalib/util/time.h>
 #include <span>
+#include <vector>
 
 namespace storage {
 
