@@ -19,6 +19,7 @@ vespa_add_executable(vespalib_adaptive_sequenced_executor_test_app TEST
     adaptive_sequenced_executor_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_adaptive_sequenced_executor_test_app COMMAND vespalib_adaptive_sequenced_executor_test_app)
 
