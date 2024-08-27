@@ -150,7 +150,9 @@ public class MetricReporterTest {
         ConvergenceFixture(String stateString) {
             super(5);
             this.stateString = stateString;
-            setUpFixturePendingVersions();
+            if (!stateString.isEmpty()) {
+                setUpFixturePendingVersions();
+            }
 
             metricUpdater.setStateVersionConvergenceGracePeriod(Duration.ofSeconds(10));
             stateBroadcastTime = timer.getCurrentWallClockTime();
@@ -208,6 +210,12 @@ public class MetricReporterTest {
     void only_count_nodes_in_available_states_as_non_converging() {
         var f = new ConvergenceFixture("version:100 distributor:5 .0.s:d .2.s:d .3.s:d storage:5 .3.s:m .4.s:d");
         // Should not count non-converged nodes, as they are not in an available state
+        f.advanceTimeAndVerifyMetrics(Duration.ofMillis(10001), 0, 0);
+    }
+
+    @Test
+    void do_not_treat_nodes_as_non_converged_if_no_state_published_yet() {
+        var f = new ConvergenceFixture(""); // no versioned state
         f.advanceTimeAndVerifyMetrics(Duration.ofMillis(10001), 0, 0);
     }
 
