@@ -3,8 +3,6 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.provision.ApplicationId;
 
-import java.util.Set;
-
 /**
  * Data generated or computed during deployment
  *
@@ -13,9 +11,6 @@ import java.util.Set;
 public class DeployData {
 
     private final ApplicationId applicationId;
-
-    /** The absolute path to the directory holding the application */
-    private final String deployedFromDir;
 
     /** Timestamp when a deployment was made */
     private final long deployTimestamp;
@@ -27,13 +22,11 @@ public class DeployData {
     private final long generation;
     private final long currentlyActiveGeneration;
 
-    public DeployData(String deployedFromDir,
-                      ApplicationId applicationId,
+    public DeployData(ApplicationId applicationId,
                       Long deployTimestamp,
                       boolean internalRedeploy,
                       Long generation,
                       long currentlyActiveGeneration) {
-        this.deployedFromDir = deployedFromDir;
         this.applicationId = applicationId;
         this.deployTimestamp = deployTimestamp;
         this.internalRedeploy = internalRedeploy;
@@ -41,7 +34,15 @@ public class DeployData {
         this.currentlyActiveGeneration = currentlyActiveGeneration;
     }
 
-    public String getDeployedFromDir() { return deployedFromDir; }
+    //TODO: Remove when Vespa 8.401 is oldest supported version
+    public DeployData(String ignored,
+                      ApplicationId applicationId,
+                      Long deployTimestamp,
+                      boolean internalRedeploy,
+                      Long generation,
+                      long currentlyActiveGeneration) {
+        this(applicationId, deployTimestamp, internalRedeploy, generation, currentlyActiveGeneration);
+    }
 
     public long getDeployTimestamp() { return deployTimestamp; }
 

@@ -73,11 +73,8 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
       "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
-      "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.Tags, java.lang.String, java.lang.Long, long)",
-      "public void <init>(java.lang.String, java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
-      "public java.lang.String getDeployedByUser()",
-      "public com.yahoo.config.provision.Tags getTags()",
       "public java.lang.String getDeployPath()",
       "public com.yahoo.config.provision.ApplicationId getApplicationId()",
       "public java.lang.Long getDeployTimestamp()",
@@ -88,7 +85,6 @@
       "public java.lang.String toString()",
       "public static com.yahoo.config.application.api.ApplicationMetaData fromJsonString(java.lang.String)",
       "public com.yahoo.slime.Slime getSlime()",
-      "public java.lang.String asJsonString()",
       "public byte[] asJsonBytes()"
     ],
     "fields" : [ ]

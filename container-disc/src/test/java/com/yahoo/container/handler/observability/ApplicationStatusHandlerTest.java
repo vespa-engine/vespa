@@ -31,7 +31,6 @@ public class ApplicationStatusHandlerTest {
                 new ApplicationMetadataConfig.Builder()
                         .checksum("abc")
                         .name("app")
-                        .path("/a/b/c")
                         .timestamp(3000)
                         .user("donald"));
 
@@ -44,7 +43,6 @@ public class ApplicationStatusHandlerTest {
         assertTrue(json.contains("meta"));
         assertTrue(json.contains("abc"));
         assertTrue(json.contains("app"));
-        assertTrue(json.contains("/a/b/c"));
         assertTrue(json.contains("3000"));
         assertTrue(json.contains("donald"));
 

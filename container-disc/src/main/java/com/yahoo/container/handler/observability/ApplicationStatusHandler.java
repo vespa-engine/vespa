@@ -112,7 +112,7 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
     private static Container container() { return Container.get();  }
 
     static JsonNode renderApplicationConfigs(ApplicationMetadataConfig metaConfig,
-                                      ApplicationUserdataConfig userConfig) {
+                                             ApplicationUserdataConfig userConfig) {
         ObjectNode vespa = jsonMapper.createObjectNode();
         vespa.put("version", Vtag.currentVersion.toString());
 

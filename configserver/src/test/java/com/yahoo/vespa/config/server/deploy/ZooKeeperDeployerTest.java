@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.yahoo.config.model.application.provider.FilesApplicationPackage.fromFileWithDeployData;
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.fromJson;
 import static com.yahoo.vespa.config.server.session.SessionZooKeeperClient.getSessionPath;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
@@ -42,6 +43,7 @@ import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -61,13 +63,12 @@ public class ZooKeeperDeployerTest {
     public void setupZK() throws IOException {
         zk = new MockCurator();
         ZooKeeperDeployer.Client zkc = new ZooKeeperDeployer.Client(zk, new BaseDeployLogger(), appPath);
-        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
-                                                                                new DeployData("/bar/baz",
-                                                                                               ApplicationId.from("default", "appName", "default"),
-                                                                                               1345L,
-                                                                                               true,
-                                                                                               3L,
-                                                                                               2L));
+        ApplicationPackage app = fromFileWithDeployData(new File("src/test/apps/zkfeed"),
+                                                        new DeployData(ApplicationId.from("default", "appName", "default"),
+                                                                       1345L,
+                                                                       true,
+                                                                       3L,
+                                                                       2L));
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
         zkc.initialize();
@@ -138,9 +139,8 @@ public class ZooKeeperDeployerTest {
         assertTrue(zk.exists(appPath.append(META_ZK_PATH)));
         ApplicationMetaData metaData = ApplicationMetaData.fromJsonString(
                 Utf8.toString(zk.getData(appPath.append(META_ZK_PATH)).get()));
-        assertTrue(metaData.getChecksum().length() > 0);
+        assertFalse(metaData.getChecksum().isEmpty());
         assertTrue(metaData.isInternalRedeploy());
-        assertEquals("/bar/baz", metaData.getDeployPath());
         assertEquals(1345, metaData.getDeployTimestamp().longValue());
         assertEquals(3, metaData.getGeneration().longValue());
         assertEquals(2, metaData.getPreviousActiveGeneration());
