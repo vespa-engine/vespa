@@ -9,6 +9,12 @@ if [[ $# -ne 1 ]]; then
 fi
 
 readonly VESPA_VERSION=$1
+readonly IMAGE_NAME="vespaengine/vespa-generic-intel-x86_64"
+
+if curl -fsSL https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/ &> /dev/null; then
+  echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
+  exit 0
+fi
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
@@ -38,7 +44,6 @@ RUN --mount=type=bind,target=/rpms/,source=. dnf reinstall -y /rpms/vespa*rpm &&
 USER vespa
 EOF
 
-readonly IMAGE_NAME="vespaengine/vespa-generic-intel-x86_64"
 
 docker build --progress plain \
   --build-arg VESPA_VERSION=$VESPA_VERSION \
@@ -49,14 +54,10 @@ docker build --progress plain \
 
 vespa/screwdriver/test-quick-start-guide.sh
 
-if curl -fsSL https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/ &> /dev/null; then
-  echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
-else
-  OPT_STATE="$(set +o)"
-  set +x
-  docker login --username aressem --password "$DOCKER_HUB_DEPLOY_TOKEN"
-  eval "$OPT_STATE"
-  docker push docker.io/$IMAGE_NAME:$VESPA_VERSION
-  docker push docker.io/$IMAGE_NAME:latest
-fi
+OPT_STATE="$(set +o)"
+set +x
+docker login --username aressem --password "$DOCKER_HUB_DEPLOY_TOKEN"
+eval "$OPT_STATE"
+docker push docker.io/$IMAGE_NAME:$VESPA_VERSION
+docker push docker.io/$IMAGE_NAME:latest
 
