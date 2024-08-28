@@ -30,7 +30,7 @@ done
 echo "Deleting the following RPMs:"
 cat $RPMS_TO_DELETE
 
-if [ "$GITHUB_EVENT_NAME" == "schedule" ]; then
+if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
     for RPMID in $(cat $RPMS_TO_DELETE); do
       curl -sSLf -X DELETE \
         --header "X-Api-Key: $CLOUDSMITH_API_TOKEN" \
