@@ -7,6 +7,12 @@
 </picture>
 <br/><br/>
 
+[![Build status](https://badge.buildkite.com/34f7cb35b91da4f929794c5fd7aa722fc15ca0224ad240270b.svg)](https://buildkite.com/vespaai/vespa-engine-vespa)
+![GitHub License](https://img.shields.io/github/license/vespa-engine/vespa)
+![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fcom%2Fyahoo%2Fvespa%2Fparent%2Fmaven-metadata.xml)
+
+
+
 Search, make inferences in, and organize vectors, tensors, text and structured data, at serving time and any scale.
 
 This repository contains all the code required to build and run all of Vespa yourself,
@@ -14,7 +20,6 @@ and where you can see all development as it is happening.
 All the content in this repository is licensed under the Apache 2.0 license.
 
 A new release of Vespa is made from this repository's master branch every morning CET Monday through Thursday.
-Build status: [![Vespa Build Status](https://api.screwdriver.cd/v4/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 - Home page: [https://vespa.ai](https://vespa.ai)
 - Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)
