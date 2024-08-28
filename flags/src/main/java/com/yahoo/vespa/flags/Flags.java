@@ -525,7 +525,7 @@ public class Flags {
             List.of("olaa"), "2024-07-05", "2025-01-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
-            TENANT_ID);
+            TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
             "hubspot-sync-companies", false,
