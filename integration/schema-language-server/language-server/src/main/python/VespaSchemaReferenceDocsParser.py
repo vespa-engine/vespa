@@ -2,6 +2,16 @@ from Node import Node
 from visitor import Visitor
 from MarkdownFile import MarkdownFile
 
+REPLACE_MAP = {
+    'FIRSTPHASE-RANK': 'FIRST-PHASE',
+    'FUNCTION-RANK': 'FUNCTION',
+    'SECONDPHASE-RANK': 'SECOND-PHASE',
+    'GLOBALPHASE-RANK': 'GLOBAL-PHASE',
+    'INDEX-HNSW': 'HNSW',
+    'WEIGHTEDSET-PROPERTIES': 'WEIGHTEDSET',
+    'IMPORT-FIELD': 'IMPORT'
+}
+
 class VespaSchemaReferenceDocsParser(Visitor):
 
     results: list[MarkdownFile] = []
@@ -12,7 +22,16 @@ class VespaSchemaReferenceDocsParser(Visitor):
         self.readMoreLink = readMoreLink
     
     def readRelevantText(self, node: Node):
-        mdFile = MarkdownFile(node.toText().strip().upper())
+
+        elmId = node.getAttr("id")
+        if (elmId is None):
+            return
+        
+        name = elmId.strip().upper()
+        if name in REPLACE_MAP:
+            name = REPLACE_MAP[name]
+
+        mdFile = MarkdownFile(name)
 
 
         currentNode = node

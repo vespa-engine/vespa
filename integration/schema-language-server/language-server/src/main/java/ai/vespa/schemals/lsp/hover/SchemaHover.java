@@ -292,6 +292,19 @@ public class SchemaHover {
         return getFileHoverInformation("rankExpression/" + function.getSignatureString(true), new Range());
     }
 
+    private static Map<String, String> hoverFileName = new HashMap<>() {{
+        put("EXPRESSION_SL", "EXPRESSION");
+        put("EXPRESSION_ML", "EXPRESSION");
+        put("RANKFEATURES_SL", "RANK-FEATURES");
+        put("RANKFEATURES_ML", "RANK-FEATURES");
+        put("SUMMARYFEATURES_SL", "SUMMARY-FEATURES");
+        put("SUMMARYFEATURES_ML", "SUMMARY-FEATURES");
+        put("SUMMARYFEATURES_ML_INHERITS", "SUMMARY-FEATURES");
+        put("MATCHFEATURES_SL", "MATCH-FEATURES");
+        put("MATCHFEATURES_ML", "MATCH-FEATURES");
+        put("MATCHFEATURES_SL_INHERITS", "MATCH-FEATURES");
+    }};
+
     public static Hover getHover(EventPositionContext context) {
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
@@ -322,7 +335,15 @@ public class SchemaHover {
             return getIndexingHover(node, context);
         }
 
-        Optional<Hover> hoverInfo = getFileHoverInformation("schema/" + node.getClassLeafIdentifierString(), node.getRange());
+        String leafString = node.getClassLeafIdentifierString();
+        String replaceString = hoverFileName.get(leafString);
+        if (replaceString != null) {
+            leafString = replaceString;
+        }
+
+        context.logger.info(leafString);
+
+        Optional<Hover> hoverInfo = getFileHoverInformation("schema/" + leafString.replaceAll("_", "-"), node.getRange());
         if (hoverInfo.isEmpty()) {
             return null;
         }
