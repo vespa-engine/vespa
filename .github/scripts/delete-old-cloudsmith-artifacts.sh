@@ -3,7 +3,7 @@
 dnf install -y 'dnf-command(config-manager)' jq
 
 set -euo pipefail
-MAX_NUMBER_OF_RELEASES=40
+MAX_NUMBER_OF_RELEASES=32
 
 # Cloudsmith repo
 rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
