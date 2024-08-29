@@ -26,6 +26,10 @@ def fetchFile(file_url: str) -> str:
 
     return data.text
 
+def readFile(path_prefix: str, file_path: str) -> str:
+    with open(path_prefix + file_path) as file:
+        return file.read()
+
 def parseRawHTML(rawData: str, fileName: str) -> Node:
     parser = DocsHTMLParser(fileName)
 
@@ -56,9 +60,14 @@ def main():
     else:
         raise Exception("No target directory specified")
     
+    localDocs = "../../../../../../../documentation/en" # None
+    
     if (len(sys.argv) >= 3):
         if (sys.argv[2] == "skip"):
             return
+
+        localDocs = sys.argv[2]
+    
     
     if not os.path.exists(targetPath):
         os.makedirs(targetPath)
@@ -68,11 +77,11 @@ def main():
         if not os.path.exists(absoluteSubPath):
             os.makedirs(absoluteSubPath)
 
-    schemaFile = fetchFile(SCHEMA_URL)
+    schemaFile = fetchFile(SCHEMA_URL) if localDocs is None else readFile(localDocs, SCHEMA_URL)
     schemaReferenceParser = VespaSchemaReferenceDocsParser(f"{LINK_BASE_URL}{SCHEMA_URL}")
     parsePage(schemaFile, SCHEMA_URL, schemaReferenceParser, targetPath.joinpath(subPaths[0]))
 
-    rankFeatureFile = fetchFile(RANK_FEATURE_URL)
+    rankFeatureFile = fetchFile(RANK_FEATURE_URL) if localDocs is None else readFile(localDocs, RANK_FEATURE_URL)
     rankFeatureParser = VespaRankFeatureDocsParser(f"{LINK_BASE_URL}{RANK_FEATURE_URL}")
     parsePage(rankFeatureFile, RANK_FEATURE_URL, rankFeatureParser, targetPath.joinpath(subPaths[1]))
 

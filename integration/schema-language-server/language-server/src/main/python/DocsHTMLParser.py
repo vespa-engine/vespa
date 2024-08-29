@@ -30,17 +30,30 @@ class DocsHTMLParser(HTMLParser):
 
         while (len(self.parseStack) > 1):
             topNode = self.parseStack.pop()
-            self.errors.append(Exception(f"Unclosed HTML tag {topNode.getTag()} at {topNode.getStartPosition()}"))
+            # self.errors.append(Exception(f"Unclosed HTML tag {topNode.getTag()} at {topNode.getStartPosition()}"))
         
         if len(self.errors) > 0:
-            raise ExceptionGroup(f"Errors occuring when parsing documentation html, source file: {self.fileName}", self.errors)
+            raise ExceptionGroup(f"Errors occuring when parsing documentation html in the repo 'vespa-engine/documentation', source file: {self.fileName}", self.errors)
         
         return self.getTopNode()
     
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         newNode = Node.createHTMLNode(tag, attrs)
-        self.getTopNode().addChild(newNode)
 
+        blockLevelElements = ["p", "h2", "pre", "NOTE"]
+
+        if newNode.getTag() in blockLevelElements:
+
+            i = 1
+            while i < len(self.parseStack):
+                if (self.parseStack[i].getTag() in blockLevelElements):
+                    while len(self.parseStack) > i:
+                        self.parseStack.pop()
+
+                i += 1
+        
+
+        self.getTopNode().addChild(newNode)
         self.parseStack.append(newNode)
     
     def getTopNode(self):
@@ -52,8 +65,8 @@ class DocsHTMLParser(HTMLParser):
             topNode = self.parseStack.pop()
             if (topNode.getTag() == tag):
                 break
-            else:
-                self.errors.append(Exception(f"Unclosed HTML tag {topNode.getTag()} at {topNode.getStartPosition()}"))
+            # else:
+            #     self.errors.append(Exception(f"Unclosed HTML tag {topNode.getTag()} at {topNode.getStartPosition()}"))
     
     def handle_data(self, data: str) -> None:
         textNode = Node.createTextNode(data)

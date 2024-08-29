@@ -31,12 +31,14 @@ class VespaRankFeatureDocsParser(Visitor):
 
         namingRegex = "[a-z][a-zA-Z0-9]*"
         parameterList = f"(\\(({namingRegex}(\\,({namingRegex}))*)(\\,\\.\\.\\.)?\\))"
+        assebledRegex = f"^{namingRegex}{parameterList}?(\\.{namingRegex})" + "{0,2}$"
 
-        success = re.search(f"^{namingRegex}{parameterList}?(\\.{namingRegex})" + "{0,2}$", name)
+        success = re.search(assebledRegex, name)
 
         RULES = f"""
         - Feature name, parameters and properties should be in camelcase.
         - No space after the commas in the parameterlist
+        - Accepted regex: {assebledRegex}
         """
 
         if not success:
@@ -78,6 +80,6 @@ class VespaRankFeatureDocsParser(Visitor):
     def getResults(self):
 
         if (len(self.exceptions) > 0):
-            raise ExceptionGroup("Naming of rank features do not comply with naming rules.", self.exceptions)
+            raise ExceptionGroup("Naming of rank features do not comply with naming rules, in the repo vespa-engine/documentation", self.exceptions)
 
         return self.results

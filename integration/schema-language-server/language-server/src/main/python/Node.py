@@ -57,7 +57,7 @@ class Node:
     @staticmethod
     def createTextNode(content: str):
         ret = Node()
-        ret.tagName = ""
+        ret.tagName = "NOTE"
         ret.attrs = []
         ret.type = NodeType.PLAIN_TEXT
         ret.plainTextContent = content
@@ -231,20 +231,48 @@ class Node:
 
     def markdownWrap(self, wrapStart: str, wrapEnd: str, content: str) -> str:
         return wrapStart + content + wrapEnd
+
+    def hasTagChild(self, tag: str) -> bool:
+
+        if (self.type == NodeType.PLAIN_TEXT):
+            return False
+
+        for child in self.children:
+            if child.getTag() == tag or child.hasTagChild(tag):
+                return True
+        
+        return False
+
+    def __removeEmptyLines(self, input: str) -> str:
+        lines = input.split("\n")
+
+        ret = ""
+        for line in lines:
+            if (line.strip() != ""):
+                ret += line + "\n"
+
+        return ret[:-1]
     
     def __htmlToMarkdown(self, content: str) -> str:
 
+        if (self.tagName == "p"):
+            return content.replace("\n", " ") + "\n\n"
+
         if (self.tagName == "h2"):
-            return self.markdownInFront("## ", content)
+            return self.markdownInFront("## ", content.replace("\n", " ")) + "\n"
         
         if (self.tagName == "pre" or self.tagName == "code"):
 
+            content = content.replace("/\n", " ")
+
             if (content.count("\n") > 0):
-                return self.markdownWrap("```\n", "\n```", content)
+                if (self.hasTagChild("a")):
+                    return self.markdownWrap("\n", "\n", content)
+                return self.markdownWrap("\n```\n", "\n```\n", content) 
             return self.markdownWrap("`", "`", content)
         
         if (self.tagName == "li"):
-            return self.markdownInFront("- ", content)
+            return self.markdownInFront("- ", self.__removeEmptyLines(content))
         
         if (self.tagName == "em"):
             return self.markdownWrap("*", "*", content)
@@ -252,10 +280,13 @@ class Node:
         if (self.tagName == "a" and self.getAttr("href") is not None):
             link = self.getAttr("href")
             return self.markdownWrap("[", f"]({link})", content)
+        
+        if (self.tagName == "ul"):
+            return content + "\n\n"
 
         return content
 
-    def __cleanupMarkdown(self, content) -> str:
+    def cleanupMarkdown(self, content) -> str:
         lines = content.split("\n")
 
         ret = ""
@@ -291,10 +322,10 @@ class Node:
             content += child.__toMarkdown()
         
         if (self.type == NodeType.ROOT):
-            return self.__cleanupMarkdown(content)
+            return self.cleanupMarkdown(content)
         
         if (self.type == NodeType.NOTE):
-            return self.markdownInFront("> ", content)
+            return self.markdownInFront("> ", content) + "\n"
         
         if (self.type == NodeType.DOM):
             return self.__htmlToMarkdown(content)
@@ -304,6 +335,6 @@ class Node:
     def toMarkdown(self, entry = True) -> str:
         ret = self.__toMarkdown()
         if (entry):
-            return self.__cleanupMarkdown(ret)
+            return self.cleanupMarkdown(ret)
         
         return ret

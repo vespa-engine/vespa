@@ -14,6 +14,7 @@ class VespaSchemaReferenceDocsParser(Visitor):
     def readRelevantText(self, node: Node):
         mdFile = MarkdownFile(node.toText().strip().upper())
 
+
         currentNode = node
         while (
             currentNode is not None and
@@ -23,12 +24,12 @@ class VespaSchemaReferenceDocsParser(Visitor):
                 currentNode == node
             )
             ):
-            mdFile.addContent(currentNode.toMarkdown())
+            mdFile.addContent(currentNode.toMarkdown() + "\n")
             currentNode = currentNode.getNext()
-
+        
         mdFile.addContent(f"\n\n[Read more]({self.readMoreLink}#{node.getAttr("id")})")
 
-        mdFile.content = mdFile.content.strip()
+        mdFile.content = node.cleanupMarkdown(mdFile.content.strip())
 
         self.results.append(mdFile)
 
