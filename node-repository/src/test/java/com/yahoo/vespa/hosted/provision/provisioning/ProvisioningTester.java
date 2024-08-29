@@ -16,6 +16,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -447,14 +448,16 @@ public class ProvisioningTester {
             String ipv6 = String.format("::%x", nextIP);
 
             nameResolver.addRecord(hostname, ipv4, ipv6);
-            var hostIps = new ArrayList<String>();
+            List<String> hostIps = new ArrayList<>();
             hostIps.add(ipv4);
             hostIps.add(ipv6);
 
-            var ipAddressPool = new ArrayList<String>();
+            List<String> ipAddressPool = new ArrayList<>();
+            List<HostName> nodeHostnames = new ArrayList<>();
             for (int poolIp = 1; poolIp <= ipAddressPoolSize; poolIp++) {
                 nextIP++;
                 String nodeHostname = hostnameParts[0] + "-" + poolIp + (hostnameParts.length > 1 ? "." + hostnameParts[1] : "");
+                nodeHostnames.add(HostName.of(nodeHostname));
                 String ipv6Addr = String.format("::%x", nextIP);
                 ipAddressPool.add(ipv6Addr);
                 nameResolver.addRecord(nodeHostname, ipv6Addr);
@@ -464,7 +467,7 @@ public class ProvisioningTester {
                     nameResolver.addRecord(nodeHostname, ipv4Addr);
                 }
             }
-            Node.Builder builder = Node.create(hostname, IP.Config.of(hostIps, ipAddressPool), hostname, flavor, type)
+            Node.Builder builder = Node.create(hostname, IP.Config.of(hostIps, ipAddressPool, nodeHostnames), hostname, flavor, type)
                     .cloudAccount(cloudAccount);
             reservedTo.ifPresent(builder::reservedTo);
             nodes.add(builder.build());

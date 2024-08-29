@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.node;
 
 import ai.vespa.net.InetAddressUtil;
 import com.google.common.net.InetAddresses;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
@@ -312,27 +313,18 @@ public record IP() {
             Objects.requireNonNull(ipv6Address, "ipv6Address must be non-null");
         }
 
-        public static class Context {
-            private final CloudName cloudName;
-            private final boolean exclave;
-            private final NameResolver resolver;
+        public record Context(Cloud cloud, boolean exclave, NameResolver resolver) {
 
-            private Context(CloudName cloudName, boolean exclave, NameResolver resolver) {
-                this.cloudName = cloudName;
-                this.exclave = exclave;
-                this.resolver = resolver;
-            }
-
-            public static Context from(CloudName cloudName, boolean exclave, NameResolver resolver) {
-                return new Context(cloudName, exclave, resolver);
+            public static Context from(Cloud cloud, boolean exclave, NameResolver resolver) {
+                return new Context(cloud, exclave, resolver);
             }
 
             public NameResolver resolver() { return resolver; }
 
-            public boolean allocateFromUnusedHostname() { return exclave || cloudName == CloudName.AZURE; }
+            public boolean allocateFromUnusedHostname() { return exclave || cloud.dynamicProvisioning(); }
 
             public boolean hasIpNotInDns(Version version) {
-                if (exclave && cloudName == CloudName.GCP && version.is4()) {
+                if (exclave && cloud.name() == CloudName.GCP && version.is4()) {
                     // Exclave nodes in GCP have IPv4, because load balancers backends are required to be IPv4,
                     // but it's private (10.x).  The hostname only resolves to the public IPv6 address.
                     return true;

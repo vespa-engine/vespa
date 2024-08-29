@@ -177,7 +177,7 @@ class Activator {
         Set<String> nonActiveApplicationHosts = new HashSet<>(nonActiveHosts);
         nonActiveApplicationHosts.removeIf(host -> potentialChildren.childrenOf(host).type(Type.combined, Type.container, Type.content).isEmpty());
 
-        if (nonActiveHosts.size() > 0) {
+        if (!nonActiveHosts.isEmpty()) {
             int numActiveApplication = applicationParentHostnames.size() - nonActiveApplicationHosts.size();
             int numActiveAdmin = parentHostnames.size() - nonActiveHosts.size() - numActiveApplication;
             var messageBuilder = new StringBuilder()
