@@ -163,7 +163,7 @@ public class SignificanceModelGenerator {
     }
 
     private void handleTokenization(String field) {
-        var tokens = tokenizer.tokenize(field, languageTag, StemMode.ALL, false);
+        var tokens = tokenizer.tokenize(field, languageTag, StemMode.NONE, false);
 
         Set<String> uniqueWords = StreamSupport.stream(tokens.spliterator(), false)
                 .filter(t -> t.getType() == TokenType.ALPHABETIC)
