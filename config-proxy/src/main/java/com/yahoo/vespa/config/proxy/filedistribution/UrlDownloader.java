@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -27,34 +29,44 @@ class UrlDownloader implements Downloader {
     @Override
     public Optional<File> downloadFile(String urlString, File downloadDir) throws IOException {
         long start = System.currentTimeMillis();
-        URL url = new URL(urlString);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        URI uri = getUri(urlString);
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestProperty("User-Agent", USER_AGENT_MODEL_DOWNLOADER);
         if (connection.getResponseCode() != 200)
-            throw new RuntimeException("Download of URL '" + url + "' failed, got response code " + connection.getResponseCode());
+            throw new RuntimeException("Download of URL '" + uri + "' failed, got response code " + connection.getResponseCode());
 
-        log.log(Level.INFO, "Downloading URL '" + url + "'");
-        File contentsPath = new File(downloadDir, filename(url));
+        log.log(Level.INFO, "Downloading URL '" + uri + "'");
+        File contentsPath = new File(downloadDir, filename(uri));
         try (ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream())) {
             try (FileOutputStream fos = new FileOutputStream((contentsPath.getAbsolutePath()))) {
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
                 if (contentsPath.exists() && contentsPath.length() > 0) {
                     new RequestTracker().trackRequest(downloadDir);
-                    log.log(Level.FINE, () -> "URL '" + url + "' available at " + contentsPath);
+                    log.log(Level.FINE, () -> "URL '" + uri + "' available at " + contentsPath);
                     log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
-                                                      url, (System.currentTimeMillis() - start) / 1000.0));
+                                                      uri, (System.currentTimeMillis() - start) / 1000.0));
                     return Optional.of(contentsPath);
                 } else {
-                    log.log(Level.SEVERE, "Downloaded URL '" + url + "' not found, returning error");
+                    log.log(Level.SEVERE, "Downloaded URL '" + uri + "' not found, returning error");
                     return Optional.empty();
                 }
             }
         }
     }
 
-    private String filename(URL url) {
-        String path = url.getPath();
+    private static URI getUri(String urlString) {
+        URI uri;
+        try {
+            uri = new URI(urlString);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return uri;
+    }
+
+    private String filename(URI uri) {
+        String path = uri.getPath();
         var fileName = path.substring(path.lastIndexOf('/') + 1);
         return fileName.isEmpty() ? CONTENTS_FILE_NAME : fileName;
     }
