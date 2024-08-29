@@ -114,8 +114,7 @@ public:
     // Iff state was accepted, returns std::nullopt
     // Otherwise (i.e. state was rejected due to a higher version already having been accepted)
     // returns an optional containing the current, higher cluster state version.
-    [[nodiscard]] std::optional<uint32_t> try_set_cluster_state_bundle(std::shared_ptr<const ClusterStateBundle> c,
-                                                                       uint16_t origin_controller_index);
+    [[nodiscard]] std::optional<uint32_t> try_set_cluster_state_bundle(std::shared_ptr<const ClusterStateBundle> c);
     HostInfo& getHostInfo() { return *_hostInfo; }
 
     void immediately_send_get_node_state_replies() override;
