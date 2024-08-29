@@ -207,6 +207,8 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.HUBSPOT_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.HUBSPOT_LAST_SUCCESS.last());
 
+        addMetric(metrics, ControllerMetrics.TENANT_CREATED_LAST_SUCCESS.last());
+
         return metrics;
     }
 
