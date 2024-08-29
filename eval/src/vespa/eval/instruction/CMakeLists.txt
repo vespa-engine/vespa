@@ -50,6 +50,7 @@ vespa_add_library(eval_instruction OBJECT
     sparse_no_overlap_join_function.cpp
     sparse_singledim_lookup.cpp
     sum_max_dot_product_function.cpp
+    sum_max_inv_hamming_function.cpp
     universal_dot_product.cpp
     unpack_bits_function.cpp
     vector_from_doubles_function.cpp
