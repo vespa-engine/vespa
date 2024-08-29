@@ -25,15 +25,16 @@ class UrlDownloader implements Downloader {
     private static final String USER_AGENT_MODEL_DOWNLOADER = "Vespa/8.x (model download - https://github.com/vespa-engine/vespa)";
 
     @Override
-    public Optional<File> downloadFile(String url, File downloadDir) throws IOException {
+    public Optional<File> downloadFile(String urlString, File downloadDir) throws IOException {
         long start = System.currentTimeMillis();
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        URL url = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestProperty("User-Agent", USER_AGENT_MODEL_DOWNLOADER);
         if (connection.getResponseCode() != 200)
             throw new RuntimeException("Download of URL '" + url + "' failed, got response code " + connection.getResponseCode());
 
         log.log(Level.INFO, "Downloading URL '" + url + "'");
-        File contentsPath = new File(downloadDir, CONTENTS_FILE_NAME);
+        File contentsPath = new File(downloadDir, filename(url));
         try (ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream())) {
             try (FileOutputStream fos = new FileOutputStream((contentsPath.getAbsolutePath()))) {
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
@@ -50,6 +51,12 @@ class UrlDownloader implements Downloader {
                 }
             }
         }
+    }
+
+    private String filename(URL url) {
+        String path = url.getPath();
+        var fileName = path.substring(path.lastIndexOf('/') + 1);
+        return fileName.isEmpty() ? CONTENTS_FILE_NAME : fileName;
     }
 
 }
