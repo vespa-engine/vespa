@@ -189,7 +189,7 @@ public class Preparer {
                                              Supplier<Integer> nextIndex, LockedNodeList allNodes) {
         validateAccount(requested.cloudAccount(), application, allNodes);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
-        IP.Allocation.Context allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
+        IP.Allocation.Context allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud(),
                                                                              requested.cloudAccount().isExclave(nodeRepository.zone()),
                                                                              nodeRepository.nameResolver());
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
