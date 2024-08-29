@@ -27,7 +27,7 @@ func TestDeploy(t *testing.T) {
 		Target:             target,
 		ApplicationPackage: ApplicationPackage{Path: appDir},
 	}
-	_, err := Deploy(opts)
+	_, err := Deploy(opts, []string{})
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(httpClient.Requests))
 	req := httpClient.LastRequest
@@ -49,7 +49,7 @@ func TestDeployCloud(t *testing.T) {
 		Target:             target,
 		ApplicationPackage: ApplicationPackage{Path: appDir},
 	}
-	_, err := Deploy(opts)
+	_, err := Deploy(opts, []string{})
 	require.Nil(t, err)
 	assert.Equal(t, 1, len(httpClient.Requests))
 	req := httpClient.LastRequest
@@ -62,7 +62,7 @@ func TestDeployCloud(t *testing.T) {
 	assert.False(t, hasDeployOptions)
 
 	opts.Version = version.MustParse("1.2.3")
-	_, err = Deploy(opts)
+	_, err = Deploy(opts, []string{})
 	require.Nil(t, err)
 	req = httpClient.LastRequest
 	values = parseMultiPart(t, req)
@@ -83,7 +83,7 @@ func TestSubmit(t *testing.T) {
 		ApplicationPackage: ApplicationPackage{Path: appDir},
 	}
 	httpClient.NextResponseString(200, `{"build": 42}`)
-	build, err := Submit(opts, Submission{})
+	build, err := Submit(opts, Submission{}, []string{})
 	require.Nil(t, err)
 	require.Equal(t, int64(42), build)
 	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
@@ -102,7 +102,7 @@ func TestSubmit(t *testing.T) {
 		Description: "broken garbage",
 		AuthorEmail: "foo@example.com",
 		SourceURL:   "https://github.com/foo/repo",
-	})
+	}, []string{})
 	require.Nil(t, err)
 	require.Equal(t, int64(43), build)
 	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))

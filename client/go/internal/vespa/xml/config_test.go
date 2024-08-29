@@ -243,6 +243,51 @@ func TestReadServicesNoResources(t *testing.T) {
 	}
 }
 
+func TestReadClientPaths(t *testing.T) {
+	s := `
+<services xmlns:deploy="vespa" xmlns:preprocess="properties">
+  <container id="qrs">
+    <clients>
+      <client id="test" permissions="read">
+        <certificate file="security/test.pem"/>
+      </client>
+      <client id="other" permissions="read">
+        <certificate file="security/other.pem"/>
+      </client>
+    </clients>
+  </container>
+</services>
+`
+	services, err := ReadServices(strings.NewReader(s))
+	if err != nil {
+		t.Fatal(err)
+	}
+	certPaths := services.CertPaths()
+	if got := certPaths[0]; got != "security/test.pem" {
+		t.Errorf("got %+v, want security/test.pem", got)
+	}
+	if got := certPaths[1]; got != "security/other.pem" {
+		t.Errorf("got %+v, want security/other.pem", got)
+	}
+}
+
+func TestReadNoClientPaths(t *testing.T) {
+	s := `
+<services xmlns:deploy="vespa" xmlns:preprocess="properties">
+  <container id="qrs">
+  </container>
+</services>
+`
+	services, err := ReadServices(strings.NewReader(s))
+	if err != nil {
+		t.Fatal(err)
+	}
+	certPaths := services.CertPaths()
+	if got := certPaths; got != nil {
+		t.Errorf("got %+v, want nil", got)
+	}
+}
+
 func TestParseResources(t *testing.T) {
 	assertResources(t, "foo", Resources{}, true)
 	assertResources(t, "vcpu=2,memory=4Gb", Resources{}, true)
