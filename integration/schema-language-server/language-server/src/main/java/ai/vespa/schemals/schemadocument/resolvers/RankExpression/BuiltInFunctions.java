@@ -1,6 +1,7 @@
 package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,16 +36,16 @@ public class BuiltInFunctions {
         // ==== Document features ====
         put("fieldLength", new GenericFunction("fieldLength", new FunctionSignature(new FieldArgument())));
         put("attribute", new GenericFunction("attribute", List.of( 
-            new FunctionSignature(new FieldArgument(FieldArgument.NumericOrTensorFieldType, IndexingType.ATTRIBUTE), Set.of(
+            new FunctionSignature(new FieldArgument(FieldArgument.NumericOrTensorFieldType, FieldArgument.IndexAttributeType), Set.of(
                 "",
                 "count"
             )),
             new FunctionSignature(List.of(
-                new FieldArgument(FieldType.NUMERIC_ARRAY, IndexingType.ATTRIBUTE),
+                new FieldArgument(FieldType.NUMERIC_ARRAY, FieldArgument.IndexAttributeType),
                 new IntegerArgument()
             )),
             new FunctionSignature(List.of(
-                new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE),
+                new FieldArgument(FieldType.WSET, FieldArgument.IndexAttributeType),
                 new StringArgument("key")
             ), Set.of(
                 "",  // empty not actually allowed but here for completion
@@ -55,10 +56,10 @@ public class BuiltInFunctions {
         // TODO: requires you to write attribute(name)
         put("tensorFromWeightedSet", new GenericFunction("tensorFromWeightedSet", List.of(
             new FunctionSignature(
-                new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source")
+                new FieldArgument(FieldType.WSET, FieldArgument.IndexAttributeType, "source")
             ),
             new FunctionSignature(List.of(
-                new FieldArgument(FieldType.WSET, IndexingType.ATTRIBUTE, "source"),
+                new FieldArgument(FieldType.WSET, FieldArgument.IndexAttributeType, "source"),
                 new StringArgument("dimension")
             ))
         ))); 
@@ -66,10 +67,10 @@ public class BuiltInFunctions {
         // TODO: requires you to write attribute(name)
         put("tensorFromLabels", new GenericFunction("tensorFromLabels", List.of(
             new FunctionSignature(
-                new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute")
+                new FieldArgument(FieldArgument.SingleValueOrArrayType, FieldArgument.IndexAttributeType, "attribute")
             ),
             new FunctionSignature(List.of(
-                new FieldArgument(FieldArgument.SingleValueOrArrayType, IndexingType.ATTRIBUTE, "attribute"),
+                new FieldArgument(FieldArgument.SingleValueOrArrayType, FieldArgument.IndexAttributeType, "attribute"),
                 new StringArgument("dimension")
             ))
         )));
@@ -187,18 +188,18 @@ public class BuiltInFunctions {
         put("closeness", new GenericFunction("closeness", List.of( 
             new FunctionSignature(List.of(new KeywordArgument("field", "dimension"), new FieldArgument(
                 FieldType.TENSOR,
-                IndexingType.ATTRIBUTE,
+                FieldArgument.IndexAttributeType,
                 "name"
             ))),
             new FunctionSignature(List.of(new KeywordArgument("label", "dimension"), new LabelArgument("name"))),
-            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "name"), Set.of(
+            new FunctionSignature(new FieldArgument(FieldType.POSITION, FieldArgument.IndexAttributeType, "name"), Set.of(
                 "",
                 "logscale"
             ))
         )));
 
         put("freshness", new GenericFunction("freshness",
-            new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, IndexingType.ATTRIBUTE, "name"), Set.of(
+            new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "name"), Set.of(
                 "",
                 "logscale"
             ))
@@ -271,7 +272,7 @@ public class BuiltInFunctions {
                 new KeywordArgument("label", "dimension"),
                 new LabelArgument("name")
             )),
-            new FunctionSignature(new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE, "name"), Set.of(
+            new FunctionSignature(new FieldArgument(FieldType.POSITION, FieldArgument.IndexAttributeType, "name"), Set.of(
                 "",
                 "km",
                 "index",
@@ -280,7 +281,7 @@ public class BuiltInFunctions {
             ))
         )));
 
-        put("age", new GenericFunction("age", new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, IndexingType.ATTRIBUTE))));
+        put("age", new GenericFunction("age", new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType))));
 
         put("file", new GenericFunction("file"));
 
@@ -288,7 +289,7 @@ public class BuiltInFunctions {
 
 
         put("distanceToPath", new GenericFunction("distanceToPath", new FunctionSignature(
-            new FieldArgument(FieldType.POSITION, IndexingType.ATTRIBUTE),
+            new FieldArgument(FieldType.POSITION, FieldArgument.IndexAttributeType),
             Set.of(
                 "", // empty not actually allowed, but here for completion
                 "distance", 
@@ -298,7 +299,7 @@ public class BuiltInFunctions {
         )));
 
         put("dotProduct", new GenericFunction("dotProduct", new FunctionSignature(List.of(
-            new FieldArgument(Set.of(FieldType.STRING, FieldType.INTEGER, FieldType.NUMERIC_ARRAY)),
+            new FieldArgument(EnumSet.of(FieldType.STRING, FieldType.INTEGER, FieldType.NUMERIC_ARRAY)),
             new VectorArgument()
         ))));
 
