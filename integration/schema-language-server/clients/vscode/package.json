@@ -4,7 +4,7 @@
   "description": "Support for Vespa schema files.",
   "author": "Vespa",
   "publisher": "vespaai",
-  "version": "2.0.2",
+  "version": "2.0.6",
   "engines": {
     "vscode": "^1.72.0"
   },

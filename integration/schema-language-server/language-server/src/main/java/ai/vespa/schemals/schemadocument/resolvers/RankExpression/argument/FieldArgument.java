@@ -1,7 +1,6 @@
 package ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument;
 
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -29,23 +28,20 @@ public class FieldArgument extends SymbolArgument {
         POSITION
     };
 
-    public static final Set<FieldType> AnyFieldType = EnumSet.allOf(FieldType.class);
-    public static final Set<FieldType> NumericOrTensorFieldType = new HashSet<>() {{
-        add(FieldType.TENSOR);
-        add(FieldType.NUMERIC);
-    }};
+    public static final EnumSet<FieldType> AnyFieldType = EnumSet.allOf(FieldType.class);
+    public static final EnumSet<FieldType> NumericOrTensorFieldType = EnumSet.of(FieldType.TENSOR, FieldType.NUMERIC);
 
-    public static final Set<FieldType> SingleValueOrArrayType = new HashSet<>() {{
-        add(FieldType.NUMERIC);
-        add(FieldType.STRING);
-        add(FieldType.NUMERIC_ARRAY);
-        add(FieldType.STRING_ARRAY);
-    }};
+    public static final EnumSet<FieldType> SingleValueOrArrayType = EnumSet.of(
+        FieldType.NUMERIC,
+        FieldType.STRING,
+        FieldType.NUMERIC_ARRAY,
+        FieldType.STRING_ARRAY
+    );
 
-    public static final Set<IndexingType> IndexAttributeType = new HashSet<>() {{
-        add(IndexingType.ATTRIBUTE);
-        add(IndexingType.INDEX);
-    }};
+    public static final EnumSet<IndexingType> IndexAttributeType = EnumSet.of(
+        IndexingType.ATTRIBUTE,
+        IndexingType.INDEX
+    );
 
     public static record UnresolvedFieldArgument(
         SchemaNode node,
@@ -57,55 +53,47 @@ public class FieldArgument extends SymbolArgument {
     private Set<FieldType> fieldTypes;
     private Set<IndexingType> indexingTypes;
 
-    public FieldArgument(Set<FieldType> fieldTypes, Set<IndexingType> indexingTypes, String displayStr) {
+    public FieldArgument(EnumSet<FieldType> fieldTypes, EnumSet<IndexingType> indexingTypes, String displayStr) {
         super(SymbolType.FIELD, displayStr);
         this.fieldTypes = fieldTypes;
         this.indexingTypes = indexingTypes;
     }
 
-    public FieldArgument(Set<FieldType> fieldTypes, Set<IndexingType> indexingTypes) {
+    public FieldArgument(EnumSet<FieldType> fieldTypes, EnumSet<IndexingType> indexingTypes) {
         this(fieldTypes, indexingTypes, "name");
     }
 
-    public FieldArgument(Set<FieldType> fieldTypes) {
-        this(fieldTypes, new HashSet<>());
+    public FieldArgument(EnumSet<FieldType> fieldTypes) {
+        this(fieldTypes, EnumSet.noneOf(IndexingType.class));
     }
 
     public FieldArgument(FieldType fieldType) {
-        this(new HashSet<>() {{
-            add(fieldType);
-        }});
+        this(EnumSet.of(fieldType));
     }
 
     public FieldArgument(FieldType fieldType, IndexingType indexingType) {
-        this(new HashSet<>() {{
-            add(fieldType);
-        }}, indexingType);
+        this(EnumSet.of(fieldType), indexingType);
     }
 
     public FieldArgument(FieldType fieldType, IndexingType indexingType, String displayStr) {
-        this(new HashSet<>() {{
-            add(fieldType);
-        }}, indexingType, displayStr);
+        this(EnumSet.of(fieldType), indexingType, displayStr);
     }
 
 
-    public FieldArgument(Set<FieldType> fieldTypes, IndexingType indexingType) {
-        this(fieldTypes, new HashSet<>() {{
-            add(indexingType);
-        }});
+    public FieldArgument(EnumSet<FieldType> fieldTypes, IndexingType indexingType) {
+        this(fieldTypes, EnumSet.of(indexingType));
     }
 
-    public FieldArgument(Set<FieldType> fieldTypes, IndexingType indexingType, String displayStr) {
-        this(fieldTypes, new HashSet<>() {{
-            add(indexingType);
-        }}, displayStr);
+    public FieldArgument(EnumSet<FieldType> fieldTypes, IndexingType indexingType, String displayStr) {
+        this(fieldTypes, EnumSet.of(indexingType), displayStr);
     }
 
-    public FieldArgument(FieldType fieldType, Set<IndexingType> indexingTypes) {
-        this(new HashSet<>() {{
-            add(fieldType);
-        }}, indexingTypes);
+    public FieldArgument(FieldType fieldType, EnumSet<IndexingType> indexingTypes) {
+        this(EnumSet.of(fieldType), indexingTypes);
+    }
+
+    public FieldArgument(FieldType fieldType, EnumSet<IndexingType> indexingTypes, String displayStr) {
+        this(EnumSet.of(fieldType), indexingTypes, displayStr);
     }
 
     public FieldArgument() {
@@ -113,7 +101,7 @@ public class FieldArgument extends SymbolArgument {
     }
 
     public FieldArgument(String displayStr) {
-        this(AnyFieldType, new HashSet<>(), displayStr);
+        this(AnyFieldType, EnumSet.noneOf(IndexingType.class), displayStr);
     }
 
     @Override
@@ -135,7 +123,7 @@ public class FieldArgument extends SymbolArgument {
             }
         }
 
-        if (diagnostic.isPresent()) {
+        if (diagnostic.isEmpty()) {
             SchemaNode unresolvedFieldArgument = super.findSymbolNode(node);
             context.addUnresolvedFieldArgument(new UnresolvedFieldArgument(unresolvedFieldArgument, fieldTypes, indexingTypes));
         }

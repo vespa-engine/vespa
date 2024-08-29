@@ -245,7 +245,7 @@ public class SchemaHover {
         return null;
     }
 
-    private static Optional<Hover> rankFeatureHover(SchemaNode node) {
+    private static Optional<Hover> rankFeatureHover(SchemaNode node, EventPositionContext context) {
 
         // Search for rankNode connection
         SchemaNode currentNode = node;
@@ -259,12 +259,20 @@ public class SchemaHover {
 
         RankNode rankNode = currentNode.getRankNode().get();
 
-        Optional<SpecificFunction> functionSignature = rankNode.getFunctionSignature();
+        Optional<SpecificFunction> rankNodeSignature = rankNode.getFunctionSignature();
 
-        if (functionSignature.isEmpty()) {
+        if (rankNodeSignature.isEmpty()) {
             return Optional.empty();
         }
-        Optional<Hover> result = getRankFeatureHover(functionSignature.get());
+
+        SpecificFunction functionSignature = rankNodeSignature.get().clone();
+
+        // Clear property from the signature if the hover was not explicitly on the property node.
+        if (node.hasSymbol() && node.getSymbol().getType() != SymbolType.PROPERTY) {
+            functionSignature.clearProperty();
+        }
+
+        Optional<Hover> result = getRankFeatureHover(functionSignature);
         result.ifPresent(hover -> hover.setRange(node.getRange()));
         return result;
     }
@@ -273,7 +281,6 @@ public class SchemaHover {
      * Public interface to be used by {@link SchemaCompletion}
      * @param function
      * @return Hover with empty range
-     * TODO: refactor
      */
     public static Optional<Hover> getRankFeatureHover(SpecificFunction function) {
         Optional<Hover> result = getFileHoverInformation("rankExpression/" + function.getSignatureString(), new Range());
@@ -297,7 +304,7 @@ public class SchemaHover {
                     MarkupContent markupContent = content.getRight();
                     if (markupContent.getValue() == "builtin") {
 
-                        Optional<Hover> builtinHover = rankFeatureHover(node);
+                        Optional<Hover> builtinHover = rankFeatureHover(node, context);
                         if (builtinHover.isPresent()) {
                             return builtinHover.get();
                         }

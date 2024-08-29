@@ -589,7 +589,6 @@ void RootRankProfile : { }
  * trailing newline tokens.
  *
  * @return the schema definition object.
- * TODO: implement inheritance
  */
 ParsedSchema rootSchema :
 {

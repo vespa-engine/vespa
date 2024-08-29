@@ -38,4 +38,12 @@ public class SpecificFunction {
     public void setProperty(String property) {
         this.property = Optional.of(property);
     }
+
+    public void clearProperty() {
+        this.property = Optional.empty();
+    }
+
+    public SpecificFunction clone() {
+        return new SpecificFunction(this.function, this.signature, this.property);
+    }
 };

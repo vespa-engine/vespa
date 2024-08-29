@@ -57,7 +57,12 @@ public class RefactorRewriteProvider implements CodeActionProvider {
         action.setTitle("Move '" + rankProfileName + "' to separate file");
         action.setKind(CodeActionKind.RefactorRewrite);
         action.setEdit(edit);
-        action.setCommand(CommandRegistry.createLSPCommand(CommandType.DOCUMENT_OPEN, List.of(rankProfileURI)));
+        //action.setCommand(CommandRegistry.createLSPCommand(CommandType.DOCUMENT_OPEN, List.of(rankProfileURI)));
+        //action.setCommand(CommandRegistry.createLSPCommand(CommandType.DOCUMENT_PARSE, List.of(context.document.getFileURI())));
+        action.setCommand(CommandRegistry.createLSPCommand(CommandType.COMMAND_LIST, List.of(
+            CommandRegistry.createLSPCommand(CommandType.DOCUMENT_PARSE, List.of(context.document.getFileURI())),
+            CommandRegistry.createLSPCommand(CommandType.DOCUMENT_OPEN, List.of(rankProfileURI))
+        )));
         return Optional.of(action);
     }
 

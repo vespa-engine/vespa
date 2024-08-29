@@ -30,10 +30,12 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.resolvers.DocumentReferenceResolver;
+import ai.vespa.schemals.schemadocument.resolvers.FieldArgumentResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
 import ai.vespa.schemals.schemadocument.resolvers.StructFieldDefinitionResolver;
 import ai.vespa.schemals.schemadocument.resolvers.TypeNodeResolver;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -231,6 +233,13 @@ public class SchemaDocument implements DocumentManager {
             diagnostics.addAll(StructFieldDefinitionResolver.resolve(context, tolerantResult.CST().get()));
 
             diagnostics.addAll(ResolverTraversal.traverse(context, tolerantResult.CST().get()));
+
+            for (UnresolvedFieldArgument fieldArg : context.unresolvedFieldArguments()) {
+                Optional<Diagnostic> diagnostic = FieldArgumentResolver.resolveFieldArgument(context, fieldArg);
+                if (diagnostic.isPresent()) {
+                    diagnostics.add(diagnostic.get());
+                }
+            }
 
             diagnostics.addAll(DocumentReferenceResolver.resolveDocumentReferences(context));
         }

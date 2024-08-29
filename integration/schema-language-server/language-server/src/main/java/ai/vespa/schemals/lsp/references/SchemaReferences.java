@@ -16,9 +16,8 @@ import ai.vespa.schemals.tree.SchemaNode;
  * Responsible for LSP textDocument/references requests.
  */
 public class SchemaReferences {
-    
 
-    public static List<? extends Location> getReferences(EventPositionContext context) {
+    public static List<Location> getReferences(EventPositionContext context) {
 
         List<Location> ret = new ArrayList<>();
 

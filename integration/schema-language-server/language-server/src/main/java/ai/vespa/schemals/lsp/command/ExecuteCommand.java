@@ -12,6 +12,12 @@ public class ExecuteCommand {
     public static Object executeCommand(EventExecuteCommandContext context) {
         Optional<SchemaCommand> command = CommandRegistry.getCommand(context.params);
 
+        if (command.isEmpty()) {
+            for (Object obj : context.params.getArguments()) {
+                context.logger.info(obj.getClass().toString() + " ||| " + obj.toString());
+            }
+        }
+
         command.ifPresent(cmd -> cmd.execute(context));
         return null;
     }
