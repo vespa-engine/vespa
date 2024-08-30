@@ -1,0 +1,300 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+---
+shared:
+  image: docker.io/vespaengine/vespa-build-almalinux-8
+  environment:
+    USER_SHELL_BIN: bash
+  annotations:
+    screwdriver.cd/restrictPR: fork
+    restore-cache: &restore-cache
+      restore-cache: |
+        (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
+
+        mkdir -p $CCACHE_DATA_DIR
+        mkdir -p $CCACHE_TMP_DIR
+
+        export CCACHE_DIR=$CCACHE_DATA_DIR
+
+        rm -f $CCACHE_DIR/ccache.conf
+        ccache -M 20G
+        ccache -o log_file=$SD_ARTIFACTS_DIR/ccache_log.txt
+        ccache -o temporary_dir=$CCACHE_TMP_DIR
+        ccache -p
+        ccache -z
+        du -sh /tmp/*
+
+    save-cache: &save-cache
+      save-cache: |
+        ls -lart /tmp/vespa
+        du -sh /tmp/vespa/*
+
+        if [[ -z "$SD_PULL_REQUEST" ]]; then
+          if [[ -z "$VESPA_USE_SANITIZER" ]] || [[ "$VESPA_USE_SANITIZER" == null ]]; then
+            # Remove what we have produced
+            rm -rf $LOCAL_MVN_REPO/com/yahoo
+            rm -rf $LOCAL_MVN_REPO/ai/vespa
+
+            # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
+            mkdir -p $(dirname $MAIN_CACHE_FILE)
+            (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
+
+            # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
+            if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2500*1000*1000 )) )); then
+              tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
+              echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
+            fi
+          fi
+        fi
+
+jobs:
+  publish-release:
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 300
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: HIGH
+
+      screwdriver.cd/buildPeriodically: H 4,10,16,22 * * 1,2,3,4
+
+    secrets:
+      - BUILDKITE_TRIGGER_TOKEN
+      - COPR_WEBHOOK
+      - OSSRH_USER
+      - OSSRH_TOKEN
+      - GPG_KEYNAME
+      - GPG_PASSPHRASE
+      - GPG_ENCPHRASE
+      - SAMPLE_APPS_DEPLOY_KEY
+      - VESPA_DEPLOY_KEY
+      - DOCKER_IMAGE_DEPLOY_KEY
+      - DOCKER_HUB_DEPLOY_KEY
+      - GHCR_DEPLOY_KEY
+      - ANN_BENCHMARK_DEPLOY_KEY
+      - SVC_OKTA_VESPA_FACTORY_TOKEN
+
+    environment:
+      GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
+    steps:
+      - get-vespa-version: |
+          JSON=$(screwdriver/factory-command.sh create-release)
+          VESPA_VERSION=$(jq -re '.version' <<< "$JSON")
+          JSON=$(screwdriver/factory-command.sh get-version $VESPA_VERSION)
+          VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$JSON")
+          echo "VESPA_VERSION=$VESPA_VERSION VESPA_REF=$VESPA_REF"
+          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
+            echo "Must have valid Vespa version and reference to continue (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF)."
+            return 1
+          fi
+          meta set vespa.version $VESPA_VERSION
+      - trig-buildkite: |
+          BUILDKITE_JSON=$(screwdriver/trig-buildkite-pipeline.sh vespa-engine-vespa-release master $VESPA_VERSION $VESPA_REF "Releasing open-source Vespa version $VESPA_VERSION :rocket:")
+      - wait-for-buildkite: |
+          BUILDKITE_URL=$(jq -re '.url' <<< "$BUILDKITE_JSON")
+          BUILDKITE_WEB_URL=$(jq -re '.web_url' <<< "$BUILDKITE_JSON")
+          screwdriver/wait-for-buildkite-build.sh $BUILDKITE_URL $BUILDKITE_WEB_URL 1800
+      - update-released-time: |
+          screwdriver/factory-command.sh update-released-time $VESPA_VERSION
+
+  publish-legacy-release:
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 300
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: HIGH
+      screwdriver.cd/buildPeriodically: H 6 1 * *
+
+    environment:
+      IMAGE_NAME: "vespaengine/vespa-generic-intel-x86_64"
+
+    secrets:
+      - DOCKER_HUB_DEPLOY_KEY
+
+    steps:
+      - get-vespa-version: |
+          set -x
+          VESPA_VERSION=$(meta get vespa.version --external publish-release)
+          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
+            echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
+            return 1
+          fi
+      - install-dependencies: |
+          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          dnf install -y docker-ce docker-ce-cli containerd.io python3 python3-pip
+          docker system info
+      - checkout: |
+          mkdir -p workdir
+          cd workdir
+          export WORKDIR=$(pwd)
+          git clone -q https://github.com/vespa-engine/vespa
+          (cd vespa && git checkout v$VESPA_VERSION)
+          git clone -q https://github.com/vespa-engine/system-test
+          # Set correct version in pom.xml files
+          (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+      - build-rpms: |
+          cd $WORKDIR
+          make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
+          rpmbuild --rebuild \
+                   --define="_topdir $WORKDIR/vespa-rpmbuild" \
+                   --define "debug_package %{nil}" \
+                   --define "_debugsource_template %{nil}" \
+                   --define '_cmake_extra_opts "-DDEFAULT_VESPA_CPU_ARCH_FLAGS=-msse3 -mcx16 -mtune=intel"' \
+                   *.src.rpm
+          rm -f *.src.rpm
+          mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm .
+      - build-container-image: |
+          cat <<EOF > Dockerfile
+          ARG VESPA_VERSION
+          FROM docker.io/vespaengine/vespa:\$VESPA_VERSION
+          USER root
+          RUN --mount=type=bind,target=/rpms/,source=. dnf reinstall -y /rpms/vespa*rpm && dnf clean all
+          USER vespa
+          EOF
+          docker build --progress plain --build-arg VESPA_VERSION=$VESPA_VERSION --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
+            --tag docker.io/$IMAGE_NAME:latest --file Dockerfile .
+      - verify-container-image: |
+          # Trick to be able to use the documentation testing to verify the image built locally
+          docker tag docker.io/$IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
+          # Run quick start guide
+          $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
+      - publish-image: |
+          if [[ -z $SD_PULL_REQUEST ]]; then
+            if curl -fsSL https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/ &> /dev/null; then
+              echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
+            else
+              OPT_STATE="$(set +o)"
+              set +x
+              docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+              eval "$OPT_STATE"
+              docker push docker.io/$IMAGE_NAME:$VESPA_VERSION
+              docker push docker.io/$IMAGE_NAME:latest
+            fi
+          fi
+
+  publish-el9-preview:
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 300
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: HIGH
+      screwdriver.cd/buildPeriodically: H 6 1 * *
+
+    environment:
+      BASE_IMAGE: "el9"
+      IMAGE_NAME: "vespaengine/vespa-el9-preview"
+
+    secrets:
+      - DOCKER_HUB_DEPLOY_KEY
+
+    steps: &publish-el9-preview-steps
+      - get-vespa-version: |
+          set -x
+          VESPA_VERSION=$(meta get vespa.version --external publish-release)
+          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
+            echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
+            return 1
+          fi
+          VESPA_MAJOR=$(echo $VESPA_VERSION | cut -d. -f1)
+      - install-dependencies: |
+          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          dnf -y install docker-ce docker-ce-cli containerd.io python3 python3-pip
+          docker system info
+      - checkout: |
+          git clone https://github.com/vespa-engine/docker-image
+          cd docker-image
+      - build-container-image: |
+          docker buildx install
+          unset DOCKER_HOST
+          docker context create vespa-context --docker "host=tcp://localhost:2376,ca=/certs/client/ca.pem,cert=/certs/client/cert.pem,key=/certs/client/key.pem"
+          docker context use vespa-context
+          docker buildx create --name vespa-builder --driver docker-container --use
+          docker buildx inspect --bootstrap
+          docker buildx build \
+                --progress plain \
+                --load \
+                --platform linux/amd64 \
+                --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
+                --build-arg VESPA_VERSION=$VESPA_VERSION \
+                --file Dockerfile  \
+                --tag docker.io/vespaengine/vespa:latest \
+                --tag docker.io/$IMAGE_NAME:latest \
+                .
+      - verify-container-image: |
+          # Run quick start guide
+          $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
+      - publish-image: |
+          if [[ -z $SD_PULL_REQUEST ]]; then
+            if curl -fsSL https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/ &> /dev/null; then
+              echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
+            else
+              OPT_STATE="$(set +o)"
+              set +x
+              docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+              eval "$OPT_STATE"
+              docker buildx build \
+                --progress plain \
+                --push \
+                --platform linux/amd64,linux/arm64 \
+                --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
+                --build-arg VESPA_VERSION=$VESPA_VERSION \
+                --file Dockerfile  \
+                --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
+                --tag docker.io/$IMAGE_NAME:$VESPA_MAJOR \
+                --tag docker.io/$IMAGE_NAME:latest \
+                .
+            fi
+          fi
+
+  verify-opensource-release-7days:
+    annotations:
+      screwdriver.cd/buildPeriodically: H 0 * * *
+    steps:
+      - now-epoch: |
+          now_epoch=`date "+%s"`
+          echo "Now epoch: " $now_epoch
+      - calculate-current-release-age: |
+          current_release_date=$(curl -sLf https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
+          grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
+          echo "Current release date: " $current_release_date
+          current_release_epoch=`date -d "$current_release_date" "+%s"`
+          echo "Current release epoch: " $current_release_epoch
+          release_age_days=$((($now_epoch-$current_release_epoch)/86400))
+          echo "Release age days: " $release_age_days
+      - error-if-current-release-too-old: |
+          if [ "$release_age_days" -gt 7 ]; then
+            echo "Current open source release is older than 7 days"
+            exit 1
+          fi
+      - calculate-docker-image-age: |
+          image_date=$(curl -sLf https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated')
+          echo "Docker image last_updated: " $image_date
+          image_epoch=`date -d "$image_date" "+%s"`
+          echo "Docker image epoch: " $image_epoch
+          docker_image_age_days=$((($now_epoch-$image_epoch)/86400))
+          echo "Docker image age days: " $docker_image_age_days
+      - error-if-docker-image-too-old: |
+          if [ "$docker_image_age_days" -gt 7 ]; then
+            echo "Current Docker image is older than 7 days"
+            exit 1
+          fi
+
+  delete-old-versions-in-archive:
+    annotations:
+      screwdriver.cd/cpu: LOW
+      screwdriver.cd/ram: LOW
+      screwdriver.cd/timeout: 10
+      screwdriver.cd/buildPeriodically: H 6 * * *
+    secrets:
+      - CLOUDSMITH_API_TOKEN
+    steps:
+      - cleanup: |
+          screwdriver/delete-old-cloudsmith-artifacts.sh
