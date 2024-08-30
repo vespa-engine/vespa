@@ -17,16 +17,29 @@ import static java.util.Objects.requireNonNull;
  */
 public class CapacityPolicies {
 
+    public record Tuning(Architecture adminClusterArchitecture,
+                         double logserverMemoryGiB)
+    {
+        double logserverMem(double v) {
+            double override = logserverMemoryGiB();
+            return (override > 0) ? override : v;
+        }
+    }
+
     private final Zone zone;
     private final Exclusivity exclusivity;
     private final ApplicationId applicationId;
-    private final Architecture adminClusterArchitecture;
+    private final Tuning tuning;
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Architecture adminClusterArchitecture) {
+        this(zone, exclusivity, applicationId, new Tuning(adminClusterArchitecture, 0.0));
+    }
+
+    public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning) {
         this.zone = zone;
         this.exclusivity = exclusivity;
         this.applicationId = applicationId;
-        this.adminClusterArchitecture = adminClusterArchitecture;
+        this.tuning = tuning;
     }
 
     public Capacity applyOn(Capacity capacity, boolean exclusive) {
@@ -92,6 +105,7 @@ public class CapacityPolicies {
     }
 
     private NodeResources defaultResources(ClusterSpec clusterSpec) {
+        var adminClusterArchitecture = tuning.adminClusterArchitecture();
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             if (exclusivity.allocation(clusterSpec)) {
                 return smallestExclusiveResources().with(adminClusterArchitecture);
@@ -134,14 +148,14 @@ public class CapacityPolicies {
 
     private NodeResources logserverResources(Architecture architecture) {
         if (zone.cloud().name() == CloudName.AZURE)
-            return new NodeResources(2, 4, 50, 0.3);
+            return new NodeResources(2, tuning.logserverMem(4.0), 50, 0.3);
 
         if (zone.cloud().name() == CloudName.GCP)
-            return new NodeResources(1, 4, 50, 0.3);
+            return new NodeResources(1, tuning.logserverMem(4.0), 50, 0.3);
 
         return architecture == Architecture.arm64
-                ? new NodeResources(0.5, 2.5, 50, 0.3)
-                : new NodeResources(0.5, 2, 50, 0.3);
+                ? new NodeResources(0.5, tuning.logserverMem(2.5), 50, 0.3)
+                : new NodeResources(0.5, tuning.logserverMem(2.0), 50, 0.3);
     }
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
