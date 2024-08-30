@@ -29,7 +29,8 @@ jobs:
         id: meta
         run: |
           if [[ "${{ github.event_name }}" == "push" && "${{ startswith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
-            BUILD_VERSION="${{ github.ref_name }}"
+            # Remove the "v" prefix from the tag.
+            BUILD_VERSION="${GITHUB_REF_NAME#v}"
           else
             BUILD_VERSION="0.0.0-dev_${{ github.run_number }}"
           fi
