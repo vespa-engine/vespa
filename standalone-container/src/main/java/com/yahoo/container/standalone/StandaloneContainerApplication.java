@@ -215,7 +215,7 @@ public class StandaloneContainerApplication implements Application {
 
     private static ContainerModelBuilder newContainerModelBuilder(Networking networkingOption) {
         return isConfigServer() ?
-                new ConfigServerContainerModelBuilder(new CloudConfigInstallVariables()) :
+                new ConfigServerContainerModelBuilder(new ConfigEnvironmentVariables()) :
                 new ContainerModelBuilder(true, networkingOption);
     }
 
@@ -266,13 +266,13 @@ public class StandaloneContainerApplication implements Application {
         if (!isConfigServer()) {
             return Zone.defaultZone();
         }
-        CloudConfigInstallVariables cloudConfigVariables = new CloudConfigInstallVariables();
-        if (!cloudConfigVariables.hostedVespa().orElse(false)) {
+        ConfigEnvironmentVariables variables = new ConfigEnvironmentVariables();
+        if (!variables.hostedVespa().orElse(false)) {
             return Zone.defaultZone();
         }
-        RegionName region = cloudConfigVariables.region().map(RegionName::from).orElseGet(RegionName::defaultName);
-        Environment environment = cloudConfigVariables.environment().map(Environment::from).orElseGet(Environment::defaultEnvironment);
-        SystemName system = cloudConfigVariables.system().map(SystemName::from).orElseGet(SystemName::defaultSystem);
+        RegionName region = variables.region().map(RegionName::from).orElseGet(RegionName::defaultName);
+        Environment environment = variables.environment().map(Environment::from).orElseGet(Environment::defaultEnvironment);
+        SystemName system = variables.system().map(SystemName::from).orElseGet(SystemName::defaultSystem);
         return new Zone(system, environment, region);
     }
 

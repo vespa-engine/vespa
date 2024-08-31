@@ -6,7 +6,7 @@ import java.util.Optional;
 /**
  * @author Tony Vaagenes
  */
-public interface CloudConfigOptions {
+public interface ConfigOptions {
 
     class ConfigServer {
         public final String hostName;

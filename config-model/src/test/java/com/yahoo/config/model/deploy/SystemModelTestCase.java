@@ -134,10 +134,6 @@ public class SystemModelTestCase {
         assertTrue(vespaModel.getConfig(StandardConfig.class, "simple/simpleservice.1").baseport() != 10000);
     }
 
-    /**
-     * This test is the same as the system test cloudconfig/plugins.
-     * Be sure to update it as well if you change this.
-     */
     @Test
     void testPlugins() {
         VespaModel vespaModel = getVespaModelDoNotValidateXml(TESTDIR + "plugins");
