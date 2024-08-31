@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.standalone;
 
-import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
+import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 /**
  * @author bjorncs
  */
-public class CloudConfigInstallVariables implements CloudConfigOptions {
+public class ConfigEnvironmentVariables implements ConfigOptions {
 
     @Override
     public Optional<Integer> rpcPort() {
@@ -31,14 +31,14 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     public ConfigServer[] allConfigServers() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVERS"))
                 .or(() -> getRawInstallVariable("services.addr_configserver"))
-                .map(CloudConfigInstallVariables::toConfigServers)
+                .map(ConfigEnvironmentVariables::toConfigServers)
                 .orElseGet(() -> new ConfigServer[0]);
     }
 
     @Override
     public int[] configServerZookeeperIds() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_IDS"))
-                .map(CloudConfigInstallVariables::multiValueParameterStream)
+                .map(ConfigEnvironmentVariables::multiValueParameterStream)
                 .orElseGet(Stream::empty)
                 .mapToInt(Integer::valueOf)
                 .toArray();
@@ -66,7 +66,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     @Override
     public String[] configModelPluginDirs() {
         return getRawInstallVariable("cloudconfig_server.config_model_plugin_dirs")
-                .map(CloudConfigInstallVariables::toConfigModelsPluginDir)
+                .map(ConfigEnvironmentVariables::toConfigModelsPluginDir)
                 .orElseGet(() -> new String[0]);
     }
 
@@ -143,7 +143,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     static ConfigServer[] toConfigServers(String configserversString) {
         return multiValueParameterStream(configserversString)
-                .map(CloudConfigInstallVariables::toConfigServer)
+                .map(ConfigEnvironmentVariables::toConfigServer)
                 .toArray(ConfigServer[]::new);
     }
 

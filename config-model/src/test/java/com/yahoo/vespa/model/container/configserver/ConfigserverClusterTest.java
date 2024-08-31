@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
-import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
+import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 import com.yahoo.vespa.model.container.xml.ConfigServerContainerModelBuilder;
 import org.junit.jupiter.api.Test;
 
@@ -153,8 +153,8 @@ public class ConfigserverClusterTest {
         Optional.of(configServerHostnames)
                 .filter(hostnames -> !hostnames.isEmpty())
                 .map(hostnames -> hostnames.stream()
-                        .map(hostname -> new CloudConfigOptions.ConfigServer(hostname, Optional.empty()))
-                        .toArray(CloudConfigOptions.ConfigServer[]::new))
+                        .map(hostname -> new ConfigOptions.ConfigServer(hostname, Optional.empty()))
+                        .toArray(ConfigOptions.ConfigServer[]::new))
                 .ifPresent(testOptions::configServers);
 
         Optional.of(configServerZkIds)

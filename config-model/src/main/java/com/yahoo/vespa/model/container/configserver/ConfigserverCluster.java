@@ -14,8 +14,8 @@ import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
-import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions.ConfigServer;
+import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
+import com.yahoo.vespa.model.container.configserver.option.ConfigOptions.ConfigServer;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -33,10 +33,10 @@ public class ConfigserverCluster extends TreeConfigProducer
         VipStatusConfig.Producer,
         ZookeeperServerConfig.Producer {
 
-    private final CloudConfigOptions options;
+    private final ConfigOptions options;
     private ContainerCluster<?> containerCluster;
 
-    public ConfigserverCluster(TreeConfigProducer<?> parent, String subId, CloudConfigOptions options) {
+    public ConfigserverCluster(TreeConfigProducer<?> parent, String subId, ConfigOptions options) {
         super(parent, subId);
         this.options = options;
     }
