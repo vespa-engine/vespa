@@ -16,7 +16,7 @@ import java.util.Optional;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedField extends ParsedBlock {
+public class ParsedField extends ParsedBlock {
 
     private ParsedType type;
     private boolean hasBolding = false;
@@ -39,12 +39,12 @@ class ParsedField extends ParsedBlock {
     private final List<DictionaryOption> dictionaryOptions = new ArrayList<>();
     private final List<String> queryCommands = new ArrayList<>();
 
-    ParsedField(String name, ParsedType type) {
+    public ParsedField(String name, ParsedType type) {
         super(name, "field");
         this.type = type;
     }
 
-    ParsedType getType() { return this.type; }
+    public ParsedType getType() { return this.type; }
     boolean hasBolding() { return this.hasBolding; }
     boolean hasFilter() { return this.isFilter; }
     boolean hasLiteral() { return this.isLiteral; }
@@ -59,7 +59,7 @@ class ParsedField extends ParsedBlock {
     List<String> getAliases() { return List.copyOf(aliases.keySet()); }
     List<String> getQueryCommands() { return List.copyOf(queryCommands); }
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
-    ParsedMatchSettings matchSettings() { return this.matchInfo; }
+    public ParsedMatchSettings matchSettings() { return this.matchInfo; }
     Optional<Integer> getWeight() { return Optional.ofNullable(weight); }
     Optional<Stemming> getStemming() { return Optional.ofNullable(stemming); }
     Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
@@ -68,7 +68,7 @@ class ParsedField extends ParsedBlock {
     Map<String, String> getRankTypes() { return Collections.unmodifiableMap(rankTypes); }
 
     /** get an existing summary field for modification, or create it */
-    ParsedSummaryField summaryFieldFor(String name) {
+    public ParsedSummaryField summaryFieldFor(String name) {
         if (summaryFields.containsKey(name)) {
             return summaryFields.get(name);
         }
@@ -78,7 +78,7 @@ class ParsedField extends ParsedBlock {
     }
 
     /** get an existing summary field for modification, or create it */
-    ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
+    public ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
         if (summaryFields.containsKey(name)) {
             var sf = summaryFields.get(name);
             if (sf.getType() == null) {
@@ -96,53 +96,53 @@ class ParsedField extends ParsedBlock {
         return sf;
     }
 
-    void addAlias(String from, String to) {
+    public void addAlias(String from, String to) {
         verifyThat(! aliases.containsKey(to), "already has alias", to);
         aliases.put(to, from);
     }
 
-    void addIndex(ParsedIndex index) {
+    public void addIndex(ParsedIndex index) {
         String idxName = index.name();
         verifyThat(! fieldIndexes.containsKey(idxName), "already has index", idxName);
         fieldIndexes.put(idxName, index);
     }
 
-    void addRankType(String index, String rankType) {
+    public void addRankType(String index, String rankType) {
         rankTypes.put(index, rankType);
     }
 
-    void dictionary(DictionaryOption option) {
+    public void dictionary(DictionaryOption option) {
         dictionaryOptions.add(option);
     }
 
-    void setBolding(boolean value) { this.hasBolding = value; }
-    void setFilter(boolean value) { this.isFilter = value; }
-    void setId(int id) { this.overrideId = id; }
-    void setLiteral(boolean value) { this.isLiteral = value; }
-    void setNormal(boolean value) { this.isNormal = value; }
-    void setNormalizing(String value) { this.normalizing = value; }
-    void setStemming(Stemming stemming) { this.stemming = stemming; }
-    void setWeight(int weight) { this.weight = weight; }
+    public void setBolding(boolean value) { this.hasBolding = value; }
+    public void setFilter(boolean value) { this.isFilter = value; }
+    public void setId(int id) { this.overrideId = id; }
+    public void setLiteral(boolean value) { this.isLiteral = value; }
+    public void setNormal(boolean value) { this.isNormal = value; }
+    public void setNormalizing(String value) { this.normalizing = value; }
+    public void setStemming(Stemming stemming) { this.stemming = stemming; }
+    public void setWeight(int weight) { this.weight = weight; }
 
-    ParsedAttribute attributeFor(String attrName) {
+    public ParsedAttribute attributeFor(String attrName) {
         return attributes.computeIfAbsent(attrName, n -> new ParsedAttribute(n));
     }
 
-    void setIndexingOperation(ParsedIndexingOp idxOp) {
+    public void setIndexingOperation(ParsedIndexingOp idxOp) {
         verifyThat(indexingOp == null, "already has indexing");
         indexingOp = idxOp;
     }
 
-    ParsedSorting sortInfo() {
+    public ParsedSorting sortInfo() {
         if (sortSettings == null) sortSettings = new ParsedSorting(name(), "field.sorting");
         return this.sortSettings;
     }
 
-    void addQueryCommand(String command) {
+    public void addQueryCommand(String command) {
         queryCommands.add(command);
     }
 
-    void addStructField(ParsedField structField) {
+    public void addStructField(ParsedField structField) {
         String fieldName = structField.name();
         verifyThat(! structFields.containsKey(fieldName), "already has struct-field", fieldName);
         structFields.put(fieldName, structField);

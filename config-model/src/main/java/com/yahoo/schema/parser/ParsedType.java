@@ -10,7 +10,7 @@ import com.yahoo.tensor.TensorType;
  * is somewhat complicated.
  * @author arnej27959
  **/
-class ParsedType {
+public class ParsedType {
     public enum Variant {
         NONE,
         BUILTIN,
@@ -141,17 +141,17 @@ class ParsedType {
         this.tensorType = tType;
     }
 
-    static ParsedType mapType(ParsedType kt, ParsedType vt) {
+    public static ParsedType mapType(ParsedType kt, ParsedType vt) {
         assert(kt != null);
         assert(vt != null);
         String name = "map<" + kt.name() + "," + vt.name() + ">";
         return new ParsedType(name, Variant.MAP, kt, vt);
     }
-    static ParsedType arrayOf(ParsedType vt) {
+    public static ParsedType arrayOf(ParsedType vt) {
         assert(vt != null);
         return new ParsedType("array<" + vt.name() + ">", Variant.ARRAY, vt);
     }
-    static ParsedType wsetOf(ParsedType vt) {
+    public static ParsedType wsetOf(ParsedType vt) {
         assert(vt != null);
         if (vt.getVariant() != Variant.BUILTIN) {
             throw new IllegalArgumentException("weightedset of complex type '" + vt + "' is not supported");
@@ -178,32 +178,32 @@ class ParsedType {
         }
         return new ParsedType("weightedset<" + vt.name() + ">", Variant.WSET, vt);
     }
-    static ParsedType documentRef(ParsedType docType) {
+    public static ParsedType documentRef(ParsedType docType) {
         assert(docType != null);
         return new ParsedType("reference<" + docType.name + ">", Variant.DOC_REFERENCE, docType);
     }
-    static ParsedType annotationRef(String name) {
+    public static ParsedType annotationRef(String name) {
         return new ParsedType("annotationreference<" + name + ">", Variant.ANN_REFERENCE);
     }
-    static ParsedType tensorType(TensorType tType) {
+    public static ParsedType tensorType(TensorType tType) {
         assert(tType != null);
         return new ParsedType(tType.toString(), Variant.TENSOR, null, null, tType);
     }
-    static ParsedType fromName(String name) {
+    public static ParsedType fromName(String name) {
         return new ParsedType(name, guessVariant(name));
     }
-    static ParsedType documentType(String name) {
+    public static ParsedType documentType(String name) {
         return new ParsedType(name, Variant.DOCUMENT);
     }
 
-    void setCreateIfNonExistent(boolean value) {
+    public void setCreateIfNonExistent(boolean value) {
         if (variant != Variant.WSET) {
             throw new IllegalArgumentException("CreateIfNonExistent only valid for weightedset, not " + variant);
         }
         this.createIfNonExistent = value;
     }
 
-    void setRemoveIfZero(boolean value) {
+    public void setRemoveIfZero(boolean value) {
         if (variant != Variant.WSET) {
             throw new IllegalArgumentException("RemoveIfZero only valid for weightedset, not " + variant);
         }

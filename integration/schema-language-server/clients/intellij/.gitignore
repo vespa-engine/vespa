@@ -1,0 +1,9 @@
+.gradle/
+.intellijPlatform/
+.run/
+build/
+gradle/
+gradle.properties
+gradlew
+gradlew.bat
+*.db

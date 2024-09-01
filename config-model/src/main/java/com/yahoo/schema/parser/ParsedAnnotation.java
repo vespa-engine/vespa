@@ -11,14 +11,14 @@ import java.util.Optional;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedAnnotation extends ParsedBlock {
+public class ParsedAnnotation extends ParsedBlock {
 
     private ParsedStruct wrappedStruct = null;
     private final List<String> inherited = new ArrayList<>();
     private final List<ParsedAnnotation> resolvedInherits = new ArrayList<>();
     private ParsedDocument ownedBy = null;
 
-    ParsedAnnotation(String name) {
+    public ParsedAnnotation(String name) {
         super(name, "annotation");
     }
 
@@ -40,9 +40,9 @@ class ParsedAnnotation extends ParsedBlock {
         }
         return wrappedStruct;
     }
-    void setStruct(ParsedStruct struct) { this.wrappedStruct = struct; }
+    public void setStruct(ParsedStruct struct) { this.wrappedStruct = struct; }
 
-    void inherit(String other) { inherited.add(other); }
+    public void inherit(String other) { inherited.add(other); }
 
     void tagOwner(ParsedDocument owner) {
         verifyThat(ownedBy == null, "already owned by", ownedBy);

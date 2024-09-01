@@ -1,0 +1,89 @@
+{
+  "name": "vespa-language-support",
+  "displayName": "Vespa Schema Language Support",
+  "description": "Support for Vespa schema files.",
+  "author": "Vespa",
+  "publisher": "vespaai",
+  "version": "2.0.6",
+  "engines": {
+    "vscode": "^1.72.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "Vespa",
+    "Schema"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vespa-engine/vespa"
+  },
+  "icon": "images/icon.png",
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "vespaSchema",
+        "aliases": [
+          "Vespa Schema"
+        ],
+        "extensions": [
+          ".sd",
+          ".profile"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configuration": {
+      "title": "Vespa Schema Language Support",
+      "properties": {
+        "vespaSchemaLS.javaHome": {
+          "type": "string",
+          "default": "",
+          "description": "Path to Java home. This is useful if Java is not installed system-wide or you want to use a specific Java executable for running the language server.",
+          "scope": "machine-overridable"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "vespaSchemaLS.restart",
+        "title": "Vespa: Restart Language Server"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run langserver-install && npm run copy-images && npm run compile && cp ../../../../LICENSE . && npm run check-types && node esbuild.js --production",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test",
+    "check-types": "tsc --noEmit",
+    "copy-images": "cp ../../resources/* ./images",
+    "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/",
+    "publish": "npm run compile && node out/publish.js"
+  },
+  "devDependencies": {
+    "@types/hasbin": "^1.2.2",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.72.0",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0",
+    "@vscode/vsce": "^2.31.1",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "hasbin": "^1.2.3",
+    "vscode-languageclient": "^9.0.1"
+  }
+}

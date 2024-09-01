@@ -1,0 +1,3271 @@
+PARSER_CLASS=SchemaParser;
+PARSER_PACKAGE=ai.vespa.schemals.parser;
+FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false; // Will create a tree node for every rule
+
+INJECT SchemaParser:
+
+    import java.io.OutputStream;
+    import java.util.Optional;
+    import java.util.List;
+    import java.util.Map;
+
+    import com.yahoo.language.Linguistics;
+    import com.yahoo.language.process.Embedder;
+    import com.yahoo.language.simple.SimpleLinguistics;
+
+    import com.yahoo.schema.DistributableResource;
+    import com.yahoo.schema.FeatureNames;
+    import com.yahoo.schema.OnnxModel;
+    import com.yahoo.schema.RankProfile.DiversitySettings;
+    import com.yahoo.schema.RankProfile.MatchPhaseSettings;
+    import com.yahoo.schema.RankProfile;
+    import com.yahoo.schema.Schema;
+
+    import com.yahoo.schema.document.Case;
+    import com.yahoo.schema.document.HnswIndexParams;
+    import com.yahoo.schema.document.MatchType;
+    import com.yahoo.schema.document.MatchAlgorithm;
+    import com.yahoo.schema.document.Sorting;
+    import com.yahoo.schema.document.Stemming;
+
+    import com.yahoo.schema.fieldoperation.IndexingOperation;
+
+    import com.yahoo.schema.parser.DictionaryOption;
+    import com.yahoo.schema.parser.ParsedAnnotation;
+    import com.yahoo.schema.parser.ParsedAttribute;
+    import com.yahoo.schema.parser.ParsedDocument;
+    import com.yahoo.schema.parser.ParsedDocumentSummary;
+    import com.yahoo.schema.parser.ParsedField;
+    import com.yahoo.schema.parser.ParsedFieldSet;
+    import com.yahoo.schema.parser.ParsedIndex;
+    import com.yahoo.schema.parser.ParsedIndexingOp;
+    import com.yahoo.schema.parser.ParsedMatchSettings;
+    import com.yahoo.schema.parser.ParsedRankFunction;
+    import com.yahoo.schema.parser.ParsedRankProfile;
+    import com.yahoo.schema.parser.ParsedSchema;
+    import com.yahoo.schema.parser.ParsedSorting;
+    import com.yahoo.schema.parser.ParsedStruct;
+    import com.yahoo.schema.parser.ParsedSummaryField;
+    import com.yahoo.schema.parser.ParsedType;
+    import com.yahoo.schema.parser.Utils;
+    import com.yahoo.schema.parser.SimpleCharStream;
+
+    import com.yahoo.search.query.ranking.Diversity;
+    import com.yahoo.search.schema.RankProfile.InputType;
+
+    import com.yahoo.searchlib.rankingexpression.FeatureList;
+    import com.yahoo.searchlib.rankingexpression.Reference;
+
+    import com.yahoo.tensor.Tensor;
+    import com.yahoo.tensor.IndexedTensor;
+    import com.yahoo.tensor.MixedTensor;
+    import com.yahoo.tensor.TensorType;
+    import com.yahoo.tensor.TensorAddress;
+{
+
+    private PrintStream logger = new PrintStream(
+        new OutputStream() {
+            public void write(int b) {
+                return;
+            }
+        }
+    );
+
+    public SchemaParser(PrintStream logger, String inputSource, CharSequence content) {
+        this(inputSource, content);
+        this.logger = logger;
+    }
+
+    /**
+     * Consumes an indexing language script which will use the simple linguistics implementation
+     * for testing, by taking input from the current input stream.
+     *
+     * @param multiline Whether or not to allow multi-line expressions.
+     */
+    @SuppressWarnings("deprecation")
+    private SubLanguageData newIndexingOperation(boolean multiline) throws ParseException {
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+    }
+
+    /**
+     * Consumes an indexing language script from the current input stream.
+     *
+     * @param multiline Whether or not to allow multi-line expressions.
+     * @param linguistics What to use for tokenizing.
+     */
+    private SubLanguageData newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+        TokenSource tokS = lastConsumedToken.getTokenSource();
+        String inputString = tokS.toString();
+        int startSplit = lastConsumedToken.getEndOffset();
+        int leadingStripped = 0;
+
+        if (multiline) {
+            leadingStripped = startSplit - lastConsumedToken.getBeginOffset() ;
+        } else {
+            leadingStripped = startSplit - lastConsumedToken.getPrevious().getBeginOffset();
+        }
+
+        Token tokenToAddExceptionsTo = lastConsumedToken;
+
+        int braceLevel = 0;
+
+        while (
+            nextTokenType() != TokenType.EOF &&
+            (
+                braceLevel > 0 ||
+                nextTokenType() != TokenType.NL
+            ) &&
+            !(
+                braceLevel == 0 &&
+                nextTokenType() == TokenType.RBRACE
+            )
+        ) {
+            lastConsumedToken = nextToken(lastConsumedToken);
+
+            if (lastConsumedToken.getType() == TokenType.LBRACE) {
+                braceLevel++;
+            }
+
+            if(lastConsumedToken.getType() == TokenType.RBRACE) {
+                braceLevel--;
+            }
+        }
+        
+        int endSplit = lastConsumedToken.getEndOffset();
+
+        inputString = inputString.substring(startSplit, endSplit);
+
+        return new SubLanguageData(inputString, leadingStripped);
+    }
+
+    /**
+     * Parses the given token image as a ranking expression feature list.
+     *
+     * @param image The token image to parse.
+     * @return The consumed feature list.
+     * @throws ParseException Thrown if the image could not be parsed.
+     */
+    private FeatureList getFeatureList(String image) throws ParseException {
+        try {
+            return new FeatureList(image);
+        }
+        catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
+            ParseException exception = (ParseException) new ParseException(
+                "Could not parse feature list '" + lastConsumedToken.toString() + "' at " +
+                lastConsumedToken.getLocation(),
+                lastConsumedToken,
+                parsingStack
+            ).initCause(e);
+
+            lastConsumedToken.addParseException(exception);
+        }
+
+        return null;
+    }
+
+}
+
+INJECT SchemaParserLexer:
+{
+    public static EnumSet<TokenType> getRegularTokens() {
+        return EnumSet.copyOf(regularTokens);
+    }
+}
+
+/**
+ * The following stores the indexinglanguage script at the AST node 
+ * for parsing later.
+ */
+INJECT indexingElm:
+    import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+{
+    private SubLanguageData ILScript = null;
+
+    public Expression expression;
+
+    public boolean hasILScript() { return ILScript != null; }
+    public SubLanguageData getILScript() { return ILScript; }
+
+    public void setILScript(SubLanguageData script) {
+        this.ILScript = script;
+    }
+}
+
+/**
+ * The following stores feature list string at the AST node 
+ * for parsing later
+ */
+INJECT featureListElm:
+{
+    private String featureListString = null;
+
+    public boolean hasFeatureListString() { return featureListString != null; }
+    public String getFeatureListString() { return featureListString; }
+
+    public void setFeatureListString(String features) {
+        this.featureListString = features;
+    }
+}
+
+/**
+ * The following stores rank expression string at the AST node 
+ * for parsing later
+ */
+INJECT expression:
+
+{
+    private String expressionString = null;
+
+    public boolean hasExpressionString() { return expressionString != null; }
+    public String getExpressionString() { return expressionString; }
+
+    public void setExpressionString(String expression) {
+        this.expressionString = expression;
+    }
+}
+
+/**
+ * Store a reference to the ParsedType in the AST to
+ * make type checking simpler
+ */
+INJECT dataType:
+    import com.yahoo.schema.parser.ParsedType;
+{
+    private ParsedType parsedType;
+    public boolean isArrayOldStyle = false;
+
+    public void setParsedType(ParsedType pt) {
+        this.parsedType = pt;
+    }
+
+
+    public ParsedType getParsedType() {
+        return this.parsedType;
+    }
+}
+
+INJECT valueType:
+    import com.yahoo.search.schema.RankProfile.InputType;
+{
+    private InputType inputType = null;
+
+    public void setInputType(InputType inputType) {
+        this.inputType = inputType;
+    }
+
+    public InputType getInputType() {
+        return inputType;
+    }
+}
+
+/**
+ * By allowing tokens to store exceptions we create a more fault tolerant parser,
+ * preventing premature exit from parsing even though the user has errors in the document.
+ *
+ * ParseExceptions are syntactical errors, so storing them is mainly to provide a better indication on
+ * where the error occurred (rather than "there is some error in this document").
+ * 
+ * IllegalArgumentExceptions come from the Parsed* classes in config-model, these are more semantic errors
+ * coming from invalid constructs that can be caught early during parsing. They do however not cover all errors that 
+ * can occur in schemas when deploying an application.
+ */
+INJECT Token :
+{
+
+    public class ParseExceptionSource {
+        public ParseException parseException;
+        public int beginOffset;
+        public int endOffset;
+
+        ParseExceptionSource(ParseException e, int beginOffset, int endOffset) {
+            parseException = e;
+            this.beginOffset = beginOffset;
+            this.endOffset = endOffset;
+        }
+    }
+
+    private ParseExceptionSource parseExceptionSource;
+    public ParseExceptionSource getParseExceptionSource() { return parseExceptionSource; }
+
+    void addParseException(ParseException e, int beginOffset, int endOffset) {
+        parseExceptionSource = new ParseExceptionSource(e, beginOffset, endOffset);
+        setDirty(true);
+    }
+
+    void addParseException(ParseException e) {
+        addParseException(e, getBeginOffset(), getEndOffset());
+    }
+
+    public class IllegalArgumentExceptionSource {
+        public IllegalArgumentException illegalArgumentException;
+        public Token endToken;
+
+        IllegalArgumentExceptionSource(IllegalArgumentException e, Token endToken) {
+            illegalArgumentException = e;
+            this.endToken = endToken;
+        }
+    }
+
+    private IllegalArgumentException illegalArgumentException;
+    public IllegalArgumentException getIllegalArguemntException() { return illegalArgumentException; }
+
+    void addIllegalArugmentException(IllegalArgumentException e) {
+        illegalArgumentException = e;
+    }
+
+}
+
+// --------------------------------------------------------------------------------
+//
+// Token declarations.
+//
+// --------------------------------------------------------------------------------
+
+// Declare white space characters. These do not include newline because it has
+// special meaning in several of the production rules.
+SKIP :
+  " " | "\t" | "\r" | "\f"
+;
+
+
+// Declare all tokens to be recognized. When a word token is added it MUST be
+// added to the identifier() production rule.
+TOKEN :
+  < NL: "\n" >
+| < ANNOTATION: "annotation" >
+| < ANNOTATIONREFERENCE: "annotationreference" >
+| < SCHEMA: "schema" >
+| < SEARCH: "search" >
+| < DIVERSITY: "diversity" >
+| < MIN_GROUPS: "min-groups" >
+| < CUTOFF_FACTOR: "cutoff-factor" >
+| < CUTOFF_STRATEGY: "cutoff-strategy" >
+| < LOOSE: "loose" >
+| < STRICT: "strict" >
+| < DOCUMENT: "document" >
+| < OPERATION: "operation" >
+| < ON_MATCH: "on-match" >
+| < ON_FIRST_PHASE: "on-first-phase" >
+| < ON_SECOND_PHASE: "on-second-phase" >
+| < ON_SUMMARY: "on-summary" >
+| < STRUCT: "struct" >
+| < INHERITS: "inherits" >
+| < FIELD: "field" >
+| < FIELDS: "fields" >
+| < FIELDSET: "fieldset" >
+| < STRUCT_FIELD: "struct-field" >
+| < IMPORT: "import" >
+| < AS: "as" >
+| < INDEXING: "indexing" >
+| < SUMMARY_TO: "summary-to" >
+| < DOCUMENT_SUMMARY: "document-summary" >
+| < RANK_TYPE: "rank-type" >
+| < WEIGHT: "weight" >
+| < TYPE: "type" >
+| < INDEX: "index" >
+| < INPUTS: "inputs">
+| < MTOKEN: "token" >
+| < TEXT: "text" >
+| < WORD: "word" >
+| < GRAM: "gram" >
+| < GRAM_SIZE: "gram-size" >
+| < MAX_LENGTH: "max-length" >
+| < MAX_OCCURRENCES: "max-occurrences" >
+| < MAX_TOKEN_LENGTH: "max-token-length" >
+| < PREFIX: "prefix" >
+| < SUBSTRING: "substring" >
+| < SUFFIX: "suffix" >
+| < CONSTANT: "constant">
+| < ONNX_MODEL: "onnx-model">
+| < SIGNIFICANCE: "significance">
+| < USE_MODEL: "use-model">
+| < INTRAOP_THREADS: "intraop-threads">
+| < INTEROP_THREADS: "interop-threads">
+| < GPU_DEVICE: "gpu-device">
+| < EXECUTION_MODE: "execution-mode">
+| < PARALLEL: "parallel">
+| < SEQUENTIAL: "sequential">
+| < MODEL: "model" >
+| < MUTATE: "mutate" >
+| < QUERY: "query" >
+| < RANK_PROFILE: "rank-profile" >
+| < RAW_AS_BASE64_IN_SUMMARY: "raw-as-base64-in-summary" >
+| < SUMMARY: "summary" >
+| < FULL: "full" >
+| < STATIC: "static" >
+| < DYNAMIC: "dynamic" >
+| < TOKENS: "tokens" >
+| < MATCHED_ELEMENTS_ONLY: "matched-elements-only" >
+| < SSCONTEXTUAL: "contextual" >
+| < SSOVERRIDE: "override" >
+| < SSTITLE: "title" >
+| < SSURL: "url" >
+| < PROPERTIES: "properties" >
+| < ATTRIBUTE: "attribute" >
+| < SORTING: "sorting" >
+| < DICTIONARY: "dictionary" >
+| < ASCENDING: "ascending" >
+| < DESCENDING: "descending" >
+| < UCA: "uca" >
+| < RAW: "raw" >
+| < LOWERCASE: "lowercase" >
+| < FUNCTION: "function" >
+| < LOCALE: "locale" >
+| < STRENGTH: "strength" >
+| < PRIMARY: "primary" >
+| < SECONDARY: "secondary" >
+| < TERTIARY: "tertiary" >
+| < QUATERNARY: "quaternary" >
+| < IDENTICAL: "identical" >
+| < STEMMING: "stemming" >
+| < NORMALIZING: "normalizing" >
+| < HASH: "hash" >
+| < BTREE: "btree" >
+| < CASED: "cased" >
+| < UNCASED: "uncased" >
+| < BOLDING: "bolding" >
+| < NONE: "none" >
+| < ON: "on" >
+| < OFF: "off" >
+| < TRUE: "true" >
+| < FALSE: "false" >
+| < SYMMETRIC: "symmetric" >
+| < QUERY_COMMAND: "query-command" >
+| < ALIAS: "alias" >
+| < MATCH: "match" >
+| < RANK: "rank" >
+| < LITERAL: "literal" >
+| < EXACT: "exact" >
+| < FILTER: "filter" >
+| < NORMAL: "normal" >
+| < EXACT_TERMINATOR: "exact-terminator" >
+| < IGNORE_DEFAULT_RANK_FEATURES: "ignore-default-rank-features" >
+| < ID: "id" >
+| < SOURCE: "source" >
+| < TO: "to" >
+| < DIRECT: "direct" >
+| < FROM_DISK: "from-disk" >
+| < OMIT_SUMMARY_FEATURES: "omit-summary-features" >
+| < ALWAYS: "always" >
+| < ON_DEMAND: "on-demand" >
+| < NEVER: "never" >
+| < ENABLE_BIT_VECTORS: "enable-bit-vectors" >
+| < ENABLE_ONLY_BIT_VECTOR: "enable-only-bit-vector" >
+| < FAST_ACCESS: "fast-access" >
+| < MUTABLE: "mutable" >
+| < PAGED: "paged" >
+| < FAST_RANK: "fast-rank" >
+| < FAST_SEARCH: "fast-search" >
+| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
+| < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
+| < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < COLON: ":" >
+| < DOT: "." >
+| < COMMA: "," >
+| < ARRAY: "array" >
+| < WEIGHTEDSET: "weightedset" >
+| < MAP: "map" >
+| < REFERENCE: "reference" >
+| < QUESTIONMARK: "?" >
+| < CREATE_IF_NONEXISTENT: "create-if-nonexistent" >
+| < REMOVE_IF_ZERO: "remove-if-zero" >
+| < MATCH_PHASE: "match-phase" >
+| < EVALUATION_POINT: "evaluation-point" >
+| < PRE_POST_FILTER_TIPPING_POINT: "pre-post-filter-tipping-point" >
+| < ORDER: "order" >
+| < MAX_FILTER_COVERAGE: "max-filter-coverage" >
+| < MAX_HITS: "max-hits" >
+| < FIRST_PHASE: "first-phase" >
+| < SECOND_PHASE: "second-phase" >
+| < GLOBAL_PHASE: "global-phase" >
+| < MACRO: "macro" >
+| < INLINE: "inline" >
+| < ARITY: "arity" >
+| < LOWER_BOUND: "lower-bound" >
+| < UPPER_BOUND: "upper-bound" >
+| < DENSE_POSTING_LIST_THRESHOLD: "dense-posting-list-threshold" >
+| < ENABLE_BM25: "enable-bm25" >
+| < HNSW: "hnsw" >
+| < MAX_LINKS_PER_NODE: "max-links-per-node" >
+| < DOUBLE_KEYWORD: "double" >
+| < FLOAT_KEYWORD: "float" >
+| < LONG_KEYWORD: "long" >
+| < STRING_KEYWORD: "string" >
+| < DISTANCE_METRIC: "distance-metric" >
+| < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
+| < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
+| < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
+| < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
+| < #BRACE_SL_CONTENT: (~["{","}","\n"])+ >
+| < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
+| < #BRACE_ML_CONTENT: (~["{","}"])+ >
+| < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
+| < RANK_PROPERTIES: "rank-properties" >
+| < RERANK_COUNT: "rerank-count" >
+| < NUM_THREADS_PER_SEARCH: "num-threads-per-search" >
+| < MIN_HITS_PER_THREAD: "min-hits-per-thread" >
+| < NUM_SEARCH_PARTITIONS: "num-search-partitions" >
+| < TERMWISE_LIMIT: "termwise-limit" >
+| < POST_FILTER_THRESHOLD: "post-filter-threshold" >
+| < APPROXIMATE_THRESHOLD: "approximate-threshold" >
+| < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
+| < KEEP_RANK_COUNT: "keep-rank-count" >
+| < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
+| < CONSTANTS: "constants" >
+| < FILE: "file" >
+| < URI: "uri" >
+| < IDENTIFIER:           ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])* >
+| < IDENTIFIER_WITH_DASH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
+| < DOUBLEQUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
+| < SINGLEQUOTEDSTRING: "'" ( ~["'"] )* "'" >
+| < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
+| < DOUBLE: ("-")? (["0"-"9"])+ "." (["0"-"9"])+ >
+| < INTEGER: ("-")? (["0"-"9"])+ >
+| < LONG: ("-")? (["0"-"9"])+"L" >
+| < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
+| < FILE_PATH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-", "/", "."])+ >
+| < HTTP: ["h","H"] ["t","T"] ["t","T"] ["p","P"] (["s","S"])? >
+| < URI_PATH: <HTTP> <COLON> ("//")? (["a"-"z","A"-"Z","0"-"9","_","-", "/", ".",":"])+ >
+| < LESSTHAN: "<" >
+| < GREATERTHAN: ">" >
+| < VARIABLE: "$" <IDENTIFIER> >
+| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+;
+
+
+// Declare a special skip token for comments.
+UNPARSED :
+  <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* >
+;
+
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+/**
+ * The rule consumes any schema and returns the corresponding object. This is the only production that should
+ * ever consume leading newlines.
+ *
+ * @return the schema object
+ */
+ParsedSchema Root :
+{
+    ParsedSchema schema;
+}
+    (<NL>)* (schema = rootSchema() | schema = rootDocument())
+    { return schema; }
+;
+
+/**
+ * This rule should only be used for parsing *.profile files.
+ */
+void RootRankProfile : { }
+    (<NL>)* rankProfile(null) (<NL>)* <EOF>
+;
+
+
+/**
+ * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @return the schema definition object.
+ */
+ParsedSchema rootSchema :
+{
+    String name;
+    String inherited = null;
+    ParsedSchema schema;
+}
+    ( ( <SCHEMA> | <SEARCH> ) name = identifierStr() (<INHERITS> inherited = identifierStr() )? {
+        schema = new ParsedSchema(name);
+        if (inherited != null) schema.inherit(inherited);
+      }
+      openLbrace (rootSchemaItem(schema) | <NL>)*
+      <RBRACE> (<NL>)* <EOF> )
+    { return schema; }
+;
+
+/**
+ * Consumes an element of a schema block. This and rootSearch() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @param schema the schema object to modify.
+ */
+rootSchemaItem(ParsedSchema schema) : {}
+    ( 
+        documentElm(schema)
+       | rawAsBase64(schema)
+       | searchStemming(schema)
+       | importField(schema)
+       | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+       | rankProfile(schema)
+       | documentSummary(schema)
+       | fieldOutsideDoc(schema)
+       | indexOutsideDoc(schema)
+       | structOutsideDoc(schema)
+       | annotationOutside(schema)
+       | fieldSetElm(schema)
+       | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+ )
+;
+
+
+/**
+ * Consumes a schema definition that contains only documents to be used for inheritance, etc.
+ *
+ * @return the schema definition object.
+ */
+ParsedSchema rootDocument() :
+{
+    ParsedSchema schema = null;
+}
+ 
+    ( (schema = rootDocumentItem(schema) | <NL>)*<EOF> )
+    {
+        return schema;
+    }
+;
+
+/**
+ * Consumes a single item from within a root document node.
+ *
+ * @param schema the schema object to modify.
+ */
+ParsedSchema rootDocumentItem(ParsedSchema schema) :
+{
+    ParsedDocument doc = null;
+}
+ 
+    ( doc = namedDocument() {
+        if (schema == null) schema = new ParsedSchema(doc.name());
+        schema.addDocument(doc);
+        schema.setDocumentWithoutSchema();
+        return schema;
+    } )
+;
+
+
+/**
+ * Consumes a document element. The name defaults to the schema's name, but may be set.
+ *
+ * @param schema the schema object to add content to.
+ */
+void documentElm(ParsedSchema schema) :
+{
+    String name = schema.name();
+    ParsedDocument document;
+    Token beginToken = lastConsumedToken.getNext();
+}
+
+    ( <DOCUMENT> (name = identifierStr)? (<NL>)*
+    {
+        document = new ParsedDocument(name);
+    }
+    [ inheritsDocument(document) (<NL>)* ]
+      openLbrace (documentBodyElm(document) | <NL>)* <RBRACE> )
+    {
+        try {
+            schema.addDocument(document);
+        } catch (IllegalArgumentException e) {
+            beginToken.addIllegalArugmentException(e);
+        }
+    }
+;
+
+/**
+ * Consumes a document element, explicitly named
+ */
+ParsedDocument namedDocument() :
+{
+    String name;
+    ParsedDocument document;
+}
+ 
+    ( <DOCUMENT> name = identifierStr() (<NL>)* { document = new ParsedDocument(name); }
+      [ inheritsDocument(document) (<NL>)* ]
+      <LBRACE> (<NL>)* (documentBodyElm(document) | <NL>)* <RBRACE> )
+    {
+        return document;
+    }
+;
+
+
+/**
+ * Consumes a document body block
+ *
+ * @param document the document type to modify.
+ */
+void documentBodyElm(ParsedDocument document) : {}
+    (
+        annotationElm(document)
+        | structInsideDoc(document)
+        | fieldInsideDoc(document)
+    )
+;
+
+void rawAsBase64(ParsedSchema schema) :
+{
+    boolean enabled = false;
+}
+ 
+    <RAW_AS_BASE64_IN_SUMMARY>
+    {
+        enabled = true;
+    }
+    [ <COLON> ( <TRUE> | ( <FALSE> { enabled = false; } ) ) ]
+    {
+        schema.enableRawAsBase64(enabled);
+    }
+;
+
+/**
+ * Consumes struct inheritance
+ *
+ * @param struct The struct type to modify.
+ */
+void inheritsStruct(ParsedStruct struct) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierStr() { struct.inherit(name); }
+    ( <COMMA>  name = identifierStr() { struct.inherit(name); } )*
+;
+
+/**
+ * Consumes a document inheritance statement.
+ *
+ * @param document The document type to modify.
+ */
+void inheritsDocument(ParsedDocument document) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierStr() { document.inherit(name); }
+    ( <COMMA>  name = identifierStr() { document.inherit(name); } )*
+;
+
+
+/**
+ * Consumes a field block from within a document element.
+ *
+ * @param document the document type to modify
+ */
+void fieldInsideDoc(ParsedDocument document) :
+{
+    ParsedField field;
+    Token beginToken = lastConsumedToken.getNext();
+}
+    field = fieldElm() {
+        try {
+            document.addField(field);
+        } catch (IllegalArgumentException e) {
+            // This exception is due to a duplicate name
+            beginToken.getNext().addIllegalArugmentException(e);
+        }
+    }
+;
+
+/**
+ * Consumes a field block from outside a document element.
+ *
+ * @param schema the schema to modify
+ */
+void fieldOutsideDoc(ParsedSchema schema) :
+{
+    ParsedField field;
+}
+
+    field = fieldElm() { schema.addField(field); }
+;
+
+/**
+ * Consumes a field block
+ */
+ParsedField fieldElm() :
+{
+    String name;
+    ParsedField field;
+    ParsedType type;
+}
+
+    <FIELD> name = identifierStr
+    {
+        if (Schema.isReservedName(name.toLowerCase())) {
+            lastConsumedToken.addParseException(new ParseException(
+                "Reserved name '" + lastConsumedToken.toString() + "' can not be used as a field name.",
+                lastConsumedToken,
+                parsingStack
+            ));
+        }
+    }
+    <TYPE> type = dataType()
+    {
+        field = new ParsedField(name, type);
+    }
+    openLbrace() ( fieldBodyElm(field) | <NL>)* <RBRACE>
+    {
+        return field;
+    }
+;
+
+/** Consumes a fieldset block */
+void fieldSetElm(ParsedSchema schema) :
+{
+  String name;
+  ParsedFieldSet fieldSet;
+}
+
+  <FIELDSET> name = identifierStr openLbrace() { fieldSet = new ParsedFieldSet(name); }
+    ((fieldsElm(fieldSet) | queryCommandInFieldSetElm(fieldSet) | matchSettingsElm(fieldSet.matchSettings())) (<NL>)*)+
+  <RBRACE>
+  {
+     schema.addFieldSet(fieldSet);
+  }
+;
+
+void fieldsElm(ParsedFieldSet fieldSet) :
+{
+    String name;
+}
+    (
+        <FIELDS><COLON> name = identifierStr { fieldSet.addField(name); }
+        ( <COMMA> name = identifierStr { fieldSet.addField(name); })*
+    )
+;
+
+void queryCommandInFieldSetElm(ParsedFieldSet fieldSet) :
+{
+    String queryCommand;
+}
+    (
+        <QUERY_COMMAND><COLON> (queryCommand = identifierWithDashStr | queryCommand = quotedString) { fieldSet.addQueryCommand(queryCommand); }
+    )
+;
+
+/**
+ * This rule consumes a annotation block from within a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void annotationOutside(ParsedSchema schema) :
+{
+    String name;
+    ParsedAnnotation type;
+}
+ 
+    <ANNOTATION> name = identifierStr() { type = new ParsedAnnotation(name); }
+    [ inheritsAnnotation(type) (<NL>)* ]
+    openLbrace() annotationBody(type) <RBRACE>
+    {
+        schema.addAnnotation(type);
+    }
+;
+
+/**
+ * Consumes an annotation block from within a document element
+ *
+ * @param document the document object to add content to
+ */
+void annotationElm(ParsedDocument document) :
+{
+    String name;
+    ParsedAnnotation type;
+}
+ 
+    <ANNOTATION> name = identifierStr() { type = new ParsedAnnotation(name); }
+    [ inheritsAnnotation(type) (<NL>)* ]
+    openLbrace() annotationBody(type) <RBRACE>
+    {
+        document.addAnnotation(type);
+    }
+;
+
+/**
+ * Consumes a single element of an annotation body block.
+ */
+void annotationBody(ParsedAnnotation type) :
+{
+    ParsedStruct struct = new ParsedStruct("annotation." + type.name());
+    boolean seenField = false;
+}
+ 
+    (structFieldDefinition(struct) { seenField = true; } (<NL>)*)*
+    {
+        if (seenField) type.setStruct(struct);
+    }
+;
+
+void inheritsAnnotation(ParsedAnnotation annotation) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierStr() { annotation.inherit(name); }
+;
+
+
+/**
+ * This rule consumes a struct block from within a document element.
+ * @param document the document object to add content to
+ */
+void structInsideDoc(ParsedDocument document) :
+{
+    ParsedStruct struct;
+}
+
+    struct = structDefinitionElm() { document.addStruct(struct); }
+;
+
+/**
+ * This rule consumes a struct block from within a schema element.
+ * @param schema the schema object to add content to
+ */
+void structOutsideDoc(ParsedSchema schema) :
+{
+    ParsedStruct struct;
+}
+
+    struct = structDefinitionElm() { schema.addStruct(struct); }
+;
+
+/**
+ * This rule consumes a struct declaration block
+ */
+ParsedStruct structDefinitionElm() :
+{
+    String name;
+    String inherited;
+    ParsedStruct struct;
+}
+
+    ( <STRUCT> name = identifierStr (<NL>)* { struct = new ParsedStruct(name); }
+    [ inheritsStruct(struct) (<NL>)* ]
+    openLbrace() (structFieldDefinition(struct) | <NL>)* <RBRACE> )
+    {
+        return struct;
+    }
+;
+
+/**
+ * This rule consumes a data type block from within a field element.
+ *
+ * @return the consumed data type
+ */
+ParsedType dataType() :
+{
+    String typeName = null;
+    boolean isArrayOldStyle = false;
+    ParsedType mapType = null;
+    ParsedType arrayType = null;
+    ParsedType wsetType = null;
+    TensorType tensorType;
+    ParsedType referenceType;
+}
+    (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> 
+            { 
+
+                ParsedType type = ParsedType.arrayOf(arrayType); 
+                thisProduction.setParsedType(type);
+                return type;
+            } 
+    )
+        | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> 
+            { 
+                ParsedType type = ParsedType.wsetOf(wsetType); 
+                thisProduction.setParsedType(type);
+                return type;
+            } 
+    )
+        | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() 
+            { 
+                thisProduction.setParsedType(mapType);
+                return mapType; 
+            } 
+    )
+        | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType() 
+            { 
+                thisProduction.setParsedType(mapType);
+                return mapType; 
+            } 
+    )
+        | SCAN(<TENSOR_TYPE>)                    => ( tensorType = tensorTypeElm("Field type") 
+            { 
+                ParsedType type = ParsedType.tensorType(tensorType); 
+                thisProduction.setParsedType(type);
+                return type;
+            } 
+    )
+        | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> 
+            { 
+                thisProduction.setParsedType(referenceType);
+                return ParsedType.documentRef(referenceType); 
+            } 
+    )
+        | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
+    )
+    {
+        ParsedType type = ParsedType.fromName(typeName);
+        if (isArrayOldStyle) {
+            //deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
+            type = ParsedType.arrayOf(type);
+        }
+        thisProduction.isArrayOldStyle = isArrayOldStyle;
+        thisProduction.setParsedType(type);
+        return type;
+    }
+;
+
+ParsedType referenceType() :
+{
+    String documentName;
+}
+
+    ( documentName = identifierStr )
+    {
+        return ParsedType.documentType(documentName);
+    }
+;
+
+ParsedType annotationRefDataType() :
+{
+    ParsedType dataType;
+    String targetName;
+}
+
+    ( <ANNOTATIONREFERENCE> <LESSTHAN> targetName = identifierStr <GREATERTHAN> )
+    {
+        return ParsedType.annotationRef(targetName);
+    }
+;
+
+ParsedType mapDataType() :
+{
+    ParsedType keyType;
+    ParsedType valType;
+}
+  ( <MAP> <LESSTHAN> keyType = dataType() <COMMA> valType = dataType() <GREATERTHAN> )
+  {
+    return ParsedType.mapType(keyType, valType);
+  }
+;
+
+/**
+ * This rule consumes a field block of a struct body.
+ *
+ * @param struct The struct to modify.
+ */
+void structFieldDefinition(ParsedStruct struct) :
+{
+    String name;
+    ParsedType type;
+    ParsedField field;
+    int fieldId;
+}
+
+    <FIELD> name = identifierStr <TYPE> type = dataType() {
+        field = new ParsedField(name, type);
+    }
+    openLbrace (idElm(field) (<NL>)*)? (matchSettingsElm(field.matchSettings()) | <NL>)* <RBRACE>
+    {
+        struct.addField(field);
+    }
+;
+
+/**
+ * This rule consumes a struct subfield from a document field body. This is not to be confused with a document
+ * struct's fields, but rather this is a subfield of a document field of type struct.
+ *
+ * @param field    the field to modify
+ */
+void structFieldElm(ParsedField field) :
+{
+    String name;
+    ParsedField structField;
+}
+    <STRUCT_FIELD> name = identifierStr {
+        if (name != null && Schema.isReservedName(name.toLowerCase())) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        structField = new ParsedField(name, null);
+    }
+    openLbrace() (structFieldBodyElm(structField) | <NL>)* <RBRACE>
+    { 
+        field.addStructField(structField); 
+    }
+;
+
+/**
+ * This rule consumes a single element of a field body block.
+ *
+ * @param field    the field being built
+ */
+void fieldBodyElm(ParsedField field) : { }
+
+     ( aliasElm(field) |
+       attributeElm(field) |
+       boldingElm(field) |
+       dictionaryElm(field) |
+       fieldStemming(field) |
+       idElm(field) |
+       summaryInField(field) |
+       indexInsideField(field) |
+       indexingElm(field) |
+       matchSettingsElm(field.matchSettings()) |
+       normalizingElm(field) |
+       queryCommandInField(field) |
+       rankElm(field) |
+       rankTypeElm(field) |
+       fieldSorting(field) |
+       structFieldElm(field) |
+       summaryToElm(field) |
+       weightElm(field) |
+       weightedsetElm(field.getType())
+    )
+;
+
+/**
+ * This rule consumes a single element of a struct subfield body block.
+ * Only elements that are supported in streaming schema and indexed schema (with complex attributes) are allowed.
+ *
+ * @param field    the field being built
+ */
+void structFieldBodyElm(ParsedField field) : { }
+    (  summaryInField(field) |
+      indexingElm(field) |
+      attributeElm(field) |
+      matchSettingsElm(field.matchSettings()) |
+      queryCommandInField(field) |
+      rankElm(field) |
+      structFieldElm(field) |
+      summaryToElm(field)
+    )
+;
+
+/**
+ * This rule consumes an indexing block of a field element.
+ *
+ * @param field The field to modify.
+ */
+void indexingElm(ParsedField field) : 
+{
+    SubLanguageData ILScript;
+}
+
+    ( <INDEXING> ( (<COLON> (ILScript = indexingOperationElm(field, false))) | (ILScript = indexingOperationElm(field, true)) ) )
+{
+    if (ILScript != null && thisProduction != null) {
+        thisProduction.setILScript(ILScript);
+    }
+}
+;
+
+/**
+ * This rule consumes an IL script block. This is expected to consume trailing newlines.
+ *
+ * @param field The field to modify.
+ */
+SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : { }
+
+    {
+        return newIndexingOperation(multiLine);
+        //IndexingOperation oldOp = newIndexingOperation(multiLine);
+        //if (oldOp != null) {
+        //    //ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
+        //    //field.setIndexingOperation(newOp);
+        //}
+    }
+;
+
+/**
+ * This rule consumes a summary-to statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void summaryToElm(ParsedField field) :
+{
+    String name = field.name();
+    String destination;
+    ParsedSummaryField psf;
+}
+    <SUMMARY_TO> [name = identifierStr()] <COLON> destination = identifierStr()
+    {
+        psf = field.summaryFieldFor(name);
+        psf.addDestination(destination);
+    }
+    ( <COMMA> destination = identifierStr() { psf.addDestination(destination); } )*
+;
+
+/**
+ * This rule consumes a weight statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void weightElm(ParsedField field) :
+{
+    int num;
+}
+
+    <WEIGHT> <COLON> num = integerElm { field.setWeight(num); }
+;
+
+/**
+ * This rule consumes a weighted set statement of a field element.
+ *
+ * @param fieldType The field type to modify.
+ */
+void weightedsetElm(ParsedType fieldType) : { }
+    <WEIGHTEDSET> ( (<COLON> weightedsetBody(fieldType))
+                | (openLbrace() (weightedsetBody(fieldType) | <NL>)* <RBRACE>) )
+;
+
+/**
+ * This rule consumes one body item of a weighted set block.
+ *
+ * @param type The field type to modify.
+ */
+void weightedsetBody(ParsedType type) : { }
+    ( <CREATE_IF_NONEXISTENT> { type.setCreateIfNonExistent(true); }
+      | <REMOVE_IF_ZERO>      { type.setRemoveIfZero(true); } )
+;
+
+/**
+ * This rule consumes a rank-type statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void rankTypeElm(ParsedField field) :
+{
+    String typeName;
+    String indexName = "";
+}
+    <RANK_TYPE> [indexName = identifierStr()] <COLON> typeName = identifierStr()
+    {
+        field.addRankType(indexName, typeName);
+    }
+;
+
+/**
+ * This rule consumes an attribute statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void attributeElm(ParsedField field) :
+{
+    String name = field.name();
+}
+
+    <ATTRIBUTE> [name = identifierStr]
+    {
+        // TODO: Remove support for attribute with different name than field name in Vespa 9
+        // if ( ! name.equals(field.name()))
+        //         deployLogger.logApplicationPackage(Level.WARNING, "Creating an attribute for field '" + field.name() +
+        //         "' with a different name '" + name + "' than the field name" +
+        //         " is deprecated, and support will be removed in Vespa 9. Define a field with the wanted name outside the document instead.");
+        ParsedAttribute attr = field.attributeFor(name);
+    }
+         ( (<COLON> attributeSetting(attr))
+           | (openLbrace() (attributeSetting(attr) | <NL>)* <RBRACE>) )
+;
+
+/* pick up sorting in field block */
+void fieldSorting(ParsedField field) : { }
+
+    sortingElm(field.sortInfo())
+;
+
+
+/* pick up sorting in attribute block */
+void attributeSorting(ParsedAttribute attribute) : { }
+
+    sortingElm(attribute.sortInfo())
+;
+
+/* pick up sorting in field block */
+void sortingElm(ParsedSorting sort) : { }
+
+    <SORTING>
+          ( (<COLON> sortingSetting(sort))
+            | (openLbrace() (sortingSetting(sort) | <NL>)* <RBRACE>) )
+;
+
+
+
+void sortingSetting(ParsedSorting sorting) :
+{
+    String locale;
+}
+ 
+    (
+        <ASCENDING> { sorting.setAscending(); }
+      | <DESCENDING> { sorting.setDescending(); }
+      | <FUNCTION> <COLON> (
+                               <UCA>       { sorting.setFunction(Sorting.Function.UCA); }
+                             | <RAW>       { sorting.setFunction(Sorting.Function.RAW); }
+                             | <LOWERCASE> { sorting.setFunction(Sorting.Function.LOWERCASE); }
+                           )
+      | <STRENGTH> <COLON> (
+                               <PRIMARY>    { sorting.setStrength(Sorting.Strength.PRIMARY); }
+                             | <SECONDARY>  { sorting.setStrength(Sorting.Strength.SECONDARY); }
+                             | <TERTIARY>   { sorting.setStrength(Sorting.Strength.TERTIARY); }
+                             | <QUATERNARY> { sorting.setStrength(Sorting.Strength.QUATERNARY); }
+                             | <IDENTICAL>  { sorting.setStrength(Sorting.Strength.IDENTICAL); }
+                           )
+      | <LOCALE> <COLON> locale = identifierWithDashStr() { sorting.setLocale(locale); }
+    )
+;
+
+/**
+ * This rule consumes a single attribute setting statement of an attribute element.
+ *
+ * @param attribute The attribute to change.
+ */
+void attributeSetting(ParsedAttribute attribute) :
+{
+    String str;
+}
+
+    (
+        <FAST_RANK>             { attribute.setFastRank(true); }
+      | <FAST_SEARCH>           { attribute.setFastSearch(true); }
+      | <FAST_ACCESS>           { attribute.setFastAccess(true); }
+      | <MUTABLE>               { attribute.setMutable(true); }
+      | <PAGED>                 { attribute.setPaged(true); }
+      | <ENABLE_BIT_VECTORS>      //{ deployLogger.logApplicationPackage(Level.WARNING, "'enable-bit-vectors' is deprecated and void -> remove it. Will be removed in vespa-9"); }
+      | <ENABLE_ONLY_BIT_VECTOR>  { attribute.setEnableOnlyBitVector(true); }
+      | attributeSorting(attribute)
+      | <ALIAS> {
+            String alias;
+            String aliasedName=attribute.name();
+        } [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr {
+          attribute.addAlias(aliasedName, alias);
+      }
+      | <DISTANCE_METRIC> <COLON> str = identifierWithDashStr { attribute.setDistanceMetric(str); }
+    )
+;
+
+/**
+ * This rule consumes a summary statement defined inside a document-summary block.
+ *
+ * @param docsum The document summary to modify.
+ */
+void summaryInDocument(ParsedDocumentSummary docsum) :
+{
+    String name;
+    ParsedType type = null;
+    ParsedSummaryField psf;
+}
+
+    <SUMMARY> name = identifierWithDashStr() { }
+    (<TYPE>   type = dataType())?
+    openLbrace() {
+        psf = new ParsedSummaryField(name, type);
+        if (type != null) {
+            psf.setHasExplicitType();
+        }
+    }
+    (summaryItem(psf) | <NL>)* <RBRACE>
+    {
+        var old = docsum.addField(psf);
+        if (old != null) {
+            // deployLogger.logApplicationPackage(Level.WARNING, "Summary field '" + psf.name()
+            //                                   + "' is defined twice in document-summary '"
+            //                                   + docsum.name() + "'");
+        }
+    }
+;
+
+/**
+ * The rule consumes a summary statement defined inside a field.
+ *
+ * @param field The field to modify.
+ */
+void summaryInField(ParsedField field) : { }
+ 
+    <SUMMARY> ( SCAN([identifierStr] <COLON>) => summaryInFieldShort(field)
+              | summaryInFieldLong(field) )
+;
+
+/**
+ * This rule consumes a single-line summary field.
+ */
+void summaryInFieldShort(ParsedField field) :
+{
+    String name = field.name();
+    ParsedSummaryField psf;
+}
+ 
+    [ name = identifierStr() ]
+    {
+        psf = field.summaryFieldFor(name);
+    }
+    <COLON> ( <DYNAMIC> { psf.setDynamic(); }
+              | <MATCHED_ELEMENTS_ONLY> { psf.setMatchedElementsOnly(); }
+              | (<FULL> | <STATIC>) { psf.setFull(); }
+              | <TOKENS> { psf.setTokens(); }
+            )
+;
+
+/**
+ * This rule consumes a multi-line summary field.
+ */
+void summaryInFieldLong(ParsedField field) :
+{
+    String name = field.name();
+    ParsedType type = field.getType();
+    boolean explicitType = false;
+    ParsedSummaryField psf;
+}
+ 
+    ( [ name = identifierStr() [ <TYPE> { type = dataType(); explicitType = true; } ] ]
+      openLbrace()
+      {
+          psf = field.summaryFieldFor(name, type);
+	  if (explicitType) {
+              psf.setHasExplicitType();
+          }
+      }
+      (summaryItem(psf) | <NL>)* <RBRACE> )
+;
+
+/**
+ * This rule consumes an item of a summary field block.
+ *
+ * @param field The field to modify.
+ */
+void summaryItem(ParsedSummaryField field) : { }
+ 
+    ( summaryTransform(field)
+      | summaryBolding(field)
+      | summarySourceList(field)
+      | summaryDestinationList(field)
+    )
+;
+
+/**
+ * This rule consumes a transform statement for a summary field element.
+ *
+ * @param field            The field to modify.
+ */
+void summaryTransform(ParsedSummaryField field) : { }
+ 
+    ( <DYNAMIC>              { field.setDynamic(); }
+     | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
+     | (<FULL> | <STATIC>)   { field.setFull(); }
+     | <TOKENS> { field.setTokens(); }
+    )
+;
+
+/**
+ * This rule consumes a bolding statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryBolding(ParsedSummaryField field) :
+{
+    boolean bold;
+}
+ 
+    <BOLDING> <COLON> bold = bool()
+    { field.setBold(bold); }
+;
+
+/**
+ * This rule consumes a source-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summarySourceList(ParsedSummaryField field) :
+{
+    String str;
+}
+ 
+    ( <SOURCE> <COLON> str = identifierStr() { field.addSource(str); }
+      (        <COMMA> str = identifierStr() { field.addSource(str); } )* ) +
+;
+
+/**
+ * This rule consumes a destination-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryDestinationList(ParsedSummaryField field) :
+{
+    String str;
+}
+ 
+    <TO> <COLON> str = identifierStr() { field.addDestination(str); }
+    (    <COMMA> str = identifierStr() { field.addDestination(str); } )*
+;
+
+/**
+ * This rule consumes a stemming block of a field element.
+ *
+ * @param field The field to modify.
+ */
+void fieldStemming(ParsedField field) :
+{
+    String setting;
+}
+ 
+    <STEMMING> <COLON> setting = identifierWithDashStr
+    {
+        field.setStemming(Stemming.get(setting));
+    }
+;
+
+/**
+ * This rule consumes a stemming statement for a schema element.
+ *
+ * @param schema the schema to modify
+ */
+void searchStemming(ParsedSchema schema) :
+{
+    String setting;
+}
+ 
+    <STEMMING> <COLON> setting = identifierWithDashStr
+    { schema.setStemming(Stemming.get(setting)); }
+;
+
+/**
+ * This rule consumes a normalizing statement of a field element.
+ * At the moment, this can only be used to turn off normalizing.
+ *
+ * @param field The field to modify.
+ */
+void normalizingElm(ParsedField field) :
+{
+    String setting;
+}
+ 
+    <NORMALIZING> <COLON> setting = identifierWithDashStr
+    {
+        field.setNormalizing(setting);
+    }
+;
+
+/**
+ * This rule consumes a bolding statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void boldingElm(ParsedField field) :
+{
+    boolean bold;
+}
+ 
+    <BOLDING> <COLON> bold = bool() { field.setBolding(bold); }
+;
+
+/**
+ * This rule consumes a dictionary statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void dictionaryElm(ParsedField field) : { }
+ 
+    <DICTIONARY>
+    ( (<COLON> dictionarySetting(field))
+    | (openLbrace() (dictionarySetting(field) | <NL>)* <RBRACE>))
+;
+
+void dictionarySetting(ParsedField field) : { }
+ 
+    (   <HASH>            { field.dictionary(DictionaryOption.HASH); }
+      | <BTREE>           { field.dictionary(DictionaryOption.BTREE); }
+      | <CASED>           { field.dictionary(DictionaryOption.CASED); }
+      | <UNCASED>         { field.dictionary(DictionaryOption.UNCASED); } )
+    {}
+;
+
+void queryCommandInField(ParsedField field) :
+{
+    String command;
+}
+ 
+    <QUERY_COMMAND> <COLON> ( command = identifierWithDashStr() | command = quotedString() )
+    {
+        field.addQueryCommand(command);
+    }
+;
+
+void aliasElm(ParsedField field) :
+{
+    String aliasedName = field.name();
+    String alias;
+}
+
+    <ALIAS> [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr
+    {
+       field.addAlias(aliasedName, alias);
+    }
+;
+
+void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
+
+    <MATCH> ( (<COLON> matchType(matchInfo))
+               | (openLbrace() (matchItem(matchInfo) | <NL>)* <RBRACE>) )
+;
+
+void matchType(ParsedMatchSettings matchInfo) : { }
+
+    (   <MTOKEN>    { matchInfo.setType(MatchType.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchInfo.setType(MatchType.TEXT); }
+      | <WORD>      { matchInfo.setType(MatchType.WORD); }
+      | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
+      | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
+      | <CASED>     { matchInfo.setCase(Case.CASED); }
+      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
+      | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
+      | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
+;
+
+/**
+ * This rule consumes a single match item for a match block.
+ *
+ * @param matchInfo The settings to modify.
+ */
+void matchItem(ParsedMatchSettings matchInfo) : { }
+ 
+    ( matchType(matchInfo) | exactTerminator(matchInfo) | gramSize(matchInfo) | matchSize(matchInfo) |
+     maxTermOccurrences(matchInfo) | maxTokenLength(matchInfo) )
+;
+
+void exactTerminator(ParsedMatchSettings matchInfo) :
+{
+    String terminator;
+}
+ 
+    <EXACT_TERMINATOR> <COLON> terminator = quotedString()
+    {
+        matchInfo.setExactTerminator(terminator);
+    }
+;
+
+void gramSize(ParsedMatchSettings matchInfo) :
+{
+    int gramSize;
+}
+ 
+    <GRAM_SIZE> <COLON> gramSize = integerElm()
+    {
+        matchInfo.setGramSize(gramSize);
+    }
+;
+
+void matchSize(ParsedMatchSettings matchInfo) :
+{
+    int matchSize;
+}
+ 
+    <MAX_LENGTH> <COLON> matchSize = integerElm() {
+        matchInfo.setMaxLength(matchSize);
+    }
+;
+
+void maxTermOccurrences(ParsedMatchSettings matchInfo) :
+{
+    int maxTermOccurrences;
+}
+ 
+    <MAX_OCCURRENCES> <COLON> maxTermOccurrences = integerElm() {
+        matchInfo.setMaxTermOccurrences(maxTermOccurrences);
+    }
+;
+
+void maxTokenLength(ParsedMatchSettings matchInfo) :
+{
+    int maxTokenLength;
+}
+ 
+    <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerElm() {
+        matchInfo.setMaxTokenLength(maxTokenLength);
+    }
+;
+
+/**
+ * Consumes a rank statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void rankElm(ParsedField field) : { }
+
+    <RANK> ( (<COLON> rankSettingElm(field))
+             | (openLbrace() (rankSettingElm(field) | <NL>)* <RBRACE>) )
+;
+
+/**
+ * Consumes a single rank setting of a rank statement.
+ *
+ * @param field The field to modify.
+ */
+void rankSettingElm(ParsedField field) : { }
+
+    ( <LITERAL>   { field.setLiteral(true); }
+      | <NORMAL>  { field.setNormal(true); }
+      | <FILTER>  { field.setFilter(true); } )
+;
+
+
+/**
+ * Consumes an id statement of a field body block.
+ *
+ * @param field    The field to modify.
+ */
+void idElm(ParsedField field) :
+{
+    int fieldId;
+}
+
+    <ID> <COLON> fieldId = integerElm
+    {
+        field.setId(fieldId);
+    }
+;
+
+/**
+ * Consumes a document-summary block from within a schema block.
+ *
+ * @param schema the schema object to add content to
+ */
+void documentSummary(ParsedSchema schema) :
+{
+    String name;
+    ParsedDocumentSummary summary;
+}
+ 
+    ( <DOCUMENT_SUMMARY>
+      name = identifierWithDashStr() { summary = new ParsedDocumentSummary(name); }
+      [inheritsDocumentSummary(summary)]
+      openLbrace()
+         (
+           <FROM_DISK> { summary.setFromDisk(true); } |
+           <OMIT_SUMMARY_FEATURES> { summary.setOmitSummaryFeatures(true); } |
+           documentSummaryItem(summary) |
+           <NL>
+         )*
+      <RBRACE>
+    )
+    { schema.addDocumentSummary(summary); }
+;
+
+/**
+ * This rule consumes an inherits statement of a document summary.
+ *
+ * @param documentSummary the document summary to modify
+ */
+void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierWithDashStr() { documentSummary.inherit(name); }
+    ( <COMMA>  name = identifierWithDashStr() { documentSummary.inherit(name); } )*
+;
+
+/**
+ * Consumes a single document-summary item.
+ *
+ * @param summary The document summary to modify.
+ */
+void documentSummaryItem(ParsedDocumentSummary summary) : { }
+ 
+    summaryInDocument(summary)
+;
+
+/**
+ * Consumes an index block in a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void indexOutsideDoc(ParsedSchema schema) :
+{
+    ParsedIndex op;
+    String indexName;
+}
+ 
+    <INDEX> indexName = identifierStr()
+    {
+        op = new ParsedIndex(indexName);
+    }
+    ( (<COLON> indexBody(op) (<COMMA> indexBody(op))*) |
+      (openLbrace() (indexBody(op) | <NL>)* <RBRACE>) )
+    {
+        schema.addIndex(op);
+    }
+;
+
+/**
+ * Consumes an index block for a field element.
+ *
+ * @param field  the field to modify
+ */
+void indexInsideField(ParsedField field) :
+{
+    ParsedIndex op;
+    String indexName = field.name();
+}
+ 
+    <INDEX> [indexName = identifierStr()]
+    {
+        // TODO: Remove support for index with different name than field name in Vespa 9
+        //if ( ! indexName.equals(field.name()))
+        //    deployLogger.logApplicationPackage(Level.WARNING, "Creating an index for field '" + field.name() +
+        //    "' with a different name '" + indexName + "' than the field name" +
+        //    " is deprecated, and support will be removed in Vespa 9. Define a field with the wanted name outside the document instead.");
+        op = new ParsedIndex(indexName);
+    }
+    ( (<COLON> indexBody(op) (<COMMA> indexBody(op))*) |
+      (openLbrace() (indexBody(op) | <NL>)* <RBRACE>) )
+    {
+        field.addIndex(op);
+    }
+;
+
+
+/**
+ * Consumes a single index statement for an index block.
+ *
+ * @param index The index to modify.
+ */
+void indexBody(ParsedIndex index) :
+{
+    String str;
+    int arity;
+    long num;
+    double threshold;
+}
+ 
+    ( <PREFIX>                                                       { index.setPrefix(true); }
+      | <ALIAS> <COLON> str = identifierWithDashStr()                   { index.addAlias(str); }
+      | <STEMMING> <COLON> str = identifierWithDashStr()                { index.setStemming(Stemming.get(str)); }
+      | <ARITY> <COLON> arity = integerElm()                            { index.setArity(arity); }
+      | <LOWER_BOUND> <COLON> num = longValue()                       { index.setLowerBound(num); }
+      | <UPPER_BOUND> <COLON> num = longValue()                       { index.setUpperBound(num); }
+      | <DENSE_POSTING_LIST_THRESHOLD> <COLON> threshold = floatValue() { index.setDensePostingListThreshold(threshold); }
+      | <ENABLE_BM25>                                                { index.setEnableBm25(true); }
+      | hnswIndex(index)                                             { }
+    )
+;
+
+void hnswIndex(ParsedIndex index) :
+{
+    HnswIndexParams.Builder params = new HnswIndexParams.Builder();
+}
+ 
+    ( SCAN(<HNSW> openLbrace()) =>
+      (<HNSW> ( (openLbrace() (hnswIndexBody(params) | <NL>)* <RBRACE>) )) |
+      <HNSW> )
+    {
+        index.setHnswIndexParams(params.build());
+    }
+;
+
+
+void hnswIndexBody(HnswIndexParams.Builder params) :
+{
+    int num;
+    boolean bool;
+}
+ 
+    ( <MAX_LINKS_PER_NODE> <COLON> num = integerElm() { params.setMaxLinksPerNode(num); }
+      | <NEIGHBORS_TO_EXPLORE_AT_INSERT> <COLON> num = integerElm() { params.setNeighborsToExploreAtInsert(num); }
+      | <MULTI_THREADED_INDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
+;
+
+void onnxModelInSchema(ParsedSchema schema) :
+{
+    OnnxModel onnxModel;
+}
+ 
+    onnxModel = onnxModel() { schema.add(onnxModel); }
+;
+
+void onnxModelInProfile(ParsedRankProfile profile) :
+{
+    OnnxModel onnxModel;
+}
+ 
+    onnxModel = onnxModel() { profile.add(onnxModel); }
+;
+
+/** Consumes an onnx-model block. */
+OnnxModel onnxModel() :
+{
+    String name;
+    OnnxModel onnxModel;
+}
+ 
+    ( <ONNX_MODEL> name = identifierStr() { onnxModel = new OnnxModel(name); }
+      openLbrace() (onnxModelItem(onnxModel) | <NL>)+ <RBRACE> )
+    { return onnxModel; }
+;
+
+/**
+ * Consumes an onnx-model block.
+ *
+ * @param onnxModel the onnxModel to modify
+ */
+void onnxModelItem(OnnxModel onnxModel) :
+{
+    String path = null;
+    int num;
+}
+ 
+    (
+        (path = fileItem()) { onnxModel.setFileName(path); } |
+        (path = uriItem()) { onnxModel.setUri(path); } |
+        <GPU_DEVICE> <COLON> num = integerElm() { onnxModel.setGpuDevice(num, false); } |
+        <INTRAOP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessIntraOpThreads(num); } |
+        <INTEROP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessInterOpThreads(num); } |
+        <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
+                                  | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
+        (<ONNX_INPUT_SL>) {
+            String name = lastConsumedToken.toString().substring(5, lastConsumedToken.toString().lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String source = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
+            onnxModel.addInputNameMapping(name, source);
+        } |
+        (<ONNX_OUTPUT_SL>) {
+            String name = lastConsumedToken.toString().substring(6, lastConsumedToken.toString().lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String as = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
+            onnxModel.addOutputNameMapping(name, as);
+        }
+    )
+;
+
+/**
+ * Consumes a constant block of a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void rankingConstant(ParsedSchema schema) :
+{
+    String name;
+    String path = null;
+    DistributableResource.PathType pathType = DistributableResource.PathType.FILE;
+    TensorType type = null;
+}
+ 
+    ( <CONSTANT> name = identifierStr() openLbrace()
+      (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. Remove?
+       | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
+      )+
+      <RBRACE>
+    )
+    {
+        if (type == null) throw new IllegalArgumentException("constant '" + name + "' must have a type");
+        if (path == null) throw new IllegalArgumentException("constant '" + name + "' must have a file");
+        schema.add(new RankProfile.Constant(FeatureNames.asConstantFeature(name), type, path, pathType));
+    }
+;
+
+String fileItem() :
+{
+   String path;
+}
+ 
+  (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = com.yahoo.path.Path.fromString(lastConsumedToken.toString()).getRelative(); } { } (<NL>)*) { return path; }
+;
+
+String uriItem() :
+{
+   String path;
+}
+ 
+  (<URI> <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*) { return path; }
+;
+
+String rankingConstantErrorMessage(String name) : {}
+ 
+    { return "For ranking constant ' " + name + "'"; }
+;
+
+
+/**
+ * Consumes a rank-profile block of a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void rankProfile(ParsedSchema schema) :
+{
+    String name;
+    ParsedRankProfile profile;
+    Token identifierToken = null;
+}
+
+    ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDashStr
+    { profile = new ParsedRankProfile(name); identifierToken = lastConsumedToken; }
+    [inheritsRankProfile(profile)]
+    openLbrace() (rankProfileItem(schema, profile) | <NL>)* <RBRACE>
+    {
+        if (schema != null) {
+            try {
+                schema.addRankProfile(profile);
+            } catch(IllegalArgumentException ex) {
+                if (identifierToken != null) {
+                    identifierToken.addIllegalArugmentException(ex);
+                }
+            }
+        }
+    }
+;
+
+/**
+ * This rule consumes a single statement for a rank-profile block.
+ *
+ * @param profile The rank profile to modify.
+ */
+void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
+
+    (
+        firstPhase(profile)
+       | fieldRankType(profile)
+       | fieldWeight(profile)
+       | fieldRankFilter(profile)
+       | matchPhase(profile)
+       | diversityElm(profile)
+       | functionElm(profile)
+       | mutateElm(profile)
+       | ignoreRankFeatures(profile)
+       | numThreadsPerSearch(profile)
+       | minHitsPerThread(profile)
+       | numSearchPartitions(profile)
+       | termwiseLimit(profile)
+       | postFilterThreshold(profile)
+       | approximateThreshold(profile)
+       | targetHitsMaxAdjustmentFactor(profile)
+       | rankProperties(profile)
+       | secondPhase(profile)
+       | globalPhase(profile)
+       | inputsElm(profile)
+       | constantsElm(schema, profile)
+       | featureListElm(profile) // Captures rank, match and summary-features
+       //| rankFeaturesElm(profile)
+       //| matchFeaturesElm(profile)
+       //| summaryFeaturesElm(profile)
+       | onnxModelInProfile(profile)
+       | strictElm(profile)
+       | significanceElm(profile)
+    )
+;
+
+/**
+ * Consumes an inherits statement of a rank-profile.
+ *
+ * @param profile the profile to modify
+ */
+void inheritsRankProfile(ParsedRankProfile profile) :
+{
+    String name;
+}
+
+    <INHERITS> name = identifierWithDashStr { profile.inherit(name); }
+    ( <COMMA>  name = identifierWithDashStr { profile.inherit(name); } )*
+;
+
+/**
+ * This rule consumes an mutate statement of a rank-profile.
+ *
+ * @param profile The profile to modify.
+ */
+void mutateElm(ParsedRankProfile profile) : { }
+ 
+    <MUTATE> openLbrace() (mutate_operation(profile) <NL>)+ <RBRACE>
+;
+
+void mutate_operation(ParsedRankProfile profile) :
+{
+    String attribute, operation;
+    RankProfile.MutateOperation.Phase phase;
+}
+ 
+   ( <ON_MATCH> { phase = RankProfile.MutateOperation.Phase.on_match; }
+   | <ON_FIRST_PHASE> { phase = RankProfile.MutateOperation.Phase.on_first_phase; }
+   | <ON_SECOND_PHASE> { phase = RankProfile.MutateOperation.Phase.on_second_phase; }
+   | <ON_SUMMARY> { phase = RankProfile.MutateOperation.Phase.on_summary; }
+   )
+   openLbrace() attribute = identifierStr() operation = mutate_expr() (<NL>)* <RBRACE>
+   { profile.addMutateOperation(phase, attribute, operation); }
+;
+
+String mutate_expr() :
+{
+     String op;
+     Number constant = null;
+}
+ 
+    (("+=" | "-=" | "=") { op = lastConsumedToken.toString(); } constant = number())
+    { return constant != null ? (op + constant) : op; }
+;
+
+/**
+ * This rule consumes a function statement of a rank-profile.
+ *
+ * @param profile The profile to modify.
+ */
+void functionElm(ParsedRankProfile profile) :
+{
+    String name, expression, parameter;
+    boolean inline = false;
+    ParsedRankFunction func;
+}
+ 
+    (  ( <FUNCTION> | <MACRO> ) inline = inlineElm() name = identifierStr() [ "$" { name = name + lastConsumedToken.toString(); } ]
+      "("
+                                             { func = new ParsedRankFunction(name); }
+          [ parameter = identifierStr()         { func.addParameter(parameter); }
+          ( <COMMA> parameter = identifierStr() { func.addParameter(parameter); } )* ]
+      ")"
+      openLbrace() expression = expression() (<NL>)* <RBRACE> )
+    {
+        func.setExpression(expression);
+        func.setInline(inline);
+        var old = profile.addOrReplaceFunction(func);
+        if (old != null) {
+            throw new IllegalArgumentException("Function '" + func.name()
+                                               + "' is defined twice in rank profile '"
+                                               + profile.name() + "'");
+        }
+    }
+;
+
+boolean inlineElm() : { }
+ 
+    ( <INLINE> { return true; } ) ?
+    { return false; }
+;
+
+
+/**
+ * This rule consumes a match-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void matchPhase(ParsedRankProfile profile) :
+{
+    MatchPhaseSettings settings = new MatchPhaseSettings();
+}
+ 
+    <MATCH_PHASE> openLbrace() (matchPhaseItem(profile, settings) | <NL>)* <RBRACE>
+    {
+        settings.checkValid();
+        profile.setMatchPhase(settings);
+    }
+;
+
+void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
+{
+    String str;
+    int num;
+    double multiplier;
+    double coverage;
+}
+ 
+    ( <ATTRIBUTE> <COLON> str = identifierStr() { settings.setAttribute(str); }
+      | diversityDeprecated(profile)
+      | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
+                          | <DESCENDING> { settings.setAscending(false); } )
+      | <MAX_HITS> <COLON> num = integerElm() { settings.setMaxHits(num); }
+      | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
+      | <EVALUATION_POINT> <COLON> multiplier = floatValue() { settings.setEvaluationPoint(multiplier); }
+      | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = floatValue() { settings.setPrePostFilterTippingPoint(multiplier); }
+    )
+;
+
+
+/**
+ * This rule consumes a diversity block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void diversityElm(ParsedRankProfile profile) :
+{
+    DiversitySettings settings = new DiversitySettings();
+}
+ 
+    <DIVERSITY> openLbrace() (diversityItem(settings) | <NL>)* <RBRACE>
+    {
+ 	    profile.setDiversity(settings);
+    }
+;
+
+void diversityDeprecated(ParsedRankProfile profile) :
+{
+    DiversitySettings settings = new DiversitySettings();
+}
+ 
+    <DIVERSITY> openLbrace() (diversityItem(settings) | <NL>)* <RBRACE>
+    {
+ 	    profile.setDiversity(settings);
+        // deployLogger.logApplicationPackage(Level.WARNING, "'diversity is deprecated inside 'match-phase'. Specify it at 'rank-profile' level.");
+    }
+;
+
+void diversityItem(DiversitySettings settings) :
+{
+    String str;
+    int num;
+    double multiplier;
+}
+ 
+    (   <ATTRIBUTE> <COLON> str = identifierStr() { settings.setAttribute(str); }
+      | <MIN_GROUPS> <COLON> num = integerElm() { settings.setMinGroups(num); }
+      | <CUTOFF_FACTOR> <COLON> multiplier = floatValue() { settings.setCutoffFactor(multiplier); }
+      | <CUTOFF_STRATEGY> <COLON>
+        (   <STRICT> { settings.setCutoffStrategy(Diversity.CutoffStrategy.strict); }
+          | <LOOSE>  { settings.setCutoffStrategy(Diversity.CutoffStrategy.loose); }
+        )
+    )
+;
+
+
+
+/**
+ * Consumes the first-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void firstPhase(ParsedRankProfile profile) :
+{
+    String exp;
+}
+
+    <FIRST_PHASE> openLbrace() (firstPhaseItem(profile) | <NL>)* <RBRACE>
+;
+
+void firstPhaseItem(ParsedRankProfile profile) :
+{
+    String expression;
+    int keepRankCount;
+    double dropLimit;
+}
+
+    ( expression = expression()                               { profile.setFirstPhaseRanking(expression); }
+    | (<KEEP_RANK_COUNT> <COLON> keepRankCount = integerElm())     { profile.setKeepRankCount(keepRankCount); }
+    | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
+    )
+;
+
+/**
+ * Consumes the second-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void secondPhase(ParsedRankProfile profile) : { }
+ 
+    <SECOND_PHASE> openLbrace() (secondPhaseItem(profile) | <NL>)* <RBRACE>
+;
+
+/**
+ * Consumes a statement for a second-phase block.
+ *
+ * @param profile The rank profile to modify.
+ */
+void secondPhaseItem(ParsedRankProfile profile) :
+{
+    String expression;
+    int rerankCount;
+    double dropLimit;
+}
+ 
+    ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
+    | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setRerankCount(rerankCount); }
+    | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
+    )
+;
+
+/**
+ * Consumes the global-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void globalPhase(ParsedRankProfile profile) : { }
+ 
+    <GLOBAL_PHASE> openLbrace() (globalPhaseItem(profile) | <NL>)* <RBRACE>
+;
+
+/**
+ * Consumes a statement for a global-phase block.
+ *
+ * @param profile The rank profile to modify.
+ */
+void globalPhaseItem(ParsedRankProfile profile) :
+{
+    String expression;
+    int rerankCount;
+}
+ 
+    ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
+    | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setGlobalPhaseRerankCount(rerankCount); }
+    )
+;
+
+
+
+/** Consumes an inputs block of a rank profile. */
+void inputsElm(ParsedRankProfile profile) :
+{
+    Reference reference;
+    TensorType type;
+    List<Reference> seenInputs = new ArrayList<>();
+}
+ 
+    <INPUTS> <LBRACE> (<NL>)*
+    (
+        reference = inputElm(profile) { seenInputs.add(reference); }
+        (<NL> { seenInputs.add(null); })*
+    )*
+    <RBRACE>
+    {
+        Reference last = null;
+        for (Reference current : seenInputs) {
+            if (last != null && current != null) {
+	            //deployLogger.logApplicationPackage(Level.WARNING, "Expected newline between inputs " + last + " and " + current);
+	        }
+	        last = current;
+        }
+    }
+;
+
+Reference inputElm(ParsedRankProfile profile) :
+{
+    Reference reference;
+    InputType type = new InputType(TensorType.empty, false);
+    Tensor defaultValue = null;
+}
+ 
+    reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type.tensorType()) )?
+    {
+        profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue)));
+        return reference;
+    }
+;
+
+/** Returns the reference "query(name)" for both "query(name)" and "name". */
+Reference inputName() :
+{
+    String name;
+}
+ 
+    (
+        ( <QUERY> "(" name = identifierStr() ")" )
+        |
+        name = identifierStr()
+    )
+    { return FeatureNames.asQueryFeature(name); }
+;
+
+InputType valueType(Reference reference) :
+{
+    TensorType type;
+    InputType result;
+}
+ 
+    (
+      ( type = tensorTypeElm("Type of " + reference) { result = new InputType(type, false); } )
+      |
+      ( <DOUBLE_KEYWORD> { result = new InputType(TensorType.empty, false); } )
+      |
+      ( <LONG_KEYWORD> {
+        result = new InputType(TensorType.empty, false);
+        //deployLogger.logApplicationPackage(Level.WARNING, "Input " + reference + ": 'long' is not possible, treated as 'double'");
+      } )
+      |
+      ( <FLOAT_KEYWORD> {
+        result = new InputType(TensorType.empty, false);
+        //deployLogger.logApplicationPackage(Level.WARNING, "Input " + reference + ": 'float' is not possible, treated as 'double'");
+      } )
+      |
+      ( <STRING_KEYWORD> { result = new InputType(TensorType.empty, true); } )
+    )
+    {
+        if (result != null) {
+            thisProduction.setInputType(result);
+        }
+        return result;
+    }
+;
+
+void featureListElm(ParsedRankProfile profile) :
+{
+    String features;
+}
+
+    ( (features = summaryFeaturesElm(profile)) | (features = matchFeaturesElm(profile)) | (features = rankFeaturesElm(profile)))
+    {
+        thisProduction.setFeatureListString(features);
+    }
+;
+
+/**
+ * Consumes a summary-features block of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+String summaryFeaturesElm(ParsedRankProfile profile) :
+{
+    String features;
+    String inherited = null;
+}
+ 
+    ( <SUMMARYFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } |
+      <SUMMARYFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                              lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } |
+      <SUMMARYFEATURES_ML_INHERITS> {
+          int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
+          String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
+          profile.setInheritedSummaryFeatures(rest.substring(0, rest.indexOf(" ")).trim());
+          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/
+      }
+    )
+    {
+        //FeatureList featureList = getFeatureList(features);
+        //if (featureList != null) {
+        //    profile.addSummaryFeatures(featureList);
+        //}
+        return features;
+    }
+;
+
+void strictElm(ParsedRankProfile profile) :
+{}
+ 
+    <STRICT> <COLON> (
+        ( <TRUE> { profile.setStrict(true); } ) |
+        ( <FALSE> { profile.setStrict(false); } )
+    )
+;
+
+void significanceElm(ParsedRankProfile profile) :
+{}
+ 
+    <SIGNIFICANCE> openLbrace() (significanceItem(profile) | <NL>)* <RBRACE>
+    {}
+;
+
+void significanceItem(ParsedRankProfile profile) :
+{}
+ 
+    <USE_MODEL> <COLON> (
+        ( <TRUE>  { profile.setUseSignificanceModel(true);  } ) |
+        ( <FALSE> { profile.setUseSignificanceModel(false); } )
+    )
+;
+
+/**
+ * Consumes a match-features block of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+String matchFeaturesElm(ParsedRankProfile profile) :
+{
+    String features;
+}
+
+    ( <MATCHFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } |
+      <MATCHFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                                             lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } |
+      <MATCHFEATURES_ML_INHERITS> {
+          int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
+          String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
+          profile.setInheritedMatchFeatures(rest.substring(0, rest.indexOf(" ")).trim());
+          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/
+      }
+    )
+    {
+        //FeatureList featureList = getFeatureList(features);
+        //if (featureList != null) {
+        //    profile.addMatchFeatures(featureList);
+        //}
+        return features;
+    }
+;
+
+/** Consumes a rank-features block of a rank profile */
+String rankFeaturesElm(ParsedRankProfile profile) :
+{
+    String features;
+}
+
+    ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } 
+    | <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                                            lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } )
+    {
+        //FeatureList featureList = getFeatureList(features);
+        //if (featureList != null) {
+        //    profile.addRankFeatures(featureList);
+        //}
+        return features;
+    }
+;
+
+
+/**
+ * This rule consumes a ignore-default-rank-features statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void ignoreRankFeatures(ParsedRankProfile profile) : { }
+ 
+    <IGNORE_DEFAULT_RANK_FEATURES> { profile.setIgnoreDefaultRankFeatures(true); }
+;
+
+/**
+ * This rule consumes a num-threads-per-search statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void numThreadsPerSearch(ParsedRankProfile profile) :
+{
+    int num;
+}
+ 
+    (<NUM_THREADS_PER_SEARCH> <COLON> num = integerElm()) { profile.setNumThreadsPerSearch(num); }
+;
+
+/**
+ * This rule consumes a min-hits-per-thread statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void minHitsPerThread(ParsedRankProfile profile) :
+{
+    int num;
+}
+ 
+    (<MIN_HITS_PER_THREAD> <COLON> num = integerElm()) { profile.setMinHitsPerThread(num); }
+;
+
+/**
+ * This rule consumes a num-search-partitions statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void numSearchPartitions(ParsedRankProfile profile) :
+{
+    int num;
+}
+ 
+    (<NUM_SEARCH_PARTITIONS> <COLON> num = integerElm()) { profile.setNumSearchPartitions(num); }
+;
+
+/**
+ * This rule consumes a termwise-limit statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void termwiseLimit(ParsedRankProfile profile) :
+{
+    double num;
+}
+ 
+    (<TERMWISE_LIMIT> <COLON> num = floatValue()) { profile.setTermwiseLimit(num); }
+;
+
+/**
+ * This rule consumes a post-filter-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void postFilterThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+ 
+    (<POST_FILTER_THRESHOLD> <COLON> threshold = floatValue()) { profile.setPostFilterThreshold(threshold); }
+;
+
+/**
+ * This rule consumes an approximate-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void approximateThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+ 
+    (<APPROXIMATE_THRESHOLD> <COLON> threshold = floatValue()) { profile.setApproximateThreshold(threshold); }
+;
+
+/**
+ * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void targetHitsMaxAdjustmentFactor(ParsedRankProfile profile) :
+{
+    double factor;
+}
+ 
+    (<TARGET_HITS_MAX_ADJUSTMENT_FACTOR> <COLON> factor = floatValue()) { profile.setTargetHitsMaxAdjustmentFactor(factor); }
+;
+
+/**
+ * Consumes a rank-properties block of a rank profile. There
+ * is a little trick within this rule to allow the final rank property
+ * to skip the terminating newline token.
+ *
+ * @param profile the rank profile to modify
+ */
+void rankProperties(ParsedRankProfile profile) : { }
+ 
+    <RANK_PROPERTIES> openLbrace() (SCAN(rankPropertyItem() <COLON> rankPropertyItem() <NL>) =>
+                               (rankProperty(profile) (<NL>)+))* [rankProperty(profile)] <RBRACE>
+;
+
+/**
+ * Consumes a single rank property pair for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void rankProperty(ParsedRankProfile profile) :
+{
+    String key, val;
+}
+ 
+    key = rankPropertyItem() <COLON> val = rankPropertyItem()
+    { profile.addRankProperty(key, val); }
+;
+
+/**
+ * Consumes a single rank property for a rank-properties block.
+ *
+ * @return the token image of the consumed item
+ */
+String rankPropertyItem() :
+{
+    String image = null;
+    String ret = "";
+    Token dToken = null;
+}
+ 
+    ( ( image = identifierWithDashStr() { ret += image; }
+        | dToken = <DOUBLE> { ret += dToken.toString(); }
+        | image = quotedString()                  { ret += image; }
+        | ( "(" | ")" | <DOT> | <COMMA> )         { ret += lastConsumedToken.toString(); } )+ )
+    { return ret; }
+;
+
+/**
+ * Consumes a field-weight statement of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void fieldWeight(ParsedRankProfile profile) :
+{
+    Integer num;
+    String name;
+}
+ 
+    <WEIGHT> name = identifierStr() <COLON> num = integerElm()
+    { profile.addFieldRankWeight(name, num); }
+;
+
+/**
+ * Consumes a rank-type statement of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void fieldRankType(ParsedRankProfile profile) :
+{
+    String name;
+    String type;
+}
+ 
+    <RANK_TYPE> name = identifierStr() <COLON> type = identifierStr()
+    { profile.addFieldRankType(name, type); }
+;
+
+/**
+ * Consumes a rank filter statement of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void fieldRankFilter(ParsedRankProfile profile) :
+{
+    String name;
+}
+ 
+    <RANK> name = identifierStr() <COLON> <FILTER>
+    { profile.addFieldRankFilter(name, true); }
+;
+
+/**
+ * Consumes a set of constants available in ranking expressions in the enclosing profile.
+ */
+void constantsElm(ParsedSchema schema, ParsedRankProfile profile) :
+{
+    String name;
+}
+ 
+    <CONSTANTS> <LBRACE> (<NL>)*
+    ( constantElm(schema, profile) (<NL>)* )*
+    <RBRACE>
+;
+
+void constantElm(ParsedSchema schema, ParsedRankProfile profile) :
+{
+    Reference name = null;
+    InputType type = new InputType(TensorType.empty, false);
+    Tensor value = null;
+    String valuePath = null;
+}
+ 
+    (
+      name = constantName()
+      (
+        SCAN( (type = valueType(name))? <COLON> (<NL>)* (tensorValue(type.tensorType()) | fileItem)) => 
+        ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type.tensorType()) | valuePath = fileItem())
+        {
+            if (value != null)
+                profile.add(new RankProfile.Constant(name, value));
+            else
+                profile.add(new RankProfile.Constant(name, type.tensorType(), valuePath));
+        }
+        )
+        | // Deprecated forms (TODO: Vespa > 8: Add warning):
+        ( constantValue(profile, name) | constantTensor(profile, name) )
+      )
+    )
+;
+
+/** Returns the reference "constant(name)" for both "constant(name)" and "name". */
+Reference constantName() :
+{
+    String name;
+}
+ 
+    (
+        ( <CONSTANT> "(" name = identifierStr() ")" )
+        |
+        name = identifierStr()
+    )
+    { return FeatureNames.asConstantFeature(name); }
+;
+
+// Deprecated form
+void constantValue(ParsedRankProfile profile, Reference name) :
+{
+    Token value;
+}
+ 
+    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
+    { profile.add(new RankProfile.Constant(name, Tensor.from(value.toString()))); }
+;
+
+// Deprecated form
+void constantTensor(ParsedRankProfile profile, Reference name) :
+{
+    String tensorString = "";
+    TensorType type = null;
+}
+ 
+    <LBRACE> (<NL>)*
+      (( tensorString = tensorValuePrefixedByValue() |
+         type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
+    { profile.add(new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));
+    }
+;
+
+String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
+ 
+    { return "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
+;
+
+
+/**
+ * Parses a tensor written in a tensor literal form,
+ * https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form
+ */
+Tensor tensorValue(TensorType type) :
+{
+    Tensor.Builder builder = Tensor.Builder.of(type);
+    Number doubleValue = null;
+}
+ 
+    ( mappedTensorValue(builder) | indexedTensorValues(builder) |  doubleValue = number() )
+    {
+        if (doubleValue != null) {
+            if (type.rank() > 0)
+                throw new IllegalArgumentException("A tensor of type " + type + " cannot be a number");
+            builder.cell(doubleValue.doubleValue());
+        }
+        return builder.build();
+    }
+;
+
+/** A mapped or mixed tensor value. */
+void mappedTensorValue(Tensor.Builder builder) : {}
+ 
+    "{"
+    ( mappedTensorBlock(builder) )*
+    ( <COMMA> (<NL>)* mappedTensorBlock(builder) )*
+    "}"
+;
+
+
+void mappedTensorBlock(Tensor.Builder builder) :
+{
+    TensorAddress mappedAddress;
+}
+ 
+    mappedAddress = tensorAddress(builder.type()) <COLON> (<NL>)*
+    ( mappedTensorCellValue(mappedAddress, builder) | indexedTensorBlockValues(mappedAddress, builder) )
+;
+
+void indexedTensorBlockValues(TensorAddress mappedAddress, Tensor.Builder builder) :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+ 
+    arrayTensorValues(values)
+    {
+        MixedTensor.BoundBuilder boundBuilder = (MixedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.block(mappedAddress, arrayValues);
+    }
+;
+
+void indexedTensorValues(Tensor.Builder builder) :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+ 
+    arrayTensorValues(values)
+    {
+        IndexedTensor.BoundBuilder boundBuilder = (IndexedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.fill(arrayValues);
+    }
+;
+
+/** Tensor array values. Using sub-bracketing for multiple dimensions is optional and therefore ignored here. */
+void arrayTensorValues(List<Double> values) : {}
+ 
+    "[" (                 ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+        ( <COMMA> (<NL>)* ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+    "]"
+;
+
+void indexedTensorValue(List<Double> values) :
+{
+    Number value;
+}
+ 
+    value = number()
+    { values.add(value.doubleValue()); }
+;
+
+void mappedTensorCellValue(TensorAddress address, Tensor.Builder builder) :
+{
+    double value;
+}
+ 
+    value = tensorCellValue()
+    { builder.cell(address, value); }
+;
+
+TensorAddress tensorAddress(TensorType type) :
+{
+    TensorAddress.Builder builder = new TensorAddress.PartialBuilder(type);
+    String label;
+}
+ 
+    (
+        label = tensorAddressLabel() { builder.add(label); }
+        |
+        ( "{" ( tensorAddressElement(builder) )* ( <COMMA> tensorAddressElement(builder) )* "}" )
+    )
+    { return builder.build(); }
+;
+
+void tensorAddressElement(TensorAddress.Builder builder) :
+{
+    String dimension;
+    String label;
+}
+ 
+    dimension = identifierStr() <COLON> (<NL>)* label = tensorAddressLabel()
+    { builder.add(dimension, label); }
+;
+
+String tensorAddressLabel() :
+{
+    String label;
+}
+ 
+    ( label = identifierStr() | label = quotedString() )
+    { return label; }
+;
+
+double tensorCellValue() :
+{
+    Number value;
+}
+ 
+    value = number()
+    { return value.doubleValue(); }
+;
+
+/** Undocumented syntax for supplying a tensor constant value by a string prefixed by "value" */
+String tensorValuePrefixedByValue() :
+{
+    String tensor;
+}
+ 
+    ( <TENSOR_VALUE_SL> { tensor = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1); } |
+      <TENSOR_VALUE_ML> { tensor = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                         lastConsumedToken.toString().lastIndexOf("}")); } )
+    {
+        return tensor;
+    }
+;
+
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{ TensorType type; }
+ 
+    <TYPE> <COLON> type = tensorTypeElm(errorMessage)
+    { return type; }
+;
+
+
+TensorType tensorTypeElm(String errorMessage) :
+{
+    String tensorTypeString;
+}
+
+    <TENSOR_TYPE> { tensorTypeString = lastConsumedToken.toString(); }
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            //throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+            lastConsumedToken.addIllegalArugmentException(e);
+            return TensorType.empty;
+        }
+        return tensorType;
+    }
+;
+
+void importField(ParsedSchema schema) :
+{
+    String fieldRefSpec;
+    String aliasFieldName;
+}
+ 
+    <IMPORT> <FIELD> fieldRefSpec = identifierStr() <AS> aliasFieldName = identifierStr() openLbrace()
+    <RBRACE>
+    {
+        long nDots = Utils.count(fieldRefSpec, '.');
+        if (nDots != 1) {
+            throw new IllegalArgumentException("Illegal field reference spec '" + fieldRefSpec + "': Does not include a single '.'");
+        }
+        int indexOfDot = fieldRefSpec.indexOf('.');
+        String documentReferenceFieldName = fieldRefSpec.substring(0, indexOfDot);
+        String foreignFieldName = fieldRefSpec.substring(indexOfDot + 1);
+        schema.addImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName);
+    }
+;
+
+/**
+ * This rule consumes an expression token and returns its image.
+ *
+ * @return The consumed token image.
+ */
+String expression() :
+{
+    String exp;
+}
+
+    ( <EXPRESSION_SL> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1); } |
+      <EXPRESSION_ML> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                                     lastConsumedToken.toString().lastIndexOf("}")); } )
+    {
+        thisProduction.setExpressionString(exp);
+        return exp;
+    }
+;
+
+String identifierWithDashStr :
+{
+    String identifier;
+}
+
+    ( identifier = identifierStr { return identifier; } )
+    |
+    ( <IDENTIFIER_WITH_DASH>
+    | <APPROXIMATE_THRESHOLD>
+    | <CREATE_IF_NONEXISTENT>
+    | <CUTOFF_FACTOR>
+    | <CUTOFF_STRATEGY>
+    | <DENSE_POSTING_LIST_THRESHOLD>
+    | <DISTANCE_METRIC>
+    | <DOCUMENT_SUMMARY>
+    | <ENABLE_BIT_VECTORS>
+    | <ENABLE_BM25>
+    | <ENABLE_ONLY_BIT_VECTOR>
+    | <EVALUATION_POINT>
+    | <EXACT_TERMINATOR>
+    | <EXECUTION_MODE>
+    | <FAST_ACCESS>
+    | <FAST_RANK>
+    | <FAST_SEARCH>
+    | <FIRST_PHASE>
+    | <FROM_DISK>
+    | <GLOBAL_PHASE>
+    | <GPU_DEVICE>
+    | <GRAM_SIZE>
+    | <IGNORE_DEFAULT_RANK_FEATURES>
+    | <INTEROP_THREADS>
+    | <INTRAOP_THREADS>
+    | <KEEP_RANK_COUNT>
+    | <LOWER_BOUND>
+    | <MATCHED_ELEMENTS_ONLY>
+    | <MATCH_PHASE>
+    | <MAX_FILTER_COVERAGE>
+    | <MAX_HITS>
+    | <MAX_LENGTH>
+    | <MAX_LINKS_PER_NODE>
+    | <MIN_GROUPS>
+    | <MIN_HITS_PER_THREAD>
+    | <MULTI_THREADED_INDEXING>
+    | <NEIGHBORS_TO_EXPLORE_AT_INSERT>
+    | <NUM_SEARCH_PARTITIONS>
+    | <NUM_THREADS_PER_SEARCH>
+    | <OMIT_SUMMARY_FEATURES>
+    | <ON_DEMAND>
+    | <ON_FIRST_PHASE>
+    | <ON_MATCH>
+    | <ONNX_MODEL>
+    | <ON_SECOND_PHASE>
+    | <ON_SUMMARY>
+    | <POST_FILTER_THRESHOLD>
+    | <PRE_POST_FILTER_TIPPING_POINT>
+    | <QUERY_COMMAND>
+    | <RANK_PROFILE>
+    | <RANK_PROPERTIES>
+    | <RANK_SCORE_DROP_LIMIT>
+    | <RANK_TYPE>
+    | <RAW_AS_BASE64_IN_SUMMARY>
+    | <REMOVE_IF_ZERO>
+    | <RERANK_COUNT>
+    | <SECOND_PHASE>
+    | <STRUCT_FIELD>
+    | <SUMMARY_TO>
+    | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
+    | <TERMWISE_LIMIT>
+    | <UPPER_BOUND>
+    | <USE_MODEL>
+    ) {
+        return lastConsumedToken.toString();
+    }
+;
+
+/**
+ * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
+ * identifiers.
+ *
+ * @return the identifier string
+ */
+String identifierStr :
+    ( <ALIAS>
+      | <ALWAYS>
+      | <ANNOTATION>
+      | <ANNOTATIONREFERENCE>
+      | <ARITY>
+      | <ARRAY>
+      | <AS>
+      | <ASCENDING>
+      | <ATTRIBUTE>
+      | <BOLDING>
+      | <BTREE>
+      | <CASED>
+      | <CONSTANT>
+      | <CONSTANTS>
+      | <CONTEXT>
+      | <DESCENDING>
+      | <DICTIONARY>
+      | <DIRECT>
+      | <DIVERSITY>
+      | <DOCUMENT>
+      | <DOUBLE_KEYWORD>
+      | <FLOAT_KEYWORD>
+      | <LONG_KEYWORD>
+      | <STRING_KEYWORD>
+      | <DYNAMIC>
+      | <EXACT>
+      | <FALSE>
+      | <FIELD>
+      | <FIELDS>
+      | <FIELDSET>
+      | <FILE>
+      | <FILTER>
+      | <FULL>
+      | <FUNCTION>
+      | <GRAM>
+      | <HASH>
+      | <HNSW>
+      | <ID>
+      | <IDENTICAL>
+      | <IDENTIFIER>
+      | <IMPORT>
+      | <INDEX>
+      | <INDEXING>
+      | <INHERITS>
+      | <INLINE>
+      | <INPUTS>
+      | <INTEGER>
+      | <LITERAL>
+      | <LOCALE>
+      | <LONG>
+      | <LOOSE>
+      | <LOWERCASE>
+      | <MACRO>
+      | <MAP>
+      | <MATCH>
+      | <MODEL>
+      | <MTOKEN>
+      | <MUTABLE>
+      | <MUTATE>
+      | <NEVER>
+      | <NONE>
+      | <NORMAL>
+      | <NORMALIZING>
+      | <OFF>
+      | <ON>
+      | <OPERATION>
+      | <ORDER>
+      | <PAGED>
+      | <PARALLEL>
+      | <PREFIX>
+      | <PRIMARY>
+      | <PROPERTIES>
+      | <QUATERNARY>
+      | <QUERY>
+      | <RANK>
+      | <RAW>
+      | <REFERENCE>
+      | <SCHEMA>
+      | <SEARCH>
+      | <SECONDARY>
+      | <SEQUENTIAL>
+      | <SORTING>
+      | <SOURCE>
+      | <SSCONTEXTUAL>
+      | <SSOVERRIDE>
+      | <SSTITLE>
+      | <SSURL>
+      | <STATIC>
+      | <STEMMING>
+      | <STRENGTH>
+      | <STRICT>
+      | <SIGNIFICANCE>
+      | <STRING>
+      | <STRUCT>
+      | <SUBSTRING>
+      | <SUFFIX>
+      | <SUMMARY>
+      | <SYMMETRIC>
+      | <TERTIARY>
+      | <TEXT>
+      | <TO>
+      | <TOKENS>
+      | <TRUE>
+      | <TYPE>
+      | <UCA>
+      | <UNCASED>
+      | <URI>
+      | <VARIABLE>
+      | <WEIGHT>
+      | <WEIGHTEDSET>
+      | <WORD>
+    ) {
+        return lastConsumedToken.toString();
+    }
+;
+
+/**
+ * Consumes a quoted string token and returns the token image minus the quotes. This does not perform
+ * unescaping of the content, it simply removes the first and last character of the image. However, the token itself can
+ * contain anything but a double quote.
+ *
+ * @return the unquoted token image
+ */
+String quotedString() : { }
+
+    ( <DOUBLEQUOTEDSTRING> | <SINGLEQUOTEDSTRING> )
+    { return lastConsumedToken.toString().substring(1, lastConsumedToken.toString().length() - 1); }
+;
+
+/** A boolean value. */
+Boolean bool() :
+
+    ( ( <ON>  | <TRUE> )  { return true; } |
+      ( <OFF> | <FALSE> ) { return false; } )
+;
+
+/** Consumes an integer token and returns its numeric value. */
+int integerElm() : { }
+
+    <INTEGER> { return Integer.parseInt(lastConsumedToken.toString()); }
+;
+
+/** Consumes a long or integer token and returns its numeric value. */
+long longValue() : { }
+
+    ( <INTEGER> { return Long.parseLong(lastConsumedToken.toString()); } |
+      <LONG>    { return Long.parseLong(lastConsumedToken.toString().substring(0, lastConsumedToken.toString().length() - 1)); }
+    )
+;
+
+/** Consumes a floating-point token and returns its numeric value. */
+double floatValue() : { }
+
+    <DOUBLE> { return Double.valueOf(lastConsumedToken.toString()); }
+;
+
+Number number() :
+{
+    Number num;
+}
+
+    ( num = floatValue | num = longValue ) { return num; }
+;
+
+void openLbrace() : { }
+    ((<NL>)* <LBRACE> (<NL>)*)
+;

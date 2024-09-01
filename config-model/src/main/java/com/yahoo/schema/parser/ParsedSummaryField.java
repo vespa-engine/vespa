@@ -11,7 +11,7 @@ import java.util.List;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedSummaryField extends ParsedBlock {
+public class ParsedSummaryField extends ParsedBlock {
 
     private ParsedType type;
     private boolean isDyn = false;
@@ -23,11 +23,11 @@ class ParsedSummaryField extends ParsedBlock {
     private final List<String> sources = new ArrayList<>();
     private final List<String> destinations = new ArrayList<>();
 
-    ParsedSummaryField(String name) {
+    public ParsedSummaryField(String name) {
         this(name, null);
     }
 
-    ParsedSummaryField(String name, ParsedType type) {
+    public ParsedSummaryField(String name, ParsedType type) {
         super(name, "summary field");
         this.type = type;
     }
@@ -42,14 +42,14 @@ class ParsedSummaryField extends ParsedBlock {
     boolean getTokens() { return isTokens; }
     boolean getHasExplicitType() { return hasExplicitType; }
 
-    void addDestination(String dst) { destinations.add(dst); }
-    void addSource(String src) { sources.add(src); }
-    void setBold(boolean value) { this.isBold = value; }
-    void setDynamic() { this.isDyn = true; }
-    void setFull() { this.isFull = true; }
-    void setMatchedElementsOnly() { this.isMEO = true; }
-    void setTokens() { this.isTokens = true; }
-    void setHasExplicitType() { this.hasExplicitType = true; }
+    public void addDestination(String dst) { destinations.add(dst); }
+    public void addSource(String src) { sources.add(src); }
+    public void setBold(boolean value) { this.isBold = value; }
+    public void setDynamic() { this.isDyn = true; }
+    public void setFull() { this.isFull = true; }
+    public void setMatchedElementsOnly() { this.isMEO = true; }
+    public void setTokens() { this.isTokens = true; }
+    public void setHasExplicitType() { this.hasExplicitType = true; }
     void setType(ParsedType value) {
         verifyThat(type == null, "Cannot change type from ", type, "to", value);
         this.type = value;

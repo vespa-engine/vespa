@@ -1,0 +1,40 @@
+<idea-plugin>
+  <id>ai.vespa</id>
+  <name>Vespa Schema Language Support</name>
+
+  <vendor>vespa.ai</vendor>
+
+  <description><![CDATA[
+    <h1>IntelliJ Plugin for Schema Language Server</h1>
+<p>Language support for the Vespa Schema language using LSP.</p>
+<p>The plugin acts as a client for the Schema Language Server, providing tools for developing Vespa Schema files.</p>
+
+<h2>Features:</h2>
+<ul>
+    <li>Error and warning highlighting</li>
+    <li>Code actions, including Quick fixes</li>
+    <li>Code completion</li>
+    <li>Go-to-definition</li>
+    <li>Documentation on hover</li>
+    <li>Syntax highlighting</li>
+</ul>
+
+  ]]></description>
+  <change-notes><![CDATA[
+<h2>Rewritten from scratch to include LSP support</h2>
+<ul>
+    <li>Error and warning highlighting</li>
+    <li>Code actions, including Quick fixes</li>
+    <li>Code completion</li>
+    <li>Documentation on hover</li>
+</ul>
+]]></change-notes>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.ultimate</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="Schema" extensions="sd;profile" implementationClass="ai.vespa.schemals.intellij.SchemaFileType" language="Schema" fieldName="INSTANCE"/>
+
+    <platform.lsp.serverSupportProvider implementation="ai.vespa.schemals.intellij.SchemaLspServerSupportProvider"/>
+    <lang.syntaxHighlighter language="Schema" implementationClass="ai.vespa.schemals.intellij.SchemaSyntaxHighlighter" />
+  </extensions>
+</idea-plugin>
