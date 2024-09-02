@@ -456,7 +456,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
-            List.of("vekterli"), "2024-05-23", "2024-09-01",
+            List.of("vekterli"), "2024-05-23", "2024-12-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -472,7 +472,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", false,
-            List.of("vekterli"), "2024-06-03", "2024-09-01",
+            List.of("vekterli"), "2024-06-03", "2024-12-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
             "Takes effect immediately",
@@ -506,7 +506,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", false,
-            List.of("vekterli"), "2024-07-01", "2024-09-01",
+            List.of("vekterli"), "2024-07-01", "2024-12-01",
             "Iff true, the cluster controller will be the authoritative source of distribution " +
             "config changes in a content cluster, and distribution changes will be part of explicitly " +
             "versioned cluster states.",
