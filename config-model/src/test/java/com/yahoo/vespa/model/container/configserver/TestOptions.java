@@ -58,11 +58,6 @@ public class TestOptions implements ConfigOptions {
     }
 
     @Override
-    public String[] configModelPluginDirs() {
-        return new String[0];
-    }
-
-    @Override
     public Optional<Long> sessionLifeTimeSecs() {
         return Optional.empty();
     }

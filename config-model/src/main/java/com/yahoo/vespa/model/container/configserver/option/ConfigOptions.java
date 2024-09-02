@@ -24,7 +24,7 @@ public interface ConfigOptions {
     ConfigServer[] allConfigServers();
     int[] configServerZookeeperIds();
     Optional<Integer> zookeeperClientPort();
-    String[] configModelPluginDirs();
+    default String[] configModelPluginDirs() { return new String[0]; } // TODO: Remove when 8.404 is oldest version in use
     Optional<Long> sessionLifeTimeSecs();
     Optional<Long> zookeeperBarrierTimeout(); //in seconds
     Optional<Integer> zookeeperElectionPort();
