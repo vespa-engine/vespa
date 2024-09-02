@@ -32,14 +32,13 @@
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/config-attributes.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_manager_test");
@@ -124,17 +123,14 @@ fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64
     AttributeUtils::fillAttribute(*attr, from, to, value, lastSyncToken);
 }
 
-search::SerialNum getCreateSerialNum(const AttributeGuard::UP &guard)
+search::SerialNum get_create_serial_num(const AttributeManager &am, const std::string &name)
 {
+    auto guard = am.getAttribute(name);
     if (!guard || !guard->valid()) {
         return 0;
     } else {
         return (*guard)->getCreateSerialNum();
     }
-}
-
-void assertCreateSerialNum(const AttributeManager &am, const std::string &name, search::SerialNum expCreateSerialNum) {
-    EXPECT_EQUAL(expCreateSerialNum, getCreateSerialNum(am.getAttribute(name)));
 }
 
 struct ImportedAttributesRepoBuilder {
@@ -278,37 +274,56 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
 }
 ParallelAttributeManager::~ParallelAttributeManager() = default;
 
-TEST_F("require that attributes are added", Fixture)
+class AttributeManagerTest : public ::testing::Test {
+protected:
+    AttributeManagerTest();
+    ~AttributeManagerTest() override;
+    static void SetUpTestSuite();
+};
+
+AttributeManagerTest::AttributeManagerTest() = default;
+AttributeManagerTest::~AttributeManagerTest() = default;
+
+void
+AttributeManagerTest::SetUpTestSuite()
 {
+    fs::remove_all(fs::path(test_dir));
+}
+
+TEST_F(AttributeManagerTest, require_that_attributes_are_added)
+{
+    Fixture f;
     EXPECT_TRUE(f.addAttribute("a1").get() != nullptr);
     EXPECT_TRUE(f.addAttribute("a2").get() != nullptr);
-    EXPECT_EQUAL("a1", (*f._m.getAttribute("a1"))->getName());
-    EXPECT_EQUAL("a1", (*f._m.getAttributeReadGuard("a1", true))->getName());
-    EXPECT_EQUAL("a2", (*f._m.getAttribute("a2"))->getName());
-    EXPECT_EQUAL("a2", (*f._m.getAttributeReadGuard("a2", true))->getName());
+    EXPECT_EQ("a1", (*f._m.getAttribute("a1"))->getName());
+    EXPECT_EQ("a1", (*f._m.getAttributeReadGuard("a1", true))->getName());
+    EXPECT_EQ("a2", (*f._m.getAttribute("a2"))->getName());
+    EXPECT_EQ("a2", (*f._m.getAttributeReadGuard("a2", true))->getName());
     EXPECT_TRUE(!f._m.getAttribute("not")->valid());
 
     auto rv = f._m.readable_attribute_vector("a1");
     ASSERT_TRUE(rv.get() != nullptr);
-    EXPECT_EQUAL("a1", rv->makeReadGuard(true)->attribute()->getName());
+    EXPECT_EQ("a1", rv->makeReadGuard(true)->attribute()->getName());
 
     rv = f._m.readable_attribute_vector("a2");
     ASSERT_TRUE(rv.get() != nullptr);
-    EXPECT_EQUAL("a2", rv->makeReadGuard(true)->attribute()->getName());
+    EXPECT_EQ("a2", rv->makeReadGuard(true)->attribute()->getName());
 
     EXPECT_TRUE(f._m.readable_attribute_vector("not_valid").get() == nullptr);
 }
 
-TEST_F("require that predicate attributes are added", Fixture)
+TEST_F(AttributeManagerTest, require_that_predicate_attributes_are_added)
 {
+    Fixture f;
     EXPECT_TRUE(f._m.addAttribute({"p1", AttributeUtils::getPredicateConfig()},
                                   createSerialNum).get() != nullptr);
-    EXPECT_EQUAL("p1", (*f._m.getAttribute("p1"))->getName());
-    EXPECT_EQUAL("p1", (*f._m.getAttributeReadGuard("p1", true))->getName());
+    EXPECT_EQ("p1", (*f._m.getAttribute("p1"))->getName());
+    EXPECT_EQ("p1", (*f._m.getAttributeReadGuard("p1", true))->getName());
 }
 
-TEST_F("require that attributes are flushed and loaded", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_attributes_are_flushed_and_loaded)
 {
+    BaseFixture f;
     IndexMetaInfo ia1(test_dir + "/a1");
     IndexMetaInfo ia2(test_dir + "/a2");
     IndexMetaInfo ia3(test_dir + "/a3");
@@ -316,89 +331,90 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
         AttributeVector::SP a1 = amf.addAttribute("a1");
-        EXPECT_EQUAL(1u, a1->getNumDocs()); // Resized to size of attributemanager
+        EXPECT_EQ(1u, a1->getNumDocs()); // Resized to size of attributemanager
         fillAttribute(a1, 1, 3, 2, 100);
-        EXPECT_EQUAL(3u, a1->getNumDocs()); // Resized to size of attributemanager
+        EXPECT_EQ(3u, a1->getNumDocs()); // Resized to size of attributemanager
         AttributeVector::SP a2 = amf.addAttribute("a2");
-        EXPECT_EQUAL(1u, a2->getNumDocs()); // Not resized to size of attributemanager
+        EXPECT_EQ(1u, a2->getNumDocs()); // Not resized to size of attributemanager
         fillAttribute(a2, 1, 5, 4, 100);
-        EXPECT_EQUAL(5u, a2->getNumDocs()); // Increased
+        EXPECT_EQ(5u, a2->getNumDocs()); // Increased
         EXPECT_TRUE(!ia1.load());
         EXPECT_TRUE(!ia2.load());
         EXPECT_TRUE(!ia3.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQ(100u, ia1.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia2.load());
-        EXPECT_EQUAL(100u, ia2.getBestSnapshot().syncToken);
+        EXPECT_EQ(100u, ia2.getBestSnapshot().syncToken);
     }
     {
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
         AttributeVector::SP a1 = amf.addAttribute("a1"); // loaded
 
-        EXPECT_EQUAL(3u, a1->getNumDocs());
+        EXPECT_EQ(3u, a1->getNumDocs());
         fillAttribute(a1, 1, 2, 200);
-        EXPECT_EQUAL(4u, a1->getNumDocs());
+        EXPECT_EQ(4u, a1->getNumDocs());
         AttributeVector::SP a2 = amf.addAttribute("a2"); // loaded
         {
             AttributeWriter aw(amf._msp);
 
-            EXPECT_EQUAL(5u, a2->getNumDocs());
-            EXPECT_EQUAL(4u, a1->getNumDocs());
+            EXPECT_EQ(5u, a2->getNumDocs());
+            EXPECT_EQ(4u, a1->getNumDocs());
             aw.onReplayDone(5u);
-            EXPECT_EQUAL(5u, a2->getNumDocs());
-            EXPECT_EQUAL(5u, a1->getNumDocs());
+            EXPECT_EQ(5u, a2->getNumDocs());
+            EXPECT_EQ(5u, a1->getNumDocs());
             fillAttribute(a2, 1, 4, 200);
-            EXPECT_EQUAL(6u, a2->getNumDocs());
+            EXPECT_EQ(6u, a2->getNumDocs());
         }
         AttributeVector::SP a3 = amf.addAttribute("a3"); // not-loaded
         AttributeWriter aw(amf._msp);
-        EXPECT_EQUAL(1u, a3->getNumDocs());
+        EXPECT_EQ(1u, a3->getNumDocs());
         aw.onReplayDone(6);
-        EXPECT_EQUAL(6u, a3->getNumDocs());
+        EXPECT_EQ(6u, a3->getNumDocs());
         fillAttribute(a3, 1, 7, 6, 200);
-        EXPECT_EQUAL(7u, a3->getNumDocs());
+        EXPECT_EQ(7u, a3->getNumDocs());
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQ(100u, ia1.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia2.load());
-        EXPECT_EQUAL(100u, ia2.getBestSnapshot().syncToken);
+        EXPECT_EQ(100u, ia2.getBestSnapshot().syncToken);
         EXPECT_TRUE(!ia3.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(200u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQ(200u, ia1.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia2.load());
-        EXPECT_EQUAL(200u, ia2.getBestSnapshot().syncToken);
+        EXPECT_EQ(200u, ia2.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia3.load());
-        EXPECT_EQUAL(200u, ia3.getBestSnapshot().syncToken);
+        EXPECT_EQ(200u, ia3.getBestSnapshot().syncToken);
     }
     {
         AttributeManagerFixture amf(f);
         AttributeVector::SP a1 = amf.addAttribute("a1"); // loaded
-        EXPECT_EQUAL(6u, a1->getNumDocs());
+        EXPECT_EQ(6u, a1->getNumDocs());
         AttributeVector::SP a2 = amf.addAttribute("a2"); // loaded
-        EXPECT_EQUAL(6u, a1->getNumDocs());
-        EXPECT_EQUAL(6u, a2->getNumDocs());
+        EXPECT_EQ(6u, a1->getNumDocs());
+        EXPECT_EQ(6u, a2->getNumDocs());
         AttributeVector::SP a3 = amf.addAttribute("a3"); // loaded
         AttributeWriter aw(amf._msp);
-        EXPECT_EQUAL(6u, a1->getNumDocs());
-        EXPECT_EQUAL(6u, a2->getNumDocs());
-        EXPECT_EQUAL(7u, a3->getNumDocs());
+        EXPECT_EQ(6u, a1->getNumDocs());
+        EXPECT_EQ(6u, a2->getNumDocs());
+        EXPECT_EQ(7u, a3->getNumDocs());
         aw.onReplayDone(7);
-        EXPECT_EQUAL(7u, a1->getNumDocs());
-        EXPECT_EQUAL(7u, a2->getNumDocs());
-        EXPECT_EQUAL(7u, a3->getNumDocs());
+        EXPECT_EQ(7u, a1->getNumDocs());
+        EXPECT_EQ(7u, a2->getNumDocs());
+        EXPECT_EQ(7u, a3->getNumDocs());
     }
 }
 
-TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_predicate_attributes_are_flushed_and_loaded)
 {
+    BaseFixture f;
     IndexMetaInfo ia1(test_dir + "/a1");
     {
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
         AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum);
-        EXPECT_EQUAL(1u, a1->getNumDocs());
+        EXPECT_EQ(1u, a1->getNumDocs());
 
         auto &pa = dynamic_cast<PredicateAttribute &>(*a1);
         PredicateIndex &index = pa.getIndex();
@@ -407,18 +423,18 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         index.indexEmptyDocument(doc_id);
         pa.commit(CommitParam(100));
 
-        EXPECT_EQUAL(2u, a1->getNumDocs());
+        EXPECT_EQ(2u, a1->getNumDocs());
 
         EXPECT_TRUE(!ia1.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQ(100u, ia1.getBestSnapshot().syncToken);
     }
     {
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
         AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum); // loaded
-        EXPECT_EQUAL(2u, a1->getNumDocs());
+        EXPECT_EQ(2u, a1->getNumDocs());
 
         auto &pa = dynamic_cast<PredicateAttribute &>(*a1);
         PredicateIndex &index = pa.getIndex();
@@ -429,24 +445,26 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         index.indexDocument(1, annotations);
         pa.commit(CommitParam(200));
 
-        EXPECT_EQUAL(3u, a1->getNumDocs());
+        EXPECT_EQ(3u, a1->getNumDocs());
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQ(100u, ia1.getBestSnapshot().syncToken);
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(200u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQ(200u, ia1.getBestSnapshot().syncToken);
     }
 }
 
-TEST_F("require that extra attribute is added", Fixture)
+TEST_F(AttributeManagerTest, require_that_extra_attribute_is_added)
 {
+    Fixture f;
     f._m.addExtraAttribute(createInt32Attribute("extra"));
     AttributeGuard::UP exguard(f._m.getAttribute("extra"));
     EXPECT_TRUE(dynamic_cast<Int32Attribute *>(exguard->operator->()) != nullptr);
 }
 
-TEST_F("require that reconfig can add attributes", Fixture)
+TEST_F(AttributeManagerTest, require_that_reconfig_can_add_attributes)
 {
+    Fixture f;
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
@@ -462,16 +480,17 @@ TEST_F("require that reconfig can add attributes", Fixture)
     std::sort(list.begin(), list.end(), [](const AttributeGuard & a, const AttributeGuard & b) {
         return a->getName() < b->getName();
     });
-    EXPECT_EQUAL(3u, list.size());
-    EXPECT_EQUAL("a1", list[0]->getName());
+    EXPECT_EQ(3u, list.size());
+    EXPECT_EQ("a1", list[0]->getName());
     EXPECT_TRUE(list[0].operator->() == a1.get()); // reuse
-    EXPECT_EQUAL("a2", list[1]->getName());
-    EXPECT_EQUAL("a3", list[2]->getName());
+    EXPECT_EQ("a2", list[1]->getName());
+    EXPECT_EQ("a3", list[2]->getName());
     EXPECT_TRUE(sam.mgr.getAttribute("ex")->operator->() == ex.get()); // reuse
 }
 
-TEST_F("require that reconfig can remove attributes", Fixture)
+TEST_F(AttributeManagerTest, require_that_reconfig_can_remove_attributes)
 {
+    Fixture f;
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
     AttributeVector::SP a3 = f.addAttribute("a3");
@@ -482,20 +501,21 @@ TEST_F("require that reconfig can remove attributes", Fixture)
     SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 1, 10));
     std::vector<AttributeGuard> list;
     sam.mgr.getAttributeList(list);
-    EXPECT_EQUAL(1u, list.size());
-    EXPECT_EQUAL("a2", list[0]->getName());
+    EXPECT_EQ(1u, list.size());
+    EXPECT_EQ("a2", list[0]->getName());
     EXPECT_TRUE(list[0].operator->() == a2.get()); // reuse
 }
 
-TEST_F("require that new attributes after reconfig are initialized", Fixture)
+TEST_F(AttributeManagerTest, require_that_new_attributes_after_reconfig_are_initialized)
 {
+    Fixture f;
     AttributeVector::SP a1 = f.addAttribute("a1");
     uint32_t docId(0);
     a1->addDoc(docId);
-    EXPECT_EQUAL(1u, docId);
+    EXPECT_EQ(1u, docId);
     a1->addDoc(docId);
-    EXPECT_EQUAL(2u, docId);
-    EXPECT_EQUAL(3u, a1->getNumDocs());
+    EXPECT_EQ(2u, docId);
+    EXPECT_EQ(3u, a1->getNumDocs());
 
     AttrSpecList newSpec;
     newSpec.emplace_back("a1", INT32_SINGLE);
@@ -505,26 +525,27 @@ TEST_F("require that new attributes after reconfig are initialized", Fixture)
     SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 3, 4));
     AttributeGuard::UP a2ap = sam.mgr.getAttribute("a2");
     AttributeGuard &a2(*a2ap);
-    EXPECT_EQUAL(3u, a2->getNumDocs());
+    EXPECT_EQ(3u, a2->getNumDocs());
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(a2->getInt(1)));
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(a2->getInt(2)));
-    EXPECT_EQUAL(0u, a2->getStatus().getLastSyncToken());
+    EXPECT_EQ(0u, a2->getStatus().getLastSyncToken());
     AttributeGuard::UP a3ap = sam.mgr.getAttribute("a3");
     AttributeGuard &a3(*a3ap);
     AttributeVector::largeint_t buf[1];
-    EXPECT_EQUAL(3u, a3->getNumDocs());
-    EXPECT_EQUAL(0u, a3->get(1, buf, 1));
-    EXPECT_EQUAL(0u, a3->get(2, buf, 1));
-    EXPECT_EQUAL(0u, a3->getStatus().getLastSyncToken());
+    EXPECT_EQ(3u, a3->getNumDocs());
+    EXPECT_EQ(0u, a3->get(1, buf, 1));
+    EXPECT_EQ(0u, a3->get(2, buf, 1));
+    EXPECT_EQ(0u, a3->getStatus().getLastSyncToken());
 }
 
-TEST_F("require that removed attributes cannot resurrect", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_removed_attributes_cannot_resurrect)
 {
+    BaseFixture f;
     auto am1 = f.make_manager();
     {
         AttributeVector::SP a1 = am1->addAttribute({"a1", INT32_SINGLE}, 0);
         fillAttribute(a1, 2, 10, 15);
-        EXPECT_EQUAL(3u, a1->getNumDocs());
+        EXPECT_EQ(3u, a1->getNumDocs());
     }
 
     AttrSpecList ns1;
@@ -539,16 +560,17 @@ TEST_F("require that removed attributes cannot resurrect", BaseFixture)
     AttributeGuard::UP ag1ap = am3.mgr.getAttribute("a1");
     AttributeGuard &ag1(*ag1ap);
     ASSERT_TRUE(ag1.valid());
-    EXPECT_EQUAL(5u, ag1->getNumDocs());
+    EXPECT_EQ(5u, ag1->getNumDocs());
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(1)));
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(2)));
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(3)));
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(4)));
-    EXPECT_EQUAL(0u, ag1->getStatus().getLastSyncToken());
+    EXPECT_EQ(0u, ag1->getStatus().getLastSyncToken());
 }
 
-TEST_F("require that extra attribute is not treated as removed", Fixture)
+TEST_F(AttributeManagerTest, require_that_extra_attribute_is_not_treated_as_removed)
 {
+    Fixture f;
     AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
     ex->commit(CommitParam(1));
@@ -558,8 +580,9 @@ TEST_F("require that extra attribute is not treated as removed", Fixture)
     EXPECT_TRUE(am2.mgr.getAttribute("ex")->operator->() == ex.get()); // reuse
 }
 
-TEST_F("require that removed fields can be pruned", Fixture)
+TEST_F(AttributeManagerTest, require_that_removed_fields_can_be_pruned)
 {
+    Fixture f;
     f.addAttribute("a1");
     f.addAttribute("a2");
     f.addAttribute("a3");
@@ -575,8 +598,9 @@ TEST_F("require that removed fields can be pruned", Fixture)
     EXPECT_FALSE(fs::exists(fs::path(test_dir + "/a3")));
 }
 
-TEST_F("require that lid space can be compacted", Fixture)
+TEST_F(AttributeManagerTest, require_that_lid_space_can_be_compacted)
 {
+    Fixture f;
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
     AttributeVector::SP ex(createInt32Attribute("ex"));
@@ -587,25 +611,26 @@ TEST_F("require that lid space can be compacted", Fixture)
     fillAttribute(a2, 20, attrValue, 100);
     fillAttribute(ex, 20, attrValue, 100);
 
-    EXPECT_EQUAL(21u, a1->getNumDocs());
-    EXPECT_EQUAL(21u, a2->getNumDocs());
-    EXPECT_EQUAL(20u, ex->getNumDocs());
-    EXPECT_EQUAL(21u, a1->getCommittedDocIdLimit());
-    EXPECT_EQUAL(21u, a2->getCommittedDocIdLimit());
-    EXPECT_EQUAL(20u, ex->getCommittedDocIdLimit());
+    EXPECT_EQ(21u, a1->getNumDocs());
+    EXPECT_EQ(21u, a2->getNumDocs());
+    EXPECT_EQ(20u, ex->getNumDocs());
+    EXPECT_EQ(21u, a1->getCommittedDocIdLimit());
+    EXPECT_EQ(21u, a2->getCommittedDocIdLimit());
+    EXPECT_EQ(20u, ex->getCommittedDocIdLimit());
 
     aw.compactLidSpace(10, 101);
 
-    EXPECT_EQUAL(21u, a1->getNumDocs());
-    EXPECT_EQUAL(21u, a2->getNumDocs());
-    EXPECT_EQUAL(20u, ex->getNumDocs());
-    EXPECT_EQUAL(10u, a1->getCommittedDocIdLimit());
-    EXPECT_EQUAL(10u, a2->getCommittedDocIdLimit());
-    EXPECT_EQUAL(20u, ex->getCommittedDocIdLimit());
+    EXPECT_EQ(21u, a1->getNumDocs());
+    EXPECT_EQ(21u, a2->getNumDocs());
+    EXPECT_EQ(20u, ex->getNumDocs());
+    EXPECT_EQ(10u, a1->getCommittedDocIdLimit());
+    EXPECT_EQ(10u, a2->getCommittedDocIdLimit());
+    EXPECT_EQ(20u, ex->getCommittedDocIdLimit());
 }
 
-TEST_F("require that lid space compaction op can be ignored", Fixture)
+TEST_F(AttributeManagerTest, require_that_lid_space_compaction_op_can_be_ignored)
 {
+    Fixture f;
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
     AttributeVector::SP ex(createInt32Attribute("ex"));
@@ -616,48 +641,50 @@ TEST_F("require that lid space compaction op can be ignored", Fixture)
     fillAttribute(a2, 20, attrValue, 100);
     fillAttribute(ex, 20, attrValue, 100);
 
-    EXPECT_EQUAL(21u, a1->getNumDocs());
-    EXPECT_EQUAL(21u, a2->getNumDocs());
-    EXPECT_EQUAL(20u, ex->getNumDocs());
-    EXPECT_EQUAL(21u, a1->getCommittedDocIdLimit());
-    EXPECT_EQUAL(21u, a2->getCommittedDocIdLimit());
-    EXPECT_EQUAL(20u, ex->getCommittedDocIdLimit());
+    EXPECT_EQ(21u, a1->getNumDocs());
+    EXPECT_EQ(21u, a2->getNumDocs());
+    EXPECT_EQ(20u, ex->getNumDocs());
+    EXPECT_EQ(21u, a1->getCommittedDocIdLimit());
+    EXPECT_EQ(21u, a2->getCommittedDocIdLimit());
+    EXPECT_EQ(20u, ex->getCommittedDocIdLimit());
 
     aw.compactLidSpace(10, 101);
 
-    EXPECT_EQUAL(21u, a1->getNumDocs());
-    EXPECT_EQUAL(21u, a2->getNumDocs());
-    EXPECT_EQUAL(20u, ex->getNumDocs());
-    EXPECT_EQUAL(21u, a1->getCommittedDocIdLimit());
-    EXPECT_EQUAL(10u, a2->getCommittedDocIdLimit());
-    EXPECT_EQUAL(20u, ex->getCommittedDocIdLimit());
+    EXPECT_EQ(21u, a1->getNumDocs());
+    EXPECT_EQ(21u, a2->getNumDocs());
+    EXPECT_EQ(20u, ex->getNumDocs());
+    EXPECT_EQ(21u, a1->getCommittedDocIdLimit());
+    EXPECT_EQ(10u, a2->getCommittedDocIdLimit());
+    EXPECT_EQ(20u, ex->getCommittedDocIdLimit());
 }
 
-TEST_F("require that flushed serial number can be retrieved", Fixture)
+TEST_F(AttributeManagerTest, require_that_flushed_serial_number_can_be_retrieved)
 {
+    Fixture f;
     f.addAttribute("a1");
-    EXPECT_EQUAL(0u, f._m.getFlushedSerialNum("a1"));
+    EXPECT_EQ(0u, f._m.getFlushedSerialNum("a1"));
     f._m.flushAll(100);
-    EXPECT_EQUAL(100u, f._m.getFlushedSerialNum("a1"));
-    EXPECT_EQUAL(0u, f._m.getFlushedSerialNum("a2"));
+    EXPECT_EQ(100u, f._m.getFlushedSerialNum("a1"));
+    EXPECT_EQ(0u, f._m.getFlushedSerialNum("a2"));
 }
 
 
-TEST_F("require that writable attributes can be retrieved", Fixture)
+TEST_F(AttributeManagerTest, require_that_writable_attributes_can_be_retrieved)
 {
+    Fixture f;
     auto a1 = f.addAttribute("a1");
     auto a2 = f.addAttribute("a2");
     AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
     auto &vec = f._m.getWritableAttributes();
-    EXPECT_EQUAL(2u, vec.size());
-    EXPECT_EQUAL(a1.get(), vec[0]);
-    EXPECT_EQUAL(a2.get(), vec[1]);
-    EXPECT_EQUAL(a1.get(), f._m.getWritableAttribute("a1"));
-    EXPECT_EQUAL(a2.get(), f._m.getWritableAttribute("a2"));
+    EXPECT_EQ(2u, vec.size());
+    EXPECT_EQ(a1.get(), vec[0]);
+    EXPECT_EQ(a2.get(), vec[1]);
+    EXPECT_EQ(a1.get(), f._m.getWritableAttribute("a1"));
+    EXPECT_EQ(a2.get(), f._m.getWritableAttribute("a2"));
     AttributeVector *noAttr = nullptr;
-    EXPECT_EQUAL(noAttr, f._m.getWritableAttribute("a3"));
-    EXPECT_EQUAL(noAttr, f._m.getWritableAttribute("ex"));
+    EXPECT_EQ(noAttr, f._m.getWritableAttribute("a3"));
+    EXPECT_EQ(noAttr, f._m.getWritableAttribute("ex"));
 }
 
 
@@ -677,15 +704,17 @@ populateAndFlushAttributes(AttributeManagerFixture &f)
 void
 validateAttribute(const AttributeVector &attr)
 {
-    ASSERT_EQUAL(10u, attr.getNumDocs());
-    EXPECT_EQUAL(createSerialNum + 10, attr.getStatus().getLastSyncToken());
+    SCOPED_TRACE(attr.getName());
+    ASSERT_EQ(10u, attr.getNumDocs());
+    EXPECT_EQ(createSerialNum + 10, attr.getStatus().getLastSyncToken());
     for (uint32_t docId = 1; docId < 10; ++docId) {
-        EXPECT_EQUAL(7, attr.getInt(docId));
+        EXPECT_EQ(7, attr.getInt(docId));
     }
 }
 
-TEST_F("require that attributes can be initialized and loaded in sequence", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_attributes_can_be_initialized_and_loaded_in_sequence)
 {
+    BaseFixture f;
     {
         AttributeManagerFixture amf(f);
         populateAndFlushAttributes(amf);
@@ -701,11 +730,11 @@ TEST_F("require that attributes can be initialized and loaded in sequence", Base
         SequentialAttributeManager newMgr(amf._m, AttrMgrSpec(std::move(newSpec), 10, createSerialNum + 5));
 
         AttributeGuard::UP a1 = newMgr.mgr.getAttribute("a1");
-        TEST_DO(validateAttribute(*a1->get()));
+        validateAttribute(*a1->get());
         AttributeGuard::UP a2 = newMgr.mgr.getAttribute("a2");
-        TEST_DO(validateAttribute(*a2->get()));
+        validateAttribute(*a2->get());
         AttributeGuard::UP a3 = newMgr.mgr.getAttribute("a3");
-        TEST_DO(validateAttribute(*a3->get()));
+        validateAttribute(*a3->get());
     }
 }
 
@@ -719,8 +748,9 @@ createAttributeConfig(const std::string &name)
     return result;
 }
 
-TEST_F("require that attributes can be initialized and loaded in parallel", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_attributes_can_be_initialized_and_loaded_in_parallel)
 {
+    BaseFixture f;
     {
         AttributeManagerFixture amf(f);
         populateAndFlushAttributes(amf);
@@ -736,28 +766,29 @@ TEST_F("require that attributes can be initialized and loaded in parallel", Base
         ParallelAttributeManager newMgr(createSerialNum + 5, *amf._msp, attrCfg, 10);
 
         AttributeGuard::UP a1 = newMgr.mgr->get()->getAttribute("a1");
-        TEST_DO(validateAttribute(*a1->get()));
+        validateAttribute(*a1->get());
         AttributeGuard::UP a2 = newMgr.mgr->get()->getAttribute("a2");
-        TEST_DO(validateAttribute(*a2->get()));
+        validateAttribute(*a2->get());
         AttributeGuard::UP a3 = newMgr.mgr->get()->getAttribute("a3");
-        TEST_DO(validateAttribute(*a3->get()));
+        validateAttribute(*a3->get());
     }
 }
 
-TEST_F("require that we can call functions on all attributes via functor",
-       Fixture)
+TEST_F(AttributeManagerTest, require_that_we_can_call_functions_on_all_attributes_via_functor)
 {
+    Fixture f;
     f.addAttribute("a1");
     f.addAttribute("a2");
     f.addAttribute("a3");
     std::shared_ptr<MyAttributeFunctor> functor =
         std::make_shared<MyAttributeFunctor>();
     f._m.asyncForEachAttribute(functor);
-    EXPECT_EQUAL("a1,a2,a3", functor->getSortedNames());
+    EXPECT_EQ("a1,a2,a3", functor->getSortedNames());
 }
 
-TEST_F("require that imported attributes are exposed via attribute context together with regular attributes", Fixture)
+TEST_F(AttributeManagerTest, require_that_imported_attributes_are_exposed_via_attribute_context_together_with_regular_attributes)
 {
+    Fixture f;
     f.addAttribute("attr");
     f.addImportedAttribute("imported");
     f.setImportedAttributes();
@@ -772,24 +803,26 @@ TEST_F("require that imported attributes are exposed via attribute context toget
 
     std::vector<const IAttributeVector *> all;
     ctx->getAttributeList(all);
-    EXPECT_EQUAL(2u, all.size());
-    EXPECT_EQUAL("attr", all[0]->getName());
-    EXPECT_EQUAL("imported", all[1]->getName());
+    EXPECT_EQ(2u, all.size());
+    EXPECT_EQ("attr", all[0]->getName());
+    EXPECT_EQ("imported", all[1]->getName());
 }
 
-TEST_F("imported attributes are transparently returned from readable_attribute_vector", Fixture)
+TEST_F(AttributeManagerTest, imported_attributes_are_transparently_returned_from_readable_attribute_vector)
 {
+    Fixture f;
     f.addAttribute("attr");
     f.addImportedAttribute("imported");
     f.setImportedAttributes();
     auto av = f._m.readable_attribute_vector("imported");
     ASSERT_TRUE(av);
     auto g = av->makeReadGuard(false);
-    EXPECT_EQUAL("imported", g->attribute()->getName());
+    EXPECT_EQ("imported", g->attribute()->getName());
 }
 
-TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_attribute_vector_of_wrong_type_is_dropped)
 {
+    BaseFixture f;
     AVConfig generic_tensor(BasicType::TENSOR);
     generic_tensor.setTensorType(ValueType::from_spec("tensor(x{})"));
     AVConfig dense_tensor(BasicType::TENSOR);
@@ -819,70 +852,74 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     newSpec.emplace_back("a5", predicate);
     newSpec.emplace_back("a6", predicate2);
     SequentialAttributeManager am2(*am1, AttrMgrSpec(std::move(newSpec), 5, 20));
-    TEST_DO(assertCreateSerialNum(*am1, "a1", 1));
-    TEST_DO(assertCreateSerialNum(*am1, "a2", 2));
-    TEST_DO(assertCreateSerialNum(*am1, "a3", 3));
-    TEST_DO(assertCreateSerialNum(*am1, "a4", 4));
-    TEST_DO(assertCreateSerialNum(*am1, "a5", 5));
-    TEST_DO(assertCreateSerialNum(*am1, "a6", 6));
-    TEST_DO(assertCreateSerialNum(am2.mgr, "a1", 1));
-    TEST_DO(assertCreateSerialNum(am2.mgr, "a2", 20));
-    TEST_DO(assertCreateSerialNum(am2.mgr, "a3", 3));
-    TEST_DO(assertCreateSerialNum(am2.mgr, "a4", 20));
-    TEST_DO(assertCreateSerialNum(am2.mgr, "a5", 5));
-    TEST_DO(assertCreateSerialNum(am2.mgr, "a6", 20));
+    EXPECT_EQ(1, get_create_serial_num(*am1, "a1"));
+    EXPECT_EQ(2, get_create_serial_num(*am1, "a2"));
+    EXPECT_EQ(3, get_create_serial_num(*am1, "a3"));
+    EXPECT_EQ(4, get_create_serial_num(*am1, "a4"));
+    EXPECT_EQ(5, get_create_serial_num(*am1, "a5"));
+    EXPECT_EQ(6, get_create_serial_num(*am1, "a6"));
+    EXPECT_EQ(1, get_create_serial_num(am2.mgr, "a1"));
+    EXPECT_EQ(20, get_create_serial_num(am2.mgr, "a2"));
+    EXPECT_EQ(3, get_create_serial_num(am2.mgr, "a3"));
+    EXPECT_EQ(20, get_create_serial_num(am2.mgr, "a4"));
+    EXPECT_EQ(5, get_create_serial_num(am2.mgr, "a5"));
+    EXPECT_EQ(20, get_create_serial_num(am2.mgr, "a6"));
 }
 
-void assertShrinkTargetSerial(proton::AttributeManager &mgr, const std::string &name, search::SerialNum expSerialNum)
+search::SerialNum get_shrink_target_serial(proton::AttributeManager &mgr, const std::string &name)
 {
     auto shrinker = mgr.getShrinker(name);
-    EXPECT_EQUAL(expSerialNum, shrinker->getFlushedSerialNum());
+    return shrinker->getFlushedSerialNum();
 }
 
-TEST_F("require that we can guess flushed serial number for shrink flushtarget", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_we_can_guess_flushed_serial_number_for_shrink_flushtarget)
 {
+    BaseFixture f;
     auto am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 1);
     am1->addAttribute({"a2", INT32_SINGLE}, 2);
-    TEST_DO(assertShrinkTargetSerial(*am1, "a1", 0));
-    TEST_DO(assertShrinkTargetSerial(*am1, "a2", 1));
+    EXPECT_EQ(0, get_shrink_target_serial(*am1, "a1"));
+    EXPECT_EQ(1, get_shrink_target_serial(*am1, "a2"));
     am1->flushAll(10);
     am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 1);
     am1->addAttribute({"a2", INT32_SINGLE}, 2);
-    TEST_DO(assertShrinkTargetSerial(*am1, "a1", 10));
-    TEST_DO(assertShrinkTargetSerial(*am1, "a2", 10));
+    EXPECT_EQ(10, get_shrink_target_serial(*am1, "a1"));
+    EXPECT_EQ(10, get_shrink_target_serial(*am1, "a2"));
 }
 
-TEST_F("require that shrink flushtarget is handed over to new attribute manager", BaseFixture)
+TEST_F(AttributeManagerTest, require_that_shrink_flushtarget_is_handed_over_to_new_attribute_manager)
 {
+    BaseFixture f;
     auto am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 4);
     AttrSpecList newSpec;
     newSpec.emplace_back("a1", INT32_SINGLE);
     auto am2 = am1->prepare_create(AttrMgrSpec(std::move(newSpec), 5, 20))->create(5, 20);
     auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
-    TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
-    EXPECT_EQUAL(am1->getShrinker("a1"), am3->getShrinker("a1"));
+    EXPECT_EQ(3, get_shrink_target_serial(*am3, "a1"));
+    EXPECT_EQ(am1->getShrinker("a1"), am3->getShrinker("a1"));
 }
 
-TEST_F("transient resource usage is zero in steady state", Fixture)
+TEST_F(AttributeManagerTest, transient_resource_usage_is_zero_in_steady_state)
 {
+    Fixture f;
     f.addAttribute("a1");
     f.addAttribute("a2");
     auto usage = f._m.get_transient_resource_usage();
-    EXPECT_EQUAL(0u, usage.disk());
-    EXPECT_EQUAL(0u, usage.memory());
+    EXPECT_EQ(0u, usage.disk());
+    EXPECT_EQ(0u, usage.memory());
 }
 
-TEST_F("late create serial number is set on new attributes", Fixture)
+TEST_F(AttributeManagerTest, late_create_serial_number_is_set_on_new_attributes)
 {
+    Fixture f;
     auto am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 4);
     auto a1 = am1->getAttribute("a1")->getSP();
     uint32_t docid = 0;
     a1->addDoc(docid);
-    EXPECT_EQUAL(1u, docid);
+    EXPECT_EQ(1u, docid);
     a1->clearDoc(docid);
     a1->commit(CommitParam(5));
     AttrSpecList new_spec;
@@ -893,20 +930,16 @@ TEST_F("late create serial number is set on new attributes", Fixture)
     auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
     EXPECT_TRUE(a1 == am3->getAttribute("a1")->getSP());
     auto a2 = am3->getAttribute("a2")->getSP();
-    TEST_DO(assertCreateSerialNum(*am3, "a1", 4));
-    TEST_DO(assertCreateSerialNum(*am3, "a2", 20));
-    TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
-    TEST_DO(assertShrinkTargetSerial(*am3, "a2", 19));
-    EXPECT_EQUAL(0u, am3->getFlushedSerialNum("a1"));
-    EXPECT_EQUAL(0u, am3->getFlushedSerialNum("a2"));
-    EXPECT_EQUAL(2u, a1->getNumDocs());
-    EXPECT_EQUAL(2u, a1->getCommittedDocIdLimit());
-    EXPECT_EQUAL(14u, a2->getNumDocs());
-    EXPECT_EQUAL(14u, a2->getCommittedDocIdLimit());
+    EXPECT_EQ(4, get_create_serial_num(*am3, "a1"));
+    EXPECT_EQ(20, get_create_serial_num(*am3, "a2"));
+    EXPECT_EQ(3, get_shrink_target_serial(*am3, "a1"));
+    EXPECT_EQ(19, get_shrink_target_serial(*am3, "a2"));
+    EXPECT_EQ(0u, am3->getFlushedSerialNum("a1"));
+    EXPECT_EQ(0u, am3->getFlushedSerialNum("a2"));
+    EXPECT_EQ(2u, a1->getNumDocs());
+    EXPECT_EQ(2u, a1->getCommittedDocIdLimit());
+    EXPECT_EQ(14u, a2->getNumDocs());
+    EXPECT_EQ(14u, a2->getCommittedDocIdLimit());
 }
 
-TEST_MAIN()
-{
-    fs::remove_all(fs::path(test_dir));
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
