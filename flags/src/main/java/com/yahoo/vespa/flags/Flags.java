@@ -257,7 +257,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2024-09-01",
+            List.of("olaa"), "2021-09-13", "2025-01-01",
             "Enable Horizon dashboard",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
@@ -293,7 +293,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2024-09-01",
+            List.of("olaa"), "2022-07-04", "2025-01-01",
             "Determines whether one metrics config check should be written per Vespa node",
             "Takes effect on next tick",
             HOSTNAME);
@@ -308,14 +308,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2024-09-01",
+            List.of("olaa"), "2022-09-23", "2025-01-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2024-09-01",
+            List.of("olaa"), "2024-01-15", "2025-01-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
             INSTANCE_ID, HOSTNAME
