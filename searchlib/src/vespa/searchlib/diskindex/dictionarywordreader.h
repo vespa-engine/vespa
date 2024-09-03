@@ -84,6 +84,9 @@ public:
 
     void writeNewWordNum(uint64_t newWordNum);
 
+    void write_word_number_mapping_start_guard() { writeNewWordNum(noWordNum()); }
+    void write_word_number_mapping_end_guard() { writeNewWordNum(noWordNumHigh()); }
+
     void write(WordAggregator &writer) {
         writer.tryWriteWord(_word);
         writeNewWordNum(writer.getWordNum());

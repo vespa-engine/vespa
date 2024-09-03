@@ -28,13 +28,11 @@ WordNumMapping::readMappingFile(const std::string &name,
     uint64_t tempfileentries = static_cast<uint64_t>(tempfilesize /
             sizeof(uint64_t));
     Array &map = _old2newwords;
-    map.resize(tempfileentries + 2);
+    map.resize(tempfileentries);
     _oldDictSize = tempfileentries;
 
-    ssize_t has_read = old2newwordfile.Read(&map[1], static_cast<size_t>(tempfilesize));
+    ssize_t has_read = old2newwordfile.Read(&map[0], static_cast<size_t>(tempfilesize));
     assert(has_read == tempfilesize);
-    map[0] = noWordNum();
-    map[tempfileentries + 1] = noWordNumHigh();
 }
 
 
