@@ -34,8 +34,10 @@ public class QuotaValidator implements Validator {
     public void validate(Context context) {
         var zone = context.deployState().zone();
         var exclusivity = new Exclusivity(zone, context.deployState().featureFlags().sharedHosts());
+        var tuning = new CapacityPolicies.Tuning(context.deployState().featureFlags().adminClusterArchitecture(),
+                                                 context.deployState().featureFlags().logserverNodeMemory());
         var capacityPolicies = new CapacityPolicies(zone, exclusivity, context.model().applicationPackage().getApplicationId(),
-                                                    context.deployState().featureFlags().adminClusterArchitecture());
+                                                    tuning);
         var quota = context.deployState().getProperties().quota();
         quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, context.model()));
         quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, context, capacityPolicies));

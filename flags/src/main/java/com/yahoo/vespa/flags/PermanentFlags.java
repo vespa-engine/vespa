@@ -329,6 +329,12 @@ public class PermanentFlags {
             value -> Set.of("any", "arm64", "x86_64").contains(value),
             INSTANCE_ID);
 
+    public static final UnboundDoubleFlag LOGSERVER_NODE_MEMORY = defineDoubleFlag(
+            "logserver-node-memory", 0.0,
+            "Amount of memory (in GiB) to allocate for logserver nodes",
+            "Takes effect on allocation from node repository",
+            INSTANCE_ID);
+
     public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
             "cloud-accounts", List.of(), String.class,
             "A list of 12-digit AWS account IDs that are valid for the given tenant",
