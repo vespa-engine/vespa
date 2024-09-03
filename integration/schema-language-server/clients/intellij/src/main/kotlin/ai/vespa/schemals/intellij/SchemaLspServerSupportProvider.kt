@@ -28,7 +28,7 @@ class SchemaLspServerDescriptor(project: Project) : ProjectWideLspServerDescript
     override fun isSupportedFile(file: VirtualFile) = file.extension.equals("sd") || file.extension.equals("profile")
 
     override fun createCommandLine(): GeneralCommandLine {
-        val schemaPlugin = PluginManager.getInstance().findEnabledPlugin(PluginId.getId("ai.vespa.schemals.intellij"))!!
+        val schemaPlugin = PluginManager.getInstance().findEnabledPlugin(PluginId.getId("ai.vespa"))!!
         val serverPath = schemaPlugin.pluginPath.resolve("schema-language-server-jar-with-dependencies.jar").toAbsolutePath().toString()
         return GeneralCommandLine("java", "-jar", serverPath)
     }
