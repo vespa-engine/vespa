@@ -147,11 +147,7 @@ public class ConfigserverCluster extends TreeConfigProducer
     }
 
     private String[] getConfigModelPluginDirs() {
-        if (options.configModelPluginDirs().length > 0) {
-            return options.configModelPluginDirs();
-        } else {
-            return new String[]{Defaults.getDefaults().underVespaHome("lib/jars/config-models")};
-        }
+        return new String[]{Defaults.getDefaults().underVespaHome("lib/jars/config-models")};
     }
 
     private ConfigServer[] getConfigServers() {

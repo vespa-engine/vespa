@@ -7,7 +7,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.yahoo.container.standalone.ConfigEnvironmentVariables.toConfigModelsPluginDir;
 import static com.yahoo.container.standalone.ConfigEnvironmentVariables.toConfigServer;
 import static com.yahoo.container.standalone.ConfigEnvironmentVariables.toConfigServers;
 import static org.junit.Assert.assertEquals;
@@ -51,15 +50,4 @@ public class ConfigEnvironmentVariablesTest {
         toConfigServer("myhost:non-numeric");
     }
 
-    @Test
-    public void string_arrays_are_split_on_spaces() {
-        String[] parsed = toConfigModelsPluginDir("/home/vespa/foo /home/vespa/bar ");
-        assertEquals(2, parsed.length);
-    }
-
-    @Test
-    public void string_arrays_are_split_on_comma() {
-        String[] parsed = toConfigModelsPluginDir("/home/vespa/foo,/home/vespa/bar,");
-        assertEquals(2, parsed.length);
-    }
 }
