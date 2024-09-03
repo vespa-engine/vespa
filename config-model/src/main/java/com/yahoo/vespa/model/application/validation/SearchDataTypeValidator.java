@@ -18,6 +18,7 @@ import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * This Validator iterates through all search cluster in the given VespaModel to make sure that there are no custom
@@ -47,6 +48,7 @@ public class SearchDataTypeValidator implements Validator {
         for (Field field : doc.fieldSet()) {
             DataType fieldType = field.getDataType();
             disallowIndexingOfMaps(context, cluster, schema, field);
+            disallowIndexingOfUnsupportedDataTypes(context, cluster, schema, field);
             if ( ! isSupportedInSearchClusters(fieldType)) {
                 context.illegal("Field type '" + fieldType.getName() + "' is illegal for search " +
                                 "clusters (field '" + field.getName() + "' in schema '" +
@@ -86,6 +88,22 @@ public class SearchDataTypeValidator implements Validator {
             context.illegal("Field type '" + fieldType.getName() + "' cannot be indexed for search " +
                             "clusters (field '" + field.getName() + "' in definition '" +
                             schema.getName() + "' for cluster '" + cluster.getClusterName() + "').");
+        }
+    }
+
+    private void disallowIndexingOfUnsupportedDataTypes(Context context, SearchCluster cluster, Schema schema, Field field)
+    {
+        var fieldType = field.getDataType();
+        var nestedFieldType = fieldType;
+        if (fieldType instanceof CollectionDataType collectionDataType) {
+            nestedFieldType = collectionDataType.getNestedType();
+        }
+        if (!(nestedFieldType.equals(DataType.STRING) || nestedFieldType.equals(DataType.URI) ||
+                (fieldType instanceof TensorDataType)) &&
+                ((SDField) field).doesIndexing()) {
+            context.deployState().getDeployLogger().logApplicationPackage(Level.WARNING, "In cluster '" + cluster.getClusterName() +
+                    "', schema '" + schema.getName() + "', field '" + field.getName() + "': Field type '" + field.getDataType().getName() +
+                    "' cannot be indexed");
         }
     }
 
