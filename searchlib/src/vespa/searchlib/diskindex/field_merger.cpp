@@ -141,6 +141,7 @@ FieldMerger::open_input_word_readers()
         }
         reader->read();
         if (reader->isValid()) {
+            reader->write_word_number_mapping_start_guard();
             _word_readers.push_back(std::move(reader));
             _word_heap->initialAdd(_word_readers.back().get());
         }
@@ -209,6 +210,7 @@ FieldMerger::renumber_word_ids_finish()
 
     // Close files
     for (auto &i : _word_readers) {
+        i->write_word_number_mapping_end_guard();
         i->close();
     }
     _word_readers.clear();
