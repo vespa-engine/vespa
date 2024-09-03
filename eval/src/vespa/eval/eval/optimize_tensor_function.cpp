@@ -14,6 +14,7 @@
 #include <vespa/eval/instruction/sparse_full_overlap_join_function.h>
 #include <vespa/eval/instruction/mixed_inner_product_function.h>
 #include <vespa/eval/instruction/sum_max_dot_product_function.h>
+#include <vespa/eval/instruction/sum_max_inv_hamming_function.h>
 #include <vespa/eval/instruction/best_similarity_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/instruction/dense_matmul_function.h>
@@ -77,6 +78,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
                       });
     run_optimize_pass(root, [&stash](const Child &child)
                       {
+                          child.set(SumMaxInvHammingFunction::optimize(child.get(), stash));
                           child.set(SumMaxDotProductFunction::optimize(child.get(), stash));
                       });
     run_optimize_pass(root, [&stash](const Child &child)
