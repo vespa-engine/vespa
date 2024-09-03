@@ -16,7 +16,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public Optional<Integer> rpcPort() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_RPC_PORT"))
-                .or(() -> getRawInstallVariable("services.port_configserver_rpc"))
                 .map(Integer::parseInt);
     }
 
@@ -30,7 +29,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public ConfigServer[] allConfigServers() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVERS"))
-                .or(() -> getRawInstallVariable("services.addr_configserver"))
                 .map(ConfigEnvironmentVariables::toConfigServers)
                 .orElseGet(() -> new ConfigServer[0]);
     }
