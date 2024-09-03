@@ -53,56 +53,62 @@ public class SchemaDataTypeValidatorTestCase {
     void indexedUriFieldIsOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field URI type uri { indexing: index | summary }");
-        assertArrayEquals(new String[] {}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {}, filter(logger.warnings).toArray());
     }
 
     @Test
     void indexedArrayOfUriFieldIsOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field URI type array<uri> { indexing: index | summary }");
-        assertArrayEquals(new String[] {}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {}, filter(logger.warnings).toArray());
     }
 
     @Test
     void indexedWeightedSetOfUriFieldIsOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field URI type weightedset<uri> { indexing: index | summary }");
-        assertArrayEquals(new String[] {}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {}, filter(logger.warnings).toArray());
     }
 
     @Test
     void indexedStringFieldIsOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field text type string { indexing: index | summary }");
-        assertArrayEquals(new String[] {}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {}, filter(logger.warnings).toArray());
     }
 
     @Test
     void indexedArrayOfStringFieldIsOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field text type array<string> { indexing: index | summary }");
-        assertArrayEquals(new String[] {}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {}, filter(logger.warnings).toArray());
     }
 
     @Test
     void indexedWeightedSetOfSTringFieldIsOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field text type weightedset<string> { indexing: index | summary }");
-        assertArrayEquals(new String[] {}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {}, filter(logger.warnings).toArray());
     }
 
     @Test
     void indexedTensorFieldIsOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field embedding type tensor(x[2]) { indexing: index | attribute | summary }");
-        assertArrayEquals(new String[] {}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {}, filter(logger.warnings).toArray());
     }
 
     @Test
     void indexedArrayOfArrayOfStringIsNotOk() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field text type array<array<string>> { indexing: index | summary }");
-        assertArrayEquals(new String[] {"In cluster 'content', schema 'test', field 'text': Field type 'Array<Array<string>>' cannot be indexed"}, logger.warnings.toArray());
+        assertArrayEquals(new String[] {"In cluster 'content', schema 'test', field 'text': Field type 'Array<Array<string>>' cannot be indexed"},
+                filter(logger.warnings).toArray());
+    }
+
+    private static List<String> filter(List<String> warnings) {
+        // filter out warnings about vespa-verify-ranksetup-bin
+        return warnings.stream().filter(x -> x.indexOf("Cannot run program") == -1).toList();
     }
 
     private static VespaModel createModel(DeployLogger logger, String sdContent) {
