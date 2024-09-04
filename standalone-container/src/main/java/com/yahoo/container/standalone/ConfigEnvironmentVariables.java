@@ -22,7 +22,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public Optional<Boolean> multiTenant() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_MULTITENANT"))
-                .or(() -> getInstallVariable("multitenant"))
                 .map(Boolean::parseBoolean);
     }
 
@@ -45,8 +44,7 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public Optional<Long> zookeeperBarrierTimeout() {
         return  Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_BARRIER_TIMEOUT"))
-                .map(Long::parseLong)
-                .or(() -> getInstallVariable("zookeeper_barrier_timeout", Long::parseLong));
+                .map(Long::parseLong);
     }
 
     @Override
@@ -57,41 +55,18 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     }
 
     @Override
-    public Optional<Long> sessionLifeTimeSecs() {
-        return getInstallVariable("session_lifetime", Long::parseLong);
-    }
-
-    @Override
-    public Optional<Integer> zookeeperClientPort() {
-        return getInstallVariable("zookeeper_clientPort", Integer::parseInt);
-    }
-
-    @Override
-    public Optional<Integer> zookeeperQuorumPort() {
-        return getInstallVariable("zookeeper_quorumPort", Integer::parseInt);
-    }
-
-    @Override
-    public Optional<Integer> zookeeperElectionPort() {
-        return getInstallVariable("zookeeper_electionPort", Integer::parseInt);
-    }
-
-    @Override
     public Optional<String> environment() {
-        return Optional.ofNullable(System.getenv("VESPA_ENVIRONMENT"))
-                .or(() -> getInstallVariable("environment"));
+        return Optional.ofNullable(System.getenv("VESPA_ENVIRONMENT"));
     }
 
     @Override
     public Optional<String> region() {
-        return Optional.ofNullable(System.getenv("VESPA_REGION"))
-                .or(() -> getInstallVariable("region"));
+        return Optional.ofNullable(System.getenv("VESPA_REGION"));
     }
 
     @Override
     public Optional<String> system() {
-        return Optional.ofNullable(System.getenv("VESPA_SYSTEM"))
-                .or(() -> getInstallVariable("system"));
+        return Optional.ofNullable(System.getenv("VESPA_SYSTEM"));
     }
 
     @Override
@@ -107,7 +82,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public Optional<Boolean> hostedVespa() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_HOSTED"))
-                .or(() -> getInstallVariable("hosted_vespa"))
                 .map(Boolean::parseBoolean);
     }
 
