@@ -278,7 +278,6 @@ void
 WrappedFieldReader::open()
 {
     TuneFileSeqRead tuneFileRead;
-    _wmap.setup(_numWordIds);
     _dmap.setup(_docIdLimit);
     _fieldReader = std::make_unique<FieldReader>();
     _fieldReader->setup(_wmap, _dmap);

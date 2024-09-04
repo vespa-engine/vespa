@@ -364,7 +364,6 @@ bool
 ShowPostingListSubApp::readWordList(const SchemaUtil::IndexIterator &index)
 {
     std::vector<std::string> &words = _wordsv[index.getIndex()];
-    WordNumMapping &wm = _wmv[index.getIndex()];
 
     search::TuneFileSeqRead tuneFileRead;
     PageDict4FileSeqRead wr;
@@ -381,7 +380,6 @@ ShowPostingListSubApp::readWordList(const SchemaUtil::IndexIterator &index)
         words.push_back(word);
         wr.readWord(word, wordNum, counts);
     }
-    wm.setup(words.size() - 1);
     if (!wr.close())
         return false;
     return true;
