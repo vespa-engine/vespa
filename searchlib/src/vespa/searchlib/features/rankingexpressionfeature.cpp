@@ -335,7 +335,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     auto compile_issues = CompiledFunction::detect_issues(*rank_function);
     auto interpret_issues = InterpretedFunction::detect_issues(*rank_function);
     if (do_compile && compile_issues && !interpret_issues) {
-        LOG(warning, "ranking expression compilation disabled: %s\n%s",
+        LOG(debug, "ranking expression compilation disabled: %s\n%s",
             script.c_str(), list_issues(compile_issues.list).c_str());
         do_compile = false;
     }
