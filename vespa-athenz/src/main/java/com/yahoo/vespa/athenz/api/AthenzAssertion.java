@@ -50,6 +50,11 @@ public class AthenzAssertion {
                 resource.equals(other.resource());
     }
 
+    /** Convenience method to check if an assertion matches the given role, resource and action. */
+    public boolean matches(AthenzRole role, AthenzResourceName resource, String action) {
+        return this.role.equals(role) && this.resource.equals(resource) && this.action.equals(action);
+    }
+
     public static class Builder {
         private Long id;
         private Effect effect;
