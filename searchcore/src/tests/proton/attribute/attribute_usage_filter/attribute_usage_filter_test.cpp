@@ -3,9 +3,8 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_usage_filter_test");
@@ -50,33 +49,28 @@ public:
     }
 };
 
-struct Fixture
+class AttributeUsageFilterTest : public  ::testing::Test
 {
+protected:
     AttributeUsageFilter filter;
     const MyListener* listener;
     using State = AttributeUsageFilter::State;
     using Config = AttributeUsageFilter::Config;
 
-    Fixture()
-        : filter(),
-          listener()
-    {
-        auto my_listener = std::make_unique<MyListener>();
-        listener = my_listener.get();
-        filter.set_listener(std::move(my_listener));
-    }
+    AttributeUsageFilterTest();
+    ~AttributeUsageFilterTest() override;
 
     void testWrite(const std::string &exp) {
         if (exp.empty()) {
             EXPECT_TRUE(filter.acceptWriteOperation());
             State state = filter.getAcceptState();
             EXPECT_TRUE(state.acceptWriteOperation());
-            EXPECT_EQUAL(exp, state.message());
+            EXPECT_EQ(exp, state.message());
         } else {
             EXPECT_FALSE(filter.acceptWriteOperation());
             State state = filter.getAcceptState();
             EXPECT_FALSE(state.acceptWriteOperation());
-            EXPECT_EQUAL(exp, state.message());
+            EXPECT_EQ(exp, state.message());
         }
     }
 
@@ -85,21 +79,32 @@ struct Fixture
     }
 };
 
+AttributeUsageFilterTest::AttributeUsageFilterTest()
+    : filter(),
+      listener()
+{
+    auto my_listener = std::make_unique<MyListener>();
+    listener = my_listener.get();
+    filter.set_listener(std::move(my_listener));
 }
 
-TEST_F("Check that default filter allows write", Fixture)
+AttributeUsageFilterTest::~AttributeUsageFilterTest() = default;
+
+}
+
+TEST_F(AttributeUsageFilterTest, Check_that_default_filter_allows_write)
 {
-    f.testWrite("");
+    testWrite("");
 }
 
 
-TEST_F("Check that enum store limit can be reached", Fixture)
+TEST_F(AttributeUsageFilterTest, Check_that_enum_store_limit_can_be_reached)
 {
-    f.filter.setConfig(Fixture::Config(0.8));
+    filter.setConfig(Config(0.8));
     MyAttributeStats stats;
     stats.triggerEnumStoreLimit();
-    f.setAttributeStats(stats);
-    f.testWrite("addressSpaceLimitReached: { "
+    setAttributeStats(stats);
+    testWrite("addressSpaceLimitReached: { "
                 "action: \""
                 "add more content nodes"
                 "\", "
@@ -110,13 +115,13 @@ TEST_F("Check that enum store limit can be reached", Fixture)
                 "attributeName: \"enumeratedName\", componentName: \"enum-store\", subdb: \"ready\"}");
 }
 
-TEST_F("Check that multivalue limit can be reached", Fixture)
+TEST_F(AttributeUsageFilterTest, Check_that_multivalue_limit_can_be_reached)
 {
-    f.filter.setConfig(Fixture::Config(0.8));
+    filter.setConfig(Config(0.8));
     MyAttributeStats stats;
     stats.triggerMultiValueLimit();
-    f.setAttributeStats(stats);
-    f.testWrite("addressSpaceLimitReached: { "
+    setAttributeStats(stats);
+    testWrite("addressSpaceLimitReached: { "
                 "action: \""
                 "add more content nodes"
                 "\", "
@@ -127,14 +132,14 @@ TEST_F("Check that multivalue limit can be reached", Fixture)
                 "attributeName: \"multiValueName\", componentName: \"multi-value\", subdb: \"ready\"}");
 }
 
-TEST_F("listener is updated when attribute stats change", Fixture)
+TEST_F(AttributeUsageFilterTest, listener_is_updated_when_attribute_stats_change)
 {
    AttributeUsageStats stats;
    AddressSpaceUsage usage;
    usage.set("my_comp", AddressSpace(12, 10, 15));
    stats.merge(usage, "my_attr", "my_subdb");
-   f.setAttributeStats(stats);
-   EXPECT_EQUAL(stats, f.listener->stats);
+   setAttributeStats(stats);
+   EXPECT_EQ(stats, listener->stats);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
