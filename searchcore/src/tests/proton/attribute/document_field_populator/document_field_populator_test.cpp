@@ -2,12 +2,12 @@
 
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -35,36 +35,40 @@ struct DocContext
     }
 };
 
-struct Fixture
+class DocumentFieldPopulatorTest : public ::testing::Test
 {
+protected:
     AttributeVector::SP _attr;
     IntegerAttribute &_intAttr;
     DocumentFieldPopulator _pop;
     DocContext _ctx;
-    Fixture()
-        : _attr(search::AttributeFactory::createAttribute("a1", AVConfig(AVBasicType::INT32))),
-          _intAttr(dynamic_cast<IntegerAttribute &>(*_attr)),
-          _pop("a1", _attr, "test"),
-          _ctx()
-    {
-        _intAttr.addDocs(2);
-        _intAttr.update(1, 100);
-        _intAttr.commit();
-    }
+
+    DocumentFieldPopulatorTest();
+    ~DocumentFieldPopulatorTest() override;
 };
 
-TEST_F("require that document field is populated based on attribute content", Fixture)
+DocumentFieldPopulatorTest::DocumentFieldPopulatorTest()
+    : _attr(search::AttributeFactory::createAttribute("a1", AVConfig(AVBasicType::INT32))),
+      _intAttr(dynamic_cast<IntegerAttribute &>(*_attr)),
+      _pop("a1", _attr, "test"),
+      _ctx()
+{
+    _intAttr.addDocs(2);
+    _intAttr.update(1, 100);
+    _intAttr.commit();
+}
+
+DocumentFieldPopulatorTest::~DocumentFieldPopulatorTest() = default;
+
+TEST_F(DocumentFieldPopulatorTest, require_that_document_field_is_populated_based_on_attribute_content)
 {
     // NOTE: DocumentFieldRetriever (used by DocumentFieldPopulator) is fully tested
     // with all data types in searchcore/src/tests/proton/server/documentretriever_test.cpp.
     {
-        std::shared_ptr<Document> doc = f._ctx.create(1);
-        f._pop.handleExisting(1, doc);
-        EXPECT_EQUAL(100, doc->getValue("a1")->getAsInt());
+        std::shared_ptr<Document> doc = _ctx.create(1);
+        _pop.handleExisting(1, doc);
+        EXPECT_EQ(100, doc->getValue("a1")->getAsInt());
     }
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
