@@ -223,30 +223,23 @@ UrlFieldInverter::invertUrlField(const FieldValue &val, const Document& doc)
             startElement(1);
             processUrlField(val, doc);
             endElement();
-        } else {
-            throw std::runtime_error(make_string("Expected URI field, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
     case CollectionType::WEIGHTEDSET: {
-        assert(val.isA(FieldValue::Type::WSET));
-        const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
-        if (isUriType(wset.getNestedType())) {
-            processWeightedSetUrlField(wset, doc);
-        } else {
-            throw std::runtime_error(
-                    make_string("Expected wset of URI struct, got '%s'", wset.getNestedType().getName().c_str()));
+        if (val.isA(FieldValue::Type::WSET)) {
+            const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
+            if (isUriType(wset.getNestedType())) {
+                processWeightedSetUrlField(wset, doc);
+            }
         }
         break;
     }
     case CollectionType::ARRAY: {
-        assert(val.isA(FieldValue::Type::ARRAY));
-        const auto &arr = static_cast<const ArrayFieldValue &>(val);
-        if (isUriType(arr.getNestedType())) {
-            processArrayUrlField(arr, doc);
-        } else {
-            throw std::runtime_error(
-                    make_string("Expected array of URI struct, got '%s' (%s)", arr.getNestedType().getName().c_str(),
-                                arr.getNestedType().toString(true).c_str()));
+        if (val.isA(FieldValue::Type::ARRAY)) {
+            const auto &arr = static_cast<const ArrayFieldValue &>(val);
+            if (isUriType(arr.getNestedType())) {
+                processArrayUrlField(arr, doc);
+            }
         }
         break;
     }
