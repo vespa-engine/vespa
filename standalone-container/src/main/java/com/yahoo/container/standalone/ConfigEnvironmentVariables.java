@@ -76,7 +76,9 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
 
     @Override
     public Optional<Boolean> useVespaVersionInRequest() {
-        return getInstallVariable("use_vespa_version_in_request", Boolean::parseBoolean);
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_USE_VERSION_IN_CONFIG_REQUEST"))
+                .or(() -> getInstallVariable("use_vespa_version_in_request"))
+                .map(Boolean::parseBoolean);
     }
 
     @Override
