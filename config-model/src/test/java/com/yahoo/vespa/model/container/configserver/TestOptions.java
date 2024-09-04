@@ -53,27 +53,7 @@ public class TestOptions implements ConfigOptions {
     }
 
     @Override
-    public Optional<Integer> zookeeperClientPort() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<Long> sessionLifeTimeSecs() {
-        return Optional.empty();
-    }
-
-    @Override
     public Optional<Long> zookeeperBarrierTimeout() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<Integer> zookeeperElectionPort() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<Integer> zookeeperQuorumPort() {
         return Optional.empty();
     }
 

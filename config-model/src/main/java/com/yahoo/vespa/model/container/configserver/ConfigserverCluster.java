@@ -78,9 +78,6 @@ public class ConfigserverCluster extends TreeConfigProducer
             builder.server(getZkServer(configServers[i], zookeeperIds[i]));
         }
 
-        if (options.zookeeperClientPort().isPresent()) {
-            builder.clientPort(options.zookeeperClientPort().get());
-        }
         if (options.hostedVespa().orElse(false)) {
             builder.vespaTlsConfigFile(Defaults.getDefaults().underVespaHome("var/zookeeper/conf/tls.conf.json"));
         }
@@ -97,9 +94,6 @@ public class ConfigserverCluster extends TreeConfigProducer
         for (String pluginDir : getConfigModelPluginDirs()) {
             builder.configModelPluginDir(pluginDir);
         }
-        if (options.sessionLifeTimeSecs().isPresent()) {
-            builder.sessionLifetime(options.sessionLifeTimeSecs().get());
-        }
         if (options.zookeeperBarrierTimeout().isPresent()) {
             builder.zookeeper(new ConfigserverConfig.Zookeeper.Builder().barrierTimeout(options.zookeeperBarrierTimeout().get()));
         }
@@ -112,9 +106,6 @@ public class ConfigserverCluster extends TreeConfigProducer
         for (ConfigServer server : getConfigServers()) {
             ConfigserverConfig.Zookeeperserver.Builder zkBuilder = new ConfigserverConfig.Zookeeperserver.Builder();
             zkBuilder.hostname(server.hostName);
-            if (options.zookeeperClientPort().isPresent()) {
-                zkBuilder.port(options.zookeeperClientPort().get());
-            }
             builder.zookeeperserver(zkBuilder);
         }
         if (options.environment().isPresent()) {
@@ -164,12 +155,6 @@ public class ConfigserverCluster extends TreeConfigProducer
 
     private ZookeeperServerConfig.Server.Builder getZkServer(ConfigServer server, int id) {
         ZookeeperServerConfig.Server.Builder builder = new ZookeeperServerConfig.Server.Builder();
-        if (options.zookeeperElectionPort().isPresent()) {
-            builder.electionPort(options.zookeeperElectionPort().get());
-        }
-        if (options.zookeeperQuorumPort().isPresent()) {
-            builder.quorumPort(options.zookeeperQuorumPort().get());
-        }
         builder.hostname(server.hostName);
         builder.id(id);
         return builder;
@@ -190,9 +175,6 @@ public class ConfigserverCluster extends TreeConfigProducer
         for (ConfigServer server : getConfigServers()) {
             CuratorConfig.Server.Builder curatorBuilder = new CuratorConfig.Server.Builder();
             curatorBuilder.hostname(server.hostName);
-            if (options.zookeeperClientPort().isPresent()) {
-                curatorBuilder.port(options.zookeeperClientPort().get());
-            }
             builder.server(curatorBuilder);
         }
         builder.zookeeperLocalhostAffinity(true);
