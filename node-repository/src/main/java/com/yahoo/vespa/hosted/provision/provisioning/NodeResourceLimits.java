@@ -40,7 +40,8 @@ public class NodeResourceLimits {
     // TODO: Remove this when we are ready to fail, not just warn on this. */
     public boolean isWithinAdvertisedDiskLimits(NodeResources requested, ClusterSpec cluster) {
         if (requested.diskIsUnspecified() || requested.memoryIsUnspecified()) return true;
-        return requested.diskGb() >= minAdvertisedDiskGb(requested, cluster);
+        // Override disk limit to be able to use more flavors as content nodes
+        return requested.diskGb() >= minAdvertisedDiskGb(requested, cluster, 2.9);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
@@ -89,8 +90,12 @@ public class NodeResourceLimits {
 
     // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
     private static double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster) {
+        return minAdvertisedDiskGb(requested, cluster, 3);
+    }
+
+    private static double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster, double contentNodeDiskToMemoryRatio) {
         return requested.memoryGiB() * switch (cluster.type()) {
-            case combined, content -> 3;
+            case combined, content -> contentNodeDiskToMemoryRatio;
             case container -> 2;
             default -> 0; // No constraint on other types
         };
