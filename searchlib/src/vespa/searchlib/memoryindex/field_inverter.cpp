@@ -357,8 +357,6 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val, const Document& d
     case CollectionType::SINGLE:
         if (val.isA(FieldValue::Type::STRING)) {
             processNormalDocTextField(static_cast<const StringFieldValue &>(val), doc);
-        } else {
-            throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
     case CollectionType::WEIGHTEDSET:
@@ -366,11 +364,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val, const Document& d
             const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (wset.getNestedType() == *DataType::STRING) {
                 processNormalDocWeightedSetTextField(wset, doc);
-            } else {
-                throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", wset.getNestedType().getName().c_str()));
             }
-        } else {
-            throw std::runtime_error(make_string("Expected weighted set, got '%s'", val.className()));
         }
         break;
     case CollectionType::ARRAY:
@@ -378,11 +372,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val, const Document& d
             const auto &arr = static_cast<const ArrayFieldValue&>(val);
             if (arr.getNestedType() == *DataType::STRING) {
                 processNormalDocArrayTextField(arr, doc);
-            } else {
-                throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", arr.getNestedType().getName().c_str()));
             }
-        } else {
-            throw std::runtime_error(make_string("Expected Array, got '%s'", val.className()));
         }
         break;
     default:
