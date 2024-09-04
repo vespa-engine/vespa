@@ -146,6 +146,20 @@ make_very_long_word_document(DocBuilder& b)
     return doc;
 }
 
+std::unique_ptr<Document>
+make_bad_index_field_document(DocBuilder& b)
+{
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::20");
+    auto fv = doc->getField("f4").createValue();
+    auto& nested_array_type = dynamic_cast<const document::ArrayDataType&>(*fv->getDataType()).getNestedType();
+    ArrayFieldValue array(nested_array_type);
+    array.add(sfb.tokenize("nested arrays are not indexed").build());
+    dynamic_cast<ArrayFieldValue&>(*fv).add(array);
+    doc->setValue("f4", *fv);
+    return doc;
+}
+
 }
 
 struct FieldInverterTest : public ::testing::Test {
@@ -162,11 +176,22 @@ struct FieldInverterTest : public ::testing::Test {
     make_add_fields()
     {
         return [](auto& header) { using namespace document::config_builder;
+            const document::config_builder::Array string_array(DataType::T_STRING);
+            const document::config_builder::Array nested_string_array((TypeOrId)string_array);
             header.addField("f0", DataType::T_STRING)
                 .addField("f1", DataType::T_STRING)
-                .addField("f2", Array(DataType::T_STRING))
-                .addField("f3", Wset(DataType::T_STRING));
+                .addField("f2", string_array)
+                .addField("f3", Wset(DataType::T_STRING))
+                .addField("f4", nested_string_array);
                };
+    }
+
+    static Schema
+    make_schema(DocBuilder& b)
+    {
+        auto schema = SchemaBuilder(b).add_indexes({"f0", "f1", "f2", "f3"}).build();
+        schema.addIndexField({"f4", search::index::schema::DataType::STRING, search::index::schema::CollectionType::ARRAY});
+        return schema;
     }
 
     FieldInverterTest();
@@ -204,7 +229,7 @@ struct FieldInverterTest : public ::testing::Test {
 
 FieldInverterTest::FieldInverterTest()
     : _b(make_add_fields()),
-      _schema(SchemaBuilder(_b).add_all_indexes().build()),
+      _schema(make_schema(_b)),
       _word_store(),
       _remover(_word_store),
       _inserter_backend(),
@@ -437,6 +462,13 @@ TEST_F(FieldInverterTest, very_long_words_are_dropped)
               "w=after,a=1,"
               "w=before,a=1",
               _inserter_backend.toStr());
+}
+
+TEST_F(FieldInverterTest, bad_index_field_is_ignored)
+{
+    invertDocument(1, *make_bad_index_field_document(_b));
+    pushDocuments();
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
 }
