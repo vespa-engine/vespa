@@ -1,11 +1,8 @@
 package ai.vespa.schemals.schemadocument.resolvers;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -53,6 +50,7 @@ public class FieldArgumentResolver {
             .setRange(node.getRange())
             .setMessage("The referenced field are missing one of the following indexing types: " + missingFields)
             .setSeverity(DiagnosticSeverity.Error)
+            .setCode(SchemaDiagnostic.DiagnosticCode.FIELD_ARGUMENT_MISSING_INDEXING_TYPE)
             .build());
 
     }
