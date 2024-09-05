@@ -8,9 +8,9 @@ on:
         description: Which kind of release is this
         required: true
         options:
-          - major
-          - minor
           - patch
+          - minor
+          - major
 
 jobs:
   lspDeploy:
