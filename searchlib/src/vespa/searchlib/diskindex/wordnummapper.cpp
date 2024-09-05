@@ -1,54 +1,40 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "wordnummapper.h"
-#include <vespa/fastlib/io/bufferedfile.h>
-#include <cassert>
+#include <vespa/fastos/file.h>
 
 namespace search::diskindex {
 
+const uint64_t WordNumMapping::_no_mapping[2] = { noWordNum(), noWordNumHigh() };
+
 WordNumMapping::WordNumMapping()
-    : _old2newwords()
+    : _file(),
+      _mapping()
 {
 }
 
+WordNumMapping::WordNumMapping(WordNumMapping&&) noexcept = default;
+
+WordNumMapping::~WordNumMapping() = default;
 
 void
-WordNumMapping::readMappingFile(const std::string &name,
-                                const TuneFileSeqRead &tuneFileRead)
+WordNumMapping::readMappingFile(const std::string &name)
 {
     // Open word mapping file
-    Fast_BufferedFile old2newwordfile;
-    if (tuneFileRead.getWantDirectIO()) {
-        old2newwordfile.EnableDirectIO();
-    }
-    // XXX no checking for success
-    old2newwordfile.ReadOpen(name.c_str());
-    int64_t tempfilesize = old2newwordfile.getSize();
-    uint64_t tempfileentries = static_cast<uint64_t>(tempfilesize /
-            sizeof(uint64_t));
-    Array &map = _old2newwords;
-    map.resize(tempfileentries);
-
-    ssize_t has_read = old2newwordfile.Read(&map[0], static_cast<size_t>(tempfilesize));
-    assert(has_read == tempfilesize);
+    _file = std::make_unique<FastOS_File>();
+    _file->enableMemoryMap(0);
+    _file->OpenReadOnlyExisting(true,  name.c_str());
+    int64_t tempfilesize = _file->getSize();
+    size_t entries = static_cast<size_t>(tempfilesize / sizeof(uint64_t));
+    const uint64_t* base = static_cast<const uint64_t*>(_file->MemoryMapPtr(0));
+    _mapping = std::span<const uint64_t>(base, entries);
 }
 
 
 void
 WordNumMapping::noMappingFile()
 {
-    Array &map = _old2newwords;
-    map.resize(2);
-    map[0] = noWordNum();
-    map[1] = noWordNumHigh();
-}
-
-
-void
-WordNumMapping::clear()
-{
-    Array &map = _old2newwords;
-    map.clear();
+    _mapping = _no_mapping;
 }
 
 }
