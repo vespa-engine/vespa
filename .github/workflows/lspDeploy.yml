@@ -42,6 +42,8 @@ jobs:
       - name: "Retrieve version"
         id: retrieve_version
         working-directory: ./integration/schema-language-server/utils
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 updateVersion.py ${{ github.event.inputs.version }} >> $GITHUB_OUTPUT
 
       - name: Download node dependencies
