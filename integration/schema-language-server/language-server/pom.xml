@@ -19,6 +19,16 @@
       <version>0.23.1</version>
     </dependency>
     <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>1.17.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.vladsch.flexmark</groupId>
+      <artifactId>flexmark-all</artifactId>
+      <version>0.64.8</version>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-model</artifactId>
       <version>8-SNAPSHOT</version>
@@ -102,25 +112,25 @@
         <groupId>com.github.os72</groupId>
         <artifactId>protoc-jar-maven-plugin</artifactId>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <phase>generate-sources</phase>
-            <configuration>
-              <executable>${project.basedir}/src/main/python/buildDocs.sh</executable>
-              <arguments>
-                <argument>${project.basedir}/target/generated-resources/hover</argument>
-              </arguments>
-              <workingDirectory>src/main/python/</workingDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.codehaus.mojo</groupId>-->
+<!--        <artifactId>exec-maven-plugin</artifactId>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <goals>-->
+<!--              <goal>exec</goal>-->
+<!--            </goals>-->
+<!--            <phase>generate-sources</phase>-->
+<!--            <configuration>-->
+<!--              <executable>${project.basedir}/src/main/python/buildDocs.sh</executable>-->
+<!--              <arguments>-->
+<!--                <argument>${project.basedir}/target/generated-resources/hover</argument>-->
+<!--              </arguments>-->
+<!--              <workingDirectory>src/main/python/</workingDirectory>-->
+<!--            </configuration>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
       <plugin>   
         <groupId>org.congocc</groupId>   
         <artifactId>org.congocc.maven.plugin</artifactId>   
