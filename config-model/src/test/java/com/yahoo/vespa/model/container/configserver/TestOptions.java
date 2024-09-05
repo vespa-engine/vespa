@@ -70,19 +70,6 @@ public class TestOptions implements ConfigOptions {
     public Optional<Boolean> useVespaVersionInRequest() { return useVespaVersionInRequest; }
 
     @Override
-    public Optional<String> loadBalancerAddress() { return Optional.empty(); }
-
-    @Override
-    public Optional<String> athenzDnsSuffix() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<String> ztsUrl() {
-        return Optional.empty();
-    }
-
-    @Override
     public String zooKeeperSnapshotMethod() { return zooKeeperSnapshotMethod; }
 
     @Override

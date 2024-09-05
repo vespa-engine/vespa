@@ -34,9 +34,9 @@ public interface ConfigOptions {
     Optional<String> system();
     default Optional<String> cloud() { return Optional.empty(); }
     Optional<Boolean> useVespaVersionInRequest();
-    Optional<String> loadBalancerAddress();
-    Optional<String> athenzDnsSuffix();
-    Optional<String> ztsUrl();
+    default Optional<String> loadBalancerAddress() { return Optional.empty(); } // TODO: Remove when 8.406 is oldest version in use
+    default Optional<String> athenzDnsSuffix() { return Optional.empty(); } // TODO: Remove when 8.406 is oldest version in use
+    default Optional<String> ztsUrl() { return Optional.empty(); } // TODO: Remove when 8.406 is oldest version in use
     String zooKeeperSnapshotMethod();
     Integer zookeeperJuteMaxBuffer(); // in bytes
 
