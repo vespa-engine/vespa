@@ -88,21 +88,6 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     }
 
     @Override
-    public Optional<String> loadBalancerAddress() {
-        return getInstallVariable("load_balancer_address");
-    }
-
-    @Override
-    public Optional<String> athenzDnsSuffix() {
-        return getInstallVariable("athenz_dns_suffix");
-    }
-
-    @Override
-    public Optional<String> ztsUrl() {
-        return getInstallVariable("zts_url");
-    }
-
-    @Override
     public String zooKeeperSnapshotMethod() {
         String vespaZookeeperSnapshotMethod = System.getenv("VESPA_ZOOKEEPER_SNAPSHOT_METHOD");
         return vespaZookeeperSnapshotMethod == null ? "" : vespaZookeeperSnapshotMethod;
