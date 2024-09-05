@@ -159,7 +159,7 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: xxhash-libs >= 0.8.1
 %endif
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.5
+Requires: vespa-openssl >= 3.1.7
 %else
 Requires: openssl-libs
 %endif
@@ -185,7 +185,7 @@ Summary: Vespa - The open big data serving engine - C++ libraries
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: libicu
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.5
+Requires: vespa-openssl >= 3.1.7
 %else
 Requires: openssl-libs
 %endif
