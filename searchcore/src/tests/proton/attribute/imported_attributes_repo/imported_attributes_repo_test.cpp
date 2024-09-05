@@ -1,7 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("imported_attributes_repo_test");
-#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
@@ -9,6 +6,7 @@ LOG_SETUP("imported_attributes_repo_test");
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <algorithm>
 
 using proton::ImportedAttributesRepo;
@@ -30,9 +28,11 @@ createAttr(const std::string &name)
                                                   false);
 }
 
-struct Fixture {
+class ImportedAttributesRepoTest : public ::testing::Test {
+protected:
     ImportedAttributesRepo repo;
-    Fixture() : repo() {}
+    ImportedAttributesRepoTest();
+    ~ImportedAttributesRepoTest() override;
     void add(ImportedAttributeVector::SP attr) {
         repo.add(attr->getName(), attr);
     }
@@ -41,49 +41,54 @@ struct Fixture {
     }
 };
 
-TEST_F("require that attributes can be added and retrieved", Fixture)
+ImportedAttributesRepoTest::ImportedAttributesRepoTest()
+    : ::testing::Test(),
+      repo()
+{
+}
+
+ImportedAttributesRepoTest::~ImportedAttributesRepoTest() = default;
+
+TEST_F(ImportedAttributesRepoTest, require_that_attributes_can_be_added_and_retrieved)
 {
     ImportedAttributeVector::SP fooAttr = createAttr("foo");
     ImportedAttributeVector::SP barAttr = createAttr("bar");
-    f.add(fooAttr);
-    f.add(barAttr);
-    EXPECT_EQUAL(2u, f.repo.size());
-    EXPECT_EQUAL(f.get("foo").get(), fooAttr.get());
-    EXPECT_EQUAL(f.get("bar").get(), barAttr.get());
+    add(fooAttr);
+    add(barAttr);
+    EXPECT_EQ(2u, repo.size());
+    EXPECT_EQ(get("foo").get(), fooAttr.get());
+    EXPECT_EQ(get("bar").get(), barAttr.get());
 }
 
-TEST_F("require that attribute can be replaced", Fixture)
+TEST_F(ImportedAttributesRepoTest, require_that_attribute_can_be_replaced)
 {
     ImportedAttributeVector::SP attr1 = createAttr("foo");
     ImportedAttributeVector::SP attr2 = createAttr("foo");
-    f.add(attr1);
-    f.add(attr2);
-    EXPECT_EQUAL(1u, f.repo.size());
-    EXPECT_EQUAL(f.get("foo").get(), attr2.get());
+    add(attr1);
+    add(attr2);
+    EXPECT_EQ(1u, repo.size());
+    EXPECT_EQ(get("foo").get(), attr2.get());
 }
 
-TEST_F("require that not-found attribute returns nullptr", Fixture)
+TEST_F(ImportedAttributesRepoTest, require_that_not_found_attribute_returns_nullptr)
 {
     ImportedAttributeVector *notFound = nullptr;
-    EXPECT_EQUAL(f.get("not_found").get(), notFound);
+    EXPECT_EQ(get("not_found").get(), notFound);
 }
 
-TEST_F("require that all attributes can be retrieved", Fixture)
+TEST_F(ImportedAttributesRepoTest, require_that_all_attributes_can_be_retrieved)
 {
-    f.add(createAttr("foo"));
-    f.add(createAttr("bar"));
+    add(createAttr("foo"));
+    add(createAttr("bar"));
     std::vector<ImportedAttributeVector::SP> list;
-    f.repo.getAll(list);
-    EXPECT_EQUAL(2u, list.size());
+    repo.getAll(list);
+    EXPECT_EQ(2u, list.size());
     // Don't depend on internal (unspecified) ordering
     std::sort(list.begin(), list.end(), [](auto& lhs, auto& rhs){
         return lhs->getName() < rhs->getName();
     });
-    EXPECT_EQUAL("bar", list[0]->getName());
-    EXPECT_EQUAL("foo", list[1]->getName());
+    EXPECT_EQ("bar", list[0]->getName());
+    EXPECT_EQ("foo", list[1]->getName());
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
