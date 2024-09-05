@@ -25,8 +25,8 @@ import com.yahoo.vespa.model.container.component.BertEmbedder;
 import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
-import com.yahoo.vespa.model.container.component.SpladeEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
+import com.yahoo.vespa.model.container.component.SpladeEmbedder;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -57,8 +57,8 @@ public class EmbedderTestCase {
                        "</component>";
         String component = "<component id='test' class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder' bundle='app'>" +
                            "  <config name='ai.vespa.example.paragraph.sentence-embedder'>" +
-                           "      <model  model-id='minilm-l6-v2' url='https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
-                           "      <vocab model-id='bert-base-uncased' url='https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt' />" +
+                           "      <model  model-id='minilm-l6-v2' url='https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
+                           "      <vocab model-id='bert-base-uncased' url='https://data.vespa-cloud.com/onnx_models/bert-base-uncased-vocab.txt' />" +
                            "  </config>" +
                            "</component>";
         assertTransform(input, component, true);
@@ -98,10 +98,10 @@ public class EmbedderTestCase {
         var cluster = model.getContainerClusters().get("container");
         var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
-        assertEquals("https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals("https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
-        assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals("https://data.vespa-cloud.com/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
         assertEquals("Represent this sentence for searching relevant passages:", embedderCfg.prependQuery());
         assertEquals("passage:", embedderCfg.prependDocument());
@@ -146,10 +146,10 @@ public class EmbedderTestCase {
         var cluster = model.getContainerClusters().get("container");
         var embedderCfg = assertColBertEmbedderComponentPresent(cluster);
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
-        assertEquals("https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals("https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
-        assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals("https://data.vespa-cloud.com/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
         assertEquals(1, embedderCfg.queryTokenId());
         assertEquals(2, embedderCfg.documentTokenId());
@@ -172,7 +172,7 @@ public class EmbedderTestCase {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
         var cluster = model.getContainerClusters().get("container");
         var embedderCfg = assertBertEmbedderComponentPresent(cluster);
-        assertEquals("https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx",
+        assertEquals("https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx",
                      modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertTrue(modelReference(embedderCfg, "tokenizerVocab").url().isEmpty());
         assertEquals("files/vocab.txt", modelReference(embedderCfg, "tokenizerVocab").path().orElseThrow().value());
@@ -204,7 +204,7 @@ public class EmbedderTestCase {
 
         Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
         ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
-        assertEquals("minilm-l6-v2 https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\"",
+        assertEquals("minilm-l6-v2 https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\"",
                      config.getObject("model").getValue());
         assertEquals("\"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());
     }

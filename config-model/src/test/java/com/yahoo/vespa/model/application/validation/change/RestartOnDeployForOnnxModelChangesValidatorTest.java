@@ -52,7 +52,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertTrue(result.get(0).validationId().isEmpty());
-        assertEquals("Onnx model 'https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx' has changed (estimated cost), need to restart services in container cluster 'cluster1'", result.get(0).getMessage());
+        assertEquals("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (estimated cost), need to restart services in container cluster 'cluster1'", result.get(0).getMessage());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         VespaModel next = createModel(onnxModelCost(defaultCost, 123));
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
-        assertStartsWith("Onnx model 'https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx' has changed (model hash)", result);
+        assertStartsWith("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (model hash)", result);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         VespaModel next = createModel(onnxModelCost(), true, "sequential");
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
-        assertStartsWith("Onnx model 'https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx' has changed (model option(s))", result);
+        assertStartsWith("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (model option(s))", result);
     }
 
     @Test
@@ -88,8 +88,8 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         VespaModel next = createModel(onnxModelCost(), true, "parallel", "e5-small-v2");
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
-        assertStartsWith("Onnx model set has changed from [https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx] " +
-                                 "to [https://data.vespa.oath.cloud/onnx_models/e5-small-v2/model.onnx",
+        assertStartsWith("Onnx model set has changed from [https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx] " +
+                                 "to [https://data.vespa-cloud.com/onnx_models/e5-small-v2/model.onnx",
                          result);
     }
 
