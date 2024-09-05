@@ -13,7 +13,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -66,8 +66,9 @@ struct DocContext
     }
 };
 
-struct Fixture
+class AttributePopulatorTest : public ::testing::Test
 {
+protected:
     DirectoryHandler _testDir;
     DummyFileHeaderContext _fileHeader;
     ForegroundTaskExecutor _attributeFieldWriter;
@@ -76,46 +77,55 @@ struct Fixture
     AttributeManager::SP _mgr;
     std::unique_ptr<AttributePopulator> _pop;
     DocContext _ctx;
-    Fixture()
-        : _testDir(TEST_DIR),
-          _fileHeader(),
-          _attributeFieldWriter(),
-          _shared(),
-          _hwInfo(),
-          _mgr(std::make_shared<AttributeManager>(TEST_DIR, "test.subdb", TuneFileAttributes(),
-                                                  _fileHeader, std::make_shared<search::attribute::Interlock>(),
-                                                  _attributeFieldWriter, _shared, _hwInfo)),
-          _pop(),
-          _ctx()
-    {
-        _mgr->addAttribute({ "a1", AVConfig(AVBasicType::INT32)}, CREATE_SERIAL_NUM);
-        _pop = std::make_unique<AttributePopulator>(_mgr, 1, "test", CREATE_SERIAL_NUM);
-    }
+    AttributePopulatorTest();
+    ~AttributePopulatorTest() override;
+    static void SetUpTestSuite();
     AttributeGuard::UP getAttr() {
         return _mgr->getAttribute("a1");
     }
 };
 
-TEST_F("require that reprocess with document populates attribute", Fixture)
+AttributePopulatorTest::AttributePopulatorTest()
+    : ::testing::Test(),
+      _testDir(TEST_DIR),
+      _fileHeader(),
+      _attributeFieldWriter(),
+      _shared(),
+      _hwInfo(),
+      _mgr(std::make_shared<AttributeManager>(TEST_DIR, "test.subdb", TuneFileAttributes(),
+                                              _fileHeader, std::make_shared<search::attribute::Interlock>(),
+                                              _attributeFieldWriter, _shared, _hwInfo)),
+      _pop(),
+      _ctx()
 {
-    AttributeGuard::UP attr = f.getAttr();
-    EXPECT_EQUAL(1u, attr->get()->getNumDocs());
-
-    f._pop->handleExisting(5, f._ctx.create(0, 33));
-    EXPECT_EQUAL(6u, attr->get()->getNumDocs());
-    EXPECT_EQUAL(33, attr->get()->getInt(5));
-    EXPECT_EQUAL(0u, attr->get()->getStatus().getLastSyncToken());
-
-    f._pop->handleExisting(6, f._ctx.create(1, 44));
-    EXPECT_EQUAL(7u, attr->get()->getNumDocs());
-    EXPECT_EQUAL(44, attr->get()->getInt(6));
-    EXPECT_EQUAL(0u, attr->get()->getStatus().getLastSyncToken());
-    f._pop->done();
-    EXPECT_EQUAL(CREATE_SERIAL_NUM, attr->get()->getStatus().getLastSyncToken());
+    _mgr->addAttribute({ "a1", AVConfig(AVBasicType::INT32)}, CREATE_SERIAL_NUM);
+    _pop = std::make_unique<AttributePopulator>(_mgr, 1, "test", CREATE_SERIAL_NUM);
 }
 
-TEST_MAIN()
+AttributePopulatorTest::~AttributePopulatorTest() = default;
+
+void
+AttributePopulatorTest::SetUpTestSuite()
 {
     std::filesystem::remove_all(std::filesystem::path(TEST_DIR));
-    TEST_RUN_ALL();
 }
+
+TEST_F(AttributePopulatorTest, require_that_reprocess_with_document_populates_attribute)
+{
+    AttributeGuard::UP attr = getAttr();
+    EXPECT_EQ(1u, attr->get()->getNumDocs());
+
+    _pop->handleExisting(5, _ctx.create(0, 33));
+    EXPECT_EQ(6u, attr->get()->getNumDocs());
+    EXPECT_EQ(33, attr->get()->getInt(5));
+    EXPECT_EQ(0u, attr->get()->getStatus().getLastSyncToken());
+
+    _pop->handleExisting(6, _ctx.create(1, 44));
+    EXPECT_EQ(7u, attr->get()->getNumDocs());
+    EXPECT_EQ(44, attr->get()->getInt(6));
+    EXPECT_EQ(0u, attr->get()->getStatus().getLastSyncToken());
+    _pop->done();
+    EXPECT_EQ(CREATE_SERIAL_NUM, attr->get()->getStatus().getLastSyncToken());
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()
