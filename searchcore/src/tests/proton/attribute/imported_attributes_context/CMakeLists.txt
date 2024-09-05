@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_imported_attributes_context_test_app TEST
     DEPENDS
     searchcore_attribute
     searchcore_documentmetastore
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_imported_attributes_context_test_app COMMAND searchcore_imported_attributes_context_test_app)
