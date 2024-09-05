@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite --port 3000",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --port 3000",
     "prepare": "cd ../../../ && husky client/js/app/.husky",
     "test": "CI=true vitest",
     "lint": "eslint '{**/*,*}.{js,jsx}'"

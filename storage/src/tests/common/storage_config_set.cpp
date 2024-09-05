@@ -26,7 +26,7 @@
 
 namespace storage {
 
-StorageConfigSet::StorageConfigSet(vespalib::string config_id_str, bool is_storage_node)
+StorageConfigSet::StorageConfigSet(std::string config_id_str, bool is_storage_node)
     : _document_type_config(std::make_unique<DocumenttypesConfigBuilder>()),
       _slobroks_config(std::make_unique<SlobroksConfigBuilder>()),
       _messagebus_config(std::make_unique<MessagebusConfigBuilder>()),
@@ -111,7 +111,7 @@ void StorageConfigSet::init_default_configs(bool is_storage_node) {
     _visitor_config->maxconcurrentvisitorsVariable = 0;
 }
 
-void StorageConfigSet::add_bucket_space_mapping(vespalib::string doc_type, vespalib::string bucket_space_name) {
+void StorageConfigSet::add_bucket_space_mapping(std::string doc_type, std::string bucket_space_name) {
     BucketspacesConfigBuilder::Documenttype type;
     type.name = std::move(doc_type);
     type.bucketspace = std::move(bucket_space_name);
@@ -132,7 +132,7 @@ void StorageConfigSet::add_distribution_config(uint16_t nodes_in_top_level_group
     _distribution_config->redundancy = 2;
 }
 
-void StorageConfigSet::add_metric_consumer(vespalib::string name, const std::vector<vespalib::string>& added_metrics) {
+void StorageConfigSet::add_metric_consumer(std::string name, const std::vector<std::string>& added_metrics) {
     MetricsmanagerConfigBuilder::Consumer consumer;
     consumer.name = std::move(name);
     consumer.addedmetrics.assign(added_metrics.begin(), added_metrics.end());

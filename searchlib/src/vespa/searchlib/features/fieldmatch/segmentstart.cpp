@@ -63,7 +63,7 @@ SegmentStart::offerHistory(int previousJ, const Metrics & metrics)
     return true; // accept
 }
 
-vespalib::string
+std::string
 SegmentStart::toString() {
     if (_i == _owner->getNumQueryTerms()) {
         return vespalib::make_string("Last segment: Complete match %f, previous j %d (%s).",

@@ -2,10 +2,10 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <cstdint>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace storage::lib { class ClusterStateBundle; }
 

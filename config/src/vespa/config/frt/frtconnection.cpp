@@ -12,7 +12,7 @@ using namespace vespalib;
 
 namespace config {
 
-FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& supervisor, const TimingValues & timingValues)
+FRTConnection::FRTConnection(const std::string& address, FRT_Supervisor& supervisor, const TimingValues & timingValues)
     : _address(address),
       _transientDelay(timingValues.transientDelay),
       _fatalDelay(timingValues.fatalDelay),

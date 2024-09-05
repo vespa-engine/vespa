@@ -29,7 +29,7 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(std::shared_p
 
 ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() = default;
 
-const vespalib::string& ImportedAttributeVectorReadGuard::getName() const {
+const std::string& ImportedAttributeVectorReadGuard::getName() const {
     return _imported_attribute.getName();
 }
 
@@ -53,7 +53,7 @@ double ImportedAttributeVectorReadGuard::getFloat(DocId doc) const {
     return _target_attribute.getFloat(getTargetLid(doc));
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 ImportedAttributeVectorReadGuard::get_raw(DocId doc) const
 {
     return _target_attribute.get_raw(getTargetLid(doc));

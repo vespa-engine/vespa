@@ -2,8 +2,8 @@
 #pragma once
 
 #include "iflushstrategy.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <string>
 
 namespace proton {
 

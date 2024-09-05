@@ -170,16 +170,6 @@ public interface ZtsClient extends AutoCloseable {
      * Get aws temporary credentials
      *
      * @param awsRole AWS role to get credentials for
-     * @return AWS temporary credentials
-     */
-    default AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole) {
-        return getAwsTemporaryCredentials(athenzDomain, awsRole, null, null);
-    }
-
-    /**
-     * Get aws temporary credentials
-     *
-     * @param awsRole AWS role to get credentials for
      * @param externalId External Id to get credentials, or <code>null</code> if not required
      * @return AWS temporary credentials
      */

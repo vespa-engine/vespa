@@ -200,7 +200,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams &params
     if (_schema && _docType) {
         for (const auto &indexField : _schema->getIndexFields()) {
             size_t dotPos = indexField.getName().find('.');
-            if ((dotPos == vespalib::string::npos) || search::index::UriField::mightBePartofUri(indexField.getName())) {
+            if ((dotPos == std::string::npos) || search::index::UriField::mightBePartofUri(indexField.getName())) {
                 document::FieldPath fieldPath;
                 _docType->buildFieldPath(fieldPath, indexField.getName().substr(0, dotPos));
                 _indexedFields.insert(fieldPath.back().getFieldRef().getId());

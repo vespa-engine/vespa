@@ -25,6 +25,7 @@
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/tls_linkage.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <thread>
@@ -163,12 +164,6 @@ dynamic_throttle_params_from_config(const StorFilestorConfig& config, uint32_t n
     params.window_size_backoff          = cfg_params.windowSizeBackoff;
     return params;
 }
-
-#ifdef __PIC__
-#define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("initial-exec")))
-#else
-#define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("local-exec")))
-#endif
 
 thread_local PersistenceHandler * _g_threadLocalHandler TLS_LINKAGE = nullptr;
 

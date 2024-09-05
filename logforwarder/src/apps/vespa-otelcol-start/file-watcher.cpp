@@ -8,7 +8,7 @@
 
 namespace {
 
-time_t lastModTime(const vespalib::string &fn) {
+time_t lastModTime(const std::string &fn) {
     if (fn.empty()) return 0;
     struct stat info;
     if (stat(fn.c_str(), &info) != 0) return 0;

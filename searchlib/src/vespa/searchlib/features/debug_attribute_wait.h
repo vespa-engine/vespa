@@ -18,7 +18,7 @@ struct DebugAttributeWaitParams {
 class DebugAttributeWaitBlueprint : public fef::Blueprint
 {
 private:
-    vespalib::string _attribute;
+    std::string _attribute;
     DebugAttributeWaitParams _params;
 
 public:

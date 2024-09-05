@@ -4,9 +4,9 @@
 
 #include "attribute_spec.h"
 #include "attribute_initializer_result.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <optional>
+#include <string>
 
 namespace search::attribute { class AttributeHeader; }
 namespace vespalib { class Executor; }
@@ -27,7 +27,7 @@ public:
 private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     std::shared_ptr<AttributeDirectory> _attrDir;
-    const vespalib::string          _documentSubDbName;
+    const std::string          _documentSubDbName;
     const AttributeSpec             _spec;
     const std::optional<uint64_t>   _currentSerialNum;
     const IAttributeFactory        &_factory;
@@ -47,7 +47,7 @@ private:
     AttributeVectorSP createAndSetupEmptyAttribute() const;
 
 public:
-    AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const vespalib::string &documentSubDbName,
+    AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const std::string &documentSubDbName,
                          AttributeSpec && spec, std::optional<uint64_t> currentSerialNum, const IAttributeFactory &factory,
                          vespalib::Executor& shared_executor);
     ~AttributeInitializer();

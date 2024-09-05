@@ -88,7 +88,7 @@ UpdateOperation::verifyUpdate(const DocumentTypeRepo &repo)
     _upd->eagerDeserialize();  // Will trigger exceptions if incompatible
 }
 
-vespalib::string
+std::string
 UpdateOperation::toString() const {
     return make_string("%s(%s, %s)",
                        ((getType() == FeedOperation::UPDATE_42) ? "Update42" : "Update"),

@@ -8,7 +8,7 @@
 
 namespace config {
 
-FileConfigSnapshotReader::FileConfigSnapshotReader(const vespalib::string & fileName)
+FileConfigSnapshotReader::FileConfigSnapshotReader(const std::string & fileName)
     : _fileName(fileName)
 {
 }

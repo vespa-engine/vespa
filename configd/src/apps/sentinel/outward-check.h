@@ -3,13 +3,13 @@
 #pragma once
 
 #include "cc-result.h"
-#include <string>
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
+#include <string>
 
 namespace config::sentinel {
 

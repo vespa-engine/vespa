@@ -47,7 +47,7 @@ const Join *check_mul(const TensorFunction &expr) {
 }
 
 bool check_params(const ValueType &res_type, const ValueType &query, const ValueType &document,
-                  const vespalib::string &sum_dim, const vespalib::string &max_dim, const vespalib::string &dp_dim)
+                  const std::string &sum_dim, const std::string &max_dim, const std::string &dp_dim)
 {
     if (res_type.is_double() &&
         (query.dimensions().size() == 2) && (query.cell_type() == CellType::FLOAT) &&
@@ -70,7 +70,7 @@ bool check_params(const ValueType &res_type, const ValueType &query, const Value
     return false;
 }
 
-size_t get_dim_size(const ValueType &type, const vespalib::string &dim) {
+size_t get_dim_size(const ValueType &type, const std::string &dim) {
     size_t npos = ValueType::Dimension::npos;
     size_t idx = type.dimension_index(dim);
     assert(idx != npos);

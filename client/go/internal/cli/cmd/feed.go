@@ -86,7 +86,7 @@ in a JSON format:
 - http.request.MBps: Request throughput measured in MB/s. This is the raw
   operation throughput, and not the network throughput,
   I.e. using compression does not affect this number.
-- http.exception.count: Same as feeder.error.count. Present for compatiblity
+- http.exception.count: Same as feeder.error.count. Present for compatibility
   with vespa-feed-client.
 - http.response.count: Number of HTTP responses received.
 - http.response.bytes: Number of bytes received.

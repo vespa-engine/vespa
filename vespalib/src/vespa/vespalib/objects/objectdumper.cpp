@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "objectdumper.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <string>
 
 namespace vespalib {
 
-using string = vespalib::string;
+using string = std::string;
 
 void
 ObjectDumper::addIndent()
@@ -51,7 +52,7 @@ void
 ObjectDumper::openStruct(std::string_view name, std::string_view type)
 {
     if (name.empty()) {
-        addLine(type + " {");
+        addLine(std::string(type) + " {");
     } else {
         addLine((string(name).append(": ").append(type).append(" {")));
     }
@@ -92,7 +93,7 @@ ObjectDumper::visitString(std::string_view name, std::string_view value)
 void
 ObjectDumper::visitNull(std::string_view name)
 {
-    addLine(name + ": <NULL>");
+    addLine(std::string(name) + ": <NULL>");
 }
 
 void

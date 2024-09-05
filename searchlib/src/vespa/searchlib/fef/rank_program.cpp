@@ -64,7 +64,7 @@ struct OverrideVisitor : public IPropertiesVisitor
             const auto &feature_type = specs[ref.executor].output_types[ref.output];
             if (feature_type.is_object()) {
                 const auto &value_type = feature_type.type();
-                const vespalib::string &encoded_value = prop.get();
+                const std::string &encoded_value = prop.get();
                 vespalib::nbostream stream(encoded_value.data(), encoded_value.size());
                 try {
                     auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
@@ -109,15 +109,15 @@ struct ProfiledExecutor : FeatureExecutor {
     ExecutionProfiler::TaskId self;
     ProfiledExecutor(ExecutionProfiler &profiler_in,
                      FeatureExecutor &executor_in,
-                     const vespalib::string &name)
+                     const std::string &name)
       : profiler(profiler_in), executor(executor_in), self(profiler.resolve(name)) {}
     void handle_bind_match_data(const MatchData &md) override {
         executor.bind_match_data(md);
     }
-    void handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs) override {
+    void handle_bind_inputs(std::span<const LazyValue> inputs) override {
         executor.bind_inputs(inputs);
     }
-    void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs) override {
+    void handle_bind_outputs(std::span<NumberOrObject> outputs) override {
         executor.bind_outputs(outputs);
     }
     bool isPure() override {
@@ -179,12 +179,12 @@ RankProgram::unbox(BlueprintResolver::FeatureRef seed, const MatchData &md)
 {
     FeatureExecutor *input_executor = _executors[seed.executor];
     const NumberOrObject *input_value = input_executor->outputs().get_raw(seed.output);
-    vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(1);
+    std::span<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(1);
     if (check_const(input_value)) {
         outputs[0].as_number = input_value->as_object.get().as_double();
         _unboxed_seeds.emplace(input_value, LazyValue(&outputs[0]));
     } else {
-        vespalib::ArrayRef<LazyValue> inputs = _hot_stash.create_array<LazyValue>(1, input_value, input_executor);
+        std::span<LazyValue> inputs = _hot_stash.create_array<LazyValue>(1, input_value, input_executor);
         FeatureExecutor &unboxer = _hot_stash.create<UnboxingExecutor>();        
         unboxer.bind_inputs(inputs);
         unboxer.bind_outputs(outputs);
@@ -244,7 +244,7 @@ RankProgram::setup(const MatchData &md,
     _executors.reserve(specs.size());
     _is_const.resize(specs.size()*2); // Reserve space in hashmap for executors to be const
     for (uint32_t i = 0; i < specs.size(); ++i) {
-        vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
+        std::span<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
         StashSelector stash(_hot_stash, _cold_stash);
         FeatureExecutor *executor = &(specs[i].blueprint->createExecutor(queryEnv, stash.get()));
         bool is_const = check_const(executor, specs[i].inputs);
@@ -254,7 +254,7 @@ RankProgram::setup(const MatchData &md,
             is_const = executor->isPure();
         }
         size_t num_inputs = specs[i].inputs.size();
-        vespalib::ArrayRef<LazyValue> inputs = stash.get().create_array<LazyValue>(num_inputs, nullptr);
+        std::span<LazyValue> inputs = stash.get().create_array<LazyValue>(num_inputs, nullptr);
         for (size_t input_idx = 0; input_idx < num_inputs; ++input_idx) {
             auto ref = specs[i].inputs[input_idx];
             FeatureExecutor *input_executor = _executors[ref.executor];
@@ -291,9 +291,9 @@ RankProgram::setup(const MatchData &md,
     LOG(debug, "Num executors = %ld, hot stash = %ld, cold stash = %ld, match data fields = %d",
                _executors.size(), _hot_stash.count_used(), _cold_stash.count_used(), md.getNumTermFields());
     if (LOG_WOULD_LOG(debug)) {
-        vespalib::hash_map<vespalib::string, size_t> executorStats;
+        vespalib::hash_map<std::string, size_t> executorStats;
         for (const FeatureExecutor * executor : _executors) {
-            vespalib::string name = executor->getClassName();
+            std::string name = executor->getClassName();
             if (executorStats.find(name) == executorStats.end()) {
                 executorStats[name] = 1;
             } else {

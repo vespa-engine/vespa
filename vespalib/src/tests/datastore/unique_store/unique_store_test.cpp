@@ -8,7 +8,6 @@
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
@@ -19,7 +18,6 @@ LOG_SETUP("unique_store_test");
 enum class DictionaryType { BTREE, HASH, BTREE_AND_HASH };
 
 using namespace vespalib::datastore;
-using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
@@ -128,7 +126,7 @@ struct TestBase : public ::testing::Test {
         }
         refs.push_back(AtomicEntryRef());
         std::vector<AtomicEntryRef> compactedRefs = refs;
-        remapper->remap(ArrayRef<AtomicEntryRef>(compactedRefs));
+        remapper->remap(std::span<AtomicEntryRef>(compactedRefs));
         remapper->done();
         remapper.reset();
         ASSERT_FALSE(refs.back().load_relaxed().valid());

@@ -189,7 +189,7 @@ Group::getConfigHash(vespalib::asciistream& out) const
     out << ')';
 }
 
-vespalib::string
+std::string
 Group::getDistributionConfigHash() const {
     vespalib::asciistream ost;
     getConfigHash(ost);

@@ -4,9 +4,9 @@
 
 namespace search::fef {
 
-RankingConstants::Constant::Constant(const vespalib::string &name_in,
-                                     const vespalib::string &type_in,
-                                     const vespalib::string &filePath_in)
+RankingConstants::Constant::Constant(const std::string &name_in,
+                                     const std::string &type_in,
+                                     const std::string &filePath_in)
     : name(name_in),
       type(type_in),
       filePath(filePath_in)
@@ -46,7 +46,7 @@ RankingConstants::operator==(const RankingConstants &rhs) const
 }
 
 const RankingConstants::Constant *
-RankingConstants::getConstant(const vespalib::string &name) const
+RankingConstants::getConstant(const std::string &name) const
 {
     auto itr = _constants.find(name);
     if (itr != _constants.end()) {

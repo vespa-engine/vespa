@@ -32,13 +32,13 @@ namespace search::fef {
 
 using ValueWrapper = AnyWrapper<Value::UP>;
 
-InvalidValueTypeException::InvalidValueTypeException(const vespalib::string& query_key, const vespalib::string& type_str_in)
+InvalidValueTypeException::InvalidValueTypeException(const std::string& query_key, const std::string& type_str_in)
     : vespalib::Exception("Invalid type '" + type_str_in + "' for query value '" + query_key + "'"),
       _type_str(type_str_in)
 {
 }
 
-InvalidTensorValueException::InvalidTensorValueException(const vespalib::eval::ValueType& type, const vespalib::string& expr_in)
+InvalidTensorValueException::InvalidTensorValueException(const vespalib::eval::ValueType& type, const std::string& expr_in)
     : vespalib::Exception("Could not create tensor value of type '" + type.to_spec() + "' from the expression '" + expr_in + "'"),
       _expr(expr_in)
 {
@@ -54,7 +54,7 @@ namespace {
  * "'" if it exists.
  */
 feature_t
-as_feature(const vespalib::string& str)
+as_feature(const std::string& str)
 {
     char *end;
     errno = 0;
@@ -79,7 +79,7 @@ empty_tensor(const ValueType& type)
 
 // Create a tensor value by evaluating a self-contained expression.
 std::unique_ptr<Value>
-as_tensor(const vespalib::string& expr, const ValueType& wanted_type)
+as_tensor(const std::string& expr, const ValueType& wanted_type)
 {
     const auto& factory = vespalib::eval::FastValueBuilderFactory::get();
     auto fun = Function::parse(expr);
@@ -100,7 +100,7 @@ std::unique_ptr<Value>
 decode_tensor_value(Property prop, const ValueType& value_type)
 {
     if (prop.found() && !prop.get().empty()) {
-        const vespalib::string& value = prop.get();
+        const std::string& value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
         try {
             auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
@@ -153,7 +153,7 @@ QueryValue::QueryValue()
 {
 }
 
-QueryValue::QueryValue(const vespalib::string& key, vespalib::eval::ValueType type)
+QueryValue::QueryValue(const std::string& key, vespalib::eval::ValueType type)
     : _key(key),
       _name("query(" + key + ")"),
       _old_key("$" + key),
@@ -165,9 +165,9 @@ QueryValue::QueryValue(const vespalib::string& key, vespalib::eval::ValueType ty
 QueryValue::~QueryValue() = default;
 
 QueryValue
-QueryValue::from_config(const vespalib::string& key, const IIndexEnvironment& env)
+QueryValue::from_config(const std::string& key, const IIndexEnvironment& env)
 {
-    vespalib::string type_str = type::QueryFeature::lookup(env.getProperties(), key);
+    std::string type_str = type::QueryFeature::lookup(env.getProperties(), key);
     ValueType type = type_str.empty() ? ValueType::double_type() : ValueType::from_spec(type_str);
     if (type.is_error()) {
         throw InvalidValueTypeException(key, type_str);

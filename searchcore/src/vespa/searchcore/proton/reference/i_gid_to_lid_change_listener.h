@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/idestructorcallback.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace document { class GlobalId; }
@@ -22,8 +22,8 @@ public:
     virtual void notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid) = 0;
     virtual void notifyRemove(IDestructorCallbackSP context, document::GlobalId gid) = 0;
     virtual void notifyRegistered(const std::vector<document::GlobalId>& removes) = 0;
-    virtual const vespalib::string &getName() const = 0;
-    virtual const vespalib::string &getDocTypeName() const = 0;
+    virtual const std::string &getName() const = 0;
+    virtual const std::string &getDocTypeName() const = 0;
 };
 
 } // namespace proton

@@ -25,16 +25,16 @@ FlattenDocsumWriter::onPrimitive(uint32_t, const Content & c)
     } else if (fv.isNumeric() ||
                fv.isA(document::FieldValue::Type::BOOL))
     {
-        vespalib::string value = fv.getAsString();
+        std::string value = fv.getAsString();
         _output.put(value.data(), value.size());
     } else {
-        vespalib::string value = fv.toString();
+        std::string value = fv.toString();
         _output.put(value.data(), value.size());
     }
     _useSeparator = true;
 }
 
-FlattenDocsumWriter::FlattenDocsumWriter(const vespalib::string & separator) :
+FlattenDocsumWriter::FlattenDocsumWriter(const std::string & separator) :
     _output(32),
     _separator(separator),
     _useSeparator(false)

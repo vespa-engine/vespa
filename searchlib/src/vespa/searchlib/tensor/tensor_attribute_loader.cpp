@@ -33,7 +33,7 @@ namespace search::tensor {
 inline namespace loader {
 
 constexpr uint32_t LOAD_COMMIT_INTERVAL = 256;
-const vespalib::string tensorTypeTag("tensortype");
+const std::string tensorTypeTag("tensortype");
 
 bool
 can_use_index_save_file(const search::attribute::Config &config, const AttributeHeader& header)

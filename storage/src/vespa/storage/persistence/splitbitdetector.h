@@ -37,7 +37,7 @@ struct SplitBitDetector
         ResultType _result;
         document::BucketId _target1;
         document::BucketId _target2;
-        vespalib::string _reason;
+        std::string _reason;
         bool _singleTarget;
 
     public:
@@ -51,7 +51,7 @@ struct SplitBitDetector
         bool success() const { return (_result == OK); }
         bool failed() const { return (_result == ERROR); }
         bool empty() const { return (_result == EMPTY); }
-        const vespalib::string& getReason() const { return _reason; }
+        const std::string& getReason() const { return _reason; }
         const document::BucketId& getTarget1() const { return _target1; }
         const document::BucketId& getTarget2() const { return _target2; }
 

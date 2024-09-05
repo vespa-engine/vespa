@@ -17,9 +17,9 @@ void TensorCreate      ::accept(NodeVisitor &visitor) const { visitor.visit(*thi
 void TensorLambda      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorPeek        ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 
-vespalib::string
+std::string
 TensorMap::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "map(";
     str += _child->dump(ctx);
     str += ",";
@@ -28,9 +28,9 @@ TensorMap::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorMapSubspaces::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "map_subspaces(";
     str += _child->dump(ctx);
     str += ",";
@@ -39,9 +39,9 @@ TensorMapSubspaces::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorJoin::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "join(";
     str += _lhs->dump(ctx);
     str += ",";
@@ -52,9 +52,9 @@ TensorJoin::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorMerge::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "join(";
     str += _lhs->dump(ctx);
     str += ",";
@@ -65,9 +65,9 @@ TensorMerge::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorReduce::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "reduce(";
     str += _child->dump(ctx);
     str += ",";
@@ -80,9 +80,9 @@ TensorReduce::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorRename::dump(DumpContext &ctx) const  {
-    vespalib::string str;
+    std::string str;
     str += "rename(";
     str += _child->dump(ctx);
     str += ",";
@@ -93,12 +93,12 @@ TensorRename::dump(DumpContext &ctx) const  {
     return str;
 }
 
-vespalib::string
-TensorRename::flatten(const std::vector<vespalib::string> &list) {
+std::string
+TensorRename::flatten(const std::vector<std::string> &list) {
     if (list.size() == 1) {
         return list[0];
     }
-    vespalib::string str = "(";
+    std::string str = "(";
     for (size_t i = 0; i < list.size(); ++i) {
         if (i > 0) {
             str += ",";
@@ -109,9 +109,9 @@ TensorRename::flatten(const std::vector<vespalib::string> &list) {
     return str;
 }
 
-vespalib::string
+std::string
 TensorConcat::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "concat(";
     str += _lhs->dump(ctx);
     str += ",";
@@ -122,9 +122,9 @@ TensorConcat::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorCellCast::dump(DumpContext &ctx) const {
-    vespalib::string str;
+    std::string str;
     str += "cell_cast(";
     str += _child->dump(ctx);
     str += ",";
@@ -133,9 +133,9 @@ TensorCellCast::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorCreate::dump(DumpContext &ctx) const {
-    vespalib::string str = _type.to_spec();
+    std::string str = _type.to_spec();
     str += ":{";
     CommaTracker child_list;
     for (const Child &child: _cells) {
@@ -148,11 +148,11 @@ TensorCreate::dump(DumpContext &ctx) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorLambda::dump(DumpContext &) const {
-    vespalib::string str = _type.to_spec();
-    vespalib::string expr = _lambda->dump();
-    if (starts_with(expr, "(")) {
+    std::string str = _type.to_spec();
+    std::string expr = _lambda->dump();
+    if (expr.starts_with("(")) {
         str += expr;
     } else {
         str += "(";
@@ -162,9 +162,9 @@ TensorLambda::dump(DumpContext &) const {
     return str;
 }
 
-vespalib::string
+std::string
 TensorPeek::dump(DumpContext &ctx) const {
-    vespalib::string str = _param->dump(ctx);
+    std::string str = _param->dump(ctx);
     str += "{";
     CommaTracker dim_list;
     for (const auto &dim : _dim_list) {
@@ -172,8 +172,8 @@ TensorPeek::dump(DumpContext &ctx) const {
         str += dim.first;
         str += ":";
         if (dim.second.is_expr()) {
-            vespalib::string expr = dim.second.expr->dump(ctx);
-            if (starts_with(expr, "(")) {
+            std::string expr = dim.second.expr->dump(ctx);
+            if (expr.starts_with("(")) {
                 str += expr;
             } else {
                 str += "(";

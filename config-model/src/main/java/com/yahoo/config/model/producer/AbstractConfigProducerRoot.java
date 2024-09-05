@@ -61,4 +61,5 @@ public abstract class AbstractConfigProducerRoot extends TreeConfigProducer<AnyC
                 .filter(Service.class::isInstance)
                 .map(Service.class::cast);
     }
+
 }

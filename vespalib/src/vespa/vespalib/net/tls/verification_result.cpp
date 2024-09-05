@@ -57,7 +57,7 @@ std::ostream& operator<<(std::ostream& os, const VerificationResult& res) {
     return os;
 }
 
-string
+std::string
 to_string(const VerificationResult& res) {
     asciistream os;
     os << res;

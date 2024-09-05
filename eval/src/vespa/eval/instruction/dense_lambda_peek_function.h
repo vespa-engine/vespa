@@ -24,7 +24,7 @@ public:
                             std::shared_ptr<Function const> idx_fun);
     ~DenseLambdaPeekFunction() override;
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
-    vespalib::string idx_fun_dump() const;
+    std::string idx_fun_dump() const;
     bool result_is_mutable() const override { return true; }
 };
 

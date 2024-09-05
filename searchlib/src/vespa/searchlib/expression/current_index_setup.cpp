@@ -9,7 +9,7 @@ namespace search::expression {
 void
 CurrentIndexSetup::Usage::notify_unbound_struct_usage(std::string_view name)
 {
-    _unbound.insert(vespalib::string(name));
+    _unbound.insert(std::string(name));
 }
 
 CurrentIndexSetup::Usage::Usage()
@@ -66,7 +66,7 @@ CurrentIndexSetup::resolve(std::string_view field_name) const
 void
 CurrentIndexSetup::bind(std::string_view struct_name, const CurrentIndex &index)
 {
-    auto res = _bound.insert(std::make_pair(vespalib::string(struct_name),
+    auto res = _bound.insert(std::make_pair(std::string(struct_name),
                                             std::addressof(index)));
     assert(res.second); // struct must be either bound or unbound
 }

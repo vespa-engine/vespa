@@ -38,7 +38,7 @@ FRTConfigResponse::hasValidResponse() const
     return (_responseState == OK);
 }
 
-vespalib::string FRTConfigResponse::errorMessage() const { return _request->GetErrorMessage(); }
+std::string FRTConfigResponse::errorMessage() const { return _request->GetErrorMessage(); }
 int FRTConfigResponse::errorCode() const { return _request->GetErrorCode(); }
 bool FRTConfigResponse::isError() const { return _request->IsError(); }
 

@@ -8,7 +8,7 @@ namespace search::fef {
 FeatureExecutor::FeatureExecutor() = default;
 
 
-vespalib::string
+std::string
 FeatureExecutor::getClassName() const
 {
     return vespalib::getClassName(*this);
@@ -21,12 +21,12 @@ FeatureExecutor::isPure()
 }
 
 void
-FeatureExecutor::handle_bind_inputs(vespalib::ConstArrayRef<LazyValue>)
+FeatureExecutor::handle_bind_inputs(std::span<const LazyValue>)
 {
 }
 
 void
-FeatureExecutor::handle_bind_outputs(vespalib::ArrayRef<NumberOrObject>)
+FeatureExecutor::handle_bind_outputs(std::span<NumberOrObject>)
 {
 }
 
@@ -36,14 +36,14 @@ FeatureExecutor::handle_bind_match_data(const MatchData &)
 }
 
 void
-FeatureExecutor::bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs)
+FeatureExecutor::bind_inputs(std::span<const LazyValue> inputs)
 {
     _inputs.bind(inputs);
     handle_bind_inputs(inputs);
 }
 
 void
-FeatureExecutor::bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs)
+FeatureExecutor::bind_outputs(std::span<NumberOrObject> outputs)
 {
     _outputs.bind(outputs);
     handle_bind_outputs(outputs);

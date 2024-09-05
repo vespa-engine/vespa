@@ -19,17 +19,17 @@ using namespace vespalib::test;
 
 //-----------------------------------------------------------------------------
 
-vespalib::string do_http(int port, CryptoEngine::SP crypto, const vespalib::string &method, const vespalib::string &uri, bool send_host = true) {
+std::string do_http(int port, CryptoEngine::SP crypto, const std::string &method, const std::string &uri, bool send_host = true) {
     auto socket = SocketSpec::from_port(port).client_address().connect();
     ASSERT_TRUE(socket.valid());
     auto conn = SyncCryptoSocket::create_client(*crypto, std::move(socket), make_local_spec());
-    vespalib::string http_req = vespalib::make_string("%s %s HTTP/1.1\r\n"
+    std::string http_req = vespalib::make_string("%s %s HTTP/1.1\r\n"
                                                       "My-Header: my value\r\n"
                                                       "%s"
                                                       "\r\n", method.c_str(), uri.c_str(), send_host ? "Host: HOST:42\r\n" : "");
     ASSERT_EQUAL(conn->write(http_req.data(), http_req.size()), ssize_t(http_req.size()));
     char buf[1024];
-    vespalib::string result;
+    std::string result;
     ssize_t res = conn->read(buf, sizeof(buf));
     while (res > 0) {
         result.append(std::string_view(buf, res));
@@ -39,13 +39,13 @@ vespalib::string do_http(int port, CryptoEngine::SP crypto, const vespalib::stri
     return result;
 }
 
-vespalib::string fetch(int port, CryptoEngine::SP crypto, const vespalib::string &path, bool send_host = true) {
+std::string fetch(int port, CryptoEngine::SP crypto, const std::string &path, bool send_host = true) {
     return do_http(port, std::move(crypto), "GET", path, send_host);
 }
 
 //-----------------------------------------------------------------------------
 
-vespalib::string make_expected_response(const vespalib::string &content_type, const vespalib::string &content) {
+std::string make_expected_response(const std::string &content_type, const std::string &content) {
     return vespalib::make_string("HTTP/1.1 200 OK\r\n"
                                  "Connection: close\r\n"
                                  "Content-Type: %s\r\n"
@@ -60,7 +60,7 @@ vespalib::string make_expected_response(const vespalib::string &content_type, co
                                  "%s", content_type.c_str(), content.size(), content.c_str());
 }
 
-vespalib::string make_expected_error(int code, const vespalib::string &message) {
+std::string make_expected_error(int code, const std::string &message) {
     return vespalib::make_string("HTTP/1.1 %d %s\r\n"
                                  "Connection: close\r\n"
                                  "\r\n", code, message.c_str());
@@ -69,7 +69,7 @@ vespalib::string make_expected_error(int code, const vespalib::string &message) 
 //-----------------------------------------------------------------------------
 
 struct Encryption {
-    vespalib::string name;
+    std::string name;
     CryptoEngine::SP engine;
     ~Encryption();
 };
@@ -109,9 +109,9 @@ TEST("require that portal can listen to auto-selected port") {
 }
 
 TEST("require that simple GET works with various encryption strategies") {
-    vespalib::string path = "/test";
-    vespalib::string type = "application/json";
-    vespalib::string content = "[1,2,3]";
+    std::string path = "/test";
+    std::string type = "application/json";
+    std::string content = "[1,2,3]";
     MyGetHandler handler([&](Portal::GetRequest request)
                          {
                              EXPECT_EQUAL(request.get_uri(), path);
@@ -176,7 +176,7 @@ TEST("require that methods other than GET return not implemented error") {
     auto expect_other = make_expected_error(501, "Not Implemented");
     for (const auto &method: {"OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"}) {
         auto result = do_http(portal->listen_port(), null_crypto(), method, "/test");
-        if (vespalib::string("GET") == method) {
+        if (std::string("GET") == method) {
             EXPECT_EQUAL(result, expect_get);
         } else {
             EXPECT_EQUAL(result, expect_other);
@@ -185,7 +185,7 @@ TEST("require that methods other than GET return not implemented error") {
 }
 
 TEST("require that GET handler can return HTTP error") {
-    vespalib::string path = "/test";
+    std::string path = "/test";
     auto portal = Portal::create(null_crypto(), 0);
     auto expect = make_expected_error(123, "My Error");
     MyGetHandler handler([](Portal::GetRequest request)
@@ -198,7 +198,7 @@ TEST("require that GET handler can return HTTP error") {
 }
 
 TEST("require that get requests dropped on the floor returns HTTP error") {
-    vespalib::string path = "/test";
+    std::string path = "/test";
     auto portal = Portal::create(null_crypto(), 0);
     auto expect = make_expected_error(500, "Internal Server Error");
     MyGetHandler handler([](Portal::GetRequest) noexcept {});
@@ -265,14 +265,14 @@ TEST("require that connection errors do not block shutdown by leaking resources"
         { // send partial request then close connection
             auto socket = SocketSpec::from_port(portal->listen_port()).client_address().connect();
             auto conn = SyncCryptoSocket::create_client(*crypto.engine, std::move(socket), make_local_spec());
-            vespalib::string req = "GET /test HTTP/1.1\r\n"
+            std::string req = "GET /test HTTP/1.1\r\n"
                                    "Host: local";
             ASSERT_EQUAL(conn->write(req.data(), req.size()), ssize_t(req.size()));
         }
         { // send request then close without reading response
             auto socket = SocketSpec::from_port(portal->listen_port()).client_address().connect();
             auto conn = SyncCryptoSocket::create_client(*crypto.engine, std::move(socket), make_local_spec());
-            vespalib::string req = "GET /test HTTP/1.1\r\n"
+            std::string req = "GET /test HTTP/1.1\r\n"
                                    "Host: localhost\r\n"
                                    "\r\n";
             ASSERT_EQUAL(conn->write(req.data(), req.size()), ssize_t(req.size()));

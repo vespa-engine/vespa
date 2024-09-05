@@ -60,7 +60,7 @@ SlimeFillerFilter::add(std::string_view field_path)
     std::string_view field_name;
     std::string_view remaining_path;
     auto dot_pos = field_path.find('.');
-    if (dot_pos != vespalib::string::npos) {
+    if (dot_pos != std::string::npos) {
         field_name = field_path.substr(0, dot_pos);
         remaining_path = field_path.substr(dot_pos + 1);
     } else {
@@ -76,7 +76,7 @@ SlimeFillerFilter::add(std::string_view field_path)
             }
         }
     } else {
-        auto insres = _filter.insert(std::make_pair(vespalib::string(field_name), std::unique_ptr<SlimeFillerFilter>()));
+        auto insres = _filter.insert(std::make_pair(std::string(field_name), std::unique_ptr<SlimeFillerFilter>()));
         assert(insres.second);
         if (!remaining_path.empty()) {
             insres.first->second = std::make_unique<SlimeFillerFilter>();
@@ -91,7 +91,7 @@ SlimeFillerFilter::add_remaining(std::unique_ptr<SlimeFillerFilter>& filter, std
 {
     if (filter) {
         auto dot_pos = field_path.find('.');
-        if (dot_pos != vespalib::string::npos) {
+        if (dot_pos != std::string::npos) {
             auto remaining_path = field_path.substr(dot_pos + 1);
             if (!remaining_path.empty()) {
                 filter->add(remaining_path);

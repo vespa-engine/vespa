@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/parsequery/item_creator.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 #ifndef JUNIPER_RPIF
 #define JUNIPER_RPIF 1

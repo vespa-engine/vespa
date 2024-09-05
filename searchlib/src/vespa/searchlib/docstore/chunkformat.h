@@ -12,7 +12,7 @@ namespace search {
 class ChunkException : public vespalib::Exception
 {
 public:
-    ChunkException(const vespalib::string & msg, std::string_view location);
+    ChunkException(const std::string & msg, std::string_view location);
 };
 
 // This is an interface for implementing a chunk format

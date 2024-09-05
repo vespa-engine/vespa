@@ -60,7 +60,7 @@ SimpleHealthProducer::setOk()
 }
 
 void
-SimpleHealthProducer::setFailed(const vespalib::string &msg)
+SimpleHealthProducer::setFailed(const std::string &msg)
 {
     std::lock_guard guard(_lock);
     _health = Health(false, msg);

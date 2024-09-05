@@ -38,7 +38,7 @@ public:
                 const IndexEnvironment &indexEnv,
                 QueryEnvironment &queryEnv,
                 MatchDataLayout &layout,
-                const std::vector<vespalib::string> &features,
+                const std::vector<std::string> &features,
                 const Properties &overrides);
     ~FeatureTest();
 
@@ -56,7 +56,7 @@ public:
                 const IndexEnvironment &indexEnv,
                 QueryEnvironment &queryEnv,
                 MatchDataLayout &layout,
-                const vespalib::string &feature,
+                const std::string &feature,
                 const Properties &overrides);
     /**
      * Necessary method to setup the internal feature execution manager. A test will typically assert on the return of
@@ -112,7 +112,7 @@ private:
     BlueprintFactory                       &_factory;
     const IndexEnvironment                 &_indexEnv;
     QueryEnvironment                       &_queryEnv;
-    std::vector<vespalib::string>           _features;
+    std::vector<std::string>           _features;
     MatchDataLayout                        &_layout;
     const Properties                       &_overrides;
     BlueprintResolver::SP                   _resolver;

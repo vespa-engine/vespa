@@ -57,7 +57,7 @@ struct CountParen {
 
 void
 FeatureNameExtractor::extract_symbol(const char *pos_in, const char *end_in,
-                                     const char *&pos_out, vespalib::string &symbol_out) const
+                                     const char *&pos_out, std::string &symbol_out) const
 {
     while ((pos_in < end_in) && prefix.is_legal(*pos_in)) {
         symbol_out.push_back(*pos_in++);

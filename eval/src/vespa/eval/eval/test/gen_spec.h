@@ -52,22 +52,22 @@ Sequence Seq(const std::vector<double> &seq);
 class DimSpec
 {
 private:
-    vespalib::string              _name;
+    std::string              _name;
     size_t                        _size;
-    std::vector<vespalib::string> _dict;
+    std::vector<std::string> _dict;
 public:
-    DimSpec(const vespalib::string &name, size_t size) noexcept;
-    DimSpec(const vespalib::string &name, std::vector<vespalib::string> dict) noexcept;
+    DimSpec(const std::string &name, size_t size) noexcept;
+    DimSpec(const std::string &name, std::vector<std::string> dict) noexcept;
     DimSpec(DimSpec &&) noexcept;
     DimSpec & operator=(DimSpec &&) noexcept;
     DimSpec & operator=(const DimSpec &);
     DimSpec(const DimSpec &);
     ~DimSpec();
-    static std::vector<vespalib::string> make_dict(size_t size, size_t stride, const vespalib::string &prefix);
+    static std::vector<std::string> make_dict(size_t size, size_t stride, const std::string &prefix);
     ValueType::Dimension type() const {
         return _size ? ValueType::Dimension{_name, uint32_t(_size)} : ValueType::Dimension{_name};
     }
-    const vespalib::string &name() const { return _name; }
+    const std::string &name() const { return _name; }
     size_t size() const {
         return _size ? _size : _dict.size();
     }
@@ -81,7 +81,7 @@ public:
     //
     // 'a2' -> DimSpec("a", 2);
     // 'b2_3' -> DimSpec("b", make_dict(2, 3, ""));
-    static DimSpec from_desc(const vespalib::string &desc);
+    static DimSpec from_desc(const std::string &desc);
 };
 
 /**
@@ -108,7 +108,7 @@ public:
     //
     // 'a2b12c5' -> GenSpec().idx("a", 2).idx("b", 12).idx("c", 5);
     // 'a2_1b3_2c5_1' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
-    static GenSpec from_desc(const vespalib::string &desc);
+    static GenSpec from_desc(const std::string &desc);
 
     GenSpec(GenSpec &&other) noexcept;
     GenSpec(const GenSpec &other);
@@ -119,20 +119,20 @@ public:
     CellType cells() const { return _cells; }
     const seq_t &seq() const { return _seq; }
     GenSpec cpy() const { return *this; }
-    GenSpec &idx(const vespalib::string &name, size_t size) {
+    GenSpec &idx(const std::string &name, size_t size) {
         assert(size != 0);
         _dims.emplace_back(name, size);
         return *this;
     }
-    GenSpec &map(const vespalib::string &name, size_t size, size_t stride = 1, const vespalib::string &prefix = "") {
+    GenSpec &map(const std::string &name, size_t size, size_t stride = 1, const std::string &prefix = "") {
         _dims.emplace_back(name, DimSpec::make_dict(size, stride, prefix));
         return *this;
     }
-    GenSpec &map(const vespalib::string &name, std::vector<vespalib::string> dict) {
+    GenSpec &map(const std::string &name, std::vector<std::string> dict) {
         _dims.emplace_back(name, std::move(dict));
         return *this;
     }
-    GenSpec &desc(const vespalib::string &dim_desc) {
+    GenSpec &desc(const std::string &dim_desc) {
         _dims.push_back(DimSpec::from_desc(dim_desc));
         return *this;
     }

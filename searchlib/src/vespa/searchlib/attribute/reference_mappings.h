@@ -45,9 +45,9 @@ class ReferenceMappings
     void syncReverseMappingIndices(const Reference &entry);
 
 public:
-    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
+    using TargetLids = std::span<const AtomicTargetLid>;
     // Class used to map from target lid to source lids
-    using ReverseMappingRefs = vespalib::ConstArrayRef<AtomicEntryRef>;
+    using ReverseMappingRefs = std::span<const AtomicEntryRef>;
 
     ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit,
                       const vespalib::alloc::Alloc& initial_alloc);

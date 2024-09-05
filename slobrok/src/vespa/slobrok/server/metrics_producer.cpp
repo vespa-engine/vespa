@@ -52,7 +52,7 @@ public:
     MetricSnapshot(system_clock::time_point prevTime, system_clock::time_point currTime);
     void addCount(const char *name, const char *desc, uint32_t count);
 
-    vespalib::string asString() const {
+    std::string asString() const {
         return _data.toString();
     }
 };
@@ -84,7 +84,7 @@ MetricSnapshot::addCount(const char *name, const char *desc, uint32_t count)
     inner.setDouble("rate", count / _snapLen);
 }
 
-vespalib::string
+std::string
 make_json_snapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
                    system_clock::time_point prevTime, system_clock::time_point currTime)
 {
@@ -127,7 +127,7 @@ void emit_prometheus_gauge(vespalib::asciistream &out, std::string_view name,
     out << name << ' ' << value << ' ' << ms_since_epoch(now).count() << '\n';
 }
 
-vespalib::string
+std::string
 make_prometheus_snapshot(const RPCHooks::Metrics &curr, system_clock::time_point now)
 {
     vespalib::asciistream out;
@@ -164,14 +164,14 @@ MetricsProducer::MetricsProducer(const RPCHooks &hooks, FNET_Transport &transpor
 
 MetricsProducer::~MetricsProducer() = default;
 
-vespalib::string
-MetricsProducer::getMetrics(const vespalib::string &consumer, ExpositionFormat format)
+std::string
+MetricsProducer::getMetrics(const std::string &consumer, ExpositionFormat format)
 {
     return _producer.getMetrics(consumer, format);
 }
 
-vespalib::string
-MetricsProducer::getTotalMetrics(const vespalib::string &, ExpositionFormat format)
+std::string
+MetricsProducer::getTotalMetrics(const std::string &, ExpositionFormat format)
 {
     const auto now = system_clock::now();
     RPCHooks::Metrics current = _rpcHooks.getMetrics();

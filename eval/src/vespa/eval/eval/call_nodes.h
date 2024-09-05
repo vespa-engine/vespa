@@ -3,9 +3,9 @@
 #pragma once
 
 #include "basic_nodes.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <map>
 #include <cmath>
+#include <map>
+#include <string>
 
 namespace vespalib::eval { struct NodeVisitor; }
 
@@ -18,16 +18,16 @@ namespace vespalib::eval::nodes {
  **/
 class Call : public Node {
 private:
-    vespalib::string     _name;
+    std::string     _name;
     size_t               _num_params;
     std::vector<Node_UP> _args;
     bool                 _is_const_double;
 public:
-    Call(const vespalib::string &name_in, size_t num_params_in)
+    Call(const std::string &name_in, size_t num_params_in)
         : _name(name_in), _num_params(num_params_in), _is_const_double(false) {}
     ~Call();
     bool is_const_double() const override { return _is_const_double; }
-    const vespalib::string &name() const { return _name; }
+    const std::string &name() const { return _name; }
     size_t num_params() const { return _num_params; }
     size_t num_args() const { return _args.size(); }
     const Node &arg(size_t i) const { return *_args[i]; }
@@ -47,8 +47,8 @@ public:
         }
         _args.push_back(std::move(arg_in));
     }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
+    std::string dump(DumpContext &ctx) const override {
+        std::string str;
         str += _name;
         str += "(";
         for (size_t i = 0; i < _args.size(); ++i) {
@@ -73,21 +73,21 @@ class CallRepo {
 private:
     static CallRepo _instance;
     typedef nodes::Call_UP (*factory_type)();
-    std::map<vespalib::string,factory_type> _map;
+    std::map<std::string,factory_type> _map;
     template <typename T>
     void add(const T &op) { _map[op.name()] = T::create; }
     CallRepo();
 public:
     static const CallRepo &instance() { return _instance; }
-    nodes::Call_UP create(const vespalib::string &name) const {
+    nodes::Call_UP create(const std::string &name) const {
         auto result = _map.find(name);
         if (result != _map.end()) {
             return result->second();
         }
         return nodes::Call_UP(nullptr);
     }
-    std::vector<vespalib::string> get_names() const {
-        std::vector<vespalib::string> ret;
+    std::vector<std::string> get_names() const {
+        std::vector<std::string> ret;
         for (const auto &entry: _map) {
             ret.push_back(entry.first);
         }
@@ -100,7 +100,7 @@ public:
 template <typename T>
 struct CallHelper : Call {
     using Helper = CallHelper<T>;
-    CallHelper(const vespalib::string &name_in, size_t num_params_in)
+    CallHelper(const std::string &name_in, size_t num_params_in)
         : Call(name_in, num_params_in) {}
     void accept(NodeVisitor &visitor) const override;
     static Call_UP create() { return Call_UP(new T()); }

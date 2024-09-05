@@ -110,7 +110,7 @@ namespace {
 
 constexpr int tls_port = proton::test::port_numbers::docsummary_tls_port;
 
-vespalib::string tls_port_spec() {
+std::string tls_port_spec() {
     return vespalib::SocketSpec::from_host_port("localhost", tls_port).spec();
 }
 
@@ -121,9 +121,9 @@ namespace proton {
 class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory
 {
 public:
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string&,
-                                                                  const vespalib::string&,
-                                                                  const vespalib::string&,
+    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string&,
+                                                                  const std::string&,
+                                                                  const std::string&,
                                                                   std::shared_ptr<search::MatchingElementsFields>) override {
         return {};
     }
@@ -133,7 +133,7 @@ public:
 class DirMaker
 {
 public:
-    explicit DirMaker(const vespalib::string & dir) :
+    explicit DirMaker(const std::string & dir) :
         _dir(dir)
     {
         std::filesystem::create_directory(std::filesystem::path(dir));
@@ -142,7 +142,7 @@ public:
         std::filesystem::remove_all(std::filesystem::path(_dir));
     }
 private:
-    vespalib::string _dir;
+    std::string _dir;
 };
 
 class BuildContext : public DocBuilder
@@ -220,10 +220,10 @@ vespalib::eval::Value::UP make_tensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);
 }
 
-vespalib::string asVstring(vespalib::Memory str) {
-    return vespalib::string(str.data, str.size);
+std::string asVstring(vespalib::Memory str) {
+    return std::string(str.data, str.size);
 }
-vespalib::string asVstring(const Inspector &value) {
+std::string asVstring(const Inspector &value) {
     return asVstring(value.asString());
 }
 
@@ -367,12 +367,12 @@ public:
 
 class MockJuniperConverter : public IJuniperConverter
 {
-    vespalib::string _result;
+    std::string _result;
 public:
     void convert(std::string_view input, vespalib::slime::Inserter&) override {
         _result = input;
     }
-    const vespalib::string& get_result() const noexcept { return _result; }
+    const std::string& get_result() const noexcept { return _result; }
 };
 
 bool
@@ -827,8 +827,8 @@ TEST_F("requireThatUrisAreUsed", Fixture)
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(4L, slime.get()[0]["weight"].asLong());
         EXPECT_EQUAL(7L, slime.get()[1]["weight"].asLong());
-        vespalib::string arr0s = asVstring(slime.get()[0]["item"]);
-        vespalib::string arr1s = asVstring(slime.get()[1]["item"]);
+        std::string arr0s = asVstring(slime.get()[0]["item"]);
+        std::string arr1s = asVstring(slime.get()[1]["item"]);
         EXPECT_EQUAL("http://www.example.com:83/fluke?ab=2#12", arr0s);
         EXPECT_EQUAL("http://www.flickr.com:85/fluke?ab=2#13", arr1s);
     }

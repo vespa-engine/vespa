@@ -119,7 +119,7 @@ EnumeratedPostingsLoader::set_ref_count(Index idx, uint32_t ref_count)
     _store.set_ref_count(idx, ref_count);
 }
 
-vespalib::ArrayRef<vespalib::datastore::EntryRef>
+std::span<vespalib::datastore::EntryRef>
 EnumeratedPostingsLoader::initialize_empty_posting_indexes()
 {
     EntryRefVector(_indexes.size(), EntryRef()).swap(_posting_indexes);

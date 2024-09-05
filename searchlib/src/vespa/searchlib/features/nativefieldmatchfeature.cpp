@@ -137,7 +137,7 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
     vespalib::asciistream shared_state_key_builder;
     _params.resize(env.getNumFields());
     FieldWrapper fields(env, params, FieldType::INDEX);
-    vespalib::string defaultFirstOccImportance = env.getProperties().lookup(getBaseName(), "firstOccurrenceImportance").get("0.5");
+    std::string defaultFirstOccImportance = env.getProperties().lookup(getBaseName(), "firstOccurrenceImportance").get("0.5");
     shared_state_key_builder << "fef.nativeFieldMatch[";
     bool first_field = true;
     for (uint32_t i = 0; i < fields.getNumFields(); ++i) {

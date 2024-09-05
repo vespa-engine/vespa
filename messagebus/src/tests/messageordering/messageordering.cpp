@@ -45,7 +45,7 @@ public:
 
         std::lock_guard guard(_mon);
 
-        vespalib::string expected(vespalib::make_string("%d", _messageCounter));
+        std::string expected(vespalib::make_string("%d", _messageCounter));
         LOG(debug, "Got message %p with %s, expecting %s",
             msg.get(),
             simpleMsg.getValue().c_str(),
@@ -110,7 +110,7 @@ VerifyReplyReceptor::handleReply(Reply::UP reply)
         }
         LOG(warning, "%s", ss.str().c_str());
     } else {
-        vespalib::string expected(vespalib::make_string("%d", _replyCount));
+        std::string expected(vespalib::make_string("%d", _replyCount));
         auto & simpleReply(dynamic_cast<SimpleReply&>(*reply));
         if (simpleReply.getValue() != expected) {
             std::stringstream ss;
@@ -162,7 +162,7 @@ TEST("messageordering_test") {
     // send messages on client
     const int messageCount = 5000;
     for (int i = 0; i < messageCount; ++i) {
-        vespalib::string str(vespalib::make_string("%d", i));
+        std::string str(vespalib::make_string("%d", i));
         //std::this_thread::sleep_for(1ms);
         auto msg = std::make_unique<SimpleMessage>(str, true, commonMessageId);
         msg->getTrace().setLevel(9);

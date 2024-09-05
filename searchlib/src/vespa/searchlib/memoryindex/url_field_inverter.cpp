@@ -19,11 +19,11 @@ namespace search::memoryindex {
 
 namespace {
 
-static vespalib::string HOSTNAME_BEGIN("StArThOsT");
-static vespalib::string HOSTNAME_END("EnDhOsT");
+static std::string HOSTNAME_BEGIN("StArThOsT");
+static std::string HOSTNAME_END("EnDhOsT");
 
 static size_t
-lowercaseToken(vespalib::string &dest, const char *src, size_t srcSize)
+lowercaseToken(std::string &dest, const char *src, size_t srcSize)
 {
     dest.clear();
     dest.reserve(8 + srcSize);
@@ -114,20 +114,20 @@ void
 UrlFieldInverter::processUrlField(const FieldValue &url_field, const Document& doc)
 {
     assert(url_field.isA(FieldValue::Type::STRING));
-    const vespalib::string &url_str =
+    const std::string &url_str =
         static_cast<const StringFieldValue &>(url_field).getValue();
     processUrlOldStyle(url_str, doc);
     return;
 }
 
 void
-UrlFieldInverter::processUrlOldStyle(const vespalib::string &s, const Document& doc)
+UrlFieldInverter::processUrlOldStyle(const std::string &s, const Document& doc)
 {
     URL url(reinterpret_cast<const unsigned char *>(s.data()), s.size());
 
     _hostname->addWord(HOSTNAME_BEGIN, doc);
 
-    vespalib::string lowToken;
+    std::string lowToken;
     const unsigned char *t;
     URL::URL_CONTEXT url_context;
     while ((t = url.GetToken(url_context))) {
@@ -223,30 +223,23 @@ UrlFieldInverter::invertUrlField(const FieldValue &val, const Document& doc)
             startElement(1);
             processUrlField(val, doc);
             endElement();
-        } else {
-            throw std::runtime_error(make_string("Expected URI field, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
     case CollectionType::WEIGHTEDSET: {
-        assert(val.isA(FieldValue::Type::WSET));
-        const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
-        if (isUriType(wset.getNestedType())) {
-            processWeightedSetUrlField(wset, doc);
-        } else {
-            throw std::runtime_error(
-                    make_string("Expected wset of URI struct, got '%s'", wset.getNestedType().getName().c_str()));
+        if (val.isA(FieldValue::Type::WSET)) {
+            const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
+            if (isUriType(wset.getNestedType())) {
+                processWeightedSetUrlField(wset, doc);
+            }
         }
         break;
     }
     case CollectionType::ARRAY: {
-        assert(val.isA(FieldValue::Type::ARRAY));
-        const auto &arr = static_cast<const ArrayFieldValue &>(val);
-        if (isUriType(arr.getNestedType())) {
-            processArrayUrlField(arr, doc);
-        } else {
-            throw std::runtime_error(
-                    make_string("Expected array of URI struct, got '%s' (%s)", arr.getNestedType().getName().c_str(),
-                                arr.getNestedType().toString(true).c_str()));
+        if (val.isA(FieldValue::Type::ARRAY)) {
+            const auto &arr = static_cast<const ArrayFieldValue &>(val);
+            if (isUriType(arr.getNestedType())) {
+                processArrayUrlField(arr, doc);
+            }
         }
         break;
     }

@@ -41,7 +41,7 @@ struct SimpleLookupView : public Value::Index::View {
     SimpleLookupView(const Map &map_in, size_t num_dims)
         : map(map_in), my_addr(num_dims), pos(map.end()) {}
 
-    void lookup(ConstArrayRef<const string_id*> addr) override {
+    void lookup(std::span<const string_id* const> addr) override {
         assert(addr.size() == my_addr.size());
         for (size_t i = 0; i < my_addr.size(); ++i) {
             my_addr[i] = Handle::handle_from_id(*addr[i]);
@@ -49,7 +49,7 @@ struct SimpleLookupView : public Value::Index::View {
         pos = map.find(my_addr);
     }
 
-    bool next_result(ConstArrayRef<string_id*>, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const>, size_t &idx_out) override {
         if (pos == map.end()) {
             return false;
         }
@@ -83,7 +83,7 @@ struct SimpleFilterView : public Value::Index::View {
         return true;
     }
 
-    SimpleFilterView(const Map &map_in, ConstArrayRef<size_t> match_dims_in, size_t num_dims)
+    SimpleFilterView(const Map &map_in, std::span<const size_t> match_dims_in, size_t num_dims)
       : map(map_in), match_dims(match_dims_in.begin(), match_dims_in.end()),
         extract_dims(), query(match_dims.size()), pos(map.end())
     {
@@ -99,7 +99,7 @@ struct SimpleFilterView : public Value::Index::View {
         assert((match_dims.size() + extract_dims.size()) == num_dims);
     }
 
-    void lookup(ConstArrayRef<const string_id*> addr) override {
+    void lookup(std::span<const string_id* const> addr) override {
         assert(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
             query[i] = Handle::handle_from_id(*addr[i]);
@@ -107,7 +107,7 @@ struct SimpleFilterView : public Value::Index::View {
         pos = map.begin();
     }
 
-    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
         while (pos != map.end()) {
             if (is_match()) {
                 assert(addr_out.size() == extract_dims.size());
@@ -139,11 +139,11 @@ struct SimpleIterateView : public Value::Index::View {
     SimpleIterateView(const Map &map_in)
         : map(map_in), pos(map.end()) {}
 
-    void lookup(ConstArrayRef<const string_id*>) override {
+    void lookup(std::span<const string_id* const>) override {
         pos = map.begin();
     }
 
-    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
         if (pos == map.end()) {
             return false;
         }
@@ -176,7 +176,7 @@ SimpleValue::SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_
 SimpleValue::~SimpleValue() = default;
 
 void
-SimpleValue::add_mapping(ConstArrayRef<std::string_view> addr)
+SimpleValue::add_mapping(std::span<const std::string_view> addr)
 {
     Labels my_addr;
     for(const auto &label: addr) {
@@ -187,7 +187,7 @@ SimpleValue::add_mapping(ConstArrayRef<std::string_view> addr)
 }
 
 void
-SimpleValue::add_mapping(ConstArrayRef<string_id> addr)
+SimpleValue::add_mapping(std::span<const string_id> addr)
 {
     Labels my_addr;
     for(string_id label: addr) {
@@ -201,7 +201,7 @@ MemoryUsage
 SimpleValue::estimate_extra_memory_usage() const
 {
     using Node = std::map<Labels,size_t>::value_type;
-    size_t key_extra_size = sizeof(vespalib::string) * _num_mapped_dims;
+    size_t key_extra_size = sizeof(std::string) * _num_mapped_dims;
     size_t node_extra_size = 2 * sizeof(Node *); // left/right child ptr
     size_t entry_size = sizeof(Node) + key_extra_size + node_extra_size;
     size_t size = entry_size * _index.size();
@@ -209,7 +209,7 @@ SimpleValue::estimate_extra_memory_usage() const
 }
 
 std::unique_ptr<Value::Index::View>
-SimpleValue::create_view(ConstArrayRef<size_t> dims) const
+SimpleValue::create_view(std::span<const size_t> dims) const
 {
     if (dims.empty()) {
         return std::make_unique<SimpleIterateView>(_index);
@@ -252,23 +252,23 @@ template <typename T>
 SimpleValueT<T>::~SimpleValueT() = default;
 
 template <typename T>
-ArrayRef<T>
-SimpleValueT<T>::add_subspace(ConstArrayRef<std::string_view> addr)
+std::span<T>
+SimpleValueT<T>::add_subspace(std::span<const std::string_view> addr)
 {
     size_t old_size = _cells.size();
     add_mapping(addr);
     _cells.resize(old_size + subspace_size(), std::numeric_limits<T>::quiet_NaN());
-    return ArrayRef<T>(&_cells[old_size], subspace_size());
+    return std::span<T>(&_cells[old_size], subspace_size());
 }
 
 template <typename T>
-ArrayRef<T>
-SimpleValueT<T>::add_subspace(ConstArrayRef<string_id> addr)
+std::span<T>
+SimpleValueT<T>::add_subspace(std::span<const string_id> addr)
 {
     size_t old_size = _cells.size();
     add_mapping(addr);
     _cells.resize(old_size + subspace_size(), std::numeric_limits<T>::quiet_NaN());
-    return ArrayRef<T>(&_cells[old_size], subspace_size());
+    return std::span<T>(&_cells[old_size], subspace_size());
 }
 
 //-----------------------------------------------------------------------------

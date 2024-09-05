@@ -3,7 +3,7 @@
 #pragma once
 
 #include "constant_value.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace vespalib::eval {
 
@@ -21,7 +21,7 @@ private:
 public:
     ConstantTensorLoader(const ValueBuilderFactory &factory) : _factory(factory) {}
     ~ConstantTensorLoader();
-    ConstantValue::UP create(const vespalib::string &path, const vespalib::string &type) const override;
+    ConstantValue::UP create(const std::string &path, const std::string &type) const override;
 };
 
 }

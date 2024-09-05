@@ -13,7 +13,6 @@
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <cinttypes>
 #include <filesystem>
@@ -35,7 +34,6 @@ using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
 using search::queryeval::FakeResult;
 using search::queryeval::SearchIterator;
-using vespalib::ArrayRef;
 using vespalib::MemoryUsage;
 
 namespace {
@@ -44,9 +42,9 @@ GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
-vespalib::string doc1("id:test:music::1");
-vespalib::string doc2("id:test:music::2");
-vespalib::string doc3("id:test:music::3");
+std::string doc1("id:test:music::1");
+std::string doc2("id:test:music::2");
+std::string doc3("id:test:music::3");
 
 }
 

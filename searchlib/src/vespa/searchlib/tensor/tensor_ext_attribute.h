@@ -28,7 +28,7 @@ class TensorExtAttribute : public NotImplementedAttribute,
     std::unique_ptr<vespalib::eval::Value>    _empty_tensor;
 
 public:
-    TensorExtAttribute(const vespalib::string& name, const Config& cfg);
+    TensorExtAttribute(const std::string& name, const Config& cfg);
     ~TensorExtAttribute() override;
     const ITensorAttribute* asTensorAttribute() const override;
     void onCommit() override;

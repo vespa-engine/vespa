@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
@@ -13,7 +12,7 @@ import java.util.List;
  *
  * @author Simon Thoresen Hult
  */
-public class RPCMessageBus extends NetworkMessageBus {
+public final class RPCMessageBus extends NetworkMessageBus {
 
     private final ConfigAgent configAgent;
 
@@ -63,19 +62,6 @@ public class RPCMessageBus extends NetworkMessageBus {
      */
     public RPCMessageBus(List<Protocol> protocols, RPCNetworkParams rpcParams, String routingCfgId) {
         this(new MessageBusParams().addProtocols(protocols), rpcParams, routingCfgId);
-    }
-
-    /**
-     * This constructor requires a single protocol that it is to support, as well as the host application's config
-     * identifier.
-     *
-     * @param protocol An instance of the known protocol.
-     * @param configId The host application's config id. This will be used to resolve the service name prefix used when
-     *                 registering with the slobrok. Using null here is allowed, but will not allow intermediate- or
-     *                 destination sessions to be routed to.
-     */
-    public RPCMessageBus(Protocol protocol, String configId) {
-        this(List.of(protocol), new RPCNetworkParams().setIdentity(new Identity(configId)), null);
     }
 
     /**

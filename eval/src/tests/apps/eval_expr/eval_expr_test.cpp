@@ -16,16 +16,16 @@ using vespalib::make_string_short::fmt;
 using vespalib::slime::JsonFormat;
 using vespalib::slime::Inspector;
 
-vespalib::string module_build_path("../../../../");
-vespalib::string binary = module_build_path + "src/apps/eval_expr/vespa-eval-expr";
-vespalib::string server_cmd = binary + " json-repl";
+std::string module_build_path("../../../../");
+std::string binary = module_build_path + "src/apps/eval_expr/vespa-eval-expr";
+std::string server_cmd = binary + " json-repl";
 
 //-----------------------------------------------------------------------------
 
 struct Result {
-    vespalib::string error;
-    vespalib::string result;
-    std::vector<std::pair<vespalib::string, vespalib::string>> steps;
+    std::string error;
+    std::string result;
+    std::vector<std::pair<std::string, std::string>> steps;
 
     Result(const Inspector &obj)
       : error(obj["error"].asString().make_string()),
@@ -38,11 +38,11 @@ struct Result {
                                arr[i]["symbol"].asString().make_string());
         }
     }
-    void verify_result(const vespalib::string &expect) {
+    void verify_result(const std::string &expect) {
         EXPECT_EQUAL(error, "");
         EXPECT_EQUAL(result, expect);
     }
-    void verify_error(const vespalib::string &expect) {
+    void verify_error(const std::string &expect) {
         EXPECT_EQUAL(steps.size(), 0u);
         EXPECT_EQUAL(result, "");
         fprintf(stderr, "... does error '%s' contain message '%s'?\n",
@@ -56,7 +56,7 @@ Result::~Result() = default;
 struct Server : public ServerCmd {
     TimeBomb time_bomb;
     Server() : ServerCmd(server_cmd), time_bomb(60) {}
-    Result eval(const vespalib::string &expr, const vespalib::string &name = {}, bool verbose = false) {
+    Result eval(const std::string &expr, const std::string &name = {}, bool verbose = false) {
         Slime req;
         auto &obj = req.setObject();
         obj.setString("expr", expr.c_str());

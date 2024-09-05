@@ -42,15 +42,15 @@ using BasicType = search::attribute::BasicType;
 using CollectionType = search::attribute::CollectionType;
 using Config = search::attribute::Config;
 
-vespalib::string denseSpecDouble("tensor(x[2])");
-vespalib::string denseSpecFloat("tensor<float>(x[2])");
-vespalib::string mixed_spec("tensor(m{},x[2])");
+std::string denseSpecDouble("tensor(x[2])");
+std::string denseSpecFloat("tensor<float>(x[2])");
+std::string mixed_spec("tensor(m{},x[2])");
 
 std::unique_ptr<Value> createTensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);
 }
 
-std::unique_ptr<Value> createTensor(const vespalib::string& type_spec, double v1, double v2) {
+std::unique_ptr<Value> createTensor(const std::string& type_spec, double v1, double v2) {
     auto type = vespalib::eval::ValueType::from_spec(type_spec);
     if (type.is_dense()) {
         return createTensor(TensorSpec(type_spec).add({{"x", 0}}, v1)
@@ -61,7 +61,7 @@ std::unique_ptr<Value> createTensor(const vespalib::string& type_spec, double v1
     }
 }
 
-std::shared_ptr<TensorAttribute> make_attr(const vespalib::string& name, const Config& cfg) {
+std::shared_ptr<TensorAttribute> make_attr(const std::string& name, const Config& cfg) {
     if (cfg.tensorType().is_dense()) {
         return std::make_shared<DenseTensorAttribute>(name, cfg);
     } else {
@@ -71,13 +71,13 @@ std::shared_ptr<TensorAttribute> make_attr(const vespalib::string& name, const C
 
 struct Fixture {
     Config _cfg;
-    vespalib::string _name;
-    vespalib::string _typeSpec;
+    std::string _name;
+    std::string _typeSpec;
     std::shared_ptr<TensorAttribute> _attr;
     std::shared_ptr<GlobalFilter> _global_filter;
     MatchingPhase _matching_phase;
 
-    Fixture(const vespalib::string &typeSpec)
+    Fixture(const std::string &typeSpec)
         : _cfg(BasicType::TENSOR, CollectionType::SINGLE),
           _name("test"),
           _typeSpec(typeSpec),
@@ -142,8 +142,8 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
 }
 
 void
-verify_iterator_returns_expected_results(const vespalib::string& attribute_tensor_type_spec,
-                                         const vespalib::string& query_tensor_type_spec)
+verify_iterator_returns_expected_results(const std::string& attribute_tensor_type_spec,
+                                         const std::string& query_tensor_type_spec)
 {
     Fixture fixture(attribute_tensor_type_spec);
     fixture.ensureSpace(6);
@@ -198,10 +198,10 @@ verify_iterator_returns_expected_results(const vespalib::string& attribute_tenso
 }
 
 struct TestParam {
-    vespalib::string attribute_tensor_type_spec;
-    vespalib::string query_tensor_type_spec;
-    TestParam(const vespalib::string& attribute_tensor_type_spec_in,
-              const vespalib::string& query_tensor_type_spec_in) noexcept
+    std::string attribute_tensor_type_spec;
+    std::string query_tensor_type_spec;
+    TestParam(const std::string& attribute_tensor_type_spec_in,
+              const std::string& query_tensor_type_spec_in) noexcept
         : attribute_tensor_type_spec(attribute_tensor_type_spec_in),
           query_tensor_type_spec(query_tensor_type_spec_in)
     {}
@@ -237,8 +237,8 @@ TEST_P(ExactNearestNeighborIteratorParameterizedTest, require_that_iterator_retu
 }
 
 void
-verify_iterator_returns_filtered_results(const vespalib::string& attribute_tensor_type_spec,
-                                         const vespalib::string& query_tensor_type_spec)
+verify_iterator_returns_filtered_results(const std::string& attribute_tensor_type_spec,
+                                         const std::string& query_tensor_type_spec)
 {
     Fixture fixture(attribute_tensor_type_spec);
     fixture.ensureSpace(6);
@@ -294,8 +294,8 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
 }
 
 void
-verify_iterator_sets_expected_rawscore(const vespalib::string& attribute_tensor_type_spec,
-                                       const vespalib::string& query_tensor_type_spec)
+verify_iterator_sets_expected_rawscore(const std::string& attribute_tensor_type_spec,
+                                       const std::string& query_tensor_type_spec)
 {
     Fixture fixture(attribute_tensor_type_spec);
     fixture.ensureSpace(6);

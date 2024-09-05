@@ -33,7 +33,7 @@ document::Bucket dummy_document_bucket(makeDocumentBucket(document::BucketId(0, 
 class DummyMergeBucketInfoSyncer : public MergeBucketInfoSyncer
 {
     uint32_t& _sync_count;
-    vespalib::string _fail;
+    std::string _fail;
 public:
     DummyMergeBucketInfoSyncer(uint32_t& sync_count)
         : MergeBucketInfoSyncer(),
@@ -50,7 +50,7 @@ public:
         }
     }
     void schedule_delayed_delete(std::unique_ptr<ApplyBucketDiffState>) const override { }
-    void set_fail(vespalib::string fail) { _fail = std::move(fail); }
+    void set_fail(std::string fail) { _fail = std::move(fail); }
 };
 
 DummyMergeBucketInfoSyncer::~DummyMergeBucketInfoSyncer() = default;
@@ -221,7 +221,7 @@ TEST_F(ApplyBucketDiffStateTest, explicit_sync_bucket_info_works)
 
 TEST_F(ApplyBucketDiffStateTest, failed_sync_bucket_info_is_detected)
 {
-    vespalib::string fail("sync bucket failed");
+    std::string fail("sync bucket failed");
     syncer.set_fail(fail);
     state->mark_stale_bucket_info();
     check_failure(fail);

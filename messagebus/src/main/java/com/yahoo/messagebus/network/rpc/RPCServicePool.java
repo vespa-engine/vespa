@@ -2,6 +2,7 @@
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.jrt.slobrok.api.IMirror;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,18 +14,15 @@ import java.util.Map;
  */
 public class RPCServicePool {
 
-    private final RPCNetwork net;
     private final Map<Long, ServiceLRUCache> mapOfServiceCache;
     private final int maxSize;
 
     /**
      * Create a new service pool for the given network.
      *
-     * @param net     The underlying RPC network.
      * @param maxSize The max number of services to cache.
      */
-    public RPCServicePool(RPCNetwork net, int maxSize) {
-        this.net = net;
+    public RPCServicePool(int maxSize) {
         mapOfServiceCache = new CopyOnWriteHashMap<>();
         this.maxSize = maxSize;
     }
@@ -34,11 +32,12 @@ public class RPCServicePool {
      * pattern so that load balancing is possible on the network level.
      *
      * @param pattern The pattern for the service we require.
+     * @param mirror  The rpc service mirror.
      * @return A service address for the given pattern.
      */
-    public RPCServiceAddress resolve(String pattern) {
+    public RPCServiceAddress resolve(String pattern, IMirror mirror) {
 
-        return getPerThreadCache().computeIfAbsent(pattern, (key) -> RPCService.create(net.getMirror(), key)).resolve();
+        return getPerThreadCache().computeIfAbsent(pattern, (key) -> RPCService.create(mirror, key)).resolve();
     }
 
     private ServiceLRUCache getPerThreadCache() {

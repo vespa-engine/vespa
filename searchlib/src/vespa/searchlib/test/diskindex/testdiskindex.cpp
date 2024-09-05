@@ -20,7 +20,7 @@ using index::schema::DataType;
 namespace {
 
 class MockFieldLengthInspector : public IFieldLengthInspector {
-    FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+    FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         if (field_name == "f1") {
             return {3.5, 21};
         } else if (field_name == "f2") {

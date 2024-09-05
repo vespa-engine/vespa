@@ -37,7 +37,7 @@ import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
  *
  * @author gjoranv
  */
-public class ApplicationMetricsRetriever extends AbstractComponent implements Runnable {
+public final class ApplicationMetricsRetriever extends AbstractComponent implements Runnable {
 
     private static final Logger log = Logger.getLogger(ApplicationMetricsRetriever.class.getName());
 

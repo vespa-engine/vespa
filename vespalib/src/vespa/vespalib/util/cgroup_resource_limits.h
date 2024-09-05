@@ -4,9 +4,9 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <optional>
 #include <string>
-#include <map>
 
 namespace vespalib {
 

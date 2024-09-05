@@ -79,7 +79,7 @@ public:
     using FieldSetup = NativeProximityExecutorSharedState::FieldSetup;
 private:
     const NativeProximityParams & _params;
-    vespalib::ConstArrayRef<FieldSetup> _setups;
+    std::span<const FieldSetup> _setups;
     uint32_t                      _totalFieldWeight;
     const fef::MatchData         *_md;
 
@@ -100,9 +100,9 @@ public:
 class NativeProximityBlueprint : public fef::Blueprint {
 private:
     NativeProximityParams _params;
-    vespalib::string      _defaultProximityBoost;
-    vespalib::string      _defaultRevProximityBoost;
-    vespalib::string      _shared_state_key;
+    std::string      _defaultProximityBoost;
+    std::string      _defaultRevProximityBoost;
+    std::string      _shared_state_key;
 
 public:
     NativeProximityBlueprint();

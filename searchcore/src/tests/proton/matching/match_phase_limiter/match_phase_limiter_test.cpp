@@ -17,6 +17,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <utility>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace proton::matching;
@@ -46,19 +47,19 @@ SearchIterator::UP prepare(SearchIterator * search)
 
 struct MockSearch : SearchIterator {
     FieldSpec spec;
-    vespalib::string term;
+    std::string term;
     vespalib::Trinary _strict;
     TermFieldMatchDataArray tfmda;
     bool postings_fetched;
     uint32_t last_seek = beginId();
     uint32_t last_unpack = beginId();
-    explicit MockSearch(const vespalib::string &term_in)
-        : spec("", 0, 0), term(term_in), _strict(vespalib::Trinary::True), tfmda(), postings_fetched(false) {}
-    MockSearch(const FieldSpec &spec_in, const vespalib::string &term_in, bool strict_in,
-               const TermFieldMatchDataArray &tfmda_in, bool postings_fetched_in)
-        : spec(spec_in), term(term_in),
+    explicit MockSearch(std::string term_in)
+        : spec("", 0, 0), term(std::move(term_in)), _strict(vespalib::Trinary::True), tfmda(), postings_fetched(false) {}
+    MockSearch(const FieldSpec &spec_in, std::string term_in, bool strict_in,
+               TermFieldMatchDataArray tfmda_in, bool postings_fetched_in)
+        : spec(spec_in), term(std::move(term_in)),
           _strict(strict_in ? vespalib::Trinary::True : vespalib::Trinary::False),
-          tfmda(tfmda_in),
+          tfmda(std::move(tfmda_in)),
           postings_fetched(postings_fetched_in) {}
     void doSeek(uint32_t docid) override { last_seek = docid; setDocId(docid); }
     void doUnpack(uint32_t docid) override { last_unpack = docid; }
@@ -68,11 +69,11 @@ struct MockSearch : SearchIterator {
 
 struct MockBlueprint : SimpleLeafBlueprint {
     FieldSpec spec;
-    vespalib::string term;
+    std::string term;
     bool postings_fetched = false;
     bool postings_strict = false;
-    MockBlueprint(const FieldSpec &spec_in, const vespalib::string &term_in)
-        : SimpleLeafBlueprint(spec_in), spec(spec_in), term(term_in)
+    MockBlueprint(const FieldSpec &spec_in, std::string term_in)
+        : SimpleLeafBlueprint(spec_in), spec(spec_in), term(std::move(term_in))
     {
         setEstimate(HitEstimate(756, false));
     }    
@@ -455,7 +456,7 @@ struct RangeLimitFixture {
 };
 
 void
-verifyLocateRange(const vespalib::string & from, const vespalib::string & to,
+verifyLocateRange(const std::string & from, const std::string & to,
                   const FieldSpec & fieldSpec, RangeLimitFixture & f)
 {
     search::query::SimpleNumberTerm term(fmt("[%s;%s]", from.c_str(), to.c_str()), fieldSpec.getName(), 0, search::query::Weight(1));
@@ -475,7 +476,7 @@ TEST_F("require that RangeLocator locates range from attribute blueprint", Range
 
 
 void
-verifyRangeIsReflectedInLimiter(const vespalib::string & from, const vespalib::string & to,
+verifyRangeIsReflectedInLimiter(const std::string & from, const std::string & to,
                                 const FieldSpec & fieldSpec, RangeLimitFixture & f)
 {
     search::query::SimpleNumberTerm term(fmt("[%s;%s]", from.c_str(), to.c_str()), fieldSpec.getName(), 0, search::query::Weight(1));

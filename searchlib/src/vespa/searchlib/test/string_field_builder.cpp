@@ -57,7 +57,7 @@ StringFieldBuilder::add_span()
 }
 
 StringFieldBuilder&
-StringFieldBuilder::token(const vespalib::string& val, bool is_word)
+StringFieldBuilder::token(const std::string& val, bool is_word)
 {
     if (val.empty()) {
         return *this;
@@ -75,7 +75,7 @@ StringFieldBuilder::token(const vespalib::string& val, bool is_word)
 }
 
 StringFieldBuilder&
-StringFieldBuilder::alt_word(const vespalib::string& val)
+StringFieldBuilder::alt_word(const std::string& val)
 {
     assert(_last_span != nullptr);
     _span_tree->annotate(*_last_span,
@@ -85,10 +85,10 @@ StringFieldBuilder::alt_word(const vespalib::string& val)
 }
 
 StringFieldBuilder&
-StringFieldBuilder::tokenize(const vespalib::string& val)
+StringFieldBuilder::tokenize(const std::string& val)
 {
     Utf8Reader reader(val);
-    vespalib::string token_buffer;
+    std::string token_buffer;
     Utf8Writer writer(token_buffer);
     uint32_t c = 0u;
     bool old_word = false;

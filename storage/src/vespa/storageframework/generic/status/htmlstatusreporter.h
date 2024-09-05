@@ -44,7 +44,7 @@ struct HtmlStatusReporter : public StatusReporter {
     virtual void reportHtmlFooter(std::ostream&, const HttpUrlPath&) const;
 
     // Implementation of StatusReporter interface
-    vespalib::string getReportContentType(const HttpUrlPath&) const override;
+    std::string getReportContentType(const HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const HttpUrlPath&) const override;
 };
 

@@ -150,7 +150,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         docIdLimit = limit;
     }
 
-    CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
+    CachedSelect::SP parseSelect(const std::string &selection) const override {
         auto res = std::make_shared<CachedSelect>();
         res->set(selection, repo);
         return res;
@@ -213,7 +213,7 @@ struct AttrUnitDR : public UnitDR
     }
 
     AttrUnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r,
-               int32_t aa, double dd, const vespalib::string &ss)
+               int32_t aa, double dd, const std::string &ss)
         : UnitDR(d->getType(), document::Document::UP(d->clone()), t, b, r),
           _amgr(), _aa(), _dd(), _ss()
     {
@@ -222,11 +222,11 @@ struct AttrUnitDR : public UnitDR
         createAttribute(_dd, BasicType::DOUBLE, "dd");
         addAttribute<DoubleFieldValue, double>(*_dd, dd);
         createAttribute(_ss, BasicType::STRING, "ss");
-        addAttribute<StringFieldValue, vespalib::string>(*_ss, ss);
+        addAttribute<StringFieldValue, std::string>(*_ss, ss);
     }
 
     void createAttribute(AttributeVector::SP &av, BasicType basicType,
-                         const vespalib::string &fieldName)
+                         const std::string &fieldName)
     {
         Config cfg(basicType, CollectionType::SINGLE);
         cfg.setFastSearch(true);
@@ -246,7 +246,7 @@ struct AttrUnitDR : public UnitDR
         av.commit();
     }
 
-    CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
+    CachedSelect::SP parseSelect(const std::string &selection) const override {
         auto res = std::make_shared<CachedSelect>();
         res->set(selection, "foo", Document(repo, document->getType(), DocumentId()), repo, &_amgr, true);
         return res;
@@ -276,7 +276,7 @@ struct PairDR : DocumentRetrieverBaseForTest {
         return ret ? std::move(ret) : second->getFullDocument(lid);
     }
 
-    CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
+    CachedSelect::SP parseSelect(const std::string &selection) const override {
         auto res = std::make_shared<CachedSelect>();
         res->set(selection, getDocumentTypeRepo());
         return res;
@@ -354,12 +354,12 @@ IDocumentRetriever::SP doc_with_null_fields(const std::string &id, Timestamp t, 
     return std::make_unique<AttrUnitDR>(Document::make_without_repo(getAttrDocType(), DocumentId(id)), t, b, false);
 }
 
-IDocumentRetriever::SP doc_with_attr_fields(const vespalib::string &id,
+IDocumentRetriever::SP doc_with_attr_fields(const std::string &id,
                                             Timestamp t, Bucket b,
                                             int32_t aa, int32_t ab, int32_t attr_aa,
                                             double dd, double attr_dd,
-                                            const vespalib::string &ss,
-                                            const vespalib::string &attr_ss)
+                                            const std::string &ss,
+                                            const std::string &attr_ss)
 {
     auto d = Document::make_without_repo(getAttrDocType(), DocumentId(id));
     d->setValue("header", StringFieldValue::make("foo"));

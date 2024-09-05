@@ -71,7 +71,7 @@ Trace::shouldTrace(uint32_t level) const
 }
 
 void
-Trace::trace(uint32_t level, const vespalib::string & message)
+Trace::trace(uint32_t level, const std::string & message)
 {
     if (shouldTrace(level)) {
         _root.addChild(message, _clock.currentTime());
@@ -95,7 +95,7 @@ Trace::serializeTraceLog(Cursor & array) const
     }
 }
 
-vespalib::string
+std::string
 Trace::toString() const
 {
     Slime slime;

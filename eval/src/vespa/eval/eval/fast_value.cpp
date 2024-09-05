@@ -37,11 +37,11 @@ struct FastLookupView : public Value::Index::View {
     FastLookupView(const FastAddrMap &map_in)
             : map(map_in), subspace(FastAddrMap::npos()) {}
 
-    void lookup(ConstArrayRef<const string_id*> addr) override {
+    void lookup(std::span<const string_id* const> addr) override {
         subspace = map.lookup(addr);
     }
 
-    bool next_result(ConstArrayRef<string_id*>, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const>, size_t &idx_out) override {
         if (subspace == FastAddrMap::npos()) {
             return false;
         }
@@ -62,11 +62,11 @@ struct FastIterateView : public Value::Index::View {
     FastIterateView(const FastAddrMap &map_in)
             : map(map_in), pos(FastAddrMap::npos()) {}
 
-    void lookup(ConstArrayRef<const string_id*>) override {
+    void lookup(std::span<const string_id* const>) override {
         pos = 0;
     }
 
-    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
         if (pos >= map.size()) {
             return false;
         }
@@ -88,7 +88,7 @@ struct FastFilterView : public Value::Index::View {
     SmallVector<string_id>    query;
     size_t                    pos;
 
-    bool is_match(ConstArrayRef<string_id> addr) const {
+    bool is_match(std::span<const string_id> addr) const {
         for (size_t i = 0; i < query.size(); ++i) {
             if (query[i] != addr[match_dims[i]]) {
                 return false;
@@ -97,12 +97,12 @@ struct FastFilterView : public Value::Index::View {
         return true;
     }
 
-    FastFilterView(const FastAddrMap &map_in, ConstArrayRef<size_t> match_dims_in) __attribute__((noinline));
+    FastFilterView(const FastAddrMap &map_in, std::span<const size_t> match_dims_in) __attribute__((noinline));
     FastFilterView(const FastFilterView &) = delete;
     FastFilterView & operator =(const FastFilterView &) = delete;
     ~FastFilterView() override;
 
-    void lookup(ConstArrayRef<const string_id*> addr) override {
+    void lookup(std::span<const string_id* const> addr) override {
         assert(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
             query[i] = *addr[i];
@@ -110,7 +110,7 @@ struct FastFilterView : public Value::Index::View {
         pos = 0;
     }
 
-    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
         while (pos < map.size()) {
             auto addr = map.get_addr(pos);
             if (is_match(addr)) {
@@ -127,7 +127,7 @@ struct FastFilterView : public Value::Index::View {
     }
 };
 
-FastFilterView::FastFilterView(const FastAddrMap &map_in, ConstArrayRef<size_t> match_dims_in)
+FastFilterView::FastFilterView(const FastAddrMap &map_in, std::span<const size_t> match_dims_in)
     : map(map_in), match_dims(match_dims_in.begin(), match_dims_in.end()),
       extract_dims(), query(match_dims.size()), pos(FastAddrMap::npos())
 {
@@ -149,7 +149,7 @@ FastFilterView::~FastFilterView() = default;
 //-----------------------------------------------------------------------------
 
 std::unique_ptr<Value::Index::View>
-FastValueIndex::create_view(ConstArrayRef<size_t> dims) const
+FastValueIndex::create_view(std::span<const size_t> dims) const
 {
     if (map.addr_size() == 0) {
         return TrivialIndex::get().create_view(dims);

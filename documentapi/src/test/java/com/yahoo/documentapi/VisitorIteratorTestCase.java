@@ -325,7 +325,7 @@ public class VisitorIteratorTestCase {
 
         for (Map.Entry<ProgressToken.BucketKeyWrapper, ProgressToken.BucketEntry> entry
                 : progress.getBuckets().entrySet()) {
-            desired.append(Long.toHexString(ProgressToken.keyToBucketId(entry.getKey().getKey())));
+            desired.append(Long.toHexString(ProgressToken.keyToBucketId(entry.getKey().key())));
             desired.append(':');
             desired.append(Long.toHexString(entry.getValue().getProgress().getRawId()));
             desired.append('\n');
@@ -781,7 +781,7 @@ public class VisitorIteratorTestCase {
         // ordered value in the array of keys
         for (int i = 0; i < (1 << db); ++i) {
             long genKey = ProgressToken.makeNthBucketKey(i, db);
-            long knownKey = keys[i].getKey();
+            long knownKey = keys[i].key();
             if (genKey != knownKey) {
                 consistentKeys = false;
                 break;

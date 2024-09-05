@@ -8,7 +8,7 @@
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace search::attribute {
 
@@ -36,13 +36,13 @@ public:
     ImportedAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, const ImportedAttributeVector &imported_attribute, bool stableEnumGuard);
     ~ImportedAttributeVectorReadGuard() override;
 
-    const vespalib::string &getName() const override;
+    const std::string &getName() const override;
     uint32_t getNumDocs() const override;
     uint32_t getValueCount(uint32_t doc) const override;
     uint32_t getMaxValueCount() const override;
     largeint_t getInt(DocId doc) const override;
     double getFloat(DocId doc) const override;
-    vespalib::ConstArrayRef<char> get_raw(DocId doc) const override;
+    std::span<const char> get_raw(DocId doc) const override;
     EnumHandle getEnum(DocId doc) const override;
     uint32_t get(DocId docId, largeint_t *buffer, uint32_t sz) const override;
     uint32_t get(DocId docId, double *buffer, uint32_t sz) const override;
@@ -92,7 +92,7 @@ public:
     const IWeightedSetEnumReadView* make_read_view(WeightedSetEnumTag tag, vespalib::Stash& stash) const override;
 private:
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
-    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
+    using TargetLids = std::span<const AtomicTargetLid>;
     std::shared_ptr<MetaStoreReadGuard>  _target_document_meta_store_read_guard;
     const ImportedAttributeVector       &_imported_attribute;
     TargetLids                           _targetLids;

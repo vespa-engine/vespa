@@ -32,7 +32,7 @@ RemoveOperationWithDocId::serialize(vespalib::nbostream &os) const
     assertValidBucketId(_docId);
     RemoveOperation::serialize(os);
     size_t oldSize = os.size();
-    vespalib::string rawId = _docId.toString();
+    std::string rawId = _docId.toString();
     os.write(rawId.c_str(), rawId.size() + 1);
     _serializedDocSize = os.size() - oldSize;
 }
@@ -47,7 +47,7 @@ RemoveOperationWithDocId::deserialize(vespalib::nbostream &is, const DocumentTyp
     _serializedDocSize = oldSize - is.size();
 }
 
-vespalib::string
+std::string
 RemoveOperationWithDocId::toString() const {
     return make_string("Remove(%s, %s)",
                        _docId.getScheme().toString().c_str(), docArgsToString().c_str());
@@ -93,7 +93,7 @@ RemoveOperationWithGid::deserialize(vespalib::nbostream &is, const DocumentTypeR
     _serializedDocSize = oldSize - is.size();
 }
 
-vespalib::string
+std::string
 RemoveOperationWithGid::toString() const {
     return make_string("RemoveGid(%s, %s, %s)",
                        _gid.toString().c_str(), _docType.c_str(), docArgsToString().c_str());

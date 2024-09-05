@@ -43,7 +43,7 @@ public:
 
 template <typename KeyType>
 KeyType
-convertKey(const IAttributeVector &, const vespalib::string &key)
+convertKey(const IAttributeVector &, const std::string &key)
 {
     KeyType ret;
     vespalib::asciistream is(key);
@@ -52,15 +52,15 @@ convertKey(const IAttributeVector &, const vespalib::string &key)
 }
 
 template <>
-vespalib::string
-convertKey<vespalib::string>(const IAttributeVector &, const vespalib::string &key)
+std::string
+convertKey<std::string>(const IAttributeVector &, const std::string &key)
 {
     return key;
 }
 
 template <>
 EnumHandle
-convertKey<EnumHandle>(const IAttributeVector &attribute, const vespalib::string &key)
+convertKey<EnumHandle>(const IAttributeVector &attribute, const std::string &key)
 {
     EnumHandle ret;
     if (!attribute.findEnum(key.c_str(), ret)) {
@@ -76,7 +76,7 @@ class KeyHandlerT : public AttributeMapLookupNode::KeyHandler
     KeyType _key;
 
 public:
-    KeyHandlerT(const IAttributeVector &attribute, const vespalib::string &key)
+    KeyHandlerT(const IAttributeVector &attribute, const std::string &key)
         : KeyHandler(attribute),
           _keys(),
           _key(convertKey<KeyType>(attribute, key))
@@ -98,7 +98,7 @@ KeyHandlerT<T,KeyType>::~KeyHandlerT() = default;
 
 using IntegerKeyHandler = KeyHandlerT<IAttributeVector::largeint_t>;
 using FloatKeyHandler   = KeyHandlerT<double>;
-using StringKeyHandler  = KeyHandlerT<const char *, vespalib::string>;
+using StringKeyHandler  = KeyHandlerT<const char *, std::string>;
 using EnumKeyHandler    = KeyHandlerT<EnumHandle>;
 
 template <typename T>
@@ -191,7 +191,7 @@ using StringValueHandler  = ValueHandlerT<const char *, StringResultNode>;
 using EnumValueHandler    = ValueHandlerT<EnumHandle, EnumResultNode>;
 
 const IAttributeVector *
-findAttribute(const search::attribute::IAttributeContext &attrCtx, bool useEnumOptimization, const vespalib::string &name)
+findAttribute(const search::attribute::IAttributeContext &attrCtx, bool useEnumOptimization, const std::string &name)
 {
     const IAttributeVector *attribute = useEnumOptimization ? attrCtx.getAttributeStableEnum(name) : attrCtx.getAttribute(name);
     if (attribute == nullptr) {

@@ -16,13 +16,13 @@ public:
 private:
     using TypedCells = vespalib::eval::TypedCells;
     std::vector<FloatType> _tmpSpace;
-    vespalib::ConstArrayRef<FloatType> internal_convert(TypedCells cells, size_t offset) noexcept;
+    std::span<const FloatType> internal_convert(TypedCells cells, size_t offset) noexcept;
 public:
     explicit TemporaryVectorStore(size_t vectorSize) noexcept : _tmpSpace(vectorSize * 2) {}
-    vespalib::ConstArrayRef<FloatType> storeLhs(TypedCells cells) noexcept {
+    std::span<const FloatType> storeLhs(TypedCells cells) noexcept {
         return internal_convert(cells, 0);
     }
-    vespalib::ConstArrayRef<FloatType> convertRhs(TypedCells cells) {
+    std::span<const FloatType> convertRhs(TypedCells cells) {
         if (vespalib::eval::get_cell_type<FloatType>() == cells.type) [[likely]] {
             return cells.unsafe_typify<FloatType>();
         } else {
@@ -43,10 +43,10 @@ private:
     using TypedCells = vespalib::eval::TypedCells;
 public:
     explicit ReferenceVectorStore(size_t vector_size) noexcept { (void) vector_size; }
-    vespalib::ConstArrayRef<FloatType> storeLhs(TypedCells cells) noexcept {
+    std::span<const FloatType> storeLhs(TypedCells cells) noexcept {
         return cells.unsafe_typify<FloatType>();
     }
-    vespalib::ConstArrayRef<FloatType> convertRhs(TypedCells cells) noexcept {
+    std::span<const FloatType> convertRhs(TypedCells cells) noexcept {
         return cells.unsafe_typify<FloatType>();
     }
 };

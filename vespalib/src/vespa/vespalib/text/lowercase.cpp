@@ -5,10 +5,10 @@
 
 namespace vespalib {
 
-vespalib::string
+std::string
 LowerCase::convert(std::string_view input)
 {
-    vespalib::string output;
+    std::string output;
     Utf8Reader r(input);
     Utf8Writer w(output);
 

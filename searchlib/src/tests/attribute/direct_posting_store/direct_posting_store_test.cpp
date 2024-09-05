@@ -14,7 +14,6 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("direct_posting_store_test");
@@ -190,7 +189,7 @@ TEST_P(DirectPostingStoreTest, lookup_works_correctly) {
 }
 
 template <typename DirectPostingStoreType, bool has_weight>
-void verify_posting(const IDirectPostingStore& api, const vespalib::string& term) {
+void verify_posting(const IDirectPostingStore& api, const std::string& term) {
     auto result = api.lookup(term, api.get_dictionary_snapshot());
     ASSERT_TRUE(result.posting_idx.valid());
     std::vector<typename DirectPostingStoreType::IteratorType> itr_store;
@@ -242,10 +241,10 @@ TEST_P(DirectPostingStoreTest, collect_folded_works)
         attr->commit();
         auto snapshot = api->get_dictionary_snapshot();
         auto lookup = api->lookup(GetParam().valid_term, snapshot);
-        std::vector<vespalib::string> folded;
+        std::vector<std::string> folded;
         std::function<void(vespalib::datastore::EntryRef)> save_folded = [&folded,sa](vespalib::datastore::EntryRef enum_idx) { folded.emplace_back(sa->getFromEnum(enum_idx.ref())); };
         api->collect_folded(lookup.enum_idx, snapshot, save_folded);
-        std::vector<vespalib::string> expected_folded{"FOO", "foo"};
+        std::vector<std::string> expected_folded{"FOO", "foo"};
         EXPECT_EQ(expected_folded, folded);
     } else {
         auto* ia = dynamic_cast<IntegerAttributeTemplate<int64_t>*>(attr.get());

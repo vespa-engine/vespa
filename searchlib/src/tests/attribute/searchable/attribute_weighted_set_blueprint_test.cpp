@@ -14,6 +14,7 @@
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/normalize_class_name.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>

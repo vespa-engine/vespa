@@ -6,8 +6,8 @@
 #include "basictype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <ostream>
+#include <span>
 #include <vector>
 
 namespace search {
@@ -75,15 +75,15 @@ public:
     using WeightedInt = WeightedType<largeint_t>;
     using WeightedEnum = WeightedType<EnumHandle>;
     using WeightedConstChar = WeightedType<const char *>;
-    using WeightedString = WeightedType<vespalib::string>;
-    using EnumRefs = vespalib::ConstArrayRef<vespalib::datastore::AtomicEntryRef>;
+    using WeightedString = WeightedType<std::string>;
+    using EnumRefs = std::span<const vespalib::datastore::AtomicEntryRef>;
 
     /**
      * Returns the name of this attribute vector.
      *
      * @return attribute name
      **/
-    virtual const vespalib::string & getName() const = 0;
+    virtual const std::string & getName() const = 0;
 
     std::string_view getNamePrefix() const {
         std::string_view name = getName();
@@ -133,7 +133,7 @@ public:
      *
      * TODO: Consider accessing via new IRawAttribute interface class.
      */
-    virtual vespalib::ConstArrayRef<char> get_raw(DocId doc) const = 0;
+    virtual std::span<const char> get_raw(DocId doc) const = 0;
 
     /**
      * Returns the first value stored for the given document as an enum value.
@@ -171,7 +171,7 @@ public:
      * @param sz the size of the buffer
      * @return the number of values for this document
      **/
-//    virtual uint32_t get(DocId docId, vespalib::string * buffer, uint32_t sz) const = 0;
+//    virtual uint32_t get(DocId docId, std::string * buffer, uint32_t sz) const = 0;
 
     /**
      * Copies the values stored for the given document into the given buffer.

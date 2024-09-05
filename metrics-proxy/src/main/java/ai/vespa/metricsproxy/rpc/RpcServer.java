@@ -34,7 +34,7 @@ import static java.util.logging.Level.WARNING;
  *
  * @author gjoranv
  */
-public class RpcServer {
+public final class RpcServer {
 
     private static final Logger log = Logger.getLogger(RpcServer.class.getName());
 

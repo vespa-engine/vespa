@@ -25,9 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -44,7 +41,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @author bratseth
  */
-public class DeploymentSpec {
+public final class DeploymentSpec {
 
     /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
     public static final DeploymentSpec empty = new DeploymentSpec(List.of(),
@@ -349,7 +346,7 @@ public class DeploymentSpec {
             message = t.getMessage();
             if (message == null) continue;
             if (message.equals(lastMessage)) continue;
-            if (b.length() > 0) {
+            if (!b.isEmpty()) {
                 b.append(": ");
             }
             b.append(message);

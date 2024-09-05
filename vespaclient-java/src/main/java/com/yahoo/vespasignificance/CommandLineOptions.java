@@ -47,7 +47,7 @@ public class CommandLineOptions {
                 .longOpt(INPUT_OPTION)
                 .build());
 
-        options.addOption(Option.builder("i")
+        options.addOption(Option.builder("o")
                 .required()
                 .hasArg(true)
                 .desc("Output file")

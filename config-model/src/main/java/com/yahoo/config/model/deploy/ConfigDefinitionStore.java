@@ -11,9 +11,7 @@ import java.util.Optional;
  */
 public interface ConfigDefinitionStore {
 
-    /**
-     * Returns a config definition, or empty if the config definition is not found.
-     */
+    /** Returns a config definition, or empty if the config definition is not found. */
     Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey);
 
 }

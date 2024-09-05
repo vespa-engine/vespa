@@ -13,7 +13,7 @@
 LOG_SETUP(".persistence.simplemessagehandler");
 
 using vespalib::make_string_short::fmt;
-using to_str = vespalib::string;
+using to_str = std::string;
 
 namespace storage {
 

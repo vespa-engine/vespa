@@ -46,10 +46,10 @@ namespace search {
 
 namespace {
 
-const vespalib::string enumeratedTag = "enumerated";
-const vespalib::string dataTypeTag = "datatype";
-const vespalib::string collectionTypeTag = "collectiontype";
-const vespalib::string docIdLimitTag = "docIdLimit";
+const std::string enumeratedTag = "enumerated";
+const std::string dataTypeTag = "datatype";
+const std::string collectionTypeTag = "collectiontype";
+const std::string docIdLimitTag = "docIdLimit";
 
 bool
 allow_paged(const search::attribute::Config& config)
@@ -68,7 +68,7 @@ allow_paged(const search::attribute::Config& config)
 }
 
 std::unique_ptr<vespalib::alloc::MemoryAllocator>
-make_memory_allocator(const vespalib::string& name, const search::attribute::Config& config)
+make_memory_allocator(const std::string& name, const search::attribute::Config& config)
 {
     if (allow_paged(config)) {
         return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
@@ -286,7 +286,7 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileNam
 
 attribute::AttributeHeader
 AttributeVector::createAttributeHeader(std::string_view fileName) const {
-    return attribute::AttributeHeader(vespalib::string(fileName),
+    return attribute::AttributeHeader(std::string(fileName),
                                       getConfig().basicType(),
                                       getConfig().collectionType(),
                                       getConfig().tensorType(),
@@ -327,7 +327,7 @@ AttributeVector::hasLoadData() const {
 bool
 AttributeVector::isEnumeratedSaveFormat() const
 {
-    vespalib::string datName(fmt("%s.dat", getBaseFileName().c_str()));
+    std::string datName(fmt("%s.dat", getBaseFileName().c_str()));
     Fast_BufferedFile   datFile(16_Ki);
     vespalib::FileHeader datHeader(FileSettings::DIRECTIO_ALIGNMENT);
     if ( ! datFile.OpenReadOnly(datName.c_str()) ) {
@@ -693,7 +693,7 @@ AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
     jstr.beginObject();
     jstr.appendKey("path").appendString(getBaseFileName());
     jstr.endObject();
-    vespalib::string eventName(fmt("%s.attribute.enumstore.%s", reason, stage));
+    std::string eventName(fmt("%s.attribute.enumstore.%s", reason, stage));
     EV_STATE(eventName.c_str(), jstr.str().data());
 }
 

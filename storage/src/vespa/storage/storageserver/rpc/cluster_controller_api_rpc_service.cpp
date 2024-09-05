@@ -99,7 +99,7 @@ void ClusterControllerApiRpcService::RPC_getNodeState2(FRT_RPCRequest* req) {
         return;
     }
 
-    vespalib::string expected(req->GetParams()->GetValue(0)._string._str,
+    std::string expected(req->GetParams()->GetValue(0)._string._str,
                               req->GetParams()->GetValue(0)._string._len);
 
     auto cmd = std::make_shared<api::GetNodeStateCommand>(expected != "unknown"
@@ -120,7 +120,7 @@ void ClusterControllerApiRpcService::RPC_setSystemState2(FRT_RPCRequest* req) {
         req->SetError(RPCRequestWrapper::ERR_NODE_SHUTTING_DOWN, "Node shutting down");
         return;
     }
-    vespalib::string systemStateStr(req->GetParams()->GetValue(0)._string._str,
+    std::string systemStateStr(req->GetParams()->GetValue(0)._string._str,
                                     req->GetParams()->GetValue(0)._string._len);
     lib::ClusterState systemState(systemStateStr);
 

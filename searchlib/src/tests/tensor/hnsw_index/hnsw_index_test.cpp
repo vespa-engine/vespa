@@ -47,7 +47,7 @@ template <typename FloatType>
 class MyDocVectorAccess : public DocVectorAccess {
 private:
     using Vector = std::vector<FloatType>;
-    using ArrayRef = vespalib::ConstArrayRef<FloatType>;
+    using ArrayRef = std::span<const FloatType>;
     mutable std::vector<Vector> _vectors;
     SubspaceType                _subspace_type;
     EmptySubspace               _empty;
@@ -264,11 +264,11 @@ public:
         ASSERT_EQ(exp_levels.size(), act_node.size());
         EXPECT_EQ(exp_levels, act_node.levels());
     }
-    void expect_top_3_by_docid(const vespalib::string& label, std::vector<float> qv, const std::vector<uint32_t>& exp) {
+    void expect_top_3_by_docid(const std::string& label, std::vector<float> qv, const std::vector<uint32_t>& exp) {
         SCOPED_TRACE(label);
         uint32_t k = 3;
         uint32_t explore_k = 100;
-        vespalib::ArrayRef<float> qv_ref(qv);
+        std::span<float> qv_ref(qv);
         vespalib::eval::TypedCells qv_cells(qv_ref);
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
@@ -340,7 +340,7 @@ public:
         this->add_document(4);
     }
 
-    void check_savetest_index(const vespalib::string& label) {
+    void check_savetest_index(const std::string& label) {
         SCOPED_TRACE(label);
         auto nodeid_for_doc_7 = get_single_nodeid(7);
         auto nodeid_for_doc_4 = get_single_nodeid(4);
@@ -1117,7 +1117,7 @@ public:
         this->commit();
     }
 
-    uint32_t prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const vespalib::string& label);
+    uint32_t prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const std::string& label);
     void prepare_insert_during_remove(bool heuristic_select_neighbors);
 };
 
@@ -1126,7 +1126,7 @@ TwoPhaseTest<IndexType>::~TwoPhaseTest() = default;
 
 template <typename IndexType>
 uint32_t
-TwoPhaseTest<IndexType>::prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const vespalib::string& label)
+TwoPhaseTest<IndexType>::prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const std::string& label)
 {
     SCOPED_TRACE(label);
     this->init(heuristic_select_neighbors);

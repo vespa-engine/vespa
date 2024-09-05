@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 #include <vector>
 
 namespace search::features {
@@ -36,12 +37,12 @@ public:
     };
 
     template <typename OutputType, typename T = typename OutputType::value_type>
-    static void parse(const vespalib::string &input, OutputType &output);
+    static void parse(const std::string &input, OutputType &output);
 
-    static void parse(const vespalib::string &input, std::vector<int8_t> &output);
+    static void parse(const std::string &input, std::vector<int8_t> &output);
 
     template <typename OutputType>
-    static void parsePartial(const vespalib::string &input, OutputType &output);
+    static void parsePartial(const std::string &input, OutputType &output);
 };
 
 }

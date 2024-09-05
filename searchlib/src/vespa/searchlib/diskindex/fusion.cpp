@@ -31,7 +31,7 @@ namespace search::diskindex {
 namespace {
 
 std::vector<FusionInputIndex>
-createInputIndexes(const std::vector<vespalib::string> & sources, const SelectorArray &selector)
+createInputIndexes(const std::vector<std::string> & sources, const SelectorArray &selector)
 {
     assert(sources.size() <= 255); // due to source selector data type
     std::vector<FusionInputIndex> indexes;
@@ -43,7 +43,7 @@ createInputIndexes(const std::vector<vespalib::string> & sources, const Selector
     return indexes;
 }
 
-uint32_t calc_trimmed_doc_id_limit(const SelectorArray& selector, const std::vector<vespalib::string>& sources)
+uint32_t calc_trimmed_doc_id_limit(const SelectorArray& selector, const std::vector<std::string>& sources)
 {
     uint32_t docIdLimit = selector.size();
     uint32_t trimmed_doc_id_limit = docIdLimit;
@@ -58,8 +58,8 @@ uint32_t calc_trimmed_doc_id_limit(const SelectorArray& selector, const std::vec
 
 }
 
-Fusion::Fusion(const Schema& schema, const vespalib::string& dir,
-               const std::vector<vespalib::string>& sources, const SelectorArray& selector,
+Fusion::Fusion(const Schema& schema, const std::string& dir,
+               const std::vector<std::string>& sources, const SelectorArray& selector,
                const TuneFileIndexing& tuneFileIndexing,
                const FileHeaderContext& fileHeaderContext)
     : _old_indexes(createInputIndexes(sources, selector)),

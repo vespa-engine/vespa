@@ -62,7 +62,7 @@ public:
     /**
      * Returns field length info from the newest disk index, or empty info for all fields if no disk index exists.
      */
-    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
+    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
 };
 
 }  // namespace searchcorespi

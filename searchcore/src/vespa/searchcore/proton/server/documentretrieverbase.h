@@ -17,7 +17,7 @@ class DocumentRetrieverBase : public IDocumentRetriever
     const document::DocumentTypeRepo &_repo;
     const IDocumentMetaStoreContext  &_meta_store;
 
-    using SelectCache = vespalib::lrucache_map<vespalib::LruParam<vespalib::string, CachedSelect::SP>>;
+    using SelectCache = vespalib::lrucache_map<vespalib::LruParam<std::string, CachedSelect::SP>>;
 
     mutable SelectCache    _selectCache;
     mutable std::mutex     _lock;
@@ -39,7 +39,7 @@ public:
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return _repo; }
     void getBucketMetaData(const storage::spi::Bucket &bucket, search::DocumentMetaData::Vector &result) const override;
     search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override;
-    CachedSelect::SP parseSelect(const vespalib::string &selection) const override;
+    CachedSelect::SP parseSelect(const std::string &selection) const override;
     ReadGuard getReadGuard() const override { return _meta_store.getReadGuard(); }
     uint32_t getDocIdLimit() const override { return _meta_store.getReadGuard()->get().getCommittedDocIdLimit(); }
 };

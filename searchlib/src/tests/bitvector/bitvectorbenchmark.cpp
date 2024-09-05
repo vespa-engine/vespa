@@ -2,11 +2,11 @@
 #include <vespa/log/log.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <cassert>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <cassert>
 #include <unistd.h>
+#include <vector>
 
 LOG_SETUP("bitvectorbenchmark");
 

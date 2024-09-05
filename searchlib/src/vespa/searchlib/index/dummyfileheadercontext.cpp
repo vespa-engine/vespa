@@ -9,7 +9,7 @@
 
 namespace search::index {
 
-vespalib::string DummyFileHeaderContext::_creator;
+std::string DummyFileHeaderContext::_creator;
 
 DummyFileHeaderContext::DummyFileHeaderContext()
     : common::FileHeaderContext(),
@@ -33,7 +33,7 @@ DummyFileHeaderContext::disableFileName()
 
 void
 DummyFileHeaderContext::addTags(vespalib::GenericHeader &header,
-                                const vespalib::string &name) const
+                                const std::string &name) const
 {
     using Tag = vespalib::GenericHeader::Tag;
 
@@ -51,7 +51,7 @@ DummyFileHeaderContext::addTags(vespalib::GenericHeader &header,
 }
 
 void
-DummyFileHeaderContext::setCreator(const vespalib::string &creator)
+DummyFileHeaderContext::setCreator(const std::string &creator)
 {
     _creator = creator;
 }

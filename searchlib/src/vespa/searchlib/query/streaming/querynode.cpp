@@ -98,7 +98,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
     case ParseItem::ITEM_FUZZY:
     {
-        vespalib::string index(queryRep.index_as_view());
+        std::string index(queryRep.index_as_view());
         if (index.empty()) {
             if ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
                 index = parent->getIndex();
@@ -213,7 +213,7 @@ std::unique_ptr<QueryNode>
 QueryNode::build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& query_rep)
 {
     std::string_view query_tensor_name = query_rep.getTerm();
-    vespalib::string field_name = query_rep.index_as_string();
+    std::string field_name = query_rep.index_as_string();
     int32_t unique_id = query_rep.getUniqueId();
     auto weight = query_rep.GetWeight();
     uint32_t target_hits = query_rep.getTargetHits();
@@ -226,7 +226,7 @@ void
 QueryNode::populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt, SimpleQueryStackDumpIterator& queryRep)
 {
     char buf[24];
-    vespalib::string subterm;
+    std::string subterm;
     auto arity = queryRep.getArity();
     for (size_t i = 0; i < arity && queryRep.next(); i++) {
         std::unique_ptr<QueryTerm> term;
@@ -288,7 +288,7 @@ QueryNode::build_weighted_set_term(const QueryNodeResultFactory& factory, Simple
 std::unique_ptr<QueryNode>
 QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
 {
-    vespalib::string index(queryRep.index_as_view());
+    std::string index(queryRep.index_as_view());
     if (index.empty()) {
         index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
     }

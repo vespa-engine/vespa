@@ -44,7 +44,7 @@ public:
     };
 
 private:
-    vespalib::string _name;
+    std::string _name;
     Type      _type;
     Component _component;
 
@@ -81,7 +81,7 @@ public:
      *
      * @param name The handler-wide unique name of this target.
      */
-    IFlushTarget(const vespalib::string &name) noexcept;
+    IFlushTarget(const std::string &name) noexcept;
 
     /**
      * Constructs a new instance of this class.
@@ -90,7 +90,7 @@ public:
      * @param type The flush type of this target.
      * @param component The component type of this target.
      */
-    IFlushTarget(const vespalib::string &name,
+    IFlushTarget(const std::string &name,
                  const Type &type,
                  const Component &component) noexcept;
 
@@ -104,7 +104,7 @@ public:
      *
      * @return The name of this.
      */
-    const vespalib::string & getName() const { return _name; }
+    const std::string & getName() const { return _name; }
 
     /**
      * Returns the flush type of this target.
@@ -187,7 +187,7 @@ public:
 
 class LeafFlushTarget : public IFlushTarget {
 public:
-    LeafFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept;
+    LeafFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept;
     bool needUrgentFlush() const override { return false; }
     Priority getPriority() const override { return Priority::NORMAL; }
     double get_replay_operation_cost() const override { return 0.0; }

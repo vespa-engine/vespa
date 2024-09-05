@@ -92,7 +92,7 @@ public:
             matching::QueryLimiter & queryLimiter,
             const std::atomic<vespalib::steady_time> & now_ref,
             std::mutex &configMutex,
-            const vespalib::string &baseDir,
+            const std::string &baseDir,
             const vespalib::HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 

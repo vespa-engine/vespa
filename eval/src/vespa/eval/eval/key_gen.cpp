@@ -107,7 +107,7 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
 
 } // namespace vespalib::eval::<unnamed>
 
-vespalib::string gen_key(const Function &function, PassParams pass_params)
+std::string gen_key(const Function &function, PassParams pass_params)
 {
     KeyGen key_gen;
     key_gen.add_byte(uint8_t(pass_params));

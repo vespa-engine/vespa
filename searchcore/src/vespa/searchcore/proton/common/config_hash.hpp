@@ -25,7 +25,7 @@ ConfigHash<Elem>::~ConfigHash()
 
 template <class Elem>
 const Elem *
-ConfigHash<Elem>::lookup(const vespalib::string &name) const
+ConfigHash<Elem>::lookup(const std::string &name) const
 {
     auto itr = _hash.find(name);
     return ((itr == _hash.end()) ? nullptr : itr->second);

@@ -120,10 +120,14 @@ public class SignificanceModelGenerator {
             Document document = put.getDocument();
             FieldValue fieldValue = document.getFieldValue(clientParameters.field);
             this.handleTokenization(fieldValue.toString());
+            if (i % 50000 == 0) {
+                System.out.println("Documents processed: " + i + ", unique words: " + documentFrequency.size());
+            }
             i++;
         }
 
         long pageCount = i - 1;
+        System.out.println("Total documents processed: " + pageCount + ", unique words: " + documentFrequency.size());
 
         SignificanceModelFile modelFile;
         File outputFile = Paths.get(clientParameters.outputFile).toFile();
@@ -159,7 +163,7 @@ public class SignificanceModelGenerator {
     }
 
     private void handleTokenization(String field) {
-        var tokens = tokenizer.tokenize(field, languageTag, StemMode.ALL, false);
+        var tokens = tokenizer.tokenize(field, languageTag, StemMode.NONE, false);
 
         Set<String> uniqueWords = StreamSupport.stream(tokens.spliterator(), false)
                 .filter(t -> t.getType() == TokenType.ALPHABETIC)

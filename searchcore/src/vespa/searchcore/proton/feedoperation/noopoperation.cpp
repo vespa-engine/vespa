@@ -13,7 +13,7 @@ NoopOperation::NoopOperation(SerialNum serialNum)
     setSerialNum(serialNum);
 }
 
-vespalib::string NoopOperation::toString() const {
+std::string NoopOperation::toString() const {
     return make_string("Noop(serialNum=%" PRIu64 ")", getSerialNum());
 }
 

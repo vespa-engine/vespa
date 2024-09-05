@@ -15,7 +15,7 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
-vespalib::string main_expr = "reduce(reduce(reduce(a*b,sum,z),max,y),sum,x)";
+std::string main_expr = "reduce(reduce(reduce(a*b,sum,z),max,y),sum,x)";
 
 void assert_optimized(const TensorSpec &a, const TensorSpec &b, size_t dp_size) {
     EvalFixture::ParamRepo param_repo;
@@ -31,7 +31,7 @@ void assert_optimized(const TensorSpec &a, const TensorSpec &b, size_t dp_size) 
     EXPECT_EQ(info[0]->dp_size(), dp_size);
 }
 
-void assert_not_optimized(const TensorSpec &a, const TensorSpec &b, const vespalib::string &expr = main_expr) {
+void assert_not_optimized(const TensorSpec &a, const TensorSpec &b, const std::string &expr = main_expr) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", a);
     param_repo.add("b", b);
@@ -91,8 +91,8 @@ TEST(SumMaxDotProduct, additional_dimensions_are_not_optimized) {
     auto extra_dense_query = Que().idx("a", 1);
     auto extra_sparse_document = Doc().map("a", 1);
     auto extra_dense_document = Doc().idx("a", 1);
-    vespalib::string extra_sum_expr = "reduce(reduce(reduce(a*b,sum,z),max,y),sum,a,x)";
-    vespalib::string extra_max_expr = "reduce(reduce(reduce(a*b,sum,z),max,a,y),sum,x)";
+    std::string extra_sum_expr = "reduce(reduce(reduce(a*b,sum,z),max,y),sum,a,x)";
+    std::string extra_max_expr = "reduce(reduce(reduce(a*b,sum,z),max,a,y),sum,x)";
     assert_not_optimized(extra_sparse_query, document);
     assert_not_optimized(extra_dense_query, document);
     assert_not_optimized(query, extra_sparse_document);
@@ -112,9 +112,9 @@ TEST(SumMaxDotProduct, more_dense_variants_are_not_optimized) {
 }
 
 TEST(SumMaxDotProduct, similar_expressions_are_not_optimized) {
-    vespalib::string max_sum_expr = "reduce(reduce(reduce(a*b,sum,z),sum,y),max,x)";
-    vespalib::string not_dp_expr1 = "reduce(reduce(reduce(a+b,sum,z),max,y),sum,x)";
-    vespalib::string not_dp_expr2 = "reduce(reduce(reduce(a*b,min,z),max,y),sum,x)";
+    std::string max_sum_expr = "reduce(reduce(reduce(a*b,sum,z),sum,y),max,x)";
+    std::string not_dp_expr1 = "reduce(reduce(reduce(a+b,sum,z),max,y),sum,x)";
+    std::string not_dp_expr2 = "reduce(reduce(reduce(a*b,min,z),max,y),sum,x)";
     assert_not_optimized(query, document, max_sum_expr);
     assert_not_optimized(query, document, not_dp_expr1);
     assert_not_optimized(query, document, not_dp_expr2);

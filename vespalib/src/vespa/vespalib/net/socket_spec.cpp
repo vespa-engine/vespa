@@ -7,10 +7,10 @@ namespace vespalib {
 
 namespace {
 
-const vespalib::string tcp_prefix("tcp/");
-const vespalib::string ipc_path_prefix("ipc/file:");
-const vespalib::string ipc_name_prefix("ipc/name:");
-const vespalib::string fallback_host("localhost");
+const std::string tcp_prefix("tcp/");
+const std::string ipc_path_prefix("ipc/file:");
+const std::string ipc_name_prefix("ipc/name:");
+const std::string fallback_host("localhost");
 
 SocketAddress make_address(const char *node, int port, bool server) {
     if (server) {
@@ -27,7 +27,7 @@ SocketAddress make_address(int port, bool server) {
 
 } // namespace vespalib::<unnamed>
 
-const vespalib::string SocketSpec::_empty;
+const std::string SocketSpec::_empty;
 
 SocketAddress
 SocketSpec::address(bool server) const
@@ -44,16 +44,16 @@ SocketSpec::address(bool server) const
 
 const SocketSpec SocketSpec::invalid;
 
-SocketSpec::SocketSpec(const vespalib::string &spec)
+SocketSpec::SocketSpec(const std::string &spec)
     : SocketSpec()
 {
-    if (starts_with(spec, ipc_path_prefix)) {
+    if (spec.starts_with(ipc_path_prefix)) {
         _node = spec.substr(ipc_path_prefix.size());
         _type = Type::PATH;
-    } else if (starts_with(spec, ipc_name_prefix)) {
+    } else if (spec.starts_with(ipc_name_prefix)) {
         _node = spec.substr(ipc_name_prefix.size());
         _type = Type::NAME;
-    } else if (starts_with(spec, tcp_prefix)) {
+    } else if (spec.starts_with(tcp_prefix)) {
         bool with_host = (spec.find(':') != spec.npos);
         const char *port_str = spec.c_str() + (with_host
                                                ? (spec.rfind(':') + 1)
@@ -84,7 +84,7 @@ SocketSpec::SocketSpec(const vespalib::string &spec)
     }
 }
 
-vespalib::string
+std::string
 SocketSpec::spec() const
 {
     switch (_type) {
@@ -103,7 +103,7 @@ SocketSpec::spec() const
 }
 
 SocketSpec
-SocketSpec::replace_host(const vespalib::string &new_host) const
+SocketSpec::replace_host(const std::string &new_host) const
 {
     if ((_type == Type::HOST_PORT) && !new_host.empty()) {
         return from_host_port(new_host, _port);
@@ -111,7 +111,7 @@ SocketSpec::replace_host(const vespalib::string &new_host) const
     return SocketSpec();
 }
 
-const vespalib::string &
+const std::string &
 SocketSpec::host_with_fallback() const
 {
     return (_type == Type::PORT) ? fallback_host : host();

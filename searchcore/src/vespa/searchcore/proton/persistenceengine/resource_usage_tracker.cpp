@@ -38,16 +38,16 @@ ResourceUsageTracker::ListenerGuard::~ListenerGuard()
 class ResourceUsageTracker::AttributeUsageListener : public IAttributeUsageListener
 {
     std::shared_ptr<ResourceUsageTracker> _tracker;
-    vespalib::string                      _document_type;
+    std::string                      _document_type;
 
 public:
-    AttributeUsageListener(std::shared_ptr<ResourceUsageTracker> tracker, const vespalib::string& document_type);
+    AttributeUsageListener(std::shared_ptr<ResourceUsageTracker> tracker, const std::string& document_type);
 
     ~AttributeUsageListener() override;
     void notify_attribute_usage(const AttributeUsageStats &attribute_usage) override;
 };
 
-ResourceUsageTracker::AttributeUsageListener::AttributeUsageListener(std::shared_ptr<ResourceUsageTracker> tracker, const vespalib::string &document_type)
+ResourceUsageTracker::AttributeUsageListener::AttributeUsageListener(std::shared_ptr<ResourceUsageTracker> tracker, const std::string &document_type)
     : IAttributeUsageListener(),
       _tracker(std::move(tracker)),
       _document_type(document_type)
@@ -124,7 +124,7 @@ ResourceUsageTracker::remove_listener()
 }
 
 void
-ResourceUsageTracker::remove_document_type(const vespalib::string &document_type)
+ResourceUsageTracker::remove_document_type(const std::string &document_type)
 {
     std::lock_guard guard(_lock);
     _attribute_usage.erase(document_type);
@@ -149,7 +149,7 @@ bool can_skip_scan(double max, double old_max, bool same_document_type) noexcept
 }
 
 void
-ResourceUsageTracker::notify_attribute_usage(const vespalib::string &document_type, const AttributeUsageStats &attribute_usage)
+ResourceUsageTracker::notify_attribute_usage(const std::string &document_type, const AttributeUsageStats &attribute_usage)
 {
     std::lock_guard guard(_lock);
     auto& old_usage = _attribute_usage[document_type];
@@ -174,10 +174,10 @@ namespace {
 class MaxAttributeUsage
 {
     const AddressSpaceUsageStats* _max;
-    const vespalib::string*       _document_type;
+    const std::string*       _document_type;
     double                        _max_usage;
 
-    vespalib::string get_name() const {
+    std::string get_name() const {
         return *_document_type + "." + _max->getSubDbName() + "." + _max->getAttributeName() + "." + _max->get_component_name();
     }
 
@@ -189,7 +189,7 @@ public:
     {
     }
 
-    void sample(const vespalib::string& document_type, const AddressSpaceUsageStats& usage) {
+    void sample(const std::string& document_type, const AddressSpaceUsageStats& usage) {
         if (_max == nullptr || usage.getUsage().usage() > _max_usage) {
             _max = &usage;
             _document_type = &document_type;
@@ -205,7 +205,7 @@ public:
         }
     }
 
-    const vespalib::string get_document_type() const { return _document_type != nullptr ? *_document_type : ""; }
+    const std::string get_document_type() const { return _document_type != nullptr ? *_document_type : ""; }
 };
 
 }
@@ -231,7 +231,7 @@ ResourceUsageTracker::scan_attribute_usage(bool force_changed, std::lock_guard<s
 }
 
 std::unique_ptr<IAttributeUsageListener>
-ResourceUsageTracker::make_attribute_usage_listener(const vespalib::string &document_type)
+ResourceUsageTracker::make_attribute_usage_listener(const std::string &document_type)
 {
     return std::make_unique<AttributeUsageListener>(shared_from_this(), document_type);
 }

@@ -43,13 +43,13 @@ public:
     void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
                          uint32_t numSegments, PostingListHandle &handle) override;
 
-    bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
+    bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
     template <typename DecodeContext>
-    void readHeader(const vespalib::string &identifier);
+    void readHeader(const std::string &identifier);
     virtual void readHeader();
-    static const vespalib::string &getIdentifier();
-    static const vespalib::string &getSubIdentifier();
+    static const std::string &getIdentifier();
+    static const std::string &getSubIdentifier();
     const index::FieldLengthInfo &get_field_length_info() const override;
 };
 
@@ -61,8 +61,8 @@ public:
 
     void readHeader() override;
 
-    static const vespalib::string &getIdentifier();
-    static const vespalib::string &getSubIdentifier();
+    static const std::string &getIdentifier();
+    static const std::string &getSubIdentifier();
 };
 
 

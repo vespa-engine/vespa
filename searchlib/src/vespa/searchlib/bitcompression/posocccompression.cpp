@@ -21,10 +21,10 @@ using namespace search::index;
 
 namespace {
 
-vespalib::string PosOccId = "PosOcc.3";
-vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
-vespalib::string EG64PosOccId = "EG64PosOcc.3"; // Dynamic k values
-vespalib::string EG64PosOccId2 = "EG64PosOcc.2";    // Fixed k values
+std::string PosOccId = "PosOcc.3";
+std::string PosOccIdCooked = "PosOcc.3.Cooked";
+std::string EG64PosOccId = "EG64PosOcc.3"; // Dynamic k values
+std::string EG64PosOccId2 = "EG64PosOcc.2";    // Fixed k values
 
 }
 
@@ -35,7 +35,7 @@ template <bool bigEndian>
 void
 EG2PosOccDecodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-           const vespalib::string &prefix)
+           const std::string &prefix)
 {
     const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header, prefix);
 }
@@ -399,7 +399,7 @@ template <bool bigEndian>
 void
 EG2PosOccEncodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-           const vespalib::string &prefix)
+           const std::string &prefix)
 {
     const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header,
             prefix);
@@ -407,7 +407,7 @@ readHeader(const vespalib::GenericHeader &header,
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 EG2PosOccDecodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId2;
@@ -418,14 +418,14 @@ template <bool bigEndian>
 void
 EG2PosOccEncodeContext<bigEndian>::
 writeHeader(vespalib::GenericHeader &header,
-            const vespalib::string &prefix) const
+            const std::string &prefix) const
 {
     _fieldsParams->writeHeader(header, prefix);
 }
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 EG2PosOccEncodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId2;
@@ -539,7 +539,7 @@ template <bool bigEndian>
 void
 EGPosOccDecodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-           const vespalib::string &prefix)
+           const std::string &prefix)
 {
     ParentClass::readHeader(header, prefix);
 }
@@ -889,14 +889,14 @@ template <bool bigEndian>
 void
 EGPosOccEncodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-           const vespalib::string &prefix)
+           const std::string &prefix)
 {
     ParentClass::readHeader(header, prefix);
 }
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 EGPosOccDecodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId;
@@ -907,14 +907,14 @@ template <bool bigEndian>
 void
 EGPosOccEncodeContext<bigEndian>::
 writeHeader(vespalib::GenericHeader &header,
-            const vespalib::string &prefix) const
+            const std::string &prefix) const
 {
     ParentClass::writeHeader(header, prefix);
 }
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 EGPosOccEncodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId;

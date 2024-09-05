@@ -30,13 +30,13 @@ public:
     class FeedBlock {
     private:
         bool _block_feed_in_cluster;
-        vespalib::string _description;
+        std::string _description;
 
     public:
         FeedBlock(bool block_feed_in_cluster_in,
-                  const vespalib::string& description_in);
+                  const std::string& description_in);
         [[nodiscard]] bool block_feed_in_cluster() const noexcept { return _block_feed_in_cluster; }
-        [[nodiscard]] const vespalib::string& description() const noexcept { return _description; }
+        [[nodiscard]] const std::string& description() const noexcept { return _description; }
         bool operator==(const FeedBlock& rhs) const noexcept;
         bool operator!=(const FeedBlock& rhs) const noexcept { return !operator==(rhs); }
     };

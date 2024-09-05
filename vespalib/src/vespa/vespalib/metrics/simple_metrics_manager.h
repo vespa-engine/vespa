@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <atomic>
-#include <mutex>
-#include <memory>
-#include <thread>
-#include <vespa/vespalib/stllike/string.h>
 #include "current_samples.h"
 #include "snapshots.h"
 #include "metrics_manager.h"
 #include "metric_types.h"
 #include "clock.h"
 #include "bucket.h"
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
 
 namespace vespalib {
 namespace metrics {
@@ -65,10 +65,10 @@ public:
     static std::shared_ptr<MetricsManager> create(const SimpleManagerConfig &config);
     static std::shared_ptr<MetricsManager> createForTest(const SimpleManagerConfig &config,
                                                          Tick::UP tick_supplier);
-    Counter counter(const vespalib::string &name, const vespalib::string &description) override;
-    Gauge gauge(const vespalib::string &name, const vespalib::string &description) override;
-    Dimension dimension(const vespalib::string &name) override;
-    Label label(const vespalib::string &value) override;
+    Counter counter(const std::string &name, const std::string &description) override;
+    Gauge gauge(const std::string &name, const std::string &description) override;
+    Dimension dimension(const std::string &name) override;
+    Label label(const std::string &value) override;
     PointBuilder pointBuilder(Point from) override;
     Point pointFrom(PointMap map) override;
     Snapshot snapshot() override;

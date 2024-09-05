@@ -36,7 +36,7 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
       _initialized(false)
 {
     // Use config to adjust values
-    vespalib::string clusterName = "mycluster";
+    std::string clusterName = "mycluster";
     uint32_t redundancy = 2;
     uint32_t nodeCount = 10;
     auto serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(config_uri.getConfigId(), config_uri.getContext());

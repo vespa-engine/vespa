@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <mutex>
-#include <vector>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
 
 namespace vespalib::eval {
 
@@ -20,7 +20,7 @@ class Function;
 class IndexLookupTable
 {
 private:
-    using Key = vespalib::string;
+    using Key = std::string;
     struct Value {
         size_t num_refs;
         std::vector<uint32_t> data;

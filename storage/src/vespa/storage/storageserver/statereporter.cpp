@@ -34,7 +34,7 @@ StateReporter::StateReporter(
 
 StateReporter::~StateReporter() = default;
 
-vespalib::string
+std::string
 StateReporter::getReportContentType(
         const framework::HttpUrlPath& /*path*/) const
 {
@@ -43,10 +43,10 @@ StateReporter::getReportContentType(
 
 namespace {
 
-std::map<vespalib::string, vespalib::string>
+std::map<std::string, std::string>
 getParams(const framework::HttpUrlPath &path)
 {
-    std::map<vespalib::string, vespalib::string> params = path.getAttributes();
+    std::map<std::string, std::string> params = path.getAttributes();
     if (params.find("consumer") == params.end()) {
         params.insert(std::make_pair("consumer", "statereporter"));
     }
@@ -67,15 +67,15 @@ StateReporter::reportStatus(std::ostream& out,
     auto status = _stateApi.get(path.getServerSpec(), path.getPath(), getParams(path), dummy_ctx);
     if (status.failed()) {
         LOG(debug, "State API reporting for path '%s' failed with status HTTP %d: %s",
-            path.getPath().c_str(), status.status_code(), vespalib::string(status.status_message()).c_str());
+            path.getPath().c_str(), status.status_code(), std::string(status.status_message()).c_str());
         return false;
     }
     out << status.payload();
     return true;
 }
 
-vespalib::string
-StateReporter::getMetrics(const vespalib::string &consumer, ExpositionFormat format)
+std::string
+StateReporter::getMetrics(const std::string &consumer, ExpositionFormat format)
 {
     metrics::MetricLockGuard guard(_manager.getMetricLock());
     auto periods = _manager.getSnapshotPeriods(guard);
@@ -113,8 +113,8 @@ StateReporter::getMetrics(const vespalib::string &consumer, ExpositionFormat for
     return out.str();
 }
 
-vespalib::string
-StateReporter::getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format)
+std::string
+StateReporter::getTotalMetrics(const std::string &consumer, ExpositionFormat format)
 {
     return _metricsAdapter.getTotalMetrics(consumer, format);
 }

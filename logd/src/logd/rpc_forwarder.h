@@ -28,7 +28,7 @@ using RpcTargetGuard = std::unique_ptr<FRT_Target, RpcTargetSubRef>;
 class RpcForwarder : public Forwarder {
 private:
     Metrics& _metrics;
-    vespalib::string _connection_spec;
+    std::string _connection_spec;
     double _rpc_timeout_secs;
     size_t _max_messages_per_request;
     RpcTargetGuard _target;
@@ -40,7 +40,7 @@ private:
 
 public:
     RpcForwarder(Metrics& metrics, const ForwardMap& forward_filter, FRT_Supervisor& supervisor,
-                 const vespalib::string& logserver_host, int logserver_rpc_port,
+                 const std::string& logserver_host, int logserver_rpc_port,
                  double rpc_timeout_secs, size_t max_messages_per_request);
     ~RpcForwarder() override;
 

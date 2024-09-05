@@ -218,8 +218,7 @@ public final class SessionCache extends AbstractComponent {
             int prime = 31;
             int result = super.hashCode();
             result = prime * result + maxPendingCount;
-            result = prime * result
-                    + (int) (maxPendingSize ^ (maxPendingSize >>> 32));
+            result = prime * result + Long.hashCode(maxPendingSize);
             return result;
         }
 
@@ -253,15 +252,10 @@ public final class SessionCache extends AbstractComponent {
             int prime = 31;
             int result = super.hashCode();
             result = prime * result + maxPending;
-            long temp;
-            temp = Double.doubleToLongBits(maxWindowSize);
-            result = prime * result + (int) (temp ^ (temp >>> 32));
-            temp = Double.doubleToLongBits(minWindowSize);
-            result = prime * result + (int) (temp ^ (temp >>> 32));
-            temp = Double.doubleToLongBits(windowSizeBackoff);
-            result = prime * result + (int) (temp ^ (temp >>> 32));
-            temp = Double.doubleToLongBits(windowSizeIncrement);
-            result = prime * result + (int) (temp ^ (temp >>> 32));
+            result = prime * result + Double.hashCode(maxWindowSize);
+            result = prime * result + Double.hashCode(minWindowSize);
+            result = prime * result + Double.hashCode(windowSizeBackoff);
+            result = prime * result + Double.hashCode(windowSizeIncrement);
             return result;
         }
 
@@ -330,9 +324,7 @@ public final class SessionCache extends AbstractComponent {
             int prime = 31;
             int result = 1;
             result = prime * result + ((policy == null) ? 0 : policy.hashCode());
-            long temp;
-            temp = Double.doubleToLongBits(timeout);
-            result = prime * result + (int) (temp ^ (temp >>> 32));
+            result = prime * result + Double.hashCode(timeout);
             return result;
         }
 

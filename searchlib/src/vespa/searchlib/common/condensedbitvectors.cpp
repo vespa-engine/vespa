@@ -24,10 +24,8 @@ public:
         }
     }
 private:
-    static uint8_t countBits(T v) {
-        return ((sizeof(T)) <= 4)
-                   ? __builtin_popcount(v)
-                   : __builtin_popcountl(v);
+    static constexpr uint8_t countBits(T v) noexcept {
+        return std::popcount(v);
     }
     T computeMask(const KeySet & keys) const __attribute__ ((noinline)) {
         T mask(0);
@@ -38,13 +36,13 @@ private:
         return mask;
     }
     static const uint64_t B = 1ul;
-    void initializeCountVector(const KeySet & keys, CountVector & cv) const override {
+    void initializeCountVector(const KeySet & keys, std::span<uint8_t> cv) const override {
        struct S {
            void operator () (uint8_t & cv, uint8_t v) { cv = v; }
        };
        computeCountVector(computeMask(keys), cv, S());
     }
-    void addCountVector(const KeySet & keys, CountVector & cv) const override {
+    void addCountVector(const KeySet & keys, std::span<uint8_t> cv) const override {
        struct S {
            void operator () (uint8_t & cv, uint8_t v) { cv += v; }
        };
@@ -56,10 +54,10 @@ private:
     }
 
     template <typename F>
-    void computeCountVector(T mask, CountVector & cv, F func) const __attribute__((noinline));
+    void computeCountVector(T mask, std::span<uint8_t> cv, F func) const __attribute__((noinline));
 
     template <typename F>
-    void computeTail(T mask, CountVector & cv, F func, size_t i) const __attribute__((noinline));
+    void computeTail(T mask, std::span<uint8_t> cv, F func, size_t i) const __attribute__((noinline));
 
     void set(Key key, uint32_t index, bool v) override {
         assert(key < getKeyCapacity());
@@ -92,7 +90,7 @@ private:
 template <typename T>
 template <typename F>
 void
-CondensedBitVectorT<T>::computeCountVector(T mask, CountVector & cv, F func) const
+CondensedBitVectorT<T>::computeCountVector(T mask, std::span<uint8_t> cv, F func) const
 {
     size_t i(0);
     const size_t UNROLL = 2;
@@ -109,7 +107,7 @@ CondensedBitVectorT<T>::computeCountVector(T mask, CountVector & cv, F func) con
 template <typename T>
 template <typename F>
 void
-CondensedBitVectorT<T>::computeTail(T mask, CountVector & cv, F func, size_t i) const
+CondensedBitVectorT<T>::computeTail(T mask, std::span<uint8_t> cv, F func, size_t i) const
 {
     auto* v = &_v.acquire_elem_ref(0);
     for (; i < cv.size(); i++) {

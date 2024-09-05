@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  *
  * @author mortent
  */
-public class DataplaneProxyService extends AbstractComponent {
+public final class DataplaneProxyService extends AbstractComponent {
 
     private static final Logger logger = Logger.getLogger(DataplaneProxyService.class.getName());
     private static final String PREFIX = "/opt/vespa";

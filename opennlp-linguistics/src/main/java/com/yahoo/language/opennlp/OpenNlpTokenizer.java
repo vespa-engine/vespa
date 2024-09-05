@@ -32,12 +32,14 @@ import java.util.Optional;
  */
 public class OpenNlpTokenizer implements Tokenizer {
 
-    enum Mode { index, query }
+    public enum Mode { index, query }
 
     private final Mode mode;
 
+    private final boolean snowballStemmingForEnglish;
+
     /** Whether to index cjk grams */
-    private boolean createCjkGrams;
+    private final boolean createCjkGrams;
 
     private final Normalizer normalizer;
     private final Transformer transformer;
@@ -52,38 +54,37 @@ public class OpenNlpTokenizer implements Tokenizer {
     }
 
     public OpenNlpTokenizer(Normalizer normalizer, Transformer transformer) {
-        this(Mode.query, normalizer, transformer, false, false);
+        this(Mode.query, normalizer, transformer, false, false, false);
     }
 
     public OpenNlpTokenizer(Mode mode, Normalizer normalizer, Transformer transformer,
-                            boolean cjk, boolean createCjkGrams) {
-        this(mode, normalizer, transformer, cjk, createCjkGrams, new SpecialTokenRegistry(List.of()));
+                            boolean snowballStemmingForEnglish, boolean cjk, boolean createCjkGrams) {
+        this(mode, normalizer, transformer, snowballStemmingForEnglish, cjk, createCjkGrams, new SpecialTokenRegistry(List.of()));
     }
 
     public OpenNlpTokenizer(Mode mode,
                             Normalizer normalizer,
                             Transformer transformer,
+                            boolean snowballStemmingForEnglish,
                             boolean cjk,
                             boolean createCjkGrams,
                             SpecialTokenRegistry specialTokenRegistry) {
-        this.mode = mode;
-        this.normalizer = normalizer;
-        this.transformer = transformer;
-        this.chineseSegmenter = cjk ? Optional.of(new JiebaSegmenter()) : Optional.empty();
-        this.createCjkGrams = createCjkGrams;
-        this.specialTokenRegistry = specialTokenRegistry;
-        this.simpleTokenizer = new SimpleTokenizer(normalizer, transformer, specialTokenRegistry);
+        this(mode, normalizer, transformer, snowballStemmingForEnglish,
+             cjk ? Optional.of(new JiebaSegmenter()) : Optional.empty(),
+             createCjkGrams, specialTokenRegistry);
     }
 
     public OpenNlpTokenizer(Mode mode,
                             Normalizer normalizer,
                             Transformer transformer,
+                            boolean snowballStemmingForEnglish,
                             Optional<JiebaSegmenter> jiebaSegmenter,
                             boolean createCjkGrams,
                             SpecialTokenRegistry specialTokenRegistry) {
         this.mode = mode;
         this.normalizer = normalizer;
         this.transformer = transformer;
+        this.snowballStemmingForEnglish = snowballStemmingForEnglish;
         this.chineseSegmenter = jiebaSegmenter;
         this.createCjkGrams = createCjkGrams;
         this.specialTokenRegistry = specialTokenRegistry;
@@ -133,7 +134,8 @@ public class OpenNlpTokenizer implements Tokenizer {
     }
 
     private Stemmer stemmerFor(Language language, StemMode stemMode) {
-        if (language == null || language == Language.ENGLISH || stemMode == StemMode.NONE) return null;
+        if (language == null || stemMode == StemMode.NONE) return null;
+        if (language == Language.ENGLISH && ! snowballStemmingForEnglish ) return null;
         SnowballStemmer.ALGORITHM algorithm = algorithmFor(language);
         if (algorithm == null) return null;
         return new SnowballStemmer(algorithm);
@@ -141,12 +143,17 @@ public class OpenNlpTokenizer implements Tokenizer {
 
     private SnowballStemmer.ALGORITHM algorithmFor(Language language) {
         return switch (language) {
+            case ARABIC -> SnowballStemmer.ALGORITHM.ARABIC;
+            case CATALAN -> SnowballStemmer.ALGORITHM.CATALAN;
             case DANISH -> SnowballStemmer.ALGORITHM.DANISH;
             case DUTCH -> SnowballStemmer.ALGORITHM.DUTCH;
+            case ENGLISH -> SnowballStemmer.ALGORITHM.ENGLISH;
             case FINNISH -> SnowballStemmer.ALGORITHM.FINNISH;
             case FRENCH -> SnowballStemmer.ALGORITHM.FRENCH;
             case GERMAN -> SnowballStemmer.ALGORITHM.GERMAN;
+            case GREEK -> SnowballStemmer.ALGORITHM.GREEK;
             case HUNGARIAN -> SnowballStemmer.ALGORITHM.HUNGARIAN;
+            case INDONESIAN -> SnowballStemmer.ALGORITHM.INDONESIAN;
             case IRISH -> SnowballStemmer.ALGORITHM.IRISH;
             case ITALIAN -> SnowballStemmer.ALGORITHM.ITALIAN;
             case NORWEGIAN_BOKMAL -> SnowballStemmer.ALGORITHM.NORWEGIAN;
@@ -157,13 +164,13 @@ public class OpenNlpTokenizer implements Tokenizer {
             case SPANISH -> SnowballStemmer.ALGORITHM.SPANISH;
             case SWEDISH -> SnowballStemmer.ALGORITHM.SWEDISH;
             case TURKISH -> SnowballStemmer.ALGORITHM.TURKISH;
-            case ENGLISH -> SnowballStemmer.ALGORITHM.ENGLISH;
             default -> null;
         };
     }
 
+    /** Creates a copy of this with the given mode set. */
     OpenNlpTokenizer withMode(Mode mode) {
-        return new OpenNlpTokenizer(mode, normalizer, transformer, chineseSegmenter, createCjkGrams, specialTokenRegistry);
+        return new OpenNlpTokenizer(mode, normalizer, transformer, snowballStemmingForEnglish, chineseSegmenter, createCjkGrams, specialTokenRegistry);
     }
 
 }

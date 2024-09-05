@@ -29,7 +29,7 @@ public:
     MockStatusReporter()
         : framework::StatusReporter("foo", "Bar")
     {}
-    vespalib::string getReportContentType(
+    std::string getReportContentType(
             const framework::HttpUrlPath&) const override
     {
         return "foo/bar";

@@ -90,6 +90,7 @@ vespa_define_module(
     src/tests/instruction/sparse_no_overlap_join_function
     src/tests/instruction/sparse_singledim_lookup
     src/tests/instruction/sum_max_dot_product_function
+    src/tests/instruction/sum_max_inv_hamming_function
     src/tests/instruction/universal_dot_product
     src/tests/instruction/unpack_bits_function
     src/tests/instruction/vector_from_doubles_function

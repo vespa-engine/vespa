@@ -44,7 +44,7 @@ TEST(DocumentIdTest, generateJavaComplianceFile)
 TEST(DocumentIdTest, testOutput)
 {
     DocumentId id("id:ns:news::crawler:http://www.yahoo.com");
-    vespalib::string expected("id:ns:news::crawler:http://www.yahoo.com");
+    std::string expected("id:ns:news::crawler:http://www.yahoo.com");
     EXPECT_EQ(expected, id.toString());
 }
 
@@ -86,7 +86,7 @@ TEST(DocumentIdTest, testCopying)
 TEST(DocumentIdTest, checkNtnuGlobalId)
 {
     DocumentId id("id:ns:news::crawler:http://www.ntnu.no/");
-    EXPECT_EQ(vespalib::string("gid(0x1e9d7fc69ac6c1da44dd87e0)"), id.getGlobalId().toString());
+    EXPECT_EQ(std::string("gid(0x1e9d7fc69ac6c1da44dd87e0)"), id.getGlobalId().toString());
 }
 
 TEST(DocumentIdTest, freestandingLocationFromGroupNameFuncMatchesIdLocation)

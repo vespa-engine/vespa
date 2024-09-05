@@ -20,7 +20,7 @@ import static java.util.logging.Level.INFO;
  *
  * @author gjoranv
  */
-public class RpcConnector extends AbstractComponent {
+public final class RpcConnector extends AbstractComponent {
     private static final Logger log = Logger.getLogger(RpcConnector.class.getName());
 
     private final Supervisor supervisor;

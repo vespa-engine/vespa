@@ -27,14 +27,14 @@ struct FunInfo {
     }
 };
 
-void assertOptimized(const vespalib::string &expr) {
+void assertOptimized(const std::string &expr) {
     CellTypeSpace just_int8({CellType::INT8}, 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo{}}, just_int8);
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);
 }
 
-void assertNotOptimized(const vespalib::string &expr) {
+void assertNotOptimized(const std::string &expr) {
     CellTypeSpace just_int8({CellType::INT8}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_int8);
 }

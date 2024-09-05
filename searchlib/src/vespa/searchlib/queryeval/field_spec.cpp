@@ -5,11 +5,11 @@
 
 namespace search::queryeval {
 
-FieldSpec::FieldSpec(const vespalib::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept
+FieldSpec::FieldSpec(const std::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept
     : FieldSpec(name, fieldId, handle, false)
 {}
 
-FieldSpec::FieldSpec(const vespalib::string & name, uint32_t fieldId,
+FieldSpec::FieldSpec(const std::string & name, uint32_t fieldId,
                      fef::TermFieldHandle handle, bool isFilter_) noexcept
     : FieldSpecBase(fieldId, handle, isFilter_),
       _name(name)

@@ -17,7 +17,7 @@ StatusReporterDelegate::StatusReporterDelegate(
 
 StatusReporterDelegate::~StatusReporterDelegate() = default;
 
-vespalib::string
+std::string
 StatusReporterDelegate::getReportContentType(const framework::HttpUrlPath& path) const
 {
     // Implementation must be data race free.

@@ -43,7 +43,7 @@ TEST_F(ProdFeaturesTest, test_field_term_match)
             StringList dump;
             ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
             for (uint32_t term = 0; term < 5; ++term) {
-                vespalib::string bn = vespalib::make_string("fieldTermMatch(bar,%u)", term);
+                std::string bn = vespalib::make_string("fieldTermMatch(bar,%u)", term);
                 dump.add(bn + ".firstPosition").add(bn + ".occurrences").add(bn + ".weight");
             }
             FT_DUMP(_factory, "fieldTermMatch", ie, dump);

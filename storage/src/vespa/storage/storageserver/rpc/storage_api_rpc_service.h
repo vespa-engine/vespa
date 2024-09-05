@@ -5,10 +5,10 @@
 #include <vespa/fnet/frt/invokable.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/storageapi/messageapi/returncode.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <atomic>
 #include <memory>
+#include <string>
 
 class FRT_RPCRequest;
 class FRT_Target;

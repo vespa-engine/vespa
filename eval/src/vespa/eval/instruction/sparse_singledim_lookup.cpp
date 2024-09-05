@@ -19,8 +19,8 @@ template <typename CT>
 double my_sparse_singledim_lookup_fallback(const Value::Index &idx, const CT *cells, string_id key) {
     size_t subspace = 0;
     const string_id *key_ref = &key;
-    auto view = idx.create_view(ConstArrayRef<size_t>{&subspace, 1});
-    view->lookup(ConstArrayRef<const string_id *>{&key_ref, 1});
+    auto view = idx.create_view(std::span<const size_t>{&subspace, 1});
+    view->lookup(std::span<const string_id* const>{&key_ref, 1});
     if (!view->next_result({}, subspace)) {
         return 0.0;
     }

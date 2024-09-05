@@ -29,9 +29,9 @@ public:
     }
 
     bool shutdown_requested() const { return !_reason.empty(); }
-    const vespalib::string& reason() const { return _reason; }
+    const std::string& reason() const { return _reason; }
 private:
-    vespalib::string _reason;
+    std::string _reason;
 };
 
 struct Fixture {

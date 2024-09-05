@@ -9,9 +9,7 @@
 #include <optional>
 #include <algorithm>
 
-namespace vespalib::eval{
-
-using vespalib::ArrayRef;
+namespace vespalib::eval {
 
 using namespace operation;
 using namespace tensor_function;

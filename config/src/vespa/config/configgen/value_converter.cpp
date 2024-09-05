@@ -3,6 +3,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <string>
 
 using namespace vespalib;
 using namespace vespalib::slime;
@@ -44,19 +45,19 @@ bool convertValue(const ::vespalib::slime::Inspector & __inspector) {
     switch (__inspector.type().getId()) {
         case BOOL::ID:   return __inspector.asBool();
         case STRING::ID:
-            vespalib::string s(__inspector.asString().make_string());
+            std::string s(__inspector.asString().make_string());
             return s.compare("true") == 0 ? true : false;
     }
     throw InvalidConfigException(make_string("Expected bool, but got incompatible config type %u", __inspector.type().getId()));
 }
 
 template<>
-vespalib::string convertValue(const ::vespalib::slime::Inspector & __inspector) { return __inspector.asString().make_string(); }
+std::string convertValue(const ::vespalib::slime::Inspector & __inspector) { return __inspector.asString().make_string(); }
 
 void
 requireValid(std::string_view __fieldName, const ::vespalib::slime::Inspector & __inspector) {
     if (!__inspector.valid()) {
-        throw ::config::InvalidConfigException("Value for '" + __fieldName + "' required but not found");
+        throw ::config::InvalidConfigException("Value for '" + std::string(__fieldName) + "' required but not found");
     }
 }
 

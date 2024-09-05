@@ -9,7 +9,7 @@
 #include <set>
 #include <vespa/vespalib/util/priority_queue.h>
 
-using V = vespalib::ConstArrayRef<float>;
+using V = std::span<const float>;
 
 #define NUM_HASH_WORDS 4
 #define IGNORE_BITS 32
@@ -29,7 +29,7 @@ static inline int hash_dist(const LsMaskHash &h1, const LsMaskHash &h2) {
     for (size_t o = 0; o < NUM_HASH_WORDS; ++o) {
         uint64_t hx = h1.bits[o] ^ h2.bits[o];
         hx &= (h1.mask[o] | h2.mask[o]);
-        cnt += __builtin_popcountl(hx);
+        cnt += std::popcount(hx);
     }
     return cnt;
 }
@@ -203,7 +203,7 @@ RpLshNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitVect
     result.reserve(k);
 
     std::vector<float> tmp(_numDims);
-    vespalib::ArrayRef<float> tmpArr(tmp);
+    std::span<float> tmpArr(tmp);
 
     LsMaskHash query_hash = mask_hash_from_pv(vector, _transformationMatrix);
     LshHitHeap heap(std::max(k, search_k));
@@ -235,7 +235,7 @@ RpLshNns::topK(uint32_t k, Vector vector, uint32_t search_k)
     result.reserve(k);
 
     std::vector<float> tmp(_numDims);
-    vespalib::ArrayRef<float> tmpArr(tmp);
+    std::span<float> tmpArr(tmp);
 
     LsMaskHash query_hash = mask_hash_from_pv(vector, _transformationMatrix);
     LshHitHeap heap(std::max(k, search_k));

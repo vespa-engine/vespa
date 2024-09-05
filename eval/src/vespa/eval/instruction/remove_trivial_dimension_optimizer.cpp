@@ -10,9 +10,9 @@ using namespace tensor_function;
 
 namespace {
 
-bool is_trivial_dim_list(const ValueType &type, const std::vector<vespalib::string> &dim_list) {
+bool is_trivial_dim_list(const ValueType &type, const std::vector<std::string> &dim_list) {
     size_t npos = ValueType::Dimension::npos;
-    for (const vespalib::string &dim: dim_list) {
+    for (const std::string &dim: dim_list) {
         size_t idx = type.dimension_index(dim);
         if ((idx == npos) || (type.dimensions()[idx].size != 1)) {
             return false;

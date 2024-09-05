@@ -216,7 +216,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             assert(_merger.hasArray());
             using DocIt = ArrayIterator<Posting>;
             DocIt postings;
-            vespalib::ConstArrayRef<Posting> array = _merger.getArray();
+            std::span<const Posting> array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);
             if (_posting_store.isFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
@@ -444,11 +444,11 @@ StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toB
             auto comp = _enumStore.make_folded_comparator_prefix(this->queryTerm()->getTerm());
             this->lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
+            std::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
             auto comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
             this->lookupRange(comp, comp);
         } else if (this->isFuzzy()) {
-            vespalib::string prefix(this->getFuzzyMatcher().getPrefix());
+            std::string prefix(this->getFuzzyMatcher().getPrefix());
             auto comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
             this->lookupRange(comp, comp);
         } else {

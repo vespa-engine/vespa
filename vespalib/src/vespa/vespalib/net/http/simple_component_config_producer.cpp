@@ -20,7 +20,7 @@ SimpleComponentConfigProducer::addConfig(const Config &config)
 }
 
 void
-SimpleComponentConfigProducer::removeConfig(const vespalib::string &name)
+SimpleComponentConfigProducer::removeConfig(const std::string &name)
 {
     std::lock_guard guard(_lock);
     _state.erase(name);

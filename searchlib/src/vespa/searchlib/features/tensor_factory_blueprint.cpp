@@ -12,13 +12,13 @@ using vespalib::eval::Function;
 namespace search {
 namespace features {
 
-vespalib::string TensorFactoryBlueprint::ATTRIBUTE_SOURCE = "attribute";
-vespalib::string TensorFactoryBlueprint::QUERY_SOURCE = "query";
+std::string TensorFactoryBlueprint::ATTRIBUTE_SOURCE = "attribute";
+std::string TensorFactoryBlueprint::QUERY_SOURCE = "query";
 
 bool
-TensorFactoryBlueprint::extractSource(const vespalib::string &source)
+TensorFactoryBlueprint::extractSource(const std::string &source)
 {
-    vespalib::string error;
+    std::string error;
     bool unwrapOk = Function::unwrap(source, _sourceType, _sourceParam, error);
     if (!unwrapOk) {
         LOG(error, "Failed to extract source param: '%s'", error.c_str());
@@ -32,7 +32,7 @@ TensorFactoryBlueprint::extractSource(const vespalib::string &source)
     return true;
 }
 
-TensorFactoryBlueprint::TensorFactoryBlueprint(const vespalib::string &baseName)
+TensorFactoryBlueprint::TensorFactoryBlueprint(const std::string &baseName)
     : Blueprint(baseName),
       _sourceType(),
       _sourceParam(),

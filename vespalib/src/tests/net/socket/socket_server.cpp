@@ -10,8 +10,8 @@
 
 using namespace vespalib;
 
-vespalib::string read_msg(SocketHandle &socket) {
-    vespalib::string msg;
+std::string read_msg(SocketHandle &socket) {
+    std::string msg;
     for (;;) {
         char c;
         ssize_t ret = socket.read(&c, 1);
@@ -26,7 +26,7 @@ vespalib::string read_msg(SocketHandle &socket) {
     }
 }
 
-void write_msg(SocketHandle &socket, const vespalib::string &msg) {
+void write_msg(SocketHandle &socket, const std::string &msg) {
     for (const char & c : msg) {
         ssize_t ret = socket.write(&c, 1);
         if (ret != 1) {

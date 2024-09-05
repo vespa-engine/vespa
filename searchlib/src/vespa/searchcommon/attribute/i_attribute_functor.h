@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace search::attribute {
 

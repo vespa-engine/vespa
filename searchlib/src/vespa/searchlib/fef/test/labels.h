@@ -16,9 +16,9 @@ struct NoLabel : public Labels {
     ~NoLabel() override;
 };
 struct SingleLabel : public Labels {
-    vespalib::string label;
+    std::string label;
     uint32_t uid;
-    SingleLabel(const vespalib::string &l, uint32_t x) : label(l), uid(x) {}
+    SingleLabel(const std::string &l, uint32_t x) : label(l), uid(x) {}
     virtual void inject(Properties &p) const override {
         vespalib::asciistream key;
         key << "vespa.label." << label << ".id";

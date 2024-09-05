@@ -24,7 +24,7 @@ protected:
         _factory = std::make_unique<QueryTermFilterFactory>(_schema);
     }
 
-    bool check_view(const vespalib::string& view, const vespalib::string& summary_field) {
+    bool check_view(const std::string& view, const std::string& summary_field) {
         if (!_factory) {
             make_factory();
         }
@@ -32,7 +32,7 @@ protected:
         return query_term_filter->use_view(view);
     }
 
-    void add_field_set(const vespalib::string& field_set_name, const std::vector<vespalib::string>& field_names) {
+    void add_field_set(const std::string& field_set_name, const std::vector<std::string>& field_names) {
         FieldSet field_set(field_set_name);
         for (auto& field_name : field_names) {
             field_set.addField(field_name);

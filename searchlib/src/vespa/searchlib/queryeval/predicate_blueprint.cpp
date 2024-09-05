@@ -24,7 +24,7 @@ using search::query::PredicateQueryTerm;
 using std::make_pair;
 using std::pair;
 using std::vector;
-using vespalib::string;
+using std::string;
 using namespace search::predicate;
 
 namespace search::queryeval {
@@ -207,7 +207,7 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
         });
 
 
-    if ((zero_constraints_docs.size() == 0) &&
+    if ((zero_constraints_docs.empty()) &&
         _interval_dict_entries.empty() && _bounds_dict_entries.empty() &&
         !_zstar_dict_entry.valid())
     {
@@ -256,7 +256,7 @@ PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
         if (_zstar_dict_entry.valid()) {
             auto vector_iterator = interval_index.getVectorPostingList(Constants::z_star_compressed_hash);
             if (vector_iterator) {
-                _zstar_vector_iterator.emplace(std::move(*vector_iterator));
+                _zstar_vector_iterator.emplace(*vector_iterator);
             } else {
                 _zstar_btree_iterator.emplace(interval_index.getBTreePostingList(_zstar_dict_entry));
             }
@@ -265,7 +265,7 @@ PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
         PredicateAttribute::MinFeatureHandle mfh = predicate_attribute().getMinFeatureVector();
         Alloc kv(Alloc::alloc(mfh.second, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE*4));
         _kVBacking.swap(kv);
-        _kV = BitVectorCache::CountVector(static_cast<uint8_t *>(_kVBacking.get()), mfh.second);
+        _kV = std::span<uint8_t>(static_cast<uint8_t *>(_kVBacking.get()), mfh.second);
         _index.computeCountVector(_cachedFeatures, _kV);
         for (const auto & entry : _bounds_dict_entries) {
             addBoundsPostingToK(entry.feature);

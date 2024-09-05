@@ -7,14 +7,13 @@
 namespace search::diskindex {
 
 WordNumMapping::WordNumMapping()
-    : _old2newwords(),
-      _oldDictSize(0u)
+    : _old2newwords()
 {
 }
 
 
 void
-WordNumMapping::readMappingFile(const vespalib::string &name,
+WordNumMapping::readMappingFile(const std::string &name,
                                 const TuneFileSeqRead &tuneFileRead)
 {
     // Open word mapping file
@@ -28,13 +27,10 @@ WordNumMapping::readMappingFile(const vespalib::string &name,
     uint64_t tempfileentries = static_cast<uint64_t>(tempfilesize /
             sizeof(uint64_t));
     Array &map = _old2newwords;
-    map.resize(tempfileentries + 2);
-    _oldDictSize = tempfileentries;
+    map.resize(tempfileentries);
 
-    ssize_t has_read = old2newwordfile.Read(&map[1], static_cast<size_t>(tempfilesize));
+    ssize_t has_read = old2newwordfile.Read(&map[0], static_cast<size_t>(tempfilesize));
     assert(has_read == tempfilesize);
-    map[0] = noWordNum();
-    map[tempfileentries + 1] = noWordNumHigh();
 }
 
 
@@ -45,7 +41,6 @@ WordNumMapping::noMappingFile()
     map.resize(2);
     map[0] = noWordNum();
     map[1] = noWordNumHigh();
-    _oldDictSize = 0;
 }
 
 
@@ -54,14 +49,6 @@ WordNumMapping::clear()
 {
     Array &map = _old2newwords;
     map.clear();
-    _oldDictSize = 0;
-}
-
-
-void
-WordNumMapping::setup(uint32_t numWordIds)
-{
-    _oldDictSize = numWordIds;
 }
 
 }

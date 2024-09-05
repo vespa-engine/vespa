@@ -25,7 +25,7 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr) {
+void verify_optimized(const std::string &expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 1);
     CellTypeSpace unstable_types(CellTypeUtils::list_unstable_types(), 1);
@@ -33,7 +33,7 @@ void verify_optimized(const vespalib::string &expr) {
     EvalFixture::verify<FunInfo>(expr, {}, unstable_types);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 1);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);

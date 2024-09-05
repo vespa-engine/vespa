@@ -45,7 +45,7 @@ public:
  */
 class DistanceToPathBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _posAttr; // Name of the position attribute.
+    std::string _posAttr; // Name of the position attribute.
 
 public:
     DistanceToPathBlueprint();

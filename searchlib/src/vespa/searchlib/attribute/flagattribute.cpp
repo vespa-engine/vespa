@@ -20,11 +20,11 @@ namespace {
 template <class FA, typename T>
 class SaveBits
 {
-    vespalib::ConstArrayRef<T> _map;
+    std::span<const T> _map;
     FA &_fa;
     
 public:
-    SaveBits(vespalib::ConstArrayRef<T> map, FA &fa)
+    SaveBits(std::span<const T> map, FA &fa)
         : _map(map),
           _fa(fa)
     {
@@ -43,7 +43,7 @@ public:
 
 
 template <typename B>
-FlagAttributeT<B>::FlagAttributeT(const vespalib::string & baseFileName, const AttributeVector::Config & cfg) :
+FlagAttributeT<B>::FlagAttributeT(const std::string & baseFileName, const AttributeVector::Config & cfg) :
     B(baseFileName, cfg),
     _bitVectorHolder(),
     _bitVectorStore(256),
@@ -91,10 +91,10 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
 
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(TT)) == 0);
-    vespalib::ConstArrayRef<TT> map(reinterpret_cast<const TT *>(udatBuffer->buffer()),
+    std::span<const TT> map(reinterpret_cast<const TT *>(udatBuffer->buffer()),
                                     udatBuffer->size() / sizeof(TT));
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, vespalib::ConstArrayRef<uint32_t>(), saver);
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, std::span<const uint32_t>(), saver);
     this->checkSetMaxValueCount(maxvc);
     
     return true;

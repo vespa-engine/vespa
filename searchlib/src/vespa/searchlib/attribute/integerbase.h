@@ -31,13 +31,13 @@ public:
     uint32_t clearDoc(DocId doc) override;
     vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 protected:
-    IntegerAttribute(const vespalib::string & name, const Config & c);
+    IntegerAttribute(const std::string & name, const Config & c);
     using Change = ChangeTemplate<NumericChangeData<largeint_t>>;
     using ChangeVector = ChangeVectorT<Change>;
     ChangeVector _changes;
 private:
-    vespalib::ConstArrayRef<char> get_raw(DocId) const override;
-    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
+    std::span<const char> get_raw(DocId) const override;
+    uint32_t get(DocId doc, std::string * v, uint32_t sz) const override;
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override;
@@ -60,9 +60,9 @@ public:
     T defaultValue() const { return isMutable() ? 0 : attribute::getUndefined<T>(); }
     bool isUndefined(DocId doc) const override { return attribute::isUndefined(get(doc)); }
 protected:
-    IntegerAttributeTemplate(const vespalib::string & name);
-    IntegerAttributeTemplate(const vespalib::string & name, const Config & c);
-    IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType);
+    IntegerAttributeTemplate(const std::string & name);
+    IntegerAttributeTemplate(const std::string & name, const Config & c);
+    IntegerAttributeTemplate(const std::string & name, const Config & c, const BasicType &realType);
     ~IntegerAttributeTemplate() override;
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
     virtual void load_enum_store(LoadedVector&) {}

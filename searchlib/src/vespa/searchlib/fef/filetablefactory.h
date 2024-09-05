@@ -12,20 +12,20 @@ namespace search::fef {
 class FileTableFactory : public ITableFactory
 {
 private:
-    vespalib::string _path;
+    std::string _path;
 
 public:
     /**
      * Creates a new factory for table files that are located in the given path.
      **/
-    FileTableFactory(const vespalib::string & path);
+    FileTableFactory(const std::string & path);
 
     /**
      * Creates a table by reading the file 'path/name' and setting up a Table object.
      * The numbers in the file should be separated with ' ' or '\n'.
      * Table::SP(NULL) is returned if the file 'path/name' is not found.
      **/
-    Table::SP createTable(const vespalib::string & name) const override;
+    Table::SP createTable(const std::string & name) const override;
 };
 
 }

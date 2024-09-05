@@ -33,7 +33,7 @@
 
         <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
-        <error-prone-annotations.vespa.version>2.28.0</error-prone-annotations.vespa.version>
+        <error-prone-annotations.vespa.version>2.30.0</error-prone-annotations.vespa.version>
         <guava.vespa.version>33.2.1-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
         <j2objc-annotations.vespa.version>3.0.0</j2objc-annotations.vespa.version>
@@ -58,7 +58,7 @@
         <aircompressor.vespa.version>0.27</aircompressor.vespa.version>
         <airline.vespa.version>0.9</airline.vespa.version>
         <antlr.vespa.version>3.5.3</antlr.vespa.version>
-        <antlr4.vespa.version>4.13.1</antlr4.vespa.version>
+        <antlr4.vespa.version>4.13.2</antlr4.vespa.version>
         <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
         <apache.httpclient5.vespa.version>5.3.1</apache.httpclient5.vespa.version>
@@ -68,8 +68,8 @@
         <assertj.vespa.version>3.26.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.765</aws-sdk.vespa.version>
-        <athenz.vespa.version>1.11.61</athenz.vespa.version>
+        <aws-sdk.vespa.version>1.12.768</aws-sdk.vespa.version>
+        <athenz.vespa.version>1.11.63</athenz.vespa.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -82,16 +82,16 @@
         <byte-buddy.vespa.version>1.14.18</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
-        <commons-codec.vespa.version>1.17.0</commons-codec.vespa.version>
+        <commons-codec.vespa.version>1.17.1</commons-codec.vespa.version>
         <commons-collections.vespa.version>3.2.2</commons-collections.vespa.version>
         <commons-csv.vespa.version>1.11.0</commons-csv.vespa.version>
         <commons-digester.vespa.version>3.2</commons-digester.vespa.version>
         <commons-io.vespa.version>2.16.1</commons-io.vespa.version>
-        <commons-lang3.vespa.version>3.14.0</commons-lang3.vespa.version>
+        <commons-lang3.vespa.version>3.16.0</commons-lang3.vespa.version>
         <commons-logging.vespa.version>1.3.3</commons-logging.vespa.version>  <!-- Bindings exported by jdisc through jcl-over-slf4j. -->
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
-        <commons-compress.vespa.version>1.26.2</commons-compress.vespa.version>
-        <commons-cli.vespa.version>1.8.0</commons-cli.vespa.version>
+        <commons-compress.vespa.version>1.27.0</commons-compress.vespa.version>
+        <commons-cli.vespa.version>1.9.0</commons-cli.vespa.version>
         <curator.vespa.version>5.7.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
         <eclipse-angus.vespa.version>2.0.2</eclipse-angus.vespa.version>
@@ -101,7 +101,7 @@
         <felix.vespa.version>7.0.5</felix.vespa.version>
         <felix.log.vespa.version>1.3.0</felix.log.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
-        <hamcrest.vespa.version>2.2</hamcrest.vespa.version>
+        <hamcrest.vespa.version>3.0</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
         <huggingface.vespa.version>0.28.0</huggingface.vespa.version>
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
@@ -118,8 +118,8 @@
         <junit.vespa.version>5.10.2</junit.vespa.version>
         <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
-        <kherud.llama.vespa.version>3.2.1</kherud.llama.vespa.version>
-        <luben.zstd.vespa.version>1.5.6-3</luben.zstd.vespa.version>
+        <kherud.llama.vespa.version>3.3.0</kherud.llama.vespa.version>
+        <luben.zstd.vespa.version>1.5.6-4</luben.zstd.vespa.version>
         <lucene.vespa.version>9.11.1</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.2</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
@@ -127,10 +127,10 @@
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.12.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
-        <netty.vespa.version>4.1.111.Final</netty.vespa.version>
+        <netty.vespa.version>4.1.112.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.18.0</onnxruntime.vespa.version>
-        <opennlp.vespa.version>2.3.3</opennlp.vespa.version>
+        <opennlp.vespa.version>2.4.0</opennlp.vespa.version>
         <opentest4j.vespa.version>1.3.0</opentest4j.vespa.version>
         <org.json.vespa.version>20240303</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
@@ -141,10 +141,10 @@
         <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.4</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.8.0</plexus-classworlds.vespa.version>
-        <protobuf.vespa.version>3.25.3</protobuf.vespa.version>
+        <protobuf.vespa.version>3.25.4</protobuf.vespa.version>
         <questdb.vespa.version>7.4.2</questdb.vespa.version>
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
-        <snappy.vespa.version>1.1.10.5</snappy.vespa.version>
+        <snappy.vespa.version>1.1.10.6</snappy.vespa.version>
         <surefire.vespa.version>3.3.1</surefire.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
@@ -176,14 +176,14 @@
         <maven-deploy-plugin.vespa.version>3.1.2</maven-deploy-plugin.vespa.version>
         <maven-enforcer-plugin.vespa.version>3.5.0</maven-enforcer-plugin.vespa.version>
         <maven-failsafe-plugin.vespa.version>3.3.1</maven-failsafe-plugin.vespa.version>
-        <maven-gpg-plugin.vespa.version>3.2.4</maven-gpg-plugin.vespa.version>
+        <maven-gpg-plugin.vespa.version>3.2.5</maven-gpg-plugin.vespa.version>
         <maven-install-plugin.vespa.version>3.1.2</maven-install-plugin.vespa.version>
         <maven-jar-plugin.vespa.version>3.4.2</maven-jar-plugin.vespa.version>
         <maven-javadoc-plugin.vespa.version>3.8.0</maven-javadoc-plugin.vespa.version>
         <maven-plugin-api.vespa.version>${maven-core.vespa.version}</maven-plugin-api.vespa.version>
         <maven-plugin-tools.vespa.version>3.13.1</maven-plugin-tools.vespa.version>
         <maven-resources-plugin.vespa.version>3.3.1</maven-resources-plugin.vespa.version>
-        <maven-resolver.vespa.version>1.9.21</maven-resolver.vespa.version>
+        <maven-resolver.vespa.version>2.0.1</maven-resolver.vespa.version>
         <maven-shade-plugin.vespa.version>3.5.3</maven-shade-plugin.vespa.version>
         <maven-shared-utils.vespa.version>3.4.2</maven-shared-utils.vespa.version>
         <maven-dependency-tree.vespa.version>3.3.0</maven-dependency-tree.vespa.version>

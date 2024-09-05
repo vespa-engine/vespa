@@ -16,14 +16,14 @@ RankResult::RankResult() :
 }
 
 RankResult &
-RankResult::addScore(const vespalib::string & featureName, feature_t score)
+RankResult::addScore(const std::string & featureName, feature_t score)
 {
     _rankScores[featureName] = score;
     return *this;
 }
 
 feature_t
-RankResult::getScore(const vespalib::string & featureName) const
+RankResult::getScore(const std::string & featureName) const
 {
     auto itr = _rankScores.find(featureName);
     if (itr != _rankScores.end()) {
@@ -69,8 +69,8 @@ RankResult::clear()
     return *this;
 }
 
-std::vector<vespalib::string> &
-RankResult::getKeys(std::vector<vespalib::string> &ret)
+std::vector<std::string> &
+RankResult::getKeys(std::vector<std::string> &ret)
 {
     for (const auto& score : _rankScores) {
         ret.push_back(score.first);
@@ -78,10 +78,10 @@ RankResult::getKeys(std::vector<vespalib::string> &ret)
     return ret;
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 RankResult::getKeys()
 {
-    std::vector<vespalib::string> ret;
+    std::vector<std::string> ret;
     return getKeys(ret);
 }
 

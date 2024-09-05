@@ -5,8 +5,8 @@ namespace search::expression {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS2(search, expression, BucketResultNode, vespalib::Identifiable);
 
-const vespalib::string BucketResultNode::_toField("to");
-const vespalib::string BucketResultNode::_fromField("from");
+const std::string BucketResultNode::_toField("to");
+const std::string BucketResultNode::_fromField("from");
 
 }
 

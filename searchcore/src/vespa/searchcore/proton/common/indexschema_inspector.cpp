@@ -17,7 +17,7 @@ IndexschemaInspector::~IndexschemaInspector()
 }
 
 bool
-IndexschemaInspector::isStringIndex(const vespalib::string &name) const
+IndexschemaInspector::isStringIndex(const std::string &name) const
 {
     auto index = _hash.lookup(name);
     if (index != nullptr) {

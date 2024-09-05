@@ -7,12 +7,12 @@ namespace vespalib {
 
 namespace {
 
-vespalib::string make_host_name() {
+std::string make_host_name() {
     return vespa::Defaults::vespaHostname();
 }
 
 } // namespace vespalib::<unnamed>
 
-const vespalib::string HostName::_host_name = make_host_name();
+const std::string HostName::_host_name = make_host_name();
 
 } // namespace vespalib

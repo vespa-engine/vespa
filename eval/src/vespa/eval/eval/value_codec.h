@@ -4,8 +4,8 @@
 
 #include "value.h"
 #include "tensor_spec.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/exception.h>
+#include <string>
 
 namespace vespalib { class nbostream; }
 

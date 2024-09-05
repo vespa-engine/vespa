@@ -21,6 +21,7 @@ import static com.yahoo.language.opennlp.OpenNlpTokenizer.Mode.*;
  */
 public class OpenNlpLinguistics extends SimpleLinguistics {
 
+    private final boolean snowballStemmingForEnglish;
     private final boolean cjk;
     private final boolean createCjkGrams;
     private final Detector detector;
@@ -31,19 +32,25 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
 
     @Inject
     public OpenNlpLinguistics(OpenNlpConfig config) {
+        this.snowballStemmingForEnglish = config.snowballStemmingForEnglish();
         this.cjk = config.cjk();
         this.createCjkGrams = config.createCjkGrams();
         this.detector = new OpenNlpDetector();
     }
 
     @Override
-    public Stemmer getStemmer() { return new StemmerImpl(createTokenizer().withMode(query)); }
+    public Tokenizer getTokenizer() {
+        return new OpenNlpTokenizer(OpenNlpTokenizer.Mode.index, getNormalizer(), getTransformer(),
+                                    snowballStemmingForEnglish, cjk, createCjkGrams);
+    }
 
     @Override
-    public Tokenizer getTokenizer() { return createTokenizer(); }
+    public Stemmer getStemmer() {
+        return new StemmerImpl(forQuerying(getTokenizer()));
+    }
 
     @Override
-    public Segmenter getSegmenter() { return new SegmenterImpl(createTokenizer().withMode(query)); }
+    public Segmenter getSegmenter() { return new SegmenterImpl(forQuerying(getTokenizer())); }
 
     @Override
     public Detector getDetector() { return detector; }
@@ -51,8 +58,10 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
     @Override
     public boolean equals(Linguistics other) { return (other instanceof OpenNlpLinguistics); }
 
-    private OpenNlpTokenizer createTokenizer() {
-        return new OpenNlpTokenizer(OpenNlpTokenizer.Mode.index, getNormalizer(), getTransformer(), cjk, createCjkGrams);
+    private Tokenizer forQuerying(Tokenizer tokenizer) {
+        if ( ! (tokenizer.getClass() == OpenNlpTokenizer.class)) // this has been subclassed and partially overridden
+            return tokenizer;
+        return ((OpenNlpTokenizer)tokenizer).withMode(query);
     }
 
 }

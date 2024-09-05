@@ -86,7 +86,7 @@ public:
             : function(function_in), param(0) {}
         Instruction(op_function function_in, uint64_t param_in) noexcept
             : function(function_in), param(param_in) {}
-        vespalib::string resolve_symbol() const;
+        std::string resolve_symbol() const;
         void perform(State &state) const {
             if (function == nullptr) {
                 state.stack.push_back(state.params->resolve(param, state.stash));

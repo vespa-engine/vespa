@@ -20,7 +20,7 @@ public:
     DocumentTypeInspector(const document::DocumentType &oldDocType,
                           const document::DocumentType &newDocType);
 
-    virtual bool hasUnchangedField(const vespalib::string &name) const override;
+    virtual bool hasUnchangedField(const std::string &name) const override;
 };
 
 } // namespace proton

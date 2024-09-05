@@ -283,7 +283,7 @@ StructFieldValue::printXml(XmlOutputStream& xos) const
     {
         double ns = getFieldValue(getField(PositionDataType::FIELD_Y))->getAsInt() / 1.0e6;
         double ew = getFieldValue(getField(PositionDataType::FIELD_X))->getAsInt() / 1.0e6;
-        vespalib::string buf = make_string("%s%.6f;%s%.6f",
+        std::string buf = make_string("%s%.6f;%s%.6f",
                 (ns < 0 ? "S" : "N"),
                 (ns < 0 ? (-ns) : ns),
                 (ew < 0 ? "W" : "E"),

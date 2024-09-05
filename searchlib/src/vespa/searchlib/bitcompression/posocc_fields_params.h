@@ -38,8 +38,8 @@ public:
     void getParams(PostingListParams &params) const;
     void setParams(const PostingListParams &params);
     void setSchemaParams(const Schema &schema, const uint32_t indexId);
-    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
-    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
+    void readHeader(const vespalib::GenericHeader &header, const std::string &prefix);
+    void writeHeader(vespalib::GenericHeader &header, const std::string &prefix) const;
     void set_field_length_info(const index::FieldLengthInfo &field_length_info);
 };
 

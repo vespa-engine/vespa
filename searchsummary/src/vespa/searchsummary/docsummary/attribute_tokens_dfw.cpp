@@ -36,7 +36,7 @@ make_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
 }
 
 void
-insert_value(std::string_view value, Inserter& inserter, vespalib::string& scratch, bool lowercase)
+insert_value(std::string_view value, Inserter& inserter, std::string& scratch, bool lowercase)
 {
     Cursor& arr = inserter.insertArray(1);
     ArrayInserter ai(arr);
@@ -58,7 +58,7 @@ insert_value(std::string_view value, Inserter& inserter, vespalib::string& scrat
 class MultiAttributeTokensDFWState : public DocsumFieldWriterState
 {
     const IMultiValueReadView<const char*>* _read_view;
-    vespalib::string                        _lowercase_scratch;
+    std::string                        _lowercase_scratch;
     bool                                    _lowercase;
 public:
     MultiAttributeTokensDFWState(const IAttributeVector& attr, vespalib::Stash& stash);
@@ -96,7 +96,7 @@ MultiAttributeTokensDFWState::insertField(uint32_t docid, Inserter& target)
 class SingleAttributeTokensDFWState : public DocsumFieldWriterState
 {
     const IAttributeVector& _attr;
-    vespalib::string        _lowercase_scratch;
+    std::string        _lowercase_scratch;
     bool                    _lowercase;
 public:
     SingleAttributeTokensDFWState(const IAttributeVector& attr);
@@ -138,7 +138,7 @@ make_field_writer_state(const IAttributeVector& attr, vespalib::Stash& stash)
     return &stash.create<EmptyDocsumFieldWriterState>();
 }
 
-AttributeTokensDFW::AttributeTokensDFW(const vespalib::string& input_field_name)
+AttributeTokensDFW::AttributeTokensDFW(const std::string& input_field_name)
     : DocsumFieldWriter(),
       _input_field_name(input_field_name)
 {
@@ -146,7 +146,7 @@ AttributeTokensDFW::AttributeTokensDFW(const vespalib::string& input_field_name)
 
 AttributeTokensDFW::~AttributeTokensDFW() = default;
 
-const vespalib::string&
+const std::string&
 AttributeTokensDFW::getAttributeName() const
 {
     return _input_field_name;

@@ -11,7 +11,7 @@
 namespace search {
 
 template <typename B, typename T>
-MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c)
+MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const std::string & name, const AttributeVector::Config & c)
     : MultiValueStringAttributeT<B, T>(name, c),
       PostingParent(*this, this->getEnumStore()),
       _posting_store_adapter(this->get_posting_store(), this->_enumStore, this->getIsFilter())
@@ -19,7 +19,7 @@ MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const
 }
 
 template <typename B, typename T>
-MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const vespalib::string & name)
+MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const std::string & name)
     : MultiValueStringPostingAttributeT<B, T>(name, AttributeVector::Config(AttributeVector::BasicType::STRING, attribute::CollectionType::ARRAY))
 {
 }

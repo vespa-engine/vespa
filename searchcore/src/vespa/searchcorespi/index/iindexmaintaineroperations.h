@@ -31,7 +31,7 @@ struct IIndexMaintainerOperations {
     /**
      * Loads a disk index from the given directory.
      */
-    virtual IDiskIndex::SP loadDiskIndex(const vespalib::string &indexDir) = 0;
+    virtual IDiskIndex::SP loadDiskIndex(const std::string &indexDir) = 0;
 
     /**
      * Reloads the given disk index and returns a new instance.
@@ -51,8 +51,8 @@ struct IIndexMaintainerOperations {
      * @param lastSerialNum the serial number of the last operation in the last input disk index.
      */
     virtual bool runFusion(const Schema &schema,
-                           const vespalib::string &outputDir,
-                           const std::vector<vespalib::string> &sources,
+                           const std::string &outputDir,
+                           const std::vector<std::string> &sources,
                            const SelectorArray &selectorArray,
                            search::SerialNum lastSerialNum,
                            std::shared_ptr<search::IFlushToken> flush_token) = 0;

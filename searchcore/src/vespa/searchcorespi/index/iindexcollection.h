@@ -41,7 +41,7 @@ public:
      */
     virtual uint32_t getSourceId(uint32_t i) const = 0;
 
-    virtual vespalib::string toString() const;
+    virtual std::string toString() const;
 
 };
 

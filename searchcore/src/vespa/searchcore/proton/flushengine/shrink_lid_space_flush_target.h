@@ -34,7 +34,7 @@ public:
      * @param flushedSerialNum    When target shrank lid space last time
      * @param target              The target supporting lid space compaction
      */
-    ShrinkLidSpaceFlushTarget(const vespalib::string &name,
+    ShrinkLidSpaceFlushTarget(const std::string &name,
                               Type type,
                               Component component,
                               SerialNum flushedSerialNum,

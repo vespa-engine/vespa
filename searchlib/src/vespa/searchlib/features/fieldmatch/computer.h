@@ -7,7 +7,7 @@
 #include "simplemetrics.h"
 #include <vespa/searchlib/features/queryterm.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace search::fef {
 
@@ -204,7 +204,7 @@ public:
      *
      * @return A string representation.
      */
-    vespalib::string toString() const;
+    std::string toString() const;
 
     /**
      * Returns the simple metrics computed while traversing the list of query terms in the constructor.
@@ -307,7 +307,7 @@ private:
     const Params                               _params;
     bool                                       _useCachedHits;
 
-    const vespalib::ConstArrayRef<QueryTerm>   _queryTerms;
+    const std::span<const QueryTerm>   _queryTerms;
     TermFieldMatchDataVector                   _queryTermFieldMatch;
     uint32_t                                   _totalTermWeight;
     feature_t                                  _totalTermSignificance;

@@ -53,7 +53,7 @@ AddIteratorHandler::doModify(FieldValue &fv) {
             cf.add(_values[i]);
         }
     } else {
-        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", fv.className());
+        std::string err = make_string("Unable to add a value to a \"%s\" field value.", fv.className());
         throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
     }
     return ModificationStatus::MODIFIED;

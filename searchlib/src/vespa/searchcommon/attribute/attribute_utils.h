@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::attribute {
 
@@ -23,8 +23,8 @@ class Config;
  * During update the complex field is first updated in the document,
  * then the struct field attribute is updated based on the new content of the complex field.
  */
-bool isUpdateableInMemoryOnly(const vespalib::string &attrName, const Config &cfg);
+bool isUpdateableInMemoryOnly(const std::string &attrName, const Config &cfg);
 
-bool isStructFieldAttribute(const vespalib::string &attrName);
+bool isStructFieldAttribute(const std::string &attrName);
 
 }

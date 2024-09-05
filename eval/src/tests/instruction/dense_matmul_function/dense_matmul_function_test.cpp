@@ -33,13 +33,13 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr, FunInfo details) {
+void verify_optimized(const std::string &expr, FunInfo details) {
     TEST_STATE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     EvalFixture::verify<FunInfo>(expr, {details}, all_types);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     TEST_STATE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);

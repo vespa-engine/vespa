@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
+#include <string>
 
 using namespace vespalib;
 
@@ -14,7 +14,7 @@ TEST("that DirectIOException propagates the correct information.") {
     EXPECT_EQUAL(10u, e.getLength());
     EXPECT_EQUAL(3u, e.getOffset());
     EXPECT_EQUAL(msg, e.getBuffer());
-    EXPECT_EQUAL(0u, string(e.what()).find("DirectIO failed for file 'file.a' buffer="));
+    EXPECT_EQUAL(0u, std::string(e.what()).find("DirectIO failed for file 'file.a' buffer="));
     EXPECT_EQUAL("file.a", e.getFileName());
 }
 

@@ -405,7 +405,7 @@ Expression embedExp() :
       <EMBED> [ LOOKAHEAD(2) embedderId = identifier() ]
       ( LOOKAHEAD(2) embedderArgument = identifier() { embedderArguments.add(embedderArgument); } )*
     )
-    { return new EmbedExpression(embedders, embedderId, embedderArguments); }
+    { return new EmbedExpression(linguistics, embedders, embedderId, embedderArguments); }
 }
 
 Expression exactExp() :

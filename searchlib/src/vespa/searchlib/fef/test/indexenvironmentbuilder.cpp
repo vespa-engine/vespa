@@ -13,7 +13,7 @@ IndexEnvironmentBuilder::IndexEnvironmentBuilder(IndexEnvironment &env) :
 IndexEnvironmentBuilder &
 IndexEnvironmentBuilder::addField(const FieldType &type,
                                   const FieldInfo::CollectionType &coll,
-                                  const vespalib::string &name)
+                                  const std::string &name)
 {
     return addField(type, coll, FieldInfo::DataType::DOUBLE, name);
 }
@@ -22,7 +22,7 @@ IndexEnvironmentBuilder &
 IndexEnvironmentBuilder::addField(const FieldType &type,
                                   const FieldInfo::CollectionType &coll,
                                   const FieldInfo::DataType &dataType,
-                                  const vespalib::string &name)
+                                  const std::string &name)
 {
     uint32_t idx = _env.getFields().size();
     FieldInfo field(type, coll, name, idx);

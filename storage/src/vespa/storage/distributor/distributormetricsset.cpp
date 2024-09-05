@@ -6,7 +6,7 @@ namespace storage::distributor {
 
 using metrics::MetricSet;
 
-BucketDbMetrics::BucketDbMetrics(const vespalib::string& db_type, metrics::MetricSet* owner)
+BucketDbMetrics::BucketDbMetrics(const std::string& db_type, metrics::MetricSet* owner)
     : metrics::MetricSet("bucket_db", {{"bucket_db_type", db_type}}, "", owner),
       memory_usage(this)
 {}

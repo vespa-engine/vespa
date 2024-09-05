@@ -13,7 +13,7 @@ namespace proton {
 class FlushContext {
 private:
     using IFlushTarget = searchcorespi::IFlushTarget;
-    vespalib::string               _name;
+    std::string               _name;
     IFlushHandler::SP              _handler;
     IFlushTarget::SP               _target;
     searchcorespi::FlushTask::UP   _task;
@@ -32,13 +32,13 @@ public:
      * @param target  The target to flush.
      * @return the name created.
      */
-    static vespalib::string createName(const IFlushHandler & handler, const IFlushTarget & target);
+    static std::string createName(const IFlushHandler & handler, const IFlushTarget & target);
 
     /**
      * Create a combined name of the handler name and the target name.
      */
-    static vespalib::string create_name(const vespalib::string& handler_name,
-                                        const vespalib::string& target_name);
+    static std::string create_name(const std::string& handler_name,
+                                        const std::string& target_name);
 
     /**
      * Constructs a new instance of this class.
@@ -70,7 +70,7 @@ public:
      *
      * @return The name of this.
      */
-    const vespalib::string & getName() const { return _name; }
+    const std::string & getName() const { return _name; }
 
     /**
      * Returns the flush handler of this context.

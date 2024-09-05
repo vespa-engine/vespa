@@ -231,8 +231,8 @@ TEST_MAIN() {
     size_t numQueries = 1000;
     int64_t maxGroups = -1;
     bool useEngine = true;
-    vespalib::string idType = "int";
-    vespalib::string aggrType = "sum";
+    std::string idType = "int";
+    std::string aggrType = "sum";
     if (argc > 1) {
         useEngine = (strcmp(argv[1], "tree") != 0);
     }

@@ -15,7 +15,7 @@ import java.util.StringTokenizer;
  * Be careful about changing this class, as it mirrors the ClusterState in C++.
  * Please update both if you need to change anything.
  */
-public class ClusterState implements Cloneable {
+public final class ClusterState implements Cloneable {
 
     private static final NodeState DEFAULT_STORAGE_UP_NODE_STATE = new NodeState(NodeType.STORAGE, State.UP);
     private static final NodeState DEFAULT_DISTRIBUTOR_UP_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.UP);
@@ -326,15 +326,15 @@ public class ClusterState implements Cloneable {
             }
             String key = token.substring(0, index);
             String value = token.substring(index + 1);
-            if (key.length() > 0 && key.charAt(0) == '.') {
-                if (lastAbsolutePath.equals("")) {
+            if (!key.isEmpty() && key.charAt(0) == '.') {
+                if (lastAbsolutePath.isEmpty()) {
                     throw new ParseException("The first path in system state string needs to be absolute, in state: " + serialized, 0);
                 }
                 key = lastAbsolutePath + key;
             } else {
                 lastAbsolutePath = key;
             }
-            if (key.length() > 0) switch (key.charAt(0)) {
+            if (!key.isEmpty()) switch (key.charAt(0)) {
                 case 'c':
                     if (key.equals("cluster")) {
                         setClusterState(State.get(value));
@@ -532,7 +532,7 @@ public class ClusterState implements Cloneable {
         sb.append(distributorNodes.toString(verbose));
         sb.append(storageNodes.toString(verbose));
 
-        if (sb.length() > 0) { // Remove first space if not empty
+        if (!sb.isEmpty()) { // Remove first space if not empty
             sb.deleteCharAt(0);
         }
         return sb.toString();

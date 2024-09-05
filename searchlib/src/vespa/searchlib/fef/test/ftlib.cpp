@@ -25,7 +25,7 @@ FtQueryEnvironment::~FtQueryEnvironment() = default;
 
 FtDumpFeatureVisitor::FtDumpFeatureVisitor() = default;
 
-FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const vespalib::string &feature) :
+FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const std::string &feature) :
     _indexEnv(),
     _queryEnv(_indexEnv),
     _overrides(),
@@ -33,7 +33,7 @@ FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const vespa
 {
 }
 
-FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const std::vector<vespalib::string> &features)
+FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const std::vector<std::string> &features)
     : _indexEnv(),
       _queryEnv(_indexEnv),
       _overrides(),
@@ -46,11 +46,11 @@ FtFeatureTest::~FtFeatureTest() = default;
 //---------------------------------------------------------------------------------------------------------------------
 // FtUtil
 //---------------------------------------------------------------------------------------------------------------------
-std::vector<vespalib::string>
-FtUtil::tokenize(const vespalib::string & str, const vespalib::string & separator)
+std::vector<std::string>
+FtUtil::tokenize(const std::string & str, const std::string & separator)
 {
-    std::vector<vespalib::string> retval;
-    if (separator != vespalib::string("")) {
+    std::vector<std::string> retval;
+    if (separator != std::string("")) {
         vespalib::StringTokenizer tnz(str, separator);
         tnz.removeEmptyTokens();
         for (auto token : tnz) {
@@ -66,14 +66,14 @@ FtUtil::tokenize(const vespalib::string & str, const vespalib::string & separato
 
 
 FtQuery
-FtUtil::toQuery(const vespalib::string & query, const vespalib::string & separator)
+FtUtil::toQuery(const std::string & query, const std::string & separator)
 {
-    std::vector<vespalib::string> prepQuery = FtUtil::tokenize(query, separator);
+    std::vector<std::string> prepQuery = FtUtil::tokenize(query, separator);
     FtQuery retval(prepQuery.size());
     for (uint32_t i = 0; i < prepQuery.size(); ++i) {
-        std::vector<vespalib::string> significanceSplit = FtUtil::tokenize(prepQuery[i], vespalib::string("%"));
-        std::vector<vespalib::string> weightSplit = FtUtil::tokenize(significanceSplit[0], vespalib::string("!"));
-        std::vector<vespalib::string> connexitySplit = FtUtil::tokenize(weightSplit[0], vespalib::string(":"));
+        std::vector<std::string> significanceSplit = FtUtil::tokenize(prepQuery[i], std::string("%"));
+        std::vector<std::string> weightSplit = FtUtil::tokenize(significanceSplit[0], std::string("!"));
+        std::vector<std::string> connexitySplit = FtUtil::tokenize(weightSplit[0], std::string(":"));
         if (connexitySplit.size() > 1) {
             retval[i].term = connexitySplit[1];
             retval[i].connexity = util::strToNum<feature_t>(connexitySplit[0]);
@@ -91,14 +91,14 @@ FtUtil::toQuery(const vespalib::string & query, const vespalib::string & separat
 }
 
 RankResult
-FtUtil::toRankResult(const vespalib::string & baseName, const vespalib::string & result, const vespalib::string & separator)
+FtUtil::toRankResult(const std::string & baseName, const std::string & result, const std::string & separator)
 {
     RankResult retval;
-    std::vector<vespalib::string> prepResult = FtUtil::tokenize(result, separator);
+    std::vector<std::string> prepResult = FtUtil::tokenize(result, separator);
     for (const auto & str : prepResult) {
-        std::vector<vespalib::string> rs = FtUtil::tokenize(str, ":");
-        vespalib::string name = rs[0];
-        vespalib::string value = rs[1];
+        std::vector<std::string> rs = FtUtil::tokenize(str, ":");
+        std::string name = rs[0];
+        std::string value = rs[1];
         retval.addScore(baseName + "." + name, search::features::util::strToNum<feature_t>(value));
     }
     return retval;

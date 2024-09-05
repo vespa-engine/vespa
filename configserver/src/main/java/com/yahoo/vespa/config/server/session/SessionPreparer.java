@@ -11,7 +11,6 @@ import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -26,6 +25,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
@@ -56,6 +56,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.model.application.validation.BundleValidator;
 import org.xml.sax.SAXException;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
@@ -128,7 +129,8 @@ public class SessionPreparer {
     ExecutorService getExecutor() { return executor; }
 
     /**
-     * Prepares a session (validates, builds model, writes to zookeeper and distributes files)
+     * Prepares a session (validates, builds model, trigger distribution of application package
+     * to other config servers, writes to zookeeper)
      *
      * @param hostValidator               host validator
      * @param logger                      for storing logs returned in response to client.
@@ -149,7 +151,7 @@ public class SessionPreparer {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
-                FileReference fileReference = preparation.startDistributionOfApplicationPackage();
+                FileReference fileReference = preparation.triggerDistributionOfApplicationPackage();
                 preparation.writeStateZK(fileReference);
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
@@ -242,7 +244,7 @@ public class SessionPreparer {
             }
         }
 
-        FileReference startDistributionOfApplicationPackage() {
+        FileReference triggerDistributionOfApplicationPackage() {
             FileReference fileReference = fileRegistry.addApplicationPackage();
             FileDistribution fileDistribution = fileDistributionFactory.createFileDistribution();
             log.log(Level.FINE, () -> "Ask other config servers to download application package for " +
@@ -250,7 +252,7 @@ public class SessionPreparer {
             ConfigServerSpec.fromConfig(configserverConfig)
                       .stream()
                       .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
-                      .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
+                      .forEach(spec -> fileDistribution.triggerDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
             checkTimeout("startDistributionOfApplicationPackage");
             return fileReference;
@@ -347,6 +349,7 @@ public class SessionPreparer {
 
         void writeStateZK(FileReference filereference) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
+
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
@@ -497,5 +500,5 @@ public class SessionPreparer {
         }
 
     }
-    
+
 }

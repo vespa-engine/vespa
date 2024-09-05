@@ -337,7 +337,7 @@ emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipi
 
 }
 
-vespalib::string
+std::string
 RPCNetwork::buildRecipientListString(const SendContext& ctx) {
     vespalib::asciistream s;
     bool first = true;

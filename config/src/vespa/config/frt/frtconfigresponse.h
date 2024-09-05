@@ -21,10 +21,10 @@ public:
 
     bool validateResponse() override;
     bool hasValidResponse() const override;
-    vespalib::string errorMessage() const override;
+    std::string errorMessage() const override;
     int errorCode() const override;
     bool isError() const override;
-    virtual const vespalib::string & getResponseTypes() const = 0;
+    virtual const std::string & getResponseTypes() const = 0;
 
 private:
     enum ResponseState { EMPTY, OK, ERROR };

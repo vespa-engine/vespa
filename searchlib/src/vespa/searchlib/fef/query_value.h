@@ -5,8 +5,8 @@
 #include "properties.h"
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace vespalib::eval { struct Value; }
 
@@ -21,11 +21,11 @@ class IQueryEnvironment;
  */
 class InvalidValueTypeException : public vespalib::Exception {
 private:
-    vespalib::string _type_str;
+    std::string _type_str;
 
 public:
-    InvalidValueTypeException(const vespalib::string& query_key, const vespalib::string& type_str_in);
-    const vespalib::string& type_str() const { return _type_str; }
+    InvalidValueTypeException(const std::string& query_key, const std::string& type_str_in);
+    const std::string& type_str() const { return _type_str; }
 };
 
 /**
@@ -33,11 +33,11 @@ public:
  */
 class InvalidTensorValueException : public vespalib::Exception {
 private:
-    vespalib::string _expr;
+    std::string _expr;
 
 public:
-    InvalidTensorValueException(const vespalib::eval::ValueType& type, const vespalib::string& expr_in);
-    const vespalib::string& expr() const { return _expr; }
+    InvalidTensorValueException(const vespalib::eval::ValueType& type, const std::string& expr_in);
+    const std::string& expr() const { return _expr; }
 };
 
 /**
@@ -48,10 +48,10 @@ public:
  */
 class QueryValue {
 private:
-    vespalib::string _key; // 'foo'
-    vespalib::string _name; // 'query(foo)'
-    vespalib::string _old_key; // '$foo'
-    vespalib::string _stored_value_key; // query.value.foo
+    std::string _key; // 'foo'
+    std::string _name; // 'query(foo)'
+    std::string _old_key; // '$foo'
+    std::string _stored_value_key; // query.value.foo
     vespalib::eval::ValueType _type;
 
     Property config_lookup(const IIndexEnvironment& env) const;
@@ -59,7 +59,7 @@ private:
 
 public:
     QueryValue();
-    QueryValue(const vespalib::string& key, vespalib::eval::ValueType type);
+    QueryValue(const std::string& key, vespalib::eval::ValueType type);
     ~QueryValue();
 
     /**
@@ -67,7 +67,7 @@ public:
      *
      * Throws InvalidValueTypeException if the value type is an error.
      */
-    static QueryValue from_config(const vespalib::string& key, const IIndexEnvironment& env);
+    static QueryValue from_config(const std::string& key, const IIndexEnvironment& env);
 
     const vespalib::eval::ValueType& type() const { return _type; }
 

@@ -16,13 +16,13 @@ class SingleRawExtAttribute : public RawAttribute,
     std::vector<char, vespalib::allocator_large<char>>         _buffer;
     std::vector<uint32_t, vespalib::allocator_large<uint32_t>> _offsets;
 public:
-    SingleRawExtAttribute(const vespalib::string& name);
+    SingleRawExtAttribute(const std::string& name);
     ~SingleRawExtAttribute() override;
     void onCommit() override;
     void onUpdateStat() override;
     bool addDoc(DocId& docId) override;
-    bool add(vespalib::ConstArrayRef<char> v, int32_t) override;
-    vespalib::ConstArrayRef<char> get_raw(DocId docid) const override;
+    bool add(std::span<const char> v, int32_t) override;
+    std::span<const char> get_raw(DocId docid) const override;
     IExtendAttribute* getExtendInterface() override;
 };
 

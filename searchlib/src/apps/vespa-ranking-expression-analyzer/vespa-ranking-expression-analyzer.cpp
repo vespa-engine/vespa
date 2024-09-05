@@ -24,9 +24,9 @@ using namespace search::features::rankingexpression;
 
 //-----------------------------------------------------------------------------
 
-vespalib::string strip_name(const vespalib::string &name) {
+std::string strip_name(const std::string &name) {
     const char *expected_ending = ".expression";
-    vespalib::string tmp = name;
+    std::string tmp = name;
     size_t pos = tmp.rfind("/");
     if (pos != tmp.npos) {
         tmp = tmp.substr(pos + 1);
@@ -57,7 +57,7 @@ size_t count_nodes(const Node &node) {
 //-----------------------------------------------------------------------------
 
 struct InputInfo {
-    vespalib::string name;
+    std::string name;
     std::vector<double> cmp_with;
     double usage_probability;
     double expected_usage;
@@ -239,8 +239,8 @@ bool vmforest_used(const std::vector<Forest::UP> &forests) {
 struct State {
     using FunPtr = std::shared_ptr<Function const>;
 
-    vespalib::string     name;
-    vespalib::string     expression;
+    std::string     name;
+    std::string     expression;
     FunPtr               function;
     FunctionInfo         fun_info;
     CompiledFunction::UP compiled_function;
@@ -248,10 +248,10 @@ struct State {
     double llvm_compile_s  = 0.0;
     double llvm_execute_us = 0.0;
 
-    std::vector<vespalib::string> options;
+    std::vector<std::string> options;
     std::vector<double> options_us;
 
-    State(const vespalib::string &file_name, vespalib::string expression_in);
+    State(const std::string &file_name, std::string expression_in);
     ~State();
 
     void benchmark_llvm_compile() {
@@ -265,7 +265,7 @@ struct State {
         llvm_compile_s = timer.min_time();
     }
 
-    void benchmark_option(const vespalib::string &opt_name, Optimize::Chain optimizer_chain) {
+    void benchmark_option(const std::string &opt_name, Optimize::Chain optimizer_chain) {
         options.push_back(opt_name);
         options_us.push_back(CompiledFunction(*function, PassParams::ARRAY, optimizer_chain).estimate_cost_us(fun_info.params));
         fprintf(stderr, "  option '%s' execute time: %g us\n", opt_name.c_str(), options_us.back());
@@ -274,7 +274,7 @@ struct State {
     void maybe_benchmark_fast_forest() {
         auto ff = FastForest::try_convert(*function);
         if (ff) {
-            vespalib::string opt_name("ff");
+            std::string opt_name("ff");
             options.push_back(opt_name);
             options_us.push_back(ff->estimate_cost_us(fun_info.params));
             fprintf(stderr, "  option '%s' execute time: %g us\n", opt_name.c_str(), options_us.back());
@@ -311,7 +311,7 @@ struct State {
     }
 };
 
-State::State(const vespalib::string &file_name, vespalib::string expression_in)
+State::State(const std::string &file_name, std::string expression_in)
     : name(strip_name(file_name)),
       expression(std::move(expression_in)),
       function(Function::parse(expression, FeatureNameExtractor())),
@@ -348,7 +348,7 @@ MyApp::main(int argc, char **argv)
     if (!(verbose || (argc == 2))) {
         return usage(argv[0]);
     }
-    vespalib::string file_name(verbose ? argv[2] : argv[1]);
+    std::string file_name(verbose ? argv[2] : argv[1]);
     vespalib::MappedFileInput file(file_name);
     if (!file.valid()) {
         fprintf(stderr, "could not read input file: '%s'\n",
@@ -357,7 +357,7 @@ MyApp::main(int argc, char **argv)
     }
     State state(file_name, file.get().make_string());
     if (state.function->has_error()) {
-        vespalib::string error_message = state.function->get_error();
+        std::string error_message = state.function->get_error();
         fprintf(stderr, "input file (%s) contains an illegal expression:\n%s\n",
                 file_name.c_str(), error_message.c_str());
         return 1;

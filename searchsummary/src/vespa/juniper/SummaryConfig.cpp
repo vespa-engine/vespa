@@ -2,8 +2,8 @@
 
 #define _NEED_SUMMARY_CONFIG_IMPL 1
 #include "SummaryConfig.h"
-#include <string>
 #include <cstring>
+#include <string>
 
 SummaryConfig* CreateSummaryConfig(const char* highlight_on,
 				   const char* highlight_off,

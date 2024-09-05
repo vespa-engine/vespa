@@ -163,7 +163,7 @@ FieldValue::getAsDouble() const
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::DOUBLE, VESPA_STRLOC);
 }
 
-vespalib::string
+std::string
 FieldValue::getAsString() const
 {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::STRING, VESPA_STRLOC);

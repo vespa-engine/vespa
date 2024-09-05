@@ -11,9 +11,9 @@ namespace config {
 
 FRTConfigRequestV3::FRTConfigRequestV3(Connection * connection,
                                        const ConfigKey & key,
-                                       const vespalib::string & configXxhash64,
+                                       const std::string & configXxhash64,
                                        int64_t currentGeneration,
-                                       const vespalib::string & hostName,
+                                       const std::string & hostName,
                                        vespalib::duration serverTimeout,
                                        const Trace & trace,
                                        const VespaVersion & vespaVersion,

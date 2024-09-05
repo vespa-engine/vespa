@@ -50,7 +50,7 @@ struct FloatDecoder {
     static T fromstr(const char * q, const char * qend, const char ** end) noexcept {
         T v(0);
 #if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 190000
-        vespalib::string tmp(q, qend - q);
+        std::string tmp(q, qend - q);
         char* tmp_end = nullptr;
         const char *tmp_cstring = tmp.c_str();
         if constexpr (std::is_same_v<T, float>) {
@@ -260,7 +260,7 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
         size_t numParts(0);
         while (! rest.empty() && ((numParts + 1) < NELEMS(parts))) {
             size_t pos(rest.find(';'));
-            if (pos != vespalib::string::npos) {
+            if (pos != std::string::npos) {
                 parts[numParts++] = rest.substr(0, pos);
                 rest = rest.substr(pos + 1);
                 if (rest.empty()) {
@@ -351,7 +351,7 @@ QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
     return valid;
 }
 
-vespalib::string
+std::string
 QueryTermSimple::getClassName() const
 {
     return vespalib::getClassName(*this);
@@ -360,7 +360,7 @@ QueryTermSimple::getClassName() const
 }
 
 void
-visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const search::QueryTermSimple *obj)
+visit(vespalib::ObjectVisitor &self, const std::string &name, const search::QueryTermSimple *obj)
 {
     if (obj != nullptr) {
         self.openStruct(name, obj->getClassName());
@@ -372,7 +372,7 @@ visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const search:
 }
 
 void
-visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const search::QueryTermSimple &obj)
+visit(vespalib::ObjectVisitor &self, const std::string &name, const search::QueryTermSimple &obj)
 {
     visit(self, name, &obj);
 }

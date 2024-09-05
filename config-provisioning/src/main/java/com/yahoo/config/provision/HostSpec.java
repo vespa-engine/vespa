@@ -3,7 +3,6 @@ package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,14 +32,6 @@ public class HostSpec implements Comparable<HostSpec> {
 
     /** Create a host in a non-cloud system, where hosts are specified in config */
     public HostSpec(String hostname, Optional<NetworkPorts> networkPorts) {
-        this(hostname,
-             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-             Optional.empty(), Optional.empty(), networkPorts, Optional.empty());
-    }
-
-    // TODO: Remove when oldest model in use is 8.124
-    @Deprecated
-    public HostSpec(String hostname, List<String> ignored, Optional<NetworkPorts> networkPorts) {
         this(hostname,
              NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
              Optional.empty(), Optional.empty(), networkPorts, Optional.empty());

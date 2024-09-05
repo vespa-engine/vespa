@@ -2,8 +2,9 @@
 #pragma once
 
 #include "bucketcopy.h"
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/time.h>
+#include <span>
+#include <vector>
 
 namespace storage {
 
@@ -145,7 +146,7 @@ std::ostream& operator<<(std::ostream& out, const BucketInfoBase<NodeSeq>& info)
     return out;
 }
 
-class ConstBucketInfoRef : public BucketInfoBase<vespalib::ConstArrayRef<BucketCopy>> {
+class ConstBucketInfoRef : public BucketInfoBase<std::span<const BucketCopy>> {
 public:
     using BucketInfoBase::BucketInfoBase;
 };
@@ -227,7 +228,7 @@ private:
 };
 
 extern template class BucketInfoBase<std::vector<BucketCopy>>;
-extern template class BucketInfoBase<vespalib::ConstArrayRef<BucketCopy>>;
+extern template class BucketInfoBase<std::span<const BucketCopy>>;
 
 }
 

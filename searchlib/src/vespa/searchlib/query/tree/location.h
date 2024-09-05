@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <string>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include "point.h"
 #include "rectangle.h"
+#include <string>
 
 namespace vespalib { class asciistream; }
 namespace search::query {

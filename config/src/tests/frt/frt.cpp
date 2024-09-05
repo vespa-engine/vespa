@@ -33,14 +33,14 @@ using namespace config::protocol::v3;
 namespace {
 
 struct Response {
-    vespalib::string defName;
-    vespalib::string defMd5;
-    vespalib::string configId;
-    vespalib::string configXxhash64;
+    std::string defName;
+    std::string defMd5;
+    std::string configId;
+    std::string configXxhash64;
     int changed;
     long generation;
     StringVector payload;
-    vespalib::string ns;
+    std::string ns;
     void encodeResponse(FRT_RPCRequest * req) const {
         FRT_Values & ret = *req->GetReturn();
 
@@ -108,7 +108,7 @@ struct Response {
         fnet::frt::StandaloneFRT server;
         FRT_Supervisor & supervisor;
         FNET_Scheduler scheduler;
-        vespalib::string address;
+        std::string address;
         ConnectionMock() : ConnectionMock(std::unique_ptr<Response>()) { }
         ConnectionMock(std::unique_ptr<Response> answer);
         ~ConnectionMock();
@@ -124,7 +124,7 @@ struct Response {
             else
                 waiter->RequestDone(req);
         }
-        const vespalib::string & getAddress() const override { return address; }
+        const std::string & getAddress() const override { return address; }
     };
 
     ConnectionMock::ConnectionMock(std::unique_ptr<Response> answer)
@@ -257,9 +257,9 @@ TEST_FF("require that request is config task is scheduled", SourceFixture(), FRT
 TEST("require that v3 request is correctly initialized") {
     ConnectionMock conn;
     ConfigKey key = ConfigKey::create<MyConfig>("foobi");
-    vespalib::string xxhash64 = "myxxhash64";
+    std::string xxhash64 = "myxxhash64";
     int64_t currentGeneration = 3;
-    vespalib::string hostName = "myhost";
+    std::string hostName = "myhost";
     duration timeout = 3s;
     Trace traceIn(3);
     traceIn.trace(2, "Hei");
@@ -311,9 +311,9 @@ struct V3RequestFixture {
     Cursor & root;
     FRT_RPCRequest * req;
     ConfigKey key;
-    vespalib::string xxhash64;
+    std::string xxhash64;
     int64_t generation;
-    vespalib::string hostname;
+    std::string hostname;
     Trace traceIn;
 
     V3RequestFixture()

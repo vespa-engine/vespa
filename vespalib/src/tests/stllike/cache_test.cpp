@@ -61,7 +61,7 @@ TEST("testCacheSize")
 TEST("testCacheSizeDeep")
 {
     B m;
-    cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, -1);
+    cache< CacheParam<P, B, zero<uint32_t>, size<std::string> > > cache(m, -1);
     cache.write(1, "15 bytes string");
     EXPECT_EQUAL(95u, cache.sizeBytes());
     cache.write(1, "10 bytes s");
@@ -72,7 +72,7 @@ TEST("testCacheSizeDeep")
 
 TEST("testCacheEntriesHonoured") {
     B m;
-    cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, -1);
+    cache< CacheParam<P, B, zero<uint32_t>, size<std::string> > > cache(m, -1);
     cache.maxElements(1);
     cache.write(1, "15 bytes string");
     EXPECT_EQUAL(1u, cache.size());
@@ -86,7 +86,7 @@ TEST("testCacheEntriesHonoured") {
 
 TEST("testCacheMaxSizeHonoured") {
     B m;
-    cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, 200);
+    cache< CacheParam<P, B, zero<uint32_t>, size<std::string> > > cache(m, 200);
     cache.write(1, "15 bytes string");
     EXPECT_EQUAL(1u, cache.size());
     EXPECT_EQUAL(95u, cache.sizeBytes());
@@ -103,7 +103,7 @@ TEST("testCacheMaxSizeHonoured") {
 
 TEST("testThatMultipleRemoveOnOverflowIsFine") {
     B m;
-    cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, 2000);
+    cache< CacheParam<P, B, zero<uint32_t>, size<std::string> > > cache(m, 2000);
     
     for (size_t j(0); j < 5; j++) {
         for (size_t i(0); cache.size() == i; i++) {
@@ -113,13 +113,13 @@ TEST("testThatMultipleRemoveOnOverflowIsFine") {
     EXPECT_EQUAL(25u, cache.size());
     EXPECT_EQUAL(2025u, cache.sizeBytes());
     EXPECT_FALSE( cache.hasKey(0) );
-    string ls("long string aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    std::string ls("long string aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    string vls=ls+ls+ls+ls+ls+ls;
+    std::string vls=ls+ls+ls+ls+ls+ls;
     cache.write(53+5, ls);
     EXPECT_EQUAL(25u, cache.size());
     EXPECT_EQUAL(2498u, cache.sizeBytes());

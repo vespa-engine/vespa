@@ -25,23 +25,23 @@ namespace storage::api {
 class CreateVisitorCommand : public StorageCommand {
 private:
     document::BucketSpace _bucketSpace;
-    vespalib::string _libName; // Name of visitor library to use, ie. DumpVisitor.so
+    std::string _libName; // Name of visitor library to use, ie. DumpVisitor.so
     vdslib::Parameters _params;
 
-    vespalib::string _controlDestination;
-    vespalib::string _dataDestination;
+    std::string _controlDestination;
+    std::string _dataDestination;
 
-    vespalib::string _docSelection;
+    std::string _docSelection;
     std::vector<document::BucketId> _buckets;
     Timestamp _fromTime;
     Timestamp _toTime;
 
     uint32_t _visitorCmdId;
-    vespalib::string _instanceId;
+    std::string _instanceId;
     VisitorId _visitorId; // Set on storage node
 
     bool _visitRemoves;
-    vespalib::string _fieldSet;
+    std::string _fieldSet;
     bool _visitInconsistentBuckets;
 
     duration _queueTimeout;
@@ -80,11 +80,11 @@ public:
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     document::Bucket getBucket() const override;
     document::BucketId super_bucket_id() const;
-    const vespalib::string & getLibraryName() const { return _libName; }
-    const vespalib::string & getInstanceId() const { return _instanceId; }
-    const vespalib::string & getControlDestination() const { return _controlDestination; }
-    const vespalib::string & getDataDestination() const { return _dataDestination; }
-    const vespalib::string & getDocumentSelection() const { return _docSelection; }
+    const std::string & getLibraryName() const { return _libName; }
+    const std::string & getInstanceId() const { return _instanceId; }
+    const std::string & getControlDestination() const { return _controlDestination; }
+    const std::string & getDataDestination() const { return _dataDestination; }
+    const std::string & getDocumentSelection() const { return _docSelection; }
     const vdslib::Parameters& getParameters() const { return _params; }
     vdslib::Parameters& getParameters() { return _params; }
     uint32_t getMaximumPendingReplyCount() const { return _maxPendingReplyCount; }
@@ -93,7 +93,7 @@ public:
     Timestamp getToTime() const { return _toTime; }
     std::vector<document::BucketId>& getBuckets() { return _buckets; }
     bool visitRemoves() const { return _visitRemoves; }
-    const vespalib::string& getFieldSet() const { return _fieldSet; }
+    const std::string& getFieldSet() const { return _fieldSet; }
     bool visitInconsistentBuckets() const { return _visitInconsistentBuckets; }
     duration getQueueTimeout() const { return _queueTimeout; }
 
@@ -144,12 +144,12 @@ public:
  */
 class DestroyVisitorCommand : public StorageCommand {
 private:
-    vespalib::string  _instanceId;
+    std::string  _instanceId;
 
 public:
     explicit DestroyVisitorCommand(std::string_view instanceId);
 
-    const vespalib::string & getInstanceId() const { return _instanceId; }
+    const std::string & getInstanceId() const { return _instanceId; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 

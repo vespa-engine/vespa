@@ -60,8 +60,6 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         stack.push(new NamedBuilder(rootBuilder));
         try {
             handleValue(payload.getSlime().get());
-        } catch (FileReferenceDoesNotExistException e) {
-            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Not able to create config builder for payload '" + payload.toString() + "'", e);
         }

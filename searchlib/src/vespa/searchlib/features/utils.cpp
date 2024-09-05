@@ -147,11 +147,11 @@ calculate_legacy_significance(const ITermData& termData)
 }
 
 const search::fef::Table *
-lookupTable(const search::fef::IIndexEnvironment & env, const vespalib::string & featureName,
-            const vespalib::string & table, const vespalib::string & fieldName, const vespalib::string & fallback)
+lookupTable(const search::fef::IIndexEnvironment & env, const std::string & featureName,
+            const std::string & table, const std::string & fieldName, const std::string & fallback)
 {
-    vespalib::string tn1 = env.getProperties().lookup(featureName, table).get(fallback);
-    vespalib::string tn2 = env.getProperties().lookup(featureName, table, fieldName).get(tn1);
+    std::string tn1 = env.getProperties().lookup(featureName, table).get(fallback);
+    std::string tn2 = env.getProperties().lookup(featureName, table, fieldName).get(tn1);
     const search::fef::Table * retval = env.getTableManager().getTable(tn2);
     if (retval == nullptr) {
         LOG(warning, "Could not find the %s '%s' to be used for field '%s' in feature '%s'",
@@ -161,7 +161,7 @@ lookupTable(const search::fef::IIndexEnvironment & env, const vespalib::string &
 }
 
 const ITermData *
-getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label)
+getTermByLabel(const search::fef::IQueryEnvironment &env, const std::string &label)
 {
     // Labeling the query item with unique id '5' with the label 'foo'
     // is represented as: [vespa.label.foo.id: "5"]

@@ -11,12 +11,12 @@ namespace search::docsummary {
 class GetDocsumArgs
 {
 private:
-    using FieldSet = vespalib::hash_set<vespalib::string>;
-    vespalib::string   _resultClassName;
+    using FieldSet = vespalib::hash_set<std::string>;
+    std::string   _resultClassName;
     bool               _dumpFeatures;
     bool               _locations_possible;
     std::vector<char>  _stackDump;
-    vespalib::string   _location;
+    std::string   _location;
     vespalib::duration _timeout;
     fef::Properties    _highlightTerms;
     FieldSet           _fields;
@@ -32,12 +32,12 @@ public:
     void setStackDump(uint32_t stackDumpLen, const char *stackDump);
     void locations_possible(bool value) { _locations_possible = value; }
     bool locations_possible() const { return _locations_possible; }
-    const vespalib::string &getLocation() const { return _location; }
-    void setLocation(const vespalib::string & location) { _location = location; }
+    const std::string &getLocation() const { return _location; }
+    void setLocation(const std::string & location) { _location = location; }
     void setTimeout(vespalib::duration timeout) { _timeout = timeout; }
     vespalib::duration getTimeout() const { return _timeout; }
 
-    const vespalib::string & getResultClassName()      const { return _resultClassName; }
+    const std::string & getResultClassName()      const { return _resultClassName; }
     std::string_view getStackDump() const {
         return {_stackDump.data(), _stackDump.size()};
     }

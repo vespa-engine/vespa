@@ -19,7 +19,7 @@ using namespace tags;
 namespace {
 
 void
-readHeader(vespalib::FileHeader &h, const vespalib::string &name)
+readHeader(vespalib::FileHeader &h, const std::string &name)
 {
     Fast_BufferedFile file(32_Ki);
     file.ReadOpenExisting(name.c_str());
@@ -47,7 +47,7 @@ BitVectorIdxFileWrite::idxSize() const
 }
 
 void
-BitVectorIdxFileWrite::open(const vespalib::string &name, uint32_t docIdLimit,
+BitVectorIdxFileWrite::open(const std::string &name, uint32_t docIdLimit,
                             const TuneFileSeqWrite &tuneFileWrite,
                             const FileHeaderContext &fileHeaderContext)
 {
@@ -56,7 +56,7 @@ BitVectorIdxFileWrite::open(const vespalib::string &name, uint32_t docIdLimit,
     } else {
         _docIdLimit = docIdLimit;
     }
-    vespalib::string idxname = name + getBitVectorKeyScopeSuffix(_scope);
+    std::string idxname = name + getBitVectorKeyScopeSuffix(_scope);
 
     assert( !_idxFile);
     _idxFile = std::make_unique<Fast_BufferedFile>();

@@ -14,7 +14,7 @@ namespace search::queryeval {
 class SimpleSearch : public SearchIterator
 {
 private:
-    vespalib::string _tag;
+    std::string _tag;
     SimpleResult     _result;
     uint32_t         _index;
     bool             _strict;
@@ -28,7 +28,7 @@ protected:
 
 public:
     SimpleSearch(const SimpleResult &result, bool strict = true);
-    SimpleSearch &tag(const vespalib::string &t) {
+    SimpleSearch &tag(const std::string &t) {
         _tag = t;
         return *this;
     }

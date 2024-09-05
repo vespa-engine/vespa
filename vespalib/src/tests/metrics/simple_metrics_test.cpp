@@ -71,7 +71,7 @@ TEST("require that simple metrics gauge merge works")
     EXPECT_EQUAL(a.lastValue, 1.0);
 }
 
-bool compare_json(const vespalib::string &a, const vespalib::string &b)
+bool compare_json(const std::string &a, const std::string &b)
 {
     using vespalib::Memory;
     using vespalib::slime::JsonFormat;
@@ -91,9 +91,9 @@ fprintf(stderr, "compares unequal:\n[A]\n%s\n[B]\n%s\n", a.c_str(), b.c_str());
     return slimeA == slimeB;
 }
 
-void check_json(const vespalib::string &actual)
+void check_json(const std::string &actual)
 {
-    vespalib::string expect = "{"
+    std::string expect = "{"
     "   snapshot: { from: 1, to: 4 },"
     "   values: [ { name: 'foo',"
     "       values: { count: 17, rate: 4.85714 }"
@@ -117,8 +117,8 @@ void check_json(const vespalib::string &actual)
     EXPECT_TRUE(compare_json(expect, actual));
 }
 
-void check_prometheus(const vespalib::string &actual) {
-    vespalib::string expect = R"(foo 17 4500
+void check_prometheus(const std::string &actual) {
+    std::string expect = R"(foo 17 4500
 foo{chain="default",documenttype="music",thread="0"} 4 4500
 bar_count 4 4500
 bar_count{chain="vespa",documenttype="blogpost",thread="1"} 1 4500

@@ -196,7 +196,7 @@ struct IndexManagerTest : public ::testing::Test {
     }
     bool has_urgent_memory_index_flush() const;
     bool has_urgent_fusion() const;
-    void assert_urgent(const vespalib::string& label, bool pending, bool flush, bool fusion);
+    void assert_urgent(const std::string& label, bool pending, bool flush, bool fusion);
 };
 
 void
@@ -281,7 +281,7 @@ IndexManagerTest::assertStats(uint32_t expNumDiskIndexes, uint32_t expNumMemoryI
 }
 
 void
-IndexManagerTest::assert_urgent(const vespalib::string& label, bool pending, bool flush, bool fusion)
+IndexManagerTest::assert_urgent(const std::string& label, bool pending, bool flush, bool fusion)
 {
     SCOPED_TRACE(label);
     EXPECT_EQ(pending, has_pending_urgent_flush());
@@ -937,7 +937,7 @@ struct EnableInterleavedFeaturesParam
         RESTART1,
         RESTART2
     };
-    vespalib::string name = "no_restart";
+    std::string name = "no_restart";
     Restart restart = Restart::NONE;
     bool doc = false;          // Feed doc after enabling interleaved fatures
     bool pruned_config = false; // Original config has been pruned
@@ -996,11 +996,11 @@ class IndexManagerEnableInterleavedFeaturesTest : public IndexManagerTest,
                                                   public testing::WithParamInterface<std::tuple<bool, bool, EnableInterleavedFeaturesParam>>
 {
 protected:
-    void enable_interleaved_features(const vespalib::string& label, bool old_config_docs, bool flushed_interleaved_features, std::optional<SerialNum> serial_num = std::nullopt);
+    void enable_interleaved_features(const std::string& label, bool old_config_docs, bool flushed_interleaved_features, std::optional<SerialNum> serial_num = std::nullopt);
 };
 
 void
-IndexManagerEnableInterleavedFeaturesTest::enable_interleaved_features(const vespalib::string& label, bool old_config_docs, bool flushed_interleaved_features, std::optional<SerialNum> serial_num)
+IndexManagerEnableInterleavedFeaturesTest::enable_interleaved_features(const std::string& label, bool old_config_docs, bool flushed_interleaved_features, std::optional<SerialNum> serial_num)
 {
     if (!serial_num.has_value()) {
         serial_num = ++_serial_num;

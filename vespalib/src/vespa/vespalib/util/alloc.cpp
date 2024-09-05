@@ -38,14 +38,14 @@ struct MMapInfo {
         _sz(0ul),
         _stackTrace()
     { }
-    MMapInfo(size_t id, size_t sz, const string & stackTrace) :
+    MMapInfo(size_t id, size_t sz, const std::string & stackTrace) :
         _id(id),
         _sz(sz),
         _stackTrace(stackTrace)
     { }
     size_t _id;
     size_t _sz;
-    string _stackTrace;
+    std::string _stackTrace;
 };
 using MMapStore = std::map<const void *, MMapInfo>;
 MMapStore _G_HugeMappings;
@@ -339,7 +339,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
         size_t mmapId = std::atomic_fetch_add(&_G_mmapCount, 1ul);
-        string stackTrace;
+        std::string stackTrace;
         if (sz >= _G_MMapLogLimit) {
             stackTrace = getStackTrace(1);
             LOG(info, "mmap %ld of size %ld from %s", mmapId, sz, stackTrace.c_str());
@@ -355,7 +355,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
             buf = mmap(wantedAddress, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
                 stackTrace = getStackTrace(1);
-                string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
+                std::string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
                 if (_G_SilenceCoreOnOOM) {
                     OOMException oom(msg);
                     oom.setPayload(std::make_unique<SilenceUncaughtException>(oom));

@@ -7,6 +7,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <string>
 
 using vespalib::StringTokenizer;
 using vespalib::IllegalArgumentException;
@@ -30,7 +31,7 @@ parseSpecialValues(std::string_view name)
         return std::make_shared<DocumentOnly>();
     } else {
         throw IllegalArgumentException("The only special names (enclosed in '[]') allowed are "
-                                       "id, all, none, docid, document; but not '" + name + "'.");
+                                       "id, all, none, docid, document; but not '" + std::string(name) + "'.");
     }
 }
 
@@ -39,14 +40,14 @@ parseFieldCollection(const DocumentTypeRepo& repo, std::string_view docType, std
 {
     const DocumentType* typePtr = repo.getDocumentType(docType);
     if (!typePtr) {
-        throw IllegalArgumentException("Unknown document type " + docType);
+        throw IllegalArgumentException("Unknown document type " + std::string(docType));
     }
     const DocumentType& type(*typePtr);
 
     StringTokenizer tokenizer(fieldNames, ",");
     Field::Set::Builder builder;
     for (const auto & token : tokenizer) {
-        const DocumentType::FieldSet * fs = type.getFieldSet(vespalib::string(token));
+        const DocumentType::FieldSet * fs = type.getFieldSet(std::string(token));
         if (fs) {
             for (const auto & fieldName : fs->getFields()) {
                 builder.add(&type.getField(fieldName));
@@ -76,7 +77,7 @@ FieldSetRepo::parse(const DocumentTypeRepo& repo, std::string_view str)
     }
 }
 
-vespalib::string
+std::string
 FieldSetRepo::serialize(const FieldSet& fieldSet)
 {
     switch (fieldSet.getType()) {
@@ -126,7 +127,7 @@ FieldSetRepo::~FieldSetRepo() = default;
 void
 FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
     for (const auto & entry : documentType.getFieldSets()) {
-        vespalib::string fieldSetName(documentType.getName());
+        std::string fieldSetName(documentType.getName());
         fieldSetName.append(":").append(entry.first);
         try {
             auto fieldset = parse(_doumentTyperepo, fieldSetName);

@@ -47,9 +47,9 @@ StatBucketReply::print(std::ostream& out, bool verbose,
         out << ", result: " << _results << ") : ";
         BucketReply::print(out, verbose, indent);
     } else {
-        vespalib::string::size_type pos = _results.find('\n');
-        vespalib::string overview;
-        if (pos != vespalib::string::npos) {
+        std::string::size_type pos = _results.find('\n');
+        std::string overview;
+        if (pos != std::string::npos) {
             overview = _results.substr(0, pos) + " ...";
         } else {
             overview = _results;

@@ -20,11 +20,11 @@ protected:
 
 public:
     struct HeaderInfo {
-        vespalib::string _baseFileName;
+        std::string _baseFileName;
         queryeval::Source _defaultSource;
         uint32_t _baseId;
         uint32_t _docIdLimit;
-        HeaderInfo(const vespalib::string & baseFileName,
+        HeaderInfo(const std::string & baseFileName,
                    queryeval::Source defaultSource,
                    uint32_t baseId,
                    uint32_t docIdLimit);
@@ -37,7 +37,7 @@ public:
     public:
         using UP = std::unique_ptr<SaveInfo>;
         using SP = std::shared_ptr<SaveInfo>;
-        SaveInfo(const vespalib::string & baseFileName,
+        SaveInfo(const std::string & baseFileName,
                  queryeval::Source defaultSource,
                  uint32_t baseId,
                  uint32_t docIdLimit,
@@ -53,7 +53,7 @@ public:
         HeaderInfo _header;
     public:
         using UP = std::unique_ptr<LoadInfo>;
-        LoadInfo(const vespalib::string & baseFileName);
+        LoadInfo(const std::string & baseFileName);
         void load();
         const HeaderInfo & header() const { return _header; }
     };
@@ -74,8 +74,8 @@ public:
      * This will compute the distribution of the sources used over the whole lid space.
      */
     Histogram getDistribution() const;
-    SaveInfo::UP extractSaveInfo(const vespalib::string & baseFileName);
-    static LoadInfo::UP extractLoadInfo(const vespalib::string & baseFileName);
+    SaveInfo::UP extractSaveInfo(const std::string & baseFileName);
+    static LoadInfo::UP extractLoadInfo(const std::string & baseFileName);
 
     void setSource(uint32_t docId, queryeval::Source source) override = 0;
     std::unique_ptr<queryeval::sourceselector::Iterator> createIterator() const override = 0;

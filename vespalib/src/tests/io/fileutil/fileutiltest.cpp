@@ -14,13 +14,13 @@ namespace vespalib {
 
 namespace {
 
-bool fileExists(const vespalib::string& name) {
+bool fileExists(const std::string& name) {
     return std::filesystem::exists(std::filesystem::path(name));
 }
 
 }
 
-vespalib::string normalizeOpenError(const vespalib::string str)
+std::string normalizeOpenError(const std::string str)
 {
     std::regex modeex(" mode=[0-7]+");
     std::regex uidex(" uid=[0-9]+");
@@ -169,14 +169,14 @@ TEST("require that we can read all data written to file")
     std::filesystem::remove(std::filesystem::path("myfile"));
     File fileForWriting("myfile");
     fileForWriting.open(File::CREATE);
-    vespalib::string text = "This is some text. ";
+    std::string text = "This is some text. ";
     fileForWriting.write(text.data(), text.size(), 0);
     fileForWriting.close();
 
     // Read contents of file, and verify it's identical.
     File file("myfile");
     file.open(File::READONLY);
-    vespalib::string content = file.readAll();
+    std::string content = file.readAll();
     file.close();
     ASSERT_EQUAL(content, text);
 
@@ -194,7 +194,7 @@ TEST("require that we can read all data written to file")
     file.close();
     ASSERT_EQUAL(offset, static_cast<off_t>(content.size()));
 
-    vespalib::string chunk;
+    std::string chunk;
     for (offset = 0; offset < 10000; offset += text.size()) {
         chunk.assign(content.data() + offset, text.size());
         ASSERT_EQUAL(text, chunk);
@@ -219,15 +219,15 @@ TEST("require that vespalib::getOpenErrorString works")
         foo.open(File::CREATE);
         foo.close();
     }
-    vespalib::string err1 = getOpenErrorString(1, "mydir/foo");
-    vespalib::string normErr1 =  normalizeOpenError(err1);
-    vespalib::string expErr1 = "error=x fileStat[name=mydir/foo mode=x uid=x gid=x size=x mtime=x] dirStat[name=mydir mode=x uid=x gid=x size=x mtime=x]";
+    std::string err1 = getOpenErrorString(1, "mydir/foo");
+    std::string normErr1 =  normalizeOpenError(err1);
+    std::string expErr1 = "error=x fileStat[name=mydir/foo mode=x uid=x gid=x size=x mtime=x] dirStat[name=mydir mode=x uid=x gid=x size=x mtime=x]";
     std::cerr << "getOpenErrorString(1, \"mydir/foo\") is " << err1 <<
         ", normalized to " << normErr1 << std::endl;
     EXPECT_EQUAL(expErr1, normErr1);
-    vespalib::string err2 = getOpenErrorString(1, "notFound");
-    vespalib::string normErr2 =  normalizeOpenError(err2);
-    vespalib::string expErr2 = "error=x fileStat[name=notFound errno=x] dirStat[name=. mode=x uid=x gid=x size=x mtime=x]";
+    std::string err2 = getOpenErrorString(1, "notFound");
+    std::string normErr2 =  normalizeOpenError(err2);
+    std::string expErr2 = "error=x fileStat[name=notFound errno=x] dirStat[name=. mode=x uid=x gid=x size=x mtime=x]";
     std::cerr << "getOpenErrorString(1, \"notFound\") is " << err2 <<
         ", normalized to " << normErr2 << std::endl;
     EXPECT_EQUAL(expErr2, normErr2);

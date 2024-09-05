@@ -88,10 +88,10 @@ error:
 }
 
 
-vespalib::string
+std::string
 FRT_RPCRequestPacket::Print(uint32_t indent)
 {
-    vespalib::string s;
+    std::string s;
     s += vespalib::make_string("%*sFRT_RPCRequestPacket {\n", indent, "");
     s += vespalib::make_string("%*s  method name: %s\n", indent, "",
            (_req->GetMethodName() != nullptr)
@@ -149,10 +149,10 @@ FRT_RPCReplyPacket::Decode(FNET_DataBuffer *src, uint32_t len)
 }
 
 
-vespalib::string
+std::string
 FRT_RPCReplyPacket::Print(uint32_t indent)
 {
-    vespalib::string s;
+    std::string s;
     s += vespalib::make_string("%*sFRT_RPCReplyPacket {\n", indent, "");
     s += vespalib::make_string("%*s  return:\n", indent, "");
     _req->GetReturn()->Print(indent + 2);
@@ -227,10 +227,10 @@ error:
 }
 
 
-vespalib::string
+std::string
 FRT_RPCErrorPacket::Print(uint32_t indent)
 {
-    vespalib::string s;
+    std::string s;
     s += vespalib::make_string("%*sFRT_RPCErrorPacket {\n", indent, "");
     s += vespalib::make_string("%*s  error code   : %d\n", indent, "", _req->GetErrorCode());
     s += vespalib::make_string("%*s  error message: %s\n", indent, "",

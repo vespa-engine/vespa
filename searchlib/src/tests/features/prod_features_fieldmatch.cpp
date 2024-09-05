@@ -110,7 +110,7 @@ Test::testFieldMatchBluePrint()
 
         StringList dump;
         ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
-        vespalib::string bn = "fieldMatch(bar)";
+        std::string bn = "fieldMatch(bar)";
         dump.add(bn);
         for (uint32_t i = 1; i < out.size(); ++i) {
             dump.add(bn + "." + out[i]);
@@ -124,7 +124,7 @@ Test::testFieldMatchBluePrint()
         ie.getFields()[0].setFilter(true);
 
         StringList dump;
-        vespalib::string bn = "fieldMatch(foo)";
+        std::string bn = "fieldMatch(foo)";
         dump.add(bn);
         dump.add(bn + ".completeness");
         dump.add(bn + ".queryCompleteness");
@@ -892,7 +892,7 @@ Test::testFieldMatchExecutorRemaining()
 
     { // test with a query on an attribute field
         LOG(info, "Query on an attribute field");
-        vespalib::string feature = "fieldMatch(foo)";
+        std::string feature = "fieldMatch(foo)";
         FtFeatureTest ft(_factory, feature);
         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");

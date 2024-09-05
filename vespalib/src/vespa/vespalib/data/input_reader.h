@@ -3,7 +3,7 @@
 #pragma once
 
 #include "memory.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace vespalib {
@@ -24,7 +24,7 @@ private:
     size_t            _pos;
     size_t            _bytes_evicted;
     bool              _eof;
-    vespalib::string  _error;
+    std::string  _error;
     std::vector<char> _space;
 
     const char *data() const { return (_data.data + _pos); }
@@ -40,10 +40,10 @@ public:
     ~InputReader();
 
     bool failed() const { return !_error.empty(); }
-    const vespalib::string &get_error_message() const { return _error; }
+    const std::string &get_error_message() const { return _error; }
     size_t get_offset() const { return (_bytes_evicted + _pos); }
 
-    void fail(const vespalib::string &msg);
+    void fail(const std::string &msg);
 
     /**
      * Make sure we have more input data available.

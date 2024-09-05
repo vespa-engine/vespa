@@ -95,7 +95,7 @@ namespace {
 
 DocumentDBMaintenanceConfig::SP
 buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
-                       const vespalib::string &docTypeName)
+                       const std::string &docTypeName)
 {
     using DdbConfig = ProtonConfig::Documentdb;
     ProtonConfig &proton(bootstrapConfig->getProtonConfig());
@@ -214,7 +214,7 @@ filterImportedAttributes(const AttributesConfigSP &attrCfg)
 const ProtonConfig::Documentdb default_document_db_config_entry;
 
 const ProtonConfig::Documentdb&
-find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs, const vespalib::string& doc_type_name) {
+find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs, const std::string& doc_type_name) {
     for (const auto & db_cfg : document_dbs) {
         if (db_cfg.inputdoctypename == doc_type_name) {
             return db_cfg;
@@ -236,7 +236,7 @@ use_hw_memory_presized_target_num_docs([[maybe_unused]] ProtonConfig::Documentdb
 }
 
 AllocConfig
-build_alloc_config(const vespalib::HwInfo & hwInfo, const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
+build_alloc_config(const vespalib::HwInfo & hwInfo, const ProtonConfig& proton_config, const std::string& doc_type_name)
 {
     // This is an approximate number based on observation of a node using 33G memory with 765M docs
     constexpr uint64_t MIN_MEMORY_COST_PER_DOCUMENT = 46;
@@ -371,7 +371,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
 
 
 DocumentDBConfigManager::
-DocumentDBConfigManager(const vespalib::string &configId, const vespalib::string &docTypeName)
+DocumentDBConfigManager(const std::string &configId, const std::string &docTypeName)
     : _configId(configId),
       _docTypeName(docTypeName),
       _bootstrapConfig(),
@@ -401,7 +401,7 @@ forwardConfig(const BootstrapConfig::SP & config)
     }
 }
 
-DocumentDBConfigHelper::DocumentDBConfigHelper(const DirSpec &spec, const vespalib::string &docTypeName)
+DocumentDBConfigHelper::DocumentDBConfigHelper(const DirSpec &spec, const std::string &docTypeName)
     : _mgr("", docTypeName),
       _retriever(make_unique<ConfigRetriever>(_mgr.createConfigKeySet(), make_shared<ConfigContext>(spec)))
 { }

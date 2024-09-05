@@ -26,7 +26,7 @@ public:
      */
     IndexEnvironmentBuilder &addField(const FieldType &type,
                                       const FieldInfo::CollectionType &coll,
-                                      const vespalib::string &name);
+                                      const std::string &name);
 
     /**
      * Add a field to the index environment with specified data type.
@@ -39,7 +39,7 @@ public:
     IndexEnvironmentBuilder &addField(const FieldType &type,
                                       const FieldInfo::CollectionType &coll,
                                       const FieldInfo::DataType &dataType,
-                                      const vespalib::string &name);
+                                      const std::string &name);
 
     /** Returns a reference to the index environment of this. */
     IndexEnvironment &getIndexEnv() { return _env; }

@@ -15,12 +15,12 @@ namespace {
 
 template <typename T>
 void
-verifyBothWays(T value, const char * expected, const vespalib::string& label)
+verifyBothWays(T value, const char * expected, const std::string& label)
 {
     SCOPED_TRACE(label);
     asciistream os;
     os << value;
-    EXPECT_EQ(os.view(), string(expected));
+    EXPECT_EQ(os.view(), std::string(expected));
     EXPECT_EQ(os.size(), strlen(expected));
     {
         T v;
@@ -41,14 +41,14 @@ verifyBothWays(T value, const char * expected, const vespalib::string& label)
 
 template <typename T>
 void
-verify(T first, T second, const char * firstResult, const char * secondResult, char delim, const vespalib::string& label)
+verify(T first, T second, const char * firstResult, const char * secondResult, char delim, const std::string& label)
 {
     SCOPED_TRACE(label);
     asciistream os;
     std::ostringstream ss;
     os << first;
     ss << first;
-    EXPECT_EQ(os.view(), string(firstResult));
+    EXPECT_EQ(os.view(), std::string(firstResult));
     EXPECT_EQ(os.size(), strlen(firstResult));
     EXPECT_EQ(ss.str().size(), strlen(firstResult));
     EXPECT_EQ(strcmp(ss.str().c_str(), firstResult), 0);
@@ -310,7 +310,7 @@ TEST(AsciistreamTest, test_string)
 {
 
     std::string ss("a");
-    vespalib::string vs("a");
+    std::string vs("a");
     {
         std::ostringstream oss;
         oss << ss << vs;
@@ -355,7 +355,7 @@ TEST(AsciistreamTest, test_create_from_file)
     is = asciistream::createFromFile(TEST_PATH("test.txt"));
     EXPECT_FALSE(is.eof());
     EXPECT_EQ(12u, is.size());
-    string s;
+    std::string s;
     is >> s;
     EXPECT_EQ("line1", s);
     is >> s;
@@ -376,7 +376,7 @@ TEST(AsciistreamTest, test_write_then_read)
     asciistream ios;
     ios << "3 words";
     int n(0);
-    string v;
+    std::string v;
     ios >> n >> v;
     EXPECT_EQ(3, n);
     EXPECT_EQ("words", v);
@@ -386,7 +386,7 @@ TEST(AsciistreamTest, test_write_then_read)
 TEST(AsciistreamTest, test_get_line)
 {
     asciistream is = asciistream("line 1\nline 2\nline 3");
-    string s;
+    std::string s;
     getline(is, s);
     EXPECT_EQ("line 1", s);
     getline(is, s);
@@ -557,8 +557,7 @@ TEST(AsciistreamTest, test_ascii_stream)
     verify<uint32_t>(789, -1, "789", "789 4294967295", ' ', "uint32_t");
     verify<uint64_t>(789789789789789l, -1, "789789789789789", "789789789789789 18446744073709551615", ' ', "uint64_t");
 
-    verifyBothWays<vespalib::string>("7.89", "7.89", "vespalib::string");
-    verifyBothWays<std::string>("7.89", "7.89", "stsd::string");
+    verifyBothWays<std::string>("7.89", "7.89", "std::string");
     verifyBothWays<float>(7.89, "7.89", "float");
     verifyBothWays<double>(7.89, "7.89", "double");
     verifyBothWays<bool>(true, "1", "bool");

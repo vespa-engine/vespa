@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <chrono>
+#include <string>
 
 namespace proton {
 
@@ -49,10 +49,10 @@ private:
     double _diskWriteSpeed;
 
     void setup(const vespalib::HwInfo::Disk &disk, const vespalib::HwInfo::Memory &memory, const vespalib::HwInfo::Cpu &cpu);
-    void setDiskWriteSpeed(const vespalib::string &path, const Config &config);
-    void sampleDiskWriteSpeed(const vespalib::string &path, const Config &config);
+    void setDiskWriteSpeed(const std::string &path, const Config &config);
+    void sampleDiskWriteSpeed(const std::string &path, const Config &config);
 public:
-    HwInfoSampler(const vespalib::string &path, const Config &config);
+    HwInfoSampler(const std::string &path, const Config &config);
     ~HwInfoSampler();
 
     const vespalib::HwInfo &hwInfo() const { return _hwInfo; }

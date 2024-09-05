@@ -359,8 +359,8 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
     const auto & fnode = dynamic_cast<const select::FieldValueNode&>(compnode.getLeft());
     const auto & vnode = dynamic_cast<const select::StringValueNode&>(compnode.getRight());
 
-    EXPECT_EQ(vespalib::string("headerval"), fnode.getFieldName());
-    EXPECT_EQ(vespalib::string("test"), vnode.getValue());
+    EXPECT_EQ(std::string("headerval"), fnode.getFieldName());
+    EXPECT_EQ(std::string("test"), vnode.getValue());
     // Test whitespace
     verifyParse("testdoctype1.headerval == \"te st \"");
     verifyParse(" \t testdoctype1.headerval\t==  \t \"test\"\t",
@@ -374,7 +374,7 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
     node = _parser->parse("testdoctype1.headerval == \"\\tt\\x48 \\n\"");
     select::Compare& escapednode(dynamic_cast<select::Compare&>(*node));
     const auto & escval = dynamic_cast<const select::StringValueNode&>(escapednode.getRight());
-    EXPECT_EQ(vespalib::string("\ttH \n"), escval.getValue());
+    EXPECT_EQ(std::string("\ttH \n"), escval.getValue());
     // Test <= <, > >=
     verifyParse("testdoctype1.headerval >= 123");
     verifyParse("testdoctype1.headerval > 123");
@@ -1288,7 +1288,7 @@ char_from_u8(const char * p) {
 TEST_F(DocumentSelectParserTest, testUtf8)
 {
     createDocs();
-    vespalib::string utf8name = char_from_u8(u8"H\u00e5kon");
+    std::string utf8name = char_from_u8(u8"H\u00e5kon");
     EXPECT_EQ(size_t(6), utf8name.size());
 
     /// \todo TODO (was warning):  UTF8 test for glob/regex support in selection language disabled. Known not to work
@@ -1309,22 +1309,22 @@ DocumentSelectParserTest::parseFieldValue(const std::string& expression) {
 TEST_F(DocumentSelectParserTest, testThatSimpleFieldValuesHaveCorrectFieldName)
 {
     EXPECT_EQ(
-        vespalib::string("headerval"),
+        std::string("headerval"),
         parseFieldValue("testdoctype1.headerval")->getRealFieldName());
 }
 
 TEST_F(DocumentSelectParserTest, testThatComplexFieldValuesHaveCorrectFieldNames)
 {
-    EXPECT_EQ(vespalib::string("headerval"),
+    EXPECT_EQ(std::string("headerval"),
               parseFieldValue("testdoctype1.headerval{test}")->getRealFieldName());
 
-    EXPECT_EQ(vespalib::string("headerval"),
+    EXPECT_EQ(std::string("headerval"),
               parseFieldValue("testdoctype1.headerval[42]")->getRealFieldName());
 
-    EXPECT_EQ(vespalib::string("headerval"),
+    EXPECT_EQ(std::string("headerval"),
               parseFieldValue("testdoctype1.headerval.meow.meow{test}")->getRealFieldName());
 
-    EXPECT_EQ(vespalib::string("headerval"),
+    EXPECT_EQ(std::string("headerval"),
               parseFieldValue("testdoctype1.headerval .meow.meow{test}")->getRealFieldName());
 }
 
@@ -1537,8 +1537,8 @@ TEST_F(DocumentSelectParserTest, test_can_build_field_value_from_field_expr_node
         auto lhs = std::make_unique<FieldExprNode>("mydoctype");
         auto root = std::make_unique<FieldExprNode>(std::move(lhs), "foo");
         auto fv = root->convert_to_field_value();
-        EXPECT_EQ(vespalib::string("mydoctype"), fv->getDocType());
-        EXPECT_EQ(vespalib::string("foo"), fv->getFieldName());
+        EXPECT_EQ(std::string("mydoctype"), fv->getDocType());
+        EXPECT_EQ(std::string("foo"), fv->getFieldName());
     }
     {
         // Nested field expression
@@ -1546,8 +1546,8 @@ TEST_F(DocumentSelectParserTest, test_can_build_field_value_from_field_expr_node
         auto lhs2 = std::make_unique<FieldExprNode>(std::move(lhs1), "foo");
         auto root = std::make_unique<FieldExprNode>(std::move(lhs2), "bar");
         auto fv = root->convert_to_field_value();
-        EXPECT_EQ(vespalib::string("mydoctype"), fv->getDocType());
-        EXPECT_EQ(vespalib::string("foo.bar"), fv->getFieldName());
+        EXPECT_EQ(std::string("mydoctype"), fv->getDocType());
+        EXPECT_EQ(std::string("foo.bar"), fv->getFieldName());
     }
 }
 
@@ -1562,8 +1562,8 @@ TEST_F(DocumentSelectParserTest, test_can_build_function_call_from_field_expr_no
         auto lhs2 = std::make_unique<FieldExprNode>(std::move(lhs1), "foo");
         auto root = std::make_unique<FieldExprNode>(std::move(lhs2), "lowercase");
         auto func = root->convert_to_function_call();
-        EXPECT_EQ(vespalib::string("lowercase"), func->getFunctionName());
-        // TODO vespalib::string?
+        EXPECT_EQ(std::string("lowercase"), func->getFunctionName());
+        // TODO std::string?
         EXPECT_EQ(std::string("(FIELD mydoctype foo)"), node_to_string(func->getChild()));
     }
 }
@@ -1576,7 +1576,7 @@ TEST_F(DocumentSelectParserTest, test_function_call_on_doctype_throws_exception)
     try {
         root->convert_to_function_call();
     } catch (const vespalib::IllegalArgumentException& e) {
-        EXPECT_EQ(vespalib::string("Cannot call function 'lowercase' directly on document type"),
+        EXPECT_EQ(std::string("Cannot call function 'lowercase' directly on document type"),
                              e.getMessage());
     }
 }

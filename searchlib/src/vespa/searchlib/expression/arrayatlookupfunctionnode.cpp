@@ -19,7 +19,7 @@ ArrayAtLookup::ArrayAtLookup() noexcept
 ArrayAtLookup::~ArrayAtLookup() = default;
 ArrayAtLookup & ArrayAtLookup::operator=(const ArrayAtLookup &rhs) = default;
 
-ArrayAtLookup::ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP indexExpr)
+ArrayAtLookup::ArrayAtLookup(const std::string &attribute, ExpressionNode::UP indexExpr)
     : AttributeNode(attribute),
       _currentIndex(),
       _indexExpression(std::move(indexExpr))

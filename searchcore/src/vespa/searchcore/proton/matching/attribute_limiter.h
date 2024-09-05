@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include <atomic>
 #include <memory>
 #include <mutex>
-#include <atomic>
+#include <string>
+#include <vector>
 
 namespace search::queryeval {
     class Searchable;
@@ -36,8 +36,8 @@ public:
     AttributeLimiter(const RangeQueryLocator & _rangeQueryLocator,
                      search::queryeval::Searchable &searchable_attributes,
                      const search::queryeval::IRequestContext & requestContext,
-                     const vespalib::string &attribute_name, bool descending,
-                     const vespalib::string &diversity_attribute,
+                     const std::string &attribute_name, bool descending,
+                     const std::string &diversity_attribute,
                      double diversityCutoffFactor,
                      DiversityCutoffStrategy diversityCutoffStrategy);
     ~AttributeLimiter();
@@ -51,9 +51,9 @@ private:
     search::queryeval::Searchable                      & _searchable_attributes;
     const search::queryeval::IRequestContext           & _requestContext;
     const RangeQueryLocator                            & _rangeQueryLocator;
-    vespalib::string                                     _attribute_name;
+    std::string                                     _attribute_name;
     bool                                                 _descending;
-    vespalib::string                                     _diversity_attribute;
+    std::string                                     _diversity_attribute;
     std::mutex                                           _lock;
     std::vector<std::unique_ptr<search::fef::MatchData>> _match_datas;
     std::unique_ptr<search::queryeval::Blueprint>        _blueprint;

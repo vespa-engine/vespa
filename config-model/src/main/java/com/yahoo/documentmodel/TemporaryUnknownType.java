@@ -7,7 +7,7 @@ import com.yahoo.document.StructDataType;
  * Proxy for an unknown type (must resolve to struct or document)
  *
  * @author arnej
- **/
+ */
 public final class TemporaryUnknownType extends StructDataType {
 
     public TemporaryUnknownType(String name) {
@@ -18,4 +18,5 @@ public final class TemporaryUnknownType extends StructDataType {
     public String toString() {
         return "{TemporaryUnknownType "+getName()+" id="+getId()+"}";
     }
+
 }

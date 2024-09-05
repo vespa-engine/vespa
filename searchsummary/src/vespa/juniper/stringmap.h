@@ -10,7 +10,7 @@
 class Fast_StringMap
 {
 private:
-    using Map = vespalib::hash_map<vespalib::string, vespalib::string>;
+    using Map = vespalib::hash_map<std::string, std::string>;
     Map  _backing;
 public:
     void Insert(const char* key, const char* value);

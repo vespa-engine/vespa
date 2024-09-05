@@ -39,7 +39,7 @@ TEST("input reader smoke test") {
         EXPECT_EQUAL(src.read(), '\0');
         EXPECT_EQUAL(src.obtain(), 0u);
         EXPECT_EQUAL(src.get_offset(), strlen(data));
-        EXPECT_EQUAL(src.get_error_message(), vespalib::string("input underflow"));
+        EXPECT_EQUAL(src.get_error_message(), std::string("input underflow"));
     }
 }
 
@@ -68,7 +68,7 @@ TEST("require that input can be explicitly failed with custom message") {
         EXPECT_EQUAL(src.read(5), Memory());
         EXPECT_EQUAL(src.obtain(), 0u);
         src.fail("ignored");
-        EXPECT_EQUAL(src.get_error_message(), vespalib::string("custom"));
+        EXPECT_EQUAL(src.get_error_message(), std::string("custom"));
         EXPECT_EQUAL(src.get_offset(), 5u);
     }
 }
@@ -81,7 +81,7 @@ TEST("require that reading a byte sequence crossing the end of input fails") {
         InputReader src(input);
         EXPECT_EQUAL(src.read(15), Memory());
         EXPECT_TRUE(src.failed());
-        EXPECT_EQUAL(src.get_error_message(), vespalib::string("input underflow"));
+        EXPECT_EQUAL(src.get_error_message(), std::string("input underflow"));
         EXPECT_EQUAL(src.get_offset(), 10u);        
     }
 }
@@ -107,7 +107,7 @@ TEST("expect that obtain does not set failure state on input reader") {
             EXPECT_TRUE(src.failed());
             EXPECT_EQUAL(src.read(), 0);
         }
-        EXPECT_EQUAL(src.get_error_message(), vespalib::string("input underflow"));
+        EXPECT_EQUAL(src.get_error_message(), std::string("input underflow"));
         EXPECT_EQUAL(src.obtain(), 0u);
     }
 }

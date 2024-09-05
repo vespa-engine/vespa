@@ -27,14 +27,14 @@ BlockableMaintenanceJob::internalNotifyDiskMemUsage(const DiskMemUsageState &sta
     }
 }
 
-BlockableMaintenanceJob::BlockableMaintenanceJob(const vespalib::string &name,
+BlockableMaintenanceJob::BlockableMaintenanceJob(const std::string &name,
                                                  vespalib::duration delay,
                                                  vespalib::duration interval)
     : BlockableMaintenanceJob(name, delay, interval, BlockableMaintenanceJobConfig())
 {
 }
 
-BlockableMaintenanceJob::BlockableMaintenanceJob(const vespalib::string &name,
+BlockableMaintenanceJob::BlockableMaintenanceJob(const std::string &name,
                                                  vespalib::duration delay,
                                                  vespalib::duration interval,
                                                  const BlockableMaintenanceJobConfig &config)

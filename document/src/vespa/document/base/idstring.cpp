@@ -5,10 +5,11 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <cstring>
 #include <charconv>
+#include <cstring>
+#include <string>
 
-using vespalib::string;
+using std::string;
 using std::string_view;
 using vespalib::make_string;
 
@@ -118,10 +119,10 @@ parseNumber(string_view s) {
     uint64_t n(0);
     auto res = std::from_chars(s.data(), s.data() + s.size(), n, 10);
     if (res.ptr != s.data() + s.size()) [[unlikely]]{
-        throw IdParseException("'n'-value must be a 64-bit number. It was " + s, VESPA_STRLOC);
+        throw IdParseException("'n'-value must be a 64-bit number. It was " + std::string(s), VESPA_STRLOC);
     }
     if (res.ec == std::errc::result_out_of_range) [[unlikely]] {
-        throw IdParseException("'n'-value out of range (" + s + ")", VESPA_STRLOC);
+        throw IdParseException("'n'-value out of range (" + std::string(s) + ")", VESPA_STRLOC);
     }
     return n;
 }
@@ -130,7 +131,7 @@ void
 setLocation(IdString::LocationType &loc, IdString::LocationType val,
                  bool &has_set_location, string_view key_values) {
     if (has_set_location) [[unlikely]] {
-        throw IdParseException("Illegal key combination in " + key_values);
+        throw IdParseException("Illegal key combination in " + std::string(key_values));
     }
     loc = val;
     has_set_location = true;

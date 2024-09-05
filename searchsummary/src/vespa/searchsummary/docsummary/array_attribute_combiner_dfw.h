@@ -19,13 +19,13 @@ class StructFieldsResolver;
  */
 class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
 {
-    std::vector<vespalib::string> _fields;
-    std::vector<vespalib::string> _attributeNames;
+    std::vector<std::string> _fields;
+    std::vector<std::string> _attributeNames;
     bool                          _is_map_of_scalar;
 
     DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext &context, vespalib::Stash &stash, const MatchingElements* matching_elements) const override;
 public:
-    ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
+    ArrayAttributeCombinerDFW(const std::string &fieldName,
                               const StructFieldsResolver& fields_resolver,
                               bool filter_elements,
                               std::shared_ptr<MatchingElementsFields> matching_elems_fields);

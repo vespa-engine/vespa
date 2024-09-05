@@ -14,7 +14,7 @@ TlsStatsMap::TlsStatsMap(Map &&map)
 TlsStatsMap::~TlsStatsMap() { }
 
 const TlsStats &
-TlsStatsMap::getTlsStats(const vespalib::string &domain) const {
+TlsStatsMap::getTlsStats(const std::string &domain) const {
     auto itr = _map.find(domain);
     if (itr != _map.end()) {
         return itr->second;
@@ -24,4 +24,4 @@ TlsStatsMap::getTlsStats(const vespalib::string &domain) const {
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, proton::flushengine::TlsStats);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, proton::flushengine::TlsStats);

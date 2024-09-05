@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author jonmv
  */
-public class LocalVisitorSession implements VisitorSession {
+public final class LocalVisitorSession implements VisitorSession {
 
     private enum State { RUNNING, FAILURE, ABORTED, SUCCESS }
 

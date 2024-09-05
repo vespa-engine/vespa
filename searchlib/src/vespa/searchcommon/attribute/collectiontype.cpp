@@ -12,7 +12,7 @@ const CollectionType::TypeInfo CollectionType::_typeTable[CollectionType::MAX_TY
 };
 
 CollectionType::Type
-CollectionType::asType(const vespalib::string &t)
+CollectionType::asType(const std::string &t)
 {
     for (size_t i(0); i < sizeof(_typeTable)/sizeof(_typeTable[0]); i++) {
         if (t == _typeTable[i]._name) {

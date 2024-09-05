@@ -8,9 +8,9 @@
 #include "aggr.h"
 #include "string_stuff.h"
 #include "value_type_spec.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace vespalib::eval::nodes {
 
@@ -23,7 +23,7 @@ public:
         : _child(std::move(child)), _lambda(std::move(lambda)) {}
     const Node &child() const { return *_child; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -45,7 +45,7 @@ public:
         : _child(std::move(child)), _lambda(std::move(lambda)) {}
     const Node &child() const { return *_child; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -69,7 +69,7 @@ public:
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
@@ -93,7 +93,7 @@ public:
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
@@ -110,14 +110,14 @@ class TensorReduce : public Node {
 private:
     Node_UP _child;
     Aggr _aggr;
-    std::vector<vespalib::string> _dimensions;
+    std::vector<std::string> _dimensions;
 public:
-    TensorReduce(Node_UP child, Aggr aggr_in, std::vector<vespalib::string> dimensions_in)
+    TensorReduce(Node_UP child, Aggr aggr_in, std::vector<std::string> dimensions_in)
         : _child(std::move(child)), _aggr(aggr_in), _dimensions(std::move(dimensions_in)) {}
     const Node &child() const { return *_child; }
     Aggr aggr() const { return _aggr; }
-    const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    const std::vector<std::string> &dimensions() const { return _dimensions; }
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -132,15 +132,15 @@ public:
 class TensorRename : public Node {
 private:
     Node_UP _child;
-    std::vector<vespalib::string> _from;
-    std::vector<vespalib::string> _to;
+    std::vector<std::string> _from;
+    std::vector<std::string> _to;
 public:
-    TensorRename(Node_UP child, std::vector<vespalib::string> from_in, std::vector<vespalib::string> to_in)
+    TensorRename(Node_UP child, std::vector<std::string> from_in, std::vector<std::string> to_in)
         : _child(std::move(child)), _from(std::move(from_in)), _to(std::move(to_in)) {}
     const Node &child() const { return *_child; }
-    const std::vector<vespalib::string> &from() const { return _from; }
-    const std::vector<vespalib::string> &to() const { return _to; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    const std::vector<std::string> &from() const { return _from; }
+    const std::vector<std::string> &to() const { return _to; }
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -150,21 +150,21 @@ public:
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
-    static vespalib::string flatten(const std::vector<vespalib::string> &list);
+    static std::string flatten(const std::vector<std::string> &list);
 };
 
 class TensorConcat : public Node {
 private:
     Node_UP          _lhs;
     Node_UP          _rhs;
-    vespalib::string _dimension;
+    std::string _dimension;
 public:
-    TensorConcat(Node_UP lhs, Node_UP rhs, const vespalib::string &dimension_in)
+    TensorConcat(Node_UP lhs, Node_UP rhs, const std::string &dimension_in)
         : _lhs(std::move(lhs)), _rhs(std::move(rhs)), _dimension(dimension_in) {}
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
-    const vespalib::string &dimension() const { return _dimension; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    const std::string &dimension() const { return _dimension; }
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
@@ -186,7 +186,7 @@ public:
         : _child(std::move(child)), _cell_type(cell_type) {}
     const Node &child() const { return *_child; }
     CellType cell_type() const { return _cell_type; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -216,7 +216,7 @@ public:
         }
     }
     const ValueType &type() const { return _type; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return _cells.size(); }
     const Node &get_child(size_t idx) const override {
@@ -249,7 +249,7 @@ public:
     const ValueType &type() const { return _type; }
     const std::vector<size_t> &bindings() const { return _bindings; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &) const override;
+    std::string dump(DumpContext &) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 0; }
     const Node &get_child(size_t) const override { abort(); }
@@ -259,16 +259,16 @@ public:
 class TensorPeek : public Node {
 public:
     struct MyLabel {
-        vespalib::string label;
+        std::string label;
         Node_UP expr;
-        MyLabel(vespalib::string label_in)
+        MyLabel(std::string label_in)
             : label(label_in), expr() {}
         MyLabel(Node_UP node)
             : label(""), expr(std::move(node)) {}
         bool is_expr() const { return bool(expr); }
     };
-    using Spec = std::map<vespalib::string, MyLabel>;
-    using Dim = std::pair<vespalib::string, MyLabel>;
+    using Spec = std::map<std::string, MyLabel>;
+    using Dim = std::pair<std::string, MyLabel>;
     using DimList = std::vector<Dim>;
 private:
     using DimRefs = std::vector<size_t>;
@@ -288,7 +288,7 @@ public:
     }
     const Node &param() const { return *_param; }
     const DimList &dim_list() const { return _dim_list; }
-    vespalib::string dump(DumpContext &ctx) const override;
+    std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return (1 + _expr_dims.size()); }
     const Node &get_child(size_t idx) const override {

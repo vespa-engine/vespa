@@ -84,7 +84,7 @@ willNeedRanking(const SearchRequest & request, const GroupingContext & groupingC
 {
     return (groupingContext.needRanking() || (request.maxhits != 0))
            && (request.sortSpec.empty() ||
-               (request.sortSpec.find("[rank]") != vespalib::string::npos) ||
+               (request.sortSpec.find("[rank]") != std::string::npos) ||
                first_phase_rank_score_drop_limit.has_value());
 }
 

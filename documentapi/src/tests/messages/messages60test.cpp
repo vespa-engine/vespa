@@ -12,7 +12,6 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/featureset.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;
@@ -201,7 +200,7 @@ TEST_F(Messages60Test, testRemoveLocationMessage) {
 TEST_F(Messages60Test, testGetDocumentMessage) {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
-    EXPECT_EQ(152u + 2 *sizeof(vespalib::string), sizeof(GetDocumentMessage));
+    EXPECT_EQ(152u + 2 *sizeof(std::string), sizeof(GetDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -263,7 +262,7 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(sizeof(vespalib::string), sizeof(TestAndSetCondition));
+    EXPECT_EQ(sizeof(std::string), sizeof(TestAndSetCondition));
     EXPECT_EQ(112u, sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
     EXPECT_EQ(sizeof(TestAndSetMessage) + 40, sizeof(PutDocumentMessage));
@@ -363,7 +362,7 @@ TEST_F(Messages60Test, testRemoveDocumentMessage) {
 
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(sizeof(TestAndSetMessage) + 48 + sizeof(vespalib::string), sizeof(RemoveDocumentMessage));
+    EXPECT_EQ(sizeof(TestAndSetMessage) + 48 + sizeof(std::string), sizeof(RemoveDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {

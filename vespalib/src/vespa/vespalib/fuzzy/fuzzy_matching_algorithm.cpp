@@ -6,14 +6,14 @@ namespace vespalib {
 
 namespace {
 
-const vespalib::string brute_force = "brute_force";
-const vespalib::string dfa_implicit = "dfa_implicit";
-const vespalib::string dfa_explicit = "dfa_explicit";
-const vespalib::string dfa_table = "dfa_table";
+const std::string brute_force = "brute_force";
+const std::string dfa_implicit = "dfa_implicit";
+const std::string dfa_explicit = "dfa_explicit";
+const std::string dfa_table = "dfa_table";
 
 }
 
-vespalib::string
+std::string
 to_string(FuzzyMatchingAlgorithm algo)
 {
     switch (algo) {
@@ -31,7 +31,7 @@ to_string(FuzzyMatchingAlgorithm algo)
 }
 
 FuzzyMatchingAlgorithm
-fuzzy_matching_algorithm_from_string(const vespalib::string& algo,
+fuzzy_matching_algorithm_from_string(const std::string& algo,
                                      FuzzyMatchingAlgorithm default_algo)
 {
     if (algo == brute_force) {

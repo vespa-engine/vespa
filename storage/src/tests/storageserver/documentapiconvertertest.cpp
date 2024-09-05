@@ -39,7 +39,7 @@ namespace storage {
 
 const DocumentId defaultDocId("id:test:text/html::0");
 const BucketSpace defaultBucketSpace(5);
-const vespalib::string defaultSpaceName("myspace");
+const std::string defaultSpaceName("myspace");
 const Bucket defaultBucket(defaultBucketSpace, BucketId(0));
 const TestAndSetCondition my_condition("my condition");
 
@@ -50,13 +50,13 @@ struct MockBucketResolver : public BucketResolver {
         }
         return Bucket(BucketSpace(0), BucketId(0));
     }
-    virtual BucketSpace bucketSpaceFromName(const vespalib::string &bucketSpace) const override {
+    virtual BucketSpace bucketSpaceFromName(const std::string &bucketSpace) const override {
         if (bucketSpace == defaultSpaceName) {
             return defaultBucketSpace;
         }
         return BucketSpace(0);
     }
-    virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
+    virtual std::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
         if (bucketSpace == defaultBucketSpace) {
             return defaultSpaceName;
         }

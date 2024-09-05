@@ -13,8 +13,6 @@
 LOG_SETUP(".features.rankingexpression");
 
 using search::fef::FeatureType;
-using vespalib::ArrayRef;
-using vespalib::ConstArrayRef;
 using vespalib::eval::CompileCache;
 using vespalib::eval::CompiledFunction;
 using vespalib::eval::DoubleValue;
@@ -32,8 +30,8 @@ namespace search::features {
 
 namespace {
 
-vespalib::string list_issues(const std::vector<vespalib::string> &issues) {
-    vespalib::string result;
+std::string list_issues(const std::vector<std::string> &issues) {
+    std::string result;
     for (const auto &issue: issues) {
         result += vespalib::make_string("  issue: %s\n", issue.c_str());
     }
@@ -52,10 +50,10 @@ class FastForestExecutor : public fef::FeatureExecutor
 private:
     const FastForest &_forest;
     FastForest::Context::UP _ctx;
-    ArrayRef<float> _params;
+    std::span<float> _params;
 
 public:
-    FastForestExecutor(ArrayRef<float> param_space, const FastForest &forest);
+    FastForestExecutor(std::span<float> param_space, const FastForest &forest);
     bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
@@ -99,8 +97,8 @@ public:
 
 struct MyLazyParams : LazyParams {
     const fef::FeatureExecutor::Inputs &inputs;
-    const ConstArrayRef<char> input_is_object;
-    MyLazyParams(const fef::FeatureExecutor::Inputs &inputs_in, ConstArrayRef<char> input_is_object_in)
+    const std::span<const char> input_is_object;
+    MyLazyParams(const fef::FeatureExecutor::Inputs &inputs_in, std::span<const char> input_is_object_in)
         : inputs(inputs_in), input_is_object(input_is_object_in) {}
     const Value &resolve(size_t idx, vespalib::Stash &stash) const override {
         if (input_is_object[idx]) {
@@ -123,7 +121,7 @@ private:
 
 public:
     InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
-                                         ConstArrayRef<char> input_is_object);
+                                         std::span<const char> input_is_object);
     bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
@@ -141,14 +139,14 @@ private:
 
 public:
     UnboxingInterpretedRankingExpressionExecutor(const InterpretedFunction &function,
-                                                 ConstArrayRef<char> input_is_object);
+                                                 std::span<const char> input_is_object);
     bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
 
-FastForestExecutor::FastForestExecutor(ArrayRef<float> param_space, const FastForest &forest)
+FastForestExecutor::FastForestExecutor(std::span<float> param_space, const FastForest &forest)
     : _forest(forest),
       _ctx(_forest.create_context()),
       _params(param_space)
@@ -219,7 +217,7 @@ LazyCompiledRankingExpressionExecutor::execute(uint32_t)
 //-----------------------------------------------------------------------------
 
 InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
-                                                                           ConstArrayRef<char> input_is_object)
+                                                                           std::span<const char> input_is_object)
     : _function(function),
       _context(function),
       _params(inputs(), input_is_object)
@@ -235,7 +233,7 @@ InterpretedRankingExpressionExecutor::execute(uint32_t)
 //-----------------------------------------------------------------------------
 
 UnboxingInterpretedRankingExpressionExecutor::UnboxingInterpretedRankingExpressionExecutor(const InterpretedFunction &function,
-                                                                                           ConstArrayRef<char> input_is_object)
+                                                                                           std::span<const char> input_is_object)
     : _function(function),
       _context(function),
       _params(inputs(), input_is_object)
@@ -278,7 +276,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
                                   const fef::ParameterList &params)
 {
     // Retrieve and concatenate whatever config is available.
-    vespalib::string script = "";
+    std::string script = "";
     fef::Property property = env.getProperties().lookup(getName(), "rankingScript");
     fef::Property expr_name = env.getProperties().lookup(getName(), "expressionName");
     if (property.size() > 0) {
@@ -337,7 +335,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     auto compile_issues = CompiledFunction::detect_issues(*rank_function);
     auto interpret_issues = InterpretedFunction::detect_issues(*rank_function);
     if (do_compile && compile_issues && !interpret_issues) {
-        LOG(warning, "ranking expression compilation disabled: %s\n%s",
+        LOG(debug, "ranking expression compilation disabled: %s\n%s",
             script.c_str(), list_issues(compile_issues.list).c_str());
         do_compile = false;
     }
@@ -395,7 +393,7 @@ RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &env, ve
         return _intrinsic_expression->create_executor(env, stash);
     }
     if (_interpreted_function) {
-        ConstArrayRef<char> input_is_object = stash.copy_array<char>(_input_is_object);
+        std::span<const char> input_is_object = stash.copy_array<char>(_input_is_object);
         if (_should_unbox) {
             return stash.create<UnboxingInterpretedRankingExpressionExecutor>(*_interpreted_function, input_is_object);
         } else {
@@ -403,7 +401,7 @@ RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &env, ve
         }
     }
     if (_fast_forest) {
-        ArrayRef<float> param_space = stash.create_array<float>(_input_is_object.size(), 0.0);
+        std::span<float> param_space = stash.create_array<float>(_input_is_object.size(), 0.0);
         return stash.create<FastForestExecutor>(param_space, *_fast_forest);
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation

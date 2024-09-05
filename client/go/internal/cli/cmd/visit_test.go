@@ -61,7 +61,9 @@ func TestRunOneVisit(t *testing.T) {
 	op := func(service *vespa.Service) {
 		vArgs := visitArgs{
 			contentCluster: "fooCC",
+			header:         make(http.Header),
 		}
+		vArgs.header.Set("X-Foo", "Bar")
 		vvo, res := runOneVisit(&vArgs, service, "BBBB")
 		assert.Equal(t, true, res.Success)
 		assert.Equal(t, "visited fooCC", res.Message)
@@ -75,6 +77,7 @@ func TestRunOneVisit(t *testing.T) {
 	}
 	req := withMockClient(t, withResponse, op)
 	assert.Equal(t, "cluster=fooCC&continuation=BBBB", req.URL.RawQuery)
+	assert.Equal(t, "Bar", req.Header.Get("X-Foo"))
 
 	op = func(service *vespa.Service) {
 		vArgs := visitArgs{

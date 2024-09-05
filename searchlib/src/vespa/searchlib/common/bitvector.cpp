@@ -19,7 +19,6 @@ LOG_SETUP(".searchlib.common.bitvector");
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::hwaccelerated::IAccelerated;
-using vespalib::Optimized;
 using vespalib::alloc::Alloc;
 
 namespace {
@@ -38,7 +37,7 @@ bool BitVector::_enable_range_check = false;
 
 struct BitVector::OrParts : vespalib::Runnable
 {
-    OrParts(vespalib::ConstArrayRef<BitVector *> vectors, BitVector::Index offset, BitVector::Index size) noexcept
+    OrParts(std::span<BitVector* const> vectors, BitVector::Index offset, BitVector::Index size) noexcept
         : _vectors(vectors),
           _offset(offset),
           _byte_size((size + 7)/8)
@@ -51,13 +50,13 @@ struct BitVector::OrParts : vespalib::Runnable
             accelrator.orBit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
         }
     }
-    vespalib::ConstArrayRef<BitVector *> _vectors;
+    std::span<BitVector* const> _vectors;
     BitVector::Index _offset;
     BitVector::Index _byte_size;
 };
 
 void
-BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors) {
+BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors) {
     constexpr uint32_t MIN_BITS_PER_THREAD = 128_Ki;
     constexpr uint32_t ALIGNMENT_BITS = 8_Ki;
     if (vectors.size() < 2) return;
@@ -206,17 +205,17 @@ BitVector::countInterval(Range range_in) const
     Word *bitValues = _words;
 
     if (startw == endw) {
-        return Optimized::popCount(load(bitValues[startw]) & ~(startBits(range.start()) | endBits(last)));
+        return std::popcount(load(bitValues[startw]) & ~(startBits(range.start()) | endBits(last)));
     }
     Index res = 0;
     // Limit to full words
     if ((range.start() & (WordLen - 1)) != 0) {
-        res += Optimized::popCount(load(bitValues[startw]) & ~startBits(range.start()));
+        res += std::popcount(load(bitValues[startw]) & ~startBits(range.start()));
         ++startw;
     }
     // Align start to 16 bytes
     while (startw < endw && (startw & 3) != 0) {
-        res += Optimized::popCount(load(bitValues[startw]));
+        res += std::popcount(load(bitValues[startw]));
         ++startw;
     }
     bool partialEnd = (last & (WordLen - 1)) != (WordLen - 1);
@@ -227,7 +226,7 @@ BitVector::countInterval(Range range_in) const
         res += IAccelerated::getAccelerator().populationCount(bitValues + startw, endw - startw);
     }
     if (partialEnd) {
-        res += Optimized::popCount(load(bitValues[endw]) & ~endBits(last));
+        res += std::popcount(load(bitValues[endw]) & ~endBits(last));
     }
 
     return res;

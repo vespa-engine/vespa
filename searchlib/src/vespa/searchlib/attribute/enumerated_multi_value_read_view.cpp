@@ -18,7 +18,7 @@ template <typename MultiValueType, typename RawMultiValueType, typename EnumEntr
 EnumeratedMultiValueReadView<MultiValueType, RawMultiValueType, EnumEntryType>::~EnumeratedMultiValueReadView() = default;
 
 template <typename MultiValueType, typename RawMultiValueType, typename EnumEntryType>
-vespalib::ConstArrayRef<MultiValueType>
+std::span<const MultiValueType>
 EnumeratedMultiValueReadView<MultiValueType, RawMultiValueType, EnumEntryType>::get_values(uint32_t docid) const
 {
     auto raw = _mv_mapping_read_view.get(docid);
@@ -31,7 +31,7 @@ EnumeratedMultiValueReadView<MultiValueType, RawMultiValueType, EnumEntryType>::
         *dst = multivalue::ValueBuilder<MultiValueType>::build(v, multivalue::get_weight(src));
         ++dst;
     }
-    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
+    return std::span<const MultiValueType>(_copy.data(), raw.size());
 }
 
 using multivalue::WeightedValue;

@@ -72,7 +72,7 @@ InterpretedFunction::op_function my_select(CellType cell_type) {
 struct CommonDim {
     bool valid;
     bool inner;
-    CommonDim(const DimList &list, const vespalib::string &dim)
+    CommonDim(const DimList &list, const std::string &dim)
         : valid(true), inner(false)
     {
         if (list[list.size() - 1].name == dim) {
@@ -119,7 +119,7 @@ bool check_input_type(const ValueType &type, const DimList &relevant) {
             ((type.cell_type() == CellType::FLOAT) || (type.cell_type() == CellType::DOUBLE)));
 }
 
-bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::string &reduce_dim) {
+bool is_multi_matmul(const ValueType &a, const ValueType &b, const std::string &reduce_dim) {
     auto dims_a = a.nontrivial_indexed_dimensions();
     auto dims_b = b.nontrivial_indexed_dimensions();
     if (check_input_type(a, dims_a) && check_input_type(b, dims_b) && (a.cell_type() == b.cell_type())) {
@@ -134,7 +134,7 @@ bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::str
 }
 
 const TensorFunction &create_multi_matmul(const TensorFunction &a, const TensorFunction &b,
-                                          const vespalib::string &reduce_dim, const ValueType &result_type, Stash &stash)
+                                          const std::string &reduce_dim, const ValueType &result_type, Stash &stash)
 {
     auto dims_a = a.result_type().nontrivial_indexed_dimensions();
     auto dims_b = b.result_type().nontrivial_indexed_dimensions();

@@ -1,12 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
+#include <vespa/vespalib/util/vespa_dll_local.h>
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
-
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+#include <string>
 
 namespace vespalib {
 

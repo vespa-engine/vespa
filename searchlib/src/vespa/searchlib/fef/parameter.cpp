@@ -5,7 +5,7 @@
 namespace search {
 namespace fef {
 
-Parameter::Parameter(ParameterType::Enum type, const vespalib::string & value) :
+Parameter::Parameter(ParameterType::Enum type, const std::string & value) :
     _type(type),
     _stringVal(value),
     _doubleVal(0),

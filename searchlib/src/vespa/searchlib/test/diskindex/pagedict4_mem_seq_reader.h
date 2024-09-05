@@ -26,7 +26,7 @@ public:
     PageDict4MemSeqReader(uint32_t chunkSize, uint64_t numWordIds,
                           ThreeLevelCountWriteBuffers &wb);
     ~PageDict4MemSeqReader();
-    void readCounts(vespalib::string &word,
+    void readCounts(std::string &word,
                     uint64_t &wordNum,
                     PostingListCounts &counts);
 };

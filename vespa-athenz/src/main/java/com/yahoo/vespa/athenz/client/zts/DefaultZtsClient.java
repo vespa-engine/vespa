@@ -53,7 +53,8 @@ import java.util.stream.Collectors;
 public class DefaultZtsClient extends ClientBase implements ZtsClient {
 
     private final URI ztsUrl;
-    protected DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier, ErrorHandler errorHandler) {
+
+    private DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier, ErrorHandler errorHandler) {
         super("vespa-zts-client", sslContextSupplier, ZtsClientException::new, hostnameVerifier, errorHandler);
         this.ztsUrl = addTrailingSlash(ztsUrl);
     }

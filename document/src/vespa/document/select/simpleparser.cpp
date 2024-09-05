@@ -4,6 +4,7 @@
 #include "compare.h"
 #include <cctype>
 #include <cerrno>
+#include <cstring>
 
 namespace document::select::simple {
 
@@ -128,7 +129,7 @@ bool StringParser::parse(std::string_view s)
     size_t pos(eatWhite(s.data(), s.size()));
     if (pos + 1 < s.size()) {
         if (s[pos++] == '"') {
-            vespalib::string str;
+            std::string str;
             for(;(pos < s.size()) && (s[pos] != '"');pos++) {
                 if ((pos < s.size()) && (s[pos] == '\\')) {
                     pos++;

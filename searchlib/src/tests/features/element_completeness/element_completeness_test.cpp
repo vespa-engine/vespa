@@ -15,8 +15,8 @@ using namespace search::fef::test;
 using namespace search::features;
 using CollectionType = FieldInfo::CollectionType;
 
-std::vector<vespalib::string> featureNamesFoo() {
-    std::vector<vespalib::string> f;
+std::vector<std::string> featureNamesFoo() {
+    std::vector<std::string> f;
     f.push_back("elementCompleteness(foo).completeness");
     f.push_back("elementCompleteness(foo).fieldCompleteness");
     f.push_back("elementCompleteness(foo).queryCompleteness");
@@ -54,9 +54,9 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    std::vector<vespalib::string> expect;
+    std::vector<std::string> expect;
     size_t dumped;
-    virtual void visitDumpFeature(const vespalib::string &name) override {
+    virtual void visitDumpFeature(const std::string &name) override {
         EXPECT_LT(dumped, expect.size());
         EXPECT_EQ(expect[dumped++], name);
     }
@@ -66,12 +66,12 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
 struct RankFixture : BlueprintFactoryFixture {
     Properties idxProps;
     RankFixture() : BlueprintFactoryFixture(), idxProps() {}
-    void test(const vespalib::string &queryStr, const FtIndex &index,
+    void test(const std::string &queryStr, const FtIndex &index,
               feature_t field, feature_t query, int32_t weight = 1, feature_t factor = 0.5,
               bool useStaleMatchData = false)
     {
         SCOPED_TRACE(queryStr);
-        std::vector<vespalib::string> names = featureNamesFoo();
+        std::vector<std::string> names = featureNamesFoo();
         ASSERT_TRUE(names.size() == 4u);
         RankResult expect;
         expect.addScore(names[TOTAL], field*factor + query*(1-factor))
@@ -115,7 +115,7 @@ TEST(ElementCompletenessTest, require_that_setup_can_be_done_on_index_field)
     IndexFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "foo")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "foo")));
 }
 
 TEST(ElementCompletenessTest, require_that_setup_can_not_be_done_on_attribute_field)
@@ -124,7 +124,7 @@ TEST(ElementCompletenessTest, require_that_setup_can_not_be_done_on_attribute_fi
     IndexFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(bar)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "bar")));
+    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "bar")));
 }
 
 TEST(ElementCompletenessTest, require_that_default_config_parameters_are_correct)
@@ -133,7 +133,7 @@ TEST(ElementCompletenessTest, require_that_default_config_parameters_are_correct
     IndexFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "foo")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "foo")));
     EXPECT_EQ(0u,  f1.getParams().fieldId);
     EXPECT_EQ(0.5, f1.getParams().fieldCompletenessImportance);
 }
@@ -144,7 +144,7 @@ TEST(ElementCompletenessTest, require_that_blueprint_can_be_configured){
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
     f2.indexEnv.getProperties().add("elementCompleteness(foo).fieldCompletenessImportance", "0.75");
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "foo")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "foo")));
     EXPECT_EQ(0.75, f1.getParams().fieldCompletenessImportance);
 }
 

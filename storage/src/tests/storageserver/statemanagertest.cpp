@@ -33,10 +33,8 @@ struct StateManagerTest : Test, NodeStateReporter {
     void SetUp() override;
     void TearDown() override;
 
-    static std::shared_ptr<api::SetSystemStateCommand> make_set_state_cmd(std::string_view state_str, uint16_t cc_index) {
-        auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state_str));
-        cmd->setSourceIndex(cc_index);
-        return cmd;
+    static std::shared_ptr<api::SetSystemStateCommand> make_set_state_cmd(std::string_view state_str) {
+        return std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state_str));
     }
 
     static std::shared_ptr<const lib::ClusterStateBundle> make_state_bundle_with_config(
@@ -58,10 +56,7 @@ struct StateManagerTest : Test, NodeStateReporter {
 
     void get_single_reply(std::shared_ptr<api::StorageReply>& reply_out);
     void get_only_ok_reply(std::shared_ptr<api::StorageReply>& reply_out);
-    void force_current_cluster_state_version(uint32_t version, uint16_t cc_index);
-    void force_current_cluster_state_version(uint32_t version) {
-        force_current_cluster_state_version(version, 0);
-    }
+    void force_current_cluster_state_version(uint32_t version);
     void mark_reported_node_state_up();
     void send_down_get_node_state_request(uint16_t controller_index);
     void assert_ok_get_node_state_reply_sent_and_clear();
@@ -75,7 +70,7 @@ struct StateManagerTest : Test, NodeStateReporter {
 
     void extract_cluster_state_version_from_host_info(uint32_t& version_out);
 
-    static vespalib::string to_string(const lib::Distribution::DistributionConfig& cfg) {
+    static std::string to_string(const lib::Distribution::DistributionConfig& cfg) {
         return lib::Distribution(cfg).serialized();
     }
 };
@@ -136,12 +131,12 @@ StateManagerTest::get_only_ok_reply(std::shared_ptr<api::StorageReply>& reply_ou
 }
 
 void
-StateManagerTest::force_current_cluster_state_version(uint32_t version, uint16_t cc_index)
+StateManagerTest::force_current_cluster_state_version(uint32_t version)
 {
     ClusterState state(*_manager->getClusterStateBundle()->getBaselineClusterState());
     state.setVersion(version);
     const auto maybe_rejected_by_ver = _manager->try_set_cluster_state_bundle(
-            std::make_shared<const lib::ClusterStateBundle>(state), cc_index);
+            std::make_shared<const lib::ClusterStateBundle>(state));
     ASSERT_EQ(maybe_rejected_by_ver, std::nullopt);
 }
 
@@ -230,7 +225,7 @@ TEST_F(StateManagerTest, receiving_cc_bundle_with_distribution_config_disables_n
 }
 
 TEST_F(StateManagerTest, internal_distribution_config_is_propagated_if_none_yet_received_from_cc) {
-    _upper->sendDown(make_set_state_cmd("version:10 distributor:1 storage:4", 0));
+    _upper->sendDown(make_set_state_cmd("version:10 distributor:1 storage:4"));
     std::shared_ptr<api::StorageReply> reply;
     ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
 
@@ -255,7 +250,7 @@ TEST_F(StateManagerTest, revert_to_internal_config_if_cc_no_longer_sends_distrib
               to_string(cmd->getClusterStateBundle().distribution_config_bundle()->config()));
 
     // CC then sends a new bundle _without_ config
-    _upper->sendDown(make_set_state_cmd("version:3 distributor:1 storage:4", 0));
+    _upper->sendDown(make_set_state_cmd("version:3 distributor:1 storage:4"));
     ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
 
     // Config implicitly reverted to the active internal config
@@ -276,10 +271,10 @@ TEST_F(StateManagerTest, revert_to_internal_config_if_cc_no_longer_sends_distrib
 TEST_F(StateManagerTest, accept_lower_state_versions_if_strict_requirement_disabled) {
     _manager->set_require_strictly_increasing_cluster_state_versions(false);
 
-    ASSERT_NO_FATAL_FAILURE(force_current_cluster_state_version(123, 1)); // CC 1
+    ASSERT_NO_FATAL_FAILURE(force_current_cluster_state_version(123));
     ASSERT_EQ(_manager->getClusterStateBundle()->getVersion(), 123);
 
-    _upper->sendDown(make_set_state_cmd("version:122 distributor:1 storage:1", 0)); // CC 0
+    _upper->sendDown(make_set_state_cmd("version:122 distributor:1 storage:1"));
     std::shared_ptr<api::StorageReply> reply;
     ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
     EXPECT_EQ(_manager->getClusterStateBundle()->getVersion(), 122);
@@ -288,40 +283,16 @@ TEST_F(StateManagerTest, accept_lower_state_versions_if_strict_requirement_disab
 TEST_F(StateManagerTest, reject_lower_state_versions_if_strict_requirement_enabled) {
     _manager->set_require_strictly_increasing_cluster_state_versions(true);
 
-    ASSERT_NO_FATAL_FAILURE(force_current_cluster_state_version(123, 1)); // CC 1
+    ASSERT_NO_FATAL_FAILURE(force_current_cluster_state_version(123));
     ASSERT_EQ(_manager->getClusterStateBundle()->getVersion(), 123);
 
-    _upper->sendDown(make_set_state_cmd("version:122 distributor:1 storage:1", 0)); // CC 0
+    _upper->sendDown(make_set_state_cmd("version:122 distributor:1 storage:1"));
     std::shared_ptr<api::StorageReply> reply;
     ASSERT_NO_FATAL_FAILURE(get_single_reply(reply));
     api::ReturnCode expected_res(api::ReturnCode::REJECTED, "Cluster state version 122 rejected; node already has "
                                                             "a higher cluster state version (123)");
     EXPECT_EQ(reply->getResult(), expected_res);
     EXPECT_EQ(_manager->getClusterStateBundle()->getVersion(), 123);
-}
-
-// Observing a lower cluster state version from the same CC index directly implies that the ZooKeeper
-// state has been lost, at which point we pragmatically (but begrudgingly) accept the state version
-// to avoid stalling the entire cluster for an indeterminate amount of time.
-TEST_F(StateManagerTest, accept_lower_state_versions_from_same_cc_index_even_if_strict_requirement_enabled) {
-    _manager->set_require_strictly_increasing_cluster_state_versions(true);
-
-    ASSERT_NO_FATAL_FAILURE(force_current_cluster_state_version(123, 1)); // CC 1
-    ASSERT_EQ(_manager->getClusterStateBundle()->getVersion(), 123);
-
-    ASSERT_NO_FATAL_FAILURE(force_current_cluster_state_version(124, 2)); // CC 2
-    ASSERT_EQ(_manager->getClusterStateBundle()->getVersion(), 124);
-
-    // CC 1 restarts from scratch with previous ZK state up in smoke.
-    _upper->sendDown(make_set_state_cmd("version:3 distributor:1 storage:1", 1));
-    std::shared_ptr<api::StorageReply> reply;
-    ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
-    EXPECT_EQ(_manager->getClusterStateBundle()->getVersion(), 3);
-
-    // CC 2 restarts and continues from where CC 1 left off.
-    _upper->sendDown(make_set_state_cmd("version:4 distributor:1 storage:1", 2));
-    ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
-    EXPECT_EQ(_manager->getClusterStateBundle()->getVersion(), 4);
 }
 
 namespace {

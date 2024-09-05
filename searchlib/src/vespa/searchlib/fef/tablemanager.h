@@ -20,7 +20,7 @@ private:
     TableManager(const TableManager &);
     TableManager &operator=(const TableManager &);
 
-    using TableCache = std::map<vespalib::string, Table::SP>;
+    using TableCache = std::map<std::string, Table::SP>;
     std::vector<ITableFactory::SP> _factories;
     mutable TableCache             _cache;
     mutable std::mutex             _lock;
@@ -42,7 +42,7 @@ public:
      *    The first table that is successfully created is added it to the cache and returned.
      * 3. Return NULL.
      **/
-    const Table * getTable(const vespalib::string & name) const override;
+    const Table * getTable(const std::string & name) const override;
 };
 
 }

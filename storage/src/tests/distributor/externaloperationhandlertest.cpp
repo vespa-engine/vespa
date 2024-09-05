@@ -36,12 +36,12 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     document::BucketId findOwned1stNotOwned2ndInStates(std::string_view state1, std::string_view state2);
 
     std::shared_ptr<api::GetCommand> makeGetCommandForUser(uint64_t id) const;
-    std::shared_ptr<api::GetCommand> makeGetCommand(const vespalib::string& id) const;
-    std::shared_ptr<api::UpdateCommand> makeUpdateCommand(const vespalib::string& doc_type, const vespalib::string& id) const;
+    std::shared_ptr<api::GetCommand> makeGetCommand(const std::string& id) const;
+    std::shared_ptr<api::UpdateCommand> makeUpdateCommand(const std::string& doc_type, const std::string& id) const;
     std::shared_ptr<api::UpdateCommand> makeUpdateCommand() const;
     std::shared_ptr<api::UpdateCommand> makeUpdateCommandForUser(uint64_t id) const;
-    std::shared_ptr<api::PutCommand> makePutCommand(const vespalib::string& doc_type, const vespalib::string& id) const;
-    std::shared_ptr<api::RemoveCommand> makeRemoveCommand(const vespalib::string& id) const;
+    std::shared_ptr<api::PutCommand> makePutCommand(const std::string& doc_type, const std::string& id) const;
+    std::shared_ptr<api::RemoveCommand> makeRemoveCommand(const std::string& id) const;
 
     void verify_busy_bounced_due_to_no_active_state(std::shared_ptr<api::StorageCommand> cmd);
 
@@ -68,7 +68,7 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
 
     void set_up_distributor_with_feed_blocked_state();
 
-    const vespalib::string _dummy_id{"id:foo:testdoctype1::bar"};
+    const std::string _dummy_id{"id:foo:testdoctype1::bar"};
 
     // Returns an arbitrary bucket not owned in the pending state
     document::BucketId set_up_pending_cluster_state_transition(bool read_only_enabled);
@@ -79,7 +79,7 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     void assert_second_command_rejected_due_to_concurrent_mutation(
             std::shared_ptr<api::StorageCommand> cmd1,
             std::shared_ptr<api::StorageCommand> cmd2,
-            const vespalib::string& expected_id_in_message);
+            const std::string& expected_id_in_message);
     void assert_second_command_not_rejected_due_to_concurrent_mutation(
             std::shared_ptr<api::StorageCommand> cmd1,
             std::shared_ptr<api::StorageCommand> cmd2);
@@ -161,7 +161,7 @@ ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
 }
 
 std::shared_ptr<api::GetCommand>
-ExternalOperationHandlerTest::makeGetCommand(const vespalib::string& id) const {
+ExternalOperationHandlerTest::makeGetCommand(const std::string& id) const {
     return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), DocumentId(id), document::AllFields::NAME);
 }
 
@@ -172,8 +172,8 @@ ExternalOperationHandlerTest::makeGetCommandForUser(uint64_t id) const {
 }
 
 std::shared_ptr<api::UpdateCommand> ExternalOperationHandlerTest::makeUpdateCommand(
-        const vespalib::string& doc_type,
-        const vespalib::string& id) const {
+        const std::string& doc_type,
+        const std::string& id) const {
     auto update = std::make_shared<document::DocumentUpdate>(
             _testDocMan.getTypeRepo(),
             *_testDocMan.getTypeRepo().getDocumentType(doc_type),
@@ -193,14 +193,14 @@ ExternalOperationHandlerTest::makeUpdateCommandForUser(uint64_t id) const {
 }
 
 std::shared_ptr<api::PutCommand> ExternalOperationHandlerTest::makePutCommand(
-        const vespalib::string& doc_type,
-        const vespalib::string& id) const {
+        const std::string& doc_type,
+        const std::string& id) const {
     auto doc = _testDocMan.createDocument(doc_type, id);
     return std::make_shared<api::PutCommand>(
             makeDocumentBucket(document::BucketId(0)), std::move(doc), api::Timestamp(0));
 }
 
-std::shared_ptr<api::RemoveCommand> ExternalOperationHandlerTest::makeRemoveCommand(const vespalib::string& id) const {
+std::shared_ptr<api::RemoveCommand> ExternalOperationHandlerTest::makeRemoveCommand(const std::string& id) const {
     return std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), DocumentId(id), api::Timestamp(0));
 }
 
@@ -386,7 +386,7 @@ void ExternalOperationHandlerTest::start_operation_verify_rejected(
 void ExternalOperationHandlerTest::assert_second_command_rejected_due_to_concurrent_mutation(
         std::shared_ptr<api::StorageCommand> cmd1,
         std::shared_ptr<api::StorageCommand> cmd2,
-        const vespalib::string& expected_id_in_message) {
+        const std::string& expected_id_in_message) {
     set_up_distributor_for_sequencing_test();
 
     // Must hold ref to started operation, or sequencing handle will be released.
@@ -597,7 +597,7 @@ struct OperationHandlerSequencingTest : ExternalOperationHandlerTest {
         set_up_distributor_for_sequencing_test();
     }
 
-    static documentapi::TestAndSetCondition bucket_lock_bypass_tas_condition(const vespalib::string& token) {
+    static documentapi::TestAndSetCondition bucket_lock_bypass_tas_condition(const std::string& token) {
         return documentapi::TestAndSetCondition(
                 vespalib::make_string("%s=%s", reindexing_bucket_lock_bypass_prefix(), token.c_str()));
     }

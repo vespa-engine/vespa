@@ -29,7 +29,7 @@ import java.util.Set;
  * buffer. The same behavior have the {@code contains()} methods.
  * The {@link #iterator()} returns an {@code Iterator<char[]>}.
  */
-public class CharArraySet extends AbstractSet<Object> {
+class CharArraySet extends AbstractSet<Object> {
 
   public static final CharArraySet EMPTY_SET = new CharArraySet(CharArrayMap.<Object>emptyMap());
   private static final Object PLACEHOLDER = new Object();
@@ -151,9 +151,8 @@ public class CharArraySet extends AbstractSet<Object> {
   public static CharArraySet copy(final Set<?> set) {
     if(set == EMPTY_SET)
       return EMPTY_SET;
-    if(set instanceof CharArraySet) {
-      final CharArraySet source = (CharArraySet) set;
-      return new CharArraySet(CharArrayMap.copy(source.map));
+    if(set instanceof CharArraySet source) {
+        return new CharArraySet(CharArrayMap.copy(source.map));
     }
     return new CharArraySet(set, false);
   }
@@ -161,7 +160,7 @@ public class CharArraySet extends AbstractSet<Object> {
   /**
    * Returns an {@link Iterator} for {@code char[]} instances in this set.
    */
-  @Override @SuppressWarnings("unchecked")
+  @Override
   public Iterator<Object> iterator() {
     // use the AbstractSet#keySet()'s iterator (to not produce endless recursion)
     return map.originalKeySet().iterator();

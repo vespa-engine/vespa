@@ -15,7 +15,7 @@ namespace search::features {
 
 template <typename OutputType, typename T>
 void
-ArrayParser::parse(const vespalib::string &input, OutputType &output)
+ArrayParser::parse(const std::string &input, OutputType &output)
 {
     using SparseVector = std::vector<ValueAndIndex<T>>;
     SparseVector sparse;
@@ -31,7 +31,7 @@ ArrayParser::parse(const vespalib::string &input, OutputType &output)
 
 template <typename OutputType>
 void
-ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
+ArrayParser::parsePartial(const std::string &input, OutputType &output)
 {
     size_t len = input.size();
     if (len >= 2) {
@@ -43,7 +43,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
             size_t key;
             char colon;
             while ( ! s.empty() ) {
-                vespalib::string::size_type commaPos(s.find(','));
+                std::string::size_type commaPos(s.find(','));
                 std::string_view item(s.substr(0, commaPos));
                 vespalib::asciistream is(item);
                 try {
@@ -53,15 +53,15 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                     } else {
                         Issue::report("Could not parse item '%s' in query vector '%s', skipping. "
                                       "Expected ':' between dimension and component.",
-                                      vespalib::string(item).c_str(), input.c_str());
+                                      std::string(item).c_str(), input.c_str());
                         return;
                     }
                 } catch (vespalib::IllegalArgumentException & e) {
                     Issue::report("Could not parse item '%s' in query vector '%s', skipping. "
-                                  "Incorrect type of operands", vespalib::string(item).c_str(), input.c_str());
+                                  "Incorrect type of operands", std::string(item).c_str(), input.c_str());
                     return;
                 }
-                if (commaPos != vespalib::string::npos) {
+                if (commaPos != std::string::npos) {
                     s = s.substr(commaPos+1);
                 } else {
                     s = std::string_view();
@@ -76,7 +76,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                     output.emplace_back(value, index++);
                 } catch (vespalib::IllegalArgumentException & e) {
                     Issue::report("Could not parse item[%ld] = '%s' in query vector '%s', skipping. "
-                                  "Incorrect type of operands", output.size(), is.c_str(), vespalib::string(s).c_str());
+                                  "Incorrect type of operands", output.size(), is.c_str(), std::string(s).c_str());
                     return;
                 }
             }
@@ -87,6 +87,6 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
 }
 
 template void
-ArrayParser::parse(const vespalib::string &input, std::vector<int> &);
+ArrayParser::parse(const std::string &input, std::vector<int> &);
 
 }

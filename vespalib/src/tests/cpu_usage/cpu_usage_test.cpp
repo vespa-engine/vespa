@@ -120,7 +120,7 @@ TEST("measure total cpu usage overhead") {
 
 //-----------------------------------------------------------------------------
 
-void verify_category(CpuUsage::Category cat, size_t idx, const vespalib::string &name) {
+void verify_category(CpuUsage::Category cat, size_t idx, const std::string &name) {
     switch (cat) { // make sure we known all categories
     case CpuUsage::Category::SETUP:
     case CpuUsage::Category::READ:
@@ -402,7 +402,7 @@ void do_sample_cpu_usage(const EndTime &end_time) {
     while (!end_time()) {
         std::this_thread::sleep_for(verbose ? 1s : 10ms);
         auto util = cpu.get_util();
-        vespalib::string body;
+        std::string body;
         for (size_t i = 0; i < util.size(); ++i) {
             if (!body.empty()) {
                 body.append(", ");

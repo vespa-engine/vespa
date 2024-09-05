@@ -134,7 +134,7 @@ namespace {
 
 template <typename MatchingMetricsType>
 void
-addRankProfileTo(MatchingMetricsType &matchingMetrics, const vespalib::string &name, size_t numDocIdPartitions)
+addRankProfileTo(MatchingMetricsType &matchingMetrics, const std::string &name, size_t numDocIdPartitions)
 {
     auto &entry = matchingMetrics.rank_profiles[name];
     if (entry.get()) {

@@ -15,7 +15,7 @@ namespace matching {
 
 class Matchers {
 private:
-    using Map = vespalib::hash_map<vespalib::string, std::shared_ptr<matching::Matcher>>;
+    using Map = vespalib::hash_map<std::string, std::shared_ptr<matching::Matcher>>;
     Map                                  _rpmap;
     const search::fef::RankingAssetsRepo _ranking_assets_repo;
     std::shared_ptr<matching::Matcher>   _fallback;
@@ -28,10 +28,10 @@ public:
     Matchers(const Matchers &) = delete;
     Matchers & operator =(const Matchers &) = delete;
     ~Matchers();
-    void add(const vespalib::string &name, std::shared_ptr<matching::Matcher> matcher);
+    void add(const std::string &name, std::shared_ptr<matching::Matcher> matcher);
     matching::MatchingStats getStats() const;
-    matching::MatchingStats getStats(const vespalib::string &name) const;
-    std::shared_ptr<matching::Matcher> lookup(const vespalib::string &name) const;
+    matching::MatchingStats getStats(const std::string &name) const;
+    std::shared_ptr<matching::Matcher> lookup(const std::string &name) const;
     const search::fef::RankingAssetsRepo& get_ranking_assets_repo() const noexcept { return _ranking_assets_repo; }
 };
 

@@ -155,10 +155,10 @@ BioPtr new_tls_frame_const_memory_bio() {
     return bio;
 }
 
-vespalib::string ssl_error_from_stack() {
+std::string ssl_error_from_stack() {
     char buf[256];
     ERR_error_string_n(ERR_get_error(), buf, sizeof(buf));
-    return vespalib::string(buf);
+    return std::string(buf);
 }
 
 void log_ssl_error(const char* source, const SocketAddress& peer_address, int ssl_error) {
@@ -258,7 +258,7 @@ void OpenSslCryptoCodecImpl::enable_hostname_validation_if_requested() {
     if (_peer_spec.valid() && !_ctx->transport_security_options().disable_hostname_validation()) {
         auto* verify_param = SSL_get0_param(_ssl.get()); // Internal ptr, no refcount bump or alloc. We must not free.
         LOG_ASSERT(verify_param != nullptr);
-        vespalib::string host = _peer_spec.host_with_fallback();
+        std::string host = _peer_spec.host_with_fallback();
         if (X509_VERIFY_PARAM_set1_host(verify_param, host.c_str(), host.size()) != 1) {
             throw CryptoException("X509_VERIFY_PARAM_set1_host() failed");
         }
@@ -268,7 +268,7 @@ void OpenSslCryptoCodecImpl::enable_hostname_validation_if_requested() {
 
 void OpenSslCryptoCodecImpl::set_server_name_indication_extension() {
     if (_peer_spec.valid()) {
-        vespalib::string host = _peer_spec.host_with_fallback();
+        std::string host = _peer_spec.host_with_fallback();
         // OpenSSL tries to cast const char* to void* in a macro, even on 1.1.1. GCC is not overly impressed,
         // so to satiate OpenSSL's quirks we pre-cast away the constness.
         auto* host_cstr_that_trusts_openssl_not_to_mess_up = const_cast<char*>(host.c_str());
@@ -278,7 +278,7 @@ void OpenSslCryptoCodecImpl::set_server_name_indication_extension() {
     }
 }
 
-std::optional<vespalib::string> OpenSslCryptoCodecImpl::client_provided_sni_extension() const {
+std::optional<std::string> OpenSslCryptoCodecImpl::client_provided_sni_extension() const {
     if ((_mode != Mode::Server) || (SSL_get_servername_type(_ssl.get()) != TLSEXT_NAMETYPE_host_name)) {
         return {};
     }
@@ -286,7 +286,7 @@ std::optional<vespalib::string> OpenSslCryptoCodecImpl::client_provided_sni_exte
     if (sni_host_raw == nullptr) {
         return {};
     }
-    return vespalib::string(sni_host_raw);
+    return std::string(sni_host_raw);
 }
 
 HandshakeResult OpenSslCryptoCodecImpl::handshake(const char* from_peer, size_t from_peer_buf_size,

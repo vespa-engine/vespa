@@ -597,7 +597,7 @@ TEST_F(PoliciesTest, test_document_route_selector_ignore)
 
 namespace {
 
-vespalib::string
+std::string
 createDocumentRouteSelectorConfigWithTwoRoutes()
 {
     return "[DocumentRouteSelector:raw:"

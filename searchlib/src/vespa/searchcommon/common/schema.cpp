@@ -30,10 +30,10 @@ writeFields(vespalib::asciistream & os,
 
 void
 writeFieldSets(vespalib::asciistream &os,
-               const vespalib::string &name,
+               const std::string &name,
                const std::vector<Schema::FieldSet> &fss)
 {
-    vespalib::string prefix(name);
+    std::string prefix(name);
     prefix += "[";
     os << prefix << fss.size() << "]\n";
     for (size_t i = 0; i < fss.size(); ++i) {
@@ -48,9 +48,9 @@ writeFieldSets(vespalib::asciistream &os,
 }
 
 struct FieldName {
-    vespalib::string name;
+    std::string name;
     explicit FieldName(const config::StringVector & lines)
-        : name(ConfigParser::parse<vespalib::string>("name", lines))
+        : name(ConfigParser::parse<std::string>("name", lines))
     {
     }
 };
@@ -89,9 +89,9 @@ Schema::Field::Field(std::string_view n, DataType dt, CollectionType ct, std::st
 
 // XXX: Resource leak if exception is thrown.
 Schema::Field::Field(const config::StringVector & lines)
-    : _name(ConfigParser::parse<vespalib::string>("name", lines)),
-      _dataType(schema::dataTypeFromName(ConfigParser::parse<vespalib::string>("datatype", lines))),
-      _collectionType(schema::collectionTypeFromName(ConfigParser::parse<vespalib::string>("collectiontype", lines)))
+    : _name(ConfigParser::parse<std::string>("name", lines)),
+      _dataType(schema::dataTypeFromName(ConfigParser::parse<std::string>("datatype", lines))),
+      _collectionType(schema::collectionTypeFromName(ConfigParser::parse<std::string>("collectiontype", lines)))
 {
 }
 
@@ -182,7 +182,7 @@ Schema::IndexField::operator!=(const IndexField &rhs) const noexcept
 }
 
 Schema::FieldSet::FieldSet(const config::StringVector & lines) :
-    _name(ConfigParser::parse<vespalib::string>("name", lines)),
+    _name(ConfigParser::parse<std::string>("name", lines)),
     _fields()
 {
     auto fn = ConfigParser::parseArray<std::vector<FieldName>>("field", lines);
@@ -230,7 +230,7 @@ Schema & Schema::operator=(Schema && rhs) noexcept = default;
 Schema::~Schema() = default;
 
 bool
-Schema::loadFromFile(const vespalib::string & fileName)
+Schema::loadFromFile(const std::string & fileName)
 {
     std::ifstream file(fileName.c_str());
     if (!file) {
@@ -264,7 +264,7 @@ Schema::loadFromFile(const vespalib::string & fileName)
 }
 
 bool
-Schema::saveToFile(const vespalib::string & fileName) const
+Schema::saveToFile(const std::string & fileName) const
 {
     vespalib::asciistream os;
     writeToStream(os, true);
@@ -295,7 +295,7 @@ Schema::saveToFile(const vespalib::string & fileName) const
     return true;
 }
 
-vespalib::string
+std::string
 Schema::toString() const
 {
     vespalib::asciistream os;
@@ -306,7 +306,7 @@ Schema::toString() const
 namespace {
 Schema::IndexField
 cloneIndexField(const Schema::IndexField &field,
-                const vespalib::string &suffix)
+                const std::string &suffix)
 {
     return Schema::IndexField(field.getName() + suffix,
                               field.getDataType(),
@@ -449,7 +449,7 @@ template <>
 bool IntersectHelper::is_matching(const Schema::FieldSet &f1, const Schema::FieldSet &f2) {
     if (f1.getFields() != f2.getFields())
         return false;
-    for (const vespalib::string & field : f1.getFields()) {
+    for (const std::string & field : f1.getFields()) {
         if (schema->getIndexFieldId(field) == Schema::UNKNOWN_FIELD_ID) {
             return false;
         }

@@ -37,7 +37,7 @@ private:
     search::AttributeMemorySaveTarget         _saveTarget;
     std::unique_ptr<search::AttributeSaver>   _saver;
     uint64_t                                  _syncToken;
-    vespalib::string                          _flushFile;
+    std::string                          _flushFile;
 
     bool saveAttribute(); // not updating snap info.
 public:

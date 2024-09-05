@@ -41,7 +41,7 @@ void do_write_xml_content_escaped(StreamT& out, std::string_view str) {
 
 }
 
-vespalib::string xml_attribute_escaped(std::string_view str) {
+std::string xml_attribute_escaped(std::string_view str) {
     vespalib::asciistream ost;
     for (const char s : str) {
         if (s == '"' || s == '\'' || s == '\n'
@@ -62,7 +62,7 @@ vespalib::string xml_attribute_escaped(std::string_view str) {
     return ost.str();
 }
 
-vespalib::string xml_content_escaped(std::string_view str) {
+std::string xml_content_escaped(std::string_view str) {
     vespalib::asciistream out;
     do_write_xml_content_escaped(out, str);
     return out.str();

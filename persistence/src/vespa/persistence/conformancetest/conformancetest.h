@@ -157,7 +157,7 @@ protected:
                               std::vector<DocTypeGidAndTimestamp> ids,
                               size_t exp_removed,
                               size_t exp_remaining,
-                              const vespalib::string& label);
+                              const std::string& label);
 
     ConformanceTest();
     ConformanceTest(const std::string &docType);

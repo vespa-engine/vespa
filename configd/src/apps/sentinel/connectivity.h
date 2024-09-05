@@ -6,8 +6,8 @@
 #include "cc-result.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/config-model.h>
-#include <string>
 #include <map>
+#include <string>
 
 using cloud::config::SentinelConfig;
 using cloud::config::ModelConfig;

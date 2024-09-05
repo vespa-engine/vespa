@@ -2,9 +2,9 @@
 #include <vespa/fsa/fsa.h>
 #include <vespa/fsamanagers/fsamanager.h>
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
-#include <stdlib.h>
 
 using namespace fsa;
 

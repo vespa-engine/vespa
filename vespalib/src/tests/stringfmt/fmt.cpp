@@ -15,7 +15,7 @@ TEST("test that make_string formats as one can expect.")
     std::string foo = make_string("%d/%x", i, j);
     std::string bar = make_string("%d/%x", i, j).c_str();
 
-    vespalib::string tst("7/666");
+    std::string tst("7/666");
 
     EXPECT_TRUE(tst == foo);
     EXPECT_TRUE(tst == bar);
@@ -41,7 +41,7 @@ TEST("test that make_string formats as one can expect.")
 }
 
 TEST("require that short form make string can be used") {
-    EXPECT_EQUAL(fmt("format: %d", 123), vespalib::string("format: 123"));
+    EXPECT_EQUAL(fmt("format: %d", 123), std::string("format: 123"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

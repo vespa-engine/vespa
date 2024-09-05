@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  *
  * @author MariusArhaug
  */
-public class DefaultSignificanceModelRegistry implements SignificanceModelRegistry {
+public final class DefaultSignificanceModelRegistry implements SignificanceModelRegistry {
 
     private static final Logger log = Logger.getLogger(DefaultSignificanceModelRegistry.class.getName());
 

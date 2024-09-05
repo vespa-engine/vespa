@@ -15,7 +15,7 @@ public:
 
     InterpolatedLookup() noexcept;
     ~InterpolatedLookup() override;
-    InterpolatedLookup(const vespalib::string &attribute, ExpressionNode::UP arg);
+    InterpolatedLookup(const std::string &attribute, ExpressionNode::UP arg);
     InterpolatedLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP lookupArg);
     InterpolatedLookup(const InterpolatedLookup &rhs);
     InterpolatedLookup & operator= (const InterpolatedLookup &rhs);

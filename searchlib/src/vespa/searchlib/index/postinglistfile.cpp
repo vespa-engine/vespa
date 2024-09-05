@@ -116,7 +116,7 @@ readPostingList(const PostingListCounts &counts,
 }
 
 bool
-PostingListFileRandReadPassThrough::open(const vespalib::string &name,
+PostingListFileRandReadPassThrough::open(const std::string &name,
         const TuneFileRandRead &tuneFileRead)
 {
     bool ret = _lower->open(name, tuneFileRead);

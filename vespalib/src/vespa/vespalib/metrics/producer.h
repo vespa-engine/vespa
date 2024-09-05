@@ -17,8 +17,8 @@ private:
 public:
     explicit Producer(std::shared_ptr<MetricsManager> m);
     ~Producer() override;
-    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
+    std::string getMetrics(const std::string &consumer, ExpositionFormat format) override;
+    std::string getTotalMetrics(const std::string &consumer, ExpositionFormat format) override;
 };
 
 }

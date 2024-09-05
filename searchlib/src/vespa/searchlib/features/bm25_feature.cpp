@@ -109,9 +109,9 @@ Bm25Executor::execute(uint32_t doc_id)
 }
 
 Trinary
-Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const
+Bm25Blueprint::lookup_param(const fef::Properties& props, const std::string& param, double& result) const
 {
-    vespalib::string key = getBaseName() + "(" + _field->name() + ")." + param;
+    std::string key = getBaseName() + "(" + _field->name() + ")." + param;
     auto value = props.lookup(key);
     if (value.found()) {
         try {
@@ -127,7 +127,7 @@ Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string
 }
 
 Trinary
-Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string& param, std::optional<double>& result) const
+Bm25Blueprint::lookup_param(const fef::Properties& props, const std::string& param, std::optional<double>& result) const
 {
     double tmp_result;
     auto lres = lookup_param(props, param, tmp_result);
@@ -190,8 +190,8 @@ Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList
 
 namespace {
 
-vespalib::string
-make_avg_field_length_key(const vespalib::string& base_name, const vespalib::string& field_name)
+std::string
+make_avg_field_length_key(const std::string& base_name, const std::string& field_name)
 {
     return base_name + ".afl." + field_name;
 }
@@ -201,7 +201,7 @@ make_avg_field_length_key(const vespalib::string& base_name, const vespalib::str
 void
 Bm25Blueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const
 {
-    vespalib::string key = make_avg_field_length_key(getBaseName(), _field->name());
+    std::string key = make_avg_field_length_key(getBaseName(), _field->name());
     if (store.get(key) == nullptr) {
         double avg_field_length = _avg_field_length.value_or(env.get_average_field_length(_field->name()));
         store.add(key, std::make_unique<AnyWrapper<double>>(avg_field_length));

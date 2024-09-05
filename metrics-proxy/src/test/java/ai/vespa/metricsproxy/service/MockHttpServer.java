@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 /**
  * @author jobergum
  */
-public class MockHttpServer {
+public final class MockHttpServer {
 
     private String response;
     private final HttpServer server;

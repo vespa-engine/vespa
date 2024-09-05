@@ -14,9 +14,9 @@ using DataType = search::fef::FieldInfo::DataType;
 
 namespace search::fef {
 
-class StringList : public std::vector<vespalib::string> {
+class StringList : public std::vector<std::string> {
 public:
-    StringList & add(const vespalib::string & str) { push_back(str); return *this; }
+    StringList & add(const std::string & str) { push_back(str); return *this; }
 };
 
 class ParameterTest : public ::testing::Test {
@@ -31,10 +31,10 @@ protected:
     ~ParameterTest() override;
     bool assertParameter(const Parameter & exp, const Parameter & act);
     bool validate(const IIndexEnvironment & env,
-                  const std::vector<vespalib::string> & params,
+                  const std::vector<std::string> & params,
                   const ParameterDescriptions & descs);
     bool validate(const IIndexEnvironment & env,
-                  const std::vector<vespalib::string> & params,
+                  const std::vector<std::string> & params,
                   const ParameterDescriptions & descs,
                   const ParameterValidator::Result & result);
 };
@@ -56,7 +56,7 @@ ParameterTest::assertParameter(const Parameter & exp, const Parameter & act)
 
 bool
 ParameterTest::validate(const IIndexEnvironment & env,
-                        const std::vector<vespalib::string> & params,
+                        const std::vector<std::string> & params,
                         const ParameterDescriptions & descs)
 {
     ParameterValidator pv(env, params, descs);
@@ -67,7 +67,7 @@ ParameterTest::validate(const IIndexEnvironment & env,
 
 bool
 ParameterTest::validate(const IIndexEnvironment & env,
-                        const std::vector<vespalib::string> & params,
+                        const std::vector<std::string> & params,
                         const ParameterDescriptions & descs,
                         const ParameterValidator::Result & result)
 {

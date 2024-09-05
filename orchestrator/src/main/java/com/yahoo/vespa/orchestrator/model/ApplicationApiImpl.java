@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * @author hakonhall
  */
-public class ApplicationApiImpl implements ApplicationApi {
+public final class ApplicationApiImpl implements ApplicationApi {
 
     private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;

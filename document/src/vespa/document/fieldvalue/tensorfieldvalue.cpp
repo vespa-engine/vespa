@@ -21,7 +21,7 @@ namespace {
 
 TensorDataType emptyTensorDataType(ValueType::error_type());
 
-vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
+std::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
 {
     return vespalib::make_string("Field tensor type is '%s' but other tensor type is '%s'",
                                  fieldTensorType.to_spec().c_str(),

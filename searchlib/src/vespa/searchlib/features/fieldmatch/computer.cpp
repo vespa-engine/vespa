@@ -225,7 +225,7 @@ Computer::fieldIndexToSemanticDistance(int j, uint32_t zeroJ) const
     }
 }
 
-vespalib::string
+std::string
 Computer::toString() const
 {
     return vespalib::make_string("Computer(%d query terms,%d field terms,%s)",

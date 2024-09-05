@@ -55,7 +55,7 @@ public:
     bool close();
 
     void getFeatureParams(PostingListParams &params);
-    static void remove(const vespalib::string &prefix);
+    static void remove(const std::string &prefix);
 private:
     using DictionaryFileSeqWrite = index::DictionaryFileSeqWrite;
     using PostingListFileSeqWrite = index::PostingListFileSeqWrite;
@@ -64,8 +64,8 @@ private:
     std::unique_ptr<PostingListFileSeqWrite> _posoccfile;
     BitVectorCandidate      _bvc;
     BitVectorFileWrite      _bmapfile;
-    const vespalib::string  _prefix;
-    vespalib::string        _word;
+    const std::string  _prefix;
+    std::string        _word;
     const uint64_t          _numWordIds;
     uint64_t                _compactWordNum;
     uint64_t                _wordNum;

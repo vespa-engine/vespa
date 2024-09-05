@@ -30,7 +30,7 @@ TEST(BucketTest, testBucketId)
     EXPECT_TRUE(!(id1 < id2) && !(id2 < id1));
     EXPECT_EQ(Hex(0), Hex(id1.getId()));
     EXPECT_EQ(Hex(0), Hex(id1.getRawId()));
-    EXPECT_EQ(vespalib::string("BucketId(0x0000000000000000)"),
+    EXPECT_EQ(std::string("BucketId(0x0000000000000000)"),
                          id1.toString());
     EXPECT_EQ(0u, id1.getUsedBits());
 
@@ -40,7 +40,7 @@ TEST(BucketTest, testBucketId)
     EXPECT_TRUE((id1 < id2) && !(id2 < id1));
     EXPECT_EQ(Hex(0x4000000000000123ull), Hex(id2.getId()));
     EXPECT_EQ(Hex(0x4000000000000123ull), Hex(id2.getRawId()));
-    EXPECT_EQ(vespalib::string("BucketId(0x4000000000000123)"),
+    EXPECT_EQ(std::string("BucketId(0x4000000000000123)"),
               id2.toString());
     EXPECT_EQ(16u, id2.getUsedBits());
 
@@ -223,10 +223,10 @@ TEST(BucketTest, testContains)
 TEST(BucketTest, testToString)
 {
     BucketSpace bucketSpace(0x123450006789ULL);
-    EXPECT_EQ(vespalib::string("BucketSpace(0x0000123450006789)"), bucketSpace.toString());
+    EXPECT_EQ(std::string("BucketSpace(0x0000123450006789)"), bucketSpace.toString());
     Bucket bucket(bucketSpace, BucketId(0x123456789ULL));
     EXPECT_EQ(
-            vespalib::string("Bucket(BucketSpace(0x0000123450006789), BucketId(0x0000000123456789))"),
+            std::string("Bucket(BucketSpace(0x0000123450006789), BucketId(0x0000000123456789))"),
             bucket.toString());
 }
 

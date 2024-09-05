@@ -31,7 +31,7 @@ makeTensor(const TensorSpec &spec)
 struct Fixture
 {
     DenseTensorStore store;
-    explicit Fixture(const vespalib::string &tensorType)
+    explicit Fixture(const std::string &tensorType)
         : store(ValueType::from_spec(tensorType), {})
     {}
     void assertSetAndGetTensor(const TensorSpec &tensorSpec) {
@@ -72,7 +72,7 @@ TEST_F("require that correct empty tensor is returned for 1d bound tensor", Fixt
 }
 
 void
-assertArraySize(const vespalib::string &tensorType, uint32_t expArraySize) {
+assertArraySize(const std::string &tensorType, uint32_t expArraySize) {
     Fixture f(tensorType);
     EXPECT_EQUAL(expArraySize, f.store.getArraySize());
 }
@@ -95,7 +95,7 @@ TEST("require that array size is calculated correctly")
 }
 
 void
-assert_max_buffer_entries(const vespalib::string& tensor_type, uint32_t exp_entries)
+assert_max_buffer_entries(const std::string& tensor_type, uint32_t exp_entries)
 {
     Fixture f(tensor_type);
     EXPECT_EQUAL(exp_entries, f.store.get_max_buffer_entries());

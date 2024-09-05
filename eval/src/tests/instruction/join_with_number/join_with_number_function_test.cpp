@@ -48,7 +48,7 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr, Primary primary, bool pri_mut) {
+void verify_optimized(const std::string &expr, Primary primary, bool pri_mut) {
     UNWIND_MSG("optimize %s", expr.c_str());
     const CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 2);
     FunInfo stable_details{primary, pri_mut, pri_mut};
@@ -58,7 +58,7 @@ void verify_optimized(const vespalib::string &expr, Primary primary, bool pri_mu
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {unstable_details}, unstable_types));
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     UNWIND_MSG("not: %s", expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {}, all_types));
@@ -122,8 +122,8 @@ TEST("require that mixed number join can be inplace") {
 }
 
 TEST("require that inappropriate cases are not optimized") {
-    for (vespalib::string lhs: {"y5", "x3_1z2_1", "x3_1y5z2_1"}) {
-        for (vespalib::string rhs: {"y5", "x3_1z2_1", "x3_1y5z2_1"}) {
+    for (std::string lhs: {"y5", "x3_1z2_1", "x3_1y5z2_1"}) {
+        for (std::string rhs: {"y5", "x3_1z2_1", "x3_1y5z2_1"}) {
             auto expr = fmt("%s$1*%s$2", lhs.c_str(), rhs.c_str());
             verify_not_optimized(expr);
         }

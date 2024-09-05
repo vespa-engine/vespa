@@ -37,6 +37,7 @@
 %global _vespa_gtest_version 1.14.0
 %global _vespa_protobuf_version 5.26.1
 %global _vespa_openblas_version 0.3.27
+%global _vespa_llama_version 3.3.0
 %global _use_vespa_abseil_cpp 1
 %global _use_vespa_protobuf 1
 %global _use_vespa_openblas 1
@@ -201,7 +202,7 @@ Requires: vespa-protobuf = %{_vespa_protobuf_version}
 Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.18.0
-Requires: vespa-jllama = 3.2.1
+Requires: vespa-jllama = %{_vespa_llama_version}
 Requires: vespa-openblas >= %{_vespa_openblas_version}
 
 %description libs
@@ -318,7 +319,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
 
 %if 0%{?_use_mvn_wrapper}
-mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
+mvn -B wrapper:wrapper -Dmaven=3.8.8 -N
 %endif
 %{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=$(pwd)/mvnw }sh bootstrap.sh java
 %{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true

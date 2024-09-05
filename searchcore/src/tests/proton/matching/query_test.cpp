@@ -155,14 +155,14 @@ Fixture::getIterator(Node &node, ISearchContext &context) {
 
 vespalib::ThreadBundle &ttb() { return vespalib::ThreadBundle::trivial(); }
 
-vespalib::string
+std::string
 termAsString(const search::query::Range &term) {
     vespalib::asciistream os;
     return (os << term).str();
 }
 
-const vespalib::string &
-termAsString(const vespalib::string & term) {
+const std::string &
+termAsString(const std::string & term) {
     return term;
 }
 
@@ -776,8 +776,8 @@ TEST("requireThatFakeFieldSearchDumpsDiffer")
     FakeSearchable b;
     a.tag("a");
     b.tag("b");
-    vespalib::string term1="term1";
-    vespalib::string term2="term2";
+    std::string term1="term1";
+    std::string term2="term2";
     ProtonStringTerm n1(term1, "field1", string_id, string_weight);
     ProtonStringTerm n2(term2, "field1", string_id, string_weight);
     ProtonStringTerm n3(term1, "field2", string_id, string_weight);
@@ -972,13 +972,13 @@ TEST("requireThatAndNotBlueprintStaysOnTopAfterWhiteListing") {
 
 
 search::query::Node::UP
-make_same_element_stack_dump(const vespalib::string &prefix, const vespalib::string &term_prefix)
+make_same_element_stack_dump(const std::string &prefix, const std::string &term_prefix)
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addSameElement(2, prefix, 0, Weight(1));
     builder.addStringTerm("xyz", term_prefix + "f1", 1, Weight(1));
     builder.addStringTerm("abc", term_prefix + "f2", 2, Weight(1));
-    vespalib::string stack = StackDumpCreator::create(*builder.build());
+    std::string stack = StackDumpCreator::create(*builder.build());
     search::SimpleQueryStackDumpIterator stack_dump_iterator(stack);
     SameElementModifier sem;
     search::query::Node::UP query = search::query::QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);

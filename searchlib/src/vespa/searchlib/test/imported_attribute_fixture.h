@@ -16,7 +16,7 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace search {
 
@@ -238,7 +238,7 @@ void assert_multi_value_matches(const ImportedAttributeFixture &f,
                                 PredicateType predicate) {
     AttributeContent<AttrValueType> content;
     content.fill(*f.get_imported_attr(), lid);
-    ASSERT_EQUAL(expected.size(), content.size());
+    ASSERT_EQ(expected.size(), content.size());
     std::vector<AttrValueType> actual(content.begin(), content.end());
     std::vector<AttrValueType> wanted(expected.begin(), expected.end());
     if constexpr (IsWeightedType<AttrValueType>::value) {

@@ -80,7 +80,7 @@ MyOperationComplete::addResultHandler(const storage::spi::ResultHandler * result
 
 SpiBmFeedHandler::SpiBmFeedHandler(std::vector<PersistenceProvider* >providers, const document::FieldSetRepo &field_set_repo, const IBmDistribution& distribution, bool skip_get_spi_bucket_info)
     : IBmFeedHandler(),
-      _name(vespalib::string("SpiBmFeedHandler(") + (skip_get_spi_bucket_info ? "skip-get-spi-bucket-info" : "get-spi-bucket-info") + ")"),
+      _name(std::string("SpiBmFeedHandler(") + (skip_get_spi_bucket_info ? "skip-get-spi-bucket-info" : "get-spi-bucket-info") + ")"),
       _providers(std::move(providers)),
       _field_set_repo(field_set_repo),
       _errors(0u),
@@ -173,7 +173,7 @@ SpiBmFeedHandler::get_error_count() const
     return _errors;
 }
 
-const vespalib::string&
+const std::string&
 SpiBmFeedHandler::get_name() const
 {
     return _name;

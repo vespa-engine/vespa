@@ -3,7 +3,7 @@
 
 #include "postinglistcounts.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::common { class FileHeaderContext; }
 
@@ -32,7 +32,7 @@ public:
     /**
      * Open posting list count file for sequential read.
      */
-    virtual bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
+    virtual bool open(const std::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
 
     /**
      * Close posting list count file.
@@ -55,7 +55,7 @@ public:
     /**
      * Open posting list count file for sequential write.
      */
-    virtual bool open(const vespalib::string &name,
+    virtual bool open(const std::string &name,
                       const TuneFileSeqWrite &tuneFileWrite,
                       const common::FileHeaderContext &fileHeaderContext) = 0;
 

@@ -55,12 +55,12 @@ TEST_F(GlobalIdTest, testNormalUsage)
     }
     { // Test printing and parsing
         GlobalId id1("LIN!#LNKASD#!MYL#&NK");
-        EXPECT_EQ(vespalib::string("gid(0x4c494e21234c4e4b41534423)"),
+        EXPECT_EQ(std::string("gid(0x4c494e21234c4e4b41534423)"),
                              id1.toString());
         GlobalId id2 = GlobalId::parse(id1.toString());
         EXPECT_EQ(id1, id2);
             // Verify string representation too, to verify that operator== works
-        EXPECT_EQ(vespalib::string("gid(0x4c494e21234c4e4b41534423)"),
+        EXPECT_EQ(std::string("gid(0x4c494e21234c4e4b41534423)"),
                              id2.toString());
     }
 }

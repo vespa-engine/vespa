@@ -21,7 +21,6 @@
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -77,8 +76,8 @@ struct DBConfigFixture {
     DocumentDBConfig::SP getConfig(int64_t generation,
                                    std::shared_ptr<DocumenttypesConfig> documentTypes,
                                    std::shared_ptr<const DocumentTypeRepo> repo,
-                                   const vespalib::string &configId,
-                                   const vespalib::string &docTypeName)
+                                   const std::string &configId,
+                                   const std::string &docTypeName)
     {
         return std::make_shared<DocumentDBConfig>
             (generation,
@@ -226,10 +225,10 @@ struct MyProtonConfigurerOwner;
 
 struct MyDocumentDBConfigOwner : public DocumentDBConfigOwner
 {
-    vespalib::string _name;
+    std::string _name;
     document::BucketSpace _bucket_space;
     MyProtonConfigurerOwner &_owner;
-    MyDocumentDBConfigOwner(const vespalib::string &name,
+    MyDocumentDBConfigOwner(const std::string &name,
                             document::BucketSpace bucket_space,
                             MyProtonConfigurerOwner &owner)
         : DocumentDBConfigOwner(),
@@ -246,7 +245,7 @@ struct MyDocumentDBConfigOwner : public DocumentDBConfigOwner
 
 struct MyLog
 {
-    std::vector<vespalib::string> _log;
+    std::vector<std::string> _log;
 
     MyLog()
         : _log()
@@ -254,7 +253,7 @@ struct MyLog
     }
     ~MyLog();
 
-    void appendLog(const vespalib::string & logEntry)
+    void appendLog(const std::string & logEntry)
     {
         _log.emplace_back(logEntry);
     }
@@ -279,7 +278,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
 
     std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
                                                                  document::BucketSpace bucketSpace,
-                                                                 const vespalib::string &configId,
+                                                                 const std::string &configId,
                                                                  const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
                                                                  const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                                                                  InitializeThreads initializeThreads) override
@@ -309,7 +308,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
         _log.emplace_back(os.str());
         
     }
-    void reconfigureDocumentDB(const vespalib::string &name, const DocumentDBConfig & config)
+    void reconfigureDocumentDB(const std::string &name, const DocumentDBConfig & config)
     {
         std::ostringstream os;
         os << "reconf db " << name << " " << config.getGeneration();
@@ -373,12 +372,12 @@ protected:
     }
     ~ProtonConfigurerTest() override;
 
-    void assertLog(const std::vector<vespalib::string> &expLog) {
+    void assertLog(const std::vector<std::string> &expLog) {
         EXPECT_EQ(expLog, _owner._log);
     }
     void sync() { _owner.sync(); }
-    void addDocType(const vespalib::string &name, const std::string& bucket_space = "default") { _config.addDocType(name, bucket_space); }
-    void removeDocType(const vespalib::string &name) { _config.removeDocType(name); }
+    void addDocType(const std::string &name, const std::string& bucket_space = "default") { _config.addDocType(name, bucket_space); }
+    void removeDocType(const std::string &name) { _config.removeDocType(name); }
     void applyConfig() {
         _configurer.reconfigure(_config.getConfigSnapshot());
         sync();

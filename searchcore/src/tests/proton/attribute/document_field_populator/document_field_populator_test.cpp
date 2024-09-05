@@ -29,7 +29,7 @@ struct DocContext
     {
     }
     Document::UP create(uint32_t id) {
-        vespalib::string docId =
+        std::string docId =
                 vespalib::make_string("id:searchdocument:searchdocument::%u", id);
         return _builder.make_document(docId);
     }

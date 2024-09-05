@@ -520,11 +520,11 @@ TEST("requireThatSimpleIntermediatesGetProperBlending") {
 }
 
 TEST("control query nodes size") {
-    EXPECT_EQUAL(64u + sizeof(vespalib::string), sizeof(ProtonTermData));
-    EXPECT_EQUAL(32u + 2 * sizeof(vespalib::string), sizeof(search::query::NumberTerm));
-    EXPECT_EQUAL(96u + 3 * sizeof(vespalib::string), sizeof(ProtonNodeTypes::NumberTerm));
-    EXPECT_EQUAL(32u + 2 * sizeof(vespalib::string), sizeof(search::query::StringTerm));
-    EXPECT_EQUAL(96u + 3 * sizeof(vespalib::string), sizeof(ProtonNodeTypes::StringTerm));
+    EXPECT_EQUAL(64u + sizeof(std::string), sizeof(ProtonTermData));
+    EXPECT_EQUAL(32u + 2 * sizeof(std::string), sizeof(search::query::NumberTerm));
+    EXPECT_EQUAL(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::NumberTerm));
+    EXPECT_EQUAL(32u + 2 * sizeof(std::string), sizeof(search::query::StringTerm));
+    EXPECT_EQUAL(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::StringTerm));
 }
 
 }  // namespace

@@ -3,8 +3,8 @@
 
 #include "query_normalization.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memory.h>
+#include <string>
 
 namespace search {
 
@@ -14,7 +14,7 @@ namespace search {
 class QueryTermSimple {
 public:
     using UP = std::unique_ptr<QueryTermSimple>;
-    using string = vespalib::string;
+    using string = std::string;
     using string_view = std::string_view;
     using Type = TermType;
 
@@ -93,8 +93,8 @@ protected:
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::QueryTermSimple &obj);
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::QueryTermSimple *obj);
 

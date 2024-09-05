@@ -159,7 +159,7 @@ MatchingTestSharedState::meta_store()
 
 vespalib::ThreadBundle &ttb() { return vespalib::ThreadBundle::trivial(); }
 
-void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
+void inject_match_phase_limiting(Properties &setup, const std::string &attribute, size_t max_hits, bool descending)
 {
     Properties cfg;
     cfg.add(indexproperties::matchphase::DegradationAttribute::NAME, attribute);
@@ -180,14 +180,14 @@ FakeResult make_elem_result(const std::vector<std::pair<uint32_t,std::vector<uin
     return result;
 }
 
-vespalib::string make_simple_stack_dump(const vespalib::string &field, const vespalib::string &term)
+std::string make_simple_stack_dump(const std::string &field, const std::string &term)
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(term, field, 1, search::query::Weight(1));
     return StackDumpCreator::create(*builder.build());
 }
 
-vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, const vespalib::string &f1_term)
+std::string make_same_element_stack_dump(const std::string &a1_term, const std::string &f1_term)
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addSameElement(2, "my", 0, Weight(1));
@@ -199,15 +199,15 @@ vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, c
 //-----------------------------------------------------------------------------
 
 struct EmptyRankingAssetsRepo : public search::fef::IRankingAssetsRepo {
-    vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
+    vespalib::eval::ConstantValue::UP getConstant(const std::string &) const override {
         return {};
     }
 
-    vespalib::string getExpression(const vespalib::string &) const override {
+    std::string getExpression(const std::string &) const override {
         return {};
     }
 
-    const OnnxModel *getOnnxModel(const vespalib::string &) const override {
+    const OnnxModel *getOnnxModel(const std::string &) const override {
         return nullptr;
     }
 };
@@ -268,7 +268,7 @@ struct MyWorld {
 
     }
 
-    void set_property(const vespalib::string &name, const vespalib::string &value) {
+    void set_property(const std::string &name, const std::string &value) {
         Properties cfg;
         cfg.add(name, value);
         config.import(cfg);
@@ -289,7 +289,7 @@ struct MyWorld {
         config.add(indexproperties::feature_rename::Rename::NAME, "tensor(x[3])(x)");
     }
 
-    static void verify_match_features(SearchReply &reply, const vespalib::string &matched_field) {
+    static void verify_match_features(SearchReply &reply, const std::string &matched_field) {
         if (reply.hits.empty()) {
             EXPECT_EQ(reply.match_features.names.size(), 0u);
             EXPECT_EQ(reply.match_features.values.size(), 0u);
@@ -320,7 +320,7 @@ struct MyWorld {
         }
     }
 
-    static void verify_match_feature_renames(SearchReply &reply, const vespalib::string &matched_field) {
+    static void verify_match_feature_renames(SearchReply &reply, const std::string &matched_field) {
         if (reply.hits.empty()) {
             EXPECT_EQ(reply.match_features.names.size(), 0u);
             EXPECT_EQ(reply.match_features.values.size(), 0u);
@@ -337,15 +337,15 @@ struct MyWorld {
         }
     }
 
-    void setup_match_phase_limiting(const vespalib::string &attribute, size_t max_hits, bool descending)
+    void setup_match_phase_limiting(const std::string &attribute, size_t max_hits, bool descending)
     {
         inject_match_phase_limiting(config, attribute, max_hits, descending);
     }
 
-    void add_match_phase_limiting_result(const vespalib::string &attribute, size_t want_docs,
+    void add_match_phase_limiting_result(const std::string &attribute, size_t want_docs,
                                          bool descending, std::initializer_list<uint32_t> docs)
     {
-        vespalib::string term = vespalib::make_string("[;;%s%zu]", descending ? "-" : "", want_docs);
+        std::string term = vespalib::make_string("[;;%s%zu]", descending ? "-" : "", want_docs);
         FakeResult result;
         for (uint32_t doc: docs) {
             result.doc(doc);
@@ -360,7 +360,7 @@ struct MyWorld {
         config.import(cfg);
     }
 
-    void verbose_a1_result(const vespalib::string &term) {
+    void verbose_a1_result(const std::string &term) {
         FakeResult result;
         for (uint32_t i = 15; i < NUM_DOCS; ++i) {
             result.doc(i);
@@ -368,7 +368,7 @@ struct MyWorld {
         searchContext.attr().addResult("a1", term, result);
     }
 
-    void add_same_element_results(const vespalib::string &my_a1_term, const vespalib::string &my_f1_0_term) {
+    void add_same_element_results(const std::string &my_a1_term, const std::string &my_f1_0_term) {
         auto my_a1_result   = make_elem_result({{10, {1}}, {20, {2, 3}}, {21, {2}}});
         auto my_f1_0_result = make_elem_result({{10, {2}}, {20, {1, 2}}, {21, {2}}});
         searchContext.attr().addResult("my.a1", my_a1_term, my_a1_result);
@@ -382,11 +382,11 @@ struct MyWorld {
                                                                  .doc(600).doc(700).doc(800).doc(900));
     }
 
-    static void setStackDump(Request &request, const vespalib::string &stack_dump) {
+    static void setStackDump(Request &request, const std::string &stack_dump) {
         request.stackDump.assign(stack_dump.data(), stack_dump.data() + stack_dump.size());
     }
 
-    static SearchRequest::SP createRequest(const vespalib::string &stack_dump)
+    static SearchRequest::SP createRequest(const std::string &stack_dump)
     {
         SearchRequest::SP request(new SearchRequest);
         request->setTimeout(60s);
@@ -395,12 +395,12 @@ struct MyWorld {
         return request;
     }
 
-    static SearchRequest::SP createSimpleRequest(const vespalib::string &field, const vespalib::string &term)
+    static SearchRequest::SP createSimpleRequest(const std::string &field, const std::string &term)
     {
         return createRequest(make_simple_stack_dump(field, term));
     }
 
-    static SearchRequest::SP createSameElementRequest(const vespalib::string &a1_term, const vespalib::string &f1_term)
+    static SearchRequest::SP createSameElementRequest(const std::string &a1_term, const std::string &f1_term)
     {
         return createRequest(make_same_element_stack_dump(a1_term, f1_term));
     }
@@ -456,7 +456,7 @@ struct MyWorld {
         return reply;
     }
 
-    static DocsumRequest::UP create_docsum_request(const vespalib::string &stack_dump, const std::initializer_list<uint32_t> docs) {
+    static DocsumRequest::UP create_docsum_request(const std::string &stack_dump, const std::initializer_list<uint32_t> docs) {
         auto req = std::make_unique<DocsumRequest>();
         setStackDump(*req, stack_dump);
         for (uint32_t docid: docs) {
@@ -466,13 +466,13 @@ struct MyWorld {
         return req;
     }
 
-    static DocsumRequest::SP createSimpleDocsumRequest(const vespalib::string & field, const vespalib::string & term) {
+    static DocsumRequest::SP createSimpleDocsumRequest(const std::string & field, const std::string & term) {
         // match a subset of basic result + request for a non-hit (not
         // sorted on docid)
         return create_docsum_request(make_simple_stack_dump(field, term), {30, 10, 15});
     }
 
-    std::unique_ptr<FieldInfo> get_field_info(const vespalib::string &field_name) {
+    std::unique_ptr<FieldInfo> get_field_info(const std::string &field_name) {
         Matcher::SP matcher = createMatcher();
         const FieldInfo *field = matcher->get_index_env().getFieldByName(field_name);
         if (field == nullptr) {
@@ -518,20 +518,20 @@ MyWorld::~MyWorld() = default;
 
 void verifyViewResolver(const ViewResolver &resolver) {
     {
-        std::vector<vespalib::string> fields;
+        std::vector<std::string> fields;
         EXPECT_TRUE(resolver.resolve("foo", fields));
         ASSERT_TRUE(fields.size() == 2u);
         EXPECT_EQ("x", fields[0]);
         EXPECT_EQ("y", fields[1]);
     }
     {
-        std::vector<vespalib::string> fields;
+        std::vector<std::string> fields;
         EXPECT_TRUE(resolver.resolve("bar", fields));
         ASSERT_TRUE(fields.size() == 1u);
         EXPECT_EQ("z", fields[0]);
     }
     {
-        std::vector<vespalib::string> fields;
+        std::vector<std::string> fields;
         EXPECT_TRUE(!resolver.resolve("baz", fields));
         ASSERT_TRUE(fields.size() == 1u);
         EXPECT_EQ("baz", fields[0]);
@@ -1281,7 +1281,7 @@ struct AttributeBlueprintParamsFixture {
    }
    void set_query_properties(std::string_view lower_limit, std::string_view upper_limit,
                              std::string_view target_hits_max_adjustment_factor,
-                             const vespalib::string & fuzzy_matching_algorithm) {
+                             const std::string & fuzzy_matching_algorithm) {
        rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
        rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);
        rank_properties.add(TargetHitsMaxAdjustmentFactor::NAME, target_hits_max_adjustment_factor);

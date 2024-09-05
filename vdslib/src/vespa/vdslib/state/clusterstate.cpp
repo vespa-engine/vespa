@@ -9,8 +9,9 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
-#include <sstream>
 #include <cassert>
+#include <sstream>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vdslib.state.cluster");
@@ -71,14 +72,14 @@ ClusterState::ClusterState(std::string_view serialized)
     vespalib::StringTokenizer st(serialized, " \t\f\r\n");
     st.removeEmptyTokens();
     NodeData nodeData;
-    vespalib::string lastAbsolutePath;
+    std::string lastAbsolutePath;
 
     for (const auto & token : st) {
-        vespalib::string::size_type index = token.find(':');
-        if (index == vespalib::string::npos) {
-            throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);
+        std::string::size_type index = token.find(':');
+        if (index == std::string::npos) {
+            throw IllegalArgumentException("Token " + std::string(token) + " does not contain ':': " + std::string(serialized), VESPA_STRLOC);
         }
-        vespalib::string key(token.substr(0, index));
+        std::string key(token.substr(0, index));
         std::string_view value = token.substr(index + 1);
         if (!key.empty() && key[0] == '.') {
             if (lastAbsolutePath.empty()) {
@@ -92,7 +93,7 @@ ClusterState::ClusterState(std::string_view serialized)
         if (key.empty() || ! parse(key, value, nodeData) ) {
             LOG(debug, "Unknown key %s in systemstate. Ignoring it, assuming it's "
                        "a new feature from a newer version than ourself: %s",
-                       vespalib::string(key).c_str(), vespalib::string(serialized).c_str());
+                       std::string(key).c_str(), std::string(serialized).c_str());
         }
     }
     nodeData.addTo(_nodeStates, _nodeCount);
@@ -140,8 +141,8 @@ ClusterState::parse(std::string_view key, std::string_view value, NodeData & nod
 bool
 ClusterState::parseSorD(std::string_view key, std::string_view value, NodeData & nodeData) {
     const NodeType* nodeType = nullptr;
-    vespalib::string::size_type dot = key.find('.');
-    std::string_view type(dot == vespalib::string::npos
+    std::string::size_type dot = key.find('.');
+    std::string_view type(dot == std::string::npos
                              ? key : key.substr(0, dot));
     if (type == "storage") {
         nodeType = &NodeType::STORAGE;
@@ -149,7 +150,7 @@ ClusterState::parseSorD(std::string_view key, std::string_view value, NodeData &
         nodeType = &NodeType::DISTRIBUTOR;
     }
     if (nodeType == nullptr) return false;
-    if (dot == vespalib::string::npos) { // Entry that set node counts
+    if (dot == std::string::npos) { // Entry that set node counts
         uint16_t nodeCount = atoi(value.data());
 
         if (nodeCount > _nodeCount[*nodeType] ) {
@@ -157,8 +158,8 @@ ClusterState::parseSorD(std::string_view key, std::string_view value, NodeData &
         }
         return true;
     }
-    vespalib::string::size_type dot2 = key.find('.', dot + 1);
-    Node node(*nodeType, (dot2 == vespalib::string::npos)
+    std::string::size_type dot2 = key.find('.', dot + 1);
+    Node node(*nodeType, (dot2 == std::string::npos)
                          ? atoi(key.substr(dot + 1).data())
                          : atoi(key.substr(dot + 1, dot2 - dot - 1).data()));
 
@@ -170,7 +171,7 @@ ClusterState::parseSorD(std::string_view key, std::string_view value, NodeData &
     if (nodeData.node != node) {
         nodeData.addTo(_nodeStates, _nodeCount);
     }
-    if (dot2 == vespalib::string::npos) {
+    if (dot2 == std::string::npos) {
         return false; // No default key for nodes.
     } else {
         nodeData.ost << " " << key.substr(dot2 + 1) << ':' << value;

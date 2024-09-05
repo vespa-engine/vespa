@@ -8,8 +8,8 @@ using search::AddressSpaceUsage;
 using vespalib::AddressSpace;
 
 void
-expect_max_usage(size_t used, const vespalib::string& attr_name,
-                 const vespalib::string& comp_name, const vespalib::string& sub_name,
+expect_max_usage(size_t used, const std::string& attr_name,
+                 const std::string& comp_name, const std::string& sub_name,
                  const AttributeUsageStats& stats)
 {
     const auto& max = stats.max_address_space_usage();

@@ -27,7 +27,7 @@ TensorAttributeSaver::TensorAttributeSaver(GenerationHandler::Guard &&guard,
 
 TensorAttributeSaver::~TensorAttributeSaver() = default;
 
-vespalib::string
+std::string
 TensorAttributeSaver::index_file_suffix()
 {
     return "nnidx";

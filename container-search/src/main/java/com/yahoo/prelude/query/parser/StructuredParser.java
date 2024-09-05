@@ -95,7 +95,7 @@ abstract class StructuredParser extends AbstractParser {
                 item = phrase(indexName == null ? null : indexPath + indexName);
             if (item == null && indexName != null && tokens.skip(LCURLYBRACKET))
                 item = sameElement(indexPath + indexName);
-            if (item == null && indexName != null && wordsAhead())
+            if (item == null && explicitIndex && wordsAhead())
                 item = phrase(indexName);
 
             submodes.reset();

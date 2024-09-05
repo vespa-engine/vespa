@@ -36,7 +36,7 @@ TEST(ClusterStateBundleTest, baseline_state_is_returned_if_bucket_space_is_not_f
 }
 
 ClusterStateBundle
-makeBundle(const vespalib::string &baselineState, const std::map<BucketSpace, vespalib::string> &derivedStates,
+makeBundle(const std::string &baselineState, const std::map<BucketSpace, std::string> &derivedStates,
            bool deferred_activation = false)
 {
     ClusterStateBundle::BucketSpaceStateMapping derivedBucketSpaceStates;

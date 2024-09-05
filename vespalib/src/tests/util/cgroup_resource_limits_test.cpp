@@ -4,6 +4,7 @@
 #include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/cgroup_resource_limits.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <string>
 
 namespace vespalib {
 
@@ -21,7 +22,7 @@ CGroupResourceLimitsTest::~CGroupResourceLimitsTest() = default;
 void
 CGroupResourceLimitsTest::check_limits(std::string_view subdir, const std::optional<uint64_t>& memory_limit, const std::optional<uint32_t>& cpu_limit)
 {
-    std::string base = "cgroup_resource_limits/" + subdir;
+    std::string base = "cgroup_resource_limits/" + std::string(subdir);
     auto src_base = TEST_PATH(base);
     CGroupResourceLimits cg_limits(src_base + "/cgroup", src_base + "/self");
     EXPECT_EQ(memory_limit, cg_limits.get_memory_limit());

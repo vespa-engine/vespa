@@ -26,7 +26,7 @@ void my_lambda_peek_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &self = unwrap_param<Self>(param);
     const std::vector<uint32_t> &lookup_table = self.table_token->get();
     auto src_cells = state.peek(0).cells().typify<SRC_CT>();
-    ArrayRef<DST_CT> dst_cells = state.stash.create_uninitialized_array<DST_CT>(lookup_table.size());
+    std::span<DST_CT> dst_cells = state.stash.create_uninitialized_array<DST_CT>(lookup_table.size());
     DST_CT *dst = &dst_cells[0];
     for (uint32_t idx: lookup_table) {
         *dst++ = src_cells[idx];
@@ -61,7 +61,7 @@ DenseLambdaPeekFunction::compile_self(const ValueBuilderFactory &, Stash &stash)
     return InterpretedFunction::Instruction(op, wrap_param<Self>(self));
 }
 
-vespalib::string
+std::string
 DenseLambdaPeekFunction::idx_fun_dump() const {
     return _idx_fun->dump_as_lambda();
 }

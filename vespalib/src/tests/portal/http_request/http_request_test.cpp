@@ -7,7 +7,7 @@
 using namespace vespalib;
 using namespace vespalib::portal;
 
-vespalib::string simple_req("GET /my/path HTTP/1.1\r\n"
+std::string simple_req("GET /my/path HTTP/1.1\r\n"
                             "Host: my.host.com:80\r\n"
                             "CustomHeader: CustomValue\r\n"
                             "\r\n123456789");
@@ -24,14 +24,14 @@ void verify_simple_req(const HttpRequest &req) {
     EXPECT_EQUAL(req.get_header("non-existing-header"), "");
 }
 
-HttpRequest make_request(const vespalib::string &req) {
+HttpRequest make_request(const std::string &req) {
     HttpRequest result;
     ASSERT_EQUAL(result.handle_data(req.data(), req.size()), req.size());
     ASSERT_TRUE(result.valid());
     return result;
 }
 
-void verify_invalid_request(const vespalib::string &req) {
+void verify_invalid_request(const std::string &req) {
     HttpRequest result;
     EXPECT_EQUAL(result.handle_data(req.data(), req.size()), req.size());
     EXPECT_TRUE(!result.need_more_data());
@@ -131,16 +131,16 @@ TEST("require that uri parameters can be parsed") {
 }
 
 TEST("require that byte values in uri segments (path, key, value) are dequoted as expected") {
-    vespalib::string str = "0123456789aBcDeF";
+    std::string str = "0123456789aBcDeF";
     for (size_t a = 0; a < 16; ++a) {
         for (size_t b = 0; b < 16; ++b) {
-            vespalib::string expect = " foo ";
+            std::string expect = " foo ";
             expect.push_back((a * 16) + b);
             expect.push_back((a * 16) + b);
             expect.append(" bar ");
-            vespalib::string input = vespalib::make_string("+foo+%%%c%c%%%c%c+bar+",
+            std::string input = vespalib::make_string("+foo+%%%c%c%%%c%c+bar+",
                     str[a], str[b], str[a], str[b]);
-            vespalib::string uri = vespalib::make_string("%s?%s=%s&extra=yes",
+            std::string uri = vespalib::make_string("%s?%s=%s&extra=yes",
                     input.c_str(), input.c_str(), input.c_str());
             auto req = make_request(vespalib::make_string("GET %s HTTP/1.1\r\n\r\n",
                             uri.c_str()));

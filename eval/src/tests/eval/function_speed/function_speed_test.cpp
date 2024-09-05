@@ -44,7 +44,7 @@ struct Fixture {
     CompiledFunction separate;
     CompiledFunction array;
     CompiledFunction lazy;
-    Fixture(const vespalib::string &expr)
+    Fixture(const std::string &expr)
         : function(Function::parse(expr)),
           interpreted_simple(SimpleValueBuilderFactory::get(), *function,
                              NodeTypes(*function, std::vector<ValueType>(function->num_params(), ValueType::double_type()))),                             

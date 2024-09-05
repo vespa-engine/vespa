@@ -15,7 +15,7 @@ using vespalib::Issue;
 
 namespace search::docsummary {
 
-StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, const IAttributeContext& attr_ctx,
+StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const IAttributeContext& attr_ctx,
                                            bool require_all_struct_fields_as_attribute)
     : _field_name(field_name),
       _map_key_attribute(),
@@ -29,12 +29,12 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
 {
     std::vector<const search::attribute::IAttributeVector *> attrs;
     attr_ctx.getAttributeList(attrs);
-    vespalib::string prefix = field_name + ".";
+    std::string prefix = field_name + ".";
     _map_key_attribute = prefix + "key";
-    vespalib::string map_value_attribute_name = prefix + "value";
-    vespalib::string value_prefix = prefix + "value.";
+    std::string map_value_attribute_name = prefix + "value";
+    std::string value_prefix = prefix + "value.";
     for (const auto attr : attrs) {
-        vespalib::string name = attr->getName();
+        std::string name = attr->getName();
         if (name.substr(0, prefix.size()) != prefix) {
             continue;
         }

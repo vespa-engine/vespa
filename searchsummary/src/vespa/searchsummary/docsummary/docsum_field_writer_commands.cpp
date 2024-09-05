@@ -4,21 +4,21 @@
 
 namespace search::docsummary::command {
 
-const vespalib::string abs_distance("absdist");
-const vespalib::string attribute("attribute");
-const vespalib::string attribute_combiner("attributecombiner");
-const vespalib::string attribute_tokens("attribute-tokens");
-const vespalib::string copy("copy");
-const vespalib::string documentid("documentid");
-const vespalib::string dynamic_teaser("dynamicteaser");
-const vespalib::string empty("empty");
-const vespalib::string geo_position("geopos");
-const vespalib::string matched_attribute_elements_filter("matchedattributeelementsfilter");
-const vespalib::string matched_elements_filter("matchedelementsfilter");
-const vespalib::string positions("positions");
-const vespalib::string rank_features("rankfeatures");
-const vespalib::string summary_features("summaryfeatures");
-const vespalib::string tokens("tokens");
+const std::string abs_distance("absdist");
+const std::string attribute("attribute");
+const std::string attribute_combiner("attributecombiner");
+const std::string attribute_tokens("attribute-tokens");
+const std::string copy("copy");
+const std::string documentid("documentid");
+const std::string dynamic_teaser("dynamicteaser");
+const std::string empty("empty");
+const std::string geo_position("geopos");
+const std::string matched_attribute_elements_filter("matchedattributeelementsfilter");
+const std::string matched_elements_filter("matchedelementsfilter");
+const std::string positions("positions");
+const std::string rank_features("rankfeatures");
+const std::string summary_features("summaryfeatures");
+const std::string tokens("tokens");
 
 }
 

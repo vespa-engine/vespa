@@ -19,21 +19,21 @@ class GidToLidChangeListener : public IGidToLidChangeListener
     vespalib::ISequencedTaskExecutor::ExecutorId           _executorId;
     std::shared_ptr<search::attribute::ReferenceAttribute> _attr;
     vespalib::RetainGuard                                  _retainGuard;
-    vespalib::string                                       _name;
-    vespalib::string                                       _docTypeName;
+    std::string                                       _name;
+    std::string                                       _docTypeName;
 
 public:
     GidToLidChangeListener(vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                            std::shared_ptr<search::attribute::ReferenceAttribute> attr,
                            vespalib::RetainGuard refCount,
-                           const vespalib::string &name,
-                           const vespalib::string &docTypeName);
+                           const std::string &name,
+                           const std::string &docTypeName);
     ~GidToLidChangeListener() override;
     void notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid) override;
     void notifyRemove(IDestructorCallbackSP context, document::GlobalId gid) override;
     void notifyRegistered(const std::vector<document::GlobalId>& removes) override;
-    const vespalib::string &getName() const override;
-    const vespalib::string &getDocTypeName() const override;
+    const std::string &getName() const override;
+    const std::string &getDocTypeName() const override;
     const std::shared_ptr<search::attribute::ReferenceAttribute> &getReferenceAttribute() const { return _attr; }
 };
 

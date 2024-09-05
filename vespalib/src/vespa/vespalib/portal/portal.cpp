@@ -28,28 +28,28 @@ Portal::Token::~Token()
     _portal.cancel_token(*this);
 }
 
-const vespalib::string &
-Portal::GetRequest::get_header(const vespalib::string &name) const
+const std::string &
+Portal::GetRequest::get_header(const std::string &name) const
 {
     assert(active());
     return _conn->get_request().get_header(name);
 }
 
-const vespalib::string &
+const std::string &
 Portal::GetRequest::get_host() const
 {
     assert(active());
     return _conn->get_request().get_host();
 }
 
-const vespalib::string &
+const std::string &
 Portal::GetRequest::get_uri() const
 {
     assert(active());
     return _conn->get_request().get_uri();
 }
 
-const vespalib::string &
+const std::string &
 Portal::GetRequest::get_path() const
 {
     assert(active());
@@ -57,20 +57,20 @@ Portal::GetRequest::get_path() const
 }
 
 bool
-Portal::GetRequest::has_param(const vespalib::string &name) const
+Portal::GetRequest::has_param(const std::string &name) const
 {
     assert(active());
     return _conn->get_request().has_param(name);
 }
 
-const vespalib::string &
-Portal::GetRequest::get_param(const vespalib::string &name) const
+const std::string &
+Portal::GetRequest::get_param(const std::string &name) const
 {
     assert(active());
     return _conn->get_request().get_param(name);
 }
 
-std::map<vespalib::string, vespalib::string>
+std::map<std::string, std::string>
 Portal::GetRequest::export_params() const
 {
     assert(active());
@@ -124,11 +124,11 @@ Portal::cancel_token(Token &token)
 }
 
 portal::HandleGuard
-Portal::lookup_get_handler(const vespalib::string &uri, GetHandler *&handler)
+Portal::lookup_get_handler(const std::string &uri, GetHandler *&handler)
 {
     std::lock_guard guard(_lock);
     for (const auto &entry: _bind_list) {
-        if (starts_with(uri, entry.prefix)) {
+        if (uri.starts_with(entry.prefix)) {
             auto handle_guard = _handle_manager.lock(entry.handle);
             if (handle_guard.valid()) {
                 handler = entry.handler;
@@ -219,7 +219,7 @@ Portal::create(CryptoEngine::SP crypto, int port)
 }
 
 Portal::Token::UP
-Portal::bind(const vespalib::string &path_prefix, GetHandler &handler)
+Portal::bind(const std::string &path_prefix, GetHandler &handler)
 {
     auto token = make_token();    
     std::lock_guard guard(_lock);

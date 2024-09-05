@@ -4,6 +4,7 @@
 
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
 #include <vespa/vespalib/stllike/allocator.h>
+#include <vector>
 
 namespace search::attribute {
 
@@ -25,7 +26,7 @@ class ExtendableStringWeightedSetMultiValueReadView : public attribute::IMultiVa
 public:
     ExtendableStringWeightedSetMultiValueReadView(const std::vector<char>& buffer, const Offsets & offsets, const std::vector<uint32_t>& idx, const std::vector<int32_t>& weights);
     ~ExtendableStringWeightedSetMultiValueReadView() override;
-    vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t doc_id) const override;
+    std::span<const MultiValueType> get_values(uint32_t doc_id) const override;
 };
 
 }

@@ -14,8 +14,8 @@ LOG_SETUP(".diskindex.fieldreader");
 
 namespace {
 
-vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
-vespalib::string interleaved_features("interleaved_features");
+std::string PosOccIdCooked = "PosOcc.3.Cooked";
+std::string interleaved_features("interleaved_features");
 
 uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())); }
 
@@ -120,10 +120,10 @@ FieldReader::setup(const WordNumMapping &wordNumMapping,
 
 
 bool
-FieldReader::open(const vespalib::string &prefix,
+FieldReader::open(const std::string &prefix,
                   const TuneFileSeqRead &tuneFileRead)
 {
-    vespalib::string name = prefix + "posocc.dat.compressed";
+    std::string name = prefix + "posocc.dat.compressed";
 
     if (!fs::exists(fs::path(name))) {
         LOG(error, "Compressed posocc file %s does not exist.", name.c_str());
@@ -133,7 +133,7 @@ FieldReader::open(const vespalib::string &prefix,
     _dictFile = std::make_unique<PageDict4FileSeqRead>();
     PostingListParams featureParams;
     _oldposoccfile = makePosOccRead(name, _dictFile.get(), featureParams, tuneFileRead);
-    vespalib::string cname = prefix + "dictionary";
+    std::string cname = prefix + "dictionary";
 
     if (!_dictFile->open(cname, tuneFileRead)) {
         LOG(error, "Could not open posocc count file %s for read", cname.c_str());
@@ -226,7 +226,7 @@ FieldReaderEmpty::FieldReaderEmpty(const IndexIterator &index)
 
 
 bool
-FieldReaderEmpty::open(const vespalib::string &prefix,
+FieldReaderEmpty::open(const std::string &prefix,
                        const TuneFileSeqRead &tuneFileRead)
 {
     (void) prefix;
@@ -268,7 +268,7 @@ FieldReaderStripInfo::allowRawFeatures()
 }
 
 bool
-FieldReaderStripInfo::open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead)
+FieldReaderStripInfo::open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead)
 {
     if (!FieldReader::open(prefix, tuneFileRead)) {
         return false;
@@ -367,8 +367,8 @@ void
 FieldReaderStripInfo::getFeatureParams(PostingListParams &params)
 {
     FieldReader::getFeatureParams(params);
-    vespalib::string paramsPrefix = PosOccFieldParams::getParamsPrefix(0);
-    vespalib::string collStr = paramsPrefix + ".collectionType";
+    std::string paramsPrefix = PosOccFieldParams::getParamsPrefix(0);
+    std::string collStr = paramsPrefix + ".collectionType";
     if (_hasElements) {
         if (_hasElementWeights) {
             params.setStr(collStr, "weightedSet");

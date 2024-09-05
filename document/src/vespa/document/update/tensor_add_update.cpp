@@ -90,7 +90,7 @@ TensorAddUpdate::applyTo(FieldValue& value) const
             tensorFieldValue = std::move(newTensor);
         }
     } else {
-        vespalib::string err = make_string("Unable to perform a tensor add update on a '%s' field value",
+        std::string err = make_string("Unable to perform a tensor add update on a '%s' field value",
                                            value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
@@ -120,7 +120,7 @@ TensorAddUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type,
     if (tensor->isA(FieldValue::Type::TENSOR)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
-        vespalib::string err = make_string("Expected tensor field value, got a '%s' field value",
+        std::string err = make_string("Expected tensor field value, got a '%s' field value",
                                            tensor->className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }

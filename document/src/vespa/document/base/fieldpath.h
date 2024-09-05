@@ -57,7 +57,7 @@ public:
     FieldPathEntry(const DataType & dataType, std::string_view variableName);
 
     Type getType() const { return _type; }
-    const vespalib::string & getName() const { return _name; }
+    const std::string & getName() const { return _name; }
 
     const DataType& getDataType() const;
 
@@ -68,7 +68,7 @@ public:
 
     const FieldValue & getLookupKey() const { return *_lookupKey; }
 
-    const vespalib::string& getVariableName() const { return _variableName; }
+    const std::string& getVariableName() const { return _variableName; }
 
     FieldValue * getFieldValueToSetPtr() const { return _fillInVal.get(); }
     FieldValue & getFieldValueToSet() const { return *_fillInVal; }
@@ -78,16 +78,16 @@ public:
      * @param key is the incoming value, and contains what is left when done.
      * *return The unescaped value
      */
-    static vespalib::string parseKey(std::string_view & key);
+    static std::string parseKey(std::string_view & key);
 private:
     void setFillValue(const DataType & dataType);
     Type                                _type;
-    vespalib::string                    _name;
+    std::string                    _name;
     Field                               _field;
     const DataType                    * _dataType;
     uint32_t                            _lookupIndex;
     std::unique_ptr<FieldValue>         _lookupKey;
-    vespalib::string                    _variableName;
+    std::string                    _variableName;
     mutable std::unique_ptr<FieldValue> _fillInVal;
 };
 

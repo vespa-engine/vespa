@@ -10,7 +10,7 @@ using namespace proton;
 namespace {
 
 struct DummyMetricSet : public metrics::MetricSet {
-    DummyMetricSet(const vespalib::string &name) : metrics::MetricSet(name, {}, "", nullptr) {}
+    DummyMetricSet(const std::string &name) : metrics::MetricSet(name, {}, "", nullptr) {}
 };
 
 struct AttributeMetricsFixture {
@@ -22,10 +22,10 @@ struct AttributeMetricsFixture {
           parent("parent"),
           metrics(&parent)
     {}
-    void addAttribute(const vespalib::string &attrName) {
+    void addAttribute(const std::string &attrName) {
         engine.addAttribute(metrics, attrName);
     }
-    void removeAttribute(const vespalib::string &attrName) {
+    void removeAttribute(const std::string &attrName) {
         engine.removeAttribute(metrics, attrName);
     }
     void cleanAttributes() {
@@ -34,10 +34,10 @@ struct AttributeMetricsFixture {
     void assertRegisteredMetrics(size_t expNumMetrics) const {
         EXPECT_EQUAL(expNumMetrics, parent.getRegisteredMetrics().size());
     }
-    void assertMetricsExists(const vespalib::string &attrName) {
+    void assertMetricsExists(const std::string &attrName) {
         EXPECT_TRUE(metrics.get(attrName) != nullptr);
     }
-    void assertMetricsNotExists(const vespalib::string &attrName) {
+    void assertMetricsNotExists(const std::string &attrName) {
         EXPECT_TRUE(metrics.get(attrName) == nullptr);
     }
 };

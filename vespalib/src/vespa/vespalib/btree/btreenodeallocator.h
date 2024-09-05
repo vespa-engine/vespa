@@ -4,10 +4,10 @@
 
 #include "btreenode.h"
 #include "btreenodestore.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <string>
 #include <vector>
 
 namespace vespalib::btree {
@@ -158,8 +158,8 @@ public:
 
     vespalib::MemoryUsage getMemoryUsage() const noexcept;
 
-    vespalib::string toString(BTreeNode::Ref ref) const;
-    vespalib::string toString(const BTreeNode * node) const;
+    std::string toString(BTreeNode::Ref ref) const;
+    std::string toString(const BTreeNode * node) const;
 
     bool getCompacting(EntryRef ref) noexcept { return _nodeStore.getCompacting(ref); }
 

@@ -155,7 +155,7 @@ NumericFieldValue<Number>::getAsDouble() const
 }
 
 template<typename Number>
-vespalib::string
+std::string
 NumericFieldValue<Number>::getAsString() const
 {
     vespalib::asciistream ost;

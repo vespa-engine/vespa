@@ -9,7 +9,7 @@
 namespace storage::lib {
 
 ClusterStateBundle::FeedBlock::FeedBlock(bool block_feed_in_cluster_in,
-                                         const vespalib::string& description_in)
+                                         const std::string& description_in)
     : _block_feed_in_cluster(block_feed_in_cluster_in),
       _description(description_in)
 {

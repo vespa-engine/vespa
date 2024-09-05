@@ -12,10 +12,10 @@ import java.util.List;
  *
  * @author Simon Thoresen Hult
  */
-public class RoutingNodeIterator {
+public final class RoutingNodeIterator {
 
     // The underlying iterator.
-    private Iterator<RoutingNode> it;
+    private final Iterator<RoutingNode> it;
 
     // The current child entry.
     private RoutingNode entry;

@@ -73,7 +73,7 @@ public:
     Iterator begin() const { return _tree.begin(_alloc); }
     FrozenView getFrozenView() const { return _tree.getFrozenView(_alloc); }
     size_t size() const { return _tree.size(_alloc); }
-    vespalib::string toString() const { return _tree.toString(_alloc); }
+    std::string toString() const { return _tree.toString(_alloc); }
     bool isValid(CompareT comp = CompareT()) const { return _tree.isValid(_alloc, comp); }
     bool isValidFrozen(CompareT comp = CompareT()) const { return _tree.isValidFrozen(_alloc, comp); }
     size_t bitSize() const { return _tree.bitSize(_alloc); }

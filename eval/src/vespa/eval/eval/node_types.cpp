@@ -17,12 +17,12 @@ class State
 private:
     const std::vector<ValueType>      &_params;
     std::map<const Node *, ValueType> &_type_map;
-    std::vector<vespalib::string>     &_errors;
+    std::vector<std::string>     &_errors;
 
 public:
     State(const std::vector<ValueType> &params,
           std::map<const Node *, ValueType> &type_map,
-          std::vector<vespalib::string> &errors)
+          std::vector<std::string> &errors)
         : _params(params), _type_map(type_map), _errors(errors) {}
 
     const ValueType &param_type(size_t idx) {
@@ -39,7 +39,7 @@ public:
         assert(pos != _type_map.end());
         return pos->second;
     }
-    void add_error(const vespalib::string &msg) {
+    void add_error(const std::string &msg) {
         _errors.push_back(msg);
     }
 };
@@ -48,14 +48,14 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     State state;
     TypeResolver(const std::vector<ValueType> &params_in,
                  std::map<const Node *, ValueType> &type_map_out,
-                 std::vector<vespalib::string> &errors_out);
+                 std::vector<std::string> &errors_out);
     ~TypeResolver();
 
     const ValueType &param_type(size_t idx) {
         return state.param_type(idx);
     }
 
-    void fail(const Node &node, const vespalib::string &msg, bool child_types = true) {
+    void fail(const Node &node, const std::string &msg, bool child_types = true) {
         auto str = fmt("%s: %s", vespalib::getClassName(node).c_str(), msg.c_str());
         if (child_types) {
             str += ", child types: [";
@@ -232,7 +232,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorPeek &node) override {
         const ValueType &param_type = type(node.param());
-        std::vector<vespalib::string> dimensions;
+        std::vector<std::string> dimensions;
         for (const auto &dim: node.dim_list()) {
             dimensions.push_back(dim.first);
             if (dim.second.is_expr()) {
@@ -319,7 +319,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
 
 TypeResolver::TypeResolver(const std::vector<ValueType> &params_in,
                            std::map<const Node *, ValueType> &type_map_out,
-                           std::vector<vespalib::string> &errors_out)
+                           std::vector<std::string> &errors_out)
     : state(params_in, type_map_out, errors_out)
 {
 }

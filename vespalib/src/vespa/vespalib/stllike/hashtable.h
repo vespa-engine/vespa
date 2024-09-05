@@ -76,9 +76,9 @@ public:
     class and_modulator
     {
     public:
-        explicit and_modulator(next_t sizeOfHashTable) noexcept : _mask(sizeOfHashTable-1) { }
-        next_t modulo(next_t hash) const noexcept { return hash & _mask; }
-        next_t getTableSize() const noexcept { return _mask + 1; }
+        constexpr explicit and_modulator(next_t sizeOfHashTable) noexcept : _mask(sizeOfHashTable-1) { }
+        constexpr next_t modulo(next_t hash) const noexcept { return hash & _mask; }
+        constexpr next_t getTableSize() const noexcept { return _mask + 1; }
         static next_t selectHashTableSize(size_t sz) noexcept { return hashtable_base::getModuloSimple(sz); }
     private:
         next_t _mask;
@@ -95,8 +95,6 @@ protected:
             (void) to;
         }
     };
-private:
-    static size_t getModulo(size_t newSize, const unsigned long * list, size_t sz) noexcept;
 };
 
 template<typename V>

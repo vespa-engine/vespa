@@ -4,7 +4,7 @@
 
 namespace proton {
 
-StatusReport::Params::Params(const vespalib::string &component)
+StatusReport::Params::Params(const std::string &component)
     : _component(component),
       _state(DOWN),
       _internalState(),

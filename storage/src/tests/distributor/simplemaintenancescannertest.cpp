@@ -98,7 +98,7 @@ namespace {
 
 std::string sortLines(const std::string& source) {
     vespalib::StringTokenizer st(source,"\n","");
-    std::vector<vespalib::string> lines;
+    std::vector<std::string> lines;
     lines.reserve(st.size());
     for (const auto & token : st) {
         lines.emplace_back(token);

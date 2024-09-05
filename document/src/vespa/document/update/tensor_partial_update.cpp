@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <cassert>
 #include <set>
@@ -46,7 +47,7 @@ struct DenseCoords {
     ~DenseCoords();
     void clear() { offset = 0; current = 0; }
     void convert_label(string_id label_id) {
-        vespalib::string label = SharedStringRepo::Handle::string_from_id(label_id);
+        std::string label = SharedStringRepo::Handle::string_from_id(label_id);
         uint32_t coord = 0;
         for (char c : label) {
             if (c < '0' || c > '9') { // bad char
@@ -263,7 +264,7 @@ find_sub_spaces_not_in_input(const Value& input, const Value& modifier, double d
         lookup_view->lookup(handler.for_output.lookup_refs);
         size_t output_subspace_index;
         if (!lookup_view->next_result({}, output_subspace_index)) {
-            ConstArrayRef<string_id> addr(handler.for_output.addr);
+            std::span<const string_id> addr(handler.for_output.addr);
             auto [tag, inserted] = sub_spaces_result.lookup_or_add_entry(addr);
             if (inserted) {
                 auto values = sub_spaces_result.get_values(tag);
@@ -299,7 +300,7 @@ PerformInsertSubspaces::invoke(const Value& input,
         return true;
     };
     copy_tensor_with_filter<ICT>(input, dsss, output_addrs, *builder, no_filter);
-    sub_spaces.each_entry([&](vespalib::ConstArrayRef<string_id> keys, vespalib::ConstArrayRef<double> values) {
+    sub_spaces.each_entry([&](std::span<const string_id> keys, std::span<const double> values) {
         auto dst = builder->add_subspace(keys).begin();
         assert(dsss == values.size());
         for (size_t i = 0; i < dsss; ++i) {

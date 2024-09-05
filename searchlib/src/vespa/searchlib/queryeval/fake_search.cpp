@@ -9,8 +9,8 @@
 
 namespace search::queryeval {
 
-FakeSearch::FakeSearch(const vespalib::string &tag, const vespalib::string &field,
-                       const vespalib::string &term, const FakeResult &res,
+FakeSearch::FakeSearch(const std::string &tag, const std::string &field,
+                       const std::string &term, const FakeResult &res,
                        fef::TermFieldMatchDataArray tfmda)
     : _tag(tag), _field(field), _term(term),
       _result(res), _offset(0), _tfmda(std::move(tfmda)),

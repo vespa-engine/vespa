@@ -5,7 +5,7 @@
 
 namespace search::diskindex {
 
-FusionOutputIndex::FusionOutputIndex(const index::Schema& schema, const vespalib::string& path, const std::vector<FusionInputIndex>& old_indexes, uint32_t doc_id_limit, const TuneFileIndexing& tune_file_indexing, const common::FileHeaderContext& file_header_context)
+FusionOutputIndex::FusionOutputIndex(const index::Schema& schema, const std::string& path, const std::vector<FusionInputIndex>& old_indexes, uint32_t doc_id_limit, const TuneFileIndexing& tune_file_indexing, const common::FileHeaderContext& file_header_context)
     : _schema(schema),
       _path(path),
       _old_indexes(std::move(old_indexes)),

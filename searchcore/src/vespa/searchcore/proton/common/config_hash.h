@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <string>
 #include <vector>
 
 namespace proton {
@@ -14,11 +14,11 @@ namespace proton {
  */
 template <class Elem>
 class ConfigHash {
-    vespalib::hash_map<vespalib::string, const Elem *> _hash;
+    vespalib::hash_map<std::string, const Elem *> _hash;
 public:
     ConfigHash(const std::vector<Elem> &config);
     ~ConfigHash();
-    const Elem *lookup(const vespalib::string &name) const;
+    const Elem *lookup(const std::string &name) const;
 };
 
 } // namespace proton

@@ -24,7 +24,7 @@ using document::select::Result;
 namespace documentapi {
 
 DocumentRouteSelectorPolicy::DocumentRouteSelectorPolicy(
-        const document::DocumentTypeRepo &repo, const config::ConfigUri & configUri) :
+        const document::IDocumentTypeRepo &repo, const config::ConfigUri & configUri) :
     mbus::IRoutingPolicy(),
     config::IFetcherCallback<messagebus::protocol::DocumentrouteselectorpolicyConfig>(),
     _repo(repo),
@@ -44,8 +44,7 @@ DocumentRouteSelectorPolicy::configure(std::unique_ptr<messagebus::protocol::Doc
 {
     string error = "";
     ConfigMap config;
-    for (uint32_t i = 0; i < cfg->route.size(); i++) {
-        const messagebus::protocol::DocumentrouteselectorpolicyConfig::Route &route = cfg->route[i];
+    for (const auto & route : cfg->route) {
         if (route.selector.empty()) {
             continue;
         }
@@ -94,10 +93,10 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
         }
         for (uint32_t i = 0; i < context.getNumRecipients(); ++i) {
             const mbus::Route &recipient = context.getRecipient(i);
-            vespalib::string routeName = recipient.toString();
+            std::string routeName = recipient.toString();
             if (select(context, routeName)) {
                 const mbus::Route *route = context.getMessageBus().getRoutingTable(DocumentProtocol::NAME)->getRoute(routeName);
-                context.addChild(route != NULL ? *route : recipient);
+                context.addChild(route != nullptr ? *route : recipient);
             }
         }
     }
@@ -106,12 +105,12 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
     // Notify that no children were selected, this is to differentiate this from the NO_RECIPIENTS_FOR_ROUTE error
     // that message bus will generate if there are no recipients and no reply.
     if (!context.hasChildren()) {
-        context.setReply(mbus::Reply::UP(new DocumentIgnoredReply()));
+        context.setReply(std::make_unique<DocumentIgnoredReply>());
     }
 }
 
 bool
-DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespalib::string &routeName)
+DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const std::string &routeName)
 {
     if (_config.empty()) {
         LOG(debug, "No config at all, select '%s'.", routeName.c_str());
@@ -122,7 +121,7 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespali
         LOG(debug, "No config entry for route '%s', select it.", routeName.c_str());
         return true;
     }
-    LOG_ASSERT(it->second.get() != NULL);
+    LOG_ASSERT(it->second);
 
     // Select based on message content.
     const mbus::Message &msg = context.getMessage();

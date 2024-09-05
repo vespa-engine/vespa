@@ -7,7 +7,7 @@
 namespace search::expression {
 
 using vespalib::Serializer;
-using vespalib::string;
+using std::string;
 
 StrCatSerializer &  StrCatSerializer::put(const vespalib::Identifiable & value)
 {

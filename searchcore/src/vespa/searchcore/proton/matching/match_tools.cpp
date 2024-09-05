@@ -53,7 +53,7 @@ bool contains_all(const HandleRecorder::HandleMap &old_map,
 }
 
 DegradationParams
-extractDegradationParams(const RankSetup &rankSetup, const vespalib::string & attribute, const Properties &rankProperties)
+extractDegradationParams(const RankSetup &rankSetup, const std::string & attribute, const Properties &rankProperties)
 {
     return { attribute,
              DegradationMaxHits::lookup(rankProperties, rankSetup.getDegradationMaxHits()),
@@ -169,7 +169,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   IAttributeContext          & attributeContext,
                   search::engine::Trace      & root_trace,
                   std::string_view          queryStack,
-                  const vespalib::string     & location,
+                  const std::string     & location,
                   const ViewResolver         & viewResolver,
                   const IDocumentMetaStore   & metaStore,
                   const IIndexEnvironment    & indexEnv,
@@ -226,7 +226,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _first_phase_rank_lookup = FirstPhaseRankLookup::get_mutable_shared_state(_queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
-        vespalib::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());
+        std::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, attribute, rankProperties);
 
         if (degradationParams.enabled()) {

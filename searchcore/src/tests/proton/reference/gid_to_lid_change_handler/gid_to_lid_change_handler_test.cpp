@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
@@ -10,6 +9,8 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <map>
+#include <string>
+
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_handler_test");
 
@@ -26,7 +27,7 @@ GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
-vespalib::string doc1("id:test:music::1");
+std::string doc1("id:test:music::1");
 
 }
 
@@ -96,12 +97,12 @@ public:
 class MyListener : public IGidToLidChangeListener
 {
     ListenerStats         &_stats;
-    vespalib::string  _name;
-    vespalib::string  _docTypeName;
+    std::string  _name;
+    std::string  _docTypeName;
 public:
     MyListener(ListenerStats &stats,
-               const vespalib::string &name,
-               const vespalib::string &docTypeName)
+               const std::string &name,
+               const std::string &docTypeName)
         : IGidToLidChangeListener(),
           _stats(stats),
           _name(name),
@@ -113,8 +114,8 @@ public:
     void notifyPutDone(IDestructorCallbackSP, GlobalId, uint32_t) override { _stats.notifyPutDone(); }
     void notifyRemove(IDestructorCallbackSP, GlobalId) override { _stats.notifyRemove(); }
     void notifyRegistered(const std::vector<GlobalId>& removes) override { _stats.markRegisteredListener(removes); }
-    const vespalib::string &getName() const override { return _name; }
-    const vespalib::string &getDocTypeName() const override { return _docTypeName; }
+    const std::string &getName() const override { return _name; }
+    const std::string &getDocTypeName() const override { return _docTypeName; }
 };
 
 struct Fixture
@@ -166,8 +167,8 @@ struct Fixture
         gate.await();
     }
 
-    void removeListeners(const vespalib::string &docTypeName,
-                         const std::set<vespalib::string> &keepNames) {
+    void removeListeners(const std::string &docTypeName,
+                         const std::set<std::string> &keepNames) {
         _handler->removeListeners(docTypeName, keepNames);
     }
 

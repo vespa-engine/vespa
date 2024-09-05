@@ -29,7 +29,7 @@ struct LabelStream {
 struct LabelBlock {
     static constexpr size_t npos = -1;
     size_t subspace_index;
-    ConstArrayRef<string_id> address;
+    std::span<const string_id> address;
     operator bool() const { return subspace_index != npos; }
 };
 

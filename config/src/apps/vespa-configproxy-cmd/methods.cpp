@@ -13,13 +13,12 @@ const Method methods[] = {
     { "invalidatecache", "invalidateCache", 0 },
     { "cachefull", "listCachedConfigFull", 0 },
     { "sources", "listSourceConnections", 0 },
-    { "statistics", "printStatistics", 0 },
     { "setmode", "setMode", 1 }, // { default | memorycache }
     { "updatesources", "updateSources", 1 },
     { 0, 0, 0}
 };
 
-const Method find(const vespalib::string &name) {
+const Method find(const std::string &name) {
     for (size_t i = 0; methods[i].shortName != 0; ++i) {
         if (name == methods[i].shortName) {
             return methods[i];

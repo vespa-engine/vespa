@@ -3,11 +3,11 @@
 #include "annotationtype.h"
 #include "numericdatatype.h"
 #include "primitivedatatype.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <string>
 
 using std::vector;
-using vespalib::string;
+using std::string;
 
 namespace document {
 namespace {
@@ -35,7 +35,7 @@ vector<const AnnotationType *> AnnotationType::getDefaultAnnotationTypes() {
     return types;
 }
 
-vespalib::string
+std::string
 AnnotationType::toString() const {
     vespalib::asciistream os;
     os << *this;

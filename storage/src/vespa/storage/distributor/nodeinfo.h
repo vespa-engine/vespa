@@ -10,7 +10,7 @@
 #include <vector>
 #include <vespa/vespalib/util/time.h>
 
-namespace storage::framework{
+namespace storage::framework {
     struct Clock;
 }
 namespace storage::distributor {

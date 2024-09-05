@@ -4,7 +4,6 @@
 #include "simplemap.h"
 #include "query.h"
 #include "rewriter.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <string>
 #include <vector>
 

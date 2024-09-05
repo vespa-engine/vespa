@@ -4,24 +4,25 @@ package com.yahoo.vespa.documentmodel;
 import java.util.TreeMap;
 
 /**
- * @author    baldersheim
+ * @author baldersheim
  */
 public class SearchManager {
 
-    /// This is the list of all known search definitions
-    private TreeMap<String, SearchDef> defs = new TreeMap<>();
+    /** The list of all known schemas. */
+    private final TreeMap<String, SchemaDef> schema = new TreeMap<>();
 
     /**
-     * This will add a searchdefinition or throw an IllegalArgumentException if the name is already used
-     * @param def The searchdef to add
+     * Adds a schema or throw an IllegalArgumentException if the name is already used
+     *
+     * @param schema the schema to add
      * @return itself for chaining purposes.
      */
-    public SearchManager add(SearchDef def) {
-        if (defs.containsKey(def.getName())) {
-            throw new IllegalArgumentException("There already exist a searchdefinition with this content:\n" +
-                    defs.get(def.getName()).toString() + "\n No room for : " + def.toString());
+    public SearchManager add(SchemaDef schema) {
+        if (this.schema.containsKey(schema.getName())) {
+            throw new IllegalArgumentException("There already exist a schema with this content:\n" +
+                                               this.schema.get(schema.getName()).toString() + "\n No room for : " + schema);
         }
-        defs.put(def.getName(), def);
+        this.schema.put(schema.getName(), schema);
         return this;
     }
 

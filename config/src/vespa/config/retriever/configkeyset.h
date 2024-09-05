@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/common/configkey.h>
 #include <set>
+#include <string>
 
 namespace config {
 
@@ -21,7 +21,7 @@ public:
      * @return *this for chaining.
      */
     template <typename... ConfigTypes>
-    ConfigKeySet & add(const vespalib::string & configId);
+    ConfigKeySet & add(const std::string & configId);
 
     /**
      * Add add another key set to this set.
@@ -32,7 +32,7 @@ public:
     ConfigKeySet & add(const ConfigKeySet & configKeySet);
 private:
     template<typename ConfigType, typename... ConfigTypes>
-    void addImpl(const vespalib::string & configId);
+    void addImpl(const std::string & configId);
 };
 
 } // namespace config

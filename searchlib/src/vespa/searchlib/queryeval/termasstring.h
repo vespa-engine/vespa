@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::query { class Node; }
 
 namespace search::queryeval {
 
-vespalib::string termAsString(const search::query::Node &term_node);
-std::string_view termAsString(const search::query::Node &term_node, vespalib::string & scratchPad);
+std::string termAsString(const search::query::Node &term_node);
+std::string_view termAsString(const search::query::Node &term_node, std::string & scratchPad);
 
 }

@@ -183,12 +183,17 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>org.junit.jupiter</groupId>
+          <artifactId>junit-jupiter-params</artifactId>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
   <build>
     <plugins>
       <plugin>
-        <groupId>com.helger.maven</groupId>
-        <artifactId>ph-javacc-maven-plugin</artifactId>
+        <groupId>io.github.tulipcc</groupId>
+        <artifactId>tulipcc-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>com.yahoo.vespa</groupId>

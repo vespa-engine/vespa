@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace search::queryeval {
 
@@ -51,7 +52,7 @@ public:
         }
     }
 
-    vespalib::string toString() const;
+    std::string toString() const;
 };
 
 struct NoUnpack {

@@ -5,7 +5,7 @@
 
 namespace search::attribute {
 
-RawAttribute::RawAttribute(const vespalib::string& name, const Config& config)
+RawAttribute::RawAttribute(const std::string& name, const Config& config)
     : NotImplementedAttribute(name, config)
 {
 }
@@ -31,7 +31,7 @@ unsigned char remap(unsigned char val)
  * is done by remap function above.
  */
 template <bool desc>
-long serialize_for_sort(vespalib::ConstArrayRef<char> raw, void* serTo, long available)
+long serialize_for_sort(std::span<const char> raw, void* serTo, long available)
 {
     auto src = reinterpret_cast<const unsigned char *>(raw.data());
     auto src_end = src + raw.size();

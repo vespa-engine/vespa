@@ -17,8 +17,8 @@ using namespace search::fef;
 
 using vespalib::eval::TensorSpec;
 
-const vespalib::string labelFeatureName("distance(label,nns)");
-const vespalib::string fieldFeatureName("distance(bar)");
+const std::string labelFeatureName("distance(label,nns)");
+const std::string fieldFeatureName("distance(bar)");
 
 using RankFixture = DistanceClosenessFixture;
 
@@ -44,7 +44,7 @@ TEST(NnsDistanceTest, require_that_setup_can_be_done_on_random_label)
     IndexEnvironmentFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(label,random_label)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"label", "random_label"}));
+    EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<std::string>{"label", "random_label"}));
 }
 
 TEST(NnsDistanceTest, require_that_setup_with_unknown_field_fails)
@@ -53,7 +53,7 @@ TEST(NnsDistanceTest, require_that_setup_with_unknown_field_fails)
     IndexEnvironmentFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(field,random_fieldname)", f1.getBaseName().c_str()));
-    EXPECT_FALSE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"field", "random_fieldname"}));
+    EXPECT_FALSE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<std::string>{"field", "random_fieldname"}));
 }
 
 TEST(NnsDistanceTest, require_that_no_label_gives_max_double_distance)

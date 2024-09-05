@@ -41,17 +41,17 @@ protected:
         uint32_t docId;
         ANAM(int32_t aw, uint32_t tw = 100, uint32_t fw = 100, uint32_t id = 1) :
             attributeWeight(aw), termWeight(tw), fieldWeight(fw), docId(id) {}
-        vespalib::string toString() const {
+        std::string toString() const {
             return vespalib::make_string("aw(%d), tw(%u), fw(%u), id(%u)",
                                          attributeWeight, termWeight.percent(), fieldWeight, docId);
         }
     };
 
-    bool assertNativeFieldMatch(feature_t score, const vespalib::string & query, const vespalib::string & field,
+    bool assertNativeFieldMatch(feature_t score, const std::string & query, const std::string & field,
                                 const Properties & props = Properties(), uint32_t docId = 1);
     bool assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & t2,
                                     const Properties & props = Properties());
-    bool assertNativeProximity(feature_t score, const vespalib::string & query, const vespalib::string & field,
+    bool assertNativeProximity(feature_t score, const std::string & query, const std::string & field,
                                const Properties & props = Properties(), uint32_t docId = 1);
     bool assertNativeRank(feature_t score, feature_t fieldMatchWeight, feature_t attributeMatchWeight, feature_t proximityWeight);
 };
@@ -264,15 +264,15 @@ TEST_F(NativeRankTest, test_native_field_match)
 
 bool
 NativeRankTest::assertNativeFieldMatch(feature_t score,
-                                       const vespalib::string & query,
-                                       const vespalib::string & field,
+                                       const std::string & query,
+                                       const std::string & field,
                                        const Properties & props,
                                        uint32_t docId)
 {
     LOG(info, "assertNativeFieldMatch(%f, '%s', '%s')", score, query.c_str(), field.c_str());
 
     // Setup feature test.
-    vespalib::string feature = "nativeFieldMatch";
+    std::string feature = "nativeFieldMatch";
     FtFeatureTest ft(_factory, feature);
 
     StringVectorMap index;
@@ -393,7 +393,7 @@ bool
 NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & t2, const Properties & props)
 {
     LOG(info, "assertNativeAttributeMatch(%f, '%s', '%s')", score, t1.toString().c_str(), t2.toString().c_str());
-    vespalib::string feature = "nativeAttributeMatch";
+    std::string feature = "nativeAttributeMatch";
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "foo");
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "bar");
@@ -668,15 +668,15 @@ TEST_F(NativeRankTest, test_native_proximity)
 
 bool
 NativeRankTest::assertNativeProximity(feature_t score,
-                                      const vespalib::string & query,
-                                      const vespalib::string & field,
+                                      const std::string & query,
+                                      const std::string & field,
                                       const Properties & props,
                                       uint32_t docId)
 {
     LOG(info, "assertNativeProximity(%f, '%s', '%s')", score, query.c_str(), field.c_str());
 
     // Setup feature test.
-    vespalib::string feature = "nativeProximity";
+    std::string feature = "nativeProximity";
     FtFeatureTest ft(_factory, feature);
 
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -793,7 +793,7 @@ NativeRankTest::assertNativeRank(feature_t score,
     LOG(info, "assertNativeRank(%f, %f, %f, %f)", score, fieldMatchWeight, attributeMatchWeight, proximityWeight);
 
     // Setup feature test.
-    vespalib::string feature = "nativeRank";
+    std::string feature = "nativeRank";
     FtFeatureTest ft(_factory, feature);
 
     ft.getIndexEnv().getProperties().add("nativeRank.fieldMatchWeight",

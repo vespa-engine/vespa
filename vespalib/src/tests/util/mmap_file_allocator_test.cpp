@@ -10,9 +10,9 @@ using vespalib::alloc::PtrAndSize;
 
 namespace {
 
-vespalib::string basedir("mmap-file-allocator-dir");
-vespalib::string hello("hello");
-vespalib::string world("world");
+std::string basedir("mmap-file-allocator-dir");
+std::string hello("hello");
+std::string world("world");
 
 struct MyAlloc
 {

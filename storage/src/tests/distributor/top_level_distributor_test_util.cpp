@@ -102,7 +102,7 @@ TopLevelDistributorTestUtil::stripe_index_of_bucket(const document::Bucket& buck
 }
 
 void
-TopLevelDistributorTestUtil::receive_set_system_state_command(const vespalib::string& state_str)
+TopLevelDistributorTestUtil::receive_set_system_state_command(const std::string& state_str)
 {
     auto state_cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state_str));
     handle_top_level_message(state_cmd); // TODO move semantics

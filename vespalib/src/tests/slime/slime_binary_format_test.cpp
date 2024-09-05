@@ -632,7 +632,7 @@ TEST("testOptionalDecodeOrder") {
     EXPECT_TRUE(!c[5].valid()); // not ARRAY
 }
 
-Slime from_json(const vespalib::string &json) {
+Slime from_json(const std::string &json) {
     Slime slime;
     EXPECT_TRUE(vespalib::slime::JsonFormat::decode(json, slime) > 0);
     return slime;

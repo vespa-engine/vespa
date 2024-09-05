@@ -24,12 +24,12 @@ BitVectorDictionary::BitVectorDictionary()
 BitVectorDictionary::~BitVectorDictionary() = default;
 
 bool
-BitVectorDictionary::open(const vespalib::string &pathPrefix,
+BitVectorDictionary::open(const std::string &pathPrefix,
                           const TuneFileRandRead &tuneFileRead,
                           BitVectorKeyScope scope)
 {
     {
-        vespalib::string booloccIdxName = pathPrefix + "boolocc" + getBitVectorKeyScopeSuffix(scope);
+        std::string booloccIdxName = pathPrefix + "boolocc" + getBitVectorKeyScopeSuffix(scope);
         FastOS_File idxFile;
         idxFile.OpenReadOnly(booloccIdxName.c_str());
         if (!idxFile.IsOpened()) {
@@ -63,7 +63,7 @@ BitVectorDictionary::open(const vespalib::string &pathPrefix,
         }
     }
 
-    vespalib::string booloccDatName = pathPrefix + "boolocc.bdat";
+    std::string booloccDatName = pathPrefix + "boolocc.bdat";
     _datFile = std::make_unique<FastOS_File>();
     _datFile->setFAdviseOptions(tuneFileRead.getAdvise());
 

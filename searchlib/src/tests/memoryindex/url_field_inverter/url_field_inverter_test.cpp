@@ -34,7 +34,7 @@ using namespace index;
 namespace memoryindex {
 
 namespace {
-const vespalib::string url = "url";
+const std::string url = "url";
 
 Document::UP
 makeDoc10Single(DocBuilder &b)

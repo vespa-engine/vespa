@@ -37,8 +37,8 @@ namespace proton {
 
 namespace {
 
-vespalib::string
-getTargetDocTypeName(const vespalib::string &attrName,
+std::string
+getTargetDocTypeName(const std::string &attrName,
                      const DocumentType &thisDocType)
 {
     const DataType &attrType = thisDocType.getField(attrName).getDataType();
@@ -48,7 +48,7 @@ getTargetDocTypeName(const vespalib::string &attrName,
 }
 
 ReferenceAttribute::SP
-getReferenceAttribute(const vespalib::string &name, const IAttributeManager &attrMgr)
+getReferenceAttribute(const std::string &name, const IAttributeManager &attrMgr)
 {
     AttributeGuard::UP guard = attrMgr.getAttribute(name);
     assert(guard.get());
@@ -77,7 +77,7 @@ getReferenceAttributes(const IAttributeManager &attrMgr)
 }
 
 GidToLidChangeRegistrator &
-DocumentDBReferenceResolver::getRegistrator(const vespalib::string &docTypeName)
+DocumentDBReferenceResolver::getRegistrator(const std::string &docTypeName)
 {
     auto &result = _registrators[docTypeName];
     if (!result) {
@@ -87,7 +87,7 @@ DocumentDBReferenceResolver::getRegistrator(const vespalib::string &docTypeName)
 }
 
 IDocumentDBReference::SP
-DocumentDBReferenceResolver::getTargetDocumentDB(const vespalib::string &refAttrName) const
+DocumentDBReferenceResolver::getTargetDocumentDB(const std::string &refAttrName) const
 {
     return _registry.get(getTargetDocTypeName(refAttrName, _thisDocType));
 }
@@ -108,7 +108,7 @@ DocumentDBReferenceResolver::detectOldListeners(const IAttributeManager &attrMgr
 {
     auto refAttrs(getReferenceAttributes(attrMgr));
     for (auto &attrSP : refAttrs) {
-        vespalib::string docTypeName = getTargetDocTypeName(attrSP->getName(), _prevThisDocType);
+        std::string docTypeName = getTargetDocTypeName(attrSP->getName(), _prevThisDocType);
         auto &registratorUP = _registrators[docTypeName];
         if (!registratorUP) {
             auto reference = _registry.tryGet(docTypeName);
@@ -125,7 +125,7 @@ DocumentDBReferenceResolver::listenToGidToLidChanges(const IAttributeManager &at
     auto refAttrs(getReferenceAttributes(attrMgr));
     for (auto &attrSP : refAttrs) {
         auto &attr = *attrSP;
-        vespalib::string docTypeName = getTargetDocTypeName(attr.getName(), _thisDocType);
+        std::string docTypeName = getTargetDocTypeName(attr.getName(), _thisDocType);
         GidToLidChangeRegistrator &registrator = getRegistrator(docTypeName);
         auto listener = std::make_unique<GidToLidChangeListener>(_attributeFieldWriter, attrSP,
                                                                  RetainGuard(_refCount),

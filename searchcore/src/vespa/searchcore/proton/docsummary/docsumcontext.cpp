@@ -14,7 +14,7 @@ LOG_SETUP(".proton.docsummary.docsumcontext");
 
 using document::PositionDataType;
 using search::common::Location;
-using vespalib::string;
+using std::string;
 using vespalib::slime::SymbolTable;
 using vespalib::slime::NIX;
 using vespalib::Memory;

@@ -31,9 +31,9 @@ public:
                       std::shared_ptr<const RankingExpressions> expressions,
                       std::shared_ptr<const OnnxModels> models);
     ~RankingAssetsRepo() override;
-    vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override;
-    vespalib::string getExpression(const vespalib::string &name) const override;
-    const OnnxModel *getOnnxModel(const vespalib::string &name) const override;
+    vespalib::eval::ConstantValue::UP getConstant(const std::string &name) const override;
+    std::string getExpression(const std::string &name) const override;
+    const OnnxModel *getOnnxModel(const std::string &name) const override;
 };
 
 }

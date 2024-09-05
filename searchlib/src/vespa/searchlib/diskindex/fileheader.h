@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vector>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <string>
+#include <vector>
 
 namespace search::diskindex {
 
@@ -16,18 +16,18 @@ private:
     uint32_t _version;
     uint32_t _headerLen;
     uint64_t _fileBitSize;
-    std::vector<vespalib::string> _formats;
+    std::vector<std::string> _formats;
 
 public:
     FileHeader();
     ~FileHeader();
 
-    bool taste(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead);
-    bool taste(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite);
-    bool taste(const vespalib::string &name, const TuneFileRandRead &tuneFileSearch);
+    bool taste(const std::string &name, const TuneFileSeqRead &tuneFileRead);
+    bool taste(const std::string &name, const TuneFileSeqWrite &tuneFileWrite);
+    bool taste(const std::string &name, const TuneFileRandRead &tuneFileSearch);
     bool getBigEndian() const { return _bigEndian; }
     uint32_t getVersion() const { return _version; }
-    const std::vector<vespalib::string> &getFormats() const { return _formats; }
+    const std::vector<std::string> &getFormats() const { return _formats; }
 };
 
 }

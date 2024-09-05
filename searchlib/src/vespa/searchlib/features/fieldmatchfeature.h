@@ -13,7 +13,7 @@ namespace search::features {
 class FieldMatchBlueprint : public fef::Blueprint {
 private:
     const fef::FieldInfo * _field;
-    vespalib::string _shared_state_key;
+    std::string _shared_state_key;
     fieldmatch::Params _params;
 
 public:

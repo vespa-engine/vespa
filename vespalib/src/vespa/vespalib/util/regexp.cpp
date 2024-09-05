@@ -24,11 +24,11 @@ bool maybe_none(char c) {
             (c == '?'));
 }
 
-const vespalib::string special("^|()[]{}.*?+\\$");
+const std::string special("^|()[]{}.*?+\\$");
 bool is_special(char c) { return special.find(c) != special.npos; }
 
-vespalib::string escape(std::string_view str) {
-    vespalib::string result;
+std::string escape(std::string_view str) {
+    std::string result;
     for (char c: str) {
         if (is_special(c)) {
             result.push_back('\\');
@@ -40,10 +40,10 @@ vespalib::string escape(std::string_view str) {
 
 } // namespace vespalib::<unnamed>
 
-vespalib::string
+std::string
 RegexpUtil::get_prefix(std::string_view re)
 {
-    vespalib::string prefix;
+    std::string prefix;
     if ((re.size() > 0) && (re.data()[0] == '^') && !has_option(re)) {
         const char *end = re.data() + re.size();
         const char *pos = re.data() + 1;
@@ -57,13 +57,13 @@ RegexpUtil::get_prefix(std::string_view re)
     return prefix;
 }
 
-vespalib::string
+std::string
 RegexpUtil::make_from_suffix(std::string_view suffix)
 {
     return escape(suffix) + "$";
 }
 
-vespalib::string
+std::string
 RegexpUtil::make_from_substring(std::string_view substring)
 {
     return escape(substring);

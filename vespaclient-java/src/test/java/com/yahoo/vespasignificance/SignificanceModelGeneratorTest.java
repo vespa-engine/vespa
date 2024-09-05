@@ -67,7 +67,7 @@ public class SignificanceModelGeneratorTest {
         assertEquals(3, documentFrequencyFile.frequencies().get("fra"));
         assertEquals(3, documentFrequencyFile.frequencies().get("skriveform"));
         assertEquals(3, documentFrequencyFile.frequencies().get("kategori"));
-        assertEquals(3, documentFrequencyFile.frequencies().get("eldr"));
+        assertEquals(3, documentFrequencyFile.frequencies().get("eldre"));
 
     }
 
@@ -102,7 +102,7 @@ public class SignificanceModelGeneratorTest {
         assertEquals(3, documentFrequencyFile.frequencies().get("fra"));
         assertEquals(3, documentFrequencyFile.frequencies().get("skriveform"));
         assertEquals(3, documentFrequencyFile.frequencies().get("kategori"));
-        assertEquals(3, documentFrequencyFile.frequencies().get("eldr"));
+        assertEquals(3, documentFrequencyFile.frequencies().get("eldre"));
 
     }
 
@@ -219,6 +219,6 @@ public class SignificanceModelGeneratorTest {
         assertEquals(3, documentFrequencyFile.frequencies().get("fra"));
         assertEquals(3, documentFrequencyFile.frequencies().get("skriveform"));
         assertEquals(3, documentFrequencyFile.frequencies().get("kategori"));
-        assertEquals(3, documentFrequencyFile.frequencies().get("eldr"));
+        assertEquals(3, documentFrequencyFile.frequencies().get("eldre"));
     }
 }

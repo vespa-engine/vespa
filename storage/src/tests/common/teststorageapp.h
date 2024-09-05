@@ -50,7 +50,7 @@ class TestStorageApp
 protected:
     document::TestDocMan _docMan;
     TestNodeStateUpdater _nodeStateUpdater;
-    vespalib::string _configId;
+    std::string _configId;
     NodeIdentity _node_identity;
     std::atomic<bool> _initialized;
 

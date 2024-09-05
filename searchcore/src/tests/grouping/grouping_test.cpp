@@ -13,9 +13,9 @@
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <iostream>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_test");
 
@@ -135,7 +135,7 @@ struct DoomFixture {
 
 //-----------------------------------------------------------------------------
 
-TEST("testSessionId") {
+TEST(GroupingTest, testSessionId) {
     SessionId id1;
     ASSERT_TRUE(id1.empty());
 
@@ -145,7 +145,7 @@ TEST("testSessionId") {
     ASSERT_TRUE(!id2.empty());
     ASSERT_TRUE(!id3.empty());
     ASSERT_TRUE(id3 < id2);
-    EXPECT_EQUAL(id2, id2);
+    EXPECT_EQ(id2, id2);
 }
 
 #define MU std::make_unique
@@ -173,7 +173,9 @@ createGL(size_t maxGroups, ExpressionNode::UP expr) {
     return l;
 }
 
-TEST_F("testGroupingContextInitialization", DoomFixture()) {
+TEST(GroupingTest, testGroupingContextInitialization)
+{
+    DoomFixture f1;
     vespalib::nbostream os;
     Grouping baseRequest;
     baseRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
@@ -190,12 +192,14 @@ TEST_F("testGroupingContextInitialization", DoomFixture()) {
     ASSERT_TRUE(!context.empty());
     GroupingContext::GroupingList list = context.getGroupingList();
     ASSERT_TRUE(list.size() == 1);
-    EXPECT_EQUAL(list[0]->asString(), baseRequest.asString());
+    EXPECT_EQ(list[0]->asString(), baseRequest.asString());
     context.reset();
     ASSERT_TRUE(context.empty());
 }
 
-TEST_F("testGroupingContextUsage", DoomFixture()) {
+TEST(GroupingTest, testGroupingContextUsage)
+{
+    DoomFixture f1;
     vespalib::nbostream os;
     Grouping request1;
     request1.setFirstLevel(0)
@@ -227,7 +231,9 @@ TEST_F("testGroupingContextUsage", DoomFixture()) {
     ASSERT_TRUE(context.empty());
 }
 
-TEST_F("testGroupingContextSerializing", DoomFixture()) {
+TEST(GroupingTest, testGroupingContextSerializing)
+{
+    DoomFixture f1;
     Grouping baseRequest;
     baseRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
             .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
@@ -245,11 +251,13 @@ TEST_F("testGroupingContextSerializing", DoomFixture()) {
     context.addGrouping(bp);
     context.serialize();
     vespalib::nbostream & res(context.getResult());
-    EXPECT_EQUAL(res.size(), os.size());
+    EXPECT_EQ(res.size(), os.size());
     ASSERT_TRUE(memcmp(res.data(), os.data(), res.size()) == 0);
 }
 
-TEST_F("testGroupingManager", DoomFixture()) {
+TEST(GroupingTest, testGroupingManager)
+{
+    DoomFixture f1;
     vespalib::nbostream os;
     Grouping request1;
     request1.setFirstLevel(0)
@@ -266,7 +274,9 @@ TEST_F("testGroupingManager", DoomFixture()) {
     ASSERT_TRUE(!manager.empty());
 }
 
-TEST_F("testGroupingSession", DoomFixture()) {
+TEST(GroupingTest, testGroupingSession)
+{
+    DoomFixture f1;
     MyWorld world;
     vespalib::nbostream os;
     Grouping request1;
@@ -287,9 +297,9 @@ TEST_F("testGroupingSession", DoomFixture()) {
 
     CheckAttributeReferences attrCheck;
     request1.select(attrCheck, attrCheck);
-    EXPECT_EQUAL(0u, attrCheck._numrefs);
+    EXPECT_EQ(0u, attrCheck._numrefs);
     request2.select(attrCheck, attrCheck);
-    EXPECT_EQUAL(0u, attrCheck._numrefs);
+    EXPECT_EQ(0u, attrCheck._numrefs);
 
     auto r1 = std::make_shared<Grouping>(request1);
     auto r2 = std::make_shared<Grouping>(request2);
@@ -301,11 +311,11 @@ TEST_F("testGroupingSession", DoomFixture()) {
     // Test initialization phase
     GroupingSession session(id, initContext, world.attributeContext, &world.documentType);
     CheckAttributeReferences attrCheck2;
-    EXPECT_EQUAL(2u, initContext.getGroupingList().size());
+    EXPECT_EQ(2u, initContext.getGroupingList().size());
     for (const auto & g : initContext.getGroupingList()) {
         g->select(attrCheck2, attrCheck2);
     }
-    EXPECT_EQUAL(8u, attrCheck2._numrefs);
+    EXPECT_EQ(8u, attrCheck2._numrefs);
     RankedHit hit;
     hit._docId = 0;
     GroupingManager &manager(session.getGroupingManager());
@@ -315,9 +325,9 @@ TEST_F("testGroupingSession", DoomFixture()) {
     for (auto & grouping : gl3) {
         grouping->select(attrCheck_after, attrCheck_after);
     }
-    EXPECT_EQUAL(attrCheck_after._numrefs, 0u);
+    EXPECT_EQ(attrCheck_after._numrefs, 0u);
     {
-        EXPECT_EQUAL(id, session.getSessionId());
+        EXPECT_EQ(id, session.getSessionId());
         ASSERT_TRUE(!session.getGroupingManager().empty());
         ASSERT_TRUE(!session.finished());
         session.continueExecution(initContext);
@@ -348,7 +358,9 @@ TEST_F("testGroupingSession", DoomFixture()) {
 
 }
 
-TEST_F("testEmptySessionId", DoomFixture()) {
+TEST(GroupingTest, testEmptySessionId)
+{
+    DoomFixture f1;
     MyWorld world;
     vespalib::nbostream os;
     Grouping request1;
@@ -369,7 +381,7 @@ TEST_F("testEmptySessionId", DoomFixture()) {
     hit._docId = 0;
     GroupingManager &manager(session.getGroupingManager());
     manager.groupInRelevanceOrder(8, &hit, 1);
-    EXPECT_EQUAL(id, session.getSessionId());
+    EXPECT_EQ(id, session.getSessionId());
     ASSERT_TRUE(!session.getGroupingManager().empty());
     ASSERT_TRUE(session.finished() && session.getSessionId().empty());
     session.continueExecution(initContext);
@@ -377,7 +389,9 @@ TEST_F("testEmptySessionId", DoomFixture()) {
     ASSERT_TRUE(r1->getRoot().getChildrenSize() > 0);
 }
 
-TEST_F("testSessionManager", DoomFixture()) {
+TEST(GroupingTest, testSessionManager)
+{
+    DoomFixture f1;
     MyWorld world;
     vespalib::nbostream os;
     Grouping request1;
@@ -402,11 +416,11 @@ TEST_F("testSessionManager", DoomFixture()) {
     auto s2 = std::make_unique<GroupingSession>(id2, initContext, world.attributeContext, &world.documentType);
     auto s3 = std::make_unique<GroupingSession>(id3, initContext, world.attributeContext, &world.documentType);
 
-    ASSERT_EQUAL(f1.timeOfDoom, s1->getTimeOfDoom());
+    ASSERT_EQ(f1.timeOfDoom, s1->getTimeOfDoom());
     mgr.insert(std::move(s1));
     s1 = mgr.pickGrouping(id1);
     ASSERT_TRUE(s1.get());
-    EXPECT_EQUAL(id1, s1->getSessionId());
+    EXPECT_EQ(id1, s1->getSessionId());
 
     mgr.insert(std::move(s1));
     mgr.insert(std::move(s2));
@@ -417,12 +431,12 @@ TEST_F("testSessionManager", DoomFixture()) {
     ASSERT_FALSE(s1);
     ASSERT_TRUE(s2);
     ASSERT_TRUE(s3);
-    EXPECT_EQUAL(id2, s2->getSessionId());
-    EXPECT_EQUAL(id3, s3->getSessionId());
+    EXPECT_EQ(id2, s2->getSessionId());
+    EXPECT_EQ(id3, s3->getSessionId());
     SessionManager::Stats stats = mgr.getGroupingStats();
-    EXPECT_EQUAL(4u, stats.numInsert);
-    EXPECT_EQUAL(3u, stats.numPick);
-    EXPECT_EQUAL(1u, stats.numDropped);
+    EXPECT_EQ(4u, stats.numInsert);
+    EXPECT_EQ(3u, stats.numPick);
+    EXPECT_EQ(1u, stats.numDropped);
 }
 
 void doGrouping(GroupingContext &ctx,
@@ -438,7 +452,9 @@ void doGrouping(GroupingContext &ctx,
     man.groupInRelevanceOrder(9, &hits[0], 3);
 }
 
-TEST_F("test grouping fork/join", DoomFixture()) {
+TEST(GroupingTest, test_grouping_fork_and_join)
+{
+    DoomFixture f1;
     MyWorld world;
 
     Grouping request;
@@ -479,10 +495,12 @@ TEST_F("test grouping fork/join", DoomFixture()) {
     session.continueExecution(context);
     GroupingContext::GroupingList list = context.getGroupingList();
     ASSERT_TRUE(list.size() == 1);
-    EXPECT_EQUAL(expect.asString(), list[0]->asString());
+    EXPECT_EQ(expect.asString(), list[0]->asString());
 }
 
-TEST_F("test session timeout", DoomFixture()) {
+TEST(GroupingTest, test_session_timeout)
+{
+    DoomFixture f1;
     MyWorld world;
     SessionManager mgr(2);
     SessionId id1("foo");
@@ -495,15 +513,15 @@ TEST_F("test session timeout", DoomFixture()) {
     mgr.insert(std::move(s1));
     mgr.insert(std::move(s2));
     mgr.pruneTimedOutSessions(steady_time(5ns));
-    ASSERT_EQUAL(2u, mgr.getGroupingStats().numCached);
+    ASSERT_EQ(2u, mgr.getGroupingStats().numCached);
     mgr.pruneTimedOutSessions(steady_time(10ns));
-    ASSERT_EQUAL(2u, mgr.getGroupingStats().numCached);
+    ASSERT_EQ(2u, mgr.getGroupingStats().numCached);
 
     mgr.pruneTimedOutSessions(steady_time(11ns));
-    ASSERT_EQUAL(1u, mgr.getGroupingStats().numCached);
+    ASSERT_EQ(1u, mgr.getGroupingStats().numCached);
 
     mgr.pruneTimedOutSessions(steady_time(21ns));
-    ASSERT_EQUAL(0u, mgr.getGroupingStats().numCached);
+    ASSERT_EQ(0u, mgr.getGroupingStats().numCached);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

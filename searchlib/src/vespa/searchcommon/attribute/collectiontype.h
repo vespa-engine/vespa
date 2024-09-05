@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace search::attribute {
 
@@ -33,7 +34,7 @@ class CollectionType
     { }
 
     explicit
-    CollectionType(const vespalib::string & t, bool remove = false, bool create = false)
+    CollectionType(const std::string & t, bool remove = false, bool create = false)
         : _type(asType(t)),
           _removeIfZero(remove),
           _createIfNonExistant(create)
@@ -62,7 +63,7 @@ class CollectionType
     };
 
     static const char * asString(Type t) noexcept { return _typeTable[t]._name; }
-    static Type asType(const vespalib::string &t);
+    static Type asType(const std::string &t);
 
     Type _type : 4;
     bool _removeIfZero : 1;

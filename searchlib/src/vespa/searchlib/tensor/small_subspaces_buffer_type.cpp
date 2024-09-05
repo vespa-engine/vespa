@@ -3,7 +3,7 @@
 #include "small_subspaces_buffer_type.h"
 #include "tensor_buffer_operations.h"
 #include "tensor_buffer_type_mapper.h"
-#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/unconstify_span.h>
 
 using vespalib::alloc::MemoryAllocator;
 
@@ -23,7 +23,7 @@ SmallSubspacesBufferType::clean_hold(void* buffer, size_t offset, EntryCount num
 {
     char* elem = static_cast<char *>(buffer) + offset * getArraySize();
     while (num_entries >= 1) {
-        _ops.reclaim_labels(vespalib::ArrayRef<char>(elem, getArraySize()));
+        _ops.reclaim_labels(std::span<char>(elem, getArraySize()));
         elem += getArraySize();
         --num_entries;
     }
@@ -34,7 +34,7 @@ SmallSubspacesBufferType::destroy_entries(void *buffer, EntryCount num_entries)
 {
     char* elem = static_cast<char *>(buffer);
     while (num_entries >= 1) {
-        _ops.reclaim_labels(vespalib::ArrayRef<char>(elem, getArraySize()));
+        _ops.reclaim_labels(std::span<char>(elem, getArraySize()));
         elem += getArraySize();
         --num_entries;
     }
@@ -48,7 +48,7 @@ SmallSubspacesBufferType::fallback_copy(void *newBuffer, const void *oldBuffer, 
     }
     const char *elem = static_cast<const char *>(oldBuffer);
     while (num_entries >= 1) {
-        _ops.copied_labels(vespalib::unconstify(vespalib::ConstArrayRef<char>(elem, getArraySize())));
+        _ops.copied_labels(vespalib::unconstify(std::span<const char>(elem, getArraySize())));
         elem += getArraySize();
         --num_entries;
     }

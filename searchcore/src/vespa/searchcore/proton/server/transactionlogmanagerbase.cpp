@@ -13,8 +13,8 @@ namespace proton {
 
 
 TransactionLogManagerBase::TransactionLogManagerBase(FNET_Transport & transport,
-                                                     const vespalib::string &tlsSpec,
-                                                     const vespalib::string &domainName) :
+                                                     const std::string &tlsSpec,
+                                                     const std::string &domainName) :
     _tlc(std::make_unique<TransLogClient>(transport, tlsSpec)),
     _tlcSession(),
     _domainName(domainName),
@@ -34,7 +34,7 @@ TransactionLogManagerBase::init()
     std::unique_ptr<Session> session = _tlc->open(_domainName);
     if ( ! session) {
         if (!_tlc->create(_domainName)) {
-            vespalib::string str = vespalib::make_string(
+            std::string str = vespalib::make_string(
                     "Failed creating domain '%s' on TLS '%s'",
                     _domainName.c_str(), _tlc->getRPCTarget().c_str());
             throw std::runtime_error(str);
@@ -43,7 +43,7 @@ TransactionLogManagerBase::init()
             _domainName.c_str(), _tlc->getRPCTarget().c_str());
         session = _tlc->open(_domainName);
         if ( ! session) {
-            vespalib::string str = vespalib::make_string(
+            std::string str = vespalib::make_string(
                     "Could not open session for domain '%s' on TLS '%s'",
                     _domainName.c_str(), _tlc->getRPCTarget().c_str());
             throw std::runtime_error(str);
@@ -53,7 +53,7 @@ TransactionLogManagerBase::init()
         _domainName.c_str(), _tlc->getRPCTarget().c_str());
     StatusResult res;
     if (!session->status(res.serialBegin, res.serialEnd, res.count)) {
-        vespalib::string str = vespalib::make_string(
+        std::string str = vespalib::make_string(
                 "Could not get status from session with domain '%s' on TLS '%s'",
                 _domainName.c_str(), _tlc->getRPCTarget().c_str());
         throw std::runtime_error(str);
@@ -126,7 +126,7 @@ TransactionLogManagerBase::logReplayComplete() const {
     doLogReplayComplete(_domainName, _replayStopWatch.elapsed());
 }
 
-const vespalib::string &
+const std::string &
 TransactionLogManagerBase::getRpcTarget() const {
     return _tlc->getRPCTarget();
 }

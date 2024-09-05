@@ -4,8 +4,8 @@
 
 #include "searchable.h"
 #include "fake_result.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <string>
 
 namespace search::queryeval {
 
@@ -15,10 +15,10 @@ namespace search::queryeval {
 class FakeSearchable : public Searchable
 {
 private:
-    using Key = std::pair<vespalib::string, vespalib::string>;
+    using Key = std::pair<std::string, std::string>;
     using Map = std::map<Key, FakeResult>;
 
-    vespalib::string _tag;
+    std::string _tag;
     Map              _map;
     bool             _is_attr;
 
@@ -35,7 +35,7 @@ public:
      * @return this object for chaining
      * @param t tag
      **/
-    FakeSearchable &tag(const vespalib::string &t) {
+    FakeSearchable &tag(const std::string &t) {
         _tag = t;
         return *this;
     }
@@ -59,8 +59,8 @@ public:
      * @param term search term in string form
      * @param result the fake result
      **/
-    FakeSearchable &addResult(const vespalib::string &field,
-                              const vespalib::string &term,
+    FakeSearchable &addResult(const std::string &field,
+                              const std::string &term,
                               const FakeResult &result);
 
     using Searchable::createBlueprint;

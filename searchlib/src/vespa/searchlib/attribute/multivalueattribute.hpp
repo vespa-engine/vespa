@@ -24,7 +24,7 @@ constexpr bool enable_free_lists = true;
 
 template <typename B, typename M>
 MultiValueAttribute<B, M>::
-MultiValueAttribute(const vespalib::string &baseFileName,
+MultiValueAttribute(const std::string &baseFileName,
                     const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
       _mvMapping(MultiValueMapping::optimizedConfigForHugePage(MultiValueMapping::array_store_max_type_id,

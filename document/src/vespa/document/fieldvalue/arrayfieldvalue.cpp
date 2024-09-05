@@ -171,7 +171,7 @@ ArrayFieldValue::print(std::ostream& out, bool verbose,
 
 fieldvalue::ModificationStatus
 ArrayFieldValue::iterateSubset(int startPos, int endPos,
-                               const vespalib::string & variable,
+                               const std::string & variable,
                                PathRange nested,
                                fieldvalue::IteratorHandler& handler) const
 {

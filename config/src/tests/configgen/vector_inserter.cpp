@@ -117,7 +117,7 @@ verify_vector_strings_can_be_inserted(V vector) {
 }
 
 TEST("require that different vectors of strings can be inserted") {
-    verify_vector_strings_can_be_inserted(std::vector<vespalib::string>());
+    verify_vector_strings_can_be_inserted(std::vector<std::string>());
     verify_vector_strings_can_be_inserted(StringVector());
 }
 

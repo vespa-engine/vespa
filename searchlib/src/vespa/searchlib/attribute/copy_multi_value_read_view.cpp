@@ -17,7 +17,7 @@ template <typename MultiValueType, typename RawMultiValueType>
 CopyMultiValueReadView<MultiValueType, RawMultiValueType>::~CopyMultiValueReadView() = default;
 
 template <typename MultiValueType, typename RawMultiValueType>
-vespalib::ConstArrayRef<MultiValueType>
+std::span<const MultiValueType>
 CopyMultiValueReadView<MultiValueType, RawMultiValueType>::get_values(uint32_t docid) const
 {
     auto raw = _mv_mapping_read_view.get(docid);
@@ -30,7 +30,7 @@ CopyMultiValueReadView<MultiValueType, RawMultiValueType>::get_values(uint32_t d
         *dst = multivalue::ValueBuilder<MultiValueType>::build(v, multivalue::get_weight(src));
         ++dst;
     }
-    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
+    return std::span<const MultiValueType>(_copy.data(), raw.size());
 }
 
 using multivalue::WeightedValue;

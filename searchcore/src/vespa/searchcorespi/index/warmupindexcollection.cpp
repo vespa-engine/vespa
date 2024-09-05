@@ -28,7 +28,7 @@ using search::queryeval::SearchIterator;
 using search::queryeval::IRequestContext;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
-using TermMap = vespalib::hash_set<vespalib::string>;
+using TermMap = vespalib::hash_set<std::string>;
 
 namespace {
 class WarmupRequestContext : public IRequestContext {
@@ -41,7 +41,7 @@ public:
     vespalib::ThreadBundle & thread_bundle() const override { return vespalib::ThreadBundle::trivial(); }
     const IAttributeVector *getAttribute(std::string_view) const override { return nullptr; }
     const IAttributeVector *getAttributeStableEnum(std::string_view) const override { return nullptr; }
-    const vespalib::eval::Value* get_query_tensor(const vespalib::string&) const override;
+    const vespalib::eval::Value* get_query_tensor(const std::string&) const override;
     const AttributeBlueprintParams& get_attribute_blueprint_params() const override { return _params; }
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
 private:
@@ -108,7 +108,7 @@ WarmupIndexCollection::setSource(uint32_t docId)
     _next->setSource(docId);
 }
 
-vespalib::string
+std::string
 WarmupIndexCollection::toString() const
 {
     vespalib::asciistream os;
@@ -182,7 +182,7 @@ WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
 {
     const auto * sb(dynamic_cast<const StringBase *>(&term));
     if (sb != nullptr) {
-        const vespalib::string & s = sb->getTerm();
+        const std::string & s = sb->getTerm();
         std::lock_guard<std::mutex> guard(_lock);
         TermMap::insert_result found = (*_handledTerms)[fieldId].insert(s);
         return ! found.second;
@@ -247,7 +247,7 @@ WarmupIndexCollection::accept(IndexSearchableVisitor &visitor) const
 }
 
 FieldLengthInfo
-WarmupIndexCollection::get_field_length_info(const vespalib::string& field_name) const
+WarmupIndexCollection::get_field_length_info(const std::string& field_name) const
 {
     return _next->get_field_length_info(field_name);
 }
@@ -279,7 +279,7 @@ WarmupRequestContext::WarmupRequestContext() = default;
 WarmupRequestContext::~WarmupRequestContext() = default;
 
 const vespalib::eval::Value*
-WarmupRequestContext::get_query_tensor(const vespalib::string&) const {
+WarmupRequestContext::get_query_tensor(const std::string&) const {
     return {};
 }
 WarmupTask::WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup)

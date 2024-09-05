@@ -13,10 +13,10 @@ LOG_SETUP("vespa-config-status");
 
 class Application {
     ConfigStatus::Flags _flags;
-    vespalib::string _cfgId;
-    vespalib::string _specString;
+    std::string _cfgId;
+    std::string _specString;
     int parseOpts(int argc, char **argv);
-    vespalib::string getSources();
+    std::string getSources();
     HostFilter parse_host_set(std::string_view raw_arg) const;
 public:
     void usage(const char *self);
@@ -94,8 +94,8 @@ int Application::main(int argc, char **argv) {
     return status.action();
 }
 
-vespalib::string Application::getSources() {
-    vespalib::string specs;
+std::string Application::getSources() {
+    std::string specs;
     for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
         if (! specs.empty()) specs += ",";
         specs += v;

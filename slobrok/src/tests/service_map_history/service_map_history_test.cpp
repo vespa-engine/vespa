@@ -9,7 +9,7 @@ using namespace vespalib;
 using namespace slobrok;
 using vespalib::make_string_short::fmt;
 
-using Map = std::map<vespalib::string, vespalib::string>;
+using Map = std::map<std::string, std::string>;
 
 struct Dumper : ServiceMapHistory::DiffCompletionHandler {
     std::unique_ptr<MapDiff> got = {};
@@ -36,7 +36,7 @@ Map dump(ServiceMapHistory &history) {
 }
 
 
-vespalib::string lookup(ServiceMapHistory &history, const vespalib::string &name) {
+std::string lookup(ServiceMapHistory &history, const std::string &name) {
     auto map = dump(history);
     auto iter = map.find(name);
     if (iter == map.end()) {

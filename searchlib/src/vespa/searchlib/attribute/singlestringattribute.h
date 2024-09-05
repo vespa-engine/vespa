@@ -32,8 +32,8 @@ protected:
     using generation_t = StringAttribute::generation_t;
 
 public:
-    SingleValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
-    SingleValueStringAttributeT(const vespalib::string & name);
+    SingleValueStringAttributeT(const std::string & name, const AttributeVector::Config & c);
+    SingleValueStringAttributeT(const std::string & name);
     ~SingleValueStringAttributeT();
 
     void freezeEnumDictionary() override;
@@ -51,7 +51,7 @@ public:
     const char * getStringFromEnum(EnumHandle e) const override {
         return this->_enumStore.get_value(e);
     }
-    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, std::string * v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = get(doc);
         }

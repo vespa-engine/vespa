@@ -4,10 +4,10 @@
 
 #include "lazy.h"
 
-#include <memory>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <memory>
+#include <string>
 
 namespace vespalib::coro {
 

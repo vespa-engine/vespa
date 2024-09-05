@@ -27,13 +27,13 @@ private:
 public:
     using UP = std::unique_ptr<QueryEnvironment>;
 
-    QueryEnvironment(const vespalib::string & location,
+    QueryEnvironment(const std::string & location,
                      const IndexEnvironment & indexEnv,
                      const search::fef::Properties & properties,
                      const search::IAttributeManager * attrMgr);
     ~QueryEnvironment() override;
 
-    void addGeoLocation(const vespalib::string &field, const vespalib::string &location);
+    void addGeoLocation(const std::string &field, const std::string &location);
     const search::fef::Properties & getProperties() const override { return _properties; }
     uint32_t getNumTerms() const override { return _queryTerms.size(); }
 
@@ -46,11 +46,11 @@ public:
 
     GeoLocationSpecPtrs getAllLocations() const override;
     const search::attribute::IAttributeContext & getAttributeContext() const override { return *_attrCtx; }
-    double get_average_field_length(const vespalib::string &) const override { return 100.0; }
+    double get_average_field_length(const std::string &) const override { return 100.0; }
     const search::fef::IIndexEnvironment & getIndexEnvironment() const override { return _indexEnv; }
     void addTerm(const search::fef::ITermData *term) { _queryTerms.push_back(term); }
 
-    std::vector<vespalib::string> get_accessed_attributes() const { return _attrCtx->get_accessed_attributes(); }
+    std::vector<std::string> get_accessed_attributes() const { return _attrCtx->get_accessed_attributes(); }
 };
 
 } // namespace streaming

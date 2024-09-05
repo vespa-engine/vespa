@@ -36,7 +36,7 @@ public:
             const std::string& name = "status");
     ~StateReporter() override;
 
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream& out, const framework::HttpUrlPath& path) const override;
 
     // Since we forward to the state API handlers, we require a union of the capabilities
@@ -57,8 +57,8 @@ private:
     ApplicationGenerationFetcher& _generationFetcher;
     std::string _name;
 
-    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
+    std::string getMetrics(const std::string &consumer, ExpositionFormat format) override;
+    std::string getTotalMetrics(const std::string &consumer, ExpositionFormat format) override;
     Health getHealth() const override;
     void getComponentConfig(Consumer &consumer) override;
 };

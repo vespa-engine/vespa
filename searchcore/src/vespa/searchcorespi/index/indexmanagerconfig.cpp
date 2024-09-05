@@ -4,7 +4,7 @@
 
 namespace searchcorespi {
 
-IndexManagerConfig::IndexManagerConfig(const vespalib::string &configId,
+IndexManagerConfig::IndexManagerConfig(const std::string &configId,
                                        const config::ConfigSnapshot &configSnapshot,
                                        size_t numSearcherThreads)
     : _configId(configId),

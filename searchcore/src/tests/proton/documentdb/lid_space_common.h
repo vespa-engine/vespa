@@ -39,7 +39,7 @@ constexpr double REMOVE_BATCH_BLOCK_RATE = 1.0 / 21.0;
 constexpr double REMOVE_BLOCK_RATE = 1.0 / 20.0;
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 constexpr uint32_t MAX_OUTSTANDING_MOVE_OPS = 10;
-const vespalib::string DOC_ID = "id:test:searchdocument::";
+const std::string DOC_ID = "id:test:searchdocument::";
 const BucketId BUCKET_ID_1(1);
 const BucketId BUCKET_ID_2(2);
 const Timestamp TIMESTAMP_1(1);
@@ -83,7 +83,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     void clearMoveDoneContexts();
     void run_remove_ops(bool remove_batch);
     void stop_remove_ops(bool remove_batch) const;
-    vespalib::string getName() const override;
+    std::string getName() const override;
     void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override;
     uint32_t getSubDbId() const override { return 2; }
     LidUsageStats getLidStatus() const override;
@@ -131,7 +131,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const override;
     DocumentMetaData getDocumentMetaData(const DocumentId&) const override;
     Document::UP getFullDocument(DocumentIdT lid) const override;
-    CachedSelect::SP parseSelect(const vespalib::string&) const override;
+    CachedSelect::SP parseSelect(const std::string&) const override;
 };
 
 struct MySubDb {

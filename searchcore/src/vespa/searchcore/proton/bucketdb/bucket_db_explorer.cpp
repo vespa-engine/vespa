@@ -12,7 +12,7 @@ namespace proton {
 
 namespace {
 
-vespalib::string
+std::string
 bucketIdToString(const BucketId &bucketId)
 {
     vespalib::asciistream stream;
@@ -21,7 +21,7 @@ bucketIdToString(const BucketId &bucketId)
     return stream.str();
 }
 
-vespalib::string
+std::string
 checksumToString(storage::spi::BucketChecksum checksum)
 {
     vespalib::asciistream stream;

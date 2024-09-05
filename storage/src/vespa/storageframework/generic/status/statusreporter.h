@@ -17,7 +17,7 @@
 #include <ostream>
 #include <vespa/storageframework/generic/status/httpurlpath.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace storage::framework {
 
@@ -33,12 +33,12 @@ struct StatusReporter {
      * ^[A-Za-z0-9_]+$. It is used to identify the status page in contexts where
      * special characters are not wanted, such as in an URL.
      */
-    const vespalib::string& getId() const { return _id; }
+    const std::string& getId() const { return _id; }
     /**
      * Get the descriptive name of the status reported. This string should be
      * able to contain anything.
      */
-    const vespalib::string& getName() const { return _name; }
+    const std::string& getName() const { return _name; }
 
     virtual bool isValidStatusRequest() const { return true; }
 
@@ -56,7 +56,7 @@ struct StatusReporter {
      * Called to get content type.
      * An empty string indicates page not found.
      */
-    virtual vespalib::string getReportContentType(const HttpUrlPath&) const = 0;
+    virtual std::string getReportContentType(const HttpUrlPath&) const = 0;
 
     /**
      * Called to get the actual content to return in the status request.
@@ -66,8 +66,8 @@ struct StatusReporter {
     virtual bool reportStatus(std::ostream&, const HttpUrlPath&) const = 0;
 
 private:
-    vespalib::string _id;
-    vespalib::string _name;
+    std::string _id;
+    std::string _name;
 
 };
 

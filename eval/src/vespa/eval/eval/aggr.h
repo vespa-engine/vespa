@@ -3,12 +3,12 @@
 #pragma once
 
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <limits>
-#include <vector>
-#include <map>
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace vespalib { class Stash; }
 
@@ -28,13 +28,13 @@ enum class Aggr { AVG, COUNT, PROD, SUM, MAX, MEDIAN, MIN };
 class AggrNames {
 private:
     static const AggrNames _instance;
-    std::map<vespalib::string,Aggr> _name_aggr_map;
-    std::map<Aggr,vespalib::string> _aggr_name_map;
-    void add(Aggr aggr, const vespalib::string &name);
+    std::map<std::string,Aggr> _name_aggr_map;
+    std::map<Aggr,std::string> _aggr_name_map;
+    void add(Aggr aggr, const std::string &name);
     AggrNames();
 public:
-    static const vespalib::string *name_of(Aggr aggr);
-    static const Aggr *from_name(const vespalib::string &name);
+    static const std::string *name_of(Aggr aggr);
+    static const Aggr *from_name(const std::string &name);
 };
 
 /**

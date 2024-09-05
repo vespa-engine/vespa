@@ -20,7 +20,7 @@ using FileInterfaceUP = LoadUtils::FileInterfaceUP;
 using LoadedBufferUP = LoadUtils::LoadedBufferUP;
 
 FileInterfaceUP
-LoadUtils::openFile(const AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::openFile(const AttributeVector& attr, const std::string& suffix)
 {
     return FileUtil::openFile(attr.getBaseFileName() + "." + suffix);
 }
@@ -44,13 +44,13 @@ LoadUtils::openWeight(const AttributeVector& attr)
 }
 
 bool
-LoadUtils::file_exists(const AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::file_exists(const AttributeVector& attr, const std::string& suffix)
 {
     return std::filesystem::exists(std::filesystem::path(attr.getBaseFileName() + "." + suffix));
 }
 
 LoadedBufferUP
-LoadUtils::loadFile(const AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::loadFile(const AttributeVector& attr, const std::string& suffix)
 {
     return FileUtil::loadFile(attr.getBaseFileName() + "." + suffix);
 }
@@ -81,11 +81,11 @@ LoadUtils::loadUDAT(const AttributeVector& attr)
 
 
 #define INSTANTIATE_ARRAY(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<ValueType>&, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<ValueType>&, ReaderBase &, std::span<const atomic_utils::NonAtomicValue_t<ValueType>>, std::span<const uint32_t>, Saver)
 #define INSTANTIATE_WSET(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, ReaderBase &, std::span<const atomic_utils::NonAtomicValue_t<ValueType>>, std::span<const uint32_t>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \
-template void loadFromEnumeratedSingleValue(vespalib::RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template void loadFromEnumeratedSingleValue(vespalib::RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, ReaderBase &, std::span<const atomic_utils::NonAtomicValue_t<ValueType>>, std::span<const uint32_t>, Saver)
 
 #define INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, Saver) \
 INSTANTIATE_SINGLE(ValueType, Saver); \

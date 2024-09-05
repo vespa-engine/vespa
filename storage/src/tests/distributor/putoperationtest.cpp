@@ -19,7 +19,7 @@
 
 using config::ConfigGetter;
 using config::FileSpec;
-using vespalib::string;
+using std::string;
 using namespace document;
 using namespace std::literals::string_literals;
 using document::test::makeDocumentBucket;

@@ -57,7 +57,7 @@ protected:
     vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const override;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 public:
-    EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
+    EnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
     ~EnumAttribute();
     bool findEnum(EnumEntryType v, EnumHandle & e) const override { return _enumStore.find_enum(v, e); }
     const EnumStore & getEnumStore() const { return _enumStore; }

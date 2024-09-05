@@ -3,12 +3,12 @@
 #pragma once
 
 #include <onnxruntime/onnxruntime_cxx_api.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
-#include <vector>
 #include <map>
 #include <set>
+#include <string>
+#include <vector>
 
 namespace vespalib::eval { struct Value; }
 
@@ -37,13 +37,13 @@ public:
     // the size of a dimension
     struct DimSize {
         size_t value;
-        vespalib::string name;
+        std::string name;
         DimSize() noexcept : value(0), name() {}
         DimSize(size_t size) noexcept : value(size), name() {}
-        DimSize(const vespalib::string &symbol) noexcept : value(0), name(symbol) {}
+        DimSize(const std::string &symbol) noexcept : value(0), name(symbol) {}
         bool is_known() const { return (value > 0); }
         bool is_symbolic() const { return !name.empty(); }
-        vespalib::string as_string() const;
+        std::string as_string() const;
     };
 
     // supported onnx element types
@@ -51,10 +51,10 @@ public:
 
     // information about a single input or output tensor
     struct TensorInfo {
-        vespalib::string name;
+        std::string name;
         std::vector<DimSize> dimensions;
         ElementType elements;
-        vespalib::string type_as_string() const;
+        std::string type_as_string() const;
         ~TensorInfo();
     };
 
@@ -64,7 +64,7 @@ public:
         std::vector<int64_t> dimensions;
         TensorType(ElementType elements_in, std::vector<int64_t> dimensions_in) noexcept
             : elements(elements_in), dimensions(std::move(dimensions_in)) {}
-        vespalib::string type_as_string() const;
+        std::string type_as_string() const;
     };
 
     // how the model should be wired with inputs/outputs
@@ -79,9 +79,9 @@ public:
     // planning how we should wire the model based on input types
     class WirePlanner {
     private:
-        std::map<vespalib::string,ValueType> _input_types;
-        std::map<vespalib::string,size_t> _symbolic_sizes;
-        std::map<vespalib::string,Onnx::TensorType> _output_types;
+        std::map<std::string,ValueType> _input_types;
+        std::map<std::string,size_t> _symbolic_sizes;
+        std::map<std::string,Onnx::TensorType> _output_types;
 
         bool need_model_probe(const Onnx &model) const;
         void do_model_probe(const Onnx &model);
@@ -90,7 +90,7 @@ public:
         ~WirePlanner();
         static CellType best_cell_type(Onnx::ElementType type);
         bool bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in);
-        std::map<vespalib::string,size_t> get_bound_sizes(const TensorInfo &onnx_in) const;
+        std::map<std::string,size_t> get_bound_sizes(const TensorInfo &onnx_in) const;
         void prepare_output_types(const Onnx &model);
         ValueType make_output_type(const TensorInfo &onnx_out) const;
         WireInfo get_wire_info(const Onnx &model) const;
@@ -161,7 +161,7 @@ private:
     void extract_meta_data() __attribute__((noinline));
 
 public:
-    Onnx(const vespalib::string &model_file, Optimize optimize);
+    Onnx(const std::string &model_file, Optimize optimize);
     ~Onnx();
     const std::vector<TensorInfo> &inputs() const { return _inputs; }
     const std::vector<TensorInfo> &outputs() const { return _outputs; }

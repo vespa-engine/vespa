@@ -51,9 +51,7 @@ public:
      *
      * @param children the search objects we are andnot'ing
      **/
-    AndNotSearchStrict(Children children) : AndNotSearchStrictBase(std::move(children))
-    {
-    }
+    explicit AndNotSearchStrict(Children children) : AndNotSearchStrictBase(std::move(children)) { }
 
     void initRange(uint32_t beginid, uint32_t endid) override {
         AndNotSearch::initRange(beginid, endid);

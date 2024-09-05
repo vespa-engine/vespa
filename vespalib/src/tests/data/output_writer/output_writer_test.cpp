@@ -17,7 +17,7 @@ TEST("output writer smoke test") {
         dst.write('\n');
         dst.printf("%d + %d = %d\n", 2, 2, 4);
     }
-    vespalib::string expect = "abc\n"
+    std::string expect = "abc\n"
                               "foo bar\n"
                               "2 + 2 = 4\n";
     EXPECT_EQUAL(Memory(expect), buffer.get());
@@ -36,7 +36,7 @@ TEST("require that reserve/commit works as expected") {
         dst.commit(1);
         dst.reserve(10);
     }
-    vespalib::string expect = "abc\n";
+    std::string expect = "abc\n";
     EXPECT_EQUAL(Memory(expect), buffer.get());
 }
 

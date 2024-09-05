@@ -195,7 +195,7 @@ public:
     /**
      * Will produce the full demangled className
      */
-    string getNativeClassName() const;
+    std::string getNativeClassName() const;
 
     /**
      * This returns the innermost class that you represent. Default is that that is yourself.
@@ -267,7 +267,7 @@ public:
      *
      * @return structured human-readable representation of this object
      **/
-    string asString() const;
+    std::string asString() const;
 
     /**
      * Visit each of the members of this object. This method should be

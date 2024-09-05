@@ -8,7 +8,7 @@
 
 namespace vespalib {
 
-MappedFileInput::MappedFileInput(const vespalib::string &file_name)
+MappedFileInput::MappedFileInput(const std::string &file_name)
     : _fd(open(file_name.c_str(), O_RDONLY)),
       _data((char *)MAP_FAILED),
       _size(0),

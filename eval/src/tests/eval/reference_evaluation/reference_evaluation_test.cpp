@@ -20,11 +20,11 @@ TensorSpec ref_eval(std::shared_ptr<const Function> fun, const std::vector<Tenso
     return ref_eval(*fun, params);
 }
 
-TensorSpec ref_eval(const vespalib::string &expr, const std::vector<TensorSpec> &params) {
+TensorSpec ref_eval(const std::string &expr, const std::vector<TensorSpec> &params) {
     return ref_eval(*Function::parse(expr), params);
 }
 
-TensorSpec make_val(const vespalib::string &expr) {
+TensorSpec make_val(const std::string &expr) {
     return ref_eval(*Function::parse(expr), {});
 }
 
@@ -35,11 +35,11 @@ struct MyEvalTest : EvalSpec::EvalTest {
     size_t fail_cnt = 0;
     bool print_pass = false;
     bool print_fail = false;
-    void next_expression(const std::vector<vespalib::string> &,
-                         const vespalib::string &) override {}
-    void handle_case(const std::vector<vespalib::string> &param_names,
+    void next_expression(const std::vector<std::string> &,
+                         const std::string &) override {}
+    void handle_case(const std::vector<std::string> &param_names,
                      const std::vector<double> &param_values,
-                     const vespalib::string &expression,
+                     const std::string &expression,
                      double expected_result) override
     {
         auto function = Function::parse(param_names, expression);

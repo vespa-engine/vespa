@@ -25,7 +25,7 @@ bool isSpace(char c) {
     }
 }
 
-bool isBlank(const vespalib::string &str) {
+bool isBlank(const std::string &str) {
     for (uint32_t i = 0; i < str.size(); ++i) {
         if (!isSpace(str[i])) {
             return false;
@@ -34,7 +34,7 @@ bool isBlank(const vespalib::string &str) {
     return true;
 }
 
-void appendQuoted(char c, vespalib::string &str) {
+void appendQuoted(char c, std::string &str) {
     switch (c) {
     case '\\':
         str.append("\\\\");
@@ -66,9 +66,9 @@ void appendQuoted(char c, vespalib::string &str) {
     }
 }
 
-vespalib::string quoteString(const vespalib::string &str)
+std::string quoteString(const std::string &str)
 {
-    vespalib::string res;
+    std::string res;
     res.push_back('"');
     for (uint32_t i = 0; i < str.size(); ++i) {
         appendQuoted(str[i], res);
@@ -91,14 +91,14 @@ FeatureNameBuilder::FeatureNameBuilder()
 FeatureNameBuilder::~FeatureNameBuilder() = default;
 
 FeatureNameBuilder &
-FeatureNameBuilder::baseName(const vespalib::string &str)
+FeatureNameBuilder::baseName(const std::string &str)
 {
     _baseName = str;
     return *this;
 }
 
 FeatureNameBuilder &
-FeatureNameBuilder::parameter(const vespalib::string &str, bool exact)
+FeatureNameBuilder::parameter(const std::string &str, bool exact)
 {
     if (str.empty() || (!exact && isBlank(str))) {
         _parameters.push_back("");
@@ -121,16 +121,16 @@ FeatureNameBuilder::clearParameters()
 }
 
 FeatureNameBuilder &
-FeatureNameBuilder::output(const vespalib::string &str)
+FeatureNameBuilder::output(const std::string &str)
 {
     _output = str;
     return *this;
 }
 
-vespalib::string
+std::string
 FeatureNameBuilder::buildName() const
 {
-    vespalib::string ret;
+    std::string ret;
     if (!_baseName.empty()) {
         ret = _baseName;
         if (!_parameters.empty()) {

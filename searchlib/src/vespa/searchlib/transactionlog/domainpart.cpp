@@ -13,7 +13,7 @@ LOG_SETUP(".transactionlog.domainpart");
 
 using vespalib::make_string_short::fmt;
 using vespalib::FileHeader;
-using vespalib::string;
+using std::string;
 using vespalib::getLastErrorString;
 using vespalib::IllegalHeaderException;
 using vespalib::nbostream;

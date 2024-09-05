@@ -11,6 +11,7 @@ name string default=""
 user string default="unknown"
 
 # The directory the application was deployed from
+# TODO: Remove in Vespa 9
 path string default=""
 
 # The application timestamp in ms

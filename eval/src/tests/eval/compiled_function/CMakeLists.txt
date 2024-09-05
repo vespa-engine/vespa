@@ -4,5 +4,6 @@ vespa_add_executable(eval_compiled_function_test_app TEST
     compiled_function_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_compiled_function_test_app NO_VALGRIND COMMAND eval_compiled_function_test_app)

@@ -41,7 +41,7 @@ locateFirst(uint32_t field_id, const Blueprint & blueprint) {
         const Blueprint::State & state = blueprint.getState();
         if (state.isTermLike() && (state.numFields() == 1) && (state.field(0).getFieldId() == field_id)) {
             const LeafBlueprint * leaf = blueprint.asLeaf();
-            vespalib::string from, too;
+            std::string from, too;
             if (leaf->getRange(from, too)) {
                 return {from, too, state.estimate().estHits};
             }

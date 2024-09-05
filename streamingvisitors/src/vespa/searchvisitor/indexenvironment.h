@@ -8,9 +8,9 @@
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <set>
+#include <string>
 
 namespace search::fef { struct IRankingAssetsRepo; }
 
@@ -23,7 +23,7 @@ namespace streaming {
 class IndexEnvironment : public search::fef::IIndexEnvironment
 {
 private:
-    using StringInt32Map = vespalib::hash_map<vespalib::string, uint32_t>;
+    using StringInt32Map = vespalib::hash_map<std::string, uint32_t>;
     const search::fef::ITableManager   * _tableManager;
     search::fef::Properties              _properties;
     std::vector<search::fef::FieldInfo>  _fields;
@@ -68,13 +68,13 @@ public:
         _motivation = motivation;
     }
 
-    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string& name) const override;
+    vespalib::eval::ConstantValue::UP getConstantValue(const std::string& name) const override;
 
-    vespalib::string getRankingExpression(const vespalib::string& name) const override;
+    std::string getRankingExpression(const std::string& name) const override;
 
-    const search::fef::OnnxModel *getOnnxModel(const vespalib::string& name) const override;
+    const search::fef::OnnxModel *getOnnxModel(const std::string& name) const override;
 
-    bool addField(const vespalib::string& name,
+    bool addField(const std::string& name,
                   bool isAttribute,
                   search::fef::FieldInfo::DataType data_type);
 

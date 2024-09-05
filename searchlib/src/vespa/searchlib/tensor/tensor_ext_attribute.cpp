@@ -32,7 +32,7 @@ create_empty_tensor(const ValueType& type)
 
 }
 
-TensorExtAttribute::TensorExtAttribute(const vespalib::string& name, const Config& cfg)
+TensorExtAttribute::TensorExtAttribute(const std::string& name, const Config& cfg)
     : NotImplementedAttribute(name, cfg),
       ITensorAttribute(),
       IExtendAttribute(),

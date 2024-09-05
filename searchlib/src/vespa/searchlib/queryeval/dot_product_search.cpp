@@ -15,7 +15,7 @@ class DotProductSearchImpl : public DotProductSearch
 {
 private:
     using ref_t = uint32_t;
-    using Weights = vespalib::ConstArrayRef<int32_t>;
+    using Weights = std::span<const int32_t>;
 
     struct CmpDocId {
         const uint32_t *termPos;

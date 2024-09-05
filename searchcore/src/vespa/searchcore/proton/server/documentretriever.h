@@ -34,7 +34,7 @@ private:
 class DocumentRetriever : public DocumentRetrieverBase,
                           public IFieldInfo {
 public:
-    using PositionFields = std::vector<std::pair<const document::Field *, vespalib::string>>;
+    using PositionFields = std::vector<std::pair<const document::Field *, std::string>>;
     DocumentRetriever(const DocTypeName &docTypeName,
                       const document::DocumentTypeRepo &repo,
                       const search::index::Schema &schema,

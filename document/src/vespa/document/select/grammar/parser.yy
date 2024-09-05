@@ -26,7 +26,7 @@
     int64_t i64_val;
     double double_val;
     const char* const_str_val;
-    vespalib::string* string_val;
+    std::string* string_val;
     Constant* constant_node;
     ValueNode* value_node;
     FieldExprNode* field_expr_node;
@@ -92,7 +92,7 @@
 
 %parse-param {DocSelScanner& scanner}
 %parse-param {const BucketIdFactory& bucket_id_factory}
-%parse-param {const DocumentTypeRepo& doc_type_repo}
+%parse-param {const IDocumentTypeRepo& doc_type_repo}
 %parse-param {std::unique_ptr<Node>& recv_expr}
 
  /* Generated parser header file verbatim */
@@ -103,12 +103,12 @@
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/valuenodes.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace document {
 class BucketIdFactory;
-class DocumentTypeRepo;
+class IDocumentTypeRepo;
 }
 
 namespace document::select {
@@ -128,7 +128,7 @@ class ValueNode;
 #pragma GCC diagnostic ignored "-Winline"
 
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/i_documenttype_repo.h>
 #include <vespa/document/select/scanner.h>
 #include <vespa/document/select/constant.h>
 #include <vespa/document/select/branch.h>
@@ -137,12 +137,12 @@ class ValueNode;
 #include <vespa/document/select/valuenodes.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <string>
 #include <iostream>
-#include <sstream>
 #include <memory>
+#include <sstream>
+#include <string>
 
-using string = vespalib::string;
+using string = std::string;
 
 // Wrap grabbing pointers from sub-rules in a way that nulls out the
 // stored attribute from the Bison stack. Otherwise, exception cleanup

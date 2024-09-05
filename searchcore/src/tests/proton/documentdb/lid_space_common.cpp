@@ -68,7 +68,7 @@ MyHandler::stop_remove_ops(bool remove_batch) const {
     }
 }
 
-vespalib::string
+std::string
 MyHandler::getName() const {
     return "myhandler";
 }
@@ -204,7 +204,7 @@ MyDocumentRetriever::getFullDocument(DocumentIdT lid) const {
 }
 
 CachedSelect::SP
-MyDocumentRetriever::parseSelect(const vespalib::string&) const {
+MyDocumentRetriever::parseSelect(const std::string&) const {
     abort();
 }
 

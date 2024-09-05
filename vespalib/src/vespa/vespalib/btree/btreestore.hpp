@@ -100,7 +100,7 @@ allocNewKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.allocator<KeyDataType>(typeId).allocArray(vespalib::ConstArrayRef<KeyDataType>(rhs, clusterSize));
+    return _store.allocator<KeyDataType>(typeId).allocArray(std::span<const KeyDataType>(rhs, clusterSize));
 }
 
 
@@ -114,7 +114,7 @@ allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
     return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).
-            allocArray(vespalib::ConstArrayRef<KeyDataType>(rhs, clusterSize));
+            allocArray(std::span<const KeyDataType>(rhs, clusterSize));
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,

@@ -32,7 +32,7 @@ struct UseHammingDist {
 };
 
 template <typename CT, typename AGGR, typename DIST>
-float best_similarity(const CT *pri, ConstArrayRef<CT> sec_cells, size_t inner_size) {
+float best_similarity(const CT *pri, std::span<const CT> sec_cells, size_t inner_size) {
     AGGR aggr;
     for (const CT *sec = sec_cells.data(); sec < sec_cells.data() + sec_cells.size(); sec += inner_size) {
         aggr.sample(DIST::calc(pri, sec, inner_size));
@@ -78,7 +78,7 @@ void my_best_similarity_op(InterpretedFunction::State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-size_t stride(const ValueType &type, const vespalib::string &name) {
+size_t stride(const ValueType &type, const std::string &name) {
     size_t stride = 0;
     for (const auto &dim: type.dimensions()) {
         if (dim.is_indexed()) {
@@ -93,7 +93,7 @@ size_t stride(const ValueType &type, const vespalib::string &name) {
 }
 
 bool check_dims(const ValueType &pri, const ValueType &sec,
-                const vespalib::string &best, const vespalib::string &inner)
+                const std::string &best, const std::string &inner)
 {
     if ((stride(pri, inner) != 1) || (stride(sec, inner) != 1)) {
         return false;
@@ -112,7 +112,7 @@ bool check_dims(const ValueType &pri, const ValueType &sec,
     return true;
 }
 
-size_t get_dim_size(const ValueType &type, const vespalib::string &dim) {
+size_t get_dim_size(const ValueType &type, const std::string &dim) {
     size_t npos = ValueType::Dimension::npos;
     size_t idx = type.dimension_index(dim);
     assert(idx != npos);

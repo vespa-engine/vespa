@@ -2,7 +2,7 @@
 
 struct PointVector {
     float v[NUM_DIMS];
-    using ConstArr = vespalib::ConstArrayRef<float>;
+    using ConstArr = std::span<const float>;
     operator ConstArr() const { return ConstArr(v, NUM_DIMS); }
 };
 
@@ -23,7 +23,7 @@ static PointVector *generatedDocs = aligned_alloc(NUM_DOCS);
 
 struct DocVectorAdapter : public DocVectorAccess<float>
 {
-    vespalib::ConstArrayRef<float> get(uint32_t docid) const override {
+    std::span<const float> get(uint32_t docid) const override {
         ASSERT_TRUE(docid < NUM_DOCS);
         return generatedDocs[docid];
     }

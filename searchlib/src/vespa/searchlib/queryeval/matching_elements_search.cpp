@@ -60,19 +60,19 @@ struct EqualCStringValue {
 template <typename BufferType, typename AttributeType>
 class FilterMatchingElementsSearch : public MatchingElementsSearch {
     const AttributeType&           _attr;
-    vespalib::string               _field_name;
+    std::string               _field_name;
     AttributeContent<BufferType>   _content;
     using EqualFunc = std::conditional_t<std::is_same_v<BufferType, const char *>, EqualCStringValue, std::equal_to<>>;
     vespalib::hash_set<BufferType, vespalib::hash<BufferType>, EqualFunc> _matches;
 
 public:
-    FilterMatchingElementsSearch(const IAttributeVector &attr, const vespalib::string& field_name, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries);
+    FilterMatchingElementsSearch(const IAttributeVector &attr, const std::string& field_name, EntryRef dictionary_snapshot, std::span<const IDirectPostingStore::LookupResult> dict_entries);
     void find_matching_elements(uint32_t doc_id, MatchingElements& result) override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
 };
 
 template <typename BufferType, typename AttributeType>
-FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsSearch(const IAttributeVector &attr, const vespalib::string& field_name, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
+FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsSearch(const IAttributeVector &attr, const std::string& field_name, EntryRef dictionary_snapshot, std::span<const IDirectPostingStore::LookupResult> dict_entries)
     : _attr(dynamic_cast<const AttributeType &>(attr)),
       _field_name(field_name),
       _content(),
@@ -113,7 +113,7 @@ FilterMatchingElementsSearch<BufferType, AttributeType>::initRange(uint32_t, uin
 }
 
 std::unique_ptr<MatchingElementsSearch>
-MatchingElementsSearch::create(const IAttributeVector &attr, const vespalib::string& field_name, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
+MatchingElementsSearch::create(const IAttributeVector &attr, const std::string& field_name, EntryRef dictionary_snapshot, std::span<const IDirectPostingStore::LookupResult> dict_entries)
 {
     if (attr.as_docid_with_weight_posting_store() == nullptr) {
         return {};

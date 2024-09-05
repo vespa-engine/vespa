@@ -13,11 +13,11 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/identifiable.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <set>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/util/exceptions.h>
+#include <set>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("doctype_config_test");
@@ -27,7 +27,7 @@ using std::set;
 using std::vector;
 using vespalib::Identifiable;
 using vespalib::IllegalArgumentException;
-using vespalib::string;
+using std::string;
 
 using namespace document::config_builder;
 using namespace document;
@@ -39,7 +39,6 @@ const int32_t doc_type_id = 787121340;
 const string header_name = type_name + ".header";
 const int32_t header_id = 30;
 const string type_name_2 = "test_2";
-const string header_name_2 = type_name_2 + ".header";
 const string field_name = "field_name";
 const string derived_name = "derived";
 

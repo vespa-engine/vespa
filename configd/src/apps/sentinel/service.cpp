@@ -8,6 +8,7 @@
 
 #include <csignal>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -28,8 +29,8 @@ namespace config::sentinel {
 
 namespace {
 
-vespalib::string getVespaTempDir() {
-    vespalib::string tmp = getenv("ROOT");
+std::string getVespaTempDir() {
+    std::string tmp = getenv("ROOT");
     tmp += "/var/db/vespa/tmp";
     return tmp;
 }
@@ -143,7 +144,7 @@ Service::terminate(bool catchable, bool dumpState)
             return 0;
         } else {
             if (dumpState && _state != KILLING) {
-                vespalib::string pstackCmd = make_string("ulimit -c 0; pstack %d > %s/%s.pstack.%d 2>&1",
+                std::string pstackCmd = make_string("ulimit -c 0; pstack %d > %s/%s.pstack.%d 2>&1",
                                                          _pid, getVespaTempDir().c_str(), name().c_str(), _pid);
                 LOG(info, "%s:%d failed to stop. Stack dumping with %s", name().c_str(), _pid, pstackCmd.c_str());
                 int pstackRet = system(pstackCmd.c_str());
@@ -383,7 +384,7 @@ Service::runChild()
     std::_Exit(EXIT_FAILURE);
 }
 
-const vespalib::string &
+const std::string &
 Service::name() const
 {
     return _config->name;

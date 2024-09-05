@@ -9,7 +9,7 @@
 
 namespace vespalib::eval::value_type {
 
-vespalib::string cell_type_to_name(CellType cell_type) {
+std::string cell_type_to_name(CellType cell_type) {
     switch (cell_type) {
     case CellType::DOUBLE:   return "double";
     case CellType::FLOAT:    return "float";
@@ -19,7 +19,7 @@ vespalib::string cell_type_to_name(CellType cell_type) {
     abort();
 }
 
-std::optional<CellType> cell_type_from_name(const vespalib::string &name) {
+std::optional<CellType> cell_type_from_name(const std::string &name) {
     for (CellType t : CellTypeUtils::list_types()) {
         if (name == cell_type_to_name(t)) {
             return t;
@@ -99,9 +99,9 @@ bool is_ident(char c, bool first) {
             (c >= '0' && c <= '9' && !first));
 }
 
-vespalib::string parse_ident(ParseContext &ctx) {
+std::string parse_ident(ParseContext &ctx) {
     ctx.skip_spaces();
-    vespalib::string ident;
+    std::string ident;
     if (is_ident(ctx.get(), true)) {
         ident.push_back(ctx.get());
         for (ctx.next(); is_ident(ctx.get(), false); ctx.next()) {
@@ -114,7 +114,7 @@ vespalib::string parse_ident(ParseContext &ctx) {
 
 size_t parse_int(ParseContext &ctx) {
     ctx.skip_spaces();
-    vespalib::string num;
+    std::string num;
     for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
         num.push_back(ctx.get());
     }
@@ -191,7 +191,7 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out,
            std::vector<ValueType::Dimension> *unsorted)
 {
     ParseContext ctx(pos_in, end_in, pos_out);
-    vespalib::string type_name = parse_ident(ctx);
+    std::string type_name = parse_ident(ctx);
     if (type_name == "error") {
         return ValueType::error_type();
     } else if (type_name == "double") {
@@ -212,7 +212,7 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out,
 }
 
 ValueType
-from_spec(const vespalib::string &spec)
+from_spec(const std::string &spec)
 {
     const char *after = nullptr;
     const char *end = spec.data() + spec.size();
@@ -224,7 +224,7 @@ from_spec(const vespalib::string &spec)
 }
 
 ValueType
-from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted)
+from_spec(const std::string &spec, std::vector<ValueType::Dimension> &unsorted)
 {
     const char *after = nullptr;
     const char *end = spec.data() + spec.size();
@@ -235,7 +235,7 @@ from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsor
     return type;
 }
 
-vespalib::string
+std::string
 to_spec(const ValueType &type)
 {
     asciistream os;

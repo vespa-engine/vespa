@@ -2,9 +2,9 @@
 
 #include "string_sort_blob_writer.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <algorithm>
 #include <cstring>
+#include <span>
 
 namespace search::attribute {
 
@@ -54,7 +54,7 @@ StringSortBlobWriter::write()
 {
     if (_best_size.has_value()) {
         if (!_asc) {
-            vespalib::ArrayRef<unsigned char> buf(_serialize_to + 1, _best_size.value());
+            std::span<unsigned char> buf(_serialize_to + 1, _best_size.value());
             for (auto& c : buf) {
                 c = 0xff - c;
             }

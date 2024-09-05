@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/fef/handle.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/small_vector.h>
+#include <string>
 #include <vector>
 
 namespace search::fef {
@@ -46,17 +46,17 @@ private:
 class FieldSpec : public FieldSpecBase
 {
 public:
-    FieldSpec(const vespalib::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept;
-    FieldSpec(const vespalib::string & name, uint32_t fieldId,
+    FieldSpec(const std::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept;
+    FieldSpec(const std::string & name, uint32_t fieldId,
               fef::TermFieldHandle handle, bool isFilter_) noexcept;
     ~FieldSpec();
 
     void setBase(FieldSpecBase base) noexcept {
 	    FieldSpecBase::operator =(base);
     }
-    const vespalib::string & getName() const noexcept { return _name; }
+    const std::string & getName() const noexcept { return _name; }
 private:
-    vespalib::string     _name;     // field name
+    std::string     _name;     // field name
 };
 
 /**

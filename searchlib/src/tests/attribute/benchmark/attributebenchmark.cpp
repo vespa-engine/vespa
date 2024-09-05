@@ -19,7 +19,7 @@ LOG_SETUP("attributebenchmark");
 using std::shared_ptr;
 
 using NumVector = std::vector<uint32_t>;
-using StringVector = std::vector<vespalib::string>;
+using StringVector = std::vector<std::string>;
 using AttrConfig = search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
@@ -34,7 +34,7 @@ class AttributeBenchmark
 private:
     class Config {
     public:
-        vespalib::string _attribute;
+        std::string _attribute;
         uint32_t _numDocs;
         uint32_t _numUpdates;
         uint32_t _numValues;
@@ -110,7 +110,7 @@ private:
     void benchmarkUpdate(const AttributePtr & ptr, const std::vector<T> & values, uint32_t id);
 
     template <typename T>
-    std::vector<vespalib::string> prepareForPrefixSearch(const std::vector<T> & values) const;
+    std::vector<std::string> prepareForPrefixSearch(const std::vector<T> & values) const;
     template <typename T>
     void benchmarkSearch(const AttributePtr & ptr, const std::vector<T> & values);
     template <typename Vector, typename T, typename BT>
@@ -224,18 +224,18 @@ AttributeBenchmark::benchmarkUpdate(const AttributePtr & ptr, const std::vector<
 }
 
 template <typename T>
-std::vector<vespalib::string>
+std::vector<std::string>
 AttributeBenchmark::prepareForPrefixSearch(const std::vector<T> & values) const
 {
     (void) values;
-    return std::vector<vespalib::string>();
+    return std::vector<std::string>();
 }
 
 template <>
-std::vector<vespalib::string>
+std::vector<std::string>
 AttributeBenchmark::prepareForPrefixSearch(const std::vector<AttributeVector::WeightedString> & values) const
 {
-    std::vector<vespalib::string> retval;
+    std::vector<std::string> retval;
     retval.reserve(values.size());
     for (size_t i = 0; i < values.size(); ++i) {
         retval.push_back(values[i].getValue().substr(0, _config._prefixLength));
@@ -252,7 +252,7 @@ AttributeBenchmark::benchmarkSearch(const AttributePtr & ptr, const std::vector<
         std::cout << "<!-- Starting " << _config._numSearchers << " searcher threads with "
             << _config._numQueries << " queries each -->" << std::endl;
 
-        std::vector<vespalib::string> prefixStrings = prepareForPrefixSearch(values);
+        std::vector<std::string> prefixStrings = prepareForPrefixSearch(values);
 
         for (uint32_t i = 0; i < _config._numSearchers; ++i) {
             if (_config._rangeSearch) {
@@ -560,7 +560,7 @@ AttributeBenchmark::main(int argc, char **argv)
         return -1;
     }
 
-    dc._attribute = vespalib::string(argv[optind]);
+    dc._attribute = std::string(argv[optind]);
 
     std::cout << "<attribute-benchmark>" << std::endl;
     init(dc);

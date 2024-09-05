@@ -8,7 +8,7 @@ using search::attribute::CollectionType;
 
 namespace search::queryeval::test {
 
-vespalib::string
+std::string
 to_string(const Config& attr_config)
 {
     std::ostringstream oss;
@@ -29,7 +29,7 @@ to_string(const Config& attr_config)
     return oss.str();
 }
 
-vespalib::string
+std::string
 to_string(QueryOperator query_op)
 {
     switch (query_op) {
@@ -61,7 +61,7 @@ delete_substr_from(const std::string& source, const std::string& substr)
 
 }
 
-vespalib::string
+std::string
 get_class_name(const auto& obj)
 {
     auto res = obj.getClassName();
@@ -74,8 +74,8 @@ get_class_name(const auto& obj)
     return res;
 }
 
-template vespalib::string get_class_name<Blueprint>(const Blueprint& obj);
-template vespalib::string get_class_name<SearchIterator>(const SearchIterator& obj);
+template std::string get_class_name<Blueprint>(const Blueprint& obj);
+template std::string get_class_name<SearchIterator>(const SearchIterator& obj);
 
 namespace {
 

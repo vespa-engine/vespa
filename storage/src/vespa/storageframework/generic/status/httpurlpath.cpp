@@ -5,7 +5,7 @@
 
 namespace storage::framework {
 
-HttpUrlPath::HttpUrlPath(const vespalib::string& urlpath)
+HttpUrlPath::HttpUrlPath(const std::string& urlpath)
     : _path(),
       _attributes(),
       _serverSpec()
@@ -13,8 +13,8 @@ HttpUrlPath::HttpUrlPath(const vespalib::string& urlpath)
     init(urlpath);
 }
 
-HttpUrlPath::HttpUrlPath(const vespalib::string& urlpath,
-                         const vespalib::string& serverSpec)
+HttpUrlPath::HttpUrlPath(const std::string& urlpath,
+                         const std::string& serverSpec)
     : _path(),
       _attributes(),
       _serverSpec(serverSpec)
@@ -22,9 +22,9 @@ HttpUrlPath::HttpUrlPath(const vespalib::string& urlpath,
     init(urlpath);
 }
 
-HttpUrlPath::HttpUrlPath(vespalib::string path,
-                         std::map<vespalib::string, vespalib::string> attributes,
-                         vespalib::string serverSpec)
+HttpUrlPath::HttpUrlPath(std::string path,
+                         std::map<std::string, std::string> attributes,
+                         std::string serverSpec)
     : _path(std::move(path)),
       _attributes(std::move(attributes)),
       _serverSpec(std::move(serverSpec))
@@ -34,19 +34,19 @@ HttpUrlPath::HttpUrlPath(vespalib::string path,
 HttpUrlPath::~HttpUrlPath() {}
 
 void
-HttpUrlPath::init(const vespalib::string &urlpath)
+HttpUrlPath::init(const std::string &urlpath)
 {
-    vespalib::string::size_type pos = urlpath.find('?');
-    if (pos == vespalib::string::npos) {
+    std::string::size_type pos = urlpath.find('?');
+    if (pos == std::string::npos) {
         _path = urlpath;
     } else {
         _path = urlpath.substr(0, pos);
-        vespalib::string sub(urlpath.substr(pos+1));
+        std::string sub(urlpath.substr(pos+1));
         vespalib::StringTokenizer tokenizer(sub, "&", "");
         for (uint32_t i=0, n=tokenizer.size(); i<n; ++i) {
-            vespalib::string s(tokenizer[i]);
+            std::string s(tokenizer[i]);
             pos = s.find('=');
-            if (pos == vespalib::string::npos) {
+            if (pos == std::string::npos) {
                 _attributes[s] = "";
             } else {
                 _attributes[s.substr(0,pos)] = s.substr(pos+1);
@@ -56,14 +56,14 @@ HttpUrlPath::init(const vespalib::string &urlpath)
 }
 
 bool
-HttpUrlPath::hasAttribute(const vespalib::string& id) const
+HttpUrlPath::hasAttribute(const std::string& id) const
 {
     return (_attributes.find(id) != _attributes.end());
 }
 
-vespalib::string
-HttpUrlPath::getAttribute(const vespalib::string& id,
-                          const vespalib::string& defaultValue) const
+std::string
+HttpUrlPath::getAttribute(const std::string& id,
+                          const std::string& defaultValue) const
 {
     auto it = _attributes.find(id);
     return (it == _attributes.end() ? defaultValue : it->second);

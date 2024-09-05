@@ -5,10 +5,10 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
 #include <fstream>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_directory_test");
@@ -21,7 +21,7 @@ namespace proton {
 
 namespace {
 
-vespalib::string toString(IndexMetaInfo &info) {
+std::string toString(IndexMetaInfo &info) {
     vespalib::asciistream os;
     bool first = true;
     for (auto &snap : info.snapshots()) {
@@ -47,7 +47,7 @@ bool hasWriter(const std::unique_ptr<AttributeDirectory::Writer> &writer) {
     return static_cast<bool>(writer);
 }
 
-void create_directory(const vespalib::string& path) {
+void create_directory(const std::string& path) {
     std::filesystem::create_directory(std::filesystem::path(path));
 }
 
@@ -66,70 +66,70 @@ public:
 
     ~Fixture() { }
 
-    vespalib::string getDir() { return _diskLayout->getBaseDir(); }
+    std::string getDir() { return _diskLayout->getBaseDir(); }
 
-    vespalib::string getAttrDir(const vespalib::string &name) { return getDir() + "/" + name; }
+    std::string getAttrDir(const std::string &name) { return getDir() + "/" + name; }
 
-    void assertDiskDir(const vespalib::string &name) {
+    void assertDiskDir(const std::string &name) {
         EXPECT_TRUE(std::filesystem::is_directory(std::filesystem::path(name)));
     }
 
-    void assertAttributeDiskDir(const vespalib::string &name) {
+    void assertAttributeDiskDir(const std::string &name) {
         assertDiskDir(getAttrDir(name));
     }
 
-    void assertNotDiskDir(const vespalib::string &name) {
+    void assertNotDiskDir(const std::string &name) {
         EXPECT_FALSE(std::filesystem::exists(std::filesystem::path(name)));
     }
 
-    void assertNotAttributeDiskDir(const vespalib::string &name) {
+    void assertNotAttributeDiskDir(const std::string &name) {
         assertNotDiskDir(getAttrDir(name));
     }
 
-    vespalib::string getSnapshotDirComponent(SerialNum serialNum) {
+    std::string getSnapshotDirComponent(SerialNum serialNum) {
         vespalib::asciistream os;
         os << "snapshot-";
         os << serialNum;
         return os.str();
     }
 
-    vespalib::string getSnapshotDir(const vespalib::string &name, SerialNum serialNum) {
+    std::string getSnapshotDir(const std::string &name, SerialNum serialNum) {
         return getAttrDir(name) + "/" + getSnapshotDirComponent(serialNum);
     }
 
-    void assertSnapshotDir(const vespalib::string &name, SerialNum serialNum) {
+    void assertSnapshotDir(const std::string &name, SerialNum serialNum) {
         assertDiskDir(getSnapshotDir(name, serialNum));
     }
 
-    void assertNotSnapshotDir(const vespalib::string &name, SerialNum serialNum) {
+    void assertNotSnapshotDir(const std::string &name, SerialNum serialNum) {
         assertNotDiskDir(getSnapshotDir(name, serialNum));
     }
 
-    void assertSnapshots(const vespalib::string &name, const vespalib::string &exp) {
-        vespalib::string attrDir(getAttrDir(name));
+    void assertSnapshots(const std::string &name, const std::string &exp) {
+        std::string attrDir(getAttrDir(name));
         IndexMetaInfo info(attrDir);
         info.load();
-        vespalib::string act = toString(info);
+        std::string act = toString(info);
         EXPECT_EQ(exp, act);
     }
 
-    auto createAttributeDir(const vespalib::string &name) { return _diskLayout->createAttributeDir(name); }
-    auto getAttributeDir(const vespalib::string &name) { return _diskLayout->getAttributeDir(name); }
-    void removeAttributeDir(const vespalib::string &name, SerialNum serialNum) { return _diskLayout->removeAttributeDir(name, serialNum); }
+    auto createAttributeDir(const std::string &name) { return _diskLayout->createAttributeDir(name); }
+    auto getAttributeDir(const std::string &name) { return _diskLayout->getAttributeDir(name); }
+    void removeAttributeDir(const std::string &name, SerialNum serialNum) { return _diskLayout->removeAttributeDir(name, serialNum); }
     auto createFooAttrDir() { return createAttributeDir("foo"); }
     auto getFooAttrDir() { return getAttributeDir("foo"); }
     void removeFooAttrDir(SerialNum serialNum) { removeAttributeDir("foo", serialNum); }
-    void assertNotGetAttributeDir(const vespalib::string &name) {
+    void assertNotGetAttributeDir(const std::string &name) {
         auto dir = getAttributeDir(name);
         EXPECT_FALSE(static_cast<bool>(dir));
         assertNotAttributeDiskDir(name);
     }
-    void assertGetAttributeDir(const vespalib::string &name, std::shared_ptr<AttributeDirectory> expDir) {
+    void assertGetAttributeDir(const std::string &name, std::shared_ptr<AttributeDirectory> expDir) {
         auto dir = getAttributeDir(name);
         EXPECT_TRUE(static_cast<bool>(dir));
         EXPECT_EQ(expDir, dir);
     }
-    void assertCreateAttributeDir(const vespalib::string &name, std::shared_ptr<AttributeDirectory> expDir) {
+    void assertCreateAttributeDir(const std::string &name, std::shared_ptr<AttributeDirectory> expDir) {
         auto dir = getAttributeDir(name);
         EXPECT_TRUE(static_cast<bool>(dir));
         EXPECT_EQ(expDir, dir);

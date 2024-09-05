@@ -499,7 +499,7 @@ TEST(QueryEvalTest, test_rank)
     }
 }
 
-vespalib::string
+std::string
 getExpectedSlime() {
     return
 "{"
@@ -640,7 +640,7 @@ TEST(QueryEvalTest, test_dump)
                                             .add(SBChild(simple("blend_a"), 2))
                                             .add(SBChild(simple("blend_b"), 4)),
                                             true) }, true);
-    vespalib::string sas = search->asString();
+    std::string sas = search->asString();
     EXPECT_TRUE(sas.size() > 50);
     vespalib::Slime slime;
     search->asSlime(vespalib::slime::SlimeInserter(slime));
@@ -653,7 +653,7 @@ TEST(QueryEvalTest, test_dump)
 
 TEST(QueryEvalTest, test_field_spec) {
     EXPECT_EQ(8u, sizeof(FieldSpecBase));
-    EXPECT_EQ(8u + sizeof(vespalib::string), sizeof(FieldSpec));
+    EXPECT_EQ(8u + sizeof(std::string), sizeof(FieldSpec));
 }
 
 

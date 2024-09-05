@@ -167,7 +167,7 @@ void
 TermEditDistanceExecutor::logRow(const std::vector<TedCell> &row, size_t numCols)
 {
     if (LOG_WOULD_LOG(info)) {
-        vespalib::string str = "[ ";
+        std::string str = "[ ";
         for (size_t i = 0; i < numCols; ++i) {
             str.append(vespalib::make_string("%5.2f", row[i].cost));
             if (i < numCols - 1) {
@@ -202,11 +202,11 @@ TermEditDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
 {
     _config.fieldId = params[0].asField()->id();
 
-    vespalib::string costDel = env.getProperties().lookup(getName(), "costDel").getAt(0);
+    std::string costDel = env.getProperties().lookup(getName(), "costDel").getAt(0);
     _config.costDel = costDel.empty() ? 1.0f : vespalib::locale::c::atof(costDel.c_str());
-    vespalib::string costIns = env.getProperties().lookup(getName(), "costIns").getAt(0);
+    std::string costIns = env.getProperties().lookup(getName(), "costIns").getAt(0);
     _config.costIns = costIns.empty() ? 1.0f : vespalib::locale::c::atof(costIns.c_str());
-    vespalib::string costSub = env.getProperties().lookup(getName(), "costSub").getAt(0);
+    std::string costSub = env.getProperties().lookup(getName(), "costSub").getAt(0);
     _config.costSub = costSub.empty() ? 1.0f : vespalib::locale::c::atof(costSub.c_str());
 
     defineInput(vespalib::make_string("fieldLength(%s)", params[0].getValue().c_str()));

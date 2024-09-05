@@ -26,7 +26,7 @@ SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, bool expensiv
 SameElementBlueprint::~SameElementBlueprint() = default;
 
 FieldSpec
-SameElementBlueprint::getNextChildField(const vespalib::string &field_name, uint32_t field_id)
+SameElementBlueprint::getNextChildField(const std::string &field_name, uint32_t field_id)
 {
     return {field_name, field_id, _layout.allocTermField(field_id), false};
 }

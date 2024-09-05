@@ -80,7 +80,7 @@ void find_matching_elements(const std::vector<uint32_t> &docs, MatchingElementsS
     }
 }
 
-void find_matching_elements(const std::vector<uint32_t> &docs, const vespalib::string &field_name, const AttrSearchCtx &attr_ctx, MatchingElements &result) {
+void find_matching_elements(const std::vector<uint32_t> &docs, const std::string &field_name, const AttrSearchCtx &attr_ctx, MatchingElements &result) {
     int32_t weight = 0;
     std::vector<uint32_t> matches;
     for (uint32_t doc : docs) {

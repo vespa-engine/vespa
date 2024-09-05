@@ -25,7 +25,6 @@ public enum SystemName {
 
     /** Continuous deployment system for testing the Public system */
     PublicCd(true, true),
-    PublicCdMigration(true, true),
 
     /** Local development system */
     dev(false, false);
@@ -43,27 +42,24 @@ public enum SystemName {
     }
 
     public static SystemName from(String value) {
-        switch (value.toLowerCase()) {
-            case "dev": return dev;
-            case "cd": return cd;
-            case "main": return main;
-            case "public": return Public;
-            case "publiccd": return PublicCd;
-            case "publiccdmigration": return PublicCdMigration;
-            default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
-        }
+        return switch (value.toLowerCase()) {
+            case "dev" -> dev;
+            case "cd" -> cd;
+            case "main" -> main;
+            case "public" -> Public;
+            case "publiccd" -> PublicCd;
+            default -> throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
+        };
     }
 
     public String value() {
-        switch (this) {
-            case dev: return "dev";
-            case cd: return "cd";
-            case main: return "main";
-            case Public: return "public";
-            case PublicCd: return "publiccd";
-            case PublicCdMigration: return "publiccdmigration";
-            default : throw new IllegalStateException();
-        }
+        return switch (this) {
+            case dev -> "dev";
+            case cd -> "cd";
+            case main -> "main";
+            case Public -> "public";
+            case PublicCd -> "publiccd";
+        };
     }
 
     /** Whether the system is similar to Public, e.g. PublicCd. */
@@ -78,6 +74,6 @@ public enum SystemName {
         return Stream.of(values()).filter(predicate).collect(Collectors.toUnmodifiableSet());
     }
 
-    public static Set<SystemName> hostedVespa() { return EnumSet.of(main, cd, Public, PublicCd, PublicCdMigration); }
+    public static Set<SystemName> hostedVespa() { return EnumSet.of(main, cd, Public, PublicCd); }
 
 }

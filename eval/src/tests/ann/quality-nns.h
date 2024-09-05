@@ -2,7 +2,7 @@
 
 bool reach_with_nns_k(NNS_API &nns, uint32_t docid, uint32_t k) {
     const PointVector &qv = generatedDocs[docid];
-    vespalib::ConstArrayRef<float> query(qv.v, NUM_DIMS);
+    std::span<const float> query(qv.v, NUM_DIMS);
     auto rv = nns.topK(k, query, k);
     if (rv.size() != k) {
         fprintf(stderr, "Result/K=%u from query for %u is %zu hits\n",

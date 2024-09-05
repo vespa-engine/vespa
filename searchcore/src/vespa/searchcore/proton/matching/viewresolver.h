@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <string>
 
 namespace search::index { class Schema; }
 
@@ -19,7 +19,7 @@ namespace proton::matching {
 class ViewResolver
 {
 private:
-    using Map = vespalib::hash_map<vespalib::string, std::vector<vespalib::string> >;
+    using Map = vespalib::hash_map<std::string, std::vector<std::string> >;
     Map _map;
 
 
@@ -35,7 +35,7 @@ public:
      * @param view the name of the view
      * @param field the name of the field
      **/
-    ViewResolver &add(const vespalib::string & view, std::string_view field);
+    ViewResolver &add(const std::string & view, std::string_view field);
 
     /**
      * Resolve a view to obtain the set of fields it
@@ -48,7 +48,7 @@ public:
      *               that are part of the requested view.
      **/
     bool resolve(std::string_view view,
-                 std::vector<vespalib::string> &fields) const;
+                 std::vector<std::string> &fields) const;
 
     /**
      * Create a view resolver based on the field collections defined

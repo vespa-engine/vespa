@@ -28,7 +28,7 @@ class SequencingHandle {
 public:
     struct BlockedByPendingOperation {};
     struct BlockedByLockedBucket {
-        vespalib::string lock_token;
+        std::string lock_token;
 
         BlockedByLockedBucket() = default;
         explicit BlockedByLockedBucket(std::string_view token) : lock_token(token) {}
@@ -132,7 +132,7 @@ public:
  */
 class OperationSequencer {
     using GidSet      = vespalib::hash_set<document::GlobalId, document::GlobalId::hash>;
-    using BucketLocks = vespalib::hash_map<document::Bucket, vespalib::string, document::Bucket::hash>;
+    using BucketLocks = vespalib::hash_map<document::Bucket, std::string, document::Bucket::hash>;
 
     GidSet      _active_gids;
     BucketLocks _active_buckets;
@@ -147,7 +147,7 @@ public:
     // any bucket that may contain `id`.
     SequencingHandle try_acquire(document::BucketSpace bucket_space, const document::DocumentId& id);
 
-    SequencingHandle try_acquire(const document::Bucket& bucket, const vespalib::string& token);
+    SequencingHandle try_acquire(const document::Bucket& bucket, const std::string& token);
 
     bool is_blocked(const document::Bucket&) const noexcept;
 private:

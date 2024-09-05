@@ -38,12 +38,12 @@ AttributePopulator::nextSerialNum()
     return _currSerialNum++;
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 AttributePopulator::getNames() const
 {
     std::vector<search::AttributeGuard> attrs;
     _writer.getAttributeManager()->getAttributeList(attrs);
-    std::vector<vespalib::string> names;
+    std::vector<std::string> names;
     names.reserve(attrs.size());
     for (const search::AttributeGuard &attr : attrs) {
         names.push_back(_subDbName + ".attribute." + attr->getName());
@@ -53,7 +53,7 @@ AttributePopulator::getNames() const
 
 AttributePopulator::AttributePopulator(const proton::IAttributeManager::SP &mgr,
                                        search::SerialNum initSerialNum,
-                                       const vespalib::string &subDbName,
+                                       const std::string &subDbName,
                                        search::SerialNum configSerialNum)
     : _writer(mgr),
       _initSerialNum(initSerialNum),

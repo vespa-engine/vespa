@@ -3,11 +3,11 @@
 
 #include "ok_state.h"
 #include "remote_slobrok.h"
+#include <vespa/vespalib/util/time.h>
 
 #include <deque>
 #include <string>
 #include <unordered_map>
-#include <vespa/vespalib/util/time.h>
 
 namespace slobrok {
 
@@ -76,7 +76,7 @@ private:
     SBEnv             &_env;
     vespalib::steady_time _lastFullConsensusTime;
 
-    vespalib::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
+    std::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
 
 public:
     ExchangeManager(const ExchangeManager &) = delete;

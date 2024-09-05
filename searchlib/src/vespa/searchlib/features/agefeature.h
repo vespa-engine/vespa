@@ -26,7 +26,7 @@ public:
  */
 class AgeBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _attribute;
+    std::string _attribute;
 
 public:
     AgeBlueprint() : fef::Blueprint("age") { }

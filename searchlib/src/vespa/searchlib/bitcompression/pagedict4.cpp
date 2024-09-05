@@ -3,7 +3,7 @@
 #include "pagedict4.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".pagedict4");
@@ -365,7 +365,7 @@ PageDict4SPWriter::flushPage()
                        _prevL3Size - wordsSize * 8;
     e.padBits(padding);
     if (wordsSize > 0) {
-        e.writeBytes(vespalib::ConstArrayRef<char>(_words.data(), wordsSize));
+        e.writeBytes(std::span<const char>(_words.data(), wordsSize));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l6Word = _l3Word;
@@ -676,7 +676,7 @@ PageDict4PWriter::flushPage()
                        _countsSize - _countsWordOffset * 8;
     e.padBits(padding);
     if (_countsWordOffset > 0) {
-        e.writeBytes(vespalib::ConstArrayRef<char>(_words.data(), _countsWordOffset));
+        e.writeBytes(std::span<const char>(_words.data(), _countsWordOffset));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l3Word = _pendingCountsWord;
@@ -957,7 +957,7 @@ PageDict4SSReader::setup(DC &ssd)
 
     _l7.clear();
 
-    vespalib::string word;
+    std::string word;
     Counts counts;
     StartOffset startOffset;
     uint64_t pageNum = _pFirstPageNum;
@@ -1063,8 +1063,8 @@ lookup(std::string_view key)
     uint64_t l6WordNum = 1;
     uint64_t wordNum = l6WordNum;
 
-    vespalib::string l6Word;            // Last L6 entry word
-    vespalib::string word;
+    std::string l6Word;            // Last L6 entry word
+    std::string word;
     StartOffset l6StartOffset;  // Last L6 entry file offset
 
     // Setup for decoding of L6+overflow stream
@@ -1191,7 +1191,7 @@ lookupOverflow(uint64_t wordNum) const
     uint32_t l7Ref = lb->_l7Ref;
     assert(l7Ref < _l7.size());
 
-    const vespalib::string &word = _l7[l7Ref]._l7Word;
+    const std::string &word = _l7[l7Ref]._l7Word;
     uint64_t l6Offset = _ssStartOffset;
     StartOffset startOffset;
     if (l7Ref > 0) {
@@ -1200,7 +1200,7 @@ lookupOverflow(uint64_t wordNum) const
     }
 
     StartOffset l6StartOffset;
-    vespalib::string l6Word;
+    std::string l6Word;
 
     uint32_t l7Ref2 = _l7[l7Ref]._l7Ref;
     if (l7Ref2 != noL7Ref()) {
@@ -1322,7 +1322,7 @@ lookup(const SSReader &ssReader,
 
     _l3Word = l6Word;
     _l3StartOffset = l6StartOffset;
-    vespalib::string word;
+    std::string word;
     uint32_t l3WordOffset = 0;
     uint32_t l5WordOffset = l3WordOffset;
     uint64_t l3WordNum = l6WordNum;
@@ -1521,9 +1521,9 @@ lookup(const SSReader &ssReader,
     uint32_t wordOffset = getPageByteSize() - wordsSize;
     const char *wordBuf = static_cast<const char *>(page) + wordOffset;
 
-    vespalib::string countsWord(l3Word);
+    std::string countsWord(l3Word);
     StartOffset countsStartOffset = l3StartOffset;
-    vespalib::string word;
+    std::string word;
     Counts counts;
 
     uint32_t countsWordOffset = 0;
@@ -1992,7 +1992,7 @@ PageDict4Reader::setupSPage()
 
 
 void
-PageDict4Reader::decodePWord(vespalib::string &word)
+PageDict4Reader::decodePWord(std::string &word)
 {
     assert(_wc != _we);
     size_t lcp = static_cast<unsigned char>(*_wc);
@@ -2011,7 +2011,7 @@ PageDict4Reader::decodePWord(vespalib::string &word)
 
 
 void
-PageDict4Reader::decodeSPWord(vespalib::string &word)
+PageDict4Reader::decodeSPWord(std::string &word)
 {
     assert(_spwc != _spwe);
     size_t lcp = static_cast<unsigned char>(*_spwc);
@@ -2030,7 +2030,7 @@ PageDict4Reader::decodeSPWord(vespalib::string &word)
 
 
 void
-PageDict4Reader::decodeSSWord(vespalib::string &word)
+PageDict4Reader::decodeSSWord(std::string &word)
 {
     uint64_t l6Offset = _ssd.getReadOffset();
 
@@ -2077,7 +2077,7 @@ PageDict4Reader::decodeSSWord(vespalib::string &word)
 }
 
 void
-PageDict4Reader::readCounts(vespalib::string &word, uint64_t &wordNum, Counts &counts)
+PageDict4Reader::readCounts(std::string &word, uint64_t &wordNum, Counts &counts)
 {
     if (_countsResidue > 0) {
         assert(_cc != _ce);
@@ -2124,7 +2124,7 @@ PageDict4Reader::readCounts(vespalib::string &word, uint64_t &wordNum, Counts &c
         readOverflowCounts(word, counts);
         _overflowPage = false;
         assert(_l3Residue > 0);
-        vespalib::string tword;
+        std::string tword;
         if (_l3Residue > 1) {
             decodeSPWord(tword);
         } else {
@@ -2152,7 +2152,7 @@ PageDict4Reader::readCounts(vespalib::string &word, uint64_t &wordNum, Counts &c
 }
 
 void
-PageDict4Reader::readOverflowCounts(vespalib::string &word, Counts &counts)
+PageDict4Reader::readOverflowCounts(std::string &word, Counts &counts)
 {
     uint64_t wordNum = _pd.readBits(64);
 

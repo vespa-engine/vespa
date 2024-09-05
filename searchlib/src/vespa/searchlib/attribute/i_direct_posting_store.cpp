@@ -13,7 +13,7 @@ public:
 
     std::string_view asString() const override { return _key; }
 private:
-    vespalib::string _key;
+    std::string _key;
 };
 }
 

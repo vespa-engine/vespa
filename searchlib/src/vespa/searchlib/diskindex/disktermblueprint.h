@@ -15,7 +15,7 @@ class DiskTermBlueprint : public queryeval::SimpleLeafBlueprint
 private:
     queryeval::FieldSpec             _field;
     const DiskIndex               &  _diskIndex;
-    vespalib::string                 _query_term;
+    std::string                 _query_term;
     DiskIndex::LookupResult::UP      _lookupRes;
     bool                             _useBitVector;
     bool                             _fetchPostingsDone;
@@ -33,7 +33,7 @@ public:
      **/
     DiskTermBlueprint(const queryeval::FieldSpec & field,
                       const DiskIndex & diskIndex,
-                      const vespalib::string& query_term,
+                      const std::string& query_term,
                       DiskIndex::LookupResult::UP lookupRes,
                       bool useBitVector);
 

@@ -16,7 +16,7 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
-void verify(const vespalib::string &a, const vespalib::string &expr, const vespalib::string &result) {
+void verify(const std::string &a, const std::string &expr, const std::string &result) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", TensorSpec::from_expr(a));
     auto expect = TensorSpec::from_expr(result);

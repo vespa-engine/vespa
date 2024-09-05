@@ -44,7 +44,7 @@ getAttributeSetToPopulate(const ARIConfig &newCfg,
     std::vector<AttributeGuard> attrList;
     newCfg.getAttrMgr()->getAttributeList(attrList);
     for (const auto &guard : attrList) {
-        const vespalib::string &name = guard->getName();
+        const std::string &name = guard->getName();
         bool inOldAttrMgr = oldCfg.getAttrMgr()->getAttribute(name)->valid();
         bool unchangedField = inspector.hasUnchangedField(name);
         search::SerialNum flushedSerialNum = newCfg.getAttrMgr()->getFlushedSerialNum(name);
@@ -62,7 +62,7 @@ IReprocessingReader::SP
 getAttributesToPopulate(const ARIConfig &newCfg,
                         const ARIConfig &oldCfg,
                         const IDocumentTypeInspector &inspector,
-                        const vespalib::string &subDbName,
+                        const std::string &subDbName,
                         search::SerialNum serialNum)
 {
     FilterAttributeManager::AttributeSet attrsToPopulate =
@@ -80,13 +80,13 @@ getFieldsToPopulate(const ARIConfig &newCfg,
                     const ARIConfig &oldCfg,
                     const IDocumentTypeInspector &inspector,
                     const IIndexschemaInspector &oldIndexschemaInspector,
-                    const vespalib::string &subDbName)
+                    const std::string &subDbName)
 {
     std::vector<IReprocessingRewriter::SP> fieldsToPopulate;
     std::vector<AttributeGuard> attrList;
     oldCfg.getAttrMgr()->getAttributeList(attrList);
     for (const auto &guard : attrList) {
-        const vespalib::string &name = guard->getName();
+        const std::string &name = guard->getName();
         const auto &attrCfg = guard->getConfig();
         bool inNewAttrMgr = newCfg.getAttrMgr()->getAttribute(name)->valid();
         bool unchangedField = inspector.hasUnchangedField(name);
@@ -116,7 +116,7 @@ AttributeReprocessingInitializer(const Config &newCfg,
                                  const Config &oldCfg,
                                  const IDocumentTypeInspector &inspector,
                                  const IIndexschemaInspector &oldIndexschemaInspector,
-                                 const vespalib::string &subDbName,
+                                 const std::string &subDbName,
                                  search::SerialNum serialNum)
     : _attrsToPopulate(getAttributesToPopulate(newCfg, oldCfg, inspector, subDbName, serialNum)),
       _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, inspector, oldIndexschemaInspector, subDbName))

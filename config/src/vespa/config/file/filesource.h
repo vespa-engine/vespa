@@ -14,15 +14,15 @@ class FileSource : public Source
 {
 private:
     std::shared_ptr<IConfigHolder> _holder;
-    const vespalib::string _fileName;
+    const std::string _fileName;
     int64_t _lastLoaded;
     int64_t _generation;
 
-    StringVector readConfigFile(const vespalib::string & fileName);
-    int64_t getLast(const vespalib::string & fileName);
+    StringVector readConfigFile(const std::string & fileName);
+    int64_t getLast(const std::string & fileName);
 
 public:
-    FileSource(std::shared_ptr<IConfigHolder> holder, const vespalib::string & fileName);
+    FileSource(std::shared_ptr<IConfigHolder> holder, const std::string & fileName);
     FileSource(const FileSource &) = delete;
     FileSource & operator = (const FileSource &) = delete;
     ~FileSource() override;

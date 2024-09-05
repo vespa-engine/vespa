@@ -373,7 +373,7 @@ getMemoryUsage() const noexcept
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
-vespalib::string
+std::string
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 toString(BTreeNode::Ref ref) const
 {
@@ -388,7 +388,7 @@ toString(BTreeNode::Ref ref) const
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
-vespalib::string
+std::string
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 toString(const BTreeNode * node) const
 {

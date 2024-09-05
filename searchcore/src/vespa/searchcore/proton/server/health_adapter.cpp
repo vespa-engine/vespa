@@ -14,7 +14,7 @@ vespalib::HealthProducer::Health
 HealthAdapter::getHealth() const
 {
     bool ok = true;
-    vespalib::string msg;
+    std::string msg;
     StatusReport::List reports(_statusProducer.getStatusReports());
     for (size_t i = 0; i < reports.size(); ++i) {
         const StatusReport &r = *reports[i];

@@ -51,7 +51,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
@@ -499,10 +498,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             request.parameters().add(new StringValue(fileData.filename()));
             request.parameters().add(new StringValue(fileData.type().name()));
             request.parameters().add(new Int64Value(fileData.size()));
-            // Only add parameter if not gzip, this is default and old clients will not handle the extra parameter
-            // TODO Always add parameter in Vespa 9
-            if (fileData.compressionType() != CompressionType.gzip)
-                request.parameters().add(new StringValue(fileData.compressionType().name()));
+            request.parameters().add(new StringValue(fileData.compressionType().name()));
             return request;
         }
 
@@ -555,18 +551,12 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         request.detach();
         rpcAuthorizer.authorizeFileRequest(request)
                 .thenRun(() -> { // okay to do in authorizer thread as serveFile is async
-                    FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
-
                     FileReference reference = new FileReference(request.parameters().get(0).asString());
                     boolean downloadFromOtherSourceIfNotFound = request.parameters().get(1).asInt32() == 0;
-                    Set<FileReferenceData.CompressionType> acceptedCompressionTypes = Set.of(CompressionType.gzip);
-                    // Newer clients specify accepted compression types in request
-                    // TODO Require acceptedCompressionTypes parameter in Vespa 9
-                    if (request.parameters().size() > 2)
-                        acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
-                                                         .map(CompressionType::valueOf)
-                                                         .collect(Collectors.toSet());
-
+                    var acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
+                            .map(CompressionType::valueOf)
+                            .collect(Collectors.toSet());
+                    var receiver = new ChunkedFileReceiver(request.target());
                     fileServer.serveFile(reference, downloadFromOtherSourceIfNotFound, acceptedCompressionTypes, request, receiver);
                 });
     }
@@ -574,15 +564,26 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     private void setFileReferencesToDownload(Request req) {
         req.detach();
         rpcAuthorizer.authorizeFileRequest(req)
-                .thenRun(() -> { // okay to do in authorizer thread as downloadIfNeeded is async
+                .thenRun(() -> { // okay to do in authorizer thread as downloadFromSource is async
                     String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
+
+                    // Download directly from the source that has the file reference, which
+                    // is the client that sent the request
+                    var client = req.target();
+                    var peerSpec = client.peerSpec();
                     Stream.of(fileReferenceStrings)
                             .map(FileReference::new)
-                            .forEach(fileReference -> downloader.downloadIfNeeded(
-                                    new FileReferenceDownload(fileReference,
-                                                              req.target().toString(),
-                                                              false /* downloadFromOtherSourceIfNotFound */)));
+                            .forEach(fileReference -> downloadFromSource(fileReference, client, peerSpec));
                     req.returnValues().add(new Int32Value(0));
                 });
     }
+
+    private void downloadFromSource(FileReference fileReference, Target client, Spec peerSpec) {
+        var fileReferenceDownload = new FileReferenceDownload(fileReference, client.toString());
+        var downloading = downloader.downloadFromSource(fileReferenceDownload, peerSpec);
+        log.log(FINE, () -> downloading
+                ? "Downloading file reference " + fileReference.value() + " from " + peerSpec
+                : "File reference " + fileReference.value() + " already exists");
+    }
+
 }

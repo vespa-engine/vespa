@@ -70,7 +70,7 @@ public:
     void set_create_if_non_existent(bool value) noexcept { _create_if_non_existent = value; }
     bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
 
-    vespalib::string getSummary() const override;
+    std::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(PutCommand, onPut);
@@ -143,7 +143,7 @@ public:
     [[nodiscard]] bool create_if_missing() const;
 
     const document::DocumentType * getDocumentType() const override;
-    vespalib::string getSummary() const override;
+    std::string getSummary() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -201,7 +201,7 @@ public:
 class GetCommand : public BucketInfoCommand {
     document::DocumentId    _docId;
     Timestamp               _beforeTimestamp;
-    vespalib::string        _fieldSet;
+    std::string        _fieldSet;
     TestAndSetCondition     _condition;
     InternalReadConsistency _internal_read_consistency;
 public:
@@ -211,7 +211,7 @@ public:
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
-    const vespalib::string& getFieldSet() const { return _fieldSet; }
+    const std::string& getFieldSet() const { return _fieldSet; }
     void setFieldSet(std::string_view fieldSet) { _fieldSet = fieldSet; }
     [[nodiscard]] bool has_condition() const noexcept { return _condition.isPresent(); }
     [[nodiscard]] const TestAndSetCondition& condition() const noexcept { return _condition; }
@@ -223,7 +223,7 @@ public:
         _internal_read_consistency = consistency;
     }
 
-    vespalib::string getSummary() const override;
+    std::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     api::LockingRequirements lockingRequirements() const noexcept override {
@@ -241,7 +241,7 @@ public:
  */
 class GetReply : public BucketInfoReply {
     document::DocumentId _docId; // In case of not found, we want id still
-    vespalib::string _fieldSet;
+    std::string _fieldSet;
     DocumentSP _doc; // Null pointer if not found
     Timestamp _beforeTimestamp;
     Timestamp _lastModifiedTime;
@@ -260,7 +260,7 @@ public:
 
     const DocumentSP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const { return _docId; }
-    const vespalib::string& getFieldSet() const { return _fieldSet; }
+    const std::string& getFieldSet() const { return _fieldSet; }
 
     Timestamp getLastModifiedTimestamp() const noexcept { return _lastModifiedTime; }
     Timestamp getBeforeTimestamp() const noexcept { return _beforeTimestamp; }
@@ -291,7 +291,7 @@ public:
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
     const document::DocumentId& getDocumentId() const override { return _docId; }
     Timestamp getTimestamp() const { return _timestamp; }
-    vespalib::string getSummary() const override;
+    std::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(RemoveCommand, onRemove)
 };

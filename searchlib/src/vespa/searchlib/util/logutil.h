@@ -11,7 +11,7 @@ public:
      * Extract the last num elements from the given path and
      * return a new path with these elements.
      **/
-    static vespalib::string extractLastElements(const vespalib::string & path, size_t numElems);
+    static std::string extractLastElements(const std::string & path, size_t numElems);
 
     /**
      * Log the given directory (with size) to the given json stringer.
@@ -20,7 +20,7 @@ public:
      * @param path     the path of the directory to log.
      * @param numElems the last number of elements from the path to log.
      **/
-    static void logDir(vespalib::JSONStringer & jstr, const vespalib::string & path, size_t numElems);
+    static void logDir(vespalib::JSONStringer & jstr, const std::string & path, size_t numElems);
 };
 
 }

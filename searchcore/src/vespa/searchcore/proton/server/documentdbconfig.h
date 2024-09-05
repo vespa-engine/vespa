@@ -111,8 +111,8 @@ public:
     using ImportedFieldsConfigSP = std::shared_ptr<ImportedFieldsConfig>;
 
 private:
-    vespalib::string                          _configId;
-    vespalib::string                          _docTypeName;
+    std::string                          _configId;
+    std::string                          _docTypeName;
     int64_t                                   _generation;
     RankProfilesConfigSP                      _rankProfiles;
     std::shared_ptr<const RankingConstants>   _rankingConstants;
@@ -170,17 +170,17 @@ public:
                      const search::LogDocumentStore::Config & storeConfig,
                      const ThreadingServiceConfig & threading_service_config,
                      const AllocConfig & alloc_config,
-                     const vespalib::string &configId,
-                     const vespalib::string &docTypeName) noexcept;
+                     const std::string &configId,
+                     const std::string &docTypeName) noexcept;
 
     DocumentDBConfig(const DocumentDBConfig &cfg) noexcept;
     DocumentDBConfig & operator=(const DocumentDBConfig &cfg) = delete;
     ~DocumentDBConfig();
 
-    const vespalib::string &getConfigId() const { return _configId; }
-    void setConfigId(const vespalib::string &configId) { _configId = configId; }
+    const std::string &getConfigId() const { return _configId; }
+    void setConfigId(const std::string &configId) { _configId = configId; }
 
-    const vespalib::string &getDocTypeName() const { return _docTypeName; }
+    const std::string &getDocTypeName() const { return _docTypeName; }
 
     int64_t getGeneration() const { return _generation; }
 

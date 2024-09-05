@@ -41,7 +41,7 @@ private:
     uint16_t _readyCopies;
     bool     _activePerGroup;
     bool     _ensurePrimaryPersisted;
-    vespalib::string _serialized;
+    std::string _serialized;
 
     struct ResultGroup {
         const Group* _group;
@@ -101,12 +101,12 @@ public:
     Distribution(const Distribution&);
     explicit Distribution(const ConfigWrapper & cfg);
     explicit Distribution(const DistributionConfig & cfg);
-    explicit Distribution(const vespalib::string& serialized);
+    explicit Distribution(const std::string& serialized);
     ~Distribution() override;
 
     Distribution& operator=(const Distribution&) = delete;
 
-    [[nodiscard]] const vespalib::string& serialized() const noexcept { return _serialized; }
+    [[nodiscard]] const std::string& serialized() const noexcept { return _serialized; }
 
     [[nodiscard]] const Group& getNodeGraph() const noexcept { return *_nodeGraph; }
     [[nodiscard]] uint16_t getRedundancy() const noexcept { return _redundancy; }
@@ -148,7 +148,7 @@ public:
      * handle active per group feature.
      */
     using IndexList = vespalib::SmallVector<uint16_t, 4>;
-    std::vector<IndexList> splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodes) const;
+    std::vector<IndexList> splitNodesIntoLeafGroups(std::span<const uint16_t> nodes) const;
 
     static bool allDistributorsDown(const Group&, const ClusterState&);
 };

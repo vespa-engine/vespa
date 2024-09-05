@@ -40,7 +40,7 @@ using search::query::TrueQueryNode;
 using search::query::WandTerm;
 using search::query::WeakAnd;
 using search::query::WeightedSetTerm;
-using vespalib::string;
+using std::string;
 using std::string_view;
 
 namespace search::queryeval {

@@ -43,7 +43,7 @@ NotImplementedAttribute::getFloat(DocId) const {
     notImplemented();
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 NotImplementedAttribute::get_raw(DocId) const
 {
     notImplemented();
@@ -60,7 +60,7 @@ NotImplementedAttribute::get(DocId, double *, uint32_t) const {
 }
 
 uint32_t
-NotImplementedAttribute::get(DocId, vespalib::string *, uint32_t) const {
+NotImplementedAttribute::get(DocId, std::string *, uint32_t) const {
     notImplemented();
 }
 

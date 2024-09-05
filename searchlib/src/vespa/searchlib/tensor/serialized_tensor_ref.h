@@ -14,13 +14,13 @@ class SerializedTensorRef
 {
     VectorBundle                                 _vectors;
     uint32_t                                     _num_mapped_dimensions;
-    vespalib::ConstArrayRef<vespalib::string_id> _labels; // all subspaces
+    std::span<const vespalib::string_id> _labels; // all subspaces
 public:
     SerializedTensorRef();
-    SerializedTensorRef(VectorBundle vectors, uint32_t num_mapped_dimensions, vespalib::ConstArrayRef<vespalib::string_id> labels);
+    SerializedTensorRef(VectorBundle vectors, uint32_t num_mapped_dimensions, std::span<const vespalib::string_id> labels);
     ~SerializedTensorRef();
     const VectorBundle& get_vectors() const noexcept { return _vectors; }
-    vespalib::ConstArrayRef<vespalib::string_id> get_labels(uint32_t subspace) const;
+    std::span<const vespalib::string_id> get_labels(uint32_t subspace) const;
 };
 
 }

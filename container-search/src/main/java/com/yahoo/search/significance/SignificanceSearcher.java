@@ -114,6 +114,15 @@ public class SignificanceSearcher extends Searcher {
     }
 
     private SignificanceModel getSignificanceModelFromQueryLanguage(Query query) throws IllegalArgumentException {
+        /*
+        Implements the following model resolving logic:
+        - When language is explicitly tagged on query
+            - Use language if available from the model registry, fail otherwise.
+            - If “un” try both “un” and “en”.
+        - When language is implicitly detected
+            - Use language if available from the model registry. Fallback to “un” then “en”, fail if none are available.
+         */
+
         Language explicitLanguage = query.getModel().getLanguage();
         Language implicitLanguage = query.getModel().getParsingLanguage();
 
@@ -132,14 +141,8 @@ public class SignificanceSearcher extends Searcher {
             return model.get();
         }
 
-        if (implicitLanguage == Language.UNKNOWN) {
-            return handleFallBackToUnknownLanguage();
-        }
         var model = significanceModelRegistry.getModel(implicitLanguage);
-        if (model.isEmpty()) {
-            throw new IllegalArgumentException("No significance model available for implicit language " + implicitLanguage);
-        }
-        return model.get();
+        return model.orElseGet(this::handleFallBackToUnknownLanguage);
     }
 
     private SignificanceModel handleFallBackToUnknownLanguage() throws IllegalArgumentException {
@@ -158,7 +161,7 @@ public class SignificanceSearcher extends Searcher {
 
         if (root instanceof WordItem wi) {
             var word = wi.getWord();
-            var documentFrequency = significanceModel.documentFrequency(word);
+            var documentFrequency = significanceModel.documentFrequency(word.toLowerCase());
             long N                = documentFrequency.corpusSize();
             long nq_i             = documentFrequency.frequency();
             log.log(Level.FINE, () -> "Setting document frequency for " + word + " to {frequency: " + nq_i + ", count: " + N + "}");

@@ -4,8 +4,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP("featurenameparser_test");
@@ -13,10 +13,10 @@ LOG_SETUP("featurenameparser_test");
 using namespace search::fef;
 
 struct ParamList {
-    std::vector<vespalib::string> list;
+    std::vector<std::string> list;
     ParamList() : list() {}
-    ParamList(const std::vector<vespalib::string> &l) : list(l) {}
-    ParamList &add(const vespalib::string &str) {
+    ParamList(const std::vector<std::string> &l) : list(l) {}
+    ParamList &add(const std::string &str) {
         list.push_back(str);
         return *this;
     }
@@ -34,9 +34,9 @@ std::ostream &operator<<(std::ostream &os, const ParamList &pl) {
 }
 
 bool
-testParse(const vespalib::string &input, bool valid,
-          const vespalib::string &base, ParamList pl,
-          const vespalib::string &output)
+testParse(const std::string &input, bool valid,
+          const std::string &base, ParamList pl,
+          const std::string &output)
 {
     bool ok = true;
     FeatureNameParser parser(input);
@@ -52,7 +52,7 @@ testParse(const vespalib::string &input, bool valid,
 }
 
 void
-testFile(const vespalib::string &name)
+testFile(const std::string &name)
 {
     char buf[4_Ki];
     uint32_t lineN = 0;
@@ -60,7 +60,7 @@ testFile(const vespalib::string &name)
     ASSERT_TRUE(f != 0);
     while (fgets(buf, sizeof(buf), f) != NULL) {
         ++lineN;
-        vespalib::string line(buf);
+        std::string line(buf);
         if (*line.rbegin() == '\n') {
             line.resize(line.size() - 1);
         }
@@ -74,8 +74,8 @@ testFile(const vespalib::string &name)
             LOG(error, "(%s:%u): malformed line: '%s'",
                 name.c_str(), lineN, line.c_str());
         } else {
-            vespalib::string input = line.substr(0, idx);
-            vespalib::string expect = line.substr(idx + strlen("<=>"));
+            std::string input = line.substr(0, idx);
+            std::string expect = line.substr(idx + strlen("<=>"));
             EXPECT_EQ(FeatureNameParser(input).featureName(), expect) << (failed = true, "");
             if (failed) {
                 LOG(error, "(%s:%u): test failed: '%s'",

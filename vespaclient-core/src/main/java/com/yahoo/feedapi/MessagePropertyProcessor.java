@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Utility class for assigning properties to messages, either from implicit
  * config values or from explicit values in requests.
  */
-public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscriber<FeederConfig> {
+public final class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscriber<FeederConfig> {
 
     private static final Logger log = Logger.getLogger(MessagePropertyProcessor.class.getName());
     private static final boolean defaultCreateIfNonExistent = false;

@@ -11,7 +11,7 @@ namespace search::features {
 
 namespace {
 
-const vespalib::string key = "firstPhaseRankLookup";
+const std::string key = "firstPhaseRankLookup";
 
 }
 

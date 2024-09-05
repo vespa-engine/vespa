@@ -4,7 +4,8 @@
 
 #include <vespa/vespalib/btree/btree_key_data.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
+#include <vector>
 
 namespace search::attribute {
 
@@ -37,7 +38,7 @@ public:
     bool hasArray() const noexcept { return _arrayValid; }
     bool hasBitVector() const noexcept { return static_cast<bool>(_bitVector); }
     bool emptyArray() const noexcept { return _array.empty(); }
-    vespalib::ConstArrayRef<Posting> getArray() const noexcept { return _array; }
+    std::span<const Posting> getArray() const noexcept { return _array; }
     const BitVector *getBitVector() const noexcept { return _bitVector.get(); }
     BitVector *getBitVector() noexcept { return _bitVector.get(); }
     const std::shared_ptr<BitVector> &getBitVectorSP() const noexcept { return _bitVector; }

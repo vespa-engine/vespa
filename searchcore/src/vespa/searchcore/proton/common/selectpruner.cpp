@@ -4,7 +4,7 @@
 #include "select_utils.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/i_documenttype_repo.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/constant.h>
@@ -49,10 +49,10 @@ using search::attribute::CollectionType;
 
 namespace proton {
 
-SelectPrunerBase::SelectPrunerBase(const vespalib::string &docType,
+SelectPrunerBase::SelectPrunerBase(const std::string &docType,
                                    const search::IAttributeManager *amgr,
                                    const document::Document &emptyDoc,
-                                   const document::DocumentTypeRepo &repo,
+                                   const document::IDocumentTypeRepo &repo,
                                    bool hasFields,
                                    bool hasDocuments)
     : _docType(docType),
@@ -74,10 +74,10 @@ SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase &rhs)
 {
 }
 
-SelectPruner::SelectPruner(const vespalib::string &docType,
+SelectPruner::SelectPruner(const std::string &docType,
                            const search::IAttributeManager *amgr,
                            const document::Document &emptyDoc,
-                           const document::DocumentTypeRepo &repo,
+                           const document::IDocumentTypeRepo &repo,
                            bool hasFields,
                            bool hasDocuments)
     : CloningVisitor(),
@@ -374,7 +374,7 @@ SelectPruner::visitFunctionValueNode(const FunctionValueNode &expr)
         return; // Can shortcut evaluation when function argument is invalid
     }
     ValueNode::UP child(std::move(_valueNode));
-    const vespalib::string &funcName(expr.getFunctionName());
+    const std::string &funcName(expr.getFunctionName());
     _valueNode = std::make_unique<FunctionValueNode>(funcName, std::move(child));
     if (_priority < FuncPriority) {
         _valueNode->setParentheses();
@@ -402,7 +402,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     }
     const document::DocumentType *docType = _repo.getDocumentType(_docType);
     bool complex = false; // Cannot handle attribute if complex expression
-    vespalib::string name = SelectUtils::extractFieldName(expr, complex);
+    std::string name = SelectUtils::extractFieldName(expr, complex);
     const bool is_imported = docType->has_imported_field_name(name);
     if (complex || !is_imported) {
         try {

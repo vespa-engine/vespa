@@ -1,22 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include "counter_aggregator.h"
 #include "gauge_aggregator.h"
+#include <string>
+#include <vector>
 
 namespace vespalib::metrics {
 
 class DimensionBinding {
 private:
-    const vespalib::string _dimensionName;
-    const vespalib::string _labelValue;
+    const std::string _dimensionName;
+    const std::string _labelValue;
 public:
-    const vespalib::string &dimensionName() const { return _dimensionName; }
-    const vespalib::string &labelValue() const { return _labelValue; }
-    DimensionBinding(const vespalib::string &a,
-                     const vespalib::string &v) noexcept
+    const std::string &dimensionName() const { return _dimensionName; }
+    const std::string &labelValue() const { return _labelValue; }
+    DimensionBinding(const std::string &a,
+                     const std::string &v) noexcept
         : _dimensionName(a), _labelValue(v)
     {}
     ~DimensionBinding() {}
@@ -28,22 +28,22 @@ struct PointSnapshot {
 
 class CounterSnapshot {
 private:
-    const vespalib::string _name;
+    const std::string _name;
     const PointSnapshot &_point;
     const size_t _count;
 public:
-    CounterSnapshot(const vespalib::string &n, const PointSnapshot &p, const CounterAggregator &c)
+    CounterSnapshot(const std::string &n, const PointSnapshot &p, const CounterAggregator &c)
         : _name(n), _point(p), _count(c.count)
     {}
     ~CounterSnapshot() {}
-    const vespalib::string &name() const { return _name; }
+    const std::string &name() const { return _name; }
     const PointSnapshot &point() const { return _point; }
     size_t count() const { return _count; }
 };
 
 class GaugeSnapshot {
 private:
-    const vespalib::string _name;
+    const std::string _name;
     const PointSnapshot &_point;
     const size_t _observedCount;
     const double _averageValue;
@@ -52,7 +52,7 @@ private:
     const double _maxValue;
     const double _lastValue;
 public:
-    GaugeSnapshot(const vespalib::string &n, const PointSnapshot &p, const GaugeAggregator &c)
+    GaugeSnapshot(const std::string &n, const PointSnapshot &p, const GaugeAggregator &c)
         : _name(n),
           _point(p),
           _observedCount(c.observedCount),
@@ -63,7 +63,7 @@ public:
           _lastValue(c.lastValue)
     {}
     ~GaugeSnapshot() {}
-    const vespalib::string &name() const { return _name; }
+    const std::string &name() const { return _name; }
     const PointSnapshot &point() const { return _point; }
     size_t observedCount() const { return _observedCount; }
     double averageValue() const { return _averageValue; }

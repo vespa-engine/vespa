@@ -73,11 +73,8 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
       "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
-      "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.Tags, java.lang.String, java.lang.Long, long)",
-      "public void <init>(java.lang.String, java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
-      "public java.lang.String getDeployedByUser()",
-      "public com.yahoo.config.provision.Tags getTags()",
       "public java.lang.String getDeployPath()",
       "public com.yahoo.config.provision.ApplicationId getApplicationId()",
       "public java.lang.Long getDeployTimestamp()",
@@ -88,7 +85,6 @@
       "public java.lang.String toString()",
       "public static com.yahoo.config.application.api.ApplicationMetaData fromJsonString(java.lang.String)",
       "public com.yahoo.slime.Slime getSlime()",
-      "public java.lang.String asJsonString()",
       "public byte[] asJsonBytes()"
     ],
     "fields" : [ ]
@@ -254,7 +250,8 @@
     "superClass" : "com.yahoo.config.application.api.DeploymentSpec$Steps",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.util.Map, com.yahoo.config.application.api.Bcp, java.time.Instant)",
@@ -513,7 +510,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
@@ -569,7 +567,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.config.provision.RegionName, com.yahoo.config.provision.InstanceName, int)",
@@ -586,7 +585,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(java.lang.String, java.lang.String, com.yahoo.config.application.api.Endpoint$Level, java.util.List)",
@@ -1233,7 +1233,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract void startDownload(java.lang.String, int, java.util.Set)"
+      "public void startDownload(java.lang.String, int, java.util.Set)",
+      "public abstract void triggerDownload(java.lang.String, int, java.util.Set)"
     ],
     "fields" : [ ]
   },
@@ -1261,7 +1262,7 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
+      "public com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
       "public abstract java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)"
     ],
     "fields" : [ ]
@@ -1345,6 +1346,7 @@
       "public boolean logserverOtelCol()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
+      "public double logserverNodeMemory()",
       "public boolean symmetricPutAndActivateReplicaSelection()",
       "public boolean enforceStrictlyIncreasingClusterStateVersions()",
       "public boolean distributionConfigFromClusterController()",
@@ -1788,12 +1790,14 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.util.Optional)",
       "public java.lang.String getName()",
       "public java.lang.String getAwsId()",
       "public java.lang.String getRole()",
       "public java.util.Optional getExternalId()",
       "public com.yahoo.config.model.api.TenantSecretStore withExternalId(java.lang.String)",
+      "public boolean isValid()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"

@@ -27,7 +27,7 @@ public:
     DocumentUP getFullDocument(search::DocumentIdT lid) const override;
     DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const override;
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
-    CachedSelect::SP parseSelect(const vespalib::string &selection) const override;
+    CachedSelect::SP parseSelect(const std::string &selection) const override;
     ReadGuard getReadGuard() const override;
     uint32_t getDocIdLimit() const override;
 };

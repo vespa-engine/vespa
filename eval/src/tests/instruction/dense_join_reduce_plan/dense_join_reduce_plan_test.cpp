@@ -7,7 +7,7 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::instruction;
 
-ValueType type(const vespalib::string &type_spec) {
+ValueType type(const std::string &type_spec) {
     return ValueType::from_spec(type_spec);
 }
 

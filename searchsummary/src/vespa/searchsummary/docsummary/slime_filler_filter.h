@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <optional>
+#include <string>
 
 namespace search::docsummary {
 
@@ -30,7 +30,7 @@ public:
     };
 
 private:
-    vespalib::hash_map<vespalib::string, std::unique_ptr<SlimeFillerFilter>> _filter;
+    vespalib::hash_map<std::string, std::unique_ptr<SlimeFillerFilter>> _filter;
     Iterator check_field(std::string_view field_name) const;
 
 public:

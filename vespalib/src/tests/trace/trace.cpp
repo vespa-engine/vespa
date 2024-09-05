@@ -24,7 +24,7 @@ TEST("testEncodeDecode")
     EXPECT_TRUE(TraceNode::decode("").isEmpty());
     EXPECT_TRUE(!TraceNode::decode("([note])").isEmpty());
 
-    string str =
+    std::string str =
         "([[17/Jun/2009:09:02:30 +0200\\] Message (type 1) received at 'dst' for session 'session'.]"
         "[[17/Jun/2009:09:02:30 +0200\\] [APP_TRANSIENT_ERROR @ localhost\\]: err1]"
         "[[17/Jun/2009:09:02:30 +0200\\] Sending reply (version 4.2) from 'dst'.])";
@@ -263,8 +263,8 @@ TEST("testTraceDump")
         for (int i = 0; i < 10; ++i) {
             big.addChild(TraceNode(b1));
         }
-        string normal = big.toString();
-        string full = big.toString(100000);
+        std::string normal = big.toString();
+        std::string full = big.toString(100000);
         EXPECT_GREATER(normal.size(), 30000u);
         EXPECT_LESS(normal.size(), 32000u);
         EXPECT_GREATER(full.size(), 50000u);
@@ -277,17 +277,17 @@ TEST("testTraceDump")
         s2.addChild("test");
         s1.addChild(s2);
         s1.addChild(s2);
-        EXPECT_EQUAL(vespalib::string("...\n"), s1.toString(0));
-        EXPECT_EQUAL(vespalib::string("<trace>\n...\n"), s1.toString(1));
-        EXPECT_EQUAL(vespalib::string("<trace>\n"      // 8    8
+        EXPECT_EQUAL(std::string("...\n"), s1.toString(0));
+        EXPECT_EQUAL(std::string("<trace>\n...\n"), s1.toString(1));
+        EXPECT_EQUAL(std::string("<trace>\n"      // 8    8
                                       "    <trace>\n"  // 12  20
                                       "        test\n" // 13  33
                                       "...\n"), s1.toString(33));
-        EXPECT_EQUAL(vespalib::string("<trace>\n"      // 8   8
+        EXPECT_EQUAL(std::string("<trace>\n"      // 8   8
                                       "    test\n"     // 9  17
                                       "    test\n"     // 9  26
                                       "...\n"), s2.toString(26));
-        EXPECT_EQUAL(vespalib::string("<trace>\n"      // 8   8
+        EXPECT_EQUAL(std::string("<trace>\n"      // 8   8
                                       "    test\n"     // 9  17
                                       "    test\n"     // 9  26
                                       "</trace>\n"), s2.toString(27));
@@ -297,7 +297,7 @@ TEST("testTraceDump")
 
 struct EncoderVisitor : public TraceVisitor
 {
-    vespalib::string str;
+    std::string str;
     void entering(const TraceNode & traceNode) override {
         (void) traceNode;
         str += "(";

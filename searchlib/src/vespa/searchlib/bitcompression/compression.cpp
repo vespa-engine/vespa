@@ -7,9 +7,9 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/datastore/aligner.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <span>
 
 namespace search::bitcompression {
 
@@ -116,7 +116,7 @@ EncodeContext64EBase<false>::writeBits(uint64_t data, uint32_t length)
 
 namespace {
 
-vespalib::string noFeatures = "NoFeatures";
+std::string noFeatures = "NoFeatures";
 
 }
 
@@ -258,7 +258,7 @@ writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
 
 template <bool bigEndian>
 void
-FeatureEncodeContext<bigEndian>::writeBytes(vespalib::ConstArrayRef<char> buf)
+FeatureEncodeContext<bigEndian>::writeBytes(std::span<const char> buf)
 {
     for (unsigned char c : buf) {
         writeBits(c, 8);
@@ -307,7 +307,7 @@ template <bool bigEndian>
 void
 FeatureDecodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-            const vespalib::string &prefix)
+            const std::string &prefix)
 {
     (void) header;
     (void) prefix;
@@ -315,7 +315,7 @@ readHeader(const vespalib::GenericHeader &header,
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 FeatureDecodeContext<bigEndian>::getIdentifier() const
 {
     return noFeatures;
@@ -390,7 +390,7 @@ template <bool bigEndian>
 void
 FeatureEncodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
-           const vespalib::string &prefix)
+           const std::string &prefix)
 {
     (void) header;
     (void) prefix;
@@ -401,7 +401,7 @@ template <bool bigEndian>
 void
 FeatureEncodeContext<bigEndian>::
 writeHeader(vespalib::GenericHeader &header,
-            const vespalib::string &prefix) const
+            const std::string &prefix) const
 {
     (void) header;
     (void) prefix;
@@ -409,7 +409,7 @@ writeHeader(vespalib::GenericHeader &header,
 
 
 template <bool bigEndian>
-const vespalib::string &
+const std::string &
 FeatureEncodeContext<bigEndian>::getIdentifier() const
 {
     return noFeatures;

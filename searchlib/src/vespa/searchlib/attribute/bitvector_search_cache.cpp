@@ -18,7 +18,7 @@ BitVectorSearchCache::BitVectorSearchCache()
 BitVectorSearchCache::~BitVectorSearchCache() = default;
 
 void
-BitVectorSearchCache::insert(const vespalib::string &term, std::shared_ptr<Entry> entry)
+BitVectorSearchCache::insert(const std::string &term, std::shared_ptr<Entry> entry)
 {
     size_t entry_extra_memory_usage = 0;
     if (entry) {
@@ -36,7 +36,7 @@ BitVectorSearchCache::insert(const vespalib::string &term, std::shared_ptr<Entry
 }
 
 std::shared_ptr<BitVectorSearchCache::Entry>
-BitVectorSearchCache::find(const vespalib::string &term) const
+BitVectorSearchCache::find(const std::string &term) const
 {
     if (size() > 0ul) {
         std::shared_lock guard(_mutex);

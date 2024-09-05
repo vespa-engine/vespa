@@ -22,7 +22,7 @@ public:
         return std::make_unique<MatchingElements>(_matching_elems);
     }
 
-    void add_matching_elements(uint32_t docid, const vespalib::string& field_name,
+    void add_matching_elements(uint32_t docid, const std::string& field_name,
                                const std::vector<uint32_t>& elements) {
         _matching_elems.add_matching_elements(docid, field_name, elements);
     }

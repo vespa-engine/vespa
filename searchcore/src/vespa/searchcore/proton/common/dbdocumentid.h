@@ -39,7 +39,7 @@ public:
                    _lid == rhs._lid;
     }
 
-    vespalib::string toString() const {
+    std::string toString() const {
         return vespalib::make_string("subDbId=%u, lid=%u", _subDbId, _lid);
     }
 

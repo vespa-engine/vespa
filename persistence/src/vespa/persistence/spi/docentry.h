@@ -45,7 +45,7 @@ public:
      */
     SizeType getSize() const { return _size; }
 
-    virtual vespalib::string toString() const;
+    virtual std::string toString() const;
     virtual const Document* getDocument() const { return nullptr; }
     virtual const DocumentId* getDocumentId() const { return nullptr; }
     virtual std::string_view getDocumentType() const { return std::string_view(); }

@@ -78,7 +78,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         validateModel();
     }
 
-    public void validateModel() {
+    private void validateModel() {
         Map<String, TensorType> inputs = evaluator.getInputInfo();
         validateName(inputs, inputIdsName, "input");
         validateName(inputs, attentionMaskName, "input");
@@ -88,7 +88,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         validateName(outputs, outputName, "output");
     }
 
-    private void validateName(Map<String, TensorType> types, String name, String type) {
+    private static void validateName(Map<String, TensorType> types, String name, String type) {
         if ( ! types.containsKey(name)) {
             throw new IllegalArgumentException("Model does not contain required " + type + ": '" + name + "'. " +
                     "Model contains: " + String.join(",", types.keySet()));

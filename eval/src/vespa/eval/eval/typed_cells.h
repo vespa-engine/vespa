@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/eval/eval/cell_type.h>
+#include <span>
 
 namespace vespalib::eval {
 
@@ -15,10 +15,10 @@ struct TypedCells {
     bool        _non_existing_attribute_value:1;
     CellType    type;
 
-    explicit TypedCells(ConstArrayRef<double> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::DOUBLE) {}
-    explicit TypedCells(ConstArrayRef<float> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::FLOAT) {}
-    explicit TypedCells(ConstArrayRef<BFloat16> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::BFLOAT16) {}
-    explicit TypedCells(ConstArrayRef<Int8Float> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::INT8) {}
+    explicit TypedCells(std::span<const double> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::DOUBLE) {}
+    explicit TypedCells(std::span<const float> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::FLOAT) {}
+    explicit TypedCells(std::span<const BFloat16> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::BFLOAT16) {}
+    explicit TypedCells(std::span<const Int8Float> cells) noexcept : data(cells.data()), size(cells.size()), _non_existing_attribute_value(false), type(CellType::INT8) {}
 
     TypedCells() noexcept : data(nullptr), size(0), _non_existing_attribute_value(false), type(CellType::DOUBLE) {}
     TypedCells(const void *dp, CellType ct, size_t sz) noexcept : data(dp), size(sz), _non_existing_attribute_value(false), type(ct) {}
@@ -31,12 +31,12 @@ struct TypedCells {
 
     template <typename T> bool check_type() const noexcept  { return check_cell_type<T>(type); }
 
-    template <typename T> ConstArrayRef<T> typify() const noexcept {
+    template <typename T> std::span<const T> typify() const noexcept {
         assert(check_type<T>());
-        return ConstArrayRef<T>((const T *)data, size);
+        return std::span<const T>((const T *)data, size);
     }
-    template <typename T> ConstArrayRef<T> unsafe_typify() const noexcept {
-        return ConstArrayRef<T>((const T *)data, size);
+    template <typename T> std::span<const T> unsafe_typify() const noexcept {
+        return std::span<const T>((const T *)data, size);
     }
 
     TypedCells(TypedCells &&other) noexcept = default;

@@ -19,8 +19,8 @@ class FunctionTableFactory : public ITableFactory
 {
 public:
     struct ParsedName {
-        vespalib::string type;
-        std::vector<vespalib::string> args;
+        std::string type;
+        std::vector<std::string> args;
         ParsedName() noexcept : type(), args() {}
     };
 
@@ -32,20 +32,20 @@ public:
     /**
      * Creates a table where the given name specifies the function and arguments to use.
      **/
-    [[nodiscard]] Table::SP createTable(const vespalib::string & name) const override;
+    [[nodiscard]] Table::SP createTable(const std::string & name) const override;
 
     /**
      * Parses the given function name and returns true if success.
      **/
-    static bool parseFunctionName(const vespalib::string & name, ParsedName & parsed);
+    static bool parseFunctionName(const std::string & name, ParsedName & parsed);
 private:
     size_t _defaultTableSize;
 
-    bool checkArgs(const std::vector<vespalib::string> & args, size_t exp, size_t & tableSize) const;
-    bool isSupported(const vespalib::string & type) const;
-    bool isExpDecay(const vespalib::string & type) const { return type == "expdecay"; }
-    bool isLogGrowth(const vespalib::string & type) const { return type == "loggrowth"; }
-    bool isLinear(const vespalib::string & type) const { return type == "linear"; }
+    bool checkArgs(const std::vector<std::string> & args, size_t exp, size_t & tableSize) const;
+    bool isSupported(const std::string & type) const;
+    bool isExpDecay(const std::string & type) const { return type == "expdecay"; }
+    bool isLogGrowth(const std::string & type) const { return type == "loggrowth"; }
+    bool isLinear(const std::string & type) const { return type == "linear"; }
     Table::SP createExpDecay(double w, double t, size_t len) const;
     Table::SP createLogGrowth(double w, double t, double s, size_t len) const;
     Table::SP createLinear(double w, double t, size_t len) const;

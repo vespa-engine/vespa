@@ -25,13 +25,13 @@ DummyDependencyHandler::~DummyDependencyHandler()
 }
 
 void
-DummyDependencyHandler::define_object_input(const vespalib::string &name, const vespalib::eval::ValueType &type)
+DummyDependencyHandler::define_object_input(const std::string &name, const vespalib::eval::ValueType &type)
 {
     object_type_map.emplace(name, FeatureType::object(type));
 }
 
 std::optional<FeatureType>
-DummyDependencyHandler::resolve_input(const vespalib::string &feature_name, Blueprint::AcceptInput accept_type)
+DummyDependencyHandler::resolve_input(const std::string &feature_name, Blueprint::AcceptInput accept_type)
 {
     input.push_back(feature_name);
     accept_input.push_back(accept_type);
@@ -51,14 +51,14 @@ DummyDependencyHandler::resolve_input(const vespalib::string &feature_name, Blue
 }
 
 void
-DummyDependencyHandler::define_output(const vespalib::string &output_name, FeatureType type)
+DummyDependencyHandler::define_output(const std::string &output_name, FeatureType type)
 {
     output.push_back(output_name);
     output_type.push_back(std::move(type));
 }
 
 void
-DummyDependencyHandler::fail(const vespalib::string &msg)
+DummyDependencyHandler::fail(const std::string &msg)
 {
     fail_msg = msg;
 }

@@ -4,10 +4,10 @@
 
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/searchcommon/common/iblobconverter.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <unicode/coll.h>
-#include <vector>
 #include <cassert>
+#include <string>
+#include <vector>
 
 namespace search {
 
@@ -30,7 +30,7 @@ public:
     const Collator & getCollator() const { return *_collator; }
 private:
     struct Buffer {
-        vespalib::string _data;
+        std::string _data;
         uint8_t *ptr() { return (uint8_t *)_data.data(); }
         int32_t siz() { return _data.size(); }
         Buffer() : _data() {

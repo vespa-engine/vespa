@@ -29,8 +29,8 @@ FakeSearchable::FakeSearchable()
 }
 
 FakeSearchable &
-FakeSearchable::addResult(const vespalib::string &field,
-                          const vespalib::string &term,
+FakeSearchable::addResult(const std::string &field,
+                          const std::string &term,
                           const FakeResult &result)
 {
     _map[Key(field, term)] = result;
@@ -46,12 +46,12 @@ template <class Map>
 class LookupVisitor : public CreateBlueprintVisitorHelper
 {
     const Map &_map;
-    const vespalib::string _tag;
+    const std::string _tag;
     bool _is_attr;
 
 public:
     LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
-                  const Map &map, const vespalib::string &tag, bool is_attr, const FieldSpec &field);
+                  const Map &map, const std::string &tag, bool is_attr, const FieldSpec &field);
 
     ~LookupVisitor();
     template <class TermNode>
@@ -72,7 +72,7 @@ public:
 
 template <class Map>
 LookupVisitor<Map>::LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
-                                  const Map &map, const vespalib::string &tag, bool is_attr, const FieldSpec &field)
+                                  const Map &map, const std::string &tag, bool is_attr, const FieldSpec &field)
     : CreateBlueprintVisitorHelper(searchable, field, requestContext),
       _map(map),
       _tag(tag),
@@ -86,7 +86,7 @@ template <class Map>
 template <class TermNode>
 void
 LookupVisitor<Map>::visitTerm(TermNode &n) {
-    const vespalib::string term_string = termAsString(n);
+    const std::string term_string = termAsString(n);
 
     FakeResult result;
     auto pos = _map.find(typename Map::key_type(getField().getName(), term_string));

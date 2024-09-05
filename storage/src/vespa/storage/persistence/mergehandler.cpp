@@ -319,7 +319,7 @@ namespace {
         return value;
     }
 
-    api::StorageMessageAddress createAddress(const vespalib::string * clusterName, uint16_t node) {
+    api::StorageMessageAddress createAddress(const std::string * clusterName, uint16_t node) {
         return api::StorageMessageAddress::create(clusterName, lib::NodeType::STORAGE, node);
     }
 

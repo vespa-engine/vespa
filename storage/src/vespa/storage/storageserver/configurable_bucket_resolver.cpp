@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <string>
 
 using namespace document;
 
@@ -26,14 +27,14 @@ ConfigurableBucketResolver::bucketFromId(const DocumentId& id) const {
         return {iter->second, BucketId(0)};
     }
     throw UnknownBucketSpaceException("Unknown bucket space mapping for document type '"
-                                      + id.getDocType() + "' in id: '" + id.toString() + "'", VESPA_STRLOC);
+                                      + std::string(id.getDocType()) + "' in id: '" + id.toString() + "'", VESPA_STRLOC);
 }
 
-BucketSpace ConfigurableBucketResolver::bucketSpaceFromName(const vespalib::string& name) const {
+BucketSpace ConfigurableBucketResolver::bucketSpaceFromName(const std::string& name) const {
     return FixedBucketSpaces::from_string(name);
 }
 
-vespalib::string ConfigurableBucketResolver::nameFromBucketSpace(const BucketSpace& space) const {
+std::string ConfigurableBucketResolver::nameFromBucketSpace(const BucketSpace& space) const {
     return FixedBucketSpaces::to_string(space);
 }
 
@@ -48,4 +49,4 @@ std::shared_ptr<ConfigurableBucketResolver> ConfigurableBucketResolver::from_con
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, document::BucketSpace);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, document::BucketSpace);

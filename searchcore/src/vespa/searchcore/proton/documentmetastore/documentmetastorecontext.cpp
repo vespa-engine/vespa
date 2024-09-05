@@ -21,7 +21,7 @@ DocumentMetaStoreContext::DocumentMetaStoreContext(std::shared_ptr<bucketdb::Buc
 {}
 
 DocumentMetaStoreContext::DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
-                                                   const vespalib::string &name,
+                                                   const std::string &name,
                                                    const search::GrowStrategy &grow)
     : _metaStoreAttr(std::make_shared<DocumentMetaStore>(std::move(bucketDB), name, grow)),
       _metaStore(std::dynamic_pointer_cast<IDocumentMetaStore>(_metaStoreAttr))

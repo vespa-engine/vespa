@@ -8,7 +8,7 @@
 
 namespace config {
 
-FileConfigWriter::FileConfigWriter(const vespalib::string & fileName)
+FileConfigWriter::FileConfigWriter(const std::string & fileName)
     : _fileName(fileName)
 {
 }

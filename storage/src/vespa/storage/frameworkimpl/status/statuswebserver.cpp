@@ -180,7 +180,7 @@ StatusWebServer::invoke_reporter(const framework::StatusReporter& reporter,
 void
 StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Portal::GetRequest request)
 {
-    vespalib::string link(urlpath.getPath());
+    std::string link(urlpath.getPath());
 
     // We allow a fixed path prefix that aliases down to whatever is provided after the prefix.
     std::string_view optional_status_path_prefix = "/contentnode-status/v1/";

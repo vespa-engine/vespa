@@ -64,6 +64,29 @@ public class QueryTestCase {
     }
 
     @Test
+    void testOrQueryWithDefaultIndexAllParsing() {
+        Query q = newQuery("/search?query=(fOObar foobar) kanoo&type=all&default-index=def");
+        assertEquals("AND (OR def:fOObar def:foobar) def:kanoo", q.getModel().getQueryTree().getRoot().toString());
+    }
+
+    @Test
+    void testOrQueryWithDefaultIndexWeakAndParsing() {
+        Query q = newQuery("/search?query=(fOObar foobar) kanoo&type=weakAnd&default-index=def");
+        assertEquals("WEAKAND(100) (OR def:fOObar def:foobar) def:kanoo", q.getModel().getQueryTree().getRoot().toString());
+    }
+    @Test
+    void testOrPhraseQueryWithDefaultIndexWeakAndParsing() {
+        Query q = newQuery("/search?query=(\"fOObar\" foobar) kanoo&type=weakAnd&default-index=def");
+        assertEquals("WEAKAND(100) (OR def:fOObar def:foobar) def:kanoo", q.getModel().getQueryTree().getRoot().toString());
+    }
+
+    @Test
+    void testOrPhraseQueryWithDefaultIndexAdvancedParsing() {
+        Query q = newQuery("/search?query=(\"fOObar\") AND kanoo&type=adv&default-index=def");
+        assertEquals("AND def:fOObar def:kanoo", q.getModel().getQueryTree().getRoot().toString());
+    }
+
+    @Test
     void testLongQueryParsing() {
         Query q = newQuery("/p13n?query=news"
                 + "interest:cnn!254+interest:cnnfn!171+interest:cnn+"

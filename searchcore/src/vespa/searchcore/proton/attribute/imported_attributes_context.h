@@ -33,7 +33,7 @@ private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using MetaStoreReadGuard = search::IDocumentMetaStoreContext::IReadGuard;
 
-    using AttributeCache = vespalib::hash_map<vespalib::string, std::unique_ptr<AttributeReadGuard>>;
+    using AttributeCache = vespalib::hash_map<std::string, std::unique_ptr<AttributeReadGuard>>;
     using MetaStoreCache = std::unordered_map<const void *, std::shared_ptr<MetaStoreReadGuard>>;
     using LockGuard = std::lock_guard<std::mutex>;
 

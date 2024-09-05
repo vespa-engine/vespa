@@ -78,6 +78,6 @@ public:
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::queryeval::SourceBlenderSearch::Child &obj);
 

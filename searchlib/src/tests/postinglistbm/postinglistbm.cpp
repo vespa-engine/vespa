@@ -171,7 +171,7 @@ PostingListBM::main(int argc, char **argv)
             break;
         case 'o':
         {
-           vespalib::string operatorType(optarg);
+           std::string operatorType(optarg);
            if (operatorType == "direct") {
                _operatorType = StressRunner::OperatorType::Direct;
            } else if (operatorType == "and") {

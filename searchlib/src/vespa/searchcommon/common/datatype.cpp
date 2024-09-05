@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/arraysize.h>
 #include <ostream>
+#include <string>
 
 namespace search::index::schema {
 
@@ -28,7 +29,7 @@ dataTypeFromName(std::string_view name) {
     else if (name == "REFERENCE") { return DataType::REFERENCE; }
     else if (name == "COMBINED") { return DataType::COMBINED; }
     else {
-        throw InvalidConfigException("Illegal enum value '" + name + "'");
+        throw InvalidConfigException("Illegal enum value '" + std::string(name) + "'");
     }
 }
 
@@ -49,7 +50,7 @@ const char *datatype_str[] = { "BOOL",
                                "REFERENCE",
                                "COMBINED"};
 
-vespalib::string
+std::string
 getTypeName(DataType type) {
     size_t typeAsNum = static_cast<size_t>(type);
     if (typeAsNum >= vespalib::arraysize(datatype_str)) {
@@ -73,7 +74,7 @@ collectionTypeFromName(std::string_view name) {
     else if (name == "ARRAY") { return CollectionType::ARRAY; }
     else if (name == "WEIGHTEDSET") { return CollectionType::WEIGHTEDSET; }
     else {
-        throw InvalidConfigException("Illegal enum value '" + name + "'");
+        throw InvalidConfigException("Illegal enum value '" + std::string(name) + "'");
     }
 }
 
@@ -81,7 +82,7 @@ const char *collectiontype_str[] = { "SINGLE",
                                      "ARRAY",
                                      "WEIGHTEDSET" };
 
-vespalib::string
+std::string
 getTypeName(CollectionType type) {
     size_t typeAsNum = static_cast<size_t>(type);
     if (typeAsNum >= vespalib::arraysize(collectiontype_str)) {

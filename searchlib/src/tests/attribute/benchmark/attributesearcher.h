@@ -79,13 +79,13 @@ public:
     void start() { _thread = std::thread([this](){doRun();}); }
     void join() { _thread.join(); }
     AttributeSearcherStatus & getStatus() { return _status; }
-    void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const char * term, bool prefix = false);
+    void buildTermQuery(std::vector<char> & buffer, const std::string & index, const char * term, bool prefix = false);
 };
 AttributeSearcher::~AttributeSearcher() = default;
 
 
 void
-AttributeSearcher::buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const char * term, bool prefix)
+AttributeSearcher::buildTermQuery(std::vector<char> & buffer, const std::string & index, const char * term, bool prefix)
 {
     uint32_t indexLen = index.size();
     uint32_t termLen = strlen(term);
@@ -231,12 +231,12 @@ AttributeRangeSearcher::doRun()
 class AttributePrefixSearcher : public AttributeSearcher
 {
 private:
-    const std::vector<vespalib::string> & _values;
+    const std::vector<std::string> & _values;
     std::vector<char> _query;
 
 public:
     AttributePrefixSearcher(const AttributePtr & attrPtr,
-                            const std::vector<vespalib::string> & values, uint32_t numQueries) :
+                            const std::vector<std::string> & values, uint32_t numQueries) :
         AttributeSearcher(attrPtr), _values(values), _query()
     {
         _status._numQueries = numQueries;

@@ -37,8 +37,8 @@ RankManager::Snapshot::addProperties(const vespa::config::search::RankProfilesCo
         _properties.back().first = curr.name;
         Properties & p = _properties.back().second;
         for (uint32_t j = 0; j < curr.fef.property.size(); ++j) {
-            p.add(vespalib::string(curr.fef.property[j].name.c_str()),
-                  vespalib::string(curr.fef.property[j].value.c_str()));
+            p.add(std::string(curr.fef.property[j].name.c_str()),
+                  std::string(curr.fef.property[j].value.c_str()));
         }
     }
 }
@@ -178,11 +178,11 @@ RankManager::Snapshot::initRankSetup(const BlueprintFactory & factory)
     LOG(debug, "Number of index environments and rank setups: %u", (uint32_t)_indexEnv.size());
     LOG_ASSERT(_properties.size() == _rankSetup.size());
     for (uint32_t i = 0; i < _properties.size(); ++i) {
-        vespalib::string number = fmt("%u", i);
+        std::string number = fmt("%u", i);
         _rpmap[number] = i;
     }
     for (uint32_t i = 0; i < _properties.size(); ++i) {
-        const vespalib::string &name = _properties[i].first;
+        const std::string &name = _properties[i].first;
         _rpmap[name] = i;
     }
     return true;
@@ -239,7 +239,7 @@ RankManager::configureRankProfiles(const RankProfilesConfig & cfg, std::shared_p
         _snapshot.set(snapshot.release());
         _snapshot.latch(); // switch to the new config object
     } else {
-        vespalib::string msg = "(re-)configuration of rank manager failed";
+        std::string msg = "(re-)configuration of rank manager failed";
         LOG(error, "%s", msg.c_str());
         throw vespalib::Exception(msg, VESPA_STRLOC);
     }

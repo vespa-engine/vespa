@@ -5,7 +5,6 @@ package com.yahoo.jdisc.cloud.aws;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSSessionCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -21,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class VespaAwsCredentialsProvider implements AWSCredentialsProvider {
+public final class VespaAwsCredentialsProvider implements AWSCredentialsProvider {
 
     private static final Logger logger = Logger.getLogger(VespaAwsCredentialsProvider.class.getName());
     private static final String DEFAULT_CREDENTIALS_PATH = "/opt/vespa/var/vespa/aws/credentials.json";

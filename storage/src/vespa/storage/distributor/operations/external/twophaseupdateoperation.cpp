@@ -727,7 +727,7 @@ TwoPhaseUpdateOperation::on_cancel(DistributorStripeMessageSender& sender, const
     }
 }
 
-vespalib::string TwoPhaseUpdateOperation::update_doc_id() const {
+std::string TwoPhaseUpdateOperation::update_doc_id() const {
     assert(_updateCmd.get() != nullptr);
     return _updateCmd->getDocumentId().toString();
 }

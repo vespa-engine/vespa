@@ -113,7 +113,7 @@ public:
      * returns the raw string representation of this. It only makes sense to
      * call this for codecs in server mode.
      */
-    std::optional<vespalib::string> client_provided_sni_extension() const;
+    std::optional<std::string> client_provided_sni_extension() const;
 
     // Only used by code bridging OpenSSL certificate verification callbacks and
     // evaluation of custom authorization rules.

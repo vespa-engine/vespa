@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vespa/vespalib/data/memory.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/common/compressiontype.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <string>
 
 namespace vespalib {
     class Slime;

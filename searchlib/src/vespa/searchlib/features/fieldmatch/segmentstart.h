@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <limits>
 #include "metrics.h"
+#include <limits>
+#include <string>
 
 namespace search::features::fieldmatch {
 
@@ -164,7 +164,7 @@ public:
      *
      * @return A string representation.
      */
-    vespalib::string toString();
+    std::string toString();
 
 private:
     Computer   *_owner;

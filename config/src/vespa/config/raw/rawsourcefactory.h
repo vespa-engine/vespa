@@ -10,13 +10,13 @@ namespace config {
  */
 class RawSourceFactory : public SourceFactory {
 public:
-    RawSourceFactory(const vespalib::string & payload)
+    RawSourceFactory(const std::string & payload)
         : _payload(payload)
     { }
 
     std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 private:
-    const vespalib::string _payload;
+    const std::string _payload;
 };
 
 }

@@ -44,7 +44,7 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 template <typename T, typename F>
-void verify_impl(const vespalib::string &expr, const vespalib::string &expect, F &&inspect) {
+void verify_impl(const std::string &expr, const std::string &expect, F &&inspect) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
     EvalFixture simple_factory_fixture(simple_factory, expr, param_repo, false);
@@ -59,24 +59,24 @@ void verify_impl(const vespalib::string &expr, const vespalib::string &expect, F
     }
 }
 template <typename T>
-void verify_impl(const vespalib::string &expr, const vespalib::string &expect) {
+void verify_impl(const std::string &expr, const std::string &expect) {
     verify_impl<T>(expr, expect, [](const T*){});
 }
 
-void verify_generic(const vespalib::string &expr, const vespalib::string &expect) {
+void verify_generic(const std::string &expr, const std::string &expect) {
     verify_impl<tensor_function::Lambda>(expr, expect);
 }
 
-void verify_reshape(const vespalib::string &expr, const vespalib::string &expect) {
+void verify_reshape(const std::string &expr, const std::string &expect) {
     verify_impl<ReplaceTypeFunction>(expr, expect);
 }
 
-void verify_range(const vespalib::string &expr, const vespalib::string &expect) {
+void verify_range(const std::string &expr, const std::string &expect) {
     verify_impl<DenseCellRangeFunction>(expr, expect);
 }
 
-void verify_idx_fun(const vespalib::string &expr, const vespalib::string &expect,
-                    const vespalib::string &expect_idx_fun)
+void verify_idx_fun(const std::string &expr, const std::string &expect,
+                    const std::string &expect_idx_fun)
 {
     verify_impl<DenseLambdaPeekFunction>(expr, expect,
                                          [&](const DenseLambdaPeekFunction *info)
@@ -85,7 +85,7 @@ void verify_idx_fun(const vespalib::string &expr, const vespalib::string &expect
                                          });
 }
 
-void verify_const(const vespalib::string &expr, const vespalib::string &expect) {
+void verify_const(const std::string &expr, const std::string &expect) {
     verify_impl<ConstValue>(expr, expect);
 }
 

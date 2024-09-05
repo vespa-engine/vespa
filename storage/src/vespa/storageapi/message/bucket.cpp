@@ -624,7 +624,7 @@ SetBucketStateCommand::print(std::ostream& out,
     }
 }
 
-vespalib::string
+std::string
 SetBucketStateCommand::getSummary() const
 {
     vespalib::asciistream stream;

@@ -141,7 +141,7 @@ readProtocolCompressionType()
     CompressionType type = CompressionType::LZ4;
     char *compressionTypeStringPtr = getenv("VESPA_CONFIG_PROTOCOL_COMPRESSION");
     if (compressionTypeStringPtr != NULL) {
-        type = stringToCompressionType(vespalib::string(compressionTypeStringPtr));
+        type = stringToCompressionType(std::string(compressionTypeStringPtr));
     }
     return type;
 }

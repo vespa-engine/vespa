@@ -22,7 +22,7 @@ struct FunInfo {
     }
 };
 
-void verify_optimized_cell_types(const vespalib::string &expr)
+void verify_optimized_cell_types(const std::string &expr)
 {
     CellTypeSpace stable(CellTypeUtils::list_stable_types(), 3);
     CellTypeSpace unstable(CellTypeUtils::list_unstable_types(), 3);
@@ -31,13 +31,13 @@ void verify_optimized_cell_types(const vespalib::string &expr)
     EvalFixture::verify<FunInfo>(expr, {}, unstable);
 }
 
-void verify_optimized(const vespalib::string &expr, size_t num_params = 3)
+void verify_optimized(const std::string &expr, size_t num_params = 3)
 {
     CellTypeSpace just_float({CellType::FLOAT}, num_params);
     EvalFixture::verify<FunInfo>(expr, {FunInfo()}, just_float);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     CellTypeSpace just_double({CellType::DOUBLE}, 3);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);
 }
@@ -55,7 +55,7 @@ TEST(Mixed112DotProduct, inverse_dimension_matching_is_handled) {
 
 TEST(Mixed112DotProduct, different_input_placement_is_handled)
 {
-    std::array<vespalib::string,3> params = {"x3_1", "y3", "x3_1y3"};
+    std::array<std::string,3> params = {"x3_1", "y3", "x3_1y3"};
     for (size_t p1 = 0; p1 < params.size(); ++p1) {
         for (size_t p2 = 0; p2 < params.size(); ++p2) {
             for (size_t p3 = 0; p3 < params.size(); ++p3) {

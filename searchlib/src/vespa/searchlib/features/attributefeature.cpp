@@ -113,7 +113,7 @@ public:
      * @param attribute The attribute vector to use.
      */
     explicit SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
-    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+    void handle_bind_outputs(std::span<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
         auto o = outputs().get_bound();
         o[1].as_number = 0;  // weight
@@ -147,7 +147,7 @@ private:
 public:
     ArrayAttributeExecutor(const ArrayReadView* array_read_view, uint32_t idx) : _array_read_view(array_read_view), _idx(idx) { }
     void execute(uint32_t docId) override;
-    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+    void handle_bind_outputs(std::span<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
         auto o = outputs().get_bound();
         o[1].as_number = 0;  // weight
@@ -163,7 +163,7 @@ private:
 public:
     explicit CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
     void execute(uint32_t docId) override;
-    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+    void handle_bind_outputs(std::span<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
         auto o = outputs().get_bound();
         o[0].as_number = 0;  // value
@@ -192,7 +192,7 @@ public:
      */
     AttributeExecutor(const attribute::IAttributeVector * attribute, uint32_t idx);
     void execute(uint32_t docId) override;
-    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+    void handle_bind_outputs(std::span<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
         auto o = outputs().get_bound();
         o[1].as_number = 0;  // weight
@@ -348,7 +348,7 @@ private:
 };
 
 fef::FeatureExecutor &
-createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
+createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const std::string &attrName, const std::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
         Issue::report("attribute feature: The attribute vector '%s' was not found, returning default values.",
@@ -433,7 +433,7 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
 }
 
 fef::FeatureExecutor &
-createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName,
+createTensorAttributeExecutor(const IAttributeVector *attribute, const std::string &attrName,
                               const ValueType &tensorType,
                               vespalib::Stash &stash)
 {
@@ -509,7 +509,7 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
     if (params.size() == 2) {
         _extra = params[1].getValue();
     }
-    vespalib::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
+    std::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
     if (!attrType.empty()) {
         _tensorType = ValueType::from_spec(attrType);
         if (_tensorType.is_error()) {

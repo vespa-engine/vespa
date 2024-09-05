@@ -169,7 +169,7 @@ public:
     /**
      * Returns the base directory from which all structures are stored.
      **/
-    virtual const vespalib::string & getBaseDir() const = 0;
+    virtual const std::string & getBaseDir() const = 0;
 
     /**
      * Visit all documents found in document store.

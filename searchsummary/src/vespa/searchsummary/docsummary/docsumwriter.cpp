@@ -20,7 +20,7 @@ namespace search::docsummary {
 
 DynamicDocsumWriter::ResolveClassInfo
 DynamicDocsumWriter::resolveClassInfo(std::string_view class_name,
-                                      const vespalib::hash_set<vespalib::string>& fields) const
+                                      const vespalib::hash_set<std::string>& fields) const
 {
     DynamicDocsumWriter::ResolveClassInfo result;
     auto id = _resultConfig->lookupResultClassId(class_name);
@@ -28,7 +28,7 @@ DynamicDocsumWriter::resolveClassInfo(std::string_view class_name,
     const auto* res_class = (id != ResultConfig::noClassID()) ? _resultConfig->lookupResultClass(id) : nullptr;
     if (res_class == nullptr) {
         Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
-                      vespalib::string(class_name).c_str());
+                      std::string(class_name).c_str());
     } else {
         result.all_fields_generated = res_class->all_fields_generated(fields);
     }
@@ -107,7 +107,7 @@ DynamicDocsumWriter::initState(const IAttributeManager & attrMan, GetDocsumsStat
     for (size_t i(0); i < num_entries; i++) {
         const DocsumFieldWriter *fw = result_class->getEntry(i)->writer();
         if (fw) {
-            const vespalib::string & attributeName = fw->getAttributeName();
+            const std::string & attributeName = fw->getAttributeName();
             if (!attributeName.empty()) {
                 state._attributes[i] = state._attrCtx->getAttribute(attributeName);
             }

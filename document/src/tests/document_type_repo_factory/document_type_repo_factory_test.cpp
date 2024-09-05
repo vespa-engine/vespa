@@ -3,11 +3,11 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
+#include <string>
 
-using vespalib::string;
+using std::string;
 using namespace document::config_builder;
 using namespace document;
 

@@ -342,7 +342,7 @@ TEST(PrimitiveFieldValueTest, testNumerics)
     EXPECT_EQ(-1, (int) b1.getValue());
     b1 = "53";
     EXPECT_EQ(53, (int) b1.getValue());
-    EXPECT_EQ(vespalib::string("53"), b1.getAsString());
+    EXPECT_EQ(std::string("53"), b1.getAsString());
 
     try{
         b1 = "-129";

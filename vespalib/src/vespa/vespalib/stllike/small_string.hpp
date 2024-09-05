@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "string.h"
+#include "small_string.h"
 #include <vespa/vespalib/util/alloc.h>
 #include <cassert>
 
@@ -118,7 +118,7 @@ void small_string<StackSize>::shrink_to_fit() noexcept {
     } else if (isAllocated()) {
         // This is just a very simple variant to temporarily support std::string interface.
         // Will only live a very short time
-        *this = string(*this);
+        *this = small_string(*this);
     }
 }
 

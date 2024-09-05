@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 #include <vector>
 
 namespace search::fef {
@@ -14,7 +15,7 @@ namespace search::fef {
 class FeatureNameParser
 {
 public:
-    using string = vespalib::string;
+    using string = std::string;
     using StringVector = std::vector<string>;
 private:
     bool                _valid;
@@ -34,7 +35,7 @@ public:
      *
      * @param featureName feature name
      **/
-    FeatureNameParser(const vespalib::string &featureName);
+    FeatureNameParser(const std::string &featureName);
     ~FeatureNameParser();
 
     /**

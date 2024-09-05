@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <string>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btree.h>
@@ -19,6 +18,7 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/test/btree/btree_printer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("btree_test");

@@ -70,7 +70,7 @@ private:
     void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override;
 
 public:
-    MultiValueNumericPostingAttribute(const vespalib::string & name, const AttributeVector::Config & cfg);
+    MultiValueNumericPostingAttribute(const std::string & name, const AttributeVector::Config & cfg);
     ~MultiValueNumericPostingAttribute();
 
     void reclaim_memory(generation_t oldest_used_gen) override;

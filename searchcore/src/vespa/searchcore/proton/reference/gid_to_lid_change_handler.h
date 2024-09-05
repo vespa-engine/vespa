@@ -64,7 +64,7 @@ public:
     void close();
 
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
-    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override;
+    void removeListeners(const std::string &docTypeName, const std::set<std::string> &keepNames) override;
 };
 
 } // namespace proton

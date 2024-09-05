@@ -17,6 +17,9 @@
       "name": "FailedExpirer"
     },
     {
+      "name": "HostRenamer"
+    },
+    {
       "name": "InactiveExpirer"
     },
     {

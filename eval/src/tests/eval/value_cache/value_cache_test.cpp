@@ -17,7 +17,7 @@ struct MyValue : ConstantValue {
 
 struct MyFactory : ConstantValueFactory {
     mutable size_t create_cnt = 0;
-    ConstantValue::UP create(const vespalib::string &path, const vespalib::string &) const override {
+    ConstantValue::UP create(const std::string &path, const std::string &) const override {
         ++create_cnt;
         return std::make_unique<MyValue>(double(atoi(path.c_str())));
     }

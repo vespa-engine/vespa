@@ -11,9 +11,9 @@
 #include <vespa/messagebus/network/inetworkowner.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <atomic>
 #include <map>
 #include <string>
-#include <atomic>
 
 namespace mbus {
 

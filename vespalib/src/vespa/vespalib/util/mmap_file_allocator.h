@@ -6,9 +6,9 @@
 #include "file_area_freelist.h"
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <map>
+#include <string>
 
 namespace vespalib::alloc {
 
@@ -31,7 +31,7 @@ class MmapFileAllocator : public MemoryAllocator {
         { }
     };
     using Allocations = hash_map<void *, SizeAndOffset>;
-    const vespalib::string _dir_name;
+    const std::string _dir_name;
     const uint32_t   _small_limit;
     const uint32_t   _premmap_size;
     mutable File     _file;
@@ -51,8 +51,8 @@ class MmapFileAllocator : public MemoryAllocator {
 public:
     static constexpr uint32_t default_small_limit =  128_Ki;
     static constexpr uint32_t default_premmap_size = 1_Mi;
-    explicit MmapFileAllocator(vespalib::string dir_name);
-    MmapFileAllocator(vespalib::string dir_name, uint32_t small_limit, uint32_t premmap_size);
+    explicit MmapFileAllocator(std::string dir_name);
+    MmapFileAllocator(std::string dir_name, uint32_t small_limit, uint32_t premmap_size);
     ~MmapFileAllocator() override;
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const noexcept override;

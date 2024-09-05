@@ -3,7 +3,7 @@
 
 #include "configwriter.h"
 #include "configformatter.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace config {
 
@@ -12,12 +12,12 @@ namespace config {
  */
 class FileConfigWriter : public ConfigWriter {
 public:
-    FileConfigWriter(const vespalib::string & fileName);
+    FileConfigWriter(const std::string & fileName);
     // Implements ConfigWriter
     bool write(const ConfigInstance & config) override;
     bool write(const ConfigInstance & config, const ConfigFormatter & formatter) override;
 private:
-    const vespalib::string _fileName;
+    const std::string _fileName;
 };
 
 } // namespace config

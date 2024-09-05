@@ -19,13 +19,13 @@ public:
     using SP = std::shared_ptr<Domain>;
     using DomainPartSP = std::shared_ptr<DomainPart>;
     using FileHeaderContext = common::FileHeaderContext;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir, vespalib::Executor & executor,
+    Domain(const std::string &name, const std::string &baseDir, vespalib::Executor & executor,
            const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext);
 
     ~Domain() override;
 
     DomainInfo getDomainInfo() const;
-    const vespalib::string & name() const { return _name; }
+    const std::string & name() const { return _name; }
     bool erase(SerialNum to);
 
     void append(const Packet & packet, Writer::DoneCallback onDone) override;
@@ -48,8 +48,8 @@ public:
     SerialNum findOldestActiveVisit() const;
     DomainPartSP findPart(SerialNum s);
 
-    static vespalib::string
-    getDir(const vespalib::string & base, const vespalib::string & domain) {
+    static std::string
+    getDir(const std::string & base, const std::string & domain) {
         return base + "/" + domain;
     }
     uint64_t size() const;
@@ -69,7 +69,7 @@ private:
     size_t byteSize(const UniqueLock & guard) const;
     uint64_t size(const UniqueLock & guard) const;
     void cleanSessions();
-    vespalib::string dir() const { return getDir(_baseDir, _name); }
+    std::string dir() const { return getDir(_baseDir, _name); }
     void addPart(SerialNum partId, bool isLastPart);
     DomainPartSP optionallyRotateFile(SerialNum serialNum);
 
@@ -88,14 +88,14 @@ private:
     std::unique_ptr<Executor>    _singleCommitter;
     Executor                    &_executor;
     std::atomic<int>             _sessionId;
-    vespalib::string             _name;
+    std::string             _name;
     DomainPartList               _parts;
     mutable std::mutex           _partsMutex;
     std::mutex                   _currentChunkMutex;
     mutable std::mutex           _sessionMutex;
     SessionList                  _sessions;
     DurationSeconds              _maxSessionRunTime;
-    vespalib::string             _baseDir;
+    std::string             _baseDir;
     const FileHeaderContext     &_fileHeaderContext;
     bool                         _markedDeleted;
 };

@@ -25,9 +25,8 @@
 #include <vespa/document/select/scanner.h>
 #include <vespa/document/select/parse_utils.h>
 #include <vespa/document/util/stringutil.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <string>
 #include <cstdlib>
+#include <string>
 
 #undef YY_DECL
 #define YY_DECL int document::select::DocSelScanner::yylex( \
@@ -35,7 +34,7 @@
         document::select::DocSelParser::location_type* yyloc)
 
 using token = document::select::DocSelParser::token;
-using string = vespalib::string;
+using string = std::string;
 
 // Inspired by https://coldfix.eu/2015/05/16/bison-c++11/
 
@@ -178,7 +177,7 @@ SQ_STRING \'(\\([\\tnfr']|x{HEXDIGIT}{2})|[^'\\])*\'
   * char to avoid getting auto-generated error messages with "unexpected $undefined" due to the
   * resulting token not matching any existing, explicitly named tokens.
   */
-. { throw_parser_syntax_error(*yyloc, "Unexpected character: '" + StringUtil::escape(vespalib::string(yytext, 1)) + "'"); }
+. { throw_parser_syntax_error(*yyloc, "Unexpected character: '" + StringUtil::escape(std::string(yytext, 1)) + "'"); }
 
 %%
 

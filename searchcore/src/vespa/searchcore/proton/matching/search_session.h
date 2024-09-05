@@ -5,9 +5,9 @@
 #include "match_context.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
 #include <memory>
+#include <string>
 
 namespace search::fef { class Properties; }
 
@@ -36,7 +36,7 @@ public:
         std::vector<char> stackDump;
     };
 private:
-    using SessionId = vespalib::string;
+    using SessionId = std::string;
 
     SessionId             _session_id;
     vespalib::steady_time _create_time;

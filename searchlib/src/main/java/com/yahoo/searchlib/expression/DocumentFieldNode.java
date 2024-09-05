@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
  * @author baldersheim
  * @author Simon Thoresen Hult
  */
-public class DocumentFieldNode extends DocumentAccessorNode {
+public final class DocumentFieldNode extends DocumentAccessorNode {
 
     public static final int classId = registerClass(0x4000 + 56, DocumentFieldNode.class, DocumentFieldNode::new);
     private String fieldName;
@@ -47,14 +47,12 @@ public class DocumentFieldNode extends DocumentAccessorNode {
      * Sets the name of the field whose value to retrieve.
      *
      * @param fieldName The field name to set.
-     * @return This, to allow chaining.
      */
-    public DocumentFieldNode setDocumentFieldName(String fieldName) {
+    void setDocumentFieldName(String fieldName) {
         if (fieldName == null) {
             throw new IllegalArgumentException("Field name can not be null.");
         }
         this.fieldName = fieldName;
-        return this;
     }
 
     @Override
@@ -92,10 +90,7 @@ public class DocumentFieldNode extends DocumentAccessorNode {
         if (!fieldName.equals(rhs.fieldName)) {
             return false;
         }
-        if (!equals(result, rhs.result)) {
-            return false;
-        }
-        return true;
+        return equals(result, rhs.result);
     }
 
     @Override

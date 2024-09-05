@@ -37,7 +37,7 @@ void my_mixed_inner_product_op(InterpretedFunction::State &state, uint64_t param
     const auto &index = mixed.index();
     size_t num_subspaces = index.size();
     size_t num_output_cells = num_subspaces * param.out_subspace_size;
-    ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(num_output_cells);
+    std::span<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(num_output_cells);
     const MCT *m_cp = m_cells.data();
     const VCT *v_cp = v_cells.data();
     using dot_product = DotProduct<MCT,VCT>;

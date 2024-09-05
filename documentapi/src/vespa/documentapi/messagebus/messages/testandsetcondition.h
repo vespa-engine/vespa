@@ -2,13 +2,13 @@
 // @author Vegard Sjonfjell
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace documentapi {
 
 class TestAndSetCondition {
 private:
-    vespalib::string _selection;
+    std::string _selection;
 
 public:
     TestAndSetCondition()
@@ -25,7 +25,7 @@ public:
     TestAndSetCondition(TestAndSetCondition &&) = default;
     TestAndSetCondition & operator=(TestAndSetCondition &&) = default;
 
-    const vespalib::string & getSelection() const { return _selection; }
+    const std::string & getSelection() const { return _selection; }
     bool isPresent() const noexcept { return !_selection.empty(); }
 
     bool operator==(const TestAndSetCondition& rhs) const noexcept {

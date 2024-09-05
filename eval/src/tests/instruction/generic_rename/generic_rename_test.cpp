@@ -31,10 +31,10 @@ const std::vector<GenSpec> rename_layouts = {
 };
 
 struct FromTo {
-    std::vector<vespalib::string> from;
-    std::vector<vespalib::string> to;
+    std::vector<std::string> from;
+    std::vector<std::string> to;
 
-    FromTo(const std::vector<vespalib::string>& from_in, const std::vector<vespalib::string>& to_in)
+    FromTo(const std::vector<std::string>& from_in, const std::vector<std::string>& to_in)
         : from(from_in),
           to(to_in)
     {
@@ -55,8 +55,8 @@ std::vector<FromTo> rename_from_to = {
 
 TEST(GenericRenameTest, dense_rename_plan_can_be_created_and_executed) {
     auto lhs = ValueType::from_spec("tensor(a[2],c[3],d{},e[5],g[7],h{})");
-    std::vector<vespalib::string> from({"a", "c", "e"});
-    std::vector<vespalib::string>   to({"f", "a", "b"});
+    std::vector<std::string> from({"a", "c", "e"});
+    std::vector<std::string>   to({"f", "a", "b"});
     ValueType renamed = lhs.rename(from, to);
     auto plan = DenseRenamePlan(lhs, renamed, from, to);
     SmallVector<size_t> expect_loop = {15,2,7};
@@ -85,8 +85,8 @@ TEST(GenericRenameTest, dense_rename_plan_can_be_created_and_executed) {
 
 TEST(GenericRenameTest, sparse_rename_plan_can_be_created) {
     auto lhs = ValueType::from_spec("tensor(a{},c{},d[3],e{},g{},h[5])");
-    std::vector<vespalib::string> from({"a", "c", "e"});
-    std::vector<vespalib::string>   to({"f", "a", "b"});
+    std::vector<std::string> from({"a", "c", "e"});
+    std::vector<std::string>   to({"f", "a", "b"});
     ValueType renamed = lhs.rename(from, to);
     auto plan = SparseRenamePlan(lhs, renamed, from, to);
     EXPECT_EQ(plan.mapped_dims, 4);
@@ -94,7 +94,7 @@ TEST(GenericRenameTest, sparse_rename_plan_can_be_created) {
     EXPECT_EQ(plan.output_dimensions, expect);
 }
 
-vespalib::string rename_dimension(const vespalib::string &name, const FromTo &ft) {
+std::string rename_dimension(const std::string &name, const FromTo &ft) {
     assert(ft.from.size() == ft.to.size());
     for (size_t i = 0; i < ft.from.size(); ++i) {
         if (name == ft.from[i]) {

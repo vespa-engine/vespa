@@ -31,14 +31,14 @@ public:
 
 class WeakAnd : public QueryNodeMixin<WeakAnd, Intermediate> {
     uint32_t _targetNumHits;
-    vespalib::string _view;
+    std::string _view;
 public:
     virtual ~WeakAnd() = 0;
 
-    WeakAnd(uint32_t targetNumHits, vespalib::string view) : _targetNumHits(targetNumHits), _view(std::move(view)) {}
+    WeakAnd(uint32_t targetNumHits, std::string view) : _targetNumHits(targetNumHits), _view(std::move(view)) {}
 
     uint32_t getTargetNumHits() const { return _targetNumHits; }
-    const vespalib::string & getView() const { return _view; }
+    const std::string & getView() const { return _view; }
 };
 
 //-----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ class ONear : public QueryNodeMixin<ONear, Intermediate>
 
 class Phrase : public QueryNodeMixin<Phrase, Intermediate>, public Term {
 public:
-    Phrase(vespalib::string view, int32_t id, Weight weight)
+    Phrase(std::string view, int32_t id, Weight weight)
         : Term(std::move(view), id, weight), _expensive(false) {}
     virtual ~Phrase() = 0;
     Phrase &set_expensive(bool value) {
@@ -109,7 +109,7 @@ private:
 
 class SameElement : public QueryNodeMixin<SameElement, Intermediate>, public Term {
 public:
-    SameElement(vespalib::string view, int32_t id, Weight weight)
+    SameElement(std::string view, int32_t id, Weight weight)
         : Term(std::move(view), id, weight), _expensive(false) {}
     virtual ~SameElement() = 0;
     SameElement &set_expensive(bool value) {

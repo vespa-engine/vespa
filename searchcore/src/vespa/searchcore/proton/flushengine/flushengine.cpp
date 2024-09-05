@@ -24,11 +24,11 @@ namespace proton {
 
 namespace {
 
-std::pair<search::SerialNum, vespalib::string>
+std::pair<search::SerialNum, std::string>
 findOldestFlushedTarget(const IFlushTarget::List &lst, const IFlushHandler &handler)
 {
     search::SerialNum oldestFlushedSerial = handler.getCurrentSerialNumber();
-    vespalib::string oldestFlushedName = "null";
+    std::string oldestFlushedName = "null";
     for (const IFlushTarget::SP &target : lst) {
         if (target->getType() != IFlushTarget::Type::GC) {
             search::SerialNum targetFlushedSerial = target->getFlushedSerialNum();
@@ -55,8 +55,8 @@ VESPA_THREAD_STACK_TAG(flush_engine_executor)
 
 }
 
-FlushEngine::FlushMeta::FlushMeta(const vespalib::string& handler_name,
-                                  const vespalib::string& target_name, uint32_t id)
+FlushEngine::FlushMeta::FlushMeta(const std::string& handler_name,
+                                  const std::string& target_name, uint32_t id)
     : _name((handler_name.empty() && target_name.empty()) ? "" : FlushContext::create_name(handler_name, target_name)),
       _handler_name(handler_name),
       _timer(),
@@ -74,7 +74,7 @@ FlushEngine::FlushInfo::FlushInfo()
 FlushEngine::FlushInfo::~FlushInfo() = default;
 
 
-FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const vespalib::string& handler_name, const IFlushTarget::SP& target, std::shared_ptr<PriorityFlushToken> priority_flush_token)
+FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const std::string& handler_name, const IFlushTarget::SP& target, std::shared_ptr<PriorityFlushToken> priority_flush_token)
     : FlushMeta(handler_name, target->getName(), taskId),
       _target(target),
       _priority_flush_token(std::move(priority_flush_token))
@@ -191,8 +191,8 @@ FlushEngine::has_slot(IFlushTarget::Priority priority)
     return canFlushMore(guard, priority);
 }
 
-vespalib::string
-FlushEngine::checkAndFlush(vespalib::string prev) {
+std::string
+FlushEngine::checkAndFlush(std::string prev) {
     std::pair<FlushContext::List, bool> lst = getSortedTargetList();
     if (lst.second) {
         // Everything returned from a priority strategy should be flushed
@@ -221,7 +221,7 @@ void
 FlushEngine::run()
 {
     _has_thread = true;
-    vespalib::string prevFlushName;
+    std::string prevFlushName;
     for (vespalib::duration idleInterval=vespalib::duration::zero(); !_closed.load(std::memory_order_relaxed); idleInterval = _idleInterval) {
         LOG(debug, "Making another check for something to flush, last was '%s'", prevFlushName.c_str());
         wait_for_slot_or_pending_prune(IFlushTarget::Priority::HIGH);
@@ -241,8 +241,8 @@ FlushEngine::run()
 
 namespace {
 
-vespalib::string
-createName(const IFlushHandler &handler, const vespalib::string &targetName)
+std::string
+createName(const IFlushHandler &handler, const std::string &targetName)
 {
     return (handler.getName() + "." + targetName);
 }
@@ -273,7 +273,7 @@ FlushEngine::prune()
 }
 
 bool
-FlushEngine::isFlushing(const std::lock_guard<std::mutex> & guard, const vespalib::string & name) const
+FlushEngine::isFlushing(const std::lock_guard<std::mutex> & guard, const std::string & name) const
 {
     (void) guard;
     for(const auto & it : _flushing) {
@@ -390,8 +390,8 @@ FlushEngine::flushAll(const FlushContext::List &lst)
     _strategyCond.notify_all();
 }
 
-vespalib::string
-FlushEngine::flushNextTarget(const vespalib::string & name, const FlushContext::List & contexts)
+std::string
+FlushEngine::flushNextTarget(const std::string & name, const FlushContext::List & contexts)
 {
     if (contexts.empty()) {
         LOG(debug, "No target to flush.");

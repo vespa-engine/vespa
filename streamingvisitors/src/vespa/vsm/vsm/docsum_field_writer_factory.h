@@ -19,9 +19,9 @@ public:
     DocsumFieldWriterFactory(bool use_v8_geo_positions, const search::docsummary::IDocsumEnvironment& env, const search::docsummary::IQueryTermFilterFactory& query_term_filter_factory, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config);
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<search::docsummary::DocsumFieldWriter>
-    create_docsum_field_writer(const vespalib::string& field_name,
-                               const vespalib::string& command,
-                               const vespalib::string& source,
+    create_docsum_field_writer(const std::string& field_name,
+                               const std::string& command,
+                               const std::string& source,
                                std::shared_ptr<search::MatchingElementsFields> matching_elems_fields) override;
 };
 

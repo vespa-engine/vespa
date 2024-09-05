@@ -21,16 +21,16 @@ public:
 
 class MyConstantValueFactory : public ConstantValueFactory {
 private:
-    using Key = std::pair<vespalib::string, vespalib::string>;
+    using Key = std::pair<std::string, std::string>;
     using Map = std::map<Key, double>;
     Map _map;
 
 public:
     MyConstantValueFactory() : _map() {}
-    void add(const vespalib::string &path, const vespalib::string &type, double value) {
+    void add(const std::string &path, const std::string &type, double value) {
         _map.insert(std::make_pair(std::make_pair(path, type), value));
     }
-    ConstantValue::UP create(const vespalib::string &path, const vespalib::string &type) const override {
+    ConstantValue::UP create(const std::string &path, const std::string &type) const override {
         auto itr = _map.find(std::make_pair(path, type));
         if (itr != _map.end()) {
             return std::make_unique<DoubleConstantValue>(itr->second);

@@ -13,17 +13,21 @@ public class FeatureRange extends PredicateValue {
     private String key;
     private Long from;
     private Long to;
-    private List<RangePartition> partitions;
-    private List<RangeEdgePartition> edgePartitions;
+    private final List<RangePartition> partitions;
+    private final List<RangeEdgePartition> edgePartitions;
 
     public FeatureRange(String key) {
         this(key, null, null);
     }
 
-    public FeatureRange(String key, Long fromInclusive, Long toInclusive) {
-        setKey(key);
-        setFromInclusive(fromInclusive);
-        setToInclusive(toInclusive);
+    public FeatureRange(String key, Long from, Long to) {
+        Objects.requireNonNull(key, "key");
+        this.key = key;
+        if (from != null && to != null && from > to) {
+            throw new IllegalArgumentException("Expected 'to' greater than or equal to " + from + ", got " + to + ".");
+        }
+        this.from = from;
+        this.to = to;
         partitions = new ArrayList<>();
         edgePartitions = new ArrayList<>();
     }

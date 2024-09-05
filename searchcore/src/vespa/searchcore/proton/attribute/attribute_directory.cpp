@@ -17,7 +17,7 @@ using search::SerialNum;
 
 namespace {
 
-vespalib::string
+std::string
 getSnapshotDirComponent(uint64_t syncToken)
 {
     vespalib::asciistream os;
@@ -30,7 +30,7 @@ getSnapshotDirComponent(uint64_t syncToken)
 namespace proton {
 
 AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout> &diskLayout,
-                                       const vespalib::string &name)
+                                       const std::string &name)
     : _diskLayout(diskLayout),
       _name(name),
       _lastFlushTime(vespalib::system_time()),
@@ -43,7 +43,7 @@ AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout
     _snapInfo.load();
     SerialNum flushedSerialNum = getFlushedSerialNum();
     if (flushedSerialNum != 0) {
-        vespalib::string dirName = getSnapshotDir(flushedSerialNum);
+        std::string dirName = getSnapshotDir(flushedSerialNum);
         _lastFlushTime = search::FileKit::getModificationTime(dirName);
     }
     for (const auto& snapshot : _snapInfo.snapshots()) {
@@ -58,7 +58,7 @@ AttributeDirectory::~AttributeDirectory()
     assert(_writer == nullptr);
 }
 
-vespalib::string
+std::string
 AttributeDirectory::getDirName() const
 {
     std::shared_ptr<AttributeDiskLayout> diskLayout;
@@ -98,16 +98,16 @@ void
 AttributeDirectory::saveSnapInfo()
 {
     if (!_snapInfo.save()) {
-        vespalib::string dirName(getDirName());
+        std::string dirName(getDirName());
         LOG(warning, "Could not save meta-info file for attribute vector '%s' to disk", dirName.c_str());
         LOG_ABORT("should not be reached");
     }
 }
 
-vespalib::string
+std::string
 AttributeDirectory::getSnapshotDir(search::SerialNum serialNum) const
 {
-    vespalib::string dirName(getDirName());
+    std::string dirName(getDirName());
     return dirName + "/" + getSnapshotDirComponent(serialNum);
 }
 
@@ -116,7 +116,7 @@ AttributeDirectory::createInvalidSnapshot(SerialNum serialNum)
 {
     IndexMetaInfo::Snapshot newSnap(false, serialNum, getSnapshotDirComponent(serialNum));
     if (empty()) {
-        vespalib::string dirName(getDirName());
+        std::string dirName(getDirName());
         std::filesystem::create_directory(std::filesystem::path(dirName));
         vespalib::File::sync(vespalib::dirname(dirName));
     }
@@ -138,7 +138,7 @@ AttributeDirectory::markValidSnapshot(SerialNum serialNum)
         assert(snap.syncToken == serialNum);
         _snapInfo.validateSnapshot(serialNum);
     }
-    vespalib::string snapshotDir(getSnapshotDir(serialNum));
+    std::string snapshotDir(getSnapshotDir(serialNum));
     vespalib::File::sync(snapshotDir);
     vespalib::File::sync(vespalib::dirname(snapshotDir));
     search::DirectoryTraverse dirt(snapshotDir);
@@ -191,7 +191,7 @@ AttributeDirectory::removeInvalidSnapshots()
         }
     }
     for (const auto &serialNum : toRemove) {
-        vespalib::string subDir(getSnapshotDir(serialNum));
+        std::string subDir(getSnapshotDir(serialNum));
         std::filesystem::remove_all(std::filesystem::path(subDir));
     }
     if (!toRemove.empty()) {
@@ -211,7 +211,7 @@ bool
 AttributeDirectory::removeDiskDir()
 {
     if (empty()) {
-        vespalib::string dirName(getDirName());
+        std::string dirName(getDirName());
         std::filesystem::remove_all(std::filesystem::path(dirName));
         vespalib::File::sync(vespalib::dirname(dirName));
         return true;
@@ -261,7 +261,7 @@ AttributeDirectory::empty() const
     return _snapInfo.snapshots().empty();
 }
 
-vespalib::string
+std::string
 AttributeDirectory::getAttributeFileName(SerialNum serialNum)
 {
     return getSnapshotDir(serialNum) + "/" + _name;

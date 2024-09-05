@@ -1,11 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <vespa/vespalib/stllike/string.h>
-
 #include "point.h"
 #include "point_map.h"
+#include <memory>
+#include <string>
 
 namespace vespalib {
 namespace metrics {

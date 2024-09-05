@@ -3,13 +3,13 @@
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <span>
 #include <variant>
 
 using vespalib::FeatureValues;
 using FeatureValue = vespalib::FeatureSet::Value;
-using ConvertedValue = std::variant<double, vespalib::string>;
+using ConvertedValue = std::variant<double, std::string>;
 
 namespace vdslib {
 
@@ -19,7 +19,7 @@ std::vector<char> doc1_mf_data{'H', 'i'};
 std::vector<char> doc2_mf_data{'T', 'h', 'e', 'r', 'e'};
 
 
-std::vector<ConvertedValue> convert(vespalib::ConstArrayRef<FeatureValue> v) {
+std::vector<ConvertedValue> convert(std::span<const FeatureValue> v) {
     std::vector<ConvertedValue> result;
     for (auto& iv : v) {
         if (iv.is_data()) {
@@ -39,7 +39,7 @@ std::vector<char> serialize(const SearchResult& sr) {
     return { buf.getBuffer(), buf.getBuffer() + buf.position() };
 }
 
-void deserialize(SearchResult& sr, vespalib::ConstArrayRef<char> buf)
+void deserialize(SearchResult& sr, std::span<const char> buf)
 {
     document::ByteBuffer dbuf(buf.data(), buf.size());
     sr.deserialize(dbuf);
@@ -60,14 +60,14 @@ void populate(SearchResult& sr, FeatureValues& mf)
     sr.set_match_features(FeatureValues(mf));
 }
 
-void check_match_features(SearchResult& sr, const vespalib::string& label, bool sort_remap)
+void check_match_features(SearchResult& sr, const std::string& label, bool sort_remap)
 {
     SCOPED_TRACE(label);
     EXPECT_EQ((std::vector<ConvertedValue>{1.0, "Hi"}), convert(sr.get_match_feature_values(sort_remap ? 1 : 0)));
     EXPECT_EQ((std::vector<ConvertedValue>{12.0, "There"}), convert(sr.get_match_feature_values(sort_remap ? 0 : 1)));
 }
 
-void check_match_features(const std::vector<char> & buf, const vespalib::string& label, bool sort_remap)
+void check_match_features(const std::vector<char> & buf, const std::string& label, bool sort_remap)
 {
     SearchResult sr;
     deserialize(sr, buf);

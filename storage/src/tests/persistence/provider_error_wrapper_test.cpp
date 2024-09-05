@@ -25,8 +25,8 @@ struct MockErrorListener : ProviderErrorListener {
         _resource_exhaustion_error = message;
     }
 
-    vespalib::string _fatal_error;
-    vespalib::string _resource_exhaustion_error;
+    std::string _fatal_error;
+    std::string _resource_exhaustion_error;
     bool _seen_fatal_error{false};
     bool _seen_resource_exhaustion_error{false};
 };
@@ -75,7 +75,7 @@ TEST_F(ProviderErrorWrapperTest, fatal_error_invokes_listener) {
 
     EXPECT_FALSE(listener->_seen_resource_exhaustion_error);
     EXPECT_TRUE(listener->_seen_fatal_error);
-    EXPECT_EQ(vespalib::string("eject! eject!"), listener->_fatal_error);
+    EXPECT_EQ(std::string("eject! eject!"), listener->_fatal_error);
 }
 
 TEST_F(ProviderErrorWrapperTest, resource_exhaustion_error_invokes_listener) {
@@ -89,7 +89,7 @@ TEST_F(ProviderErrorWrapperTest, resource_exhaustion_error_invokes_listener) {
 
     EXPECT_FALSE(listener->_seen_fatal_error);
     EXPECT_TRUE(listener->_seen_resource_exhaustion_error);
-    EXPECT_EQ(vespalib::string("out of juice"), listener->_resource_exhaustion_error);
+    EXPECT_EQ(std::string("out of juice"), listener->_resource_exhaustion_error);
 }
 
 TEST_F(ProviderErrorWrapperTest, listener_not_invoked_on_success) {

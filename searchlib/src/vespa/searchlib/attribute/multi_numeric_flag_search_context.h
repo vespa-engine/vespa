@@ -21,7 +21,7 @@ template <typename T, typename M>
 class MultiNumericFlagSearchContext : public MultiNumericSearchContext<T, M>
 {
 public:
-    using AtomicBitVectorsRef = vespalib::ConstArrayRef<vespalib::datastore::AtomicValueWrapper<BitVector *>>;
+    using AtomicBitVectorsRef = std::span<const vespalib::datastore::AtomicValueWrapper<BitVector *>>;
 
     MultiNumericFlagSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view,
                                   AtomicBitVectorsRef bit_vectors);

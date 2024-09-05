@@ -12,6 +12,7 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <atomic>
 #include <map>
@@ -139,7 +140,7 @@ private:
 class DummyPersistence : public AbstractPersistenceProvider
 {
 public:
-    DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
+    explicit DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
     ~DummyPersistence() override;
 
     Result initialize() override;

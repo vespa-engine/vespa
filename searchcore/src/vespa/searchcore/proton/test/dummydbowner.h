@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/server/idocumentdbowner.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace proton {
 

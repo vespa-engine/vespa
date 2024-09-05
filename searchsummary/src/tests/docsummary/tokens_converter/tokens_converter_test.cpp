@@ -34,7 +34,7 @@ using vespalib::slime::SlimeInserter;
 
 namespace {
 
-vespalib::string
+std::string
 slime_to_string(const Slime& slime)
 {
     SimpleBuffer buf;
@@ -61,7 +61,7 @@ protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType*                     _document_type;
     document::FixedTypeRepo                 _fixed_repo;
-    vespalib::string                        _dummy_field_name;
+    std::string                        _dummy_field_name;
     TokenExtractor                          _token_extractor;
 
     TokensConverterTest();
@@ -69,8 +69,8 @@ protected:
     void set_span_tree(StringFieldValue& value, std::unique_ptr<SpanTree> tree);
     StringFieldValue make_annotated_string(bool alt_tokens);
     StringFieldValue make_annotated_chinese_string();
-    vespalib::string make_exp_annotated_chinese_string_tokens();
-    vespalib::string convert(const StringFieldValue& fv);
+    std::string make_exp_annotated_chinese_string_tokens();
+    std::string convert(const StringFieldValue& fv);
 };
 
 TokensConverterTest::TokensConverterTest()
@@ -124,13 +124,13 @@ TokensConverterTest::make_annotated_chinese_string()
     return value;
 }
 
-vespalib::string
+std::string
 TokensConverterTest::make_exp_annotated_chinese_string_tokens()
 {
     return R"(["我就是那个","大灰狼"])";
 }
 
-vespalib::string
+std::string
 TokensConverterTest::convert(const StringFieldValue& fv)
 {
     TokensConverter converter(_token_extractor);
@@ -142,28 +142,28 @@ TokensConverterTest::convert(const StringFieldValue& fv)
 
 TEST_F(TokensConverterTest, convert_empty_string)
 {
-    vespalib::string exp(R"([])");
+    std::string exp(R"([])");
     StringFieldValue plain_string("");
     EXPECT_EQ(exp, convert(plain_string));
 }
 
 TEST_F(TokensConverterTest, convert_plain_string)
 {
-    vespalib::string exp(R"([])");
+    std::string exp(R"([])");
     StringFieldValue plain_string("Foo Bar Baz");
     EXPECT_EQ(exp, convert(plain_string));
 }
 
 TEST_F(TokensConverterTest, convert_annotated_string)
 {
-    vespalib::string exp(R"(["foo","baz"])");
+    std::string exp(R"(["foo","baz"])");
     auto annotated_string = make_annotated_string(false);
     EXPECT_EQ(exp, convert(annotated_string));
 }
 
 TEST_F(TokensConverterTest, convert_annotated_string_with_alternatives)
 {
-    vespalib::string exp(R"(["foo",["bar","baz"]])");
+    std::string exp(R"(["foo",["bar","baz"]])");
     auto annotated_string = make_annotated_string(true);
     EXPECT_EQ(exp, convert(annotated_string));
 }

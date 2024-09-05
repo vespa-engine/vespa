@@ -87,7 +87,7 @@ void half_close(CryptoSocket &socket) {
 
 //-----------------------------------------------------------------------------
 
-vespalib::string read_bytes(CryptoSocket &socket, SmartBuffer &read_buffer, size_t wanted_bytes) {
+std::string read_bytes(CryptoSocket &socket, SmartBuffer &read_buffer, size_t wanted_bytes) {
     SingleFdSelector selector(socket.get_fd());
     while (read_buffer.obtain().size < wanted_bytes) {
         ASSERT_TRUE(selector.wait_readable());
@@ -95,7 +95,7 @@ vespalib::string read_bytes(CryptoSocket &socket, SmartBuffer &read_buffer, size
         drain(socket, read_buffer);
     }
     auto data = read_buffer.obtain();
-    vespalib::string message(data.data, wanted_bytes);
+    std::string message(data.data, wanted_bytes);
     read_buffer.evict(message.size());
     return message;
 }
@@ -118,7 +118,7 @@ void read_EOF(CryptoSocket &socket, SmartBuffer &read_buffer) {
 
 //-----------------------------------------------------------------------------
 
-void write_bytes(CryptoSocket &socket, const vespalib::string &message) {
+void write_bytes(CryptoSocket &socket, const std::string &message) {
     SmartBuffer write_buffer(message.size());
     SingleFdSelector selector(socket.get_fd());
     auto data = write_buffer.reserve(message.size());
@@ -163,15 +163,15 @@ void verify_graceful_shutdown(CryptoSocket &socket, SmartBuffer &read_buffer, bo
 //-----------------------------------------------------------------------------
 
 void verify_socket_io(CryptoSocket &socket, SmartBuffer &read_buffer, bool is_server) {
-    vespalib::string client_message = "please pick up, I need to talk to you";
-    vespalib::string server_message = "hello, this is the server speaking";
+    std::string client_message = "please pick up, I need to talk to you";
+    std::string server_message = "hello, this is the server speaking";
     if(is_server) {
-        vespalib::string read = read_bytes(socket, read_buffer, client_message.size());
+        std::string read = read_bytes(socket, read_buffer, client_message.size());
         write_bytes(socket, server_message);
         EXPECT_EQUAL(client_message, read);
     } else {
         write_bytes(socket, client_message);
-        vespalib::string read = read_bytes(socket, read_buffer, server_message.size());
+        std::string read = read_bytes(socket, read_buffer, server_message.size());
         EXPECT_EQUAL(server_message, read);
     }
 }

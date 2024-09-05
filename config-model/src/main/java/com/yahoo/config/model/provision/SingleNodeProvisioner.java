@@ -17,7 +17,7 @@ import java.util.Optional;
 
 /**
  * A host provisioner used when there is no hosts.xml file (using localhost as the only host)
- * No state in this provisioner, i.e it does not know anything about the active
+ * No state in this provisioner, i.e. it does not know anything about the active
  * application if one exists.
  *
  * @author hmusum

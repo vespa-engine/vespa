@@ -4,8 +4,8 @@
 #include "types.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <iosfwd>
+#include <string>
 
 namespace vespalib { class asciistream; }
 
@@ -18,12 +18,12 @@ namespace storage::spi {
  * Prefer this instead of a std::tuple due to named fields and a pre-provided hash function.
  */
 struct DocTypeGidAndTimestamp {
-    vespalib::string doc_type;
+    std::string doc_type;
     document::GlobalId gid;
     Timestamp timestamp;
 
     DocTypeGidAndTimestamp();
-    DocTypeGidAndTimestamp(const vespalib::string& doc_type_, document::GlobalId gid_, Timestamp timestamp_) noexcept;
+    DocTypeGidAndTimestamp(const std::string& doc_type_, document::GlobalId gid_, Timestamp timestamp_) noexcept;
 
     DocTypeGidAndTimestamp(const DocTypeGidAndTimestamp&);
     DocTypeGidAndTimestamp& operator=(const DocTypeGidAndTimestamp&);
@@ -36,12 +36,12 @@ struct DocTypeGidAndTimestamp {
     }
 
     void print(vespalib::asciistream&) const;
-    vespalib::string to_string() const;
+    std::string to_string() const;
 
     struct hash {
         size_t operator()(const DocTypeGidAndTimestamp& dt_gid_ts) const noexcept {
             size_t h = document::GlobalId::hash()(dt_gid_ts.gid);
-            h = h ^ (vespalib::hash<vespalib::string>()(dt_gid_ts.doc_type) + 0x9e3779b9U + (h << 6U) + (h >> 2U));
+            h = h ^ (vespalib::hash<std::string>()(dt_gid_ts.doc_type) + 0x9e3779b9U + (h << 6U) + (h >> 2U));
             return h ^ (dt_gid_ts.timestamp + 0x9e3779b9U + (h << 6U) + (h >> 2U)); // Basically boost::hash_combine
         }
     };

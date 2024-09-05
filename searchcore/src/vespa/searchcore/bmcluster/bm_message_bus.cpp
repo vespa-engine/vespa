@@ -28,7 +28,7 @@ namespace {
 
 std::atomic<uint64_t> bm_message_bus_msg_id(0u);
 
-vespalib::string reply_as_string(Reply &reply) {
+std::string reply_as_string(Reply &reply) {
     vespalib::asciistream os;
     if (reply.getType() == 0) {
         os << "empty reply";

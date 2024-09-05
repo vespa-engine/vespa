@@ -6,6 +6,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -32,6 +33,7 @@ import java.util.concurrent.Future;
 
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,9 +54,8 @@ public class FileDownloaderTest {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
             connection = new MockConnection();
             supervisor = new Supervisor(new Transport()).setDropEmptyBuffers(true);
-            fileDownloader = createDownloader(connection, Duration.ofSeconds(1));
+            fileDownloader = createDownloader(connection, Duration.ofMillis(500));
         } catch (IOException e) {
-            e.printStackTrace();
             fail(e.getMessage());
         }
     }
@@ -243,13 +244,13 @@ public class FileDownloaderTest {
         FileDownloader fileDownloader = createDownloader(connectionPool, timeout);
         FileReference xyzzy = new FileReference("xyzzy");
         // Should download since we do not have the file on disk
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy, "test"));
-        assertTrue(fileDownloader.isDownloading(xyzzy));
+        Spec spec = new Spec("localhost", 1234);
+        assertTrue(fileDownloader.downloadFromSource(new FileReferenceDownload(xyzzy, "test"), spec));
         assertFalse(getFile(xyzzy).isPresent());
         // Receive files to simulate download
         receiveFile(xyzzy, "xyzzy.jar", FileReferenceData.Type.file, "content");
         // Should not download, since file has already been downloaded
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy, "test"));
+        assertFalse(fileDownloader.downloadFromSource(new FileReferenceDownload(xyzzy, "test"), spec));
         // and file should be available
         assertTrue(getFile(xyzzy).isPresent());
     }
@@ -283,15 +284,13 @@ public class FileDownloaderTest {
                      0.0001);
     }
 
-    private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, String content) {
+    private void receiveFile(FileReference fileReference, String filename, Type type, String content) {
         receiveFile(fileReference, filename, type, Utf8.toBytes(content));
     }
 
-    private void receiveFile(FileReference fileReference, String filename,
-                             FileReferenceData.Type type, byte[] content) {
+    private void receiveFile(FileReference fileReference, String filename, Type type, byte[] content) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
-        FileReceiver.Session session =
-                new FileReceiver.Session(downloadDir, 1, fileReference, type, gzip, filename, content.length);
+        var session = new FileReceiver.Session(downloadDir, 1, fileReference, type, gzip, filename, content.length);
         session.addPart(0, content);
         File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
         fileDownloader.downloads().completedDownloading(fileReference, file);

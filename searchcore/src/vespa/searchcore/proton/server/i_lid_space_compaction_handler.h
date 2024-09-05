@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/common/lid_usage_stats.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace vespalib { class IDestructorCallback; }
@@ -32,7 +32,7 @@ struct ILidSpaceCompactionHandler
     /**
      * Returns the name of this handler.
      */
-    virtual vespalib::string getName() const = 0;
+    virtual std::string getName() const = 0;
 
     /**
      * Sets the listener used to get notifications on the operations handled by the document meta store.

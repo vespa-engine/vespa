@@ -43,8 +43,8 @@ public:
     int get_weight() const override;
     ItemCreator get_creator() const override;
 
-    vespalib::string _name;
-    vespalib::string _index;
+    std::string _name;
+    std::string _index;
     std::vector<std::unique_ptr<QueryItem>> _child;
     bool _prefix;
     int _p1;

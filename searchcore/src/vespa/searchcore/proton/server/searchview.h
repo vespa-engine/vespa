@@ -31,7 +31,7 @@ public:
     SessionManager & getSessionManager() const noexcept { return _matchView->getSessionManager(); }
     const std::shared_ptr<IDocumentMetaStoreContext>& getDocumentMetaStore() const noexcept { return _matchView->getDocumentMetaStore(); }
     DocIdLimit &getDocIdLimit() const noexcept { return _matchView->getDocIdLimit(); }
-    matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const { return _matchView->getMatcherStats(rankProfile); }
+    matching::MatchingStats getMatcherStats(const std::string &rankProfile) const { return _matchView->getMatcherStats(rankProfile); }
 
     std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
     std::unique_ptr<SearchReply> match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;

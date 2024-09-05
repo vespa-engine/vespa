@@ -20,13 +20,13 @@ namespace search {
 //-----------------------------------------------------------------------------
 template <typename B>
 SingleValueStringAttributeT<B>::
-SingleValueStringAttributeT(const vespalib::string &name,
+SingleValueStringAttributeT(const std::string &name,
                             const AttributeVector::Config & c)
     : SingleValueEnumAttribute<B>(name, c)
 { }
 
 template <typename B>
-SingleValueStringAttributeT<B>::SingleValueStringAttributeT(const vespalib::string &name)
+SingleValueStringAttributeT<B>::SingleValueStringAttributeT(const std::string &name)
     : SingleValueStringAttributeT<B>(name, AttributeVector::Config(AttributeVector::BasicType::STRING))
 { }
 

@@ -2,7 +2,6 @@
 #pragma once
 
 #include "snapshots.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <string>
 
 namespace vespalib { class asciistream; }
@@ -24,7 +23,7 @@ public:
     explicit PrometheusFormatter(const Snapshot& snapshot);
     ~PrometheusFormatter();
 
-    [[nodiscard]] vespalib::string as_text_formatted() const;
+    [[nodiscard]] std::string as_text_formatted() const;
 private:
     enum SubMetric { Count, Sum, Min, Max };
     constexpr static uint32_t NumSubMetrics = 4; // Must match the enum cardinality of SubMetric

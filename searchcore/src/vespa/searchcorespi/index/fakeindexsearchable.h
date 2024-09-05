@@ -35,7 +35,7 @@ public:
     search::SerialNum getSerialNum() const override { return 0; }
     void accept(IndexSearchableVisitor &) const override { }
 
-    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         (void) field_name;
         return search::index::FieldLengthInfo();
     }

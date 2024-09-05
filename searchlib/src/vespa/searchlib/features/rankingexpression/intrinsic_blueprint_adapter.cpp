@@ -27,7 +27,7 @@ struct IntrinsicBlueprint : IntrinsicExpression {
     FeatureType type;
     IntrinsicBlueprint(Blueprint::UP blueprint_in, const FeatureType &type_in)
         : blueprint(std::move(blueprint_in)), type(type_in) {}
-    vespalib::string describe_self() const override { return blueprint->getName(); }
+    std::string describe_self() const override { return blueprint->getName(); }
     const FeatureType &result_type() const override { return type; }
     void prepare_shared_state(const QueryEnv & env, fef::IObjectStore & store) const override {
         blueprint->prepareSharedState(env, store);
@@ -42,15 +42,15 @@ struct ResultTypeExtractor : Blueprint::DependencyHandler {
     bool too_much;
     bool failed;
     ResultTypeExtractor() : result_type(), too_much(false), failed(false) {}
-    std::optional<FeatureType> resolve_input(const vespalib::string &, Blueprint::AcceptInput) override {
+    std::optional<FeatureType> resolve_input(const std::string &, Blueprint::AcceptInput) override {
         too_much = true;
         return std::nullopt;
     }
-    void define_output(const vespalib::string &, FeatureType type) override {
+    void define_output(const std::string &, FeatureType type) override {
         too_much = (too_much || result_type.has_value());
         result_type.emplace(std::move(type));
     }
-    void fail(const vespalib::string &) override { failed = true; }
+    void fail(const std::string &) override { failed = true; }
     bool valid() const { return (is_valid(result_type) && !too_much && !failed); }
     const FeatureType &get() const { return result_type.value(); }
 };
@@ -60,7 +60,7 @@ struct ResultTypeExtractor : Blueprint::DependencyHandler {
 IntrinsicExpression::UP
 IntrinsicBlueprintAdapter::try_create(const search::fef::Blueprint &proto,
                                       const search::fef::IIndexEnvironment &env,
-                                      const std::vector<vespalib::string> &params)
+                                      const std::vector<std::string> &params)
 {
     FeatureNameBuilder name_builder;
     ResultTypeExtractor result_type;

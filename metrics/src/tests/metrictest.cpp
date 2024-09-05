@@ -14,7 +14,7 @@ void
 testMetricsGetDimensionsAsPartOfMangledNameImpl()
 {
     MetricImpl m("test", {{"foo", "bar"}}, "description goes here");
-    EXPECT_EQ(vespalib::string("test{foo:bar}"), m.getMangledName());
+    EXPECT_EQ(std::string("test{foo:bar}"), m.getMangledName());
 }
 
 template <typename MetricImpl>
@@ -24,7 +24,7 @@ testMangledNameMayContainMultipleDimensionsImpl()
     MetricImpl m("test",
                 {{"flarn", "yarn"}, {"foo", "bar"}},
                 "description goes here");
-    EXPECT_EQ(vespalib::string("test{flarn:yarn,foo:bar}"), m.getMangledName());
+    EXPECT_EQ(std::string("test{flarn:yarn,foo:bar}"), m.getMangledName());
 }
 
 TEST(MetricTest, value_metrics_get_dimensions_as_part_of_mangled_name)
@@ -55,20 +55,20 @@ TEST(MetricTest, mangled_name_lists_dimensions_in_lexicographic_order)
     LongValueMetric m("test",
                       {{"xyz", "bar"}, {"abc", "foo"}, {"def", "baz"}},
                       "", nullptr);
-    EXPECT_EQ(vespalib::string("test{abc:foo,def:baz,xyz:bar}"), m.getMangledName());
+    EXPECT_EQ(std::string("test{abc:foo,def:baz,xyz:bar}"), m.getMangledName());
 }
 
 TEST(MetricTest, mangling_does_not_change_original_metric_name)
 {
     LongValueMetric m("test", {{"foo", "bar"}}, "", nullptr);
-    EXPECT_EQ(vespalib::string("test"), m.getName());
+    EXPECT_EQ(std::string("test"), m.getName());
 }
 
 TEST(MetricTest, legacy_tags_do_not_create_mangled_name)
 {
     LongValueMetric m("test", {{"foo"},{"bar"}}, "", nullptr);
-    EXPECT_EQ(vespalib::string("test"), m.getName());
-    EXPECT_EQ(vespalib::string("test"), m.getMangledName());
+    EXPECT_EQ(std::string("test"), m.getName());
+    EXPECT_EQ(std::string("test"), m.getMangledName());
 }
 
 }

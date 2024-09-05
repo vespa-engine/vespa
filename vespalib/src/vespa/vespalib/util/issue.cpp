@@ -31,7 +31,7 @@ Link **get_head() {
 
 } // <unnamed>
 
-Issue::Issue(vespalib::string message)
+Issue::Issue(std::string message)
   : _message(std::move(message))
 {
 }
@@ -64,7 +64,7 @@ Issue::listen(Handler &handler)
 }
 
 void
-Issue::report(vespalib::string msg)
+Issue::report(std::string msg)
 {
     report(Issue(std::move(msg)));
 }
@@ -80,7 +80,7 @@ Issue::report(const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
-    vespalib::string msg = make_string_va(format, ap);
+    std::string msg = make_string_va(format, ap);
     va_end(ap);
     report(Issue(std::move(msg)));
 }

@@ -22,9 +22,10 @@ public class ConfigModelId implements Comparable<ConfigModelId> {
 
     /**
      * Create id with a name and version
+     *
      * @param tagName Name of the id
      * @param tagVersion Version of the id
-     * @return A ConfigModelId instance
+     * @return a ConfigModelId instance
      */
     public static ConfigModelId fromNameAndVersion(String tagName, String tagVersion) {
         return new ConfigModelId(tagName, Version.fromString(tagVersion));
@@ -34,7 +35,7 @@ public class ConfigModelId implements Comparable<ConfigModelId> {
      * Create id with given name, using default version 1.
      *
      * @param tagName Name of the id
-     * @return A ConfigModelId instance
+     * @return a ConfigModelId instance
      */
     public static ConfigModelId fromName(String tagName) {
         return new ConfigModelId(tagName, new Version(1));
@@ -68,6 +69,7 @@ public class ConfigModelId implements Comparable<ConfigModelId> {
 
     /**
      * Return the XML element name.
+     *
      * @return the name of the config model
      */
     public String getName() {
@@ -76,6 +78,7 @@ public class ConfigModelId implements Comparable<ConfigModelId> {
 
     /**
      * Return the XML element version.
+     *
      * @return the version of the config model
      */
     Version getVersion() {
@@ -83,10 +86,7 @@ public class ConfigModelId implements Comparable<ConfigModelId> {
     }
 
     private String toStringValue() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(name);
-        sb.append(".");
-        sb.append(version);
-        return sb.toString();
+        return name + "." + version;
     }
+
 }

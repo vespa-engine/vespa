@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  *
  * @author Simon Thoresen Hult
  */
-public class ApplicationSpec {
+public final class ApplicationSpec {
 
     private final HashMap<String, HashSet<String>> services = new HashMap<String, HashSet<String>>();
 
@@ -106,26 +106,11 @@ public class ApplicationSpec {
      * @return The corresponding regex pattern string.
      */
     private static String toRegex(char c) {
-        switch (c) {
-        case '*':
-            return ".*";
-        case '?':
-            return ".";
-        case '^':
-        case '$':
-        case '|':
-        case '{':
-        case '}':
-        case '(':
-        case ')':
-        case '[':
-        case ']':
-        case '\\':
-        case '+':
-        case '.':
-            return "\\" + c;
-        default:
-            return "" + c;
-        }
+        return switch (c) {
+            case '*' -> ".*";
+            case '?' -> ".";
+            case '^', '$', '|', '{', '}', '(', ')', '[', ']', '\\', '+', '.' -> "\\" + c;
+            default -> "" + c;
+        };
     }
 }

@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.test;
 
+import ai.vespa.opennlp.OpenNlpConfig;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.detect.Hint;
+import com.yahoo.language.opennlp.OpenNlpLinguistics;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.simple.SimpleDetector;
@@ -1255,6 +1257,17 @@ public class QueryTestCase {
             CompiledQueryProfileRegistry cRegistry = registry.compile();
             Query query = new Query("?query=foo&presentation.format=xml", cRegistry.findQueryProfile("default"));
         }
+    }
+
+    @Test
+    public void testChinese() {
+        var query = new Query(httpEncode("?query=中村靖日驟逝"), null);
+        var execution = new Execution(Execution.Context.createContextStub(null, new IndexFacts(),
+                                                                          new OpenNlpLinguistics(new OpenNlpConfig.Builder().cjk(true)
+                                                                                                                            .createCjkGrams(true)
+                                                                                                                            .snowballStemmingForEnglish(true).build())));
+        query.getModel().setExecution(execution);
+        assertEquals("WEAKAND(100) 中村靖 日驟 逝", query.getModel().getQueryTree().toString());
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {

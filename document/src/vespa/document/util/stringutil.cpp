@@ -87,8 +87,8 @@ ReplacementCharacters::ReplacementCharacters()
 
 static ReplacementCharacters _G_ForceInitialisation;
 
-const vespalib::string &
-StringUtil::escape(const vespalib::string & source, vespalib::string & destination, char delimiter)
+const std::string &
+StringUtil::escape(const std::string & source, std::string & destination, char delimiter)
 {
     size_t escapeCount(0);
     for (char c : source) {
@@ -127,7 +127,7 @@ StringUtil::escape(const vespalib::string & source, vespalib::string & destinati
     return source;
 }
 
-vespalib::string
+std::string
 StringUtil::unescape(std::string_view source)
 {
     vespalib::asciistream ost;
@@ -156,7 +156,7 @@ StringUtil::unescape(std::string_view source)
             throw IllegalArgumentException("Found \\x at end of input",
                                            VESPA_STRLOC);
         }
-        vespalib::string hexdigits(source.substr(i+2, 2));
+        std::string hexdigits(source.substr(i+2, 2));
         char* endp = nullptr;
         ost << static_cast<char>(strtol(hexdigits.c_str(), &endp, 16));
         if (*endp) {

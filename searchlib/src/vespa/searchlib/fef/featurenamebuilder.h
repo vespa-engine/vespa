@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 #include <vector>
 
 namespace search::fef {
@@ -15,9 +15,9 @@ namespace search::fef {
 class FeatureNameBuilder
 {
 private:
-    vespalib::string              _baseName;
-    std::vector<vespalib::string> _parameters;
-    vespalib::string              _output;
+    std::string              _baseName;
+    std::vector<std::string> _parameters;
+    std::string              _output;
 
 public:
     /**
@@ -32,7 +32,7 @@ public:
      * @return this object, for chaining
      * @param str base name
      **/
-    FeatureNameBuilder &baseName(const vespalib::string &str);
+    FeatureNameBuilder &baseName(const std::string &str);
 
     /**
      * Add a parameter to the end of the parameter list.
@@ -43,7 +43,7 @@ public:
      * exact string value. If this is false, the framework is allowed
      * to normalize the string as if it was a feature name.
      **/
-    FeatureNameBuilder &parameter(const vespalib::string &str, bool exact = true);
+    FeatureNameBuilder &parameter(const std::string &str, bool exact = true);
 
     /**
      * Clear the list of parameters.
@@ -58,7 +58,7 @@ public:
      * @return this object, for chaining
      * @param str output name
      **/
-    FeatureNameBuilder &output(const vespalib::string &str);
+    FeatureNameBuilder &output(const std::string &str);
 
     /**
      * Build a full feature name from the information put into this
@@ -66,7 +66,7 @@ public:
      *
      * @return feature name
      **/
-    vespalib::string buildName() const;
+    std::string buildName() const;
 };
 
 }

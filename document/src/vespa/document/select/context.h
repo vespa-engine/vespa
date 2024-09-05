@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <string>
 
 namespace document {
     class Document;
@@ -24,7 +24,7 @@ public:
     virtual ~Context();
 
     void setVariableMap(std::unique_ptr<VariableMap> map);
-    std::unique_ptr<Value> getValue(const vespalib::string & value) const;
+    std::unique_ptr<Value> getValue(const std::string & value) const;
 
     const Document *_doc;
     const DocumentId *_docId;

@@ -4,9 +4,17 @@ package com.yahoo.config.model.application.provider;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
@@ -30,7 +38,7 @@ public class Bundle {
     public Bundle(JarFile jarFile, File bundleFile) {
         this.jarFile = jarFile;
         this.bundleFile = bundleFile;
-        defEntries = findDefEntries();
+        defEntries = List.copyOf(findDefEntries());
     }
 
     public static List<Bundle> getBundles(File bundleDir) {
@@ -56,11 +64,11 @@ public class Bundle {
         if (!bundleDir.isDirectory()) {
             return new ArrayList<>();
         }
-        return List.of(bundleDir.listFiles((dir, name) -> name.endsWith(".jar")));
+        return List.of(Objects.requireNonNull(bundleDir.listFiles((dir, name) -> name.endsWith(".jar"))));
     }
 
     public List<DefEntry> getDefEntries() {
-        return Collections.unmodifiableList(defEntries);
+        return defEntries;
     }
 
     /**
@@ -93,10 +101,6 @@ public class Bundle {
         return defEntries;
     }
 
-    public JarFile getJarFile() {
-        return jarFile;
-    }
-
     public File getFile() {
         return bundleFile;
     }
@@ -104,7 +108,7 @@ public class Bundle {
     /**
      * Represents a def-file inside a Component. Immutable.
      */
-    public static class DefEntry {
+    public static final class DefEntry {
 
         private final Bundle bundle;
         private final ZipEntry zipEntry;
@@ -139,7 +143,7 @@ public class Bundle {
         }
 
         private String getContents() {
-            StringBuilder ret = new StringBuilder("");
+            StringBuilder ret = new StringBuilder();
             BufferedReader reader = new BufferedReader(getReader());
             try {
                 String str = reader.readLine();

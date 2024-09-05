@@ -30,7 +30,7 @@ public:
         search::IDocumentStore::SP            _docStore;
         const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
     public:
-        SummarySetup(const vespalib::string & baseDir,
+        SummarySetup(const std::string & baseDir,
                      const SummaryConfig & summaryCfg,
                      const JuniperrcConfig & juniperCfg,
                      search::IAttributeManager::SP attributeMgr,
@@ -48,7 +48,7 @@ public:
     };
 
 private:
-    vespalib::string               _baseDir;
+    std::string               _baseDir;
     std::shared_ptr<search::IDocumentStore> _docStore;
 
 public:
@@ -56,7 +56,7 @@ public:
     SummaryManager(vespalib::Executor &shared_executor,
                    const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,
-                   const vespalib::string &baseDir,
+                   const std::string &baseDir,
                    const search::TuneFileSummary &tuneFileSummary,
                    const search::common::FileHeaderContext &fileHeaderContext,
                    search::transactionlog::SyncProxy &tlSyncer,

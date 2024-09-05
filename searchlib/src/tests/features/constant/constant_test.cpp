@@ -40,7 +40,7 @@ struct ExecFixture
 {
     BlueprintFactory factory;
     FtFeatureTest test;
-    ExecFixture(const vespalib::string &feature)
+    ExecFixture(const std::string &feature)
         : factory(),
           test(factory, feature)
     {
@@ -63,7 +63,7 @@ struct ExecFixture
     double executeDouble(uint32_t docId = 1) {
         return extractDouble(docId);
     }
-    void addTensor(const vespalib::string &name,
+    void addTensor(const std::string &name,
                    const TensorSpec &spec)
     {
         Value::UP tensor = make_tensor(spec);
@@ -72,12 +72,12 @@ struct ExecFixture
                                             std::move(type),
                                             std::move(tensor));
     }
-    void addDouble(const vespalib::string &name, const double value) {
+    void addDouble(const std::string &name, const double value) {
         test.getIndexEnv().addConstantValue(name,
                                             ValueType::double_type(),
                                             std::make_unique<DoubleValue>(value));
     }
-    void addTypeValue(const vespalib::string &name, const vespalib::string &type, const vespalib::string &value) {
+    void addTypeValue(const std::string &name, const std::string &type, const std::string &value) {
         auto &props = test.getIndexEnv().getProperties();
         auto type_prop = fmt("constant(%s).type", name.c_str());
         auto value_prop = fmt("constant(%s).value", name.c_str());

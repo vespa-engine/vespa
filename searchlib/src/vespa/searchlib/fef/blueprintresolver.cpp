@@ -4,6 +4,7 @@
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
 #include "blueprint.h"
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config.h>
@@ -21,7 +22,7 @@ constexpr int TRACE_SKIP_POS = 10;
 
 using Accept = Blueprint::AcceptInput;
 
-vespalib::string describe(const vespalib::string &feature_name) {
+std::string describe(const std::string &feature_name) {
     return BlueprintResolver::describe_feature(feature_name);
 }
 
@@ -56,7 +57,7 @@ struct Compiler : public Blueprint::DependencyHandler {
             : spec(std::move(blueprint)), parser(parser_in) {}
     };
     using Stack = std::vector<Frame>;
-    using Errors = std::vector<vespalib::string>;
+    using Errors = std::vector<std::string>;
 
     struct FrameGuard {
         Stack &stack;
@@ -73,8 +74,8 @@ struct Compiler : public Blueprint::DependencyHandler {
     Errors                      errors;
     ExecutorSpecList           &spec_list;
     FeatureMap                 &feature_map;
-    std::set<vespalib::string>  setup_set;
-    std::set<vespalib::string>  failed_set;
+    std::set<std::string>  setup_set;
+    std::set<std::string>  failed_set;
     const char                 *min_stack;
     const char                 *max_stack;
 
@@ -107,8 +108,8 @@ struct Compiler : public Blueprint::DependencyHandler {
     Frame &self() { return resolve_stack.back(); }
     [[nodiscard]] bool failed() const { return !failed_set.empty(); }
 
-    vespalib::string make_trace(bool skip_self) {
-        vespalib::string trace;
+    std::string make_trace(bool skip_self) {
+        std::string trace;
         auto pos = resolve_stack.rbegin();
         auto end = resolve_stack.rend();
         if ((pos != end) && skip_self) {
@@ -130,11 +131,11 @@ struct Compiler : public Blueprint::DependencyHandler {
         return trace;
     }
 
-    FeatureRef fail(const vespalib::string &feature_name, const vespalib::string &reason, bool skip_self = false) {
+    FeatureRef fail(const std::string &feature_name, const std::string &reason, bool skip_self = false) {
         if (failed_set.count(feature_name) == 0) {
             failed_set.insert(feature_name);
             auto trace = make_trace(skip_self);
-            vespalib::string msg;
+            std::string msg;
             msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
             vespalib::chomp(msg);
             errors.emplace_back(msg);
@@ -143,7 +144,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         return {};
     }
 
-    void fail_self(const vespalib::string &reason) {
+    void fail_self(const std::string &reason) {
         fail(self().parser.featureName(), reason, true);
     }
 
@@ -180,7 +181,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         }
     }
 
-    FeatureRef resolve_feature(const vespalib::string &feature_name, Accept accept_type) {
+    FeatureRef resolve_feature(const std::string &feature_name, Accept accept_type) {
         auto parser = std::make_unique<FeatureNameParser>(feature_name);
         if (!parser->valid()) {
             return fail(feature_name, "malformed name");
@@ -208,7 +209,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         return fail(parser->featureName(), fmt("unknown output: '%s'", parser->output().c_str()));
     }
 
-    std::optional<FeatureType> resolve_input(const vespalib::string &feature_name, Accept accept_type) override {
+    std::optional<FeatureType> resolve_input(const std::string &feature_name, Accept accept_type) override {
         assert(self().spec.output_types.empty()); // require: 'resolve inputs' before 'define outputs'
         auto ref = resolve_feature(feature_name, accept_type);
         if (!ref.valid()) {
@@ -220,8 +221,8 @@ struct Compiler : public Blueprint::DependencyHandler {
         return spec_list[ref.executor].output_types[ref.output];
     }
 
-    void define_output(const vespalib::string &output_name, FeatureType type) override {
-        vespalib::string feature_name = self().parser.executorName();
+    void define_output(const std::string &output_name, FeatureType type) override {
+        std::string feature_name = self().parser.executorName();
         if (!output_name.empty()) {
             feature_name.push_back('.');
             feature_name.append(output_name);
@@ -234,7 +235,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         self().spec.output_types.push_back(std::move(type));
     }
 
-    void fail(const vespalib::string &msg) override {
+    void fail(const std::string &msg) override {
         fail_self(msg);
     }
 };
@@ -266,8 +267,8 @@ BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
 {
 }
 
-vespalib::string
-BlueprintResolver::describe_feature(const vespalib::string &name)
+std::string
+BlueprintResolver::describe_feature(const std::string &name)
 {
     auto parser = std::make_unique<FeatureNameParser>(name);
     if (parser->valid() &&

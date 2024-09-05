@@ -26,6 +26,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <filesystem>
 #include <set>
+#include <string>
 
 using document::Document;
 using document::FieldValue;
@@ -192,14 +193,14 @@ FusionRunnerTest::createIndex(const string &dir, uint32_t id, bool fusion)
         memory_index.dump(index_builder);
     }
 
-    _selector->extractSaveInfo(index_dir + "/selector")->save(tuneFileAttributes, _fileHeaderContext);
+    _selector->extractSaveInfo(std::string(index_dir) + "/selector")->save(tuneFileAttributes, _fileHeaderContext);
 }
 
 set<uint32_t>
 readFusionIds(const string &dir)
 {
     set<uint32_t> ids;
-    const vespalib::string prefix("index.fusion.");
+    const std::string prefix("index.fusion.");
     std::filesystem::directory_iterator dir_scan(dir);
     for (auto& entry : dir_scan) {
         if (entry.is_directory() && entry.path().filename().string().find(prefix) == 0) {
@@ -213,7 +214,7 @@ readFusionIds(const string &dir)
     return ids;
 }
 
-vespalib::string
+std::string
 getFusionIndexName(uint32_t fusion_id)
 {
    vespalib::asciistream ost;

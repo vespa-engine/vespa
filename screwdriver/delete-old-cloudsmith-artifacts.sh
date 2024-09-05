@@ -31,7 +31,8 @@ cat $RPMS_TO_DELETE
 
 if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
     for RPMID in $(cat $RPMS_TO_DELETE); do
-      curl -sLf -u "$CLOUDSMITH_API_CREDS" -X DELETE \
+      curl -sLf -X DELETE \
+        --header "X-Api-Key: $CLOUDSMITH_API_TOKEN" \
         --header 'accept: application/json' \
         "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/$RPMID/"
     done

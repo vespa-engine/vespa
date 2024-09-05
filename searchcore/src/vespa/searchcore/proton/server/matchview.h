@@ -53,10 +53,10 @@ public:
     DocIdLimit & getDocIdLimit() const noexcept { return _docIdLimit; }
 
     // Throws on error.
-    std::shared_ptr<matching::Matcher> getMatcher(const vespalib::string & rankProfile) const;
+    std::shared_ptr<matching::Matcher> getMatcher(const std::string & rankProfile) const;
 
     matching::MatchingStats
-    getMatcherStats(const vespalib::string &rankProfile) const {
+    getMatcherStats(const std::string &rankProfile) const {
         return _matchers->getStats(rankProfile);
     }
 

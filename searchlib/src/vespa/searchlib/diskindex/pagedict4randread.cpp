@@ -10,9 +10,9 @@ LOG_SETUP(".diskindex.pagedict4randread");
 
 namespace {
 
-vespalib::string myPId("PageDict4P.1");
-vespalib::string mySPId("PageDict4SP.1");
-vespalib::string mySSId("PageDict4SS.1");
+std::string myPId("PageDict4P.1");
+std::string mySPId("PageDict4SP.1");
+std::string mySSId("PageDict4SS.1");
 
 }
 
@@ -199,12 +199,12 @@ PageDict4RandRead::lookup(std::string_view word,
 
 
 bool
-PageDict4RandRead::open(const vespalib::string &name,
+PageDict4RandRead::open(const std::string &name,
                         const TuneFileRandRead &tuneFileRead)
 {
-    vespalib::string pname = name + ".pdat";
-    vespalib::string spname = name + ".spdat";
-    vespalib::string ssname = name + ".ssdat";
+    std::string pname = name + ".pdat";
+    std::string spname = name + ".spdat";
+    std::string ssname = name + ".ssdat";
 
     int mmapFlags(tuneFileRead.getMemoryMapFlags());
     _ssfile->enableMemoryMap(mmapFlags);

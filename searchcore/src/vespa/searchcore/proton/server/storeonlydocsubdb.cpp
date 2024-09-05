@@ -54,8 +54,8 @@ IIndexWriter::SP nullIndexWriter;
 
 }
 
-StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName, const vespalib::string &subName,
-                                  const vespalib::string &baseDir,
+StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName, const std::string &subName,
+                                  const std::string &baseDir,
                                   uint32_t subDbId, SubDbType subDbType)
     : _docTypeName(docTypeName),
       _subName(subName),
@@ -229,7 +229,7 @@ createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCf
                                 std::shared_ptr<SummaryManager::SP> result) const
 {
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
-    vespalib::string baseDir(_baseDir + "/summary");
+    std::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
         (grow, baseDir, getSubDbName(), _writeService.shared(),
          storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, std::move(bucketizer), std::move(result));
@@ -254,9 +254,9 @@ createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
     grow.setGrowDelta(grow.getGrowDelta() + alloc_strategy.get_amortize_count());
-    vespalib::string baseDir(_baseDir + "/documentmetastore");
-    vespalib::string name = DocumentMetaStore::getFixedName();
-    vespalib::string attrFileName = baseDir + "/" + name; // XXX: Wrong
+    std::string baseDir(_baseDir + "/documentmetastore");
+    std::string name = DocumentMetaStore::getFixedName();
+    std::string attrFileName = baseDir + "/" + name; // XXX: Wrong
     // make preliminary result visible early, allowing dependent
     // initializers to get hold of document meta store instance in
     // their constructors.
@@ -270,8 +270,8 @@ createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
 void
 StoreOnlyDocSubDB::setupDocumentMetaStore(const DocumentMetaStoreInitializerResult & dmsResult)
 {
-    vespalib::string baseDir(_baseDir + "/documentmetastore");
-    vespalib::string name = DocumentMetaStore::getFixedName();
+    std::string baseDir(_baseDir + "/documentmetastore");
+    std::string name = DocumentMetaStore::getFixedName();
     DocumentMetaStore::SP dms(dmsResult.documentMetaStore());
     if (dms->isLoaded()) {
         _flushedDocumentMetaStoreSerialNum = dms->getStatus().getLastSyncToken();
@@ -413,7 +413,7 @@ StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig &configSnapshot)
     _iFeedView.set(std::move(feedView));
 }
 
-vespalib::string
+std::string
 StoreOnlyDocSubDB::getSubDbName() const {
     return vespalib::make_string("%s.%s", _owner.getName().c_str(), _subName.c_str());
 }
@@ -557,7 +557,7 @@ StoreOnlyDocSubDB::getDocumentRetriever()
 }
 
 MatchingStats
-StoreOnlyDocSubDB::getMatcherStats(const vespalib::string &rankProfile) const
+StoreOnlyDocSubDB::getMatcherStats(const std::string &rankProfile) const
 {
     (void) rankProfile;
     return {};
@@ -586,14 +586,14 @@ StoreOnlyDocSubDB::getDocumentDBReference()
 StoreOnlySubDBFileHeaderContext::
 StoreOnlySubDBFileHeaderContext(const FileHeaderContext & parentFileHeaderContext,
                                 const DocTypeName &docTypeName,
-                                const vespalib::string &baseDir)
+                                const std::string &baseDir)
     : FileHeaderContext(),
       _parentFileHeaderContext(parentFileHeaderContext),
       _docTypeName(docTypeName),
       _subDB()
 {
     size_t pos = baseDir.rfind('/');
-    _subDB = (pos != vespalib::string::npos) ? baseDir.substr(pos + 1) : baseDir;
+    _subDB = (pos != std::string::npos) ? baseDir.substr(pos + 1) : baseDir;
 }
 StoreOnlySubDBFileHeaderContext::~StoreOnlySubDBFileHeaderContext() = default;
 
@@ -604,7 +604,7 @@ StoreOnlyDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &)
 
 void
 StoreOnlySubDBFileHeaderContext::
-addTags(vespalib::GenericHeader &header, const vespalib::string &name) const
+addTags(vespalib::GenericHeader &header, const std::string &name) const
 {
     _parentFileHeaderContext.addTags(header, name);
     using Tag = GenericHeader::Tag;

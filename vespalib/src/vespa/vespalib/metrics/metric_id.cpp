@@ -5,12 +5,12 @@
 namespace vespalib::metrics {
 
 MetricId
-MetricId::from_name(const vespalib::string& name)
+MetricId::from_name(const std::string& name)
 {
     return NameRepo::instance.metric(name);
 }
 
-const vespalib::string&
+const std::string&
 MetricId::as_name() const
 {
     return NameRepo::instance.metricName(*this);

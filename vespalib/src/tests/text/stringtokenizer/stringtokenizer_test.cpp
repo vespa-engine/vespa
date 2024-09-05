@@ -9,9 +9,9 @@ using namespace vespalib;
 
 TEST("stringtokenizer_test") {
     {
-        string s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
+        std::string s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
         StringTokenizer tokenizer(s);
-        std::vector<string> result;
+        std::vector<std::string> result;
         result.push_back("This");
         result.push_back("is");
         result.push_back("a");
@@ -27,16 +27,16 @@ TEST("stringtokenizer_test") {
                              static_cast<size_t>(tokenizer.size()));
         for (unsigned int i=0; i<result.size(); i++)
             EXPECT_EQUAL(result[i], tokenizer[i]);
-        std::set<string> sorted(tokenizer.begin(), tokenizer.end());
+        std::set<std::string> sorted(tokenizer.begin(), tokenizer.end());
         EXPECT_EQUAL(static_cast<size_t>(8u), sorted.size());
 
         tokenizer.removeEmptyTokens();
         EXPECT_EQUAL(7u, tokenizer.size());
     }
     {
-        string s("\tAnother list with some \ntokens, and stuff.");
+        std::string s("\tAnother list with some \ntokens, and stuff.");
         StringTokenizer tokenizer(s, " \t\n", ",.");
-        std::vector<string> result;
+        std::vector<std::string> result;
         result.push_back("");
         result.push_back("Another");
         result.push_back("list");
@@ -51,14 +51,14 @@ TEST("stringtokenizer_test") {
                              static_cast<size_t>(tokenizer.size()));
         for (unsigned int i=0; i<result.size(); i++)
             EXPECT_EQUAL(result[i], tokenizer[i]);
-        std::set<string> sorted(tokenizer.begin(), tokenizer.end());
+        std::set<std::string> sorted(tokenizer.begin(), tokenizer.end());
         EXPECT_EQUAL(static_cast<size_t>(8u), sorted.size());
 
         tokenizer.removeEmptyTokens();
         EXPECT_EQUAL(7u, tokenizer.size());
     }
     {
-        string s(" ");
+        std::string s(" ");
         StringTokenizer tokenizer(s);
         EXPECT_EQUAL(0u, tokenizer.size());
     }

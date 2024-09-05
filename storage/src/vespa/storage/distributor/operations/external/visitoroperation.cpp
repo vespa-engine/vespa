@@ -38,7 +38,7 @@ VisitorOperation::BucketInfo::print(vespalib::asciistream & out) const
 
 VisitorOperation::BucketInfo::~BucketInfo() = default;
 
-vespalib::string
+std::string
 VisitorOperation::BucketInfo::toString() const
 {
     vespalib::asciistream ost;
@@ -185,7 +185,7 @@ VisitorOperation::markOperationAsFailedDueToNodeError(
             result.getResult(),
             vespalib::make_string("[from content node %u] %s",
                                   fromFailingNodeIndex,
-                                  vespalib::string(result.getMessage()).c_str()));
+                                  std::string(result.getMessage()).c_str()));
 }
 
 void
@@ -252,7 +252,7 @@ VisitorOperation::verifyDistributorsAreAvailable()
 {
     const lib::ClusterState& clusterState = _bucketSpace.getClusterState();
     if (clusterState.getNodeCount(lib::NodeType::DISTRIBUTOR) == 0) {
-        vespalib::string err(vespalib::make_string(
+        std::string err(vespalib::make_string(
             "No distributors available when processing visitor '%s'",
             _msg->getInstanceId().c_str()));
         LOG(debug, "%s", err.c_str());
@@ -318,7 +318,7 @@ VisitorOperation::verifyOperationContainsBuckets()
 {
     size_t bucketCount = _msg->getBuckets().size();
     if (bucketCount == 0) {
-        vespalib::string errorMsg = vespalib::make_string(
+        std::string errorMsg = vespalib::make_string(
                 "No buckets in CreateVisitorCommand for visitor '%s'",
                 _msg->getInstanceId().c_str());
         throw VisitorVerificationException(api::ReturnCode::ILLEGAL_PARAMETERS, errorMsg);
@@ -330,7 +330,7 @@ VisitorOperation::verifyOperationHasSuperbucketAndProgress()
 {
     size_t bucketCount = _msg->getBuckets().size();
     if (bucketCount != 2) {
-        vespalib::string errorMsg = vespalib::make_string(
+        std::string errorMsg = vespalib::make_string(
                 "CreateVisitorCommand does not contain 2 buckets for visitor '%s'",
                 _msg->getInstanceId().c_str());
         throw VisitorVerificationException(api::ReturnCode::ILLEGAL_PARAMETERS, errorMsg);
@@ -813,7 +813,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
     os << _msg->getInstanceId() << '-'
        << _node_ctx.node_index() << '-' << cmd->getMsgId();
 
-    vespalib::string storageInstanceId(os.view());
+    std::string storageInstanceId(os.view());
     cmd->setInstanceId(storageInstanceId);
     cmd->setAddress(api::StorageMessageAddress::create(_node_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, node));
     cmd->setMaximumPendingReplyCount(pending);
@@ -914,7 +914,7 @@ VisitorOperation::assign_bucket_lock_handle(SequencingHandle handle)
 }
 
 void
-VisitorOperation::assign_put_lock_access_token(const vespalib::string& token)
+VisitorOperation::assign_put_lock_access_token(const std::string& token)
 {
     _put_lock_token = token;
 }

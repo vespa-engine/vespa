@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Routing policy to determine which distributor in a content cluster to send data to.
@@ -299,10 +298,10 @@ public class ContentPolicy extends SlobrokPolicy {
         private String getDistributionConfigId() {
             return distributionConfigId == null ? clusterName : distributionConfigId;
         }
-        public String getClusterName() {
+        public final String getClusterName() {
             return clusterName;
         }
-        public SlobrokHostPatternGenerator createPatternGenerator() {
+        private SlobrokHostPatternGenerator createPatternGenerator() {
             return new SlobrokHostPatternGenerator(getClusterName());
         }
         public HostFetcher createHostFetcher(SlobrokPolicy policy, int percent) {
@@ -340,19 +339,24 @@ public class ContentPolicy extends SlobrokPolicy {
         private static final BucketIdFactory factory = new BucketIdFactory();
 
         private BucketId getBucketId(Message msg) {
-            switch (msg.getType()) {
-                case DocumentProtocol.MESSAGE_PUTDOCUMENT:         return factory.getBucketId(((PutDocumentMessage)msg).getDocumentPut().getDocument().getId());
-                case DocumentProtocol.MESSAGE_GETDOCUMENT:         return factory.getBucketId(((GetDocumentMessage)msg).getDocumentId());
-                case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:      return factory.getBucketId(((RemoveDocumentMessage)msg).getDocumentId());
-                case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:      return factory.getBucketId(((UpdateDocumentMessage)msg).getDocumentUpdate().getId());
-                case DocumentProtocol.MESSAGE_GETBUCKETLIST:       return ((GetBucketListMessage)msg).getBucketId();
-                case DocumentProtocol.MESSAGE_STATBUCKET:          return ((StatBucketMessage)msg).getBucketId();
-                case DocumentProtocol.MESSAGE_CREATEVISITOR:       return ((CreateVisitorMessage)msg).getBuckets().get(0);
-                case DocumentProtocol.MESSAGE_REMOVELOCATION:      return ((RemoveLocationMessage)msg).getBucketId();
-                default:
+            return switch (msg.getType()) {
+                case DocumentProtocol.MESSAGE_PUTDOCUMENT ->
+                        factory.getBucketId(((PutDocumentMessage) msg).getDocumentPut().getDocument().getId());
+                case DocumentProtocol.MESSAGE_GETDOCUMENT ->
+                        factory.getBucketId(((GetDocumentMessage) msg).getDocumentId());
+                case DocumentProtocol.MESSAGE_REMOVEDOCUMENT ->
+                        factory.getBucketId(((RemoveDocumentMessage) msg).getDocumentId());
+                case DocumentProtocol.MESSAGE_UPDATEDOCUMENT ->
+                        factory.getBucketId(((UpdateDocumentMessage) msg).getDocumentUpdate().getId());
+                case DocumentProtocol.MESSAGE_GETBUCKETLIST -> ((GetBucketListMessage) msg).getBucketId();
+                case DocumentProtocol.MESSAGE_STATBUCKET -> ((StatBucketMessage) msg).getBucketId();
+                case DocumentProtocol.MESSAGE_CREATEVISITOR -> ((CreateVisitorMessage) msg).getBuckets().get(0);
+                case DocumentProtocol.MESSAGE_REMOVELOCATION -> ((RemoveLocationMessage) msg).getBucketId();
+                default -> {
                     log.log(Level.SEVERE, "Message type '" + msg.getType() + "' not supported.");
-                    return null;
-            }
+                    yield null;
+                }
+            };
         }
 
         BucketId handleBucketIdCalculation(RoutingContext context) {
@@ -367,7 +371,7 @@ public class ContentPolicy extends SlobrokPolicy {
     }
 
     /** Class handling the logic of picking a distributor */
-    public static class DistributorSelectionLogic {
+    public final static class DistributorSelectionLogic {
         /** Message context class. Contains data we want to inspect about a request at reply time. */
         private static class MessageContext {
             final Integer calculatedDistributor;
@@ -482,7 +486,7 @@ public class ContentPolicy extends SlobrokPolicy {
         void handleWrongDistribution(WrongDistributionReply reply, RoutingContext routingContext) {
             final MessageContext context = (MessageContext) routingContext.getContext();
             final Optional<ClusterState> replyState = clusterStateFromReply(reply);
-            if (!replyState.isPresent()) {
+            if (replyState.isEmpty()) {
                 return;
             }
             final ClusterState newState = replyState.get();

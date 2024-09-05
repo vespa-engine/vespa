@@ -11,18 +11,18 @@
 #include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
-#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/memory.h>
+#include <cassert>
 #include <filesystem>
 #include <iomanip>
 #include <random>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using document::BucketId;
 using document::StringFieldValue;
@@ -128,81 +128,82 @@ checkStats(IDataStore &store,
     chunkStats = store.getFileChunkStats();
     showStats(storageStats);
     showChunks(chunkStats);
-    EXPECT_EQUAL(expLastSerial, storageStats.lastSerialNum());
-    EXPECT_EQUAL(expLastFlushedSerial, storageStats.lastFlushedSerialNum());
-    EXPECT_EQUAL(storageStats.lastSerialNum(), calcLastSerialNum(chunkStats));
-    EXPECT_EQUAL(storageStats.lastFlushedSerialNum(), calcLastFlushedSerialNum(chunkStats));
-    EXPECT_EQUAL(storageStats.diskUsage(), calcDiskUsage(chunkStats));
-    EXPECT_EQUAL(storageStats.diskBloat(), calcDiskBloat(chunkStats));
+    EXPECT_EQ(expLastSerial, storageStats.lastSerialNum());
+    EXPECT_EQ(expLastFlushedSerial, storageStats.lastFlushedSerialNum());
+    EXPECT_EQ(storageStats.lastSerialNum(), calcLastSerialNum(chunkStats));
+    EXPECT_EQ(storageStats.lastFlushedSerialNum(), calcLastFlushedSerialNum(chunkStats));
+    EXPECT_EQ(storageStats.diskUsage(), calcDiskUsage(chunkStats));
+    EXPECT_EQ(storageStats.diskBloat(), calcDiskBloat(chunkStats));
 }
 
 }
 
 #ifdef __linux__
-TEST("test that DirectIOPadding works accordng to spec") {
+TEST(LogDataStoreTest, test_that_DirectIOPadding_works_accordng_to_spec)
+{
     constexpr ssize_t FILE_SIZE = 4_Ki*3;
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
     Alloc buf(Alloc::alloc_aligned(FILE_SIZE, 4_Ki));
     memset(buf.get(), 'a', buf.size());
-    EXPECT_EQUAL(FILE_SIZE, file.Write2(buf.get(), FILE_SIZE));
+    EXPECT_EQ(FILE_SIZE, file.Write2(buf.get(), FILE_SIZE));
     size_t padBefore(0);
     size_t padAfter(0);
 
     EXPECT_TRUE(file.DirectIOPadding(4_Ki, 4096, padBefore, padAfter));
-    EXPECT_EQUAL(0u, padBefore);
-    EXPECT_EQUAL(0u, padAfter);
+    EXPECT_EQ(0u, padBefore);
+    EXPECT_EQ(0u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4095, 4_Ki, padBefore, padAfter));
-    EXPECT_EQUAL(4095u, padBefore);
-    EXPECT_EQUAL(1u, padAfter);
+    EXPECT_EQ(4095u, padBefore);
+    EXPECT_EQ(1u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
-    EXPECT_EQUAL(1u, padBefore);
-    EXPECT_EQUAL(4095u, padAfter);
+    EXPECT_EQ(1u, padBefore);
+    EXPECT_EQ(4095u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4_Ki, 4097, padBefore, padAfter));
-    EXPECT_EQUAL(0u, padBefore);
-    EXPECT_EQUAL(4095u, padAfter);
+    EXPECT_EQ(0u, padBefore);
+    EXPECT_EQ(4095u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4_Ki, 4095, padBefore, padAfter));
-    EXPECT_EQUAL(0u, padBefore);
-    EXPECT_EQUAL(1u, padAfter);
+    EXPECT_EQ(0u, padBefore);
+    EXPECT_EQ(1u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4097, 4095, padBefore, padAfter));
-    EXPECT_EQUAL(1u, padBefore);
-    EXPECT_EQUAL(0u, padAfter);
+    EXPECT_EQ(1u, padBefore);
+    EXPECT_EQ(0u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
-    EXPECT_EQUAL(1u, padBefore);
-    EXPECT_EQUAL(4095u, padAfter);
+    EXPECT_EQ(1u, padBefore);
+    EXPECT_EQ(4095u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
-    EXPECT_EQUAL(1u, padBefore);
-    EXPECT_EQUAL(4095u, padAfter);
+    EXPECT_EQ(1u, padBefore);
+    EXPECT_EQ(4095u, padAfter);
 
     EXPECT_FALSE(file.DirectIOPadding(FILE_SIZE-1, 4_Ki, padBefore, padAfter));
-    EXPECT_EQUAL(0u, padBefore);
-    EXPECT_EQUAL(0u, padAfter);
-    EXPECT_EQUAL(FILE_SIZE, file.getSize());
+    EXPECT_EQ(0u, padBefore);
+    EXPECT_EQ(0u, padAfter);
+    EXPECT_EQ(FILE_SIZE, file.getSize());
 
     FastOS_File file2("directio.test");
     file2.EnableDirectIO();
     EXPECT_TRUE(file2.OpenWriteOnlyExisting(true));
     EXPECT_TRUE(file2.SetPosition(file2.getSize()));
-    EXPECT_EQUAL(FILE_SIZE, file2.getSize());
-    EXPECT_EQUAL(FILE_SIZE, file2.Write2(buf.get(), FILE_SIZE));
-    EXPECT_EQUAL(FILE_SIZE*2, file2.getSize());
+    EXPECT_EQ(FILE_SIZE, file2.getSize());
+    EXPECT_EQ(FILE_SIZE, file2.Write2(buf.get(), FILE_SIZE));
+    EXPECT_EQ(FILE_SIZE*2, file2.getSize());
     EXPECT_TRUE(file2.Close());
 
     EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
-    EXPECT_EQUAL(1u, padBefore);
-    EXPECT_EQUAL(4095u, padAfter);
+    EXPECT_EQ(1u, padBefore);
+    EXPECT_EQ(4095u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(FILE_SIZE-1, 4_Ki, padBefore, padAfter));
-    EXPECT_EQUAL(4095u, padBefore);
-    EXPECT_EQUAL(1u, padAfter);
+    EXPECT_EQ(4095u, padBefore);
+    EXPECT_EQ(1u, padAfter);
 
     EXPECT_TRUE(file.Close());
     std::filesystem::remove(std::filesystem::path(file.GetFileName()));
@@ -246,18 +247,19 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
         datastore.compactBloat(30000);
         datastore.remove(31000, 0);
         checkStats(datastore, 31000, 30000);
-        EXPECT_LESS_EQUAL(minFiles, datastore.getAllActiveFiles().size());
-        EXPECT_GREATER_EQUAL(maxFiles, datastore.getAllActiveFiles().size());
+        EXPECT_LE(minFiles, datastore.getAllActiveFiles().size());
+        EXPECT_GE(maxFiles, datastore.getAllActiveFiles().size());
     }
     {
         LogDataStore datastore(executor, "growing", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         checkStats(datastore, 30000, 30000);
-        EXPECT_LESS_EQUAL(minFiles, datastore.getAllActiveFiles().size());
-        EXPECT_GREATER_EQUAL(maxFiles, datastore.getAllActiveFiles().size());
+        EXPECT_LE(minFiles, datastore.getAllActiveFiles().size());
+        EXPECT_GE(maxFiles, datastore.getAllActiveFiles().size());
     }
 }
-TEST("testGrowingChunkedBySize") {
+TEST(LogDataStoreTest, testGrowingChunkedBySize)
+{
     LogDataStore::Config config;
     config.setMaxFileSize(100000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
@@ -265,7 +267,8 @@ TEST("testGrowingChunkedBySize") {
     verifyGrowing(config, 40, 120);
 }
 
-TEST("testGrowingChunkedByNumLids") {
+TEST(LogDataStoreTest, testGrowingChunkedByNumLids)
+{
     LogDataStore::Config config;
     config.setMaxNumLids(1000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
@@ -276,12 +279,13 @@ TEST("testGrowingChunkedByNumLids") {
 void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz)
 {
     vespalib::DataBuffer buf;
-    EXPECT_EQUAL(static_cast<ssize_t>(sz), datastore.read(lid, buf));
-    EXPECT_EQUAL(buf.getDataLen(), sz);
+    EXPECT_EQ(static_cast<ssize_t>(sz), datastore.read(lid, buf));
+    EXPECT_EQ(buf.getDataLen(), sz);
     EXPECT_TRUE(vespalib::memcmp_safe(a, buf.getData(), sz) == 0);
 }
 
-TEST("testTruncatedIdxFile"){
+TEST(LogDataStoreTest, testTruncatedIdxFile)
+{
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
     vespalib::ThreadStackExecutor executor(1);
@@ -290,14 +294,14 @@ TEST("testTruncatedIdxFile"){
         // Files comes from the 'growing test'.
         LogDataStore datastore(executor, TEST_PATH("bug-7257706"), config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
-        EXPECT_EQUAL(354ul, datastore.lastSyncToken());
+        EXPECT_EQ(354ul, datastore.lastSyncToken());
     }
     const char * magic = "mumbo jumbo";
     {
         std::filesystem::resize_file(std::filesystem::path("bug-7257706-truncated/1422358701368384000.idx"), 3830);
         LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
-        EXPECT_EQUAL(331ul, datastore.lastSyncToken());
+        EXPECT_EQ(331ul, datastore.lastSyncToken());
         datastore.write(332, 7, magic, strlen(magic));
         datastore.write(333, 8, magic, strlen(magic));
         datastore.flush(datastore.initFlush(334));
@@ -305,11 +309,12 @@ TEST("testTruncatedIdxFile"){
     {
         LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
-        EXPECT_EQUAL(334ul, datastore.lastSyncToken());
+        EXPECT_EQ(334ul, datastore.lastSyncToken());
     }
 }
 
-TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
+TEST(LogDataStoreTest, testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved)
+{
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
     vespalib::ThreadStackExecutor executor(1);
@@ -317,12 +322,13 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     LogDataStore datastore(executor, "dangling-test", config,
                            GrowStrategy(), TuneFileSummary(),
                            fileHeaderContext, tlSyncer, nullptr);
-    EXPECT_EQUAL(354ul, datastore.lastSyncToken());
-    EXPECT_EQUAL(4096u + 480u, datastore.getDiskHeaderFootprint());
-    EXPECT_EQUAL(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
+    EXPECT_EQ(354ul, datastore.lastSyncToken());
+    EXPECT_EQ(4096u + 480u, datastore.getDiskHeaderFootprint());
+    EXPECT_EQ(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
 }
 
-TEST("testThatIncompleteCompactedFilesAreRemoved") {
+TEST(LogDataStoreTest, testThatIncompleteCompactedFilesAreRemoved)
+{
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
     vespalib::ThreadStackExecutor executor(1);
@@ -330,10 +336,10 @@ TEST("testThatIncompleteCompactedFilesAreRemoved") {
     LogDataStore datastore(executor, "incompletecompact-test", config,
                            GrowStrategy(), TuneFileSummary(),
                            fileHeaderContext, tlSyncer, nullptr);
-    EXPECT_EQUAL(354ul, datastore.lastSyncToken());
-    EXPECT_EQUAL(3*(4096u + 480u), datastore.getDiskHeaderFootprint());
+    EXPECT_EQ(354ul, datastore.lastSyncToken());
+    EXPECT_EQ(3*(4096u + 480u), datastore.getDiskHeaderFootprint());
     LogDataStore::NameIdSet files = datastore.getAllActiveFiles();
-    EXPECT_EQUAL(3u, files.size());
+    EXPECT_EQ(3u, files.size());
     EXPECT_TRUE(files.find(FileChunk::NameId(1422358701368384000)) != files.end());
     EXPECT_TRUE(files.find(FileChunk::NameId(2000000000000000000)) != files.end());
     EXPECT_TRUE(files.find(FileChunk::NameId(2422358701368384000)) != files.end());
@@ -363,35 +369,36 @@ private:
 
 VisitStore::~VisitStore() =default;
 
-TEST("test visit cache does not cache empty ones and is able to access some backing store.") {
+TEST(LogDataStoreTest, test_visit_cache_does_not_cache_empty_ones_and_is_able_to_access_some_backing_store)
+{
     const char * A7 = "aAaAaAa";
     VisitStore store;
     IDataStore & datastore = store.getStore();
 
     VisitCache visitCache(datastore, 100000, CompressionConfig::Type::LZ4);
-    EXPECT_EQUAL(12u, visitCache.read({1}).bytesAllocated());
+    EXPECT_EQ(12u, visitCache.read({1}).bytesAllocated());
     EXPECT_TRUE(visitCache.read({1}).empty());
     datastore.write(1,1, A7, 7);
-    EXPECT_EQUAL(12u, visitCache.read({2}).bytesAllocated());
+    EXPECT_EQ(12u, visitCache.read({2}).bytesAllocated());
     CompressedBlobSet cbs = visitCache.read({1});
     EXPECT_FALSE(cbs.empty());
-    EXPECT_EQUAL(19u, cbs.bytesAllocated());
+    EXPECT_EQ(19u, cbs.bytesAllocated());
     BlobSet bs(cbs.getBlobSet());
-    EXPECT_EQUAL(7u, bs.get(1).size());
-    EXPECT_EQUAL(0, strncmp(A7, bs.get(1).c_str(), 7));
+    EXPECT_EQ(7u, bs.get(1).size());
+    EXPECT_EQ(0, strncmp(A7, bs.get(1).c_str(), 7));
     datastore.write(2,2, A7, 7);
     datastore.write(3,3, A7, 7);
     datastore.write(4,4, A7, 7);
     visitCache.remove(1);
-    EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
-    EXPECT_EQUAL(2u, visitCache.read({2,4,5}).getBlobSet().getPositions().size());
+    EXPECT_EQ(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+    EXPECT_EQ(2u, visitCache.read({2,4,5}).getBlobSet().getPositions().size());
     datastore.remove(5, 3);
-    EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+    EXPECT_EQ(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
     visitCache.remove(3);
-    EXPECT_EQUAL(1u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+    EXPECT_EQ(1u, visitCache.read({1,3}).getBlobSet().getPositions().size());
 }
 
-using vespalib::string;
+using std::string;
 using document::DataType;
 using document::Document;
 using document::DocumentId;
@@ -428,7 +435,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field, size_t numRe
     DocumentId id(idstr.view());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
     Document::UP doc(new Document(repo, *docType, id));
-    ASSERT_TRUE(doc.get());
+    assert(doc.get());
     asciistream mainstr;
     mainstr << "static text" << i << " body something";
     for (uint32_t j = 0; j < 10+numReps; ++j) {
@@ -522,7 +529,7 @@ VisitCacheStore::VerifyVisitor::VerifyVisitor(VisitCacheStore & vcs, std::vector
     }
 }
 VisitCacheStore::VerifyVisitor::~VerifyVisitor() {
-    EXPECT_EQUAL(_expected.size(), _actual.size());
+    EXPECT_EQ(_expected.size(), _actual.size());
 }
 
 
@@ -553,130 +560,136 @@ VisitCacheStore::recreate() {
 }
 
 void
-verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, size_t memory_used) {
-    EXPECT_EQUAL(hits, cs.hits);
-    EXPECT_EQUAL(misses, cs.misses);
-    EXPECT_EQUAL(elements, cs.elements);
-    EXPECT_LESS_EQUAL(memory_used,  cs.memory_used + 20);  // We allow +- 20 as visitorder and hence compressability is non-deterministic.
-    EXPECT_GREATER_EQUAL(memory_used+20,  cs.memory_used);
+verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, size_t memory_used, std::string_view label) {
+    SCOPED_TRACE(label);
+    EXPECT_EQ(hits, cs.hits);
+    EXPECT_EQ(misses, cs.misses);
+    EXPECT_EQ(elements, cs.elements);
+    EXPECT_LE(memory_used,  cs.memory_used + 20);  // We allow +- 20 as visitorder and hence compressability is non-deterministic.
+    EXPECT_GE(memory_used+20,  cs.memory_used);
 }
 
-TEST("Control static memory usage") {
+TEST(LogDataStoreTest, Control_static_memory_usage)
+{
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
     IDocumentStore &ds = vcs.getStore();
     vespalib::MemoryUsage usage = ds.getMemoryUsage();
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
-    constexpr size_t string_size = sizeof(vespalib::string);
-    EXPECT_EQUAL(74476 + mutex_size + 3 * string_size, usage.allocatedBytes());
-    EXPECT_EQUAL(752u + mutex_size + 3 * string_size, usage.usedBytes());
+    constexpr size_t string_size = sizeof(std::string);
+    EXPECT_EQ(74476 + mutex_size + 3 * string_size, usage.allocatedBytes());
+    EXPECT_EQ(752u + mutex_size + 3 * string_size, usage.usedBytes());
 }
 
-TEST("test the update cache strategy") {
+TEST(LogDataStoreTest, test_the_update_cache_strategy)
+{
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
     IDocumentStore & ds = vcs.getStore();
     for (size_t i(1); i <= 10; i++) {
         vcs.write(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 28, "initial 10 writes");
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241, "read 7");
     vcs.write(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241, "second write 8");
     vcs.write(7, 17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 302));
+    verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 302, "second write 7");
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 302));
+    verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 302, "second read 7");
     vcs.remove(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 302));
+    verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 302, "remove 8");
     vcs.remove(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 28, "remove 7");
     vcs.write(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 28, "third 7");
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 2, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 1, 2, 1, 241, "third read 7");
     vcs.write(7, 17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 2, 1, 302));
+    verifyCacheStats(ds.getCacheStats(), 1, 2, 1, 302, "fourth write 7");
     vcs.recreate();
     IDocumentStore & ds2 = vcs.getStore();
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds2.getCacheStats(), 0, 1, 1, 302));
+    verifyCacheStats(ds2.getCacheStats(), 0, 1, 1, 302, "fourth read 7");
 }
 
-TEST("test the invalidate cache strategy") {
+TEST(LogDataStoreTest, test_the_invalidate_cache_strategy)
+{
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::INVALIDATE);
     IDocumentStore & ds = vcs.getStore();
     for (size_t i(1); i <= 10; i++) {
         vcs.write(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 28, "initial 10 writes");
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241, "read 7");
     vcs.write(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 241, "second write 8");
     vcs.write(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 0, 1, 0, 28, "second write 7");
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 0, 2, 1, 241, "second read 7");
     vcs.remove(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 0, 2, 1, 241, "remove 8");
     vcs.remove(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 0, 2, 0, 28, "remove 7");
     vcs.write(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 0, 2, 0, 28, "third write 7");
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 3, 1, 241));
+    verifyCacheStats(ds.getCacheStats(), 0, 3, 1, 241, "third read 7");
 }
 
-TEST("test that the integrated visit cache works.") {
+TEST(LogDataStoreTest, test_that_the_integrated_visit_cache_works)
+{
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::INVALIDATE);
     IDocumentStore & ds = vcs.getStore();
     for (size_t i(1); i <= 100; i++) {
         vcs.write(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 28));
+    verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 28, "initial 100 writes");
 
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
     constexpr size_t BASE_SZ = 20602;
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, BASE_SZ));
+    verifyCacheStats(ds.getCacheStats(), 0, 100, 100, BASE_SZ, "first read 1..100 read");
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, BASE_SZ)); // From the individual cache.
+    verifyCacheStats(ds.getCacheStats(), 100, 100, 100, BASE_SZ, "second read 1..100 read"); // From the individual cache.
 
     vcs.verifyVisit({7,9,17,19,67,88}, false);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, BASE_SZ));
+    verifyCacheStats(ds.getCacheStats(), 100, 100, 100, BASE_SZ, "first visit");
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 101, 101, BASE_SZ+16));
+    verifyCacheStats(ds.getCacheStats(), 100, 101, 101, BASE_SZ + 16l, "second visit");
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, BASE_SZ+16));
+    verifyCacheStats(ds.getCacheStats(), 101, 101, 101, BASE_SZ + 16, "third visit");
     vcs.rewrite(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, BASE_SZ-197)); // From the individual cache.
+    verifyCacheStats(ds.getCacheStats(), 101, 101, 100, BASE_SZ - 197, "rewrite 8"); // From the individual cache.
     vcs.rewrite(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, BASE_SZ-166)); // From the both caches.
+    verifyCacheStats(ds.getCacheStats(), 101, 101, 98, BASE_SZ - 166, "rewrite 7"); // From the both caches.
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, BASE_SZ-410));
+    verifyCacheStats(ds.getCacheStats(), 101, 102, 99, BASE_SZ - 410, "fourth visit");
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, BASE_SZ-406));
+    verifyCacheStats(ds.getCacheStats(), 101, 103, 99, BASE_SZ - 406, "fifth visit");
     vcs.rewrite(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, BASE_SZ-391));
+    verifyCacheStats(ds.getCacheStats(), 101, 103, 97, BASE_SZ - 391, "rewrite 17");
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, BASE_SZ-611));
+    verifyCacheStats(ds.getCacheStats(), 101, 104, 98, BASE_SZ - 611, "sixth visit");
     vcs.remove(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, BASE_SZ-391));
+    verifyCacheStats(ds.getCacheStats(), 101, 104, 97, BASE_SZ - 391, "remove 17");
     vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, BASE_SZ-611));
+    verifyCacheStats(ds.getCacheStats(), 101, 105, 98, BASE_SZ - 611, "seventh visit");
 
     vcs.verifyVisit({41, 42}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, BASE_SZ-611));
+    verifyCacheStats(ds.getCacheStats(), 101, 106, 99, BASE_SZ - 611, "eight visit");
     vcs.verifyVisit({43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, BASE_SZ-611));
+    verifyCacheStats(ds.getCacheStats(), 101, 107, 100, BASE_SZ - 611, "ninth visit");
     vcs.verifyVisit({41, 42, 43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, BASE_SZ-611));
+    verifyCacheStats(ds.getCacheStats(), 101, 108, 99, BASE_SZ - 611, "tenth visit");
 }
 
-TEST("testWriteRead") {
+TEST(LogDataStoreTest, testWriteRead)
+{
     std::filesystem::remove_all(std::filesystem::path("empty"));
     const char * bufA = "aaaaaaaaaaaaaaaaaaaaa";
     const char * bufB = "bbbbbbbbbbbbbbbb";
@@ -691,10 +704,10 @@ TEST("testWriteRead") {
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         ASSERT_TRUE(datastore.lastSyncToken() == 0);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
-        EXPECT_LESS(0u, headerFootprint);
-        EXPECT_EQUAL(datastore.getDiskFootprint(), headerFootprint);
-        EXPECT_EQUAL(datastore.getDiskBloat(), 0ul);
-        EXPECT_EQUAL(datastore.getMaxSpreadAsBloat(), 0ul);
+        EXPECT_LT(0u, headerFootprint);
+        EXPECT_EQ(datastore.getDiskFootprint(), headerFootprint);
+        EXPECT_EQ(datastore.getDiskBloat(), 0ul);
+        EXPECT_EQ(datastore.getMaxSpreadAsBloat(), 0ul);
         datastore.write(1, 0, a[0].c_str(), a[0].size());
         fetchAndTest(datastore, 0, a[0].c_str(), a[0].size());
         datastore.write(2, 0, a[1].c_str(), a[1].size());
@@ -713,10 +726,10 @@ TEST("testWriteRead") {
         for(size_t i=0; i < 100; i++) {
             fetchAndTest(datastore, i, a[i%2].c_str(), a[i%2].size());
         }
-        EXPECT_EQUAL(datastore.getDiskFootprint(),
+        EXPECT_EQ(datastore.getDiskFootprint(),
                      2711ul + headerFootprint);
-        EXPECT_EQUAL(datastore.getDiskBloat(), 0ul);
-        EXPECT_EQUAL(datastore.getMaxSpreadAsBloat(), 0ul);
+        EXPECT_EQ(datastore.getDiskBloat(), 0ul);
+        EXPECT_EQ(datastore.getMaxSpreadAsBloat(), 0ul);
         datastore.flush(datastore.initFlush(lastSyncToken));
     }
     {
@@ -727,10 +740,10 @@ TEST("testWriteRead") {
                                GrowStrategy(), TuneFileSummary(),
                                fileHeaderContext, tlSyncer, nullptr);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
-        EXPECT_LESS(0u, headerFootprint);
-        EXPECT_EQUAL(4944ul + headerFootprint, datastore.getDiskFootprint());
-        EXPECT_EQUAL(0ul, datastore.getDiskBloat());
-        EXPECT_EQUAL(0ul, datastore.getMaxSpreadAsBloat());
+        EXPECT_LT(0u, headerFootprint);
+        EXPECT_EQ(4944ul + headerFootprint, datastore.getDiskFootprint());
+        EXPECT_EQ(0ul, datastore.getDiskBloat());
+        EXPECT_EQ(0ul, datastore.getMaxSpreadAsBloat());
 
         for(size_t i=0; i < 100; i++) {
             fetchAndTest(datastore, i, a[i%2].c_str(), a[i%2].size());
@@ -743,14 +756,15 @@ TEST("testWriteRead") {
             fetchAndTest(datastore, i, a[(i+1)%2].c_str(), a[(i+1)%2].size());
         }
 
-        EXPECT_EQUAL(7594ul + headerFootprint, datastore.getDiskFootprint());
-        EXPECT_EQUAL(0ul, datastore.getDiskBloat());
-        EXPECT_EQUAL(0ul, datastore.getMaxSpreadAsBloat());
+        EXPECT_EQ(7594ul + headerFootprint, datastore.getDiskFootprint());
+        EXPECT_EQ(0ul, datastore.getDiskBloat());
+        EXPECT_EQ(0ul, datastore.getMaxSpreadAsBloat());
     }
     std::filesystem::remove_all(std::filesystem::path("empty"));
 }
 
-TEST("requireThatFlushTimeIsAvailableAfterFlush") {
+TEST(LogDataStoreTest, requireThatFlushTimeIsAvailableAfterFlush)
+{
     DirectoryHandler testDir("flushtime");
     vespalib::system_time before(vespalib::system_clock::now());
     DummyFileHeaderContext fileHeaderContext;
@@ -759,14 +773,14 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     MyTlSyncer tlSyncer;
     LogDataStore store(executor, testDir.getDir(), config, GrowStrategy(),
                        TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
-    EXPECT_EQUAL(0s, std::chrono::duration_cast<std::chrono::seconds>(store.getLastFlushTime().time_since_epoch()));
+    EXPECT_EQ(0s, std::chrono::duration_cast<std::chrono::seconds>(store.getLastFlushTime().time_since_epoch()));
     uint64_t flushToken = store.initFlush(5);
-    EXPECT_EQUAL(5u, flushToken);
+    EXPECT_EQ(5u, flushToken);
     store.flush(flushToken);
     vespalib::system_time after(vespalib::system_clock::now());
     // the file name of the dat file is 'magic', using the clock instead of stating the file
-    EXPECT_LESS_EQUAL(before, store.getLastFlushTime());
-    EXPECT_GREATER_EQUAL(after, store.getLastFlushTime());
+    EXPECT_LE(before, store.getLastFlushTime());
+    EXPECT_GE(after, store.getLastFlushTime());
 }
 
 
@@ -784,29 +798,30 @@ private:
     uint32_t _mod;
 };
 
-TEST("testBucketDensityComputer") {
+TEST(LogDataStoreTest, testBucketDensityComputer)
+{
     DummyBucketizer bucketizer(100);
     BucketDensityComputer bdc(&bucketizer);
     vespalib::GenerationHandler::Guard guard = bdc.getGuard();
-    EXPECT_EQUAL(0u, bdc.getNumBuckets());
+    EXPECT_EQ(0u, bdc.getNumBuckets());
     bdc.recordLid(guard, 1, 1);
-    EXPECT_EQUAL(1u, bdc.getNumBuckets());
+    EXPECT_EQ(1u, bdc.getNumBuckets());
     bdc.recordLid(guard, 2, 1);
-    EXPECT_EQUAL(2u, bdc.getNumBuckets());
+    EXPECT_EQ(2u, bdc.getNumBuckets());
     bdc.recordLid(guard, 3, 1);
-    EXPECT_EQUAL(3u, bdc.getNumBuckets());
+    EXPECT_EQ(3u, bdc.getNumBuckets());
     bdc.recordLid(guard, 2, 1);
-    EXPECT_EQUAL(3u, bdc.getNumBuckets());
+    EXPECT_EQ(3u, bdc.getNumBuckets());
     bdc.recordLid(guard, 4, 0);
-    EXPECT_EQUAL(3u, bdc.getNumBuckets());
+    EXPECT_EQ(3u, bdc.getNumBuckets());
     bdc.recordLid(guard, 4, 1);
-    EXPECT_EQUAL(4u, bdc.getNumBuckets());
+    EXPECT_EQ(4u, bdc.getNumBuckets());
 
     BucketDensityComputer nonRecording(nullptr);
     guard = nonRecording.getGuard();
-    EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
+    EXPECT_EQ(0u, nonRecording.getNumBuckets());
     nonRecording.recordLid(guard, 1, 1);
-    EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
+    EXPECT_EQ(0u, nonRecording.getNumBuckets());
 }
 
 LogDataStore::Config
@@ -815,7 +830,7 @@ getBasicConfig(size_t maxFileSize)
     return LogDataStore::Config().setMaxFileSize(maxFileSize);
 }
 
-vespalib::string
+std::string
 genData(uint32_t lid, size_t numBytes)
 {
     assert(numBytes >= 6);
@@ -839,7 +854,7 @@ struct Fixture {
         return serialNum++;
     }
 
-    Fixture(const vespalib::string &dirName = "tmp",
+    Fixture(const std::string &dirName = "tmp",
             bool dirCleanup = true,
             size_t maxFileSize = 4_Ki * 2)
         : executor(1),
@@ -858,7 +873,7 @@ struct Fixture {
         store.flush(serialNum);
     }
     Fixture &write(uint32_t lid, size_t numBytes = 1024) {
-        vespalib::string data = genData(lid, numBytes);
+        std::string data = genData(lid, numBytes);
         store.write(nextSerialNum(), lid, data.c_str(), data.size());
         return *this;
     }
@@ -871,60 +886,70 @@ struct Fixture {
             }
         }
     }
-    void compactLidSpace(uint32_t wantedDocIdLimit) {
+    void compactLidSpace(uint32_t wantedDocIdLimit, std::string_view label) {
+        SCOPED_TRACE(label);
         store.compactLidSpace(wantedDocIdLimit);
         assertDocIdLimit(wantedDocIdLimit);
     }
     void assertDocIdLimit(uint32_t expDocIdLimit) {
-        EXPECT_EQUAL(expDocIdLimit, store.getDocIdLimit());
+        EXPECT_EQ(expDocIdLimit, store.getDocIdLimit());
+    }
+    void assertDocIdLimit(uint32_t expDocIdLimit, std::string_view label) {
+        SCOPED_TRACE(label);
+        assertDocIdLimit(expDocIdLimit);
     }
     void assertNumChunks(size_t numChunks) {
-        EXPECT_EQUAL(numChunks, store.getFileChunkStats().size());
+        EXPECT_EQ(numChunks, store.getFileChunkStats().size());
     }
     void assertDocIdLimitInFileChunks(const std::vector<uint32_t> expLimits) {
         std::vector<uint32_t> actLimits;
         for (const auto &stat : store.getFileChunkStats()) {
             actLimits.push_back(stat.docIdLimit());
         }
-        EXPECT_EQUAL(expLimits, actLimits);
+        EXPECT_EQ(expLimits, actLimits);
     }
-    void assertContent(const std::set<uint32_t> &lids, uint32_t docIdLimit, size_t numBytesPerEntry = 1024) {
+    void assertDocIdLimitInFileChunks(const std::vector<uint32_t> expLimits, std::string_view label) {
+        SCOPED_TRACE(label);
+        assertDocIdLimitInFileChunks(std::move(expLimits));
+    }
+    void assertContent(const std::set<uint32_t> &lids, uint32_t docIdLimit, size_t numBytesPerEntry, std::string_view label) {
+        SCOPED_TRACE(label);
         for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
             vespalib::DataBuffer buffer;
             size_t size = store.read(lid, buffer);
             if (lids.find(lid) != lids.end()) {
-                vespalib::string expData = genData(lid, numBytesPerEntry);
-                EXPECT_EQUAL(expData, vespalib::string(buffer.getData(), buffer.getDataLen()));
-                EXPECT_GREATER(size, 0u);
+                std::string expData = genData(lid, numBytesPerEntry);
+                EXPECT_EQ(expData, std::string(buffer.getData(), buffer.getDataLen()));
+                EXPECT_GT(size, 0u);
             } else {
-                EXPECT_EQUAL("", vespalib::string(buffer.getData(), buffer.getDataLen()));
-                EXPECT_EQUAL(0u, size);
+                EXPECT_EQ("", std::string(buffer.getData(), buffer.getDataLen()));
+                EXPECT_EQ(0u, size);
             }
         }
     }
 };
 
-TEST("require that docIdLimit is updated when inserting entries")
+TEST(LogDataStoreTest, require_that_docIdLimit_is_updated_when_inserting_entries)
 {
     {
         Fixture f("tmp", false);
-        f.assertDocIdLimit(0);
+        f.assertDocIdLimit(0, "initial");
         f.write(10);
-        f.assertDocIdLimit(11);
+        f.assertDocIdLimit(11, "write 10");
         f.write(9);
-        f.assertDocIdLimit(11);
+        f.assertDocIdLimit(11, "write 9");
         f.write(11);
-        f.assertDocIdLimit(12);
+        f.assertDocIdLimit(12, "write 11");
         f.assertNumChunks(1);
         f.flush();
     }
     {
         Fixture f("tmp");
-        f.assertDocIdLimit(12);
+        f.assertDocIdLimit(12, "reload");
     }
 }
 
-TEST("require that docIdLimit at idx file creation time is written to idx file header")
+TEST(LogDataStoreTest, require_that_docIdLimit_at_idx_file_creation_time_is_written_to_idx_file_header)
 {
     std::vector<uint32_t> expLimits = {std::numeric_limits<uint32_t>::max(),14,104,204};
     {
@@ -932,16 +957,16 @@ TEST("require that docIdLimit at idx file creation time is written to idx file h
         f.writeUntilNewChunk(10);
         f.writeUntilNewChunk(100);
         f.writeUntilNewChunk(200);
-        f.assertDocIdLimitInFileChunks(expLimits);
+        f.assertDocIdLimitInFileChunks(expLimits, "writes");
         f.flush();
     }
     {
         Fixture f("tmp");
-        f.assertDocIdLimitInFileChunks(expLimits);
+        f.assertDocIdLimitInFileChunks(expLimits, "reload");
     }
 }
 
-TEST("require that lid space can be compacted and entries from old files skipped during load")
+TEST(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_entries_from_old_files_skipped_during_load)
 {
     {
         Fixture f("tmp", false);
@@ -950,82 +975,87 @@ TEST("require that lid space can be compacted and entries from old files skipped
         f.write(20);
         f.writeUntilNewChunk(200);
         f.write(30);
-        TEST_DO(f.assertContent({10,100,101,102,20,200,201,202,30}, 203));
+        f.assertContent({10,100,101,102,20,200,201,202,30}, 203, 1024, "write 30");
 
         f.assertDocIdLimit(203);
-        f.compactLidSpace(100);
-        TEST_DO(f.assertContent({10,20,30}, 203));
+        f.compactLidSpace(100, "compactLidSpace 100");
+        f.assertContent({10,20,30}, 203, 1024, "after compactLidSpace");
 
         f.writeUntilNewChunk(31);
         f.write(99);
         f.write(300);
-        TEST_DO(f.assertContent({10,20,30,31,32,33,99,300}, 301));
+        f.assertContent({10,20,30,31,32,33,99,300}, 301, 1024, "write 100");
         f.assertDocIdLimitInFileChunks({std::numeric_limits<uint32_t>::max(),103,203,100});
         f.flush();
     }
     {
         Fixture f("tmp");
-        TEST_DO(f.assertContent({10,20,30,31,32,33,99,300}, 301));
+        f.assertContent({10,20,30,31,32,33,99,300}, 301, 1024, "reload");
     }
 }
 
-TEST_F("require that getLid() is protected by docIdLimit", Fixture)
+TEST(LogDataStoreTest, require_that_getLid_is_protected_by_docIdLimit)
 {
+    Fixture f;
     f.write(1);
     vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
     EXPECT_TRUE(f.store.getLid(guard, 1).valid());
     EXPECT_FALSE(f.store.getLid(guard, 2).valid());
 }
 
-TEST_F("require that lid space can be compacted and shrunk", Fixture)
+TEST(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_shrunk)
 {
+    Fixture f;
     f.write(1).write(2);
     EXPECT_FALSE(f.store.canShrinkLidSpace());
 
-    f.compactLidSpace(2);
+    f.compactLidSpace(2, "compactLidSpace 2");
     vespalib::MemoryUsage before = f.store.getMemoryUsage();
     EXPECT_TRUE(f.store.canShrinkLidSpace());
-    EXPECT_EQUAL(8u, f.store.getEstimatedShrinkLidSpaceGain()); // one lid info entry
+    EXPECT_EQ(8u, f.store.getEstimatedShrinkLidSpaceGain()); // one lid info entry
     f.store.shrinkLidSpace();
 
     vespalib::MemoryUsage after = f.store.getMemoryUsage();
-    EXPECT_LESS(after.usedBytes(), before.usedBytes());
-    EXPECT_EQUAL(8u, before.usedBytes() - after.usedBytes());
+    EXPECT_LT(after.usedBytes(), before.usedBytes());
+    EXPECT_EQ(8u, before.usedBytes() - after.usedBytes());
 }
 
-TEST_F("require that lid space can be increased after being compacted and then shrunk", Fixture)
+TEST(LogDataStoreTest, require_that_lid_space_can_be_increased_after_being_compacted_and_then_shrunk)
 {
+    Fixture f;
     f.write(1).write(3);
-    TEST_DO(f.compactLidSpace(2));
+    f.compactLidSpace(2, "compactLidSpace 2");
     f.write(2);
-    TEST_DO(f.assertDocIdLimit(3));
+    f.assertDocIdLimit(3, "write 2");
     f.store.shrinkLidSpace();
-    TEST_DO(f.assertDocIdLimit(3));
-    TEST_DO(f.assertContent({1,2}, 3));
+    f.assertDocIdLimit(3, "shrinkLidSpace");
+    f.assertContent({1,2}, 3, 1024, "shrinkLidSpace");
 }
 
-TEST_F("require that there is control of static memory usage", Fixture)
+TEST(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
 {
+    Fixture f;
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQUAL(456u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(vespalib::string), sizeof(LogDataStore));
-    EXPECT_EQUAL(73916u + 3 * sizeof(vespalib::string), usage.allocatedBytes());
-    EXPECT_EQUAL(192u + 3 * sizeof(vespalib::string), usage.usedBytes());
+    EXPECT_EQ(456u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
+    EXPECT_EQ(73916u + 3 * sizeof(std::string), usage.allocatedBytes());
+    EXPECT_EQ(192u + 3 * sizeof(std::string), usage.usedBytes());
 }
 
-TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)
+TEST(LogDataStoreTest, require_that_lid_space_can_be_shrunk_only_after_read_guards_are_deleted)
 {
+    Fixture f;
     f.write(1).write(2);
     EXPECT_FALSE(f.store.canShrinkLidSpace());
     {
         vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
-        f.compactLidSpace(2);
+        f.compactLidSpace(2, "compactLidSpace 2");
         f.write(1); // trigger remove of old generations
         EXPECT_FALSE(f.store.canShrinkLidSpace());
-        EXPECT_EQUAL(0u, f.store.getEstimatedShrinkLidSpaceGain());
+        EXPECT_EQ(0u, f.store.getEstimatedShrinkLidSpaceGain());
     }
     f.write(1); // trigger remove of old generations
     EXPECT_TRUE(f.store.canShrinkLidSpace());
-    EXPECT_EQUAL(8u, f.store.getEstimatedShrinkLidSpaceGain());
+    EXPECT_EQ(8u, f.store.getEstimatedShrinkLidSpaceGain());
 }
 
 LogDataStore::NameIdSet create(std::vector<size_t> list) {
@@ -1036,23 +1066,25 @@ LogDataStore::NameIdSet create(std::vector<size_t> list) {
     return l;
 }
 
-TEST("require that findIncompleteCompactedFiles does expected filtering") {
+TEST(LogDataStoreTest, require_that_findIncompleteCompactedFiles_does_expected_filtering)
+{
     EXPECT_TRUE(LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,202,204})).empty());
     LogDataStore::NameIdSet toRemove = LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,204}));
-    EXPECT_EQUAL(1u, toRemove.size());
+    EXPECT_EQ(1u, toRemove.size());
     EXPECT_TRUE(toRemove.find(FileChunk::NameId(201)) != toRemove.end());
     toRemove = LogDataStore::findIncompleteCompactedFiles(create({1,2,4,100,200,201,204,205}));
-    EXPECT_EQUAL(3u, toRemove.size());
+    EXPECT_EQ(3u, toRemove.size());
     EXPECT_TRUE(toRemove.find(FileChunk::NameId(2)) != toRemove.end());
     EXPECT_TRUE(toRemove.find(FileChunk::NameId(201)) != toRemove.end());
     EXPECT_TRUE(toRemove.find(FileChunk::NameId(205)) != toRemove.end());
 
-    EXPECT_EXCEPTION((void) LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,202,204})).empty(),
-                     vespalib::IllegalStateException, "3 consecutive files {200, 201, 202}. Impossible");
+    VESPA_EXPECT_EXCEPTION((void) LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,202,204})).empty(),
+                           vespalib::IllegalStateException, "3 consecutive files {200, 201, 202}. Impossible");
 
 }
 
-TEST("require that config equality operator detects inequality") {
+TEST(LogDataStoreTest, require_that_config_equality_operator_detects_inequality)
+{
     using C = LogDataStore::Config;
     EXPECT_TRUE(C() == C());
     EXPECT_FALSE(C() == C().setMaxFileSize(1));
@@ -1062,7 +1094,10 @@ TEST("require that config equality operator detects inequality") {
     EXPECT_FALSE(C() == C().compactCompression({CompressionConfig::ZSTD}));
 }
 
-TEST_MAIN() {
+int
+main(int argc, char* argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
     DummyFileHeaderContext::setCreator("logdatastore_test");
-    TEST_RUN_ALL();
+    return RUN_ALL_TESTS();
 }

@@ -3,10 +3,10 @@
 #pragma once
 
 #include "state_explorer.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace vespalib {
 
@@ -23,7 +23,7 @@ private:
 public:
     SlimeExplorer(const slime::Inspector &self) : _self(self) {}
     virtual void get_state(const slime::Inserter &inserter, bool full) const override;
-    virtual std::vector<vespalib::string> get_children_names() const override;
+    virtual std::vector<std::string> get_children_names() const override;
     virtual std::unique_ptr<StateExplorer> get_child(std::string_view name) const override;
 };
 

@@ -11,7 +11,6 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
@@ -19,7 +18,6 @@ import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.HexDump;
@@ -72,7 +70,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
-import static java.util.logging.Level.INFO;
 
 
 /**
@@ -137,14 +134,14 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     /** Creates package from a local directory, typically deploy app   */
-    public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData,
+    public static FilesApplicationPackage fromFileWithDeployData(File appDir,
+                                                                 DeployData deployData,
                                                                  boolean includeSourceFiles) {
         return new Builder(appDir).includeSourceFiles(includeSourceFiles).deployData(deployData).build();
     }
 
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployedFromDir(),
-                                       deployData.getDeployTimestamp(),
+        return new ApplicationMetaData(deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
                                        deployData.getApplicationId(),
                                        computeCheckSum(appDir),
@@ -487,8 +484,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private static ApplicationMetaData readMetaData(File appDir) {
         String originalAppDir = preprocessed.equals(appDir.getName()) ? appDir.getParentFile().getName() : appDir.getName();
-        ApplicationMetaData defaultMetaData = new ApplicationMetaData("n/a",
-                                                                      0L,
+        ApplicationMetaData defaultMetaData = new ApplicationMetaData(0L,
                                                                       false,
                                                                       ApplicationId.from(TenantName.defaultName(),
                                                                                          ApplicationName.from(originalAppDir),

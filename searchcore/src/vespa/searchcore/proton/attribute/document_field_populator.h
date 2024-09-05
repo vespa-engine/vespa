@@ -14,15 +14,15 @@ class DocumentFieldPopulator : public IReprocessingRewriter
 {
 private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
-    vespalib::string  _fieldName;
+    std::string  _fieldName;
     AttributeVectorSP _attr;
-    vespalib::string  _subDbName;
+    std::string  _subDbName;
     int64_t           _documentsPopulated;
 
 public:
-    DocumentFieldPopulator(const vespalib::string &fieldName,
+    DocumentFieldPopulator(const std::string &fieldName,
                            AttributeVectorSP attr,
-                           const vespalib::string &subDbName);
+                           const std::string &subDbName);
 
     ~DocumentFieldPopulator() override;
 

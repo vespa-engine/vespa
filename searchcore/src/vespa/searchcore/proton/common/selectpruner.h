@@ -9,25 +9,25 @@
 
 namespace search { class IAttributeManager; }
 
-namespace document { class DocumentTypeRepo; }
+namespace document { class IDocumentTypeRepo; }
 
 namespace proton {
 
 class SelectPrunerBase
 {
 protected:
-    const vespalib::string &_docType;
+    const std::string &_docType;
     const search::IAttributeManager *_amgr;
     const document::Document &_emptyDoc;
-    const document::DocumentTypeRepo &_repo;
+    const document::IDocumentTypeRepo &_repo;
     bool _hasFields;
     bool _hasDocuments;
 
 public:
-    SelectPrunerBase(const vespalib::string &docType,
+    SelectPrunerBase(const std::string &docType,
                      const search::IAttributeManager *amgr,
                      const document::Document &emptyDoc,
-                     const document::DocumentTypeRepo &repo,
+                     const document::IDocumentTypeRepo &repo,
                      bool hasFields,
                      bool hasDocuments);
 
@@ -46,10 +46,10 @@ private:
     using ValueNodeUP = document::select::ValueNode::UP;
     uint32_t _attrFieldNodes;
 public:
-    SelectPruner(const vespalib::string &docType,
+    SelectPruner(const std::string &docType,
                  const search::IAttributeManager *amgr,
                  const document::Document &emptyDoc,
-                 const document::DocumentTypeRepo &repo,
+                 const document::IDocumentTypeRepo &repo,
                  bool hasFields,
                  bool hasDocuments);
 

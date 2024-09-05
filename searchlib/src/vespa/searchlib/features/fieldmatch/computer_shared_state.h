@@ -22,7 +22,7 @@ public:
      * @param fieldInfo         The info object of the matched field.
      * @param params            The parameter object for this computer.
      */
-    ComputerSharedState(const vespalib::string& propertyNamespace, const fef::PhraseSplitterQueryEnv& splitter_query_env,
+    ComputerSharedState(const std::string& propertyNamespace, const fef::PhraseSplitterQueryEnv& splitter_query_env,
                         const fef::FieldInfo& fieldInfo, const Params& params);
     ~ComputerSharedState();
 

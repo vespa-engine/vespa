@@ -25,7 +25,7 @@ class BlueprintResolver
 public:
     using SP = std::shared_ptr<BlueprintResolver>;
     using BlueprintSP = std::shared_ptr<Blueprint>;
-    using Warnings = std::vector<vespalib::string>;
+    using Warnings = std::vector<std::string>;
 
     /**
      * Low-level reference to a single output from a feature
@@ -45,7 +45,7 @@ public:
             : executor(executor_in), output(output_in) {}
         [[nodiscard]] bool valid() const { return (executor != undef); }
     };
-    using FeatureMap = std::map<vespalib::string, FeatureRef>;
+    using FeatureMap = std::map<std::string, FeatureRef>;
 
     /**
      * Thin blueprint wrapper with additional information about how
@@ -84,7 +84,7 @@ public:
 private:
     const BlueprintFactory       &_factory;
     const IIndexEnvironment      &_indexEnv;
-    std::vector<vespalib::string> _seeds;
+    std::vector<std::string> _seeds;
     ExecutorSpecList              _executorSpecs;
     FeatureMap                    _featureMap;
     FeatureMap                    _seedMap;
@@ -109,7 +109,7 @@ public:
     //
     // rankingExpression(foo@hash) -> function 'foo'
     // feature -> rank feature 'feature'
-    static vespalib::string describe_feature(const vespalib::string &name);
+    static std::string describe_feature(const std::string &name);
 
     /**
      * Add a feature name to the list of seeds. During compilation,

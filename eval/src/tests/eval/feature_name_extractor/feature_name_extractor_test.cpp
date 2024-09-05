@@ -4,18 +4,18 @@
 
 using vespalib::eval::FeatureNameExtractor;
 
-void verify_extract(const vespalib::string &input,
-                    const vespalib::string &expect_symbol,
-                    const vespalib::string &expect_after)
+void verify_extract(const std::string &input,
+                    const std::string &expect_symbol,
+                    const std::string &expect_after)
 {
     FeatureNameExtractor extractor;
     const char *pos_in = input.data();
     const char *end_in = input.data() + input.size();
-    vespalib::string symbol_out;
+    std::string symbol_out;
     const char *pos_out = nullptr;
     extractor.extract_symbol(pos_in, end_in, pos_out, symbol_out);
     ASSERT_TRUE(pos_out != nullptr);
-    vespalib::string after(pos_out, end_in);
+    std::string after(pos_out, end_in);
     EXPECT_EQUAL(expect_symbol, symbol_out);
     EXPECT_EQUAL(expect_after, after);
 }

@@ -18,7 +18,7 @@ class SingleEnumSearchContext : public BaseSC
 protected:
     using DocId = ISearchContext::DocId;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
-    using EnumIndices = vespalib::ConstArrayRef<AtomicEntryRef>;
+    using EnumIndices = std::span<const AtomicEntryRef>;
     EnumIndices                 _enum_indices;
     const EnumStoreT<T>&        _enum_store;
 

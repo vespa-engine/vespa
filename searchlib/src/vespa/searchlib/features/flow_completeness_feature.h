@@ -76,7 +76,7 @@ public:
 class FlowCompletenessBlueprint : public fef::Blueprint
 {
 private:
-    std::vector<vespalib::string>  _output;
+    std::vector<std::string>  _output;
     FlowCompletenessParams _params;
 
 public:

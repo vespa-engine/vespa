@@ -3,10 +3,10 @@
 #pragma once
 
 #include "traits.h"
-#include "arrayref.h"
 #include "memoryusage.h"
 #include <cstdlib>
 #include <memory>
+#include <span>
 
 namespace vespalib {
 namespace stash {
@@ -101,7 +101,7 @@ private:
     }
 
     template <typename T>
-    T *copy_elements(char *mem, ConstArrayRef<T> src) {
+    T *copy_elements(char *mem, std::span<const T> src) {
         T *array = reinterpret_cast<T*>(mem);
         for (size_t i = 0; i < src.size(); ++i) {
             new (array + i) T(src[i]);
@@ -168,34 +168,34 @@ public:
     }
 
     template <typename T, typename ... Args>
-    ArrayRef<T> create_array(size_t size, Args && ... args) {
+    std::span<T> create_array(size_t size, Args && ... args) {
         if (can_skip_destruction<T>) {
-            return ArrayRef<T>(init_array<T, Args...>(alloc(size * sizeof(T)), size, std::forward<Args>(args)...), size);
+            return std::span<T>(init_array<T, Args...>(alloc(size * sizeof(T)), size, std::forward<Args>(args)...), size);
         }
         using DeleteHook = stash::DestructArray<T>;
         char *mem = alloc(sizeof(DeleteHook) + (size * sizeof(T)));
         T *ret = init_array<T, Args...>(mem + sizeof(DeleteHook), size, std::forward<Args>(args)...);
         _cleanup = new (mem) DeleteHook(_cleanup, size);
-        return ArrayRef<T>(ret, size);
+        return std::span<T>(ret, size);
     }
 
     template <typename T>
-    ArrayRef<T> create_uninitialized_array(size_t size) {
+    std::span<T> create_uninitialized_array(size_t size) {
         static_assert(std::is_trivially_copyable_v<T>);
         static_assert(can_skip_destruction<T>);
-        return ArrayRef<T>(reinterpret_cast<T*>(alloc(size * sizeof(T))), size);
+        return std::span<T>(reinterpret_cast<T*>(alloc(size * sizeof(T))), size);
     }
 
     template <typename T>
-    ArrayRef<T> copy_array(ConstArrayRef<T> src) {
+    std::span<T> copy_array(std::span<const T> src) {
         if (can_skip_destruction<T>) {
-            return ArrayRef<T>(copy_elements<T>(alloc(src.size() * sizeof(T)), src), src.size());
+            return std::span<T>(copy_elements<T>(alloc(src.size() * sizeof(T)), src), src.size());
         }
         using DeleteHook = stash::DestructArray<T>;
         char *mem = alloc(sizeof(DeleteHook) + (src.size() * sizeof(T)));
         T *ret = copy_elements<T>(mem + sizeof(DeleteHook), src);
         _cleanup = new (mem) DeleteHook(_cleanup, src.size());
-        return ArrayRef<T>(ret, src.size());
+        return std::span<T>(ret, src.size());
     }
 };
 

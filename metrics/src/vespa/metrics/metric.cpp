@@ -103,7 +103,7 @@ Metric::assignMangledNameWithDimensions()
         return;
     }
     sortTagsInDeterministicOrder();
-    vespalib::string mangled = createMangledNameWithDimensions();
+    std::string mangled = createMangledNameWithDimensions();
     _mangledName = NameRepo::metricId(mangled);
 }
 
@@ -115,7 +115,7 @@ Metric::sortTagsInDeterministicOrder()
     });
 }
 
-vespalib::string
+std::string
 Metric::createMangledNameWithDimensions() const
 {
     vespalib::asciistream s;
@@ -166,13 +166,13 @@ Metric::getRoot() const
                         : _owner->getRoot());
 }
 
-vespalib::string
+std::string
 Metric::getPath() const
 {
     if (_owner == 0 || _owner->_owner == 0) {
         return getName();
     } else {
-        vespalib::string path(_owner->getPath());
+        std::string path(_owner->getPath());
         path += '.';
         path.append(getName());
         return path;

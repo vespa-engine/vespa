@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/issue.h>
-#include <climits>
 #include <cinttypes>
+#include <climits>
+#include <memory>
+#include <string>
 
 namespace search::predicate {
 
@@ -21,14 +22,15 @@ class PredicateRangeTermExpander {
     int64_t _upper_bound;
 
 public:
-    PredicateRangeTermExpander(int arity,
-                               int64_t lower_bound = LLONG_MIN,
-                               int64_t upper_bound = LLONG_MAX)
+    explicit PredicateRangeTermExpander(int arity,
+                                        int64_t lower_bound = LLONG_MIN,
+                                        int64_t upper_bound = LLONG_MAX)
         : _arity(arity),
           _max_positive_levels(1),
           _max_negative_levels(1),
           _lower_bound(lower_bound),
-          _upper_bound(upper_bound) {
+          _upper_bound(upper_bound)
+    {
         uint64_t t = _upper_bound;
         while ((t /= _arity) > 0) ++_max_positive_levels;
         t = uint64_t(0)-_lower_bound;
@@ -36,7 +38,7 @@ public:
     }
 
     template <typename Handler>
-    void expand(const vespalib::string &key, int64_t value, Handler &handler);
+    void expand(const std::string &key, int64_t value, Handler &handler);
 };
 
 
@@ -44,16 +46,15 @@ public:
  * Handler must implement handleRange(string) and handleEdge(string, uint64_t).
  */
 template <typename Handler>
-void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t signed_value, Handler &handler) {
+void PredicateRangeTermExpander::expand(const std::string &key, int64_t signed_value, Handler &handler) {
     if (signed_value < _lower_bound || signed_value > _upper_bound) {
         vespalib::Issue::report("predicate_range_term_expander: Search outside bounds should have been rejected by ValidatePredicateSearcher.");
         return;
     }
     size_t buffer_size = 21 * 2 + 3 + key.size(); // 2 numbers + punctuation + key
-    // GNU extension: Variable-length automatic array
-    char buffer[buffer_size];
+    auto buffer = std::make_unique<char[]>(buffer_size);
     int size;
-    int prefix_size = snprintf(buffer, buffer_size, "%s=", key.c_str());
+    int prefix_size = snprintf(buffer.get(), buffer_size, "%s=", key.c_str());
     bool negative = signed_value < 0;
     uint64_t value;
     int max_levels;
@@ -67,9 +68,8 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
     }
 
     int64_t edge_interval = (value / _arity) * _arity;
-    size = snprintf(buffer + prefix_size, buffer_size - prefix_size, "%" PRIu64, edge_interval);
-    handler.handleEdge(std::string_view(buffer, prefix_size + size),
-                       value - edge_interval);
+    size = snprintf(buffer.get() + prefix_size, buffer_size - prefix_size, "%" PRIu64, edge_interval);
+    handler.handleEdge(std::string_view(buffer.get(), prefix_size + size), value - edge_interval);
 
     uint64_t level_size = _arity;
     for (int i = 0; i < max_levels; ++i) {
@@ -78,18 +78,18 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
             if (start + level_size - 1 > (uint64_t(0)-LLONG_MIN)) {
                 break;
             }
-            size = snprintf(buffer + prefix_size, buffer_size - prefix_size,
+            size = snprintf(buffer.get() + prefix_size, buffer_size - prefix_size,
                             "%" PRIu64 "-%" PRIu64,
                             start + level_size - 1, start);
         } else {
             if (start + level_size - 1 > LLONG_MAX) {
                 break;
             }
-            size = snprintf(buffer + prefix_size, buffer_size - prefix_size,
+            size = snprintf(buffer.get() + prefix_size, buffer_size - prefix_size,
                             "%" PRIu64 "-%" PRIu64,
                            start, start + level_size - 1);
         }
-        handler.handleRange(std::string_view(buffer, prefix_size + size));
+        handler.handleRange(std::string_view(buffer.get(), prefix_size + size));
         level_size *= _arity;
         if (!level_size) {  // overflow
             break;

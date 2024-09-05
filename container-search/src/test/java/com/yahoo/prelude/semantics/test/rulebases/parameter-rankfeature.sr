@@ -1,0 +1,2 @@
+# Workaround for not supporting parenthesis in rules, so we can't write parameter.ranking.features.query(isYoutube)
+youtube +> parameter.ranking.properties.isYoutube=1;

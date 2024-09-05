@@ -267,7 +267,7 @@ TEST_F(FieldSetTest, testSerialize)
 
     for (const char * fieldSet : fieldSets) {
         auto fs = FieldSetRepo::parse(docRepo, fieldSet);
-        EXPECT_EQ(vespalib::string(fieldSet), FieldSetRepo::serialize(*fs));
+        EXPECT_EQ(std::string(fieldSet), FieldSetRepo::serialize(*fs));
     }
 }
 
@@ -305,7 +305,7 @@ TEST(FieldCollectionTest, testHash ) {
 }
 
 TEST(FieldTest, testSizeOf) {
-    EXPECT_EQ(sizeof(Field), 24u + sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(Field), 24u + sizeof(std::string));
 }
 
 } // document

@@ -44,7 +44,7 @@ constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 193;
 constexpr vespalib::duration MAX_COUNT_DURATION(1000ms);
 
-const vespalib::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
+const std::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
 
 void save_mips_max_distance(GenericHeader& header, DistanceFunctionFactory& dff) {
     auto* mips_dff = dynamic_cast<MipsDistanceFunctionFactoryBase*>(&dff);
@@ -67,7 +67,7 @@ void load_mips_max_distance(const GenericHeader& header, DistanceFunctionFactory
     }
 }
 
-bool has_link_to(vespalib::ConstArrayRef<uint32_t> links, uint32_t id) {
+bool has_link_to(std::span<const uint32_t> links, uint32_t id) {
     for (uint32_t link : links) {
         if (link == id) return true;
     }
@@ -755,7 +755,7 @@ HnswIndex<type>::compact_level_arrays(const CompactionStrategy& compaction_strat
     auto compacting_buffers = _graph.levels_store.start_compact_worst_buffers(compaction_strategy);
     uint32_t nodeid_limit = _graph.nodes.size();
     auto filter = compacting_buffers->make_entry_ref_filter();
-    vespalib::ArrayRef<NodeType> nodes(&_graph.nodes[0], nodeid_limit);
+    std::span<NodeType> nodes(&_graph.nodes[0], nodeid_limit);
     for (auto& node : nodes) {
         auto levels_ref = node.levels_ref().load_relaxed();
         if (levels_ref.valid() && filter.has(levels_ref)) {
@@ -775,7 +775,7 @@ HnswIndex<type>::compact_link_arrays(const CompactionStrategy& compaction_strate
     for (uint32_t nodeid = 1; nodeid < nodeid_limit; ++nodeid) {
         EntryRef levels_ref = _graph.get_levels_ref(nodeid);
         if (levels_ref.valid()) {
-            vespalib::ArrayRef<AtomicEntryRef> refs(_graph.levels_store.get_writable(levels_ref));
+            std::span<AtomicEntryRef> refs(_graph.levels_store.get_writable(levels_ref));
             context->compact(refs);
         }
     }

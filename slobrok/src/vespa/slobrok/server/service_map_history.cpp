@@ -15,7 +15,7 @@ ServiceMapHistory::UpdateLog::UpdateLog()
         
 ServiceMapHistory::UpdateLog::~UpdateLog() = default;
 
-void ServiceMapHistory::UpdateLog::add(const vespalib::string &name) {
+void ServiceMapHistory::UpdateLog::add(const std::string &name) {
     currentGeneration.add();
     updates.push(name);
     while (updates.size() > keep_items) {
@@ -28,9 +28,9 @@ bool ServiceMapHistory::UpdateLog::isInRange(const Generation &gen) const {
     return gen.inRangeInclusive(startGeneration, currentGeneration);
 }
 
-std::vector<vespalib::string>
+std::vector<std::string>
 ServiceMapHistory::UpdateLog::updatedSince(const Generation &gen) const {
-    std::vector<vespalib::string> result;
+    std::vector<std::string> result;
     uint32_t skip = startGeneration.distance(gen);
     uint32_t last = startGeneration.distance(currentGeneration);
     for (uint32_t idx = skip; idx < last; ++idx) {
@@ -99,10 +99,10 @@ void ServiceMapHistory::add(const ServiceMapping &mapping) {
 
 MapDiff ServiceMapHistory::makeDiffFrom(const Generation &fromGen) const {
     if (_log.isInRange(fromGen)) {
-        std::vector<vespalib::string> removes;
+        std::vector<std::string> removes;
         ServiceMappingList updates;
         auto changes = _log.updatedSince(fromGen);
-        for (const vespalib::string & name : changes) {
+        for (const std::string & name : changes) {
             if (_map.contains(name)) {
                 updates.emplace_back(name, _map.at(name));
             } else {

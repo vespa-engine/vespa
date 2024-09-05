@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& os, const PeerCredentials& creds) {
 
 namespace {
 void emit_comma_separated_string_list(asciistream& os, std::string_view title,
-                                      const std::vector<string>& strings, bool prefix_comma)
+                                      const std::vector<std::string>& strings, bool prefix_comma)
 {
     if (prefix_comma) {
         os << ", ";
@@ -36,7 +36,7 @@ void emit_comma_separated_string_list(asciistream& os, std::string_view title,
 }
 }
 
-vespalib::string PeerCredentials::to_string() const {
+std::string PeerCredentials::to_string() const {
     asciistream os;
     os << "PeerCredentials(";
     bool emit_comma = false;

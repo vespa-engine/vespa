@@ -17,10 +17,10 @@ public:
     MaintenanceCommand & operator = (MaintenanceCommand &&) noexcept = delete;
     ~MaintenanceCommand() override;
 
-    const vespalib::string& getReason() const { return _reason; };
+    const std::string& getReason() const { return _reason; };
     void setReason(std::string_view reason) { _reason = reason; };
 protected:
-    vespalib::string _reason;
+    std::string _reason;
 };
 
 }

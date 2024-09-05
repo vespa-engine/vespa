@@ -23,12 +23,12 @@ struct CreateParam {
     FastValue<uint32_t, false> my_spec;
     size_t num_children;
 
-    ArrayRef<uint32_t> indexes(ConstArrayRef<Handle> key) {
+    std::span<uint32_t> indexes(std::span<const Handle> key) {
         SmallVector<string_id> my_key;
         for (const auto &label: key) {
             my_key.push_back(label.id());
         }
-        auto old_subspace = my_spec.my_index.map.lookup(ConstArrayRef<string_id>(my_key));
+        auto old_subspace = my_spec.my_index.map.lookup(std::span<const string_id>(my_key));
         if (old_subspace != FastAddrMap::npos()) {
             return my_spec.get_subspace(old_subspace);
         }

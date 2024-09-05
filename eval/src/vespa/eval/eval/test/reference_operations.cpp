@@ -61,7 +61,7 @@ bool join_address(const TensorSpec::Address &a, const TensorSpec::Address &b, Te
     return true;
 }
 
-vespalib::string rename_dimension(const vespalib::string &name, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+std::string rename_dimension(const std::string &name, const std::vector<std::string> &from, const std::vector<std::string> &to) {
     for (size_t i = 0; i < from.size(); ++i) {
         if (name == from[i]) {
             return to[i];
@@ -125,7 +125,7 @@ TensorSpec ReferenceOperations::concat(const TensorSpec &in_a, const TensorSpec 
 }
 
 
-TensorSpec ReferenceOperations::create(const vespalib::string &type, const CreateSpec &spec, const std::vector<TensorSpec> &children) {
+TensorSpec ReferenceOperations::create(const std::string &type, const CreateSpec &spec, const std::vector<TensorSpec> &children) {
     TensorSpec result(type);
     if (ValueType::from_spec(type).is_error()) {
         return result;
@@ -253,7 +253,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
     if (peek_spec.empty() || children.empty()) {
         return TensorSpec(ValueType::error_type().to_spec());
     }
-    std::vector<vespalib::string> peek_dims;
+    std::vector<std::string> peek_dims;
     for (const auto & [dim_name, label_or_child] : peek_spec) {
         peek_dims.push_back(dim_name);
     }
@@ -264,7 +264,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
     if (result_type.is_error()) {
         return result;
     }
-    auto is_mapped_dim = [&](const vespalib::string &name) {
+    auto is_mapped_dim = [&](const std::string &name) {
         size_t dim_idx = param_type.dimension_index(name);
         assert(dim_idx != ValueType::Dimension::npos);
         const auto &param_dim = param_type.dimensions()[dim_idx];
@@ -272,7 +272,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
     };
     TensorSpec::Address addr;
     for (const auto & [dim_name, label_or_child] : peek_spec) {
-        const vespalib::string &dim = dim_name;
+        const std::string &dim = dim_name;
         std::visit(vespalib::overload
                    {
                        [&](const TensorSpec::Label &label) {
@@ -311,7 +311,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
 }
 
 
-TensorSpec ReferenceOperations::reduce(const TensorSpec &in_a, Aggr aggr, const std::vector<vespalib::string> &dims) {
+TensorSpec ReferenceOperations::reduce(const TensorSpec &in_a, Aggr aggr, const std::vector<std::string> &dims) {
     auto a = in_a.normalize();
     ValueType res_type = ValueType::from_spec(a.type()).reduce(dims);
     TensorSpec result(res_type.to_spec());
@@ -342,7 +342,7 @@ TensorSpec ReferenceOperations::reduce(const TensorSpec &in_a, Aggr aggr, const 
 }
 
 
-TensorSpec ReferenceOperations::rename(const TensorSpec &in_a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+TensorSpec ReferenceOperations::rename(const TensorSpec &in_a, const std::vector<std::string> &from, const std::vector<std::string> &to) {
     auto a = in_a.normalize();
     assert(from.size() == to.size());
     ValueType res_type = ValueType::from_spec(a.type()).rename(from, to);
@@ -360,7 +360,7 @@ TensorSpec ReferenceOperations::rename(const TensorSpec &in_a, const std::vector
     return result.normalize();
 }
 
-TensorSpec ReferenceOperations::lambda(const vespalib::string &type_in, lambda_fun_t fun) {
+TensorSpec ReferenceOperations::lambda(const std::string &type_in, lambda_fun_t fun) {
     ValueType type = ValueType::from_spec(type_in);
     TensorSpec result(type.to_spec());
     if (type.is_error()) {

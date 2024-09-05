@@ -31,7 +31,7 @@ public:
 private:
     struct Hook {
         size_t seq;
-        vespalib::string path_prefix;
+        std::string path_prefix;
         const JsonGetHandler *handler;
         Hook(size_t seq_in,
              std::string_view prefix_in,
@@ -47,7 +47,7 @@ private:
 
     struct Resource {
         size_t seq;
-        vespalib::string path;
+        std::string path;
         Resource(size_t seq_in, std::string_view path_in) noexcept
             : seq(seq_in), path(path_in) {}
     };
@@ -82,9 +82,9 @@ public:
     ~JsonHandlerRepo() override;
     Token::UP bind(std::string_view path_prefix, const JsonGetHandler &get_handler);
     Token::UP add_root_resource(std::string_view path);
-    [[nodiscard]] std::vector<vespalib::string> get_root_resources() const;
-    [[nodiscard]] Response get(const vespalib::string &host, const vespalib::string &path,
-                               const std::map<vespalib::string,vespalib::string> &params,
+    [[nodiscard]] std::vector<std::string> get_root_resources() const;
+    [[nodiscard]] Response get(const std::string &host, const std::string &path,
+                               const std::map<std::string,std::string> &params,
                                const net::ConnectionAuthContext &auth_ctx) const override;
 };
 

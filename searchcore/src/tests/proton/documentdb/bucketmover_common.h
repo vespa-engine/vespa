@@ -97,7 +97,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 
     void failRetrieveForLid(uint32_t lid) { _lid2Fail = lid; }
 
-    CachedSelect::SP parseSelect(const vespalib::string &) const override {
+    CachedSelect::SP parseSelect(const std::string &) const override {
         return {};
     }
 };

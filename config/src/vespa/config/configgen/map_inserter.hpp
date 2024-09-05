@@ -7,7 +7,7 @@
 namespace config::internal {
 
 template<typename T, typename Converter>
-MapInserter<T, Converter>::MapInserter(std::map<vespalib::string, T> & map)
+MapInserter<T, Converter>::MapInserter(std::map<std::string, T> & map)
     : _map(map)
 {}
 

@@ -284,7 +284,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         ClusterSpec cluster = asSpec(Optional.ofNullable(clusterCapacity.clusterType()), clusterIndex);
         NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), 1, nodeResources, false, true,
                                           nodeRepository().zone().cloud().account(), Duration.ZERO);
-        var allocationContext = IP.Allocation.Context.from(nodeRepository().zone().cloud().name(),
+        var allocationContext = IP.Allocation.Context.from(nodeRepository().zone().cloud(),
                                                            nodeSpec.cloudAccount().isExclave(nodeRepository().zone()),
                                                            nodeRepository().nameResolver());
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes, application, cluster, nodeSpec,

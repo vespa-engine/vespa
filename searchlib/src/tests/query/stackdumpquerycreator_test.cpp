@@ -14,7 +14,7 @@ LOG_SETUP("stackdumpquerycreator_test");
 using search::ParseItem;
 using search::RawBuf;
 using search::SimpleQueryStackDumpIterator;
-using vespalib::string;
+using std::string;
 using namespace search::query;
 
 namespace {

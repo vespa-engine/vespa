@@ -7,7 +7,7 @@
 #include "juniperproperties.h"
 #include "resultclass.h"
 #include "resultconfig.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search { class IAttributeManager; }
 
@@ -38,7 +38,7 @@ public:
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState& state,
                               IDocsumStore &docinfos, Inserter & target) = 0;
     virtual ResolveClassInfo resolveClassInfo(std::string_view class_name,
-                                              const vespalib::hash_set<vespalib::string>& fields) const = 0;
+                                              const vespalib::hash_set<std::string>& fields) const = 0;
 };
 
 //--------------------------------------------------------------------------
@@ -61,7 +61,7 @@ public:
                       IDocsumStore &docinfos, Inserter & inserter) override;
 
     ResolveClassInfo resolveClassInfo(std::string_view class_name,
-                                      const vespalib::hash_set<vespalib::string>& fields) const override;
+                                      const vespalib::hash_set<std::string>& fields) const override;
 };
 
 }

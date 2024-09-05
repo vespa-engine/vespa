@@ -16,7 +16,7 @@ MmapFileAllocatorFactory::MmapFileAllocatorFactory()
 MmapFileAllocatorFactory::~MmapFileAllocatorFactory() = default;
 
 void
-MmapFileAllocatorFactory::setup(const vespalib::string& dir_name)
+MmapFileAllocatorFactory::setup(const std::string& dir_name)
 {
     _dir_name = dir_name;
     _generation = 0;
@@ -26,7 +26,7 @@ MmapFileAllocatorFactory::setup(const vespalib::string& dir_name)
 }
 
 std::unique_ptr<MemoryAllocator>
-MmapFileAllocatorFactory::make_memory_allocator(const vespalib::string& name)
+MmapFileAllocatorFactory::make_memory_allocator(const std::string& name)
 {
     if (_dir_name.empty()) {
         return {};

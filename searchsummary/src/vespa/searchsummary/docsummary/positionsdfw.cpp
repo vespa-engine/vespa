@@ -64,7 +64,7 @@ LocationAttrDFW::getAllLocations(GetDocsumsState& state) const
 LocationAttrDFW::AllLocations::AllLocations() = default;
 LocationAttrDFW::AllLocations::~AllLocations() = default;
 
-AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName)
+AbsDistanceDFW::AbsDistanceDFW(const std::string & attrName)
     : LocationAttrDFW(attrName)
 { }
 
@@ -107,7 +107,7 @@ AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::sl
 
 //--------------------------------------------------------------------------
 
-PositionsDFW::PositionsDFW(const vespalib::string & attrName, bool useV8geoPositions) :
+PositionsDFW::PositionsDFW(const std::string & attrName, bool useV8geoPositions) :
     AttrDFW(attrName),
     _useV8geoPositions(useV8geoPositions)
 {

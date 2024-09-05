@@ -50,7 +50,7 @@ protected:
     uint64_t _oldWordNum;
     uint32_t _residue;
     uint32_t _docIdLimit;
-    vespalib::string _word;
+    std::string _word;
 
     static uint64_t noWordNumHigh() {
         return std::numeric_limits<uint64_t>::max();
@@ -91,7 +91,7 @@ public:
     }
 
     virtual void setup(const WordNumMapping &wordNumMapping, const DocIdMapping &docIdMapping);
-    virtual bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead);
+    virtual bool open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead);
     virtual bool close();
     virtual void setFeatureParams(const PostingListParams &params);
     virtual void getFeatureParams(PostingListParams &params);
@@ -113,7 +113,7 @@ private:
 
 public:
     FieldReaderEmpty(const IndexIterator &index);
-    bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
+    bool open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
     void getFeatureParams(PostingListParams &params) override;
 };
 
@@ -134,7 +134,7 @@ public:
     FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner>);
     bool allowRawFeatures() override;
     bool need_regenerate_interleaved_features_scan() override;
-    bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
+    bool open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
     void read() override;
     void scan_element_lengths(uint32_t scan_chunk) override;
     void getFeatureParams(PostingListParams &params) override;

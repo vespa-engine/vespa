@@ -101,9 +101,9 @@ PosOccFieldsParams::setSchemaParams(const Schema &schema,
 
 void
 PosOccFieldsParams::readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix)
+               const std::string &prefix)
 {
-    vespalib::string numFieldsKey(prefix + "numFields");
+    std::string numFieldsKey(prefix + "numFields");
     assertCachedParamsRef();
     uint32_t numFields = header.getTag(numFieldsKey).asInteger();
     assert(numFields == 1u);
@@ -113,7 +113,7 @@ PosOccFieldsParams::readHeader(const vespalib::GenericHeader &header,
     for (uint32_t field = 0; field < numFields; ++field) {
         vespalib::asciistream as;
         as << prefix << "field[" << field << "].";
-        vespalib::string subPrefix(as.view());
+        std::string subPrefix(as.view());
         _params[field].readHeader(header, subPrefix);
     }
 }
@@ -121,9 +121,9 @@ PosOccFieldsParams::readHeader(const vespalib::GenericHeader &header,
 
 void
 PosOccFieldsParams::writeHeader(vespalib::GenericHeader &header,
-                                const vespalib::string &prefix) const
+                                const std::string &prefix) const
 {
-    vespalib::string numFieldsKey(prefix + "numFields");
+    std::string numFieldsKey(prefix + "numFields");
     assertCachedParamsRef();
     assert(_numFields == 1u);
     header.putTag(GenericHeader::Tag(numFieldsKey, _numFields));
@@ -131,7 +131,7 @@ PosOccFieldsParams::writeHeader(vespalib::GenericHeader &header,
     for (uint32_t field = 0; field < _numFields; ++field) {
         vespalib::asciistream as;
         as << prefix << "field[" << field << "].";
-        vespalib::string subPrefix(as.view());
+        std::string subPrefix(as.view());
         _params[field].writeHeader(header, subPrefix);
     }
 }

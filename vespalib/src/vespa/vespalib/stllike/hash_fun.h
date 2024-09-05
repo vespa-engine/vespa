@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib {
 
@@ -77,14 +78,14 @@ inline size_t hashValue(const void *buf, size_t sz) noexcept {
 }
 
 struct hash_strings {
-    size_t operator() (const vespalib::string & arg) const noexcept { return hashValue(arg.data(), arg.size()); }
+    size_t operator() (const std::string & arg) const noexcept { return hashValue(arg.data(), arg.size()); }
     size_t operator() (std::string_view arg) const noexcept { return hashValue(arg.data(), arg.size()); }
     size_t operator() (const char * arg) const noexcept { return hashValue(arg); }
 };
 
 template<> struct hash<const char *> : hash_strings { };
 template<> struct hash<std::string_view> : public hash_strings { };
-template<> struct hash<vespalib::string> : hash_strings {};
+template<> struct hash<std::string> : hash_strings {};
 
 template<typename V> struct size {
     size_t operator() (const V & arg) const noexcept { return arg.size(); }

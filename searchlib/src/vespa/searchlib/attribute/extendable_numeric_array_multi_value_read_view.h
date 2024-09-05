@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
+#include <vector>
 
 namespace search::attribute {
 
@@ -22,7 +23,7 @@ class ExtendableNumericArrayMultiValueReadView : public attribute::IMultiValueRe
 public:
     ExtendableNumericArrayMultiValueReadView(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx);
     ~ExtendableNumericArrayMultiValueReadView() override;
-    vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t doc_id) const override;
+    std::span<const MultiValueType> get_values(uint32_t doc_id) const override;
 };
 
 }

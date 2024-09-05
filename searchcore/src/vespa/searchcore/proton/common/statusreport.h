@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace proton {
@@ -25,24 +25,24 @@ public:
     };
 
     struct Params {
-        vespalib::string _component;
+        std::string _component;
         State _state;
-        vespalib::string _internalState;
-        vespalib::string _internalConfigState;
+        std::string _internalState;
+        std::string _internalConfigState;
         float _progress;
-        vespalib::string _message;
+        std::string _message;
 
-        Params(const vespalib::string &component);
+        Params(const std::string &component);
         ~Params();
         Params &state(State value) {
             _state = value;
             return *this;
         }
-        Params &internalState(const vespalib::string &value) {
+        Params &internalState(const std::string &value) {
             _internalState = value;
             return *this;
         }
-        Params &internalConfigState(const vespalib::string &value) {
+        Params &internalConfigState(const std::string &value) {
             _internalConfigState = value;
             return *this;
         }
@@ -50,19 +50,19 @@ public:
             _progress = value;
             return *this;
         }
-        Params &message(const vespalib::string &value) {
+        Params &message(const std::string &value) {
             _message = value;
             return *this;
         }
     };
 
 private:
-    vespalib::string _component;
+    std::string _component;
     State _state;
-    vespalib::string _internalState;
-    vespalib::string _internalConfigState;
+    std::string _internalState;
+    std::string _internalConfigState;
     float _progress;
-    vespalib::string _message;
+    std::string _message;
 
 public:
     StatusReport(const Params &params);
@@ -72,7 +72,7 @@ public:
         return std::make_unique<StatusReport>(params);
     }
 
-    const vespalib::string &getComponent() const {
+    const std::string &getComponent() const {
         return _component;
     }
 
@@ -80,11 +80,11 @@ public:
         return _state;
     }
 
-    const vespalib::string &getInternalState() const {
+    const std::string &getInternalState() const {
         return _internalState;
     }
 
-    const vespalib::string &getInternalConfigState() const {
+    const std::string &getInternalConfigState() const {
         return _internalConfigState;
     }
 
@@ -96,12 +96,12 @@ public:
         return _progress;
     }
 
-    const vespalib::string &getMessage() const {
+    const std::string &getMessage() const {
         return _message;
     }
 
-    vespalib::string getInternalStatesStr() const {
-        vespalib::string retval = "state=" + _internalState;
+    std::string getInternalStatesStr() const {
+        std::string retval = "state=" + _internalState;
         if (!_internalConfigState.empty()) {
             retval = retval + " configstate=" + _internalConfigState;
         }

@@ -25,7 +25,7 @@ class CopyMultiValueReadView : public IMultiValueReadView<MultiValueType>
 public:
     CopyMultiValueReadView(MultiValueMappingReadView<RawMultiValueType> mv_mapping_read_view);
     ~CopyMultiValueReadView() override;
-    vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t docid) const override;
+    std::span<const MultiValueType> get_values(uint32_t docid) const override;
 };
 
 }

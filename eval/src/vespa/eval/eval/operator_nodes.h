@@ -3,10 +3,10 @@
 #pragma once
 
 #include "basic_nodes.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <cmath>
-#include <memory>
 #include <map>
+#include <memory>
+#include <string>
 
 namespace vespalib::eval { struct NodeVisitor; }
 
@@ -23,7 +23,7 @@ public:
     enum Order { LEFT, RIGHT };
 
 private:
-    vespalib::string _op_str;
+    std::string _op_str;
     int              _priority;
     Order            _order;
     Node_UP          _lhs;
@@ -31,9 +31,9 @@ private:
     bool             _is_const_double;
 
 public:
-    Operator(const vespalib::string &op_str_in, int priority_in, Order order_in);
+    Operator(const std::string &op_str_in, int priority_in, Order order_in);
     ~Operator();
-    vespalib::string op_str() const { return _op_str; }
+    std::string op_str() const { return _op_str; }
     int priority() const { return _priority; }
     Order order() const { return _order; }
     const Node &lhs() const { return *_lhs; }
@@ -66,8 +66,8 @@ public:
         _is_const_double = (_lhs->is_const_double() && _rhs->is_const_double());
     }
 
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
+    std::string dump(DumpContext &ctx) const override {
+        std::string str;
         str += "(";
         str += _lhs->dump(ctx);
         str += op_str();
@@ -88,11 +88,11 @@ class OperatorRepo {
 private:
     static OperatorRepo _instance;
     typedef nodes::Operator_UP (*factory_type)();
-    std::map<vespalib::string,factory_type> _map;
+    std::map<std::string,factory_type> _map;
     size_t _max_size;
     template <typename T>
     void add(const T &op) {
-        vespalib::string op_str = op.op_str();
+        std::string op_str = op.op_str();
         _max_size = std::max(_max_size, op_str.size());
         _map[op_str] = T::create;
     }
@@ -100,7 +100,7 @@ private:
 public:
     static const OperatorRepo &instance() { return _instance; }
     size_t max_size() const { return _max_size; }
-    nodes::Operator_UP create(vespalib::string &tmp) const {
+    nodes::Operator_UP create(std::string &tmp) const {
         for (; !tmp.empty(); tmp.resize(tmp.size() - 1)) {
             auto result = _map.find(tmp);
             if (result != _map.end()) {
@@ -109,8 +109,8 @@ public:
         }
         return nodes::Operator_UP(nullptr);
     }
-    std::vector<vespalib::string> get_names() const {
-        std::vector<vespalib::string> ret;
+    std::vector<std::string> get_names() const {
+        std::vector<std::string> ret;
         for (const auto &entry: _map) {
             ret.push_back(entry.first);
         }
@@ -123,7 +123,7 @@ public:
 template <typename T>
 struct OperatorHelper : Operator {
     using Helper = OperatorHelper<T>;
-    OperatorHelper(const vespalib::string &op_str_in, int priority_in, Operator::Order order_in)
+    OperatorHelper(const std::string &op_str_in, int priority_in, Operator::Order order_in)
         : Operator(op_str_in, priority_in, order_in) {}
     void accept(NodeVisitor &visitor) const override;
     static Operator_UP create() { return Operator_UP(new T()); }

@@ -117,31 +117,23 @@ public class FileReferenceCompressor {
 
     private OutputStream compressedOutputStream(File outputFile) throws IOException {
         return switch (type) {
-            case compressed -> {
-                log.log(Level.FINEST, () -> "Compressing with compression type " + compressionType);
-                yield switch (compressionType) {
-                    case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
-                    case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
-                    case zstd -> new ZstdOutputStream(new FileOutputStream(outputFile));
-                };
-            }
+            case compressed -> switch (compressionType) {
+                case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
+                case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
+                case zstd -> new ZstdOutputStream(new FileOutputStream(outputFile));
+            };
             case file -> new FileOutputStream(outputFile);
-            default -> throw new RuntimeException("Unknown file reference type " + type);
         };
     }
 
     private InputStream decompressedInputStream(File inputFile) throws IOException {
         return switch (type) {
-            case compressed -> {
-                log.log(Level.FINEST, () -> "Decompressing with compression type " + compressionType);
-                yield switch (compressionType) {
-                    case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
-                    case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
-                    case zstd -> new ZstdInputStream(new FileInputStream(inputFile));
-                };
-            }
+            case compressed -> switch (compressionType) {
+                case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
+                case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
+                case zstd -> new ZstdInputStream(new FileInputStream(inputFile));
+            };
             case file -> new FileInputStream(inputFile);
-            default -> throw new RuntimeException("Unknown file reference type " + type);
         };
     }
 

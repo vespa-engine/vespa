@@ -14,14 +14,14 @@
 #define TokenDispatcher DocScanner
 #endif
 
-#include <vector>
-#include <list>
-#include <map>
-#include <string>
 #include "ITokenProcessor.h"
 #include "querynode.h"
 #include "matchobject.h"
 #include "querymodifier.h"
+#include <list>
+#include <map>
+#include <string>
+#include <vector>
 
 #ifdef __hpux__
 // HP-UX does "magic" with max and min macros so algorithm must have been included

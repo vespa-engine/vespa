@@ -74,8 +74,8 @@ private:
 
     void applyValueChanges(EnumStoreBatchUpdater& updater) override;
 public:
-    SingleValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
-    SingleValueStringPostingAttributeT(const vespalib::string & name);
+    SingleValueStringPostingAttributeT(const std::string & name, const AttributeVector::Config & c);
+    SingleValueStringPostingAttributeT(const std::string & name);
     ~SingleValueStringPostingAttributeT();
 
     void reclaim_memory(generation_t oldest_used_gen) override;

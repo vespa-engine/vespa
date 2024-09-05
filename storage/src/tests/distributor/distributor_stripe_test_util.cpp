@@ -142,7 +142,7 @@ DistributorStripeTestUtil::configure_stripe(const ConfigBuilder& builder)
 }
 
 void
-DistributorStripeTestUtil::receive_set_system_state_command(const vespalib::string& state_str)
+DistributorStripeTestUtil::receive_set_system_state_command(const std::string& state_str)
 {
     auto state_cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state_str));
     _stripe->handleMessage(state_cmd); // TODO move semantics
@@ -155,7 +155,7 @@ DistributorStripeTestUtil::handle_top_level_message(const std::shared_ptr<api::S
 }
 
 void
-DistributorStripeTestUtil::simulate_set_pending_cluster_state(const vespalib::string& state_str)
+DistributorStripeTestUtil::simulate_set_pending_cluster_state(const std::string& state_str)
 {
     lib::ClusterState state(state_str);
     lib::ClusterStateBundle pending_state(state);

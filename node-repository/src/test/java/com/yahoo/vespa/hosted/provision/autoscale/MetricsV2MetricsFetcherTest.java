@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.applicationmodel.HostName;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +38,7 @@ public class MetricsV2MetricsFetcherTest {
         MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(), orchestrator, httpClient);
 
         tester.makeReadyNodes(4, resources); // Creates (in order) host-1.yahoo.com, host-2.yahoo.com, host-3.yahoo.com, host-4.yahoo.com
+        tester.clock().advance(Duration.ofMinutes(5)); // Make sure these are not considered new nodes (metrics will not be fetched for them)
         tester.activateTenantHosts();
 
         ApplicationId application1 = ProvisioningTester.applicationId();

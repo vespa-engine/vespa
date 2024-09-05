@@ -27,7 +27,7 @@ public:
 
     // index API:
     size_t size() const override { return _num_subspaces; }
-    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
+    std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
 };
 
 } // namespace

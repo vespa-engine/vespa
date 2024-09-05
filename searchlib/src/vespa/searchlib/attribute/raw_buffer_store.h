@@ -28,8 +28,8 @@ public:
 
     RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_type_id, double grow_factor);
     ~RawBufferStore();
-    EntryRef set(vespalib::ConstArrayRef<char> raw) { return _array_store.add(raw); };
-    vespalib::ConstArrayRef<char> get(EntryRef ref) const { return _array_store.get(ref); }
+    EntryRef set(std::span<const char> raw) { return _array_store.add(raw); };
+    std::span<const char> get(EntryRef ref) const { return _array_store.get(ref); }
     void remove(EntryRef ref) { _array_store.remove(ref); }
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) { return _array_store.update_stat(compaction_strategy); }
     vespalib::AddressSpace get_address_space_usage() const { return _array_store.addressSpaceUsage(); }

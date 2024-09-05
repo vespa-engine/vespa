@@ -325,7 +325,7 @@ JsonStream::finalize()
     return *this;
 }
     
-string
+std::string
 JsonStream::getStateString() const
 {
     asciistream as;
@@ -357,7 +357,7 @@ JsonStream::getStateString() const
     return as.str();
 }
 
-string
+std::string
 JsonStream::getJsonStreamState() const
 {
     asciistream report;

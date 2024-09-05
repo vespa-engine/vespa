@@ -3,11 +3,11 @@
 #pragma once
 
 #include "status-callback.h"
-#include <string>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
+#include <string>
 
 namespace config::sentinel {
 

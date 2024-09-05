@@ -282,7 +282,7 @@ public:
     /**
      * @return address spec of socket peer. Only makes sense to call on non-listening sockets.
      */
-    vespalib::string GetPeerSpec() const;
+    std::string GetPeerSpec() const;
 
     /**
      * Does this connection have the ability to accept incoming channels ?

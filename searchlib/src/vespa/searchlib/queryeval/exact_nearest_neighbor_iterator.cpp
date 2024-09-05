@@ -7,7 +7,6 @@
 #include <vespa/searchlib/tensor/distance_function.h>
 
 using search::tensor::ITensorAttribute;
-using vespalib::ConstArrayRef;
 using vespalib::eval::TypedCells;
 using vespalib::eval::CellType;
 

@@ -78,7 +78,7 @@ private:
     NodeCounts         _nodeCount;
     const State*       _clusterState;
     NodeMap            _nodeStates;
-    vespalib::string   _description;
+    std::string   _description;
     uint16_t           _distributionBits;
 };
 

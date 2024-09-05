@@ -5,7 +5,7 @@
 
 namespace vespalib {
 
-string
+std::string
 MemoryUsage::toString() const {
     vespalib::asciistream os;
     os << *this;

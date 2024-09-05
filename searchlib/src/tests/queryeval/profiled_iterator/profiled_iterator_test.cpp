@@ -99,7 +99,7 @@ SearchIterator::UP create_weak_and() {
     return WeakAndSearch::create(terms, wand::MatchParams(dummy_heap), wand::TermFrequencyScorer(), 100, true, true);
 }
 
-void collect(std::map<vespalib::string,size_t> &counts, const auto &node) {
+void collect(std::map<std::string,size_t> &counts, const auto &node) {
     if (!node.valid()) {
         return;
     }
@@ -115,13 +115,13 @@ void collect(std::map<vespalib::string,size_t> &counts, const auto &node) {
     }
 };
 
-std::map<vespalib::string,size_t> collect_counts(const auto &root) {
-    std::map<vespalib::string,size_t> counts;
+std::map<std::string,size_t> collect_counts(const auto &root) {
+    std::map<std::string,size_t> counts;
     collect(counts, root);
     return counts;
 }
 
-void print_counts(const std::map<vespalib::string,size_t> &counts) {
+void print_counts(const std::map<std::string,size_t> &counts) {
     for (const auto &[name, count]: counts) {
         fprintf(stderr, "%s: %zu\n", name.c_str(), count);
     }
@@ -147,7 +147,7 @@ void verify_termwise_result(SearchIterator &search, const std::vector<uint32_t> 
     }
 }
 
-void verify_operation(ExecutionProfiler &profiler, std::map<vespalib::string,size_t> &seen, const vespalib::string &expect) {
+void verify_operation(ExecutionProfiler &profiler, std::map<std::string,size_t> &seen, const std::string &expect) {
     Slime slime;
     profiler.report(slime.setObject());
     auto counts = collect_counts(slime.get());
@@ -162,7 +162,7 @@ void verify_operation(ExecutionProfiler &profiler, std::map<vespalib::string,siz
 
 TEST(ProfiledIteratorTest, init_seek_unpack_termwise_is_profiled) {
     ExecutionProfiler profiler(64);
-    std::map<vespalib::string,size_t> seen;
+    std::map<std::string,size_t> seen;
     auto root = ProfiledIterator::profile(profiler, T({1,2,3}));
     root->initRange(1,4);
     verify_operation(profiler, seen, "/SimpleSearch/init");

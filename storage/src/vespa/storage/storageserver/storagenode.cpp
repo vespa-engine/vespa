@@ -36,12 +36,12 @@ namespace {
 using vespalib::getLastErrorString;
 
 void
-writePidFile(const vespalib::string& pidfile)
+writePidFile(const std::string& pidfile)
 {
     ssize_t rv = -1;
-    vespalib::string mypid = vespalib::make_string("%d\n", getpid());
+    std::string mypid = vespalib::make_string("%d\n", getpid());
     size_t lastSlash = pidfile.rfind('/');
-    if (lastSlash != vespalib::string::npos) {
+    if (lastSlash != std::string::npos) {
         std::filesystem::create_directories(std::filesystem::path(pidfile.substr(0, lastSlash)));
     }
     int fd = open(pidfile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -56,7 +56,7 @@ writePidFile(const vespalib::string& pidfile)
 }
 
 void
-removePidFile(const vespalib::string& pidfile)
+removePidFile(const std::string& pidfile)
 {
     if (unlink(pidfile.c_str()) != 0) {
         LOG(warning, "Failed to delete pidfile '%s': %s",

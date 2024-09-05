@@ -44,7 +44,7 @@ private:
     RequestContext               _request_ctx;
     Value::UP                    _query_tensor;
 
-    void insert_tensor_in_properties(const vespalib::string& tensor_name, const Value& tensor_value) {
+    void insert_tensor_in_properties(const std::string& tensor_name, const Value& tensor_value) {
         vespalib::nbostream stream;
         encode_value(tensor_value, stream);
         _query_env.getProperties().add(tensor_name, std::string_view(stream.data(), stream.size()));
@@ -69,7 +69,7 @@ public:
     TensorSpec expected_query_tensor() const {
         return spec_from_value(*_query_tensor);
     }
-    const Value* get_query_tensor(const vespalib::string& tensor_name) const {
+    const Value* get_query_tensor(const std::string& tensor_name) const {
         return _request_ctx.get_query_tensor(tensor_name);
     }
 };

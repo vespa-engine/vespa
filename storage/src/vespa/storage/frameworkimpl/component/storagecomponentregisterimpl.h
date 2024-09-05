@@ -23,7 +23,7 @@ class StorageComponentRegisterImpl
 
     std::mutex                                        _componentLock;
     std::vector<StorageComponent*>                    _components;
-    vespalib::string                                  _clusterName;
+    std::string                                  _clusterName;
     const lib::NodeType*                              _nodeType;
     uint16_t                                          _index;
     std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;

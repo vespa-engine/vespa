@@ -67,7 +67,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
                              IBucketStateChangedNotifier &bucketStateChangedNotifier,
                              IDiskMemUsageNotifier &diskMemUsageNotifier,
                              const BlockableMaintenanceJobConfig &blockableConfig,
-                             const vespalib::string &docTypeName,
+                             const std::string &docTypeName,
                              document::BucketSpace bucketSpace)
     : BlockableMaintenanceJob("move_buckets." + docTypeName, vespalib::duration::zero(), vespalib::duration::zero(), blockableConfig),
       IClusterStateChangedHandler(),
@@ -128,7 +128,7 @@ BucketMoveJob::create(std::shared_ptr<IBucketStateCalculator> calc,
                       IBucketStateChangedNotifier &bucketStateChangedNotifier,
                       IDiskMemUsageNotifier &diskMemUsageNotifier,
                       const BlockableMaintenanceJobConfig &blockableConfig,
-                      const vespalib::string &docTypeName,
+                      const std::string &docTypeName,
                       document::BucketSpace bucketSpace)
 {
     return {new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,

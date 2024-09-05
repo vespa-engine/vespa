@@ -74,8 +74,8 @@ TEST(ValueCodecTest, simple_values_can_be_built_using_tensor_spec) {
 
 //-----------------------------------------------------------------------------
 
-vespalib::string make_type_spec(bool use_float, const vespalib::string &dims) {
-    vespalib::string type_spec = "tensor";
+std::string make_type_spec(bool use_float, const std::string &dims) {
+    std::string type_spec = "tensor";
     if (use_float) {
         type_spec.append("<float>");
     }

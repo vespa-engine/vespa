@@ -79,8 +79,8 @@ writeToFile(const TuneFileAttributes &tuneFileAttributes,
 }
 
 bool
-AttributeMemorySaveTarget::setup_writer(const vespalib::string& file_suffix,
-                                        const vespalib::string& desc)
+AttributeMemorySaveTarget::setup_writer(const std::string& file_suffix,
+                                        const std::string& desc)
 {
     auto writer = std::make_unique<AttributeMemoryFileWriter>();
     auto itr = _writers.find(file_suffix);
@@ -92,7 +92,7 @@ AttributeMemorySaveTarget::setup_writer(const vespalib::string& file_suffix,
 }
 
 IAttributeFileWriter&
-AttributeMemorySaveTarget::get_writer(const vespalib::string& file_suffix)
+AttributeMemorySaveTarget::get_writer(const std::string& file_suffix)
 {
     auto itr = _writers.find(file_suffix);
     if (itr == _writers.end()) {

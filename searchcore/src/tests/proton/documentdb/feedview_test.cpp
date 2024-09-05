@@ -29,8 +29,10 @@
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <tuple>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".feedview_test");
@@ -73,8 +75,8 @@ struct MyLidVector : public std::vector<DocumentIdT>
 
 
 const uint32_t subdb_id = 0;
-const vespalib::string indexAdapterTypeName = "index";
-const vespalib::string attributeAdapterTypeName = "attribute";
+const std::string indexAdapterTypeName = "index";
+const std::string attributeAdapterTypeName = "attribute";
 
 struct MyTracer
 {
@@ -103,20 +105,20 @@ struct MyTracer
         _os << ")";
     }
 
-    void tracePut(const vespalib::string &adapterType, SerialNum serialNum, uint32_t lid) {
+    void tracePut(const std::string &adapterType, SerialNum serialNum, uint32_t lid) {
         Guard guard(_mutex);
         addComma();
         _os << "put(adapter=" << adapterType <<
             ",serialNum=" << serialNum << ",lid=" << lid << ")";
     }
 
-    void traceRemove(const vespalib::string &adapterType, SerialNum serialNum, uint32_t lid) {
+    void traceRemove(const std::string &adapterType, SerialNum serialNum, uint32_t lid) {
         Guard guard(_mutex);
         addComma();
         _os << "remove(adapter=" << adapterType << ",serialNum=" << serialNum << ",lid=" << lid << ")";
     }
 
-    void traceCommit(const vespalib::string &adapterType, SerialNum serialNum) {
+    void traceCommit(const std::string &adapterType, SerialNum serialNum) {
         Guard guard(_mutex);
         addComma();
         _os << "commit(adapter=" << adapterType <<
@@ -129,12 +131,12 @@ struct ParamsContext
     DocTypeName                          _docTypeName;
     SearchableFeedView::PersistentParams _params;
 
-    ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir);
+    ParamsContext(const std::string &docType, const std::string &baseDir);
     ~ParamsContext();
     const SearchableFeedView::PersistentParams &getParams() const { return _params; }
 };
 
-ParamsContext::ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir)
+ParamsContext::ParamsContext(const std::string &docType, const std::string &baseDir)
     : _docTypeName(docType),
       _params(0, 0, _docTypeName, subdb_id, SubDbType::READY)
 {
@@ -178,6 +180,8 @@ struct MyIndexWriter : public test::MockIndexWriter
     }
 };
 
+using LastChange = std::tuple<document::GlobalId, uint32_t, uint32_t>;
+
 struct MyGidToLidChangeHandler : public MockGidToLidChangeHandler
 {
     document::GlobalId _changeGid;
@@ -209,19 +213,9 @@ public:
             ++_changes;
         }
     }
-
-    void assertChanges(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
-        EXPECT_EQUAL(expGid, _changeGid);
-        EXPECT_EQUAL(expLid, _changeLid);
-        EXPECT_EQUAL(expChanges, _changes);
-    }
-    void assertNumChanges(uint32_t expChanges) {
-        EXPECT_EQUAL(expChanges, _changes);
-    }
-    void assertLid(document::GlobalId gid, uint32_t expLid) {
-        uint32_t lid = _gidToLid[gid];
-        EXPECT_EQUAL(expLid, lid);
-    }
+    LastChange get_last_change() const noexcept { return std::make_tuple(_changeGid, _changeLid, _changes); }
+    uint32_t get_num_changes() const noexcept { return _changes; }
+    uint32_t get_lid(document::GlobalId gid) { return _gidToLid[gid]; }
 };
 
 struct MyDocumentStore : public test::DummyDocumentStore
@@ -329,9 +323,9 @@ struct MyAttributeWriter : public IAttributeWriter
     int _heartBeatCount;
     uint32_t _commitCount;
     uint32_t _wantedLidLimit;
-    using AttrMap = std::map<vespalib::string, std::shared_ptr<AttributeVector>>;
+    using AttrMap = std::map<std::string, std::shared_ptr<AttributeVector>>;
     AttrMap _attrMap;
-    std::set<vespalib::string> _attrs;
+    std::set<std::string> _attrs;
     proton::IAttributeManager::SP _mgr;
     MyTracer &_tracer;
 
@@ -342,7 +336,7 @@ struct MyAttributeWriter : public IAttributeWriter
     getWritableAttributes() const override {
         return std::vector<AttributeVector *>();
     }
-    AttributeVector *getWritableAttribute(const vespalib::string &attrName) const override {
+    AttributeVector *getWritableAttribute(const std::string &attrName) const override {
         if (_attrs.count(attrName) == 0) {
             return nullptr;
         }
@@ -464,16 +458,16 @@ struct DocumentContext
     BucketId           bid;
     Timestamp          ts;
     using List = std::vector<DocumentContext>;
-    DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder);
+    DocumentContext(const std::string &docId, uint64_t timestamp, DocBuilder &builder);
     ~DocumentContext();
-    void addFieldUpdate(DocBuilder &builder, const vespalib::string &fieldName) {
+    void addFieldUpdate(DocBuilder &builder, const std::string &fieldName) {
         const document::Field &field = builder.get_document_type().getField(fieldName);
         upd->addUpdate(document::FieldUpdate(field));
     }
     document::GlobalId gid() const { return doc->getId().getGlobalId(); }
 };
 
-DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder& builder)
+DocumentContext::DocumentContext(const std::string &docId, uint64_t timestamp, DocBuilder& builder)
     : doc(builder.make_document(docId)),
       upd(std::make_shared<DocumentUpdate>(builder.get_repo(), builder.get_document_type(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
@@ -555,7 +549,7 @@ struct FixtureBase
 
     DocBuilder &getBuilder() { return sc._builder; }
 
-    DocumentContext doc(const vespalib::string &docId, uint64_t timestamp) {
+    DocumentContext doc(const std::string &docId, uint64_t timestamp) {
         return DocumentContext(docId, timestamp, getBuilder());
     }
 
@@ -647,9 +641,7 @@ struct FixtureBase
         _writeService.master().sync();
     }
 
-    bool assertTrace(const vespalib::string &exp) {
-        return EXPECT_EQUAL(exp, _tracer._os.view());
-    }
+    std::string get_trace() { return _tracer._os.str(); }
 
     DocumentContext::List makeDummyDocs(uint32_t first, uint32_t count, uint64_t tsfirst) __attribute__((noinline));
 
@@ -667,15 +659,9 @@ struct FixtureBase
         gate.await();
         _writeService.master().sync();
     }
-    void assertChangeHandler(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
-        _gidToLidChangeHandler->assertChanges(expGid, expLid, expChanges);
-    }
-    void assertChangeHandlerCount(uint32_t expChanges) {
-        _gidToLidChangeHandler->assertNumChanges(expChanges);
-    }
-    void assertChangeNotified(document::GlobalId gid, uint32_t expLid) {
-        _gidToLidChangeHandler->assertLid(gid, expLid);
-    }
+    LastChange get_last_change() { return _gidToLidChangeHandler->get_last_change(); }
+    uint32_t get_change_handler_count() { return _gidToLidChangeHandler->get_num_changes(); }
+    uint32_t get_notified_lid(document::GlobalId gid) { return _gidToLidChangeHandler->get_lid(gid); }
     void populateBeforeCompactLidSpace();
 
     void dms_commit() { _dmsc->get().commit(search::CommitParam(serial)); }
@@ -777,15 +763,15 @@ void assertBucketInfo(const BucketId &ebid, const Timestamp &ets, uint32_t lid, 
     EXPECT_TRUE(metaStore.getGid(lid, gid));
     search::DocumentMetaData meta = metaStore.getMetaData(gid);
     EXPECT_TRUE(meta.valid());
-    EXPECT_EQUAL(ebid, meta.bucketId);
+    EXPECT_EQ(ebid, meta.bucketId);
     Timestamp ats;
-    EXPECT_EQUAL(ets, meta.timestamp);
+    EXPECT_EQ(ets, meta.timestamp);
 }
 
 void assertLidVector(const MyLidVector &exp, const MyLidVector &act) __attribute__((noinline));
 void assertLidVector(const MyLidVector &exp, const MyLidVector &act)
 {
-    EXPECT_EQUAL(exp.size(), act.size());
+    EXPECT_EQ(exp.size(), act.size());
     for (size_t i = 0; i < exp.size(); ++i) {
         EXPECT_TRUE(std::find(act.begin(), act.end(), exp[i]) != act.end());
     }
@@ -795,17 +781,17 @@ void
 assertAttributeUpdate(SerialNum serialNum, const document::DocumentId &docId,
                       DocumentIdT lid, const MyAttributeWriter & adapter)
 {
-    EXPECT_EQUAL(serialNum, adapter._updateSerial);
-    EXPECT_EQUAL(docId, adapter._updateDocId);
-    EXPECT_EQUAL(lid, adapter._updateLid);
+    EXPECT_EQ(serialNum, adapter._updateSerial);
+    EXPECT_EQ(docId, adapter._updateDocId);
+    EXPECT_EQ(lid, adapter._updateLid);
 }
 
 }
 
 
-TEST_F("require that put() updates document meta store with bucket info",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_put_updates_document_meta_store_with_bucket_info)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
     f.dms_commit();
@@ -813,36 +799,38 @@ TEST_F("require that put() updates document meta store with bucket info",
     assertBucketInfo(dc.bid, dc.ts, 1, f.getMetaStore());
     // TODO: rewrite to use getBucketInfo() when available
     BucketInfo bucketInfo = f.getBucketDB()->get(dc.bid);
-    EXPECT_EQUAL(1u, bucketInfo.getDocumentCount());
-    EXPECT_NOT_EQUAL(bucketInfo.getChecksum(), BucketChecksum(0));
+    EXPECT_EQ(1u, bucketInfo.getDocumentCount());
+    EXPECT_NE(bucketInfo.getChecksum(), BucketChecksum(0));
 }
 
-TEST_F("require that put() calls attribute adapter", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_put_calls_attribute_adapter)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc = f.doc1();
-    EXPECT_EQUAL(0u, f._docIdLimit.get());
+    EXPECT_EQ(0u, f._docIdLimit.get());
     f.putAndWait(dc);
     f.forceCommitAndWait();
 
-    EXPECT_EQUAL(1u, f.maw._putSerial);
-    EXPECT_EQUAL(DocumentId("id:ns:searchdocument::1"), f.maw._putDocId);
-    EXPECT_EQUAL(1u, f.maw._putLid);
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
+    EXPECT_EQ(1u, f.maw._putSerial);
+    EXPECT_EQ(DocumentId("id:ns:searchdocument::1"), f.maw._putDocId);
+    EXPECT_EQ(1u, f.maw._putLid);
+    EXPECT_EQ(2u, f._docIdLimit.get());
 }
 
-TEST_F("require that put() notifies gid to lid change handler", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_put_notifies_gid_to_lid_change_handler)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc1 = f.doc1(10);
     DocumentContext dc2 = f.doc1(20);
     f.putAndWait(dc1);
-    TEST_DO(f.assertChangeHandler(dc1.gid(), 1u, 1u));
+    EXPECT_EQ((LastChange{dc1.gid(), 1u, 1u}), f.get_last_change());
     f.putAndWait(dc2);
-    TEST_DO(f.assertChangeHandler(dc2.gid(), 1u, 1u));
+    EXPECT_EQ((LastChange{dc2.gid(), 1u, 1u}), f.get_last_change());
 }
 
-TEST_F("require that update() updates document meta store with bucket info",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_update_updates_document_meta_store_with_bucket_info)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc1 = f.doc1(10);
     DocumentContext dc2 = f.doc1(20);
     f.putAndWait(dc1);
@@ -853,13 +841,14 @@ TEST_F("require that update() updates document meta store with bucket info",
     assertBucketInfo(dc1.bid, Timestamp(20), 1, f.getMetaStore());
     // TODO: rewrite to use getBucketInfo() when available
     BucketInfo bucketInfo = f.getBucketDB()->get(dc1.bid);
-    EXPECT_EQUAL(1u, bucketInfo.getDocumentCount());
-    EXPECT_NOT_EQUAL(bucketInfo.getChecksum(), bcs);
-    EXPECT_NOT_EQUAL(bucketInfo.getChecksum(), BucketChecksum(0));
+    EXPECT_EQ(1u, bucketInfo.getDocumentCount());
+    EXPECT_NE(bucketInfo.getChecksum(), bcs);
+    EXPECT_NE(bucketInfo.getChecksum(), BucketChecksum(0));
 }
 
-TEST_F("require that update() calls attribute adapter", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_update_calls_attribute_adapter)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc1 = f.doc1(10);
     DocumentContext dc2 = f.doc1(20);
     f.putAndWait(dc1);
@@ -868,9 +857,9 @@ TEST_F("require that update() calls attribute adapter", SearchableFeedViewFixtur
     assertAttributeUpdate(2u, DocumentId("id:ns:searchdocument::1"), 1u, f.maw);
 }
 
-TEST_F("require that remove() updates document meta store with bucket info",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_remove_updates_document_meta_store_with_bucket_info)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc1 = f.doc("id:test:searchdocument:n=1:1", 10);
     DocumentContext dc2 = f.doc("id:test:searchdocument:n=1:2", 11);
     f.putAndWait(dc1);
@@ -884,64 +873,65 @@ TEST_F("require that remove() updates document meta store with bucket info",
     EXPECT_FALSE(f.getMetaStore().validLid(2)); // don't remember remove
     // TODO: rewrite to use getBucketInfo() when available
     BucketInfo bucketInfo = f.getBucketDB()->get(dc1.bid);
-    EXPECT_EQUAL(1u, bucketInfo.getDocumentCount());
-    EXPECT_NOT_EQUAL(bucketInfo.getChecksum(), bcs2);
-    EXPECT_EQUAL(bucketInfo.getChecksum(), bcs1);
+    EXPECT_EQ(1u, bucketInfo.getDocumentCount());
+    EXPECT_NE(bucketInfo.getChecksum(), bcs2);
+    EXPECT_EQ(bucketInfo.getChecksum(), bcs1);
 }
 
-TEST_F("require that remove() calls attribute adapter", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_remove_calls_attribute_adapter)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc1 = f.doc1(10);
     DocumentContext dc2 = f.doc1(20);
     f.putAndWait(dc1);
     f.removeAndWait(dc2);
 
-    EXPECT_EQUAL(2u, f.maw._removeSerial);
-    EXPECT_EQUAL(1u, f.maw._removeLid);
+    EXPECT_EQ(2u, f.maw._removeSerial);
+    EXPECT_EQ(1u, f.maw._removeLid);
 }
 
-TEST_F("require that remove() notifies gid to lid change handler", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_remove_notifies_gid_to_lid_change_handler)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc1 = f.doc1(10);
     DocumentContext dc2 = f.doc1(20);
     f.putAndWait(dc1);
-    TEST_DO(f.assertChangeHandler(dc1.gid(), 1u, 1u));
+    EXPECT_EQ((LastChange{dc1.gid(), 1u, 1u}), f.get_last_change());
     f.removeAndWait(dc2);
-    TEST_DO(f.assertChangeHandler(dc2.gid(), 0u, 2u));
+    EXPECT_EQ((LastChange{dc2.gid(), 0u, 2u}), f.get_last_change());
 }
 
-bool
-assertThreadObserver(uint32_t masterExecuteCnt,
-                     uint32_t indexExecuteCnt,
-                     uint32_t summaryExecuteCnt,
-                     const test::ThreadingServiceObserver &observer)
-{
-    if (!EXPECT_EQUAL(masterExecuteCnt, observer.masterObserver().getExecuteCnt())) return false;
-    if (!EXPECT_EQUAL(indexExecuteCnt, observer.indexObserver().getExecuteCnt())) return false;
-    if (!EXPECT_EQUAL(summaryExecuteCnt, observer.summaryObserver().getExecuteCnt())) return false;
-    return true;
+namespace {
+
+std::tuple<uint32_t, uint32_t, uint32_t> get_execute_counts(const test::ThreadingServiceObserver &observer) {
+    return std::make_tuple(observer.masterObserver().getExecuteCnt(),
+                         observer.indexObserver().getExecuteCnt(),
+                         observer.summaryObserver().getExecuteCnt());
 }
 
-TEST_F("require that remove() calls removes_complete() via delayed thread service",
-        SearchableFeedViewFixture)
+}
+
+TEST(FeedViewTest, require_that_remove_calls_removes_complete_via_delayed_thread_service)
 {
-    EXPECT_TRUE(assertThreadObserver(0, 0, 0, f.writeServiceObserver()));
+    SearchableFeedViewFixture f;
+    EXPECT_EQ(std::make_tuple(0u, 0u, 0u), get_execute_counts(f.writeServiceObserver()));
     f.putAndWait(f.doc1(10));
     f.forceCommitAndWait();
     // put index fields handled in index thread
-    EXPECT_TRUE(assertThreadObserver(2, 2, 2, f.writeServiceObserver()));
+    EXPECT_EQ(std::make_tuple(2u, 2u, 2u), get_execute_counts(f.writeServiceObserver()));
     f.removeAndWait(f.doc1(20));
     f.forceCommitAndWait();
     // remove index fields handled in index thread
     // delayed remove complete handled in same index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(5, 4, 4, f.writeServiceObserver()));
-    EXPECT_EQUAL(1u, f.metaStoreObserver()._removes_complete_cnt);
+    EXPECT_EQ(std::make_tuple(5u, 4u, 4u), get_execute_counts(f.writeServiceObserver()));
+    EXPECT_EQ(1u, f.metaStoreObserver()._removes_complete_cnt);
     ASSERT_FALSE(f.metaStoreObserver()._removes_complete_lids.empty());
-    EXPECT_EQUAL(1u, f.metaStoreObserver()._removes_complete_lids.back());
+    EXPECT_EQ(1u, f.metaStoreObserver()._removes_complete_lids.back());
 }
 
-TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_handleDeleteBucket_removes_documents)
 {
+    SearchableFeedViewFixture f;
     DocumentContext::List docs;
     docs.push_back(f.doc("id:test:searchdocument:n=1:1", 10));
     docs.push_back(f.doc("id:test:searchdocument:n=1:2", 11));
@@ -950,21 +940,21 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     docs.push_back(f.doc("id:test:searchdocument:n=2:2", 14));
 
     f.putAndWait(docs);
-    TEST_DO(f.assertChangeHandler(docs.back().gid(), 5u, 5u));
-    TEST_DO(f.assertChangeNotified(docs[0].gid(), 1));
-    TEST_DO(f.assertChangeNotified(docs[1].gid(), 2));
-    TEST_DO(f.assertChangeNotified(docs[2].gid(), 3));
-    TEST_DO(f.assertChangeNotified(docs[3].gid(), 4));
-    TEST_DO(f.assertChangeNotified(docs[4].gid(), 5));
+    EXPECT_EQ((LastChange{docs.back().gid(), 5u, 5u}), f.get_last_change());
+    EXPECT_EQ(1, f.get_notified_lid(docs[0].gid()));
+    EXPECT_EQ(2, f.get_notified_lid(docs[1].gid()));
+    EXPECT_EQ(3, f.get_notified_lid(docs[2].gid()));
+    EXPECT_EQ(4, f.get_notified_lid(docs[3].gid()));
+    EXPECT_EQ(5, f.get_notified_lid(docs[4].gid()));
     f.dms_commit();
 
     DocumentIdT lid;
     EXPECT_TRUE(f.getMetaStore().getLid(docs[0].doc->getId().getGlobalId(), lid));
-    EXPECT_EQUAL(1u, lid);
+    EXPECT_EQ(1u, lid);
     EXPECT_TRUE(f.getMetaStore().getLid(docs[1].doc->getId().getGlobalId(), lid));
-    EXPECT_EQUAL(2u, lid);
+    EXPECT_EQ(2u, lid);
     EXPECT_TRUE(f.getMetaStore().getLid(docs[2].doc->getId().getGlobalId(), lid));
-    EXPECT_EQUAL(3u, lid);
+    EXPECT_EQ(3u, lid);
 
     // delete bucket for user 1
     DeleteBucketOperation op(docs[0].bid);
@@ -975,8 +965,8 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     gate.await();
     f.dms_commit();
 
-    EXPECT_EQUAL(0u, f.getBucketDB()->get(docs[0].bid).getDocumentCount());
-    EXPECT_EQUAL(2u, f.getBucketDB()->get(docs[3].bid).getDocumentCount());
+    EXPECT_EQ(0u, f.getBucketDB()->get(docs[0].bid).getDocumentCount());
+    EXPECT_EQ(2u, f.getBucketDB()->get(docs[3].bid).getDocumentCount());
     EXPECT_FALSE(f.getMetaStore().getLid(docs[0].doc->getId().getGlobalId(), lid));
     EXPECT_FALSE(f.getMetaStore().getLid(docs[1].doc->getId().getGlobalId(), lid));
     EXPECT_FALSE(f.getMetaStore().getLid(docs[2].doc->getId().getGlobalId(), lid));
@@ -984,19 +974,19 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     assertLidVector(exp, f.miw._removes);
     assertLidVector(exp, f.msa._removes);
     assertLidVector(exp, f.maw._removes);
-    TEST_DO(f.assertChangeHandlerCount(8));
-    TEST_DO(f.assertChangeNotified(docs[0].gid(), 0));
-    TEST_DO(f.assertChangeNotified(docs[1].gid(), 0));
-    TEST_DO(f.assertChangeNotified(docs[2].gid(), 0));
-    TEST_DO(f.assertChangeNotified(docs[3].gid(), 4));
-    TEST_DO(f.assertChangeNotified(docs[4].gid(), 5));
+    EXPECT_EQ(8, f.get_change_handler_count());
+    EXPECT_EQ(0, f.get_notified_lid(docs[0].gid()));
+    EXPECT_EQ(0, f.get_notified_lid(docs[1].gid()));
+    EXPECT_EQ(0, f.get_notified_lid(docs[2].gid()));
+    EXPECT_EQ(4, f.get_notified_lid(docs[3].gid()));
+    EXPECT_EQ(5, f.get_notified_lid(docs[4].gid()));
 }
 
 void
 assertPostConditionAfterRemoves(const DocumentContext::List &docs,
                                 SearchableFeedViewFixture &f)
 {
-    EXPECT_EQUAL(3u, f.getMetaStore().getNumUsedLids());
+    EXPECT_EQ(3u, f.getMetaStore().getNumUsedLids());
     EXPECT_FALSE(f.getMetaData(docs[0]).valid());
     EXPECT_TRUE(f.getMetaData(docs[1]).valid());
     EXPECT_FALSE(f.getMetaData(docs[1]).removed);
@@ -1009,13 +999,14 @@ assertPostConditionAfterRemoves(const DocumentContext::List &docs,
     assertLidVector(MyLidVector().add(1).add(4), f.miw._removes);
     assertLidVector(MyLidVector().add(1).add(4), f.msa._removes);
     MyDocumentStore::DocMap &sdocs = f.msa._store._docs;
-    EXPECT_EQUAL(3u, sdocs.size());
+    EXPECT_EQ(3u, sdocs.size());
     EXPECT_TRUE(sdocs.find(1) == sdocs.end());
     EXPECT_TRUE(sdocs.find(4) == sdocs.end());
 }
 
-TEST_F("require that removes are not remembered", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_removes_are_not_remembered)
 {
+    SearchableFeedViewFixture f;
     DocumentContext::List docs;
     docs.push_back(f.doc("id:test:searchdocument:n=1:1", 10));
     docs.push_back(f.doc("id:test:searchdocument:n=1:2", 11));
@@ -1043,7 +1034,7 @@ TEST_F("require that removes are not remembered", SearchableFeedViewFixture)
     f.forceCommitAndWait();
     f.putAndWait(docs[0]);
     f.forceCommitAndWait();
-    EXPECT_EQUAL(5u, f.getMetaStore().getNumUsedLids());
+    EXPECT_EQ(5u, f.getMetaStore().getNumUsedLids());
     EXPECT_TRUE(f.getMetaData(docs[0]).valid());
     EXPECT_TRUE(f.getMetaData(docs[1]).valid());
     EXPECT_TRUE(f.getMetaData(docs[2]).valid());
@@ -1054,43 +1045,43 @@ TEST_F("require that removes are not remembered", SearchableFeedViewFixture)
     EXPECT_FALSE(f.getMetaData(docs[2]).removed);
     EXPECT_FALSE(f.getMetaData(docs[3]).removed);
     EXPECT_FALSE(f.getMetaData(docs[4]).removed);
-    EXPECT_EQUAL(5u, f.msa._store._docs.size());
+    EXPECT_EQ(5u, f.msa._store._docs.size());
     const Document::SP &doc1 = f.msa._store._docs[1];
-    EXPECT_EQUAL(docs[3].doc->getId(), doc1->getId());
-    EXPECT_EQUAL(docs[3].doc->getId().toString(),
-                 doc1->getValue("s1")->toString());
+    EXPECT_EQ(docs[3].doc->getId(), doc1->getId());
+    EXPECT_EQ(docs[3].doc->getId().toString(), doc1->getValue("s1")->toString());
     const Document::SP &doc4 = f.msa._store._docs[4];
-    EXPECT_EQUAL(docs[0].doc->getId(), doc4->getId());
-    EXPECT_EQUAL(docs[0].doc->getId().toString(),
-                 doc4->getValue("s1")->toString());
-    EXPECT_EQUAL(5u, f.msa._store._docs.size());
+    EXPECT_EQ(docs[0].doc->getId(), doc4->getId());
+    EXPECT_EQ(docs[0].doc->getId().toString(), doc4->getValue("s1")->toString());
+    EXPECT_EQ(5u, f.msa._store._docs.size());
 
     f.removeAndWait(docs[0]);
     f.forceCommitAndWait();
     f.removeAndWait(docs[3]);
     f.forceCommitAndWait();
-    EXPECT_EQUAL(3u, f.msa._store._docs.size());
+    EXPECT_EQ(3u, f.msa._store._docs.size());
 }
 
-TEST_F("require that heartbeat propagates to index- and attributeadapter",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_heartbeat_propagates_to_index_and_attribute_adapter)
 {
+    SearchableFeedViewFixture f;
     vespalib::Gate gate;
     f.runInMaster([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
         f.fv.heartBeat(2, std::move(onDone));
     });
     gate.await();
-    EXPECT_EQUAL(1, f.miw._heartBeatCount);
-    EXPECT_EQUAL(1, f.maw._heartBeatCount);
+    EXPECT_EQ(1, f.miw._heartBeatCount);
+    EXPECT_EQ(1, f.maw._heartBeatCount);
 }
 
+namespace {
+
 template <typename Fixture>
-void putDocumentAndUpdate(Fixture &f, const vespalib::string &fieldName)
+void putDocumentAndUpdate(Fixture &f, const std::string &fieldName)
 {
     DocumentContext dc1 = f.doc1();
     f.putAndWait(dc1);
     f.forceCommitAndWait();
-    EXPECT_EQUAL(1u, f.msa._store._lastSyncToken);
+    EXPECT_EQ(1u, f.msa._store._lastSyncToken);
 
     DocumentContext dc2("id:ns:searchdocument::1", 20, f.getBuilder());
     dc2.addFieldUpdate(f.getBuilder(), fieldName);
@@ -1100,95 +1091,94 @@ void putDocumentAndUpdate(Fixture &f, const vespalib::string &fieldName)
 
 template <typename Fixture>
 void requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(Fixture &f,
-                                                              const vespalib::string &fieldName)
+                                                              const std::string &fieldName)
 {
     putDocumentAndUpdate(f, fieldName);
 
-    EXPECT_EQUAL(1u, f.msa._store._lastSyncToken); // document store not updated
+    EXPECT_EQ(1u, f.msa._store._lastSyncToken); // document store not updated
     assertAttributeUpdate(2u, DocumentId("id:ns:searchdocument::1"), 1, f.maw);
 }
 
 template <typename Fixture>
 void requireThatUpdateUpdatesAttributeAndDocumentStore(Fixture &f,
-                                                       const vespalib::string &fieldName)
+                                                       const std::string &fieldName)
 {
     putDocumentAndUpdate(f, fieldName);
 
-    EXPECT_EQUAL(2u, f.msa._store._lastSyncToken); // document store updated
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
     assertAttributeUpdate(2u, DocumentId("id:ns:searchdocument::1"), 1, f.maw);
 }
 
-TEST_F("require that update() to fast-access attribute only updates attribute and not document store",
-       FastAccessFeedViewFixture)
+}
+
+TEST(FeedViewTest, require_that_update_to_fast_access_attribute_only_updates_attribute_and_not_document_store)
 {
+    FastAccessFeedViewFixture f;
     f.maw._attrs.insert("a1"); // mark a1 as fast-access attribute field
     requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a1");
 }
 
-TEST_F("require that update() to attribute only updates attribute and not document store",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_update_to_attribute_only_updates_attribute_and_not_document_store)
 {
+    SearchableFeedViewFixture f;
     f.maw._attrs.insert("a1"); // mark a1 as attribute field
     requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a1");
 }
 
-TEST_F("require that update to non fast-access attribute also updates document store",
-        FastAccessFeedViewFixture)
+TEST(FeedViewTest, require_that_update_to_non_fast_access_attribute_also_updates_document_store)
 {
+    FastAccessFeedViewFixture f;
     requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a1");
 }
 
-TEST_F("require that update() to fast-access predicate attribute updates attribute and document store",
-       FastAccessFeedViewFixture)
+TEST(FeedViewTest, require_that_update_to_fast_access_predicate_attribute_updates_attribute_and_document_store)
 {
+    FastAccessFeedViewFixture f;
     f.maw._attrs.insert("a2"); // mark a2 as fast-access attribute field
     requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a2");
 }
 
-TEST_F("require that update() to predicate attribute updates attribute and document store",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_update_to_predicate_attribute_updates_attribute_and_document_store)
 {
+    SearchableFeedViewFixture f;
     f.maw._attrs.insert("a2"); // mark a2 as attribute field
     requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a2");
 }
 
-TEST_F("require that update() to fast-access tensor attribute only updates attribute and NOT document store",
-       FastAccessFeedViewFixture)
+TEST(FeedViewTest, require_that_update_to_fast_access_tensor_attribute_only_updates_attribute_and_not_document_store)
 {
+    FastAccessFeedViewFixture f;
     f.maw._attrs.insert("a3"); // mark a3 as fast-access attribute field
     requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a3");
 }
 
-TEST_F("require that update() to tensor attribute only updates attribute and NOT document store",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_update_to_tensor_attribute_only_updates_attribute_and_not_document_store)
 {
+    SearchableFeedViewFixture f;
     f.maw._attrs.insert("a3"); // mark a3 as attribute field
     requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a3");
 }
 
-TEST_F("require that compactLidSpace() propagates to document meta store and document store and "
-       "blocks lid space shrinkage until generation is no longer used",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_compactLidSpace_propagates_to_document_meta_store_and_document_store_and_blocks_lid_space_shrinkage_until_generation_is_no_longer_used)
 {
+    SearchableFeedViewFixture f;
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 4, 4, f.writeServiceObserver()));
+    EXPECT_EQ(std::make_tuple(5u, 4u, 4u), get_execute_counts(f.writeServiceObserver()));
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 7, 7, f.writeServiceObserver()));
-    EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
-    EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
-    EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
+    EXPECT_EQ(std::make_tuple(7u, 7u, 7u), get_execute_counts(f.writeServiceObserver()));
+    EXPECT_EQ(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
+    EXPECT_EQ(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
+    EXPECT_EQ(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
+    EXPECT_EQ(2u, f._docIdLimit.get());
 }
 
-TEST_F("require that compactLidSpace() doesn't propagate to "
-       "document meta store and document store and "
-       "blocks lid space shrinkage until generation is no longer used",
-       SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_compactLidSpace_doesnt_propagate_to_document_meta_store_and_document_store_and_blocks_lid_space_shrinkage_until_generation_is_no_longer_used)
 {
+    SearchableFeedViewFixture f;
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 4, 4, f.writeServiceObserver()));
+    EXPECT_EQ(std::make_tuple(5u, 4u, 4u), get_execute_counts(f.writeServiceObserver()));
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
     Gate gate;
@@ -1198,99 +1188,105 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
     gate.await();
     f._writeService.master().sync();
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 6, 5, f.writeServiceObserver()));
-    EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
-    EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
-    EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
+    EXPECT_EQ(std::make_tuple(6u, 6u, 5u), get_execute_counts(f.writeServiceObserver()));
+    EXPECT_EQ(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
+    EXPECT_EQ(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
+    EXPECT_EQ(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
 }
 
-TEST_F("require that compactLidSpace() propagates to attributeadapter", FastAccessFeedViewFixture)
+TEST(FeedViewTest, require_that_compactLidSpace_propagates_to_attribute_adapter)
 {
+    FastAccessFeedViewFixture f;
     f.populateBeforeCompactLidSpace();
     f.compactLidSpaceAndWait(2);
-    EXPECT_EQUAL(2u, f.maw._wantedLidLimit);
+    EXPECT_EQ(2u, f.maw._wantedLidLimit);
 }
 
-TEST_F("require that compactLidSpace() propagates to index writer", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_compactLidSpace_propagates_to_index_writer)
 {
+    SearchableFeedViewFixture f;
     f.populateBeforeCompactLidSpace();
     f.compactLidSpaceAndWait(2);
-    EXPECT_EQUAL(2u, f.miw._wantedLidLimit);
+    EXPECT_EQ(2u, f.miw._wantedLidLimit);
 }
 
-TEST_F("require that commit is not implicitly called", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_commit_is_not_implicitly_called)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
-    EXPECT_EQUAL(0u, f.miw._commitCount);
-    EXPECT_EQUAL(0u, f.maw._commitCount);
-    EXPECT_EQUAL(0u, f._docIdLimit.get());
+    EXPECT_EQ(0u, f.miw._commitCount);
+    EXPECT_EQ(0u, f.maw._commitCount);
+    EXPECT_EQ(0u, f._docIdLimit.get());
     f.removeAndWait(dc);
-    EXPECT_EQUAL(0u, f.miw._commitCount);
-    EXPECT_EQUAL(0u, f.maw._commitCount);
-    EXPECT_EQUAL(0u, f._docIdLimit.get());
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1),"
-                  "put(adapter=index,serialNum=1,lid=1),"
-                  "ack(Result(0, )),"
-                  "remove(adapter=attribute,serialNum=2,lid=1),"
-                  "remove(adapter=index,serialNum=2,lid=1),"
-                  "ack(Result(0, ))");
+    EXPECT_EQ(0u, f.miw._commitCount);
+    EXPECT_EQ(0u, f.maw._commitCount);
+    EXPECT_EQ(0u, f._docIdLimit.get());
+    EXPECT_EQ("put(adapter=attribute,serialNum=1,lid=1),"
+              "put(adapter=index,serialNum=1,lid=1),"
+              "ack(Result(0, )),"
+              "remove(adapter=attribute,serialNum=2,lid=1),"
+              "remove(adapter=index,serialNum=2,lid=1),"
+              "ack(Result(0, ))", f.get_trace());
     f.forceCommitAndWait();
 }
 
-TEST_F("require that forceCommit updates docid limit", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_forceCommit_updates_docid_limit)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
-    EXPECT_EQUAL(0u, f.miw._commitCount);
-    EXPECT_EQUAL(0u, f.maw._commitCount);
-    EXPECT_EQUAL(0u, f._docIdLimit.get());
+    EXPECT_EQ(0u, f.miw._commitCount);
+    EXPECT_EQ(0u, f.maw._commitCount);
+    EXPECT_EQ(0u, f._docIdLimit.get());
     f.forceCommitAndWait();
-    EXPECT_EQUAL(1u, f.miw._commitCount);
-    EXPECT_EQUAL(1u, f.maw._commitCount);
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1),"
-                  "put(adapter=index,serialNum=1,lid=1),"
-                  "ack(Result(0, )),"
-                  "commit(adapter=attribute,serialNum=1),"
-                  "commit(adapter=index,serialNum=1)");
+    EXPECT_EQ(1u, f.miw._commitCount);
+    EXPECT_EQ(1u, f.maw._commitCount);
+    EXPECT_EQ(2u, f._docIdLimit.get());
+    EXPECT_EQ("put(adapter=attribute,serialNum=1,lid=1),"
+              "put(adapter=index,serialNum=1,lid=1),"
+              "ack(Result(0, )),"
+              "commit(adapter=attribute,serialNum=1),"
+              "commit(adapter=index,serialNum=1)", f.get_trace());
 }
 
-TEST_F("require that forceCommit updates docid limit during shrink", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_forceCommit_updates_docid_limit_during_shrink)
 {
+    SearchableFeedViewFixture f;
     f.putAndWait(f.makeDummyDocs(0, 3, 1000));
-    EXPECT_EQUAL(0u, f._docIdLimit.get());
+    EXPECT_EQ(0u, f._docIdLimit.get());
     f.forceCommitAndWait();
-    EXPECT_EQUAL(4u, f._docIdLimit.get());
+    EXPECT_EQ(4u, f._docIdLimit.get());
     f.removeAndWait(f.makeDummyDocs(1, 2, 2000));
-    EXPECT_EQUAL(4u, f._docIdLimit.get());
+    EXPECT_EQ(4u, f._docIdLimit.get());
     f.forceCommitAndWait();
-    EXPECT_EQUAL(4u, f._docIdLimit.get());
+    EXPECT_EQ(4u, f._docIdLimit.get());
     f.compactLidSpaceAndWait(2);
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
+    EXPECT_EQ(2u, f._docIdLimit.get());
     f.forceCommitAndWait();
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
+    EXPECT_EQ(2u, f._docIdLimit.get());
     f.putAndWait(f.makeDummyDocs(1, 1, 3000));
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
+    EXPECT_EQ(2u, f._docIdLimit.get());
     f.forceCommitAndWait();
-    EXPECT_EQUAL(3u, f._docIdLimit.get());
+    EXPECT_EQ(3u, f._docIdLimit.get());
 }
 
-TEST_F("require that move() notifies gid to lid change handler", SearchableFeedViewFixture)
+TEST(FeedViewTest, require_that_move_notifies_gid_to_lid_change_handler)
 {
+    SearchableFeedViewFixture f;
     DocumentContext dc1 = f.doc("id::searchdocument::1", 10);
     DocumentContext dc2 = f.doc("id::searchdocument::2", 20);
     f.putAndWait(dc1);
     f.forceCommitAndWait();
-    TEST_DO(f.assertChangeHandler(dc1.gid(), 1u, 1u));
+    EXPECT_EQ((LastChange{dc1.gid(), 1u, 1u}), f.get_last_change());
     f.putAndWait(dc2);
     f.forceCommitAndWait();
-    TEST_DO(f.assertChangeHandler(dc2.gid(), 2u, 2u));
+    EXPECT_EQ((LastChange{dc2.gid(), 2u, 2u}), f.get_last_change());
     DocumentContext dc3 = f.doc("id::searchdocument::1", 30);
     f.removeAndWait(dc3);
     f.forceCommitAndWait();
-    TEST_DO(f.assertChangeHandler(dc3.gid(), 0u, 3u));
+    EXPECT_EQ((LastChange{dc3.gid(), 0u, 3u}), f.get_last_change());
     f.moveAndWait(dc2, 2, 1);
     f.forceCommitAndWait();
-    TEST_DO(f.assertChangeHandler(dc2.gid(), 1u, 4u));
+    EXPECT_EQ((LastChange{dc2.gid(), 1u, 4u}), f.get_last_change());
 }

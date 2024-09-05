@@ -20,7 +20,7 @@ public:
     ~StatusReporterDelegate() override;
 
     void registerStatusPage();
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 };
 

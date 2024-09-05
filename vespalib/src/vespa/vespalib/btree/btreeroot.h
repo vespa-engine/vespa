@@ -49,7 +49,7 @@ protected:
     using ParentType::getFrozenRootRelaxed;
     using ParentType::isFrozen;
 
-    vespalib::string toString(BTreeNode::Ref node, const NodeAllocatorType &allocator) const;
+    std::string toString(BTreeNode::Ref node, const NodeAllocatorType &allocator) const;
 public:
     /**
      * Read view of the frozen version of the tree.
@@ -134,7 +134,7 @@ public:
 
     size_t size(const NodeAllocatorType &allocator) const;
     size_t frozenSize(const NodeAllocatorType &allocator) const;
-    vespalib::string toString(const NodeAllocatorType &allocator) const;
+    std::string toString(const NodeAllocatorType &allocator) const;
     size_t bitSize(const NodeAllocatorType &allocator) const;
     size_t bitSize(BTreeNode::Ref node, const NodeAllocatorType &allocator) const;
     void thaw(Iterator &itr);

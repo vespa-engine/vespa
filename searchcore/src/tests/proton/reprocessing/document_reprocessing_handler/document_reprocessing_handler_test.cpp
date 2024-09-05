@@ -27,7 +27,7 @@ struct MyProcessor : public ReprocessingType
 using MyReader = MyProcessor<IReprocessingReader>;
 using MyRewriter = MyProcessor<IReprocessingRewriter>;
 
-const vespalib::string DOC_ID = "id:test:searchdocument::0";
+const std::string DOC_ID = "id:test:searchdocument::0";
 
 struct FixtureBase
 {

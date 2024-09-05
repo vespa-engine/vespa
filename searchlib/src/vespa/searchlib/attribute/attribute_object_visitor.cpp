@@ -9,7 +9,7 @@ namespace search::attribute {
 
 namespace {
 
-vespalib::string
+std::string
 get_type(const IAttributeVector& attr)
 {
     auto coll_type = CollectionType(attr.getCollectionType());

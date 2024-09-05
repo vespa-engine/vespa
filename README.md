@@ -1,11 +1,17 @@
 <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://vespa.ai/assets/vespa-ai-logo-heather.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://vespa.ai/assets/vespa-ai-logo-rock.svg">
-  <img alt="#Vespa" width="200" src="https://vespa.ai/assets/vespa-ai-logo-rock.svg" style="margin-bottom: 25px;">
+  <source media="(prefers-color-scheme: dark)" srcset="https://assets.vespa.ai/logos/Vespa-logo-green-RGB.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://assets.vespa.ai/logos/Vespa-logo-dark-RGB.svg">
+  <img alt="#Vespa" width="200" src="https://assets.vespa.ai/logos/Vespa-logo-dark-RGB.svg" style="margin-bottom: 25px;">
 </picture>
 <br/><br/>
+
+[![Build status](https://badge.buildkite.com/34f7cb35b91da4f929794c5fd7aa722fc15ca0224ad240270b.svg)](https://buildkite.com/vespaai/vespa-engine-vespa)
+![GitHub License](https://img.shields.io/github/license/vespa-engine/vespa)
+![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fcom%2Fyahoo%2Fvespa%2Fparent%2Fmaven-metadata.xml)
+
+
 
 Search, make inferences in, and organize vectors, tensors, text and structured data, at serving time and any scale.
 
@@ -14,7 +20,6 @@ and where you can see all development as it is happening.
 All the content in this repository is licensed under the Apache 2.0 license.
 
 A new release of Vespa is made from this repository's master branch every morning CET Monday through Thursday.
-Build status: [![Vespa Build Status](https://api.screwdriver.cd/v4/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 - Home page: [https://vespa.ai](https://vespa.ai)
 - Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)

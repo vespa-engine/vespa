@@ -32,7 +32,7 @@ using search::attribute::AttributeHeader;
 
 namespace {
 
-vespalib::string
+std::string
 extraPredicateType(const search::attribute::PersistentPredicateParams &params)
 {
     vespalib::asciistream os;
@@ -42,7 +42,7 @@ extraPredicateType(const search::attribute::PersistentPredicateParams &params)
     return os.str();
 }
 
-vespalib::string
+std::string
 extraType(const Config &cfg)
 {
     if (cfg.basicType().type() == BasicType::Type::TENSOR) {
@@ -54,7 +54,7 @@ extraType(const Config &cfg)
     return "";
 }
 
-vespalib::string
+std::string
 extraType(const AttributeHeader &header)
 {
     if (header.getBasicType().type() == BasicType::Type::TENSOR) {
@@ -66,7 +66,7 @@ extraType(const AttributeHeader &header)
     return "";
 }
 
-vespalib::string
+std::string
 collectionTypeString(const CollectionType &type, bool detailed)
 {
     vespalib::asciistream os;
@@ -116,7 +116,7 @@ headerTypeOK(const AttributeHeader &header, const Config &cfg)
 }
 
 AttributeHeader
-extractHeader(const vespalib::string &attrFileName)
+extractHeader(const std::string &attrFileName)
 {
     auto df = search::FileUtil::openFile(attrFileName + ".dat");
     vespalib::FileHeader datHeader;
@@ -142,10 +142,10 @@ void
 logAttributeWrongType(const AttributeVector::SP &attr, const AttributeHeader &header)
 {
     const Config &cfg(attr->getConfig());
-    vespalib::string extraCfgType = extraType(cfg);
-    vespalib::string extraHeaderType = extraType(header);
-    vespalib::string cfgCollStr = collectionTypeString(cfg.collectionType(), true);
-    vespalib::string headerCollStr = collectionTypeString(header.getCollectionType(), header.getCollectionTypeParamsSet());
+    std::string extraCfgType = extraType(cfg);
+    std::string extraHeaderType = extraType(header);
+    std::string cfgCollStr = collectionTypeString(cfg.collectionType(), true);
+    std::string headerCollStr = collectionTypeString(header.getCollectionType(), header.getCollectionTypeParamsSet());
     LOG(info, "Attribute vector '%s' is of wrong type (expected %s/%s/%s, got %s/%s/%s)",
         header.getFileName().c_str(), cfg.basicType().asString(), cfgCollStr.c_str(), extraCfgType.c_str(),
         header.getBasicType().asString(), headerCollStr.c_str(), extraHeaderType.c_str());
@@ -158,7 +158,7 @@ AttributeInitializer::readHeader()
 {
     if (!_attrDir->empty()) {
         search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
-        vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
+        std::string attrFileName = _attrDir->getAttributeFileName(serialNum);
         if (serialNum != 0) {
             _header = std::make_unique<const AttributeHeader>(extractHeader(attrFileName));
             if (_header->getCreateSerialNum() <= _currentSerialNum && headerTypeOK(*_header, _spec.getConfig()) && (serialNum >= _currentSerialNum)) {
@@ -172,7 +172,7 @@ AttributeVector::SP
 AttributeInitializer::tryLoadAttribute() const
 {
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
-    vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
+    std::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
     if (serialNum != 0 && _header) {
         if (!_header_ok) {
@@ -235,7 +235,7 @@ AttributeInitializer::createAndSetupEmptyAttribute() const
 }
 
 AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
-                                           const vespalib::string &documentSubDbName,
+                                           const std::string &documentSubDbName,
                                            AttributeSpec && spec,
                                            std::optional<uint64_t> currentSerialNum,
                                            const IAttributeFactory &factory,

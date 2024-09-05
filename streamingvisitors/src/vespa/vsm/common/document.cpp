@@ -23,7 +23,7 @@ vespalib::asciistream & operator << (vespalib::asciistream & os, const FieldRef 
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const StringFieldIdTMap & f)
 {
-    std::map<vespalib::string, FieldIdT> ordered(f._map.begin(), f._map.end());
+    std::map<std::string, FieldIdT> ordered(f._map.begin(), f._map.end());
     for (const auto& elem : ordered) {
         os << elem.first << " = " << elem.second << '\n';
     }
@@ -35,12 +35,12 @@ StringFieldIdTMap::StringFieldIdTMap() :
 {
 }
 
-void StringFieldIdTMap::add(const vespalib::string & s, FieldIdT fieldId)
+void StringFieldIdTMap::add(const std::string & s, FieldIdT fieldId)
 {
     _map[s] = fieldId;
 }
 
-void StringFieldIdTMap::add(const vespalib::string & s)
+void StringFieldIdTMap::add(const std::string & s)
 {
     if (_map.find(s) == _map.end()) {
         FieldIdT fieldId = _map.size();
@@ -48,7 +48,7 @@ void StringFieldIdTMap::add(const vespalib::string & s)
     }
 }
 
-FieldIdT StringFieldIdTMap::fieldNo(const vespalib::string & fName) const
+FieldIdT StringFieldIdTMap::fieldNo(const std::string & fName) const
 {
     auto found = _map.find(fName);
     FieldIdT fNo((found != _map.end()) ? found->second : npos);
@@ -70,5 +70,5 @@ Document::~Document() = default;
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vsm::FieldIdTList);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vsm::IndexFieldMapT);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, vsm::FieldIdTList);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, vsm::IndexFieldMapT);

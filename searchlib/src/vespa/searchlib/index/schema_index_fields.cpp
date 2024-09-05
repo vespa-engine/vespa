@@ -22,12 +22,12 @@ SchemaIndexFields::setup(const Schema &schema)
     // Detect all URI fields (flattened structs).
     for (uint32_t fieldId = 0; fieldId < numIndexFields; ++fieldId) {
         const Schema::IndexField &field = schema.getIndexField(fieldId);
-        const vespalib::string &name = field.getName();
+        const std::string &name = field.getName();
         size_t dotPos = name.find('.');
-        if (dotPos != vespalib::string::npos) {
-            const vespalib::string suffix = name.substr(dotPos + 1);
+        if (dotPos != std::string::npos) {
+            const std::string suffix = name.substr(dotPos + 1);
             if (suffix == "scheme") {
-                const vespalib::string shortName = name.substr(0, dotPos);
+                const std::string shortName = name.substr(0, dotPos);
                 UriField uriField;
                 uriField.setup(schema, shortName);
                 if (uriField.valid(schema, field.getCollectionType())) {

@@ -76,11 +76,11 @@ SimpleIndexConfig createSimpleIndexConfig(const search::attribute::Config &confi
 
 }  // namespace
 
-PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name)
+PredicateAttribute::PredicateAttribute(const std::string &base_file_name)
     : PredicateAttribute(base_file_name, Config(BasicType::PREDICATE))
 {}
 
-PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name, const Config &config)
+PredicateAttribute::PredicateAttribute(const std::string &base_file_name, const Config &config)
     : NotImplementedAttribute(base_file_name, config),
       _limit_provider(*this),
       _index(std::make_unique<PredicateIndex>(getGenerationHolder(), _limit_provider,

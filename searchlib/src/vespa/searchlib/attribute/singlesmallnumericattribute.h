@@ -58,7 +58,7 @@ protected:
 
 public:
 
-    SingleValueSmallNumericAttribute(const vespalib::string & baseFileName, const Config &c, Word valueMask,
+    SingleValueSmallNumericAttribute(const std::string & baseFileName, const Config &c, Word valueMask,
                                      uint32_t valueShiftShift, uint32_t valueShiftMask, uint32_t wordShift);
 
     ~SingleValueSmallNumericAttribute() override;
@@ -145,13 +145,13 @@ public:
 class SingleValueSemiNibbleNumericAttribute : public SingleValueSmallNumericAttribute
 {
 public:
-    SingleValueSemiNibbleNumericAttribute(const vespalib::string & baseFileName, const GrowStrategy & grow);
+    SingleValueSemiNibbleNumericAttribute(const std::string & baseFileName, const GrowStrategy & grow);
 };
 
 class SingleValueNibbleNumericAttribute : public SingleValueSmallNumericAttribute
 {
 public:
-    SingleValueNibbleNumericAttribute(const vespalib::string & baseFileName, const GrowStrategy & grow);
+    SingleValueNibbleNumericAttribute(const std::string & baseFileName, const GrowStrategy & grow);
 };
 
 }

@@ -17,7 +17,7 @@ protected:
     const std::string _tables2Dir;
 
     bool assertTable(const Table & act, const Table & exp);
-    bool assertCreateTable(const ITableFactory & tf, const vespalib::string & name, const Table & exp);
+    bool assertCreateTable(const ITableFactory & tf, const std::string & name, const Table & exp);
     void testTable();
     void testFileTableFactory();
     void testFunctionTableFactory();
@@ -54,7 +54,7 @@ TableTest::assertTable(const Table & act, const Table & exp)
 }
 
 bool
-TableTest::assertCreateTable(const ITableFactory & tf, const vespalib::string & name, const Table & exp)
+TableTest::assertCreateTable(const ITableFactory & tf, const std::string & name, const Table & exp)
 {
     Table::SP t = tf.createTable(name);
     bool failed = false;

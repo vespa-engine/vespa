@@ -15,7 +15,7 @@ class BoundMipsDistanceFunction final : public BoundDistanceFunction {
 private:
     using FloatType = VectorStoreType::FloatType;
     mutable VectorStoreType _tmpSpace;
-    const vespalib::ConstArrayRef<FloatType> _lhs_vector;
+    const std::span<const FloatType> _lhs_vector;
     const vespalib::hwaccelerated::IAccelerated & _computer;
     double _max_sq_norm;
     using ExtraDimT = std::conditional_t<extra_dim,double,std::monostate>;
@@ -43,7 +43,7 @@ public:
     }
 
     double calc(TypedCells rhs) const noexcept override {
-        vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
+        std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         const FloatType * a = _lhs_vector.data();
         const FloatType * b = rhs_vector.data();
         double dp = _computer.dotProduct(cast(a), cast(b), rhs.size);

@@ -32,7 +32,7 @@ class InvertContext : public BundledFieldsContext
 {
     using IndexedFields = std::vector<std::unique_ptr<const document::Field>>;
     std::vector<uint32_t> _pushers;
-    vespalib::string      _document_field_names;
+    std::string      _document_field_names;
     mutable IndexedFields _document_fields;
     mutable IndexedFields _document_uri_fields;
     mutable const document::DataType* _data_type;

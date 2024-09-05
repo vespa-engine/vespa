@@ -47,7 +47,7 @@ public class JRTConnectionPool implements ConnectionPool {
         addSources(sourceSet);
     }
 
-    public void addSources(ConfigSourceSet sourceSet) {
+    private void addSources(ConfigSourceSet sourceSet) {
         this.sourceSet = sourceSet;
         synchronized (connections) {
             for (String address : sourceSet.getSources()) {
@@ -91,15 +91,15 @@ public class JRTConnectionPool implements ConnectionPool {
         return currentConnection = newConnection;
     }
 
-    public synchronized JRTConnection initialize() {
+    private synchronized JRTConnection initialize() {
         return pickNewConnectionRandomly(getSources());
     }
 
-    protected JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
+    final protected JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
         return sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
     }
 
-    protected List<JRTConnection> getSources() {
+    final public List<JRTConnection> getSources() {
         List<JRTConnection> ret;
         synchronized (connections) {
             ret = new ArrayList<>(connections.values());

@@ -13,9 +13,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
-#include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_node_test");
@@ -52,15 +50,15 @@ using vespalib::BufferRef;
 
 namespace {
 
-vespalib::string stringValue(const ResultNode &result, const IAttributeVector &attr) {
+std::string stringValue(const ResultNode &result, const IAttributeVector &attr) {
     if (result.inherits(EnumResultNode::classId)) {
         auto enumHandle = result.getEnum();
-        return vespalib::string(attr.getStringFromEnum(enumHandle));
+        return std::string(attr.getStringFromEnum(enumHandle));
     }
     char buf[100];
     BufferRef bref(&buf[0], sizeof(buf));
     auto sbuf = result.getString(bref);
-    return vespalib::string(sbuf.c_str(), sbuf.c_str() + sbuf.size());
+    return std::string(sbuf.c_str(), sbuf.c_str() + sbuf.size());
 }
 
 struct AttributeManagerFixture
@@ -70,16 +68,16 @@ struct AttributeManagerFixture
     AttributeManagerFixture();
     ~AttributeManagerFixture();
     template <typename AttributeType, typename ValueType>
-    void buildAttribute(const vespalib::string &name, BasicType type, std::vector<ValueType> values);
-    void buildStringAttribute(const vespalib::string &name, std::vector<vespalib::string> values);
-    void buildBoolAttribute(const vespalib::string &name, std::vector<bool> values);
-    void buildFloatAttribute(const vespalib::string &name, std::vector<double> values);
-    void buildIntegerAttribute(const vespalib::string &name, BasicType type, std::vector<IAttributeVector::largeint_t> values);
+    void buildAttribute(const std::string &name, BasicType type, std::vector<ValueType> values);
+    void buildStringAttribute(const std::string &name, std::vector<std::string> values);
+    void buildBoolAttribute(const std::string &name, std::vector<bool> values);
+    void buildFloatAttribute(const std::string &name, std::vector<double> values);
+    void buildIntegerAttribute(const std::string &name, BasicType type, std::vector<IAttributeVector::largeint_t> values);
     template <typename AttributeType, typename ValueType>
-    void buildArrayAttribute(const vespalib::string &name, BasicType type, std::vector<std::vector<ValueType>> values);
-    void buildStringArrayAttribute(const vespalib::string &name,std::vector<std::vector<vespalib::string>> values);
-    void buildFloatArrayAttribute(const vespalib::string &name, std::vector<std::vector<double>> values);
-    void buildIntegerArrayAttribute(const vespalib::string &name, BasicType type, std::vector<std::vector<IAttributeVector::largeint_t>> values);
+    void buildArrayAttribute(const std::string &name, BasicType type, std::vector<std::vector<ValueType>> values);
+    void buildStringArrayAttribute(const std::string &name,std::vector<std::vector<std::string>> values);
+    void buildFloatArrayAttribute(const std::string &name, std::vector<std::vector<double>> values);
+    void buildIntegerArrayAttribute(const std::string &name, BasicType type, std::vector<std::vector<IAttributeVector::largeint_t>> values);
 };
 
 AttributeManagerFixture::AttributeManagerFixture()
@@ -106,7 +104,7 @@ AttributeManagerFixture::~AttributeManagerFixture() = default;
 
 template <typename AttributeType, typename ValueType>
 void
-AttributeManagerFixture::buildAttribute(const vespalib::string &name, BasicType type,
+AttributeManagerFixture::buildAttribute(const std::string &name, BasicType type,
                                         std::vector<ValueType> values)
 {
     Config cfg(type, CollectionType::Type::SINGLE);
@@ -118,7 +116,7 @@ AttributeManagerFixture::buildAttribute(const vespalib::string &name, BasicType 
     for (const std::conditional_t<std::is_same_v<bool, ValueType>, bool, ValueType&> value : values) {
         uint32_t docId = 0;
         EXPECT_TRUE(attr->addDoc(docId));
-        EXPECT_NOT_EQUAL(0u, docId);
+        EXPECT_NE(0u, docId);
         attr->update(docId, value);
         attr->commit();
     }
@@ -126,28 +124,28 @@ AttributeManagerFixture::buildAttribute(const vespalib::string &name, BasicType 
 }
 
 void
-AttributeManagerFixture::buildStringAttribute(const vespalib::string &name,
-                                              std::vector<vespalib::string> values)
+AttributeManagerFixture::buildStringAttribute(const std::string &name,
+                                              std::vector<std::string> values)
 {
-    buildAttribute<StringAttribute, vespalib::string>(name, BasicType::Type::STRING, std::move(values));
+    buildAttribute<StringAttribute, std::string>(name, BasicType::Type::STRING, std::move(values));
 }
 
 void
-AttributeManagerFixture::buildFloatAttribute(const vespalib::string &name,
+AttributeManagerFixture::buildFloatAttribute(const std::string &name,
                                              std::vector<double> values)
 {
     buildAttribute<FloatingPointAttribute, double>(name, BasicType::Type::DOUBLE, std::move(values));
 }
 
 void
-AttributeManagerFixture::buildIntegerAttribute(const vespalib::string &name, BasicType type,
+AttributeManagerFixture::buildIntegerAttribute(const std::string &name, BasicType type,
                                                std::vector<IAttributeVector::largeint_t> values)
 {
     buildAttribute<IntegerAttribute, IAttributeVector::largeint_t>(name, type, std::move(values));
 }
 
 void
-AttributeManagerFixture::buildBoolAttribute(const vespalib::string &name,
+AttributeManagerFixture::buildBoolAttribute(const std::string &name,
                                             std::vector<bool> values)
 {
     buildAttribute<SingleBoolAttribute>(name, BasicType::BOOL, std::move(values));
@@ -155,7 +153,7 @@ AttributeManagerFixture::buildBoolAttribute(const vespalib::string &name,
 
 template <typename AttributeType, typename ValueType>
 void
-AttributeManagerFixture::buildArrayAttribute(const vespalib::string &name, BasicType type,
+AttributeManagerFixture::buildArrayAttribute(const std::string &name, BasicType type,
                                              std::vector<std::vector<ValueType>> values)
 {
     Config cfg(type, CollectionType::Type::ARRAY);
@@ -167,7 +165,7 @@ AttributeManagerFixture::buildArrayAttribute(const vespalib::string &name, Basic
     for (const auto &docValues : values) {
         uint32_t docId = 0;
         EXPECT_TRUE(attr->addDoc(docId));
-        EXPECT_NOT_EQUAL(0u, docId);
+        EXPECT_NE(0u, docId);
         for (const auto &value : docValues) {
             attr->append(docId, value, 1);
         }
@@ -177,60 +175,67 @@ AttributeManagerFixture::buildArrayAttribute(const vespalib::string &name, Basic
 }
 
 void
-AttributeManagerFixture::buildStringArrayAttribute(const vespalib::string &name,
-                                              std::vector<std::vector<vespalib::string>> values)
+AttributeManagerFixture::buildStringArrayAttribute(const std::string &name,
+                                              std::vector<std::vector<std::string>> values)
 {
-    buildArrayAttribute<StringAttribute, vespalib::string>(name, BasicType::Type::STRING, std::move(values));
+    buildArrayAttribute<StringAttribute, std::string>(name, BasicType::Type::STRING, std::move(values));
 }
 
 void
-AttributeManagerFixture::buildFloatArrayAttribute(const vespalib::string &name,
+AttributeManagerFixture::buildFloatArrayAttribute(const std::string &name,
                                              std::vector<std::vector<double>> values)
 {
     buildArrayAttribute<FloatingPointAttribute, double>(name, BasicType::Type::DOUBLE, std::move(values));
 }
 
 void
-AttributeManagerFixture::buildIntegerArrayAttribute(const vespalib::string &name,
+AttributeManagerFixture::buildIntegerArrayAttribute(const std::string &name,
                                                     BasicType type,
                                                     std::vector<std::vector<IAttributeVector::largeint_t>> values)
 {
     buildArrayAttribute<IntegerAttribute, IAttributeVector::largeint_t>(name, type, std::move(values));
 }
 
+std::string preserve_accurate_types_string(bool preserve_accurate_types) {
+    return preserve_accurate_types ? " with preserve accurate types" : " without preserve accurate types";
+}
 
-class Fixture
+std::string use_enum_opt_string(bool use_enum_optimization) {
+    return use_enum_optimization ? " with enum optimization" : " without enum optimization";
+}
+
+class AttributeNodeTest : public ::testing::Test
 {
-public:
+protected:
     AttributeManagerFixture             attrs;
     AttributeContext                    context;
-    Fixture();
-    ~Fixture();
-    std::unique_ptr<AttributeNode> makeNode(const vespalib::string &attributeName, bool useEnumOptimiation = false, bool preserveAccurateTypes = false);
-    void assertInts(std::vector<IAttributeVector::largeint_t> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
-    void assertBools(std::vector<bool> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
-    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName);
-    void assertFloats(std::vector<double> expVals, const vespalib::string &attributteName);
-    void assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
-    void assertStringArrays(std::vector<std::vector<vespalib::string>> expVals, const vespalib::string &attributteName, bool useEnumOptimization = false);
-    void assertFloatArrays(std::vector<std::vector<double>> expVals, const vespalib::string &attributteName);
+    AttributeNodeTest();
+    ~AttributeNodeTest() override;
+    std::unique_ptr<AttributeNode> makeNode(const std::string &attributeName, bool useEnumOptimiation = false, bool preserveAccurateTypes = false);
+    void assertInts(std::vector<IAttributeVector::largeint_t> expVals, const std::string &attributteName, bool preserveAccurateTypes = false);
+    void assertBools(std::vector<bool> expVals, const std::string &attributteName, bool preserveAccurateTypes = false);
+    void assertStrings(std::vector<std::string> expVals, const std::string &attributteName);
+    void assertFloats(std::vector<double> expVals, const std::string &attributteName);
+    void assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> expVals, const std::string &attributteName, bool preserveAccurateTypes = false);
+    void assertStringArrays(std::vector<std::vector<std::string>> expVals, const std::string &attributteName, bool useEnumOptimization = false);
+    void assertFloatArrays(std::vector<std::vector<double>> expVals, const std::string &attributteName);
 private:
-    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName, bool useEnumOptimization);
+    void assertStrings(std::vector<std::string> expVals, const std::string &attributteName, bool useEnumOptimization);
 };
 
-Fixture::Fixture()
+AttributeNodeTest::AttributeNodeTest()
     : attrs(),
       context(attrs.mgr)
 {
 }
 
-Fixture::~Fixture() = default;
+AttributeNodeTest::~AttributeNodeTest() = default;
 
 std::unique_ptr<AttributeNode>
-Fixture::makeNode(const vespalib::string &attributeName, bool useEnumOptimization, bool preserveAccurateTypes)
+AttributeNodeTest::makeNode(const std::string &attributeName, bool useEnumOptimization, bool preserveAccurateTypes)
 {
     std::unique_ptr<AttributeNode> node;
-    if (attributeName.find('{') == vespalib::string::npos) {
+    if (attributeName.find('{') == std::string::npos) {
         node = std::make_unique<AttributeNode>(attributeName);
     } else {
         node = makeAttributeMapLookupNode(attributeName);
@@ -244,8 +249,9 @@ Fixture::makeNode(const vespalib::string &attributeName, bool useEnumOptimizatio
 
 
 void
-Fixture::assertInts(std::vector<IAttributeVector::largeint_t> expVals, const vespalib::string &attributeName, bool preserveAccurateTypes)
+AttributeNodeTest::assertInts(std::vector<IAttributeVector::largeint_t> expVals, const std::string &attributeName, bool preserveAccurateTypes)
 {
+    SCOPED_TRACE("assertInts " + attributeName + preserve_accurate_types_string(preserveAccurateTypes));
     auto node = makeNode(attributeName, false, preserveAccurateTypes);
     uint32_t docId = 0;
     for (const auto &expDocVal : expVals) {
@@ -259,13 +265,14 @@ Fixture::assertInts(std::vector<IAttributeVector::largeint_t> expVals, const ves
             ASSERT_TRUE(result.inherits(IntegerResultNode::classId));
         }
         IAttributeVector::largeint_t docVal = result.getInteger();
-        EXPECT_EQUAL(expDocVal, docVal);
+        EXPECT_EQ(expDocVal, docVal);
     }
 }
 
 void
-Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attributeName, bool preserveAccurateTypes)
+AttributeNodeTest::assertBools(std::vector<bool> expVals, const std::string &attributeName, bool preserveAccurateTypes)
 {
+    SCOPED_TRACE("assertBools " + attributeName + preserve_accurate_types_string(preserveAccurateTypes));
     auto node = makeNode(attributeName, false, preserveAccurateTypes);
     uint32_t docId = 0;
     for (const auto expDocVal : expVals) {
@@ -277,19 +284,20 @@ Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attribut
         ASSERT_TRUE(result.inherits(BoolResultNode::classId));
         const BoolResultNode & bResult = static_cast<const BoolResultNode &>(result);
 
-        EXPECT_EQUAL(expDocVal, bResult.getBool());
+        EXPECT_EQ(expDocVal, bResult.getBool());
     }
 }
 
 void
-Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributeName) {
+AttributeNodeTest::assertStrings(std::vector<std::string> expVals, const std::string &attributeName) {
     assertStrings(expVals, attributeName, false);
     assertStrings(expVals, attributeName, true);
 }
 
 void
-Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributeName, bool useEnumOptimization)
+AttributeNodeTest::assertStrings(std::vector<std::string> expVals, const std::string &attributeName, bool useEnumOptimization)
 {
+    SCOPED_TRACE("assertStrings " + attributeName + use_enum_opt_string(useEnumOptimization));
     auto node = makeNode(attributeName, useEnumOptimization);
     uint32_t docId = 0;
     for (const auto &expDocVal : expVals) {
@@ -301,18 +309,19 @@ Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::st
             ASSERT_TRUE(result.inherits(EnumResultNode::classId));
             search::enumstore::EnumHandle enumVal(0);
             ASSERT_TRUE(node->getAttribute()->findEnum(expDocVal.c_str(), enumVal));
-            EXPECT_EQUAL(result.getEnum(), enumVal);
+            EXPECT_EQ(result.getEnum(), enumVal);
         } else {
             ASSERT_TRUE(result.inherits(StringResultNode::classId));
         }
-        vespalib::string docVal = stringValue(result, *node->getAttribute());
-        EXPECT_EQUAL(expDocVal, docVal);
+        std::string docVal = stringValue(result, *node->getAttribute());
+        EXPECT_EQ(expDocVal, docVal);
     }
 }
 
 void
-Fixture::assertFloats(std::vector<double> expVals, const vespalib::string &attributeName)
+AttributeNodeTest::assertFloats(std::vector<double> expVals, const std::string &attributeName)
 {
+    SCOPED_TRACE("assertFloats " + attributeName);
     auto node = makeNode(attributeName);
     uint32_t docId = 0;
     for (const auto &expDocVal : expVals) {
@@ -322,16 +331,17 @@ Fixture::assertFloats(std::vector<double> expVals, const vespalib::string &attri
         const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(FloatResultNode::classId));
         double docVal = result.getFloat();
-        EXPECT_EQUAL(std::isnan(expDocVal), std::isnan(docVal));
+        EXPECT_EQ(std::isnan(expDocVal), std::isnan(docVal));
         if (!std::isnan(expDocVal)) {
-            EXPECT_EQUAL(expDocVal, docVal);
+            EXPECT_EQ(expDocVal, docVal);
         }
     }
 }
 
 void
-Fixture::assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> expVals, const vespalib::string &attributeName, bool preserveAccurateTypes)
+AttributeNodeTest::assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> expVals, const std::string &attributeName, bool preserveAccurateTypes)
 {
+    SCOPED_TRACE("assertIntArrays " + attributeName + preserve_accurate_types_string(preserveAccurateTypes));
     auto node = makeNode(attributeName, false, preserveAccurateTypes);
     uint32_t docId = 0;
     for (const auto &expDocVals : expVals) {
@@ -350,13 +360,14 @@ Fixture::assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> 
         for (size_t i = 0; i < resultVector.size(); ++i) {
             docVals.push_back(resultVector.get(i).getInteger());
         }
-        EXPECT_EQUAL(expDocVals, docVals);
+        EXPECT_EQ(expDocVals, docVals);
     }
 }
 
 void
-Fixture::assertStringArrays(std::vector<std::vector<vespalib::string>> expVals, const vespalib::string &attributeName, bool useEnumOptimization)
+AttributeNodeTest::assertStringArrays(std::vector<std::vector<std::string>> expVals, const std::string &attributeName, bool useEnumOptimization)
 {
+    SCOPED_TRACE("assertStringArrays " + attributeName + use_enum_opt_string(useEnumOptimization));
     auto node = makeNode(attributeName, useEnumOptimization);
     uint32_t docId = 0;
     for (const auto &expDocVals : expVals) {
@@ -371,17 +382,18 @@ Fixture::assertStringArrays(std::vector<std::vector<vespalib::string>> expVals, 
         } else {
             ASSERT_TRUE(result.inherits(StringResultNodeVector::classId));
         }
-        std::vector<vespalib::string> docVals;
+        std::vector<std::string> docVals;
         for (size_t i = 0; i < resultVector.size(); ++i) {
             docVals.push_back(stringValue(resultVector.get(i), *node->getAttribute()));
         }
-        EXPECT_EQUAL(expDocVals, docVals);
+        EXPECT_EQ(expDocVals, docVals);
     }
 }
 
 void
-Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespalib::string &attributeName)
+AttributeNodeTest::assertFloatArrays(std::vector<std::vector<double>> expVals, const std::string &attributeName)
 {
+    SCOPED_TRACE("assertFloatArrays " + attributeName);
     auto node = makeNode(attributeName);
     uint32_t docId = 0;
     for (const auto &expDocVals : expVals) {
@@ -396,73 +408,73 @@ Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespa
         for (size_t i = 0; i < resultVector.size(); ++i) {
             docVals.push_back(resultVector.get(i).getFloat());
         }
-        EXPECT_EQUAL(expDocVals.size(), docVals.size());
+        EXPECT_EQ(expDocVals.size(), docVals.size());
         for (size_t i = 0; i < expDocVals.size(); ++i) {
-            EXPECT_EQUAL(std::isnan(expDocVals[i]), std::isnan(docVals[i]));
+            EXPECT_EQ(std::isnan(expDocVals[i]), std::isnan(docVals[i]));
             if (!std::isnan(expDocVals[i])) {
-                EXPECT_EQUAL(expDocVals[i], docVals[i]);
+                EXPECT_EQ(expDocVals[i], docVals[i]);
             }
         }
     }
 }
 
-TEST_F("test single values", Fixture)
+TEST_F(AttributeNodeTest, test_single_values)
 {
-    TEST_DO(f.assertBools({ true, false,false,true,true,false }, "bfield"));
-    TEST_DO(f.assertBools({ true, false,false,true,true,false }, "bfield", true));
-    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield"));
-    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield", true));
-    TEST_DO(f.assertStrings({ "n1", "" }, "sfield"));
-    TEST_DO(f.assertFloats({ 110.0, getUndefined<double>() }, "ffield"));
+    assertBools({ true, false,false,true,true,false }, "bfield");
+    assertBools({ true, false,false,true,true,false }, "bfield", true);
+    assertInts({ 10, getUndefined<int8_t>()}, "ifield");
+    assertInts({ 10, getUndefined<int8_t>()}, "ifield", true);
+    assertStrings({ "n1", "" }, "sfield");
+    assertFloats({ 110.0, getUndefined<double>() }, "ffield");
 }
 
-TEST_F("Test array values", Fixture)
+TEST_F(AttributeNodeTest, Test_array_values)
 {
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val"));
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val", true));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name", true));
-    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "array.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "smap.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "smap.value.name"));
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "smap.value.val"));
-    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "smap.value.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "map.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "map.value"));
+    assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val");
+    assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val", true);
+    assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name");
+    assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name", true);
+    assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "array.fval");
+    assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "smap.key");
+    assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "smap.value.name");
+    assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "smap.value.val");
+    assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "smap.value.fval");
+    assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "map.key");
+    assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "map.value");
 }
 
-TEST_F("test keyed values", Fixture)
+TEST_F(AttributeNodeTest, test_keyed_values)
 {
-    TEST_DO(f.assertStrings({"n1.1", "", ""}, "smap{\"k1.1\"}.name"));
-    TEST_DO(f.assertStrings({"n1.2", "", ""}, "smap{\"k1.2\"}.name"));
-    TEST_DO(f.assertStrings({"", "n2", ""}, "smap{\"k2\"}.name"));
-    TEST_DO(f.assertStrings({"", "", ""}, "smap{\"k5\"}.name"));
-    TEST_DO(f.assertFloats({ 110.0, getUndefined<double>(), getUndefined<double>()}, "smap{\"k1.1\"}.fval"));
-    TEST_DO(f.assertFloats({ getUndefined<double>(), getUndefined<double>(), getUndefined<double>()}, "smap{\"k1.2\"}.fval"));
-    TEST_DO(f.assertFloats({ getUndefined<double>(), 120.0, getUndefined<double>()}, "smap{\"k2\"}.fval"));
-    TEST_DO(f.assertFloats({ getUndefined<double>(), getUndefined<double>(), getUndefined<double>()}, "smap{\"k5\"}.fval"));
-    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k1.1\"}.val"));
-    TEST_DO(f.assertInts({ 11, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k1.2\"}.val"));
-    TEST_DO(f.assertInts({ getUndefined<int8_t>(), 20, getUndefined<int8_t>()}, "smap{\"k2\"}.val"));
-    TEST_DO(f.assertInts({ getUndefined<int8_t>(), getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k5\"}.val"));
-    TEST_DO(f.assertStrings({"n1.1", "", ""}, "map{\"k1.1\"}"));
-    TEST_DO(f.assertStrings({"n1.2", "", ""}, "map{\"k1.2\"}"));
-    TEST_DO(f.assertStrings({"", "n2", ""}, "map{\"k2\"}"));
-    TEST_DO(f.assertStrings({"", "", ""}, "map{\"k5\"}"));
+    assertStrings({"n1.1", "", ""}, "smap{\"k1.1\"}.name");
+    assertStrings({"n1.2", "", ""}, "smap{\"k1.2\"}.name");
+    assertStrings({"", "n2", ""}, "smap{\"k2\"}.name");
+    assertStrings({"", "", ""}, "smap{\"k5\"}.name");
+    assertFloats({ 110.0, getUndefined<double>(), getUndefined<double>()}, "smap{\"k1.1\"}.fval");
+    assertFloats({ getUndefined<double>(), getUndefined<double>(), getUndefined<double>()}, "smap{\"k1.2\"}.fval");
+    assertFloats({ getUndefined<double>(), 120.0, getUndefined<double>()}, "smap{\"k2\"}.fval");
+    assertFloats({ getUndefined<double>(), getUndefined<double>(), getUndefined<double>()}, "smap{\"k5\"}.fval");
+    assertInts({ 10, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k1.1\"}.val");
+    assertInts({ 11, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k1.2\"}.val");
+    assertInts({ getUndefined<int8_t>(), 20, getUndefined<int8_t>()}, "smap{\"k2\"}.val");
+    assertInts({ getUndefined<int8_t>(), getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k5\"}.val");
+    assertStrings({"n1.1", "", ""}, "map{\"k1.1\"}");
+    assertStrings({"n1.2", "", ""}, "map{\"k1.2\"}");
+    assertStrings({"", "n2", ""}, "map{\"k2\"}");
+    assertStrings({"", "", ""}, "map{\"k5\"}");
 }
 
-TEST_F("test indirectly keyed values", Fixture)
+TEST_F(AttributeNodeTest, test_indirectly_keyed_values)
 {
-    TEST_DO(f.assertStrings({"n1.2", "n2", ""}, "map{attribute(keyfield1)}"));
-    TEST_DO(f.assertStrings({"n1.1", "", ""}, "map{attribute(keyfield2)}"));
-    TEST_DO(f.assertStrings({"n1.2", "n2", ""}, "smap{attribute(keyfield1)}.name"));
-    TEST_DO(f.assertStrings({"n1.1", "", ""}, "smap{attribute(keyfield2)}.name"));
-    TEST_DO(f.assertFloats({ getUndefined<double>(), 120.0, getUndefined<double>()}, "smap{attribute(keyfield1)}.fval"));
-    TEST_DO(f.assertFloats({ 110.0, getUndefined<double>(), getUndefined<double>()}, "smap{attribute(keyfield2)}.fval"));
-    TEST_DO(f.assertInts({ 11, 20, getUndefined<int8_t>()}, "smap{attribute(keyfield1)}.val"));
-    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{attribute(keyfield2)}.val"));
+    assertStrings({"n1.2", "n2", ""}, "map{attribute(keyfield1)}");
+    assertStrings({"n1.1", "", ""}, "map{attribute(keyfield2)}");
+    assertStrings({"n1.2", "n2", ""}, "smap{attribute(keyfield1)}.name");
+    assertStrings({"n1.1", "", ""}, "smap{attribute(keyfield2)}.name");
+    assertFloats({ getUndefined<double>(), 120.0, getUndefined<double>()}, "smap{attribute(keyfield1)}.fval");
+    assertFloats({ 110.0, getUndefined<double>(), getUndefined<double>()}, "smap{attribute(keyfield2)}.fval");
+    assertInts({ 11, 20, getUndefined<int8_t>()}, "smap{attribute(keyfield1)}.val");
+    assertInts({ 10, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{attribute(keyfield2)}.val");
 }
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

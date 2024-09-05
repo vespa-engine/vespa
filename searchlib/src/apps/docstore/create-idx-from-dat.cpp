@@ -14,7 +14,7 @@ using namespace search;
 class CreateIdxFileFromDatApp
 {
     void usage(const char *self);
-    int createIdxFile(const vespalib::string & datFileName, const vespalib::string & idxFileName);
+    int createIdxFile(const std::string & datFileName, const std::string & idxFileName);
 public:
     int main(int argc, char **argv);
 };
@@ -86,7 +86,7 @@ generate(uint64_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size
 }
 
 }
-int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName, const vespalib::string & idxFileName)
+int CreateIdxFileFromDatApp::createIdxFile(const std::string & datFileName, const std::string & idxFileName)
 {
     MMapRandRead datFile(datFileName, 0, 0);
     int64_t fileSize = datFile.getSize();
@@ -155,10 +155,10 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
 int
 CreateIdxFileFromDatApp::main(int argc, char **argv)
 {
-    vespalib::string cmd;
+    std::string cmd;
     if (argc == 3) {
-        vespalib::string datFile(argv[1]);
-        vespalib::string idxfile(argv[2]);
+        std::string datFile(argv[1]);
+        std::string idxfile(argv[2]);
         createIdxFile(datFile, idxfile);
     } else {
         fprintf(stderr, "Too few arguments\n");

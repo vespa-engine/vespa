@@ -7,8 +7,8 @@
 
 namespace metrics {
 
-vespalib::string
-StateApiAdapter::getMetrics(const vespalib::string &consumer, ExpositionFormat format)
+std::string
+StateApiAdapter::getMetrics(const std::string &consumer, ExpositionFormat format)
 {
     MetricLockGuard guard(_manager.getMetricLock());
     auto periods = _manager.getSnapshotPeriods(guard);
@@ -38,8 +38,8 @@ StateApiAdapter::getMetrics(const vespalib::string &consumer, ExpositionFormat f
     return out.str();
 }
 
-vespalib::string
-StateApiAdapter::getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format)
+std::string
+StateApiAdapter::getTotalMetrics(const std::string &consumer, ExpositionFormat format)
 {
     _manager.updateMetrics();
     MetricLockGuard guard(_manager.getMetricLock());

@@ -39,7 +39,7 @@ using DocumenttypesConfigSP = DocumentDBConfig::DocumenttypesConfigSP;
 using vespalib::nbostream;
 using vespalib::HwInfo;
 
-vespalib::string myId("myconfigid");
+std::string myId("myconfigid");
 
 DocumentDBConfig::SP
 makeBaseConfigSnapshot(FNET_Transport & transport)

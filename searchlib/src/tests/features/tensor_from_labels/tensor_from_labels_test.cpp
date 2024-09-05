@@ -40,7 +40,7 @@ Value::UP make_tensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);
 }
 
-Value::UP make_empty(const vespalib::string &type) {
+Value::UP make_empty(const std::string &type) {
     return make_tensor(TensorSpec(type));
 }
 
@@ -85,7 +85,7 @@ struct ExecFixture
 {
     BlueprintFactory factory;
     FtFeatureTest test;
-    ExecFixture(const vespalib::string &feature)
+    ExecFixture(const std::string &feature)
         : factory(),
           test(factory, feature)
     {

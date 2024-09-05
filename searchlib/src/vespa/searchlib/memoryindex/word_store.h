@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/datastore/datastore.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::memoryindex {
 

@@ -21,7 +21,7 @@ public:
     const ::EVP_PKEY* native_key() const noexcept { return _pkey.get(); }
 
     Type type() const noexcept override { return _type; }
-    vespalib::string private_to_pem() const override;
+    std::string private_to_pem() const override;
 
     static std::shared_ptr<PrivateKeyImpl> generate_openssl_p256_ec_key();
 };
@@ -35,7 +35,7 @@ public:
     ::X509* native_cert() noexcept { return _cert.get(); }
     const ::X509* native_cert() const noexcept { return _cert.get(); }
 
-    vespalib::string to_pem() const override;
+    std::string to_pem() const override;
 
     // Generates an X509 certificate using a SHA-256 digest
     static std::shared_ptr<X509CertificateImpl> generate_openssl_x509_from(Params params);

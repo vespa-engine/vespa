@@ -169,12 +169,12 @@ GenericAccelrator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, 
 
 double
 GenericAccelrator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
-    return squaredEuclideanDistanceT<float, 2>(a, b, sz);
+    return squaredEuclideanDistanceT<float, 16>(a, b, sz);
 }
 
 double
 GenericAccelrator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
-    return squaredEuclideanDistanceT<double, 2>(a, b, sz);
+    return squaredEuclideanDistanceT<double, 16>(a, b, sz);
 }
 
 void

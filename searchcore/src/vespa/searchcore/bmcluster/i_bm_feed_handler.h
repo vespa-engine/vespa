@@ -3,7 +3,7 @@
 #pragma once
 
 #include <memory>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace document {
 class Bucket;
@@ -30,7 +30,7 @@ public:
     virtual void get(const document::Bucket& bucket, std::string_view field_set_string, const document::DocumentId& document_id, PendingTracker& tracker) = 0;
     virtual void attach_bucket_info_queue(PendingTracker& tracker) = 0;
     virtual uint32_t get_error_count() const = 0;
-    virtual const vespalib::string &get_name() const = 0;
+    virtual const std::string &get_name() const = 0;
     virtual bool manages_timestamp() const = 0;
 };
 

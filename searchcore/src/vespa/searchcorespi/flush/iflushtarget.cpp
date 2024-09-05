@@ -4,11 +4,11 @@
 
 namespace searchcorespi {
 
-IFlushTarget::IFlushTarget(const vespalib::string &name) noexcept
+IFlushTarget::IFlushTarget(const std::string &name) noexcept
     : IFlushTarget(name, Type::OTHER, Component::OTHER)
 { }
 
-IFlushTarget::IFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept
+IFlushTarget::IFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept
     : _name(name),
       _type(type),
       _component(component)
@@ -16,7 +16,7 @@ IFlushTarget::IFlushTarget(const vespalib::string &name, const Type &type, const
 
 IFlushTarget::~IFlushTarget() = default;
 
-LeafFlushTarget::LeafFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept
+LeafFlushTarget::LeafFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept
     : IFlushTarget(name, type, component)
 {}
 

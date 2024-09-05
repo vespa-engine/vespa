@@ -18,7 +18,7 @@ class RawMultiValueReadView : public IMultiValueReadView<MultiValueType>
 public:
     RawMultiValueReadView(MultiValueMappingReadView<MultiValueType> mv_mapping_read_view);
     ~RawMultiValueReadView() override;
-    vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t docid) const override;
+    std::span<const MultiValueType> get_values(uint32_t docid) const override;
 };
 
 }

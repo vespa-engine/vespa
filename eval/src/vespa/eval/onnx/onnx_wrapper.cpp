@@ -4,17 +4,16 @@
 #include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/dense_cells_value.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/unconstify_span.h>
+#include <span>
 #include <type_traits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.onnx_wrapper");
 
-using vespalib::ArrayRef;
-using vespalib::ConstArrayRef;
 
 using vespalib::make_string_short::fmt;
 
@@ -55,7 +54,7 @@ using MyTypify = TypifyValue<TypifyCellType,TypifyOnnxElementType>;
 //-----------------------------------------------------------------------------
 
 struct TypeToString {
-    template <typename T> static vespalib::string invoke() { return getClassName<T>(); }
+    template <typename T> static std::string invoke() { return getClassName<T>(); }
 };
 
 struct IsSameType {
@@ -89,7 +88,7 @@ CreateEmptyOnnxTensor create_empty_onnx_tensor;
 struct CreateVespaTensorRef {
     template <typename T> static Value::UP invoke(const ValueType &type_ref, Ort::Value &value) {
         size_t num_cells = type_ref.dense_subspace_size();
-        ConstArrayRef<T> cells(value.GetTensorMutableData<T>(), num_cells);
+        std::span<const T> cells(value.GetTensorMutableData<T>(), num_cells);
         return std::make_unique<DenseValueView>(type_ref, TypedCells(cells));
     }
     Value::UP operator()(const ValueType &type_ref, Ort::Value &value) {
@@ -121,7 +120,7 @@ ClearVespaTensor clear_vespa_tensor;
 
 //-----------------------------------------------------------------------------
 
-template <typename E> vespalib::string type_name(E enum_value) {
+template <typename E> std::string type_name(E enum_value) {
     return typify_invoke<1,MyTypify,TypeToString>(enum_value);
 }
 
@@ -189,7 +188,7 @@ std::vector<Onnx::DimSize> make_dimensions(const Ort::ConstTensorTypeAndShapeInf
         if (shape[i] > 0) {
             result.emplace_back(shape[i]);
         } else if (symbolic_sizes[i] != nullptr) {
-            result.emplace_back(vespalib::string(symbolic_sizes[i]));
+            result.emplace_back(std::string(symbolic_sizes[i]));
         } else {
             result.emplace_back();
         }
@@ -200,7 +199,7 @@ std::vector<Onnx::DimSize> make_dimensions(const Ort::ConstTensorTypeAndShapeInf
 Onnx::TensorInfo make_tensor_info(const OnnxString &name, const Ort::TypeInfo &type_info) {
     auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
     auto element_type = tensor_info.GetElementType();
-    return Onnx::TensorInfo{vespalib::string(name.get()), make_dimensions(tensor_info), make_element_type(element_type)};
+    return Onnx::TensorInfo{std::string(name.get()), make_dimensions(tensor_info), make_element_type(element_type)};
 }
 
 Onnx::TensorType get_type_of(const Ort::Value &value) {
@@ -225,7 +224,7 @@ std::vector<int64_t> extract_sizes(const ValueType &type) {
 
 } // <unnamed>
 
-vespalib::string
+std::string
 Onnx::DimSize::as_string() const
 {
     if (is_known()) {
@@ -237,10 +236,10 @@ Onnx::DimSize::as_string() const
     }
 }
 
-vespalib::string
+std::string
 Onnx::TensorInfo::type_as_string() const
 {
-    vespalib::string res = type_name(elements);
+    std::string res = type_name(elements);
     for (const auto &dim: dimensions) {
         res += dim.as_string();
     }
@@ -249,10 +248,10 @@ Onnx::TensorInfo::type_as_string() const
 
 Onnx::TensorInfo::~TensorInfo() = default;
 
-vespalib::string
+std::string
 Onnx::TensorType::type_as_string() const
 {
-    vespalib::string res = type_name(elements);
+    std::string res = type_name(elements);
     for (const auto &size: dimensions) {
         res += DimSize(size).as_string();
     }
@@ -365,10 +364,10 @@ Onnx::WirePlanner::bind_input_type(const ValueType &vespa_in, const TensorInfo &
     return true;
 }
 
-std::map<vespalib::string,size_t>
+std::map<std::string,size_t>
 Onnx::WirePlanner::get_bound_sizes(const TensorInfo &onnx_in) const
 {
-    std::map<vespalib::string,size_t> result;
+    std::map<std::string,size_t> result;
     for (const auto &dim: onnx_in.dimensions) {
         if (dim.is_symbolic()) {
             auto pos = _symbolic_sizes.find(dim.name);
@@ -650,7 +649,7 @@ Onnx::extract_meta_data()
     }
 }
 
-Onnx::Onnx(const vespalib::string &model_file, Optimize optimize)
+Onnx::Onnx(const std::string &model_file, Optimize optimize)
     : _shared(Shared::get()),
       _options(),
       _session(nullptr),

@@ -14,7 +14,7 @@ private:
     ME                       &_target;
     Method                    _method;
     std::unique_ptr<config::LegacySubscriber> _subscriber;
-    vespalib::string          _cfgId;
+    std::string          _cfgId;
 
     SubscriptionProxyNg(const SubscriptionProxyNg&);
     SubscriptionProxyNg &operator=(const SubscriptionProxyNg&);

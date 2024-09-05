@@ -186,7 +186,7 @@ TEST("require that source spec parses compression type") {
 
 TEST("require that vespa version is set") {
     VespaVersion vespaVersion = VespaVersion::getCurrentVersion();
-    vespalib::string str = vespaVersion.toString();
+    std::string str = vespaVersion.toString();
 
     EXPECT_TRUE(str.length() > 0);
 }

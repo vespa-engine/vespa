@@ -9,8 +9,6 @@
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <algorithm>
 
-using vespalib::ArrayRef;
-using vespalib::ConstArrayRef;
 using vespalib::MemoryUsage;
 using vespalib::SharedStringRepo;
 using vespalib::StringIdVector;
@@ -53,7 +51,7 @@ TensorBufferOperations::TensorBufferOperations(const vespalib::eval::ValueType& 
 TensorBufferOperations::~TensorBufferOperations() = default;
 
 uint32_t
-TensorBufferOperations::get_num_subspaces_and_flag(ConstArrayRef<char> buf) const noexcept
+TensorBufferOperations::get_num_subspaces_and_flag(std::span<const char> buf) const noexcept
 {
     assert(buf.size() >= get_num_subspaces_size());
     const uint32_t& num_subspaces_and_flag_ref = *reinterpret_cast<const uint32_t*>(buf.data());
@@ -61,14 +59,14 @@ TensorBufferOperations::get_num_subspaces_and_flag(ConstArrayRef<char> buf) cons
 }
 
 void
-TensorBufferOperations::set_skip_reclaim_labels(ArrayRef<char> buf, uint32_t num_subspaces_and_flag) const noexcept
+TensorBufferOperations::set_skip_reclaim_labels(std::span<char> buf, uint32_t num_subspaces_and_flag) const noexcept
 {
     uint32_t& num_subspaces_and_flag_ref = *reinterpret_cast<uint32_t*>(buf.data());
     vespalib::atomic::store_ref_relaxed(num_subspaces_and_flag_ref, (num_subspaces_and_flag | skip_reclaim_labels_mask));
 }
 
 void
-TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::Value& tensor)
+TensorBufferOperations::store_tensor(std::span<char> buf, const vespalib::eval::Value& tensor)
 {
     uint32_t num_subspaces = tensor.index().size();
     assert(num_subspaces <= num_subspaces_mask);
@@ -112,11 +110,11 @@ TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::V
 }
 
 std::unique_ptr<vespalib::eval::Value>
-TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::eval::ValueType& tensor_type) const
+TensorBufferOperations::make_fast_view(std::span<const char> buf, const vespalib::eval::ValueType& tensor_type) const
 {
     auto num_subspaces = get_num_subspaces(buf);
     assert(buf.size() >= get_buffer_size(num_subspaces));
-    ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
+    std::span<const string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     auto cells_size = num_subspaces * _subspace_type.size();
     auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
     auto aligner = select_aligner(cells_mem_size);
@@ -127,7 +125,7 @@ TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::
 }
 
 void
-TensorBufferOperations::copied_labels(ArrayRef<char> buf) const
+TensorBufferOperations::copied_labels(std::span<char> buf) const
 {
     auto num_subspaces_and_flag = get_num_subspaces_and_flag(buf);
     if (!get_skip_reclaim_labels(num_subspaces_and_flag)) {
@@ -136,7 +134,7 @@ TensorBufferOperations::copied_labels(ArrayRef<char> buf) const
 }
 
 void
-TensorBufferOperations::reclaim_labels(ArrayRef<char> buf) const
+TensorBufferOperations::reclaim_labels(std::span<char> buf) const
 {
     auto num_subspaces_and_flag = get_num_subspaces_and_flag(buf);
     if (get_skip_reclaim_labels(num_subspaces_and_flag)) {
@@ -144,18 +142,18 @@ TensorBufferOperations::reclaim_labels(ArrayRef<char> buf) const
     }
     set_skip_reclaim_labels(buf, num_subspaces_and_flag);
     auto num_subspaces = get_num_subspaces(num_subspaces_and_flag);
-    ArrayRef<string_id> labels(reinterpret_cast<string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
+    std::span<string_id> labels(reinterpret_cast<string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     for (auto& label : labels) {
         SharedStringRepo::unsafe_reclaim(label);
     }
 }
 
 void
-TensorBufferOperations::encode_stored_tensor(ConstArrayRef<char> buf, const vespalib::eval::ValueType& tensor_type, vespalib::nbostream& target) const
+TensorBufferOperations::encode_stored_tensor(std::span<const char> buf, const vespalib::eval::ValueType& tensor_type, vespalib::nbostream& target) const
 {
     auto num_subspaces = get_num_subspaces(buf);
     assert(buf.size() >= get_buffer_size(num_subspaces));
-    ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
+    std::span<const string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     auto cells_size = num_subspaces * _subspace_type.size();
     auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
     auto aligner = select_aligner(cells_mem_size);

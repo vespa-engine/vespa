@@ -17,7 +17,7 @@ class BoundHammingDistance final : public BoundDistanceFunction {
 private:
     using FloatType = VectorStoreType::FloatType;
     mutable VectorStoreType _tmpSpace;
-    const vespalib::ConstArrayRef<FloatType> _lhs_vector;
+    const std::span<const FloatType> _lhs_vector;
 public:
     explicit BoundHammingDistance(TypedCells lhs)
         : _tmpSpace(lhs.size),
@@ -25,7 +25,7 @@ public:
     {}
     double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs_vector.size();
-        vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
+        std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         if constexpr (std::is_same<Int8Float, FloatType>::value) {
             return (double) vespalib::binary_hamming_distance(_lhs_vector.data(), rhs_vector.data(), sz);
         } else {

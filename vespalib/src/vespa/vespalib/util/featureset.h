@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/memory.h>
 #include <map>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace vespalib {
 
@@ -49,7 +49,7 @@ public:
         }
     };
 
-    using string = vespalib::string;
+    using string = std::string;
     using StringVector = std::vector<string>;
 private:
     StringVector _names;
@@ -158,7 +158,7 @@ public:
 // An even simpler feature container. Used to pass match features around.
 struct FeatureValues {
     using Value = FeatureSet::Value;
-    std::vector<vespalib::string> names;
+    std::vector<std::string> names;
     std::vector<Value> values; // values.size() == names.size() * N
     FeatureValues() noexcept;
     FeatureValues(const FeatureValues& rhs);

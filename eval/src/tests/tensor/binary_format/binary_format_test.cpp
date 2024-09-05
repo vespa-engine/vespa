@@ -21,21 +21,21 @@ using namespace vespalib::slime::convenience;
 
 using vespalib::make_string_short::fmt;
 
-vespalib::string get_source_dir() {
+std::string get_source_dir() {
     const char *dir = getenv("SOURCE_DIRECTORY");
     return (dir ? dir : ".");
 }
-vespalib::string source_dir = get_source_dir();
-vespalib::string module_src_path = source_dir + "/../../../../";
-vespalib::string module_build_path = "../../../../";
+std::string source_dir = get_source_dir();
+std::string module_src_path = source_dir + "/../../../../";
+std::string module_build_path = "../../../../";
 
 const ValueBuilderFactory &simple = SimpleValueBuilderFactory::get();
 const ValueBuilderFactory &streamed = StreamedValueBuilderFactory::get();
 const ValueBuilderFactory &fast = FastValueBuilderFactory::get();
 
 TEST(TensorBinaryFormatTest, tensor_binary_format_test_spec_can_be_generated) {
-    vespalib::string spec = module_src_path + "src/apps/make_tensor_binary_format_test_spec/test_spec.json";
-    vespalib::string binary = module_build_path + "src/apps/make_tensor_binary_format_test_spec/eval_make_tensor_binary_format_test_spec_app";
+    std::string spec = module_src_path + "src/apps/make_tensor_binary_format_test_spec/test_spec.json";
+    std::string binary = module_build_path + "src/apps/make_tensor_binary_format_test_spec/eval_make_tensor_binary_format_test_spec_app";
     EXPECT_EQ(system(fmt("%s > binary_test_spec.json", binary.c_str()).c_str()), 0);
     EXPECT_EQ(system(fmt("diff -u %s binary_test_spec.json", spec.c_str()).c_str()), 0);
 }
@@ -125,7 +125,7 @@ void test_binary_format_spec(Cursor &test) {
 }
 
 TEST(TensorBinaryFormatTest, tensor_binary_format_test_spec) {
-    vespalib::string path = module_src_path;
+    std::string path = module_src_path;
     path.append("src/apps/make_tensor_binary_format_test_spec/test_spec.json");
     MappedFileInput file(path);
     EXPECT_TRUE(file.valid());

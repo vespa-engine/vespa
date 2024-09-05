@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace vespalib {
 
@@ -28,14 +29,14 @@ public:
      * Samples are taken until two consecutive memory stats are similar given the size epsilon.
      * This ensures a somewhat consistent memory stats snapshot.
      */
-    static ProcessMemoryStats create(uint64_t sizeEpsilon = 1 * 1024 * 1024);
+    static ProcessMemoryStats create(double epsilon);
     uint64_t getMappedVirt() const { return _mapped_virt; }
     uint64_t getMappedRss() const { return _mapped_rss; }
     uint64_t getAnonymousVirt() const { return _anonymous_virt; }
     uint64_t getAnonymousRss() const { return _anonymous_rss; }
     uint64_t getMappingsCount() const { return _mappings_count; }
-    bool similarTo(const ProcessMemoryStats &rhs, uint64_t sizeEpsilon) const;
-    vespalib::string toString() const;
+    bool similarTo(const ProcessMemoryStats &rhs, double epsilon) const;
+    std::string toString() const;
     bool operator < (const ProcessMemoryStats & rhs) const { return _anonymous_rss < rhs._anonymous_rss; }
 
     /** for unit tests only */

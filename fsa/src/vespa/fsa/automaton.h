@@ -10,13 +10,13 @@
 
 #pragma once
 
+#include "blob.h"
+#include "fsa.h"
+
+#include <cassert>
 #include <map>
 #include <list>
 #include <string>
-#include <cassert>
-
-#include "blob.h"
-#include "fsa.h"
 
 namespace fsa {
 

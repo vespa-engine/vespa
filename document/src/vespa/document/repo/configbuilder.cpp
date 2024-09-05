@@ -6,7 +6,7 @@
 
 namespace document::config_builder {
 
-int32_t createFieldId(const vespalib::string &name, int32_t type) {
+int32_t createFieldId(const std::string &name, int32_t type) {
     StructDataType dummy("dummy", type);
     Field f(name, dummy);
     return f.getId();
@@ -32,7 +32,7 @@ void DatatypeConfig::addNestedType(const TypeOrId &t) {
 }
 
 Struct &
-Struct::addTensorField(const vespalib::string &name, const vespalib::string &spec) {
+Struct::addTensorField(const std::string &name, const std::string &spec) {
     sstruct.field.resize(sstruct.field.size() + 1);
     auto &field = sstruct.field.back();
     field.name = name;
@@ -55,14 +55,14 @@ void addType(const DatatypeConfig &type,
 }
 
 DocTypeRep &
-DocTypeRep::annotationType(int32_t id, const vespalib::string &name, const DatatypeConfig &type) {
+DocTypeRep::annotationType(int32_t id, const std::string &name, const DatatypeConfig &type) {
     addType(type, doc_type);
     return annotationType(id, name, type.id);
 }
 
 
 DocTypeRep
-DocumenttypesConfigBuilderHelper::document(int32_t id, const vespalib::string &name,
+DocumenttypesConfigBuilderHelper::document(int32_t id, const std::string &name,
                                            const DatatypeConfig &header,
                                            const DatatypeConfig &body) {
     assert(header.type == DatatypeConfig::Type::STRUCT);

@@ -7,8 +7,8 @@ namespace proton::test {
 
 struct DummyFlushTarget : public searchcorespi::LeafFlushTarget
 {
-    DummyFlushTarget(const vespalib::string &name) noexcept;
-    DummyFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept;
+    DummyFlushTarget(const std::string &name) noexcept;
+    DummyFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept;
     ~DummyFlushTarget() override;
     MemoryGain getApproxMemoryGain() const override { return MemoryGain(0, 0); }
     DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }

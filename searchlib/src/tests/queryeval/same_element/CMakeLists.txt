@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_same_element_test_app TEST
     same_element_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_same_element_test_app COMMAND searchlib_same_element_test_app)

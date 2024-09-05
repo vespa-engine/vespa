@@ -77,7 +77,7 @@ class FileDistributionRpcServer {
     private static final int baseErrorCode = 0x10000;
     private static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
 
-    private static final int fileReferenceDoesNotExists = baseFileProviderErrorCode;
+    private static final int fileReferenceNotFound = baseFileProviderErrorCode;
 
     private void getFile(Request req) {
         req.detach();
@@ -112,8 +112,8 @@ class FileDistributionRpcServer {
             req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
             log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
         } else {
-            log.log(Level.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
-            req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
+            log.log(Level.INFO, "File reference '" + fileReference.value() + "' not found");
+            req.setError(fileReferenceNotFound, "File reference '" + fileReference.value() + "' not found");
         }
 
         req.returnRequest();

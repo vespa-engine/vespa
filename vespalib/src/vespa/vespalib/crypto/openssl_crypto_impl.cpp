@@ -42,10 +42,10 @@ struct X509ExtensionDeleter {
 
 using X509ExtensionPtr = std::unique_ptr<::X509_EXTENSION, X509ExtensionDeleter>;
 
-vespalib::string bio_to_string(BIO& bio) {
+std::string bio_to_string(BIO& bio) {
     int written = BIO_pending(&bio);
     assert(written >= 0);
-    vespalib::string pem_str(written, '\0');
+    std::string pem_str(written, '\0');
     if (::BIO_read(&bio, &pem_str[0], written) != written) {
         throw CryptoException("BIO_read did not copy all PEM data");
     }
@@ -62,7 +62,7 @@ BioPtr new_memory_bio() {
 
 } // anonymous namespace
 
-vespalib::string
+std::string
 PrivateKeyImpl::private_to_pem() const {
     BioPtr bio = new_memory_bio();
     // TODO this API is const-broken even on 1.1.1, revisit in the future...
@@ -205,7 +205,7 @@ assign_subject_distinguished_name(::X509_NAME& name, const X509Certificate::Dist
 // and who knows what terrible things it might do to it (we must also ensure null
 // termination of the string).
 void
-add_v3_ext(::X509& subject, ::X509& issuer, int nid, vespalib::string value) {
+add_v3_ext(::X509& subject, ::X509& issuer, int nid, std::string value) {
     // We are now reaching a point where the API we need to use is not properly documented.
     // This functionality is inferred from https://opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
     ::X509V3_CTX ctx;
@@ -226,10 +226,10 @@ add_v3_ext(::X509& subject, ::X509& issuer, int nid, vespalib::string value) {
 
 void
 add_any_subject_alternate_names(::X509& subject, ::X509& issuer,
-                                     const std::vector<vespalib::string>& sans) {
+                                     const std::vector<std::string>& sans) {
     // There can only be 1 SAN entry in a valid cert, but it can have multiple
     // logical entries separated by commas in a single string.
-    vespalib::string san_csv;
+    std::string san_csv;
     for (auto& san : sans) {
         if (!san_csv.empty()) {
             san_csv += ',';
@@ -300,7 +300,7 @@ X509CertificateImpl::generate_openssl_x509_from(Params params) {
     return std::make_shared<X509CertificateImpl>(std::move(cert));
 }
 
-vespalib::string
+std::string
 X509CertificateImpl::to_pem() const {
     BioPtr bio = new_memory_bio();
     // TODO this API is const-broken, revisit in the future...

@@ -30,7 +30,7 @@ getSpanString(std::string_view s, const Span &span)
     return {s.data() + span.from(), static_cast<size_t>(span.length())};
 }
 
-vespalib::string dummy_field_name;
+std::string dummy_field_name;
 
 }
 

@@ -57,7 +57,7 @@ SearchContext::fetchPostings(const queryeval::ExecuteInfo& execInfo, bool strict
     }
 }
 
-const vespalib::string&
+const std::string&
 SearchContext::attributeName() const
 {
     return _attr.getName();

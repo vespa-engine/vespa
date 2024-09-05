@@ -7,15 +7,15 @@ package com.yahoo.vespa.clustercontroller.utils.communication.async;
 public abstract class RedirectedAsyncOperation<S, T> implements AsyncOperation<T> {
 
     protected final AsyncOperation<S> source;
-    private final AsyncOperationListenImpl<T> listenImpl;
+    private AsyncOperationListenImpl<T> listenImpl;
 
     public RedirectedAsyncOperation(AsyncOperation<S> source) {
         this.source = source;
+    }
+
+    void listen() {
         this.listenImpl = new AsyncOperationListenImpl<>(this);
-        source.register(new AsyncCallback<S>() {
-            @Override
-            public void done(AsyncOperation<S> op) { notifyDone(); }
-        });
+        source.register(op -> notifyDone());
     }
 
     private void notifyDone() {

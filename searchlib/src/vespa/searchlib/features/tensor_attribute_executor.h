@@ -5,7 +5,7 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace search::tensor { class ITensorAttribute; }
 namespace search::features {

@@ -12,7 +12,7 @@ namespace search::attribute {
  **/
 class IAttributeContext : public IAttributeExecutor {
 public:
-    using string = vespalib::string;
+    using string = std::string;
     /** Convenience typedefs **/
     using UP = std::unique_ptr<IAttributeContext>;
 

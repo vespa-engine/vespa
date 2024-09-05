@@ -39,7 +39,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.emplace_back(tensor_function::inject(type, param_idx, stash));
     }
 
-    void make_reduce(const Node &, Aggr aggr, const std::vector<vespalib::string> &dimensions) {
+    void make_reduce(const Node &, Aggr aggr, const std::vector<std::string> &dimensions) {
         assert(stack.size() >= 1);
         const auto &a = stack.back().get();
         stack.back() = tensor_function::reduce(a, aggr, dimensions, stash);
@@ -73,7 +73,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::merge(a, b, function, stash);
     }
 
-    void make_concat(const Node &, const vespalib::string &dimension) {
+    void make_concat(const Node &, const std::string &dimension) {
         assert(stack.size() >= 2);
         const auto &b = stack.back().get();
         stack.pop_back();
@@ -129,7 +129,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void make_peek(const TensorPeek &node) {
         assert(stack.size() >= node.num_children());
         const TensorFunction &param = stack[stack.size()-node.num_children()];
-        std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
+        std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
         for (auto pos = node.dim_list().rbegin(); pos != node.dim_list().rend(); ++pos) {
             if (pos->second.is_expr()) {
                 spec.emplace(pos->first, stack.back());
@@ -148,7 +148,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::peek(param, spec, stash);
     }
 
-    void make_rename(const Node &, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+    void make_rename(const Node &, const std::vector<std::string> &from, const std::vector<std::string> &to) {
         assert(stack.size() >= 1);
         const auto &a = stack.back().get();
         stack.back() = tensor_function::rename(a, from, to, stash);

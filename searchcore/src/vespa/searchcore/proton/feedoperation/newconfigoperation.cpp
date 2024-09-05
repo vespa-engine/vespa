@@ -31,7 +31,7 @@ NewConfigOperation::deserialize(vespalib::nbostream &is,
     _streamHandler.deserializeConfig(getSerialNum(), is);
 }
 
-vespalib::string NewConfigOperation::toString() const {
+std::string NewConfigOperation::toString() const {
     return make_string("NewConfig(serialNum=%" PRIu64 ")", getSerialNum());
 }
 

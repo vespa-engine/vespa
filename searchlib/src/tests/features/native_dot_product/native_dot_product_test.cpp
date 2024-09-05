@@ -39,7 +39,7 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) override {
+    virtual void visitDumpFeature(const std::string &) override {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
@@ -84,7 +84,7 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     std::vector<TermFieldHandle> barHandles;
     RankFixture(const std::vector<uint32_t> &fooWeights,
                 const std::vector<uint32_t> &barWeights,
-                const vespalib::string &featureName = fooFeatureName)
+                const std::string &featureName = fooFeatureName)
         : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
           mdl(), match_data(), rankProgram(), fooHandles(), barHandles()
     {
@@ -143,25 +143,25 @@ TEST_FFF("require that no features are dumped", NativeDotProductBlueprint, Index
 TEST_FF("require that setup can be done on index field", NativeDotProductBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "foo")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "foo")));
 }
 
 TEST_FF("require that setup can be done on attribute field", NativeDotProductBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(bar)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "bar")));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "bar")));
 }
 
 TEST_FF("require that setup fails for unknown field", NativeDotProductBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(unknown)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "unknown")));
+    EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "unknown")));
 }
 
 TEST_FF("require that setup can be done without field", NativeDotProductBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>()));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>()));
 }
 
 TEST_F("require that not searching a field will give it 0.0 dot product", RankFixture(vec(), vec(1, 2, 3))) {

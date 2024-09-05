@@ -15,14 +15,14 @@ class LidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 {
 private:
     const MaintenanceDocumentSubDB _subDb;
-    const vespalib::string         _docTypeName;
+    const std::string         _docTypeName;
 
 public:
     LidSpaceCompactionHandler(const MaintenanceDocumentSubDB& subDb,
-                              const vespalib::string& docTypeName);
+                              const std::string& docTypeName);
     ~LidSpaceCompactionHandler() override;
 
-    vespalib::string getName() const override;
+    std::string getName() const override;
     void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) override;
     uint32_t getSubDbId() const override;
     search::LidUsageStats getLidStatus() const override;

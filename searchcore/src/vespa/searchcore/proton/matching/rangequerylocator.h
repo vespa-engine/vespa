@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
+#include <string>
 
 namespace search::queryeval { class Blueprint; }
 
@@ -13,15 +14,15 @@ public:
     RangeLimitMetaInfo();
     RangeLimitMetaInfo(std::string_view low, std::string_view high, size_t estimate);
     ~RangeLimitMetaInfo();
-    const vespalib::string & low() const { return _low; }
-    const vespalib::string & high() const { return _high; }
+    const std::string & low() const { return _low; }
+    const std::string & high() const { return _high; }
     bool valid() const { return _valid; }
     size_t estimate() const { return _estimate; }
 private:
     bool             _valid;
     size_t           _estimate;
-    vespalib::string _low;
-    vespalib::string _high;
+    std::string _low;
+    std::string _high;
 };
 
 class RangeQueryLocator {

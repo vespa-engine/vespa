@@ -15,7 +15,7 @@ class DocumentDBReferenceRegistry : public IDocumentDBReferenceRegistry
 {
     mutable std::mutex _lock;
     mutable std::condition_variable _cv;
-    std::map<vespalib::string, std::shared_ptr<IDocumentDBReference>> _handlers;
+    std::map<std::string, std::shared_ptr<IDocumentDBReference>> _handlers;
 public:
     DocumentDBReferenceRegistry();
     virtual ~DocumentDBReferenceRegistry();

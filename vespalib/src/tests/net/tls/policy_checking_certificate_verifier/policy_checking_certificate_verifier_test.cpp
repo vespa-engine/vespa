@@ -98,20 +98,20 @@ TEST("special extended regex characters are ignored") {
 }
 
 // TODO CN + SANs
-PeerCredentials creds_with_sans(std::vector<vespalib::string> dns_sans, std::vector<vespalib::string> uri_sans) {
+PeerCredentials creds_with_sans(std::vector<std::string> dns_sans, std::vector<std::string> uri_sans) {
     PeerCredentials creds;
     creds.dns_sans = std::move(dns_sans);
     creds.uri_sans = std::move(uri_sans);
     return creds;
 }
 
-PeerCredentials creds_with_dns_sans(std::vector<vespalib::string> dns_sans) {
+PeerCredentials creds_with_dns_sans(std::vector<std::string> dns_sans) {
     PeerCredentials creds;
     creds.dns_sans = std::move(dns_sans);
     return creds;
 }
 
-PeerCredentials creds_with_uri_sans(std::vector<vespalib::string> uri_sans) {
+PeerCredentials creds_with_uri_sans(std::vector<std::string> uri_sans) {
     PeerCredentials creds;
     creds.uri_sans = std::move(uri_sans);
     return creds;

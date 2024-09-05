@@ -5,6 +5,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/docapi_common.pb.h>
 #include <vespa/documentapi/messagebus/docapi_feed.pb.h>
@@ -148,8 +149,8 @@ void log_codec_error(const char* op, const char* type, const char* msg) noexcept
     LOGBM(error, "Error during Protobuf %s for message type %s: %s", op, type, msg);
 }
 
-[[noreturn]] void rethrow_as_decorated_exception(const char* type, const vespalib::string& msg) __attribute((noinline));
-[[noreturn]] void rethrow_as_decorated_exception(const char* type, const vespalib::string& msg) {
+[[noreturn]] void rethrow_as_decorated_exception(const char* type, const std::string& msg) __attribute((noinline));
+[[noreturn]] void rethrow_as_decorated_exception(const char* type, const std::string& msg) {
     throw vespalib::IllegalArgumentException(vespalib::make_string("Failed decoding message of type %s: %s", type, msg.c_str()), VESPA_STRLOC);
 }
 
@@ -405,7 +406,7 @@ RoutableFactories80::remove_location_message_factory(std::shared_ptr<const docum
             document::BucketIdFactory factory;
             document::select::Parser parser(*type_repo, factory);
             auto msg = std::make_unique<RemoveLocationMessage>(factory, parser, string(get_raw_selection(src.selection())));
-            msg->setBucketSpace(vespalib::string(get_bucket_space(src.bucket_space())));
+            msg->setBucketSpace(std::string(get_bucket_space(src.bucket_space())));
             return msg;
         }
     );

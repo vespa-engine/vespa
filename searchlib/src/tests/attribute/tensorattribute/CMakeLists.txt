@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_tensorattribute_test_app TEST
     tensorattribute_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_tensorattribute_test_app COMMAND searchlib_tensorattribute_test_app)

@@ -26,9 +26,9 @@ namespace vsm {
 
 namespace {
 
-void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_config, const vespalib::string& field_name)
+void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_config, const std::string& field_name)
 {
-    vespalib::string prefix = field_name + ".";
+    std::string prefix = field_name + ".";
     for (const auto& spec : fields_config.fieldspec) {
         if (spec.name.substr(0, prefix.size()) == prefix) {
             fields.add_mapping(field_name, spec.name);
@@ -44,7 +44,7 @@ bool is_exact_match(std::string_view arg1) {
 }
 
 std::unique_ptr<DocsumFieldWriter>
-make_tokens_dfw(const vespalib::string& source, VsmfieldsConfig& fields_config)
+make_tokens_dfw(const std::string& source, VsmfieldsConfig& fields_config)
 {
     bool exact_match = false;
     Normalizing normalize_mode = Normalizing::LOWERCASE;
@@ -67,9 +67,9 @@ DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, co
 DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
 std::unique_ptr<DocsumFieldWriter>
-DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& field_name,
-                                                     const vespalib::string& command,
-                                                     const vespalib::string& source,
+DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
+                                                     const std::string& command,
+                                                     const std::string& source,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
@@ -86,7 +86,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
     } else if (command == command::geo_position) {
     } else if ((command == command::matched_attribute_elements_filter) ||
                (command == command::matched_elements_filter)) {
-        vespalib::string source_field = source.empty() ? field_name : source;
+        std::string source_field = source.empty() ? field_name : source;
         populate_fields(*matching_elems_fields, _vsm_fields_config, source_field);
         fieldWriter = MatchedElementsFilterDFW::create(source_field, matching_elems_fields);
     } else if ((command == command::tokens) ||

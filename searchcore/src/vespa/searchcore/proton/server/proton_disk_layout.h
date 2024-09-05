@@ -3,7 +3,7 @@
 #pragma once
 
 #include "i_proton_disk_layout.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 class FNET_Transport;
 
@@ -17,11 +17,11 @@ class ProtonDiskLayout : public IProtonDiskLayout
 {
 private:
     FNET_Transport         & _transport;
-    const vespalib::string   _baseDir;
-    const vespalib::string   _tlsSpec;
+    const std::string   _baseDir;
+    const std::string   _tlsSpec;
 
 public:
-    ProtonDiskLayout(FNET_Transport & transport, const vespalib::string &baseDir, const vespalib::string &tlsSpec);
+    ProtonDiskLayout(FNET_Transport & transport, const std::string &baseDir, const std::string &tlsSpec);
     ~ProtonDiskLayout() override;
     void remove(const DocTypeName &docTypeName) override;
     void initAndPruneUnused(const std::set<DocTypeName> &docTypeNames) override;

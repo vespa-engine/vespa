@@ -8,10 +8,10 @@ using vespalib::Serializer;
 using vespalib::Deserializer;
 
 namespace {
-vespalib::string _G_pathField("path");
-vespalib::string _G_docIdField("docId");
-vespalib::string _G_globalIdField("globalId");
-vespalib::string _G_distributionKeyField("distributionKey");
+std::string _G_pathField("path");
+std::string _G_docIdField("docId");
+std::string _G_globalIdField("globalId");
+std::string _G_distributionKeyField("distributionKey");
 }
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, FS4Hit, Hit);

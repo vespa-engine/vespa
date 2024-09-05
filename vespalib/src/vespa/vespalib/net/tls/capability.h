@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <bitset>
+#include <cstdint>
 #include <iosfwd>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -90,9 +91,9 @@ public:
     }
 
     std::string_view name() const noexcept;
-    string to_string() const;
+    std::string to_string() const;
 
-    static std::optional<Capability> find_capability(const string& cap_name) noexcept;
+    static std::optional<Capability> find_capability(const std::string& cap_name) noexcept;
 
     // The "none" capability is a sentinel value to allow mTLS handshakes to go through
     // but where no access is granted to any capability-checked API. Non-capability-checked

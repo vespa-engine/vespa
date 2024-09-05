@@ -18,7 +18,7 @@ using DiskGain = IFlushTarget::DiskGain;
 
 class MyFlushHandler : public IFlushHandler {
 public:
-    MyFlushHandler(const vespalib::string &name) noexcept : IFlushHandler(name) {}
+    MyFlushHandler(const std::string &name) noexcept : IFlushHandler(name) {}
     std::vector<IFlushTarget::SP> getFlushTargets() override {
         return std::vector<IFlushTarget::SP>();
     }
@@ -35,7 +35,7 @@ private:
     system_time  _lastFlushTime;
     bool          _urgentFlush;
 public:
-    MyFlushTarget(const vespalib::string &name, MemoryGain memoryGain,
+    MyFlushTarget(const std::string &name, MemoryGain memoryGain,
                   DiskGain diskGain, SerialNum flushedSerial,
                   system_time lastFlushTime, bool urgentFlush) noexcept :
         test::DummyFlushTarget(name),
@@ -53,7 +53,7 @@ public:
     bool needUrgentFlush() const override { return _urgentFlush; }
 };
 
-using StringList = std::vector<vespalib::string>;
+using StringList = std::vector<std::string>;
 
 class ContextBuilder {
 private:
@@ -63,7 +63,7 @@ private:
     flushengine::ActiveFlushStats _active_flushes;
 
     void
-    fixupMap(const vespalib::string &name, SerialNum lastSerial)
+    fixupMap(const std::string &name, SerialNum lastSerial)
     {
         flushengine::TlsStats oldStats = _map[name];
         if (oldStats.getLastSerial() < lastSerial) {
@@ -76,7 +76,7 @@ private:
 public:
     ContextBuilder();
     ~ContextBuilder();
-    void addTls(const vespalib::string &name,
+    void addTls(const std::string &name,
                 const flushengine::TlsStats &tlsStats) {
         _map[name] = tlsStats;
     }
@@ -89,7 +89,7 @@ public:
         FlushContext::SP ctx(new FlushContext(_handler, target, lastSerial));
         return add(ctx);
     }
-    ContextBuilder& active_flush(const vespalib::string& handler_name, vespalib::system_time start_time) {
+    ContextBuilder& active_flush(const std::string& handler_name, vespalib::system_time start_time) {
         _active_flushes.set_start_time(handler_name, start_time);
         return *this;
     }
@@ -112,31 +112,31 @@ ContextBuilder::ContextBuilder()
 ContextBuilder::~ContextBuilder() = default;
 
 MyFlushTarget::SP
-createTargetM(const vespalib::string &name, MemoryGain memoryGain)
+createTargetM(const std::string &name, MemoryGain memoryGain)
 {
     return std::make_shared<MyFlushTarget>(name, memoryGain, DiskGain(), SerialNum(), system_time(), false);
 }
 
 MyFlushTarget::SP
-createTargetD(const vespalib::string &name, DiskGain diskGain, SerialNum serial = 0)
+createTargetD(const std::string &name, DiskGain diskGain, SerialNum serial = 0)
 {
     return std::make_shared<MyFlushTarget>(name, MemoryGain(), diskGain, serial, system_time(), false);
 }
 
 MyFlushTarget::SP
-createTargetS(const vespalib::string &name, SerialNum serial, system_time timeStamp = system_time())
+createTargetS(const std::string &name, SerialNum serial, system_time timeStamp = system_time())
 {
     return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), serial, timeStamp, false);
 }
 
 MyFlushTarget::SP
-createTargetT(const vespalib::string &name, system_time lastFlushTime, SerialNum serial = 0)
+createTargetT(const std::string &name, system_time lastFlushTime, SerialNum serial = 0)
 {
     return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), serial, lastFlushTime, false);
 }
 
 MyFlushTarget::SP
-createTargetF(const vespalib::string &name, bool urgentFlush)
+createTargetF(const std::string &name, bool urgentFlush)
 {
     return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), SerialNum(), system_time(), urgentFlush);
 }

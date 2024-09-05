@@ -26,25 +26,25 @@ TEST(ProcessTest, simple_run_ignore_output_failure) {
 //-----------------------------------------------------------------------------
 
 TEST(ProcessTest, simple_run) {
-    vespalib::string out;
+    std::string out;
     EXPECT_TRUE(Process::run("/bin/echo -n foo", out));
     EXPECT_EQ(out, "foo");
 }
 
 TEST(ProcessTest, simple_run_failure) {
-    vespalib::string out;
+    std::string out;
     EXPECT_FALSE(Process::run("/bin/echo -n foo; false", out));
     EXPECT_EQ(out, "foo");
 }
 
 TEST(ProcessTest, simple_run_strip_single_line_trailing_newline) {
-    vespalib::string out;
+    std::string out;
     EXPECT_TRUE(Process::run("echo foo", out));
     EXPECT_EQ(out, "foo");
 }
 
 TEST(ProcessTest, simple_run_dont_strip_multi_line_output) {
-    vespalib::string out;
+    std::string out;
     EXPECT_TRUE(Process::run("perl -e 'print \"foo\\n\\n\"'", out));
     EXPECT_EQ(out, "foo\n\n");
 }
@@ -66,13 +66,13 @@ TEST(ProcessTest, proc_kill) {
 
 //-----------------------------------------------------------------------------
 
-vespalib::string line1 = "this is a line";
-vespalib::string line2 = "this is also a line";
-vespalib::string line3 = "this is last line";
+std::string line1 = "this is a line";
+std::string line2 = "this is also a line";
+std::string line3 = "this is last line";
 
 TEST(ProcessTest, read_line) {
     Process proc("cat");
-    for (const vespalib::string &line: {std::cref(line1), std::cref(line2), std::cref(line3)}) {
+    for (const std::string &line: {std::cref(line1), std::cref(line2), std::cref(line3)}) {
         auto mem = proc.reserve(line.size() + 1);
         memcpy(mem.data, line.data(), line.size());
         mem.data[line.size()] = '\n';
@@ -118,13 +118,13 @@ Slime read_slime(Input &input) {
     return slime;
 }
 
-vespalib::string to_json(const Slime &slime) {
+std::string to_json(const Slime &slime) {
     SimpleBuffer buf;
     JsonFormat::encode(slime, buf, true);
     return buf.get().make_string();
 }
 
-Slime from_json(const vespalib::string &json) {
+Slime from_json(const std::string &json) {
     Slime slime;
     EXPECT_TRUE(JsonFormat::decode(json, slime));
     return slime;

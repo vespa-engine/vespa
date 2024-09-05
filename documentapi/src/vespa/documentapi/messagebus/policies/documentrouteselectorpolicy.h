@@ -9,7 +9,7 @@
 #include <vespa/config/helper/ifetchercallback.h>
 #include <mutex>
 
-namespace document { class DocumentTypeRepo; }
+namespace document { class IDocumentTypeRepo; }
 
 namespace mbus {
     class Route;
@@ -36,7 +36,7 @@ private:
     using SelectorPtr = std::shared_ptr<document::select::Node>;
     using ConfigMap = std::map<string, SelectorPtr>;
 
-    const document::DocumentTypeRepo      &_repo;
+    const document::IDocumentTypeRepo      &_repo;
     mutable std::mutex                     _lock;
     ConfigMap                              _config;
     string                                 _error;
@@ -50,7 +50,7 @@ private:
      * @param routeName The candidate route whose selector to run.
      * @return Whether or not to send to the given recipient.
      */
-    bool select(mbus::RoutingContext &context, const vespalib::string &routeName);
+    bool select(mbus::RoutingContext &context, const std::string &routeName);
 
 public:
     /**
@@ -59,7 +59,7 @@ public:
      *
      * @param configUri The configuration uri to subscribe with.
      */
-    DocumentRouteSelectorPolicy(const document::DocumentTypeRepo &repo,
+    DocumentRouteSelectorPolicy(const document::IDocumentTypeRepo &repo,
                                 const config::ConfigUri &configUri);
     ~DocumentRouteSelectorPolicy() override;
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/datatype.h>
+#include <cstdint>
 #include <vector>
 #include <cstddef>
 

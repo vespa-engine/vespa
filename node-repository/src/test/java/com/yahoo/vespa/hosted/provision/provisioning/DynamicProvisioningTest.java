@@ -16,7 +16,6 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;

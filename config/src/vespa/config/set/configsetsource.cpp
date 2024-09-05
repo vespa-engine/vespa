@@ -32,7 +32,7 @@ ConfigSetSource::getConfig()
     AsciiConfigWriter writer(ss);
     writer.write(*instance);
     StringVector lines(getlines(ss));
-    vespalib::string currentXxhash64(calculateContentXxhash64(lines));
+    std::string currentXxhash64(calculateContentXxhash64(lines));
 
     if (isGenerationNewer(_generation, _lastState.generation) && currentXxhash64.compare(_lastState.xxhash64) != 0) {
         LOG(debug, "New generation, updating");

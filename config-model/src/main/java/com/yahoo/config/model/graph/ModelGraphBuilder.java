@@ -12,7 +12,6 @@ import java.util.List;
  * constructor arguments.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ModelGraphBuilder {
 
@@ -49,4 +48,5 @@ public class ModelGraphBuilder {
         }
         return new ModelGraph(modelNodes, roots);
     }
+
 }

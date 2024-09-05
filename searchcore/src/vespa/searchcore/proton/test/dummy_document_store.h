@@ -8,10 +8,10 @@ namespace proton::test {
 
 struct DummyDocumentStore : public search::IDocumentStore
 {
-    vespalib::string _baseDir;
+    std::string _baseDir;
 
     DummyDocumentStore() = default;
-    DummyDocumentStore(const vespalib::string &baseDir) noexcept
+    DummyDocumentStore(const std::string &baseDir) noexcept
         : _baseDir(baseDir)
     {}
     ~DummyDocumentStore() = default;
@@ -35,7 +35,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     size_t getDiskBloat() const override { return 0; }
     size_t getMaxSpreadAsBloat() const override { return getDiskBloat(); }
     vespalib::CacheStats getCacheStats() const override { return vespalib::CacheStats(); }
-    const vespalib::string &getBaseDir() const override { return _baseDir; }
+    const std::string &getBaseDir() const override { return _baseDir; }
     void accept(search::IDocumentStoreReadVisitor &,
                 search::IDocumentStoreVisitorProgress &,
                 const document::DocumentTypeRepo &) override {}

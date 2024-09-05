@@ -91,12 +91,12 @@ private:
     std::atomic<bool>        _busy;
     SlobrokList              _slobrokSpecs;
     Configurator::UP         _configurator;
-    vespalib::string         _currSlobrok;
+    std::string         _currSlobrok;
     uint32_t                 _idx;
     BackOff                  _backOff;
-    std::vector<vespalib::string> _names;   // registered service names
-    std::vector<vespalib::string> _pending; // pending service name registrations
-    std::vector<vespalib::string> _unreg;   // pending service name unregistrations
+    std::vector<std::string> _names;   // registered service names
+    std::vector<std::string> _pending; // pending service name registrations
+    std::vector<std::string> _unreg;   // pending service name unregistrations
     FRT_Target              *_target;
     FRT_RPCRequest          *_req;
 };

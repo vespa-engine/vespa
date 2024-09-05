@@ -61,7 +61,7 @@ using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using std::ostringstream;
-using vespalib::string;
+using std::string;
 
 namespace {
 

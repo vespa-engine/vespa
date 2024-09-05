@@ -9,12 +9,11 @@
 
 #pragma once
 
-#include <string>
-#include <map>
-#include <vector>
-
 #include "fsa.h"
 #include "detector.h"
+#include <map>
+#include <string>
+#include <vector>
 
 namespace fsa {
 

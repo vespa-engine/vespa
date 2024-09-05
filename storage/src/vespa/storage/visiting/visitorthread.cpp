@@ -64,7 +64,7 @@ VisitorThread::Event::Event(api::VisitorId visitor, mbus::Reply::UP reply)
 }
 
 namespace {
-    vespalib::string getThreadName(uint32_t i) {
+    std::string getThreadName(uint32_t i) {
         vespalib::asciistream name;
         name << "Visitor thread " << i;
         return name.str();
@@ -338,7 +338,7 @@ VisitorThread::createVisitor(std::string_view libName,
                               const vdslib::Parameters& params,
                               vespalib::asciistream & error)
 {
-    vespalib::string str(libName);
+    std::string str(libName);
     std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
 
     auto it = _visitorFactories.find(str);

@@ -25,18 +25,15 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
-import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
 import java.net.URI;
@@ -46,7 +43,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Predicate;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -212,6 +208,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean logserverOtelCol;
         private final SharedHosts sharedHosts;
         private final Architecture adminClusterArchitecture;
+        private final double logserverNodeMemory;
         private final boolean symmetricPutAndActivateReplicaSelection;
         private final boolean enforceStrictlyIncreasingClusterStateVersions;
         private final boolean launchApplicationAthenzService;
@@ -262,6 +259,7 @@ public class ModelContextImpl implements ModelContext {
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
             this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with( appId).with(version).value();
             this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
+            this.logserverNodeMemory = PermanentFlags.LOGSERVER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
             this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
             this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(source).with(appId).with(version).value();
@@ -318,6 +316,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean logserverOtelCol() { return logserverOtelCol; }
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
+        @Override public double logserverNodeMemory() { return logserverNodeMemory; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
         @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
         @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
@@ -454,7 +453,7 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public List<TenantSecretStore> tenantSecretStores() {
-            return SecretStoreExternalIdRetriever.populateExternalId(secretStore, applicationId.tenant(), zone.system(), tenantSecretStores);
+            return tenantSecretStores;
         }
 
         @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) {

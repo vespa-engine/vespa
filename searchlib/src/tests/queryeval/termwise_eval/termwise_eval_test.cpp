@@ -194,7 +194,7 @@ std::vector<uint32_t> make_expect(uint32_t begin, uint32_t end) {
 }
 
 void
-verify(const std::vector<uint32_t> &expect, SearchIterator &search, uint32_t begin, uint32_t end, const vespalib::string& label)
+verify(const std::vector<uint32_t> &expect, SearchIterator &search, uint32_t begin, uint32_t end, const std::string& label)
 {
     SCOPED_TRACE(label);
     std::vector<uint32_t> actual;
@@ -431,7 +431,7 @@ TEST(TermwiseEvalTest, require_that_the_hit_rate_must_be_high_enough_for_termwis
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
         my_or.basic_plan(strict, 100);
-        EXPECT_TRUE(my_or.createSearch(*md)->asString().find("TermwiseSearch") == vespalib::string::npos);
+        EXPECT_TRUE(my_or.createSearch(*md)->asString().find("TermwiseSearch") == std::string::npos);
     }
 }
 
@@ -447,7 +447,7 @@ TEST(TermwiseEvalTest, require_that_enough_unranked_termwise_terms_are_present_f
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));  // <- ranked
     for (bool strict: {true, false}) {
         my_or.basic_plan(strict, 100);
-        EXPECT_TRUE(my_or.createSearch(*md)->asString().find("TermwiseSearch") == vespalib::string::npos);
+        EXPECT_TRUE(my_or.createSearch(*md)->asString().find("TermwiseSearch") == std::string::npos);
     }
 }
 

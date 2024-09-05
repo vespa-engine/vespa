@@ -13,12 +13,12 @@ using vespalib::getLastErrorString;
 namespace search::docsummary {
 
 bool
-DocumentSummary::readDocIdLimit(const vespalib::string &dir, uint32_t &count)
+DocumentSummary::readDocIdLimit(const std::string &dir, uint32_t &count)
 {
     char numbuf[20];
     Fast_BufferedFile qcntfile(4_Ki);
     unsigned int qcnt;
-    vespalib::string qcntname;
+    std::string qcntname;
     const char *p;
 
     qcntname = dir + "/docsum.qcnt";
@@ -37,9 +37,9 @@ DocumentSummary::readDocIdLimit(const vespalib::string &dir, uint32_t &count)
 
 
 bool
-DocumentSummary::writeDocIdLimit(const vespalib::string &dir, uint32_t count)
+DocumentSummary::writeDocIdLimit(const std::string &dir, uint32_t count)
 {
-    vespalib::string qcntname = dir + "/docsum.qcnt";
+    std::string qcntname = dir + "/docsum.qcnt";
     Fast_BufferedFile qcntfile(4_Ki);
 
     qcntfile.WriteOpen(qcntname.c_str());

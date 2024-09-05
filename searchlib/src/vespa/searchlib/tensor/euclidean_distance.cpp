@@ -19,7 +19,7 @@ private:
     using FloatType = VectorStoreType::FloatType;
     const vespalib::hwaccelerated::IAccelerated & _computer;
     mutable VectorStoreType _tmpSpace;
-    const vespalib::ConstArrayRef<FloatType> _lhs_vector;
+    const std::span<const FloatType> _lhs_vector;
 public:
     explicit BoundEuclideanDistance(TypedCells lhs)
         : _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator()),
@@ -27,7 +27,7 @@ public:
           _lhs_vector(_tmpSpace.storeLhs(lhs))
     {}
     double calc(TypedCells rhs) const noexcept override {
-        vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
+        std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         auto a = _lhs_vector.data();
         auto b = rhs_vector.data();
         return _computer.squaredEuclideanDistance(cast(a), cast(b), _lhs_vector.size());

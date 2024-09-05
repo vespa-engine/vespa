@@ -5,10 +5,11 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <list>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <list>
 #include <ostream>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".metrics.metricsset");
@@ -72,8 +73,8 @@ double MetricSet::getDoubleValue(string_view) const {
 const Metric*
 MetricSet::getMetric(string_view name) const
 {
-    vespalib::string::size_type pos = name.find('.');
-    if (pos == vespalib::string::npos) {
+    std::string::size_type pos = name.find('.');
+    if (pos == std::string::npos) {
         return getMetricInternal(name);
     } else {
         string_view child(name.substr(0, pos));
@@ -82,8 +83,8 @@ MetricSet::getMetric(string_view name) const
         if (m == 0) return 0;
         if (!m->isMetricSet()) {
             throw vespalib::IllegalStateException(
-                    "Metric " + child + " is not a metric set. Cannot retrieve "
-                    "metric at path " + name + " within metric " + getPath(),
+                    "Metric " + std::string(child) + " is not a metric set. Cannot retrieve "
+                    "metric at path " + std::string(name) + " within metric " + getPath(),
                     VESPA_STRLOC);
         }
         return static_cast<const MetricSet*>(m)->getMetric(rest);

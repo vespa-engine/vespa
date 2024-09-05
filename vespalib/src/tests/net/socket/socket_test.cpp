@@ -66,7 +66,7 @@ SocketTest::my_inet()
     }
 }
 
-bool is_socket(const vespalib::string &path) {
+bool is_socket(const std::string &path) {
     struct stat info;
     if (path.empty() || (lstat(path.c_str(), &info) != 0)) {
         return false;
@@ -74,7 +74,7 @@ bool is_socket(const vespalib::string &path) {
     return S_ISSOCK(info.st_mode);
 }
 
-bool is_file(const vespalib::string &path) {
+bool is_file(const std::string &path) {
     struct stat info;
     if (path.empty() || (lstat(path.c_str(), &info) != 0)) {
         return false;
@@ -82,11 +82,11 @@ bool is_file(const vespalib::string &path) {
     return S_ISREG(info.st_mode);
 }
 
-void remove_file(const vespalib::string &path) {
+void remove_file(const std::string &path) {
     unlink(path.c_str());
 }
 
-void replace_file(const vespalib::string &path, const vespalib::string &data) {
+void replace_file(const std::string &path, const std::string &data) {
     remove_file(path);
     int fd = creat(path.c_str(), 0600);
     ASSERT_NE(fd, -1);
@@ -94,8 +94,8 @@ void replace_file(const vespalib::string &path, const vespalib::string &data) {
     close(fd);
 }
 
-vespalib::string get_meta(const SocketAddress &addr) {
-    vespalib::string meta;
+std::string get_meta(const SocketAddress &addr) {
+    std::string meta;
     if (addr.is_ipv4()) {
         meta = "ipv4";
     } else if (addr.is_ipv6()) {
@@ -114,9 +114,9 @@ vespalib::string get_meta(const SocketAddress &addr) {
     return meta;
 }
 
-vespalib::string read_bytes(SocketHandle &socket, size_t wanted_bytes) {
+std::string read_bytes(SocketHandle &socket, size_t wanted_bytes) {
     char tmp[64];
-    vespalib::string result;
+    std::string result;
     while (result.size() < wanted_bytes) {
         size_t read_size = std::min(sizeof(tmp), wanted_bytes - result.size());
         ssize_t read_result = socket.read(tmp, read_size);
@@ -129,17 +129,17 @@ vespalib::string read_bytes(SocketHandle &socket, size_t wanted_bytes) {
 }
 
 void verify_socket_io(bool is_server, SocketHandle &socket) {
-    vespalib::string server_message = "hello, this is the server speaking";
-    vespalib::string client_message = "please pick up, I need to talk to you";
+    std::string server_message = "hello, this is the server speaking";
+    std::string client_message = "please pick up, I need to talk to you";
     if(is_server) {
         ssize_t written = socket.write(server_message.data(), server_message.size());
         EXPECT_EQ(written, ssize_t(server_message.size()));
-        vespalib::string read = read_bytes(socket, client_message.size());
+        std::string read = read_bytes(socket, client_message.size());
         EXPECT_EQ(client_message, read);
     } else {
         ssize_t written = socket.write(client_message.data(), client_message.size());
         EXPECT_EQ(written, ssize_t(client_message.size()));
-        vespalib::string read = read_bytes(socket, server_message.size());
+        std::string read = read_bytes(socket, server_message.size());
         EXPECT_EQ(server_message, read);
     }
 }
@@ -196,7 +196,7 @@ TEST_F(SocketTest, ipc_address_with_path)
     EXPECT_TRUE(!addr.is_abstract());
     EXPECT_TRUE(!addr.is_wildcard());
     EXPECT_EQ(addr.port(), -1);
-    EXPECT_EQ(vespalib::string("my_socket"), addr.path());
+    EXPECT_EQ(std::string("my_socket"), addr.path());
     EXPECT_TRUE(addr.name().empty());
     fprintf(stderr, "from_path(my_socket)\n");
     fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
@@ -212,7 +212,7 @@ TEST_F(SocketTest, ipc_address_with_name)
     EXPECT_TRUE(!addr.is_wildcard());
     EXPECT_EQ(addr.port(), -1);
     EXPECT_TRUE(addr.path().empty());
-    EXPECT_EQ(vespalib::string("my_socket"), addr.name());
+    EXPECT_EQ(std::string("my_socket"), addr.name());
     fprintf(stderr, "from_path(my_socket)\n");
     fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
 }
@@ -350,7 +350,7 @@ TEST_F(SocketTest, require_that_basic_unix_domain_socket_io_works_with_name)
 
 TEST_F(SocketTest, require_that_two_server_sockets_cannot_have_the_same_abstract_unix_domain_socket_name)
 {
-    vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
+    std::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
     ServerSocket server1(spec);
     ServerSocket server2(spec);
     EXPECT_TRUE(server1.valid());
@@ -359,7 +359,7 @@ TEST_F(SocketTest, require_that_two_server_sockets_cannot_have_the_same_abstract
 
 TEST_F(SocketTest, require_that_abstract_socket_names_are_freed_when_the_server_socket_is_destructed)
 {
-    vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
+    std::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
     ServerSocket server1(spec);
     EXPECT_TRUE(server1.valid());
     server1 = ServerSocket();
@@ -369,7 +369,7 @@ TEST_F(SocketTest, require_that_abstract_socket_names_are_freed_when_the_server_
 
 TEST_F(SocketTest, require_that_abstract_sockets_do_not_have_socket_files)
 {
-    vespalib::string name = make_string("my_socket-%d", int(getpid()));
+    std::string name = make_string("my_socket-%d", int(getpid()));
     ServerSocket server(SocketSpec::from_name(name));
     EXPECT_TRUE(server.valid());
     EXPECT_TRUE(!is_socket(name));

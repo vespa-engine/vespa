@@ -8,8 +8,9 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
+#include <cstdint>
+#include <string>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
 
 namespace storage::lib {
 

@@ -57,6 +57,20 @@ public class Flags {
             "Takes immediate effect wherever possible.",
             NODE_TYPE);
 
+    public static final UnboundBooleanFlag ASSUME_ROLE_IN_VESPA_ATHENZ = defineFeatureFlag(
+            "assume-role-in-vespa-athenz", false,
+            List.of("hakonhall"), "2024-08-09", "2024-10-09",
+            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public AWS systems, when trying assuming AWS roles. " +
+            "node-type is config in config server, controller in controller.",
+            "Takes effect on start of config server/controller.",
+            NODE_TYPE);
+
+    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_ZMS = defineFeatureFlag(
+            "use-vespa-athenz-zms", false,
+            List.of("hakonhall"), "2024-08-16", "2024-10-16",
+            "Whether to communicate with Vespa Athenz ZMS instead of Yahoo Athenz ZMS in public systems.",
+            "Typically takes effect on start of config server/controller, or immediately for hosts (host-admin).");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -243,7 +257,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2024-09-01",
+            List.of("olaa"), "2021-09-13", "2025-01-01",
             "Enable Horizon dashboard",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
@@ -279,7 +293,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2024-09-01",
+            List.of("olaa"), "2022-07-04", "2025-01-01",
             "Determines whether one metrics config check should be written per Vespa node",
             "Takes effect on next tick",
             HOSTNAME);
@@ -294,14 +308,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2024-09-01",
+            List.of("olaa"), "2022-09-23", "2025-01-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2024-09-01",
+            List.of("olaa"), "2024-01-15", "2025-01-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
             INSTANCE_ID, HOSTNAME
@@ -341,13 +355,13 @@ public class Flags {
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-09-01",
+            List.of("hmusum"), "2023-07-19", "2024-11-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-09-01",
+            List.of("hmusum"), "2023-07-19", "2024-11-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -382,7 +396,7 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-09-01",
+            List.of("hmusum"), "2023-09-25", "2024-10-01",
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -396,7 +410,7 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("mpolden", "tokle"), "2023-10-06", "2024-09-01",
+            List.of("mpolden", "tokle"), "2023-10-06", "2025-09-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -442,7 +456,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
-            List.of("vekterli"), "2024-05-23", "2024-09-01",
+            List.of("vekterli"), "2024-05-23", "2024-12-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -458,7 +472,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", false,
-            List.of("vekterli"), "2024-06-03", "2024-09-01",
+            List.of("vekterli"), "2024-06-03", "2024-12-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
             "Takes effect immediately",
@@ -473,7 +487,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
-            List.of("jonmv"), "2024-06-11", "2024-09-01",
+            List.of("jonmv"), "2024-06-11", "2024-11-01",
             "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
             "Takes effect on next deployment",
             INSTANCE_ID);
@@ -492,7 +506,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", false,
-            List.of("vekterli"), "2024-07-01", "2024-09-01",
+            List.of("vekterli"), "2024-07-01", "2024-12-01",
             "Iff true, the cluster controller will be the authoritative source of distribution " +
             "config changes in a content cluster, and distribution changes will be part of explicitly " +
             "versioned cluster states.",
@@ -502,7 +516,7 @@ public class Flags {
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2025-12-31",
-            "If true, force leagy mode for weakAnd query parsing",
+            "If true, force legacy mode for weakAnd query parsing",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
@@ -511,7 +525,7 @@ public class Flags {
             List.of("olaa"), "2024-07-05", "2025-01-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
-            TENANT_ID);
+            TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
             "hubspot-sync-companies", false,
@@ -524,6 +538,26 @@ public class Flags {
             List.of("olaa"), "2024-07-31", "2024-10-01",
             "Whether to provision with SDM enabled",
             "Takes effect immediately");
+
+    public static final UnboundStringFlag HOSTNAME_SCHEME = defineStringFlag(
+            "hostname-scheme", "legacy",
+            List.of("mpolden"), "2024-08-07", "2024-12-01",
+            "The hostname scheme to use when provisioning hosts. Must be 'legacy' or 'standard",
+            "Takes effect immediately",
+            (value) -> "legacy".equals(value) || "standard".equals(value),
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
+            "tcp-shrink-window", true,
+            List.of("hmusum"), "2024-08-14", "2024-09-14",
+            "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default false",
+            "Takes effect on next host-admin run");
+
+    public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
+            "file-download-backoff-initial-time-ms", 5000,
+            List.of("hmusum"), "2024-08-16", "2024-09-16",
+            "Initial backoff time in milliseconds when failing to download a file reference",
+            "Takes effect on restart of Docker container");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

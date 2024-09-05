@@ -52,7 +52,7 @@ CommitAndWaitDocumentRetriever::visitDocuments(const LidVector &lids, search::ID
 }
 
 CachedSelect::SP
-CommitAndWaitDocumentRetriever::parseSelect(const vespalib::string &selection) const {
+CommitAndWaitDocumentRetriever::parseSelect(const std::string &selection) const {
     return _retriever->parseSelect(selection);
 }
 

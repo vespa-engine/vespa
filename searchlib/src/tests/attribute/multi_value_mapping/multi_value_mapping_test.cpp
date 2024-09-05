@@ -7,7 +7,6 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rand48.h>
@@ -24,7 +23,7 @@ using AllocStats = MemoryAllocatorObserver::Stats;
 
 template <typename ElemT>
 void
-assertArray(const std::vector<ElemT> &exp, vespalib::ConstArrayRef<ElemT> values)
+assertArray(const std::vector<ElemT> &exp, std::span<const ElemT> values)
 {
     EXPECT_EQ(exp, std::vector<ElemT>(values.begin(), values.end()));
 }
@@ -33,7 +32,7 @@ template <class MvMapping>
 class MyAttribute : public search::NotImplementedAttribute
 {
     using MultiValueType = typename MvMapping::MultiValueType;
-    using ConstArrayRef = vespalib::ConstArrayRef<MultiValueType>;
+    using ConstArrayRef = std::span<const MultiValueType>;
     MvMapping &_mvMapping;
     virtual void onCommit() override { }
     virtual void onUpdateStat() override { }
@@ -82,8 +81,8 @@ protected:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
-    using ArrayRef = vespalib::ArrayRef<ElemT>;
-    using ConstArrayRef = vespalib::ConstArrayRef<ElemT>;
+    using ArrayRef = std::span<ElemT>;
+    using ConstArrayRef = std::span<const ElemT>;
     MappingTestBase()
         : _stats(),
           _mvMapping(),

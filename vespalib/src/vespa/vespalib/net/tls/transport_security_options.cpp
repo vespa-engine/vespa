@@ -16,9 +16,9 @@ TransportSecurityOptions::TransportSecurityOptions(Params params)
 {
 }
 
-TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem,
-                                                   vespalib::string cert_chain_pem,
-                                                   vespalib::string private_key_pem,
+TransportSecurityOptions::TransportSecurityOptions(std::string ca_certs_pem,
+                                                   std::string cert_chain_pem,
+                                                   std::string private_key_pem,
                                                    AuthorizedPeers authorized_peers,
                                                    bool disable_hostname_validation)
     : _ca_certs_pem(std::move(ca_certs_pem)),

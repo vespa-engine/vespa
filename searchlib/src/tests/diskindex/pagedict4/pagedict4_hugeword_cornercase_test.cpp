@@ -161,7 +161,7 @@ void testPageSizedCounts()
     uint64_t checkWordNum = 0;
     PostingListCounts counts;
     for (uint64_t wordNum = 1; wordNum < 7; ++wordNum) {
-        vespalib::string word;
+        std::string word;
         counts.clear();
         r.readCounts(word, checkWordNum, counts);
         if (wordNum < 6) {

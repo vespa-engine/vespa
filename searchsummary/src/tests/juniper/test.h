@@ -57,12 +57,12 @@
 
 #pragma once
 
-#include <string>
+#include <algorithm>
 #include <iostream>
+#include <iterator>
+#include <string>
 #include <typeinfo>
 #include <vector>
-#include <algorithm>
-#include <iterator>
 
 // The following have underscores because they are macros
 // (and it's impolite to usurp other users' functions!).

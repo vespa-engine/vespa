@@ -4,7 +4,7 @@
 
 #include "matchdata.h"
 #include "number_or_object.h"
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
 
 namespace search::fef {
 
@@ -45,12 +45,12 @@ class FeatureExecutor
 public:
     class Inputs {
         uint32_t _docid;
-        vespalib::ConstArrayRef<LazyValue> _inputs;
+        std::span<const LazyValue> _inputs;
     public:
         Inputs() : _docid(-1), _inputs() {}
         void set_docid(uint32_t docid) { _docid = docid; }
         uint32_t get_docid() const { return _docid; }
-        void bind(vespalib::ConstArrayRef<LazyValue> inputs) { _inputs = inputs; }
+        void bind(std::span<const LazyValue> inputs) { _inputs = inputs; }
         inline feature_t get_number(size_t idx) const;
         inline vespalib::eval::Value::CREF get_object(size_t idx) const;
         size_t size() const { return _inputs.size(); }
@@ -58,7 +58,7 @@ public:
 
     class Outputs {
     public:
-        using OutputArray = vespalib::ArrayRef<NumberOrObject>;
+        using OutputArray = std::span<NumberOrObject>;
         Outputs() : _outputs() {}
         void bind(OutputArray  outputs) { _outputs = outputs; }
         void set_number(size_t idx, feature_t value) {
@@ -87,7 +87,7 @@ public:
         }
         size_t size() const { return _outputs.size(); }
     private:
-        vespalib::ArrayRef<NumberOrObject> _outputs;
+        std::span<NumberOrObject> _outputs;
     };
 
 private:
@@ -95,8 +95,8 @@ private:
     Outputs _outputs;
 
 protected:
-    virtual void handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs);
-    virtual void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
+    virtual void handle_bind_inputs(std::span<const LazyValue> inputs);
+    virtual void handle_bind_outputs(std::span<NumberOrObject> outputs);
     virtual void handle_bind_match_data(const MatchData &md);
 
     /**
@@ -120,11 +120,11 @@ public:
     *
     * @return fully qualified class name
     **/
-    vespalib::string getClassName() const;
+    std::string getClassName() const;
 
     // bind order per executor: inputs, outputs, match_data
-    void bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs);
-    void bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
+    void bind_inputs(std::span<const LazyValue> inputs);
+    void bind_outputs(std::span<NumberOrObject> outputs);
     void bind_match_data(const MatchData &md);
 
     const Inputs &inputs() const { return _inputs; }

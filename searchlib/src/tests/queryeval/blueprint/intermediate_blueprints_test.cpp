@@ -40,7 +40,7 @@ using vespalib::make_string_short::fmt;
 using vespalib::normalize_class_name;
 using Path = std::vector<std::variant<size_t,std::string_view>>;
 
-vespalib::string strict_equiv_name = "search::queryeval::EquivImpl<true, search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char> >";
+std::string strict_equiv_name = "search::queryeval::EquivImpl<true, search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char> >";
 
 struct InvalidSelector : ISourceSelector {
     InvalidSelector() : ISourceSelector(Source()) {}
@@ -518,9 +518,9 @@ struct SourceBlenderTestFixture {
     void addChildrenForSimpleSBTest(IntermediateBlueprint & parent);
 };
 
-vespalib::string path_to_str(const Path &path) {
+std::string path_to_str(const Path &path) {
     size_t cnt = 0;
-    vespalib::string str("[");
+    std::string str("[");
     for (const auto &item: path) {
         if (cnt++ > 0) {
             str.append(",");
@@ -533,7 +533,7 @@ vespalib::string path_to_str(const Path &path) {
     return str;
 }
 
-vespalib::string to_str(const Inspector &value) {
+std::string to_str(const Inspector &value) {
     if (!value.valid()) {
         return "<missing>";
     }

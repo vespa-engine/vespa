@@ -31,7 +31,7 @@ private:
 
     DocumentMetaStoreSP                      _dms;
     ITlsSyncer                              &_tlsSyncer;
-    vespalib::string                         _baseDir;
+    std::string                         _baseDir;
     bool                                     _cleanUpAfterFlush;
     FlushStats                               _lastStats;
     const search::TuneFileAttributes         _tuneFileAttributes;
@@ -48,7 +48,7 @@ public:
      * given base dir where all attribute vectors are located.
      **/
     DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms, ITlsSyncer &tlsSyncer,
-                                 const vespalib::string &baseDir, const search::TuneFileAttributes &tuneFileAttributes,
+                                 const std::string &baseDir, const search::TuneFileAttributes &tuneFileAttributes,
                                  const search::common::FileHeaderContext &fileHeaderContext, const vespalib::HwInfo &hwInfo);
 
     ~DocumentMetaStoreFlushTarget() override;
@@ -64,7 +64,7 @@ public:
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
 
-    static void initCleanup(const vespalib::string &baseDir);
+    static void initCleanup(const std::string &baseDir);
     uint64_t getApproxBytesToWriteToDisk() const override;
 };
 

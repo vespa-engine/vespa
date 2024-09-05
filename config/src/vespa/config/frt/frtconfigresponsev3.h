@@ -20,8 +20,8 @@ public:
     FRTConfigResponseV3(FRT_RPCRequest * request);
 
 private:
-    static const vespalib::string RESPONSE_TYPES;
-    const vespalib::string & getResponseTypes() const override;
+    static const std::string RESPONSE_TYPES;
+    const std::string & getResponseTypes() const override;
     ConfigValue readConfigValue() const override;
 };
 

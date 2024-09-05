@@ -8,8 +8,7 @@
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
-#include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace search::attribute {
 
@@ -48,8 +47,8 @@ struct Fixture : ImportedAttributeFixture {
         return create_iterator(ctx, match, true);
     }
 
-    void assertSearch(const std::vector<uint32_t> &expDocIds, SearchIterator &iter) {
-        EXPECT_EQUAL(SimpleResult(expDocIds), SimpleResult().searchStrict(iter, get_imported_attr()->getNumDocs()));
+    SimpleResult search(SearchIterator& iter) {
+        return SimpleResult().searchStrict(iter, get_imported_attr()->getNumDocs());
     }
 };
 
@@ -57,38 +56,53 @@ Fixture::~Fixture() = default;
 
 template <typename Iterator>
 bool is_hit_with_weight(Iterator& iter, TermFieldMatchData& match, DocId lid, int32_t weight) {
-    if (!EXPECT_TRUE(iter.seek(lid))) {
+    bool failed = false;
+    EXPECT_TRUE(iter.seek(lid)) << (failed = true, "");
+    if (failed) {
         return false;
     }
     iter.unpack(lid);
-    return (EXPECT_EQUAL(lid, match.getDocId()) &&
-            EXPECT_EQUAL(weight, match.getWeight()));
+    EXPECT_EQ(lid, match.getDocId()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
+    EXPECT_EQ(weight, match.getWeight()) << (failed = true, "");
+    return !failed;
 }
 
 template <typename Iterator>
 bool is_strict_hit_with_weight(Iterator& iter, TermFieldMatchData& match,
                                DocId seek_lid, DocId expected_lid, int32_t weight) {
+    bool failed = false;
     iter.seek(seek_lid);
-    if (!EXPECT_EQUAL(expected_lid, iter.getDocId())) {
+    EXPECT_EQ(expected_lid, iter.getDocId()) << (failed = true, "");
+    if (failed) {
         return false;
     }
     iter.unpack(expected_lid);
-    return (EXPECT_EQUAL(expected_lid, match.getDocId()) &&
-            EXPECT_EQUAL(weight, match.getWeight()));
+    EXPECT_EQ(expected_lid, match.getDocId())  << (failed = true, "");
+    if (failed) {
+        return false;
+    }
+    EXPECT_EQ(weight, match.getWeight()) << (failed = true, "");
+    return !failed;
 }
 
-TEST_F("calc_hit_estimate() returns document count of reference attribute when not using fast-search target attribute", Fixture) {
+TEST(ImportedSearchContextTest, calc_hit_estimate_returns_document_count_of_reference_attribute_when_not_using_fast_search_target_attribute)
+{
+    Fixture f;
     add_n_docs_with_undefined_values(*f.target_attr, 10);
     add_n_docs_with_undefined_values(*f.reference_attr, 101);
 
     auto ctx = f.create_context(word_term("foo"));
     auto est = ctx->calc_hit_estimate();
-    EXPECT_EQUAL(101u, est.est_hits());
+    EXPECT_EQ(101u, est.est_hits());
     EXPECT_TRUE(est.is_unknown());
 }
 
-TEST_F("calc_hit_estimate() estimates hits when using fast-search target attribute", Fixture(false, FastSearchConfig::ExplicitlyEnabled))
+TEST(ImportedSearchContextTest, calc_hit_estimate_estimates_hits_when_using_fast_search_target_attribute)
 {
+    Fixture f(false, FastSearchConfig::ExplicitlyEnabled);
     constexpr uint32_t target_docs = 1000;
     constexpr uint32_t docs = 10000;
     constexpr uint32_t target_gids = 200;
@@ -119,7 +133,7 @@ TEST_F("calc_hit_estimate() estimates hits when using fast-search target attribu
     auto ctx = f.create_context(word_term("10"));
     // Exact count: 0 target hits => 0
     auto est = ctx->calc_hit_estimate();
-    EXPECT_EQUAL(0u, est.est_hits());
+    EXPECT_EQ(0u, est.est_hits());
     EXPECT_FALSE(est.is_unknown());
     TermFieldMatchData match;
     auto iter = f.create_iterator(*ctx, match, false);
@@ -127,35 +141,43 @@ TEST_F("calc_hit_estimate() estimates hits when using fast-search target attribu
     ctx = f.create_context(word_term("20"));
     // Exact count: 2 target hits, 2 docs / target doc => 2 * 2 = 4
     est = ctx->calc_hit_estimate();
-    EXPECT_EQUAL(4u, est.est_hits());
+    EXPECT_EQ(4u, est.est_hits());
     EXPECT_FALSE(est.is_unknown());
     ctx = f.create_context(word_term("30"));
     // Approximation: 110 target hits => 110 * 10001 / 1001 = 1099
     est = ctx->calc_hit_estimate();
-    EXPECT_EQUAL(1099u, est.est_hits());
+    EXPECT_EQ(1099u, est.est_hits());
     EXPECT_FALSE(est.is_unknown());
 }
 
-TEST_F("attributeName() returns imported attribute name", Fixture) {
+TEST(ImportedSearchContextTest, attributeName_returns_imported_attribute_name)
+{
+    Fixture f;
     auto ctx = f.create_context(word_term("foo"));
-    EXPECT_EQUAL(f.default_imported_attr_name(), ctx->attributeName());
+    EXPECT_EQ(f.default_imported_attr_name(), ctx->attributeName());
 }
 
-TEST_F("valid() forwards to target search context", Fixture) {
+TEST(ImportedSearchContextTest, valid_forwards_to_target_search_context)
+{
+    Fixture f;
     auto ctx = f.create_context(word_term("foo"));
-    EXPECT_EQUAL(ctx->target_search_context().valid(), ctx->valid());
+    EXPECT_EQ(ctx->target_search_context().valid(), ctx->valid());
 }
 
-TEST_F("getAsIntegerTerm() forwards to target search context", Fixture) {
+TEST(ImportedSearchContextTest, getAsIntegerTerm_forwards_to_target_search_context)
+{
+    Fixture f;
     auto ctx = f.create_context(word_term("foo"));
     // No operator== or printing for Range, so doing this the hard way
     auto expected_range = ctx->target_search_context().getAsIntegerTerm();
     auto actual_range = ctx->getAsIntegerTerm();
-    EXPECT_EQUAL(expected_range.lower(), actual_range.lower());
-    EXPECT_EQUAL(expected_range.upper(), actual_range.upper());
+    EXPECT_EQ(expected_range.lower(), actual_range.lower());
+    EXPECT_EQ(expected_range.upper(), actual_range.upper());
 }
 
-TEST_F("Non-strict iterator not marked as strict", Fixture) {
+TEST(ImportedSearchContextTest, non_strict_iterator_not_marked_as_strict)
+{
+    Fixture f;
     auto ctx = f.create_context(word_term("5678"));
     TermFieldMatchData match;
     auto iter = f.create_non_strict_iterator(*ctx, match);
@@ -163,7 +185,9 @@ TEST_F("Non-strict iterator not marked as strict", Fixture) {
     EXPECT_TRUE(iter->is_strict() == Trinary::False); // No EXPECT_EQUALS printing of Trinary...
 }
 
-TEST_F("Non-strict iterator seek forwards to target attribute", Fixture) {
+TEST(ImportedSearchContextTest, non_strict_iterator_seek_forwards_to_target_attribute)
+{
+    Fixture f;
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32,
             {{DocId(1), dummy_gid(3), DocId(3), 1234},
@@ -175,19 +199,21 @@ TEST_F("Non-strict iterator seek forwards to target attribute", Fixture) {
     auto iter = f.create_non_strict_iterator(*ctx, match);
 
     EXPECT_FALSE(iter->isAtEnd());
-    EXPECT_EQUAL(iter->beginId(), iter->getDocId());
+    EXPECT_EQ(iter->beginId(), iter->getDocId());
 
     EXPECT_FALSE(iter->seek(DocId(1)));
-    EXPECT_EQUAL(iter->beginId(), iter->getDocId()); // Non-strict iterator does not change current ID
+    EXPECT_EQ(iter->beginId(), iter->getDocId()); // Non-strict iterator does not change current ID
 
     EXPECT_TRUE(iter->seek(DocId(3)));
-    EXPECT_EQUAL(DocId(3), iter->getDocId());
+    EXPECT_EQ(DocId(3), iter->getDocId());
 
     EXPECT_FALSE(iter->seek(DocId(5)));
-    EXPECT_EQUAL(DocId(3), iter->getDocId()); // Still unchanged
+    EXPECT_EQ(DocId(3), iter->getDocId()); // Still unchanged
 }
 
-TEST_F("Non-strict iterator unpacks target match data for single value hit", Fixture) {
+TEST(ImportedSearchContextTest, non_strict_iterator_unpacks_target_match_data_for_single_value_hit)
+{
+    Fixture f;
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32,
             {{DocId(1), dummy_gid(3), DocId(3), 1234},
@@ -217,16 +243,20 @@ struct ArrayValueFixture : Fixture {
 
 ArrayValueFixture::~ArrayValueFixture() = default;
 
-TEST_F("Non-strict iterator handles unmapped LIDs", ArrayValueFixture) {
+TEST(ImportedSearchContextTest, non_strict_iterator_handles_unmapped_lids)
+{
+    ArrayValueFixture f;
     auto ctx = f.create_context(word_term("1234"));
     TermFieldMatchData match;
     auto iter = f.create_non_strict_iterator(*ctx, match);
 
     EXPECT_FALSE(iter->seek(DocId(2)));
-    EXPECT_EQUAL(iter->beginId(), iter->getDocId());
+    EXPECT_EQ(iter->beginId(), iter->getDocId());
 }
 
-TEST_F("Non-strict iterator handles seek outside of LID space", ArrayValueFixture) {
+TEST(ImportedSearchContextTest, non_strict_iterator_handles_seek_outside_of_lid_space)
+{
+    ArrayValueFixture f;
     auto ctx = f.create_context(word_term("1234"));
     TermFieldMatchData match;
     auto iter = f.create_non_strict_iterator(*ctx, match);
@@ -236,7 +266,9 @@ TEST_F("Non-strict iterator handles seek outside of LID space", ArrayValueFixtur
     EXPECT_TRUE(iter->isAtEnd());
 }
 
-TEST_F("Non-strict iterator unpacks target match data for array hit", ArrayValueFixture) {
+TEST(ImportedSearchContextTest, non_strict_iterator_unpacks_target_match_data_for_array_hit)
+{
+    ArrayValueFixture f;
     auto ctx = f.create_context(word_term("1234"));
     TermFieldMatchData match;
     auto iter = f.create_non_strict_iterator(*ctx, match);
@@ -261,7 +293,9 @@ struct WsetValueFixture : Fixture {
 
 WsetValueFixture::~WsetValueFixture() = default;
 
-TEST_F("Non-strict iterator unpacks target match data for weighted set hit", WsetValueFixture) {
+TEST(ImportedSearchContextTest, non_strict_iterator_unpacks_target_match_data_for_weighted_set_hit)
+{
+    WsetValueFixture f;
     auto ctx = f.create_context(word_term("foo"));
     TermFieldMatchData match;
     auto iter = f.create_non_strict_iterator(*ctx, match);
@@ -270,7 +304,9 @@ TEST_F("Non-strict iterator unpacks target match data for weighted set hit", Wse
     EXPECT_TRUE(is_hit_with_weight(*iter, match, DocId(6), 42));
 }
 
-TEST_F("Strict iterator is marked as strict", Fixture) {
+TEST(ImportedSearchContextTest, strict_iterator_is_marked_as_strict)
+{
+    Fixture f;
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
@@ -279,7 +315,9 @@ TEST_F("Strict iterator is marked as strict", Fixture) {
     EXPECT_TRUE(iter->is_strict() == Trinary::True); // No EXPECT_EQUALS printing of Trinary...
 }
 
-TEST_F("Non-strict blueprint with high hit rate is strict", Fixture(false, FastSearchConfig::ExplicitlyEnabled)) {
+TEST(ImportedSearchContextTest, non_strict_blueprint_with_high_hit_rate_is_strict)
+{
+    Fixture f(false, FastSearchConfig::ExplicitlyEnabled);
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::createForTest(0.02), false);
     TermFieldMatchData match;
@@ -288,7 +326,9 @@ TEST_F("Non-strict blueprint with high hit rate is strict", Fixture(false, FastS
     EXPECT_TRUE(iter->is_strict() == Trinary::True);
 }
 
-TEST_F("Non-strict blueprint with low hit rate is non-strict", Fixture(false, FastSearchConfig::ExplicitlyEnabled)) {
+TEST(ImportedSearchContextTest, non_strict_blueprint_with_low_hit_rate_is_non_strict)
+{
+    Fixture f(false, FastSearchConfig::ExplicitlyEnabled);
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::createForTest(0.01), false);
     TermFieldMatchData match;
@@ -313,33 +353,37 @@ SingleValueFixture::~SingleValueFixture() = default;
 
 // Strict iteration implicitly tests unmapped LIDs by its nature, so we don't have a separate test for that.
 
-TEST_F("Strict iterator seeks to first available hit LID", SingleValueFixture) {
+TEST(ImportedSearchContextTest, strict_iterator_seeks_to_first_available_hit_lid)
+{
+    SingleValueFixture f;
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
 
     EXPECT_FALSE(iter->isAtEnd());
-    EXPECT_EQUAL(DocId(3), iter->getDocId());
+    EXPECT_EQ(DocId(3), iter->getDocId());
 
     EXPECT_FALSE(iter->seek(DocId(1)));
     EXPECT_FALSE(iter->isAtEnd());
-    EXPECT_EQUAL(DocId(3), iter->getDocId());
+    EXPECT_EQ(DocId(3), iter->getDocId());
 
     EXPECT_TRUE(iter->seek(DocId(3)));
     EXPECT_FALSE(iter->isAtEnd());
-    EXPECT_EQUAL(DocId(3), iter->getDocId());
+    EXPECT_EQ(DocId(3), iter->getDocId());
 
     EXPECT_FALSE(iter->seek(DocId(4)));
     EXPECT_FALSE(iter->isAtEnd());
-    EXPECT_EQUAL(DocId(5), iter->getDocId());
+    EXPECT_EQ(DocId(5), iter->getDocId());
 
     // Seeking beyond last hit exhausts doc id limit and marks iterator as done
     EXPECT_FALSE(iter->seek(DocId(6)));
     EXPECT_TRUE(iter->isAtEnd());
 }
 
-TEST_F("Strict iterator unpacks target match data for single value hit", SingleValueFixture) {
+TEST(ImportedSearchContextTest, strict_iterator_unpacks_target_match_data_for_single_value_hit)
+{
+    SingleValueFixture f;
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
@@ -351,7 +395,9 @@ TEST_F("Strict iterator unpacks target match data for single value hit", SingleV
     EXPECT_TRUE(is_strict_hit_with_weight(*iter, match, DocId(4), DocId(5), 1));
 }
 
-TEST_F("Strict iterator unpacks target match data for array hit", ArrayValueFixture) {
+TEST(ImportedSearchContextTest, strict_iterator_unpacks_target_match_data_for_array_hit)
+{
+    ArrayValueFixture f;
     auto ctx = f.create_context(word_term("1234"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
@@ -363,7 +409,9 @@ TEST_F("Strict iterator unpacks target match data for array hit", ArrayValueFixt
     EXPECT_TRUE(is_strict_hit_with_weight(*iter, match, DocId(4), DocId(4), 3));
 }
 
-TEST_F("Strict iterator unpacks target match data for weighted set hit", WsetValueFixture) {
+TEST(ImportedSearchContextTest, strict_iterator_unpacks_target_match_data_for_weighted_set_hit)
+{
+    WsetValueFixture f;
     auto ctx = f.create_context(word_term("foo"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
@@ -374,7 +422,9 @@ TEST_F("Strict iterator unpacks target match data for weighted set hit", WsetVal
     EXPECT_TRUE(is_strict_hit_with_weight(*iter, match, DocId(3), DocId(6), 42));
 }
 
-TEST_F("Strict iterator handles seek outside of LID space", ArrayValueFixture) {
+TEST(ImportedSearchContextTest, strict_iterator_handles_seek_outside_of_lid_space)
+{
+    ArrayValueFixture f;
     auto ctx = f.create_context(word_term("1234"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
@@ -385,7 +435,9 @@ TEST_F("Strict iterator handles seek outside of LID space", ArrayValueFixture) {
     EXPECT_TRUE(iter->isAtEnd());
 }
 
-TEST_F("matches() performs GID mapping and forwards to target attribute", SingleValueFixture) {
+TEST(ImportedSearchContextTest, matches_performs_gid_mapping_and_forwards_to_target_attribute)
+{
+    SingleValueFixture f;
     auto ctx = f.create_context(word_term("5678"));
     EXPECT_FALSE(ctx->matches(DocId(2)));
     EXPECT_TRUE(ctx->matches(DocId(3)));
@@ -393,20 +445,24 @@ TEST_F("matches() performs GID mapping and forwards to target attribute", Single
     EXPECT_TRUE(ctx->matches(DocId(5)));
 }
 
-TEST_F("matches(weight) performs GID mapping and forwards to target attribute", WsetValueFixture) {
+TEST(ImportedSearchContextTest, matches_weight_performs_gid_mapping_and_forwards_to_target_attribute)
+{
+    WsetValueFixture f;
     auto ctx = f.create_context(word_term("foo"));
     int32_t weight = 0;
     EXPECT_FALSE(ctx->matches(DocId(1), weight));
-    EXPECT_EQUAL(0, weight); // Unchanged
+    EXPECT_EQ(0, weight); // Unchanged
 
     EXPECT_TRUE(ctx->matches(DocId(2), weight));
-    EXPECT_EQUAL(-5, weight);
+    EXPECT_EQ(-5, weight);
 
     EXPECT_TRUE(ctx->matches(DocId(6), weight));
-    EXPECT_EQUAL(42, weight);
+    EXPECT_EQ(42, weight);
 }
 
-TEST_F("Multiple iterators can be created from the same context", SingleValueFixture) {
+TEST(ImportedSearchContextTest, multiple_iterators_can_be_created_from_the_same_context)
+{
+    SingleValueFixture f;
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
 
@@ -428,8 +484,9 @@ TEST_F("Multiple iterators can be created from the same context", SingleValueFix
     EXPECT_TRUE(is_hit_with_weight(*iter2, match2, DocId(3), 1));
 }
 
-TEST_F("original lid range is used by search context", SingleValueFixture)
+TEST(ImportedSearchContextTest, original_lid_range_is_used_by_search_context)
 {
+    SingleValueFixture f;
     auto first_ctx = f.create_context(word_term("5678"));
     add_n_docs_with_undefined_values(*f.reference_attr, 1);
     f.map_reference(DocId(10), dummy_gid(5), DocId(5));
@@ -438,12 +495,13 @@ TEST_F("original lid range is used by search context", SingleValueFixture)
     EXPECT_TRUE(second_ctx->matches(DocId(10)));
 } 
 
-TEST_F("Original target lid range is used by search context", SingleValueFixture)
+TEST(ImportedSearchContextTest, original_target_lid_range_is_used_by_search_context)
 {
-    EXPECT_EQUAL(11u, f.target_attr->getNumDocs());
+    SingleValueFixture f;
+    EXPECT_EQ(11u, f.target_attr->getNumDocs());
     auto first_ctx = f.create_context(word_term("2345"));
     add_n_docs_with_undefined_values(*f.target_attr, 1);
-    EXPECT_EQUAL(12u, f.target_attr->getNumDocs());
+    EXPECT_EQ(12u, f.target_attr->getNumDocs());
     auto typed_target_attr = f.template target_attr_as<IntegerAttribute>();
     ASSERT_TRUE(typed_target_attr->update(11, 2345));
     f.target_attr->commit();
@@ -455,9 +513,11 @@ TEST_F("Original target lid range is used by search context", SingleValueFixture
 
 // Note: this uses an underlying string attribute, as queryTerm() does not seem to
 // implemented at all for (single) numeric attributes. Intentional?
-TEST_F("queryTerm() returns term context was created with", WsetValueFixture) {
+TEST(ImportedSearchContextTest, queryTerm_returns_term_context_was_created_with)
+{
+    WsetValueFixture f;
     auto ctx = f.create_context(word_term("helloworld"));
-    EXPECT_EQUAL(std::string("helloworld"), std::string(ctx->queryTerm()->getTerm()));
+    EXPECT_EQ(std::string("helloworld"), std::string(ctx->queryTerm()->getTerm()));
 }
 
 struct SearchCacheFixture : Fixture {
@@ -486,46 +546,48 @@ makeSearchCacheEntry(const std::vector<uint32_t> docIds, uint32_t docIdLimit)
     return std::make_shared<BitVectorSearchCache::Entry>(IDocumentMetaStoreContext::IReadGuard::SP(), bitVector, docIdLimit);
 }
 
-TEST_F("Bit vector from search cache is used if found", SearchCacheFixture)
+TEST(ImportedSearchContextTest, bitvector_from_search_cache_is_used_if_found)
 {
+    SearchCacheFixture f;
     f.imported_attr->getSearchCache()->insert("5678",
                                               makeSearchCacheEntry({2, 6}, f.get_imported_attr()->getNumDocs()));
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
-    TEST_DO(f.assertSearch({2, 6}, *iter)); // Note: would be {3, 5} if cache was not used
-    EXPECT_EQUAL(0u, f.document_meta_store->get_read_guard_cnt);
+    EXPECT_EQ(SimpleResult({2, 6}), f.search(*iter)); // Note: would be {3, 5} if cache was not used
+    EXPECT_EQ(0u, f.document_meta_store->get_read_guard_cnt);
 }
 
-void
-assertBitVector(const std::vector<uint32_t> &expDocIds, const BitVector &bitVector)
+std::vector<uint32_t>
+get_bitvector_hits(const BitVector &bitVector)
 {
     std::vector<uint32_t> actDocsIds;
     bitVector.foreach_truebit([&](uint32_t docId){ actDocsIds.push_back(docId); });
-    EXPECT_EQUAL(expDocIds, actDocsIds);
+    return actDocsIds;
 }
 
-TEST_F("Entry is inserted into search cache if bit vector posting list is used", SearchCacheFixture)
+TEST(ImportedSearchContextTest, entry_is_inserted_into_search_cache_if_bit_vector_posting_list_is_used)
 {
-    EXPECT_EQUAL(0u, f.imported_attr->getSearchCache()->size());
+    SearchCacheFixture f;
+    EXPECT_EQ(0u, f.imported_attr->getSearchCache()->size());
     auto old_mem_usage = f.imported_attr->get_memory_usage();
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
-    TEST_DO(f.assertSearch({3, 5}, *iter));
+    EXPECT_EQ(SimpleResult({3, 5}), f.search(*iter));
 
-    EXPECT_EQUAL(1u, f.imported_attr->getSearchCache()->size());
+    EXPECT_EQ(1u, f.imported_attr->getSearchCache()->size());
     auto new_mem_usage = f.imported_attr->get_memory_usage();
-    EXPECT_LESS(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
-    EXPECT_LESS(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
+    EXPECT_LT(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
+    EXPECT_LT(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
     auto cacheEntry = f.imported_attr->getSearchCache()->find("5678");
-    EXPECT_EQUAL(cacheEntry->docIdLimit, f.get_imported_attr()->getNumDocs());
-    TEST_DO(assertBitVector({3, 5}, *cacheEntry->bitVector));
-    EXPECT_EQUAL(1u, f.document_meta_store->get_read_guard_cnt);
+    EXPECT_EQ(cacheEntry->docIdLimit, f.get_imported_attr()->getNumDocs());
+    EXPECT_EQ((std::vector<uint32_t>{3, 5}), get_bitvector_hits(*cacheEntry->bitVector));
+    EXPECT_EQ(1u, f.document_meta_store->get_read_guard_cnt);
 }
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

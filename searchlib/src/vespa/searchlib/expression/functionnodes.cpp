@@ -293,7 +293,7 @@ MaxFunctionNode::getInitialValue() const
     } else if (arg.inherits(IntegerResultNodeVector::classId)) {
         initial.reset(new Int64ResultNode(std::numeric_limits<int64_t>::min()));
     } else {
-        throw std::runtime_error(vespalib::string("Can not choose an initial value for class ") + arg.getClass().name());
+        throw std::runtime_error(std::string("Can not choose an initial value for class ") + arg.getClass().name());
     }
     return initial;
 }
@@ -308,7 +308,7 @@ MinFunctionNode::getInitialValue() const
     } else if (arg.inherits(IntegerResultNodeVector::classId)) {
         initial.reset(new Int64ResultNode(std::numeric_limits<int64_t>::max()));
     } else {
-        throw std::runtime_error(vespalib::string("Can not choose an initial value for class ") + arg.getClass().name());
+        throw std::runtime_error(std::string("Can not choose an initial value for class ") + arg.getClass().name());
     }
     return initial;
 }

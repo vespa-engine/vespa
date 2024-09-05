@@ -3,8 +3,8 @@
 #pragma once
 
 #include "geo_location.h"
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace search::common {
 

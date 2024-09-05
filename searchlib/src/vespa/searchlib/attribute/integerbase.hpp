@@ -11,12 +11,12 @@ namespace search {
 using largeint_t = attribute::IAttributeVector::largeint_t;
 
 template<typename T>
-IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name)
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const std::string & name)
     : IntegerAttributeTemplate(name, BasicType::fromType(T()))
 { }
 
 template<typename T>
-IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name, const Config & c)
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const std::string & name, const Config & c)
     : IntegerAttribute(name, c),
       _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
 {
@@ -24,7 +24,7 @@ IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & n
 }
 
 template<typename T>
-IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType)
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const std::string & name, const Config & c, const BasicType &realType)
     : IntegerAttribute(name, c),
       _defaultValue(ChangeBase::UPDATE, 0, 0u)
 {

@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <string>
-#include <cstdint>
 #include "geo_location.h"
 #include "geo_location_spec.h"
+#include <cstdint>
+#include <string>
 
 namespace search::common {
 

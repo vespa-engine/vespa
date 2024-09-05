@@ -69,7 +69,7 @@ TEST(FastValueTest, insert_subspace) {
     Handle bar("bar");
     string_id foo_id = foo.id();
     string_id bar_id = bar.id();
-    auto addr = [](string_id &ref){ return ConstArrayRef<string_id>(&ref, 1); };
+    auto addr = [](string_id &ref){ return std::span<const string_id>(&ref, 1); };
     auto type = ValueType::from_spec("tensor<float>(x{},y[2])");
     auto value = std::make_unique<FastValue<float,true>>(type, 1, 2, 5);
     EXPECT_EQ(value->index().size(), 0);
@@ -116,7 +116,7 @@ TEST(FastValueTest, insert_subspace) {
 }
 
 TEST(FastValueTest, insert_empty_subspace) {
-    auto addr = []() { return ConstArrayRef<string_id>(); };
+    auto addr = []() { return std::span<const string_id>(); };
     auto type = ValueType::from_spec("double");
     auto value = std::make_unique<FastValue<double, true>>(type, 0, 1, 1);
     EXPECT_EQ(value->index().size(), 0);
@@ -152,7 +152,7 @@ verifyFastValueSize(TensorSpec spec, uint32_t elems, size_t expected) {
 TEST(FastValueTest, document_fast_value_memory_usage) {
     EXPECT_EQ(232, sizeof(FastValue<float,true>));
     FastValue<float,true> test(ValueType::from_spec("tensor<float>(country{})"), 1, 1, 1);
-    constexpr size_t BASE_SZ = 348 + sizeof(vespalib::string);
+    constexpr size_t BASE_SZ = 348 + sizeof(std::string);
     EXPECT_EQ(BASE_SZ, test.get_memory_usage().allocatedBytes());
 
 
@@ -221,7 +221,7 @@ TEST(FastValueBuilderTest, mixed_add_subspace_robustness) {
     size_t subspace_idx;
     auto get_subspace = [&]() {
         auto cells = value->cells().typify<double>();
-        return ConstArrayRef<double>(cells.begin() + subspace_idx * 2, 2);
+        return std::span<const double>(cells.begin() + subspace_idx * 2, 2);
     };
     auto view = value->index().create_view({});
     view->lookup({});

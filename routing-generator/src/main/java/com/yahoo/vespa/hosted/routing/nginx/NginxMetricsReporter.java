@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * @author mortent
  * @author mpolden
  */
-public class NginxMetricsReporter extends AbstractComponent implements Runnable {
+public final class NginxMetricsReporter extends AbstractComponent implements Runnable {
 
     private static final Duration interval = Duration.ofSeconds(20);
 

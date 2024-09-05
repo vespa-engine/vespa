@@ -31,7 +31,7 @@ public:
      * @param target   The target to decorate.
      * @param prefix   The prefix to prepend to the target
      */
-    FlushTargetProxy(const IFlushTarget::SP &target, const vespalib::string & prefix);
+    FlushTargetProxy(const IFlushTarget::SP &target, const std::string & prefix);
     /**
      * Returns the decorated flush target. This should not be used for anything
      * but testing, as invoking a method on the returned target beats the

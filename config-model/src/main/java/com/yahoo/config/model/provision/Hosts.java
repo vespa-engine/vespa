@@ -42,8 +42,8 @@ public class Hosts {
     private void validateAliases(Collection<Host> hosts) {
         Set<String> aliases = new HashSet<>();
         for (Host host : hosts) {
-            if (host.aliases().size() > 0) {
-                if (host.aliases().size() < 1)
+            if (!host.aliases().isEmpty()) {
+                if (host.aliases().isEmpty())
                     throw new IllegalArgumentException("Host '" + host.hostname() + "' must have at least one <alias> tag.");
                 for (String alias : host.aliases()) {
                     if (aliases.contains(alias))
@@ -65,7 +65,7 @@ public class Hosts {
         Document doc = XmlHelper.getDocument(hostsFile);
         for (Element hostE : XML.getChildren(doc.getDocumentElement(), "host")) {
             String name = hostE.getAttribute("name");
-            if (name.equals("")) {
+            if (name.isEmpty()) {
                 throw new IllegalArgumentException("Missing 'name' attribute for host.");
             }
             if ("localhost".equals(name)) {
@@ -103,12 +103,12 @@ public class Hosts {
             }
             if (! e.getNodeName().equals("alias")) {
                 throw new IllegalArgumentException("Unexpected tag: '" + e.getNodeName() + "' at node " +
-                                                           XML.getNodePath(e, " > ") + ", expected 'alias'.");
+                                                   XML.getNodePath(e, " > ") + ", expected 'alias'.");
             }
             String alias = e.getFirstChild().getNodeValue();
-            if ((alias == null) || (alias.equals(""))) {
+            if ((alias == null) || (alias.isEmpty())) {
                 throw new IllegalArgumentException("Missing value for the alias tag at node " +
-                                                           XML.getNodePath(e, " > ") + "'.");
+                                                   XML.getNodePath(e, " > ") + "'.");
             }
             aliases.add(alias);
         }

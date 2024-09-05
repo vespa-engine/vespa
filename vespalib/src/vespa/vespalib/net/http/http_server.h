@@ -27,7 +27,7 @@ public:
     using UP = std::unique_ptr<HttpServer>;
     HttpServer(int port_in);
     ~HttpServer();
-    const vespalib::string &host() const { return _server->my_host(); }
+    const std::string &host() const { return _server->my_host(); }
     JsonHandlerRepo &repo() { return _handler_repo; }
     int port() const { return _server->listen_port(); }
 };

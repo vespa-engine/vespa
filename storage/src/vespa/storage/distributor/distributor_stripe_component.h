@@ -52,7 +52,7 @@ public:
 
     // Implements DistributorNodeContext
     const framework::Clock& clock() const noexcept override { return getClock(); }
-    const vespalib::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
+    const std::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
 
@@ -151,7 +151,7 @@ public:
     const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept override;
 
     // Implements DocumentSelectionParser
-    std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
+    std::unique_ptr<document::select::Node> parse_selection(const std::string& selection) const override;
 
 private:
     DistributorStripeInterface& _distributor;

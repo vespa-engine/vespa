@@ -162,7 +162,7 @@ public:
      * @param spec connect spec
      * @param result handler
      **/
-    void resolve_async(const vespalib::string &spec,
+    void resolve_async(const std::string &spec,
                        vespalib::AsyncResolver::ResultHandler::WP result_handler);
 
     /**

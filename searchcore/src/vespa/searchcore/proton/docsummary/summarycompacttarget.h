@@ -26,7 +26,7 @@ public:
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
 protected:
-    SummaryGCTarget(const vespalib::string &, vespalib::Executor & summaryService, IDocumentStore & docStore);
+    SummaryGCTarget(const std::string &, vespalib::Executor & summaryService, IDocumentStore & docStore);
 private:
 
     virtual size_t getBloat(const IDocumentStore & docStore) const = 0;

@@ -69,10 +69,10 @@ DeadLockDetector::enableShutdown(bool enable)
 
 namespace {
     struct VisitorWrapper : public framework::ThreadVisitor {
-        std::map<vespalib::string, DeadLockDetector::State>& _states;
+        std::map<std::string, DeadLockDetector::State>& _states;
         DeadLockDetector::ThreadVisitor& _visitor;
 
-        VisitorWrapper(std::map<vespalib::string, DeadLockDetector::State>& s,
+        VisitorWrapper(std::map<std::string, DeadLockDetector::State>& s,
                        DeadLockDetector::ThreadVisitor& visitor)
             : _states(s),
               _visitor(visitor)
@@ -119,7 +119,7 @@ DeadLockDetector::isAboveWarnThreshold(vespalib::steady_time time,
     return (tick._lastTick + tp.getMaxCycleTime() + slack / 4 < time);
 }
 
-vespalib::string
+std::string
 DeadLockDetector::getBucketLockInfo() const
 {
     vespalib::asciistream ost;
@@ -175,7 +175,7 @@ namespace {
 void
 DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
                                  const framework::Thread& deadlocked_thread,
-                                 const vespalib::string& id,
+                                 const std::string& id,
                                  const framework::ThreadProperties&,
                                  const framework::ThreadTickData& tick,
                                  bool warnOnly)
@@ -199,12 +199,12 @@ DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
     }
     if (warnOnly) {
         if (warning_enabled) {
-            LOGBT(warning, "deadlockw-" + id, "%s", vespalib::string(error.view()).c_str());
+            LOGBT(warning, "deadlockw-" + id, "%s", std::string(error.view()).c_str());
         }
         return;
     } else {
         if (shutdown_enabled || warning_enabled) {
-            LOGBT(error, "deadlock-" + id, "%s", vespalib::string(error.view()).c_str());
+            LOGBT(error, "deadlock-" + id, "%s", std::string(error.view()).c_str());
         }
     }
     if (shutdown_enabled) {
@@ -258,7 +258,7 @@ namespace {
             : _table(table), _time(time) {}
 
         template<typename T>
-        vespalib::string toS(const T& val) {
+        std::string toS(const T& val) {
             vespalib::asciistream ost;
             ost << val;
             return ost.str();

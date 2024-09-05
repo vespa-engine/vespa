@@ -59,7 +59,7 @@ struct ExecFixture
 {
     BlueprintFactory factory;
     FtFeatureTest test;
-    ExecFixture(const vespalib::string &feature)
+    ExecFixture(const std::string &feature)
         : factory(),
           test(factory, feature)
     {

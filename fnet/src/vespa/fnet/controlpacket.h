@@ -97,6 +97,6 @@ public:
      * This method should never be called and will abort the program.
      **/
     bool Decode(FNET_DataBuffer *, uint32_t) override;
-    vespalib::string Print(uint32_t indent = 0) override;
+    std::string Print(uint32_t indent = 0) override;
 };
 

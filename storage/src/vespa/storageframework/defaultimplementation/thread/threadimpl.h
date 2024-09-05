@@ -61,7 +61,7 @@ public:
     void interrupt() override;
     void join() override;
 
-    vespalib::string get_live_thread_stack_trace() const override;
+    std::string get_live_thread_stack_trace() const override;
 
     void registerTick(CycleType, vespalib::steady_time) override;
     void registerTick(CycleType cycleType) override;

@@ -12,7 +12,7 @@ namespace vespalib {
 class ObjectDumper : public ObjectVisitor
 {
 private:
-    vespalib::string _str;
+    std::string _str;
     int         _indent;
     int         _currIndent;
 
@@ -29,7 +29,7 @@ private:
      *
      * @param line the line we want to add
      **/
-    void addLine(const vespalib::string &line);
+    void addLine(const std::string &line);
 
     /**
      * Open a subscope by increasing the current indent level
@@ -58,7 +58,7 @@ public:
      *
      * @return object string representation
      **/
-    const vespalib::string & toString() const { return _str; }
+    const std::string & toString() const { return _str; }
 
     void openStruct(std::string_view name, std::string_view type) override;
     void closeStruct() override;

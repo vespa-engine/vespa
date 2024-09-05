@@ -10,12 +10,12 @@
 
 #pragma once
 
-#include <string>
-#include <map>
-#include <vector>
-
 #include "fsa.h"
 #include "ngram.h"
+
+#include <map>
+#include <string>
+#include <vector>
 
 namespace fsa {
 

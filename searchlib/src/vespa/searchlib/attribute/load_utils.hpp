@@ -13,8 +13,8 @@ template <class MvMapping, class Saver>
 uint32_t
 loadFromEnumeratedMultiValue(MvMapping & mapping,
                              ReaderBase & attrReader,
-                             vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>> enumValueToValueMap,
-                             vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
+                             std::span<const atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>> enumValueToValueMap,
+                             std::span<const uint32_t> enum_value_remapping,
                              Saver saver)
 {
     mapping.prepareLoadFromMultiValue();
@@ -62,8 +62,8 @@ void
 loadFromEnumeratedSingleValue(Vector &vector,
                               vespalib::GenerationHolder &genHolder,
                               ReaderBase &attrReader,
-                              vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
-                              vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
+                              std::span<const atomic_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
+                              std::span<const uint32_t> enum_value_remapping,
                               Saver saver)
 {
     using ValueType = typename Vector::ValueType;

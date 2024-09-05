@@ -22,7 +22,7 @@ struct FunInfo {
     }
 };
 
-void verify_optimized_cell_types(const vespalib::string &expr) {
+void verify_optimized_cell_types(const std::string &expr) {
     auto same_stable_types = CellTypeSpace(CellTypeUtils::list_stable_types(), 2).same();
     auto same_unstable_types = CellTypeSpace(CellTypeUtils::list_unstable_types(), 2).same();
     auto different_types = CellTypeSpace(CellTypeUtils::list_types(), 2).different();
@@ -31,12 +31,12 @@ void verify_optimized_cell_types(const vespalib::string &expr) {
     EvalFixture::verify<FunInfo>(expr, {}, different_types);
 }
 
-void verify_optimized(const vespalib::string &expr, bool expect_mutable = false) {
+void verify_optimized(const std::string &expr, bool expect_mutable = false) {
     CellTypeSpace just_float({CellType::FLOAT}, 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo(expect_mutable)}, just_float);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     CellTypeSpace just_float({CellType::FLOAT}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_float);
 }
@@ -110,7 +110,7 @@ std::vector<MapType> map_types_for(KeyType key_type) {
 
 TEST(MappedLookup, test_case_interactions) {
     for (bool mutable_map: {false, true}) {
-        vespalib::string expr = mutable_map ? "reduce(a*@b,sum,x)" : "reduce(a*b,sum,x)";
+        std::string expr = mutable_map ? "reduce(a*@b,sum,x)" : "reduce(a*b,sum,x)";
         for (KeyType key_type: {KeyType::EMPTY, KeyType::UNIT, KeyType::SCALING, KeyType::MULTI}) {
             auto key = make_key(key_type);
             for (MapType map_type: map_types_for(key_type)) {

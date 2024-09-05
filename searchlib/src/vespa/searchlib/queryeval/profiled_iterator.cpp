@@ -25,7 +25,7 @@ struct TaskGuard {
     ~TaskGuard() { profiler.complete(); }
 };
 
-vespalib::string name_of(const auto &obj) {
+std::string name_of(const auto &obj) {
     auto name = vespalib::getClassName(obj);
     auto end = name.find("<");
     auto ns = name.rfind("::", end);
@@ -34,11 +34,11 @@ vespalib::string name_of(const auto &obj) {
 }
 
 std::unique_ptr<SearchIterator> create(Profiler &profiler,
-                                       const vespalib::string &path,
+                                       const std::string &path,
                                        std::unique_ptr<SearchIterator> search,
                                        auto ctor_token)
 {
-    vespalib::string prefix = fmt("%s%s/", path.c_str(), name_of(*search).c_str());
+    std::string prefix = fmt("%s%s/", path.c_str(), name_of(*search).c_str());
     return std::make_unique<ProfiledIterator>(profiler, std::move(search),
                                               profiler.resolve(prefix + "init"),
                                               profiler.resolve(prefix + "seek"),
@@ -101,7 +101,7 @@ ProfiledIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 std::unique_ptr<SearchIterator>
-ProfiledIterator::profile(Profiler &profiler, std::unique_ptr<SearchIterator> node, const vespalib::string &path)
+ProfiledIterator::profile(Profiler &profiler, std::unique_ptr<SearchIterator> node, const std::string &path)
 {
     node->transform_children([&](auto child, size_t i){
                                  return profile(profiler, std::move(child), fmt("%s%zu/", path.c_str(), i));

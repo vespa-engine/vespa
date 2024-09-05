@@ -8,7 +8,6 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <array>
 
@@ -20,16 +19,16 @@ namespace documentapi {
 
 // This is not version-dependent
 TEST(MessagesTest, concrete_types_have_expected_sizes) {
-    EXPECT_EQ(sizeof(GetDocumentMessage),    152u + 2 *sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(GetDocumentMessage),    152u + 2 *sizeof(std::string));
     EXPECT_EQ(sizeof(GetDocumentReply),      128u);
-    EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(std::string));
     EXPECT_EQ(sizeof(DocumentMessage),       112u);
     EXPECT_EQ(sizeof(TestAndSetMessage),     sizeof(TestAndSetCondition) + sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 40);
     EXPECT_EQ(sizeof(WriteDocumentReply),    112u);
     EXPECT_EQ(sizeof(UpdateDocumentReply),   120u);
     EXPECT_EQ(sizeof(UpdateDocumentMessage), sizeof(TestAndSetMessage) + 40);
-    EXPECT_EQ(sizeof(RemoveDocumentMessage), sizeof(TestAndSetMessage) + 48 + sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(RemoveDocumentMessage), sizeof(TestAndSetMessage) + 48 + sizeof(std::string));
     EXPECT_EQ(sizeof(RemoveDocumentReply),   120u);
 }
 

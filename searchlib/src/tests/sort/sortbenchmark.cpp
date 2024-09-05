@@ -3,7 +3,7 @@
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 using vespalib::Array;
 using vespalib::ConstBufferRef;
@@ -79,7 +79,7 @@ Test::cat() const
 TEST_MAIN() {
     size_t numVectors(11);
     size_t values(10000000);
-    vespalib::string type("radix");
+    std::string type("radix");
     if (argc > 1) {
         values = strtol(argv[1], NULL, 0);
         if (argc > 2) {

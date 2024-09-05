@@ -7,7 +7,7 @@
 namespace proton {
 
 GidToLidChangeRegistrator::GidToLidChangeRegistrator(std::shared_ptr<IGidToLidChangeHandler> handler,
-                                                     const vespalib::string &docTypeName)
+                                                     const std::string &docTypeName)
     : _handler(std::move(handler)),
       _docTypeName(docTypeName),
       _keepNames()

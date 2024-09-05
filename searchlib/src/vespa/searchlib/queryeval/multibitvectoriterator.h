@@ -5,6 +5,7 @@
 #include "multisearch.h"
 #include "unpackinfo.h"
 #include <vespa/searchlib/common/bitword.h>
+#include <vespa/vespalib/util/vespa_dll_local.h>
 
 namespace vespalib::hwaccelerated { class IAccelerated; }
 

@@ -7,11 +7,8 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -31,8 +28,7 @@ import static org.mockito.Mockito.when;
  */
 public class SecretStoreValidatorTest {
 
-    private final SecretStore secretStore = mock(SecretStore.class);
-    private final SecretStoreValidator secretStoreValidator = new SecretStoreValidator(secretStore);
+    private final SecretStoreValidator secretStoreValidator = new SecretStoreValidator();
 
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().port(4080), true);
@@ -44,10 +40,9 @@ public class SecretStoreValidatorTest {
                 "\"name\":\"store\"," +
                 "\"role\":\"role\"," +
                 "\"region\":\"some-region\"," +
-                "\"parameterName\":\"some-parameter\"" +
+                "\"parameterName\":\"some-parameter\"," +
+                "\"externalId\":\"some-secret-value\"" +
                 "}");
-        var expectedSecretName = SecretStoreExternalIdRetriever.secretName(TenantName.defaultName(), SystemName.PublicCd, "store");
-        when(secretStore.getSecret(expectedSecretName)).thenReturn("some-secret-value");
         stubFor(post(urlEqualTo("/validate-secret-store"))
                 .withRequestBody(equalToJson("{\"awsId\":\"123\"," +
                         "\"name\":\"store\"," +

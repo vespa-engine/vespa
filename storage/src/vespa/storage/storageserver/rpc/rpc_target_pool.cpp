@@ -5,7 +5,7 @@
 
 namespace storage::rpc {
 
-RpcTargetPool::RpcTargetPool(RpcTargetVector&& targets, const vespalib::string& spec, uint32_t slobrok_gen)
+RpcTargetPool::RpcTargetPool(RpcTargetVector&& targets, const std::string& spec, uint32_t slobrok_gen)
     : _targets(std::move(targets)),
       _spec(spec),
       _slobrok_gen(slobrok_gen)

@@ -50,7 +50,7 @@ QueryEnvironment::getAttributeContext() const
 }
 
 double
-QueryEnvironment::get_average_field_length(const vespalib::string &field_name) const
+QueryEnvironment::get_average_field_length(const std::string &field_name) const
 {
     return _field_length_inspector.get_field_length_info(field_name).get_average_field_length();
 }

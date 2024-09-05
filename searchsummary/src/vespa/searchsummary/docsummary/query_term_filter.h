@@ -13,7 +13,7 @@ namespace search::docsummary {
  */
 class QueryTermFilter : public IQueryTermFilter
 {
-    using StringSet = vespalib::hash_set<vespalib::string>;
+    using StringSet = vespalib::hash_set<std::string>;
     StringSet _views;
 public:
     QueryTermFilter(StringSet views);

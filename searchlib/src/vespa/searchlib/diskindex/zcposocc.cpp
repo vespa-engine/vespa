@@ -43,7 +43,7 @@ setFeatureParams(const PostingListParams &params)
 }
 
 
-const vespalib::string &
+const std::string &
 Zc4PosOccSeqRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;
@@ -100,7 +100,7 @@ setFeatureParams(const PostingListParams &params)
 }
 
 
-const vespalib::string &
+const std::string &
 ZcPosOccSeqRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;

@@ -39,7 +39,6 @@
       "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer returnFile(java.io.File)",
       "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer returnFiles(java.util.Map)",
       "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer throwTimeoutException()",
-      "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer throwFileReferenceDoesNotExistException()",
       "public void shutdown()"
     ],
     "fields" : [ ]

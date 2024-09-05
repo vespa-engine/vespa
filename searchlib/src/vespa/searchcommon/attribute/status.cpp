@@ -60,10 +60,10 @@ Status::operator=(const Status& rhs)
     return *this;
 }
 
-vespalib::string
+std::string
 Status::createName(std::string_view index, std::string_view attr)
 {
-    vespalib::string name (index);
+    std::string name (index);
     name += ".attribute.";
     name += attr;
     return name;

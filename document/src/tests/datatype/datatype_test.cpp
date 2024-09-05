@@ -59,12 +59,12 @@ public:
 
     ~TensorDataTypeFixture();
 
-    void setup(const vespalib::string &spec)
+    void setup(const std::string &spec)
     {
         _tensorDataType = TensorDataType::fromSpec(spec);
     }
 
-    bool isAssignableType(const vespalib::string &spec) const
+    bool isAssignableType(const std::string &spec) const
     {
         auto assignType = ValueType::from_spec(spec);
         return _tensorDataType->isAssignableType(assignType);

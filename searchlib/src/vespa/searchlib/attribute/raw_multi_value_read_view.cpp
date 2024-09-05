@@ -14,7 +14,7 @@ template <typename MultiValueType>
 RawMultiValueReadView<MultiValueType>::~RawMultiValueReadView() = default;
 
 template <typename MultiValueType>
-vespalib::ConstArrayRef<MultiValueType>
+std::span<const MultiValueType>
 RawMultiValueReadView<MultiValueType>::get_values(uint32_t docid) const
 {
     return _mv_mapping_read_view.get(docid);

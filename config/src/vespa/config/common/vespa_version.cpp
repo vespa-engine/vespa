@@ -5,20 +5,20 @@
 
 namespace config {
 
-const VespaVersion currentVersion(VespaVersion::fromString(vespalib::string(vespalib::VersionTagComponent)));
+const VespaVersion currentVersion(VespaVersion::fromString(std::string(vespalib::VersionTagComponent)));
 
 
 VespaVersion::VespaVersion(const VespaVersion & vespaVersion) = default;
 
 VespaVersion & VespaVersion::operator=(const VespaVersion &rhs) = default;
 
-VespaVersion::VespaVersion(const vespalib::string & versionString)
+VespaVersion::VespaVersion(const std::string & versionString)
     : _versionString(versionString)
 {
 }
 
 VespaVersion
-VespaVersion::fromString(const vespalib::string & versionString)
+VespaVersion::fromString(const std::string & versionString)
 {
     return VespaVersion(versionString);
 }
@@ -28,7 +28,7 @@ VespaVersion::getCurrentVersion() {
     return currentVersion;
 }
 
-const vespalib::string &
+const std::string &
 VespaVersion::toString() const
 {
     return _versionString;

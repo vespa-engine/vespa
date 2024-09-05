@@ -15,7 +15,7 @@ class TransactionLogManager : public TransactionLogManagerBase
 {
     std::unique_ptr<Visitor> _visitor;
 
-    void doLogReplayComplete(const vespalib::string &domainName, vespalib::duration elapsedTime) const override;
+    void doLogReplayComplete(const std::string &domainName, vespalib::duration elapsedTime) const override;
 
 public:
     /**
@@ -24,7 +24,7 @@ public:
      * @param tlsSpec the spec of the transaction log server.
      * @param domainName the name of the domain this manager should handle.
      **/
-    TransactionLogManager(FNET_Transport & transport, const vespalib::string &tlsSpec, const vespalib::string &domainName);
+    TransactionLogManager(FNET_Transport & transport, const std::string &tlsSpec, const std::string &domainName);
     ~TransactionLogManager() override;
 
     /**
@@ -43,7 +43,7 @@ public:
      **/
     static void
     prepareReplay(TransLogClient &client,
-                  const vespalib::string &domainName,
+                  const std::string &domainName,
                   SerialNum flushedIndexMgrSerial,
                   SerialNum flushedSummaryMgrSerial,
                   ConfigStore &config_store);

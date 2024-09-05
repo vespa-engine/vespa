@@ -36,7 +36,7 @@ struct BlockingHostResolver : public AsyncResolver::HostResolver {
     Gate barrier;
     BlockingHostResolver(size_t num_callers) noexcept
         : callers(num_callers), barrier() {}
-    vespalib::string ip_address(const vespalib::string &) override {
+    std::string ip_address(const std::string &) override {
         callers.countDown();
         barrier.await();
         return "127.0.0.7";
@@ -47,19 +47,19 @@ struct BlockingHostResolver : public AsyncResolver::HostResolver {
 
 struct MyHostResolver : public AsyncResolver::HostResolver {
     std::mutex ip_lock;
-    std::map<vespalib::string,vespalib::string> ip_map;
-    std::map<vespalib::string, size_t> ip_cnt;
+    std::map<std::string,std::string> ip_map;
+    std::map<std::string, size_t> ip_cnt;
     MyHostResolver() : ip_lock(), ip_map(), ip_cnt() {}
-    vespalib::string ip_address(const vespalib::string &host) override {
+    std::string ip_address(const std::string &host) override {
         std::lock_guard<std::mutex> guard(ip_lock);
         ++ip_cnt[host];
         return ip_map[host];
     }
-    void set_ip_addr(const vespalib::string &host, const vespalib::string &ip_addr) {
+    void set_ip_addr(const std::string &host, const std::string &ip_addr) {
         std::lock_guard<std::mutex> guard(ip_lock);
         ip_map[host] = ip_addr;
     }
-    size_t get_cnt(const vespalib::string &host) {
+    size_t get_cnt(const std::string &host) {
         std::lock_guard<std::mutex> guard(ip_lock);
         return ip_cnt[host];
     }
@@ -77,10 +77,10 @@ struct ResolveFixture {
     std::shared_ptr<MyClock> clock;
     std::shared_ptr<MyHostResolver> host_resolver;
     AsyncResolver::SP async_resolver;
-    void set_ip_addr(const vespalib::string &host, const vespalib::string &ip) {
+    void set_ip_addr(const std::string &host, const std::string &ip) {
         host_resolver->set_ip_addr(host, ip);
     }
-    size_t get_cnt(const vespalib::string &host) { return host_resolver->get_cnt(host); }
+    size_t get_cnt(const std::string &host) { return host_resolver->get_cnt(host); }
     size_t get_total_cnt() { return host_resolver->get_total_cnt(); }
     void set_now(double s) { clock->set_now(MyClock::seconds(s)); }
     ResolveFixture(size_t max_cache_size = 10000)
@@ -102,7 +102,7 @@ struct ResolveFixture {
         set_ip_addr("d", "127.0.4.1");
         set_ip_addr("e", "127.0.5.1");
     }
-    vespalib::string resolve(const vespalib::string &spec) {
+    std::string resolve(const std::string &spec) {
         SocketAddress result;
         auto handler = std::make_shared<ResultSetter>(result);
         async_resolver->resolve_async(spec, handler);
@@ -136,13 +136,13 @@ TEST("require that shared async resolver is shared") {
 }
 
 TEST("require that shared async resolver can resolve connect spec") {
-    vespalib::string spec("tcp/localhost:123");
+    std::string spec("tcp/localhost:123");
     SocketAddress result;
     auto resolver = AsyncResolver::get_shared();
     auto handler = std::make_shared<ResultSetter>(result);
     resolver->resolve_async(spec, handler);
     resolver->wait_for_pending_resolves();
-    vespalib::string resolved = result.spec();
+    std::string resolved = result.spec();
     fprintf(stderr, "resolver(spec:%s) -> '%s'\n", spec.c_str(), resolved.c_str());
     EXPECT_TRUE(handler->done);
     EXPECT_NOT_EQUAL(resolved, spec);
@@ -162,7 +162,7 @@ TEST("require that steady clock is steady clock") {
 }
 
 TEST("require that simple host resolver can resolve host name") {
-    vespalib::string host_name("localhost");
+    std::string host_name("localhost");
     AsyncResolver::SimpleHostResolver resolver;
     auto resolved = resolver.ip_address(host_name);
     fprintf(stderr, "resolver(host_name:%s) -> '%s'\n", host_name.c_str(), resolved.c_str());

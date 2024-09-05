@@ -104,7 +104,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
     configure(config);
 }
 
-Distribution::Distribution(const vespalib::string& serialized)
+Distribution::Distribution(const std::string& serialized)
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
       _node2Group(),
@@ -477,7 +477,7 @@ Distribution::getIdealDistributorNode(const ClusterState& state, const document:
 }
 
 std::vector<Distribution::IndexList>
-Distribution::splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodeList) const
+Distribution::splitNodesIntoLeafGroups(std::span<const uint16_t> nodeList) const
 {
     vespalib::hash_map<uint16_t, IndexList> nodes(nodeList.size());
     for (auto node : nodeList) {

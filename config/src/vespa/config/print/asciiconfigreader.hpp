@@ -30,7 +30,7 @@ std::unique_ptr<ConfigType>
 AsciiConfigReader<ConfigType>::read()
 {
     StringVector lines;
-    vespalib::string line;
+    std::string line;
     while (getline(_is, line)) {
         lines.push_back(line);
     }

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace vespalib {
     class nbostream;
@@ -88,7 +88,7 @@ using DocumentUpdate = document::DocumentUpdate;
 using DocumentId = document::DocumentId;
 using GlobalId = document::GlobalId;
 using TimestampList = std::vector<Timestamp>;
-using string = vespalib::string;
+using string = std::string;
 using DocumentUP = std::unique_ptr<document::Document>;
 using DocumentIdUP = std::unique_ptr<document::DocumentId>;
 using DocumentSP = std::shared_ptr<document::Document>;

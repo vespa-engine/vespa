@@ -71,7 +71,7 @@ public:
     bool ready() const override;
 
 private:
-    using SpecMap = vespalib::hash_map<vespalib::string, vespalib::string>;
+    using SpecMap = vespalib::hash_map<std::string, std::string>;
     /** from FNET_Task, polls slobrok **/
     void PerformTask() override;
 

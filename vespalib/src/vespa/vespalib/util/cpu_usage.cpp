@@ -3,6 +3,7 @@
 #include "cpu_usage.h"
 #include "require.h"
 #include <pthread.h>
+#include <cstring>
 #include <optional>
 #include <cassert>
 
@@ -106,10 +107,10 @@ CpuUsage::ThreadTrackerImpl::sample() noexcept
     return sample;
 }
 
-vespalib::string &
+std::string &
 CpuUsage::name_of(Category cat)
 {
-    static std::array<vespalib::string,num_categories> names = {"setup", "read", "write", "compact", "other"};
+    static std::array<std::string,num_categories> names = {"setup", "read", "write", "compact", "other"};
     return names[index_of(cat)];
 }
 

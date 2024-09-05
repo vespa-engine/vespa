@@ -35,11 +35,11 @@ protected:
     void internalNotifyDiskMemUsage(const DiskMemUsageState &state);
 
 public:
-    BlockableMaintenanceJob(const vespalib::string &name,
+    BlockableMaintenanceJob(const std::string &name,
                             vespalib::duration delay,
                             vespalib::duration interval);
 
-    BlockableMaintenanceJob(const vespalib::string &name,
+    BlockableMaintenanceJob(const std::string &name,
                             vespalib::duration delay,
                             vespalib::duration interval,
                             const BlockableMaintenanceJobConfig &config);

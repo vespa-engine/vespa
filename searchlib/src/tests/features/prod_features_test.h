@@ -51,33 +51,33 @@ protected:
     void testFieldMatchExecutorExceedingIterationLimit();
     void testFieldMatchExecutorRemaining();
 
-    void assertAge(feature_t expAge, const vespalib::string & attr, uint64_t now, uint64_t docTime);
+    void assertAge(feature_t expAge, const std::string & attr, uint64_t now, uint64_t docTime);
     static void setupForAgeTest(FtFeatureTest & ft, int64_t docTime);
     static void setupForAttributeTest(FtFeatureTest &ft, bool setup_env = true);
-    void assertCloseness(feature_t exp, const vespalib::string & attr, double distance, double maxDistance = 0, double halfResponse = 0);
-    static void setupForDistanceTest(FtFeatureTest & ft, const vespalib::string & attrName,
+    void assertCloseness(feature_t exp, const std::string & attr, double distance, double maxDistance = 0, double halfResponse = 0);
+    static void setupForDistanceTest(FtFeatureTest & ft, const std::string & attrName,
                                      const std::vector<std::pair<int32_t, int32_t> > & positions, bool zcurve);
-    void assert2DZDistance(feature_t exp, const vespalib::string & positions,
+    void assert2DZDistance(feature_t exp, const std::string & positions,
                            int32_t xquery, int32_t yquery, uint32_t xAspect = 0, uint32_t hit_index = 0);
-    void assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos, const vespalib::string &path,
+    void assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos, const std::string &path,
                               feature_t distance = search::features::DistanceToPathExecutor::DEFAULT_DISTANCE,
                               feature_t traveled = 1, feature_t product = 0);
-    void assertDotProduct(feature_t exp, const vespalib::string & vector, uint32_t docId = 1,
-                          const vespalib::string & attribute = "wsstr", const vespalib::string & attributeOverride="");
+    void assertDotProduct(feature_t exp, const std::string & vector, uint32_t docId = 1,
+                          const std::string & attribute = "wsstr", const std::string & attributeOverride="");
 
-    void assertFieldMatch(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,
+    void assertFieldMatch(const std::string & spec, const std::string & query, const std::string & field,
                           const search::features::fieldmatch::Params * params = nullptr, uint32_t totalTermWeight = 0, feature_t totalSignificance = 0.0f);
-    void assertFieldMatch(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,
+    void assertFieldMatch(const std::string & spec, const std::string & query, const std::string & field,
                           uint32_t totalTermWeight);
-    void assertFieldMatchTS(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,
+    void assertFieldMatchTS(const std::string & spec, const std::string & query, const std::string & field,
                             feature_t totalSignificance);
-    vespalib::string getExpression(const vespalib::string &parameter) const;
-    void assertForeachOperation(feature_t exp, const vespalib::string & cond, const vespalib::string & op);
-    void assertFreshness(feature_t expFreshness, const vespalib::string & attr, uint32_t age, uint32_t maxAge = 0, double halfResponse = 0, bool logScale = false);
-    bool assertTermDistance(const search::features::TermDistanceCalculator::Result & exp, const vespalib::string & query,
-                            const vespalib::string & field, uint32_t docId = 1);
-    bool assertMatches(uint32_t output, const vespalib::string & query, const vespalib::string & field,
-                       const vespalib::string & feature = "matches(foo)", uint32_t docId = 1);
+    std::string getExpression(const std::string &parameter) const;
+    void assertForeachOperation(feature_t exp, const std::string & cond, const std::string & op);
+    void assertFreshness(feature_t expFreshness, const std::string & attr, uint32_t age, uint32_t maxAge = 0, double halfResponse = 0, bool logScale = false);
+    bool assertTermDistance(const search::features::TermDistanceCalculator::Result & exp, const std::string & query,
+                            const std::string & field, uint32_t docId = 1);
+    bool assertMatches(uint32_t output, const std::string & query, const std::string & field,
+                       const std::string & feature = "matches(foo)", uint32_t docId = 1);
 
     search::fef::BlueprintFactory _factory;
 };

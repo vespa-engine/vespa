@@ -53,7 +53,7 @@ public:
      */
     virtual void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const = 0;
 
-    virtual CachedSelect::SP parseSelect(const vespalib::string &selection) const = 0;
+    virtual CachedSelect::SP parseSelect(const std::string &selection) const = 0;
 
     // Convenience to get all fields
     DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId & docId) const;

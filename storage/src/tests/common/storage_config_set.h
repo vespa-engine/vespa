@@ -70,18 +70,18 @@ class StorageConfigSet {
     std::unique_ptr<StorVisitorConfigBuilder>              _visitor_config;
     std::unique_ptr<StorVisitordispatcherConfigBuilder>    _visitor_dispatcher_config;
 
-    vespalib::string                       _config_id_str;
+    std::string                       _config_id_str;
     config::ConfigSet                      _config_set;
     std::shared_ptr<config::ConfigContext> _config_ctx;
     config::ConfigUri                      _config_uri;
 
 public:
-    StorageConfigSet(vespalib::string config_id_str, bool is_storage_node);
+    StorageConfigSet(std::string config_id_str, bool is_storage_node);
     ~StorageConfigSet();
 
     void init_default_configs(bool is_storage_node);
-    void add_bucket_space_mapping(vespalib::string doc_type, vespalib::string bucket_space_name);
-    void add_metric_consumer(vespalib::string name, const std::vector<vespalib::string>& added_metrics);
+    void add_bucket_space_mapping(std::string doc_type, std::string bucket_space_name);
+    void add_metric_consumer(std::string name, const std::vector<std::string>& added_metrics);
     void add_distribution_config(uint16_t nodes_in_top_level_group);
     void set_slobrok_config_port(int slobrok_port);
     void set_node_index(uint16_t node_index);

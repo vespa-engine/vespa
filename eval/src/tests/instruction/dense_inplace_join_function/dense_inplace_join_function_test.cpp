@@ -23,7 +23,7 @@ GenSpec::seq_t glb = [] (size_t) noexcept {
 
 EvalFixture::ParamRepo make_params() {
     EvalFixture::ParamRepo repo;
-    for (vespalib::string param : {
+    for (std::string param : {
             "x5$1", "x5$2", "x5$3",
             "x5y3$1", "x5y3$2",
             "@x5$1", "@x5$2", "@x5$3",
@@ -40,7 +40,7 @@ EvalFixture::ParamRepo make_params() {
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
-void verify_optimized(const vespalib::string &expr, size_t param_idx) {
+void verify_optimized(const std::string &expr, size_t param_idx) {
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     for (size_t i = 0; i < fixture.num_params(); ++i) {
@@ -55,19 +55,19 @@ void verify_optimized(const vespalib::string &expr, size_t param_idx) {
     }
 }
 
-void verify_p0_optimized(const vespalib::string &expr) {
+void verify_p0_optimized(const std::string &expr) {
     verify_optimized(expr, 0);
 }
 
-void verify_p1_optimized(const vespalib::string &expr) {
+void verify_p1_optimized(const std::string &expr) {
     verify_optimized(expr, 1);
 }
 
-void verify_p2_optimized(const vespalib::string &expr) {
+void verify_p2_optimized(const std::string &expr) {
     verify_optimized(expr, 2);
 }
 
-void verify_not_optimized(const vespalib::string &expr) {
+void verify_not_optimized(const std::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     for (size_t i = 0; i < fixture.num_params(); ++i) {

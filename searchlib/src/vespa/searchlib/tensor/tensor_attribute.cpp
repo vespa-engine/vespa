@@ -45,7 +45,7 @@ createEmptyTensor(const ValueType &type)
     return vespalib::eval::value_from_spec(empty_spec, factory);
 }
 
-vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
+std::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
 {
     return vespalib::make_string("Field tensor type is '%s' but other tensor type is '%s'",
                                  fieldTensorType.to_spec().c_str(),
@@ -103,7 +103,7 @@ TensorAttribute::onCommit()
     if (_tensorStore.consider_compact()) {
         auto context = _tensorStore.start_compact(getConfig().getCompactionStrategy());
         if (context) {
-            context->compact(vespalib::ArrayRef<AtomicEntryRef>(&_refVector[0], _refVector.size()));
+            context->compact(std::span<AtomicEntryRef>(&_refVector[0], _refVector.size()));
         }
         _compactGeneration = getCurrentGeneration();
         incGeneration();

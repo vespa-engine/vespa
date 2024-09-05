@@ -24,17 +24,17 @@ class FlushEngine
 public:
     class FlushMeta {
     public:
-        FlushMeta(const vespalib::string& handler_name, const vespalib::string& target_name, uint32_t id);
+        FlushMeta(const std::string& handler_name, const std::string& target_name, uint32_t id);
         ~FlushMeta();
-        const vespalib::string & getName() const { return _name; }
-        const vespalib::string& handler_name() const { return _handler_name; }
+        const std::string & getName() const { return _name; }
+        const std::string& handler_name() const { return _handler_name; }
         vespalib::system_time getStart() const { return vespalib::to_utc(_timer.get_start()); }
         vespalib::duration elapsed() const { return _timer.elapsed(); }
         uint32_t getId() const { return _id; }
         bool operator < (const FlushMeta & rhs) const { return _id < rhs._id; }
     private:
-        vespalib::string  _name;
-        vespalib::string  _handler_name;
+        std::string  _name;
+        std::string  _handler_name;
         vespalib::Timer   _timer;
         uint32_t          _id;
     };
@@ -44,7 +44,7 @@ private:
     struct FlushInfo : public FlushMeta
     {
         FlushInfo();
-        FlushInfo(uint32_t taskId, const vespalib::string& handler_name, const IFlushTarget::SP &target, std::shared_ptr<PriorityFlushToken> priority_flush_token);
+        FlushInfo(uint32_t taskId, const std::string& handler_name, const IFlushTarget::SP &target, std::shared_ptr<PriorityFlushToken> priority_flush_token);
         ~FlushInfo();
 
         IFlushTarget::SP  _target;
@@ -79,7 +79,7 @@ private:
     std::pair<FlushContext::List,bool> getSortedTargetList();
     std::shared_ptr<search::IFlushToken> get_flush_token(const FlushContext& ctx);
     FlushContext::SP initNextFlush(const FlushContext::List &lst);
-    vespalib::string flushNextTarget(const vespalib::string & name, const FlushContext::List & contexts);
+    std::string flushNextTarget(const std::string & name, const FlushContext::List & contexts);
     void flushAll(const FlushContext::List &lst);
     bool prune();
     uint32_t initFlush(const FlushContext &ctx, std::shared_ptr<PriorityFlushToken> priority_flush_token);
@@ -90,8 +90,8 @@ private:
     void idle_wait(vespalib::duration minimumWaitTimeIfReady);
     bool wait_for_slot(IFlushTarget::Priority priority);
     bool has_slot(IFlushTarget::Priority priority);
-    bool isFlushing(const std::lock_guard<std::mutex> &guard, const vespalib::string & name) const;
-    vespalib::string checkAndFlush(vespalib::string prev);
+    bool isFlushing(const std::lock_guard<std::mutex> &guard, const std::string & name) const;
+    std::string checkAndFlush(std::string prev);
 
     friend class FlushTask;
     friend class FlushEngineExplorer;

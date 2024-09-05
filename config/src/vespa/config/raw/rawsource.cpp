@@ -9,7 +9,7 @@ namespace config {
 
 RawSource::~RawSource() = default;
 
-RawSource::RawSource(std::shared_ptr<IConfigHolder> holder, const vespalib::string & payload)
+RawSource::RawSource(std::shared_ptr<IConfigHolder> holder, const std::string & payload)
     : _holder(std::move(holder)),
       _payload(payload)
 {

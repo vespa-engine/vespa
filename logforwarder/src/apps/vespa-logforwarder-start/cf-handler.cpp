@@ -32,7 +32,7 @@ bool isExecutable(const char *path) {
     return ((statbuf.st_mode & S_IXOTH) != 0);
 }
 
-time_t lastModTime(const vespalib::string &fn) {
+time_t lastModTime(const std::string &fn) {
     if (fn.empty()) return 0;
     struct stat info;
     if (stat(fn.c_str(), &info) != 0) return 0;
@@ -53,16 +53,16 @@ void CfHandler::doConfigure() {
     }
 }
 
-vespalib::string CfHandler::clientCertFile() const {
-    static const vespalib::string certDir = "/var/lib/sia/certs/";
+std::string CfHandler::clientCertFile() const {
+    static const std::string certDir = "/var/lib/sia/certs/";
     if (_lastConfig && !_lastConfig->role.empty()) {
         return certDir + _lastConfig->role + ".cert.pem";
     }
     return "";
 }
 
-vespalib::string CfHandler::clientKeyFile() const {
-    static const vespalib::string certDir = "/var/lib/sia/keys/";
+std::string CfHandler::clientKeyFile() const {
+    static const std::string certDir = "/var/lib/sia/keys/";
     if (_lastConfig && !_lastConfig->role.empty()) {
         return certDir + _lastConfig->role + ".key.pem";
     }

@@ -29,8 +29,8 @@ public:
     AttributeUsageSamplerContext(AttributeUsageFilter& filter);
     ~AttributeUsageSamplerContext();
     void merge(const search::AddressSpaceUsage &usage,
-               const vespalib::string &attributeName,
-               const vespalib::string &subDbName);
+               const std::string &attributeName,
+               const std::string &subDbName);
     const AttributeUsageStats& getUsage() const { return _usage; }
 };
 

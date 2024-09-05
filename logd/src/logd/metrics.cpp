@@ -15,7 +15,7 @@ Metrics::Metrics(std::shared_ptr<MetricsManager> m)
 Metrics::~Metrics() = default;
 
 void
-Metrics::countLine(const vespalib::string &level, const vespalib::string &service) const
+Metrics::countLine(const std::string &level, const std::string &service) const
 {
     Point p = metrics->pointBuilder()
             .bind(loglevel, level)

@@ -25,7 +25,7 @@ CachingRpcTargetResolver::CachingRpcTargetResolver(const slobrok::api::IMirrorAP
 
 CachingRpcTargetResolver::~CachingRpcTargetResolver() = default;
 
-vespalib::string
+std::string
 CachingRpcTargetResolver::address_to_slobrok_id(const api::StorageMessageAddress& address) {
     vespalib::asciistream as;
     as << "storage/cluster." << address.getCluster()
@@ -51,7 +51,7 @@ CachingRpcTargetResolver::lookup_target(const api::StorageMessageAddress& addres
 std::shared_ptr<RpcTarget>
 CachingRpcTargetResolver::consider_update_target_pool(const api::StorageMessageAddress& address,
                                                       uint64_t bucket_id,
-                                                      const vespalib::string& connection_spec,
+                                                      const std::string& connection_spec,
                                                       uint32_t curr_slobrok_gen,
                                                       [[maybe_unused]] const UniqueLock& targets_lock) {
     // If address has the same spec as the existing target pool, just reuse it.
@@ -73,7 +73,7 @@ CachingRpcTargetResolver::consider_update_target_pool(const api::StorageMessageA
 std::shared_ptr<RpcTarget>
 CachingRpcTargetResolver::insert_new_target_mapping(const api::StorageMessageAddress& address,
                                                     uint64_t bucket_id,
-                                                    const vespalib::string& connection_spec,
+                                                    const std::string& connection_spec,
                                                     uint32_t curr_slobrok_gen,
                                                     [[maybe_unused]] const UniqueLock& targets_lock) {
     RpcTargetPool::RpcTargetVector targets;

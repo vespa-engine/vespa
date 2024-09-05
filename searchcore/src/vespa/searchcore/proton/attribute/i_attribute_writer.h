@@ -36,7 +36,7 @@ public:
     virtual ~IAttributeWriter() = default;
 
     virtual std::vector<search::AttributeVector *> getWritableAttributes() const = 0;
-    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &attrName) const = 0;
+    virtual search::AttributeVector *getWritableAttribute(const std::string &attrName) const = 0;
     virtual void put(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
     virtual void remove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
     virtual void remove(const LidVector &lidVector, SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;

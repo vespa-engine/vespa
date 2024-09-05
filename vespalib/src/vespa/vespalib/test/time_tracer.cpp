@@ -19,7 +19,7 @@ thread_local TimeTracer::ThreadState *TimeTracer::_thread_state = nullptr;
 
 //-----------------------------------------------------------------------------
 
-TimeTracer::Tag::Tag(const vespalib::string &name)
+TimeTracer::Tag::Tag(const std::string &name)
     : _id(master().get_tag_id(name))
 {
 }
@@ -34,7 +34,7 @@ TimeTracer::Record::ms_duration() const
     return std::chrono::duration<double, std::milli>(stop - start).count();
 }
 
-vespalib::string
+std::string
 TimeTracer::Record::tag_name() const
 {
     return master().get_tag_name(tag_id);
@@ -103,7 +103,7 @@ TimeTracer::TimeTracer()
 }
 
 uint32_t
-TimeTracer::get_tag_id(const vespalib::string &tag_name)
+TimeTracer::get_tag_id(const std::string &tag_name)
 {
     std::lock_guard guard(_lock);
     auto pos = _tags.find(tag_name);
@@ -116,7 +116,7 @@ TimeTracer::get_tag_id(const vespalib::string &tag_name)
     return id;
 }
 
-vespalib::string
+std::string
 TimeTracer::get_tag_name(uint32_t tag_id)
 {
     std::lock_guard guard(_lock);

@@ -2,10 +2,10 @@
 #pragma once
 
 #include "nbo.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/bfloat16.h>
+#include <string>
 #include <vector>
 
 namespace vespalib {
@@ -63,8 +63,8 @@ public:
     nbostream & operator >> (bool & v)     { read1(&v); return *this; }
     nbostream & operator << (const char * v) { uint32_t sz(strlen(v)); (*this) << sz; write(v, sz); return *this; }
     nbostream & operator << (std::string_view v) { uint32_t sz(v.size()); (*this) << sz; write(v.data(), sz); return *this; }
-    nbostream & operator << (const vespalib::string & v) { uint32_t sz(v.size()); (*this) << sz; write(v.c_str(), sz); return *this; }
-    nbostream & operator >> (vespalib::string & v) {
+    nbostream & operator << (const std::string & v) { uint32_t sz(v.size()); (*this) << sz; write(v.c_str(), sz); return *this; }
+    nbostream & operator >> (std::string & v) {
         uint32_t sz; (*this) >> sz;
         if (__builtin_expect(left() >= sz, true)) {
             v.assign(&_rbuf[_rp], sz);
@@ -174,7 +174,7 @@ public:
         putInt1_4Bytes(value.size());
         write(value.data(), value.size());
     }
-    void readSmallString(vespalib::string &value) {
+    void readSmallString(std::string &value) {
         size_t strSize = getInt1_4Bytes();
         const char *cstr = peek();
         value.assign(cstr, strSize);

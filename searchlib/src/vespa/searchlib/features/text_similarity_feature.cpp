@@ -163,11 +163,11 @@ TextSimilarityExecutor::handle_bind_match_data(const fef::MatchData &md)
 
 //-----------------------------------------------------------------------------
 
-const vespalib::string TextSimilarityBlueprint::score_output("score");
-const vespalib::string TextSimilarityBlueprint::proximity_output("proximity");
-const vespalib::string TextSimilarityBlueprint::order_output("order");
-const vespalib::string TextSimilarityBlueprint::query_coverage_output("queryCoverage");
-const vespalib::string TextSimilarityBlueprint::field_coverage_output("fieldCoverage");
+const std::string TextSimilarityBlueprint::score_output("score");
+const std::string TextSimilarityBlueprint::proximity_output("proximity");
+const std::string TextSimilarityBlueprint::order_output("order");
+const std::string TextSimilarityBlueprint::query_coverage_output("queryCoverage");
+const std::string TextSimilarityBlueprint::field_coverage_output("fieldCoverage");
 
 TextSimilarityBlueprint::TextSimilarityBlueprint()
     : Blueprint("textSimilarity"), _field_id(fef::IllegalHandle) {}

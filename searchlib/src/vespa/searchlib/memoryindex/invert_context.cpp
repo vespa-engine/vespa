@@ -18,7 +18,7 @@ using document::Field;
 namespace {
 
 std::unique_ptr<document::Field>
-get_field(const DocumentType& doc_type, const vespalib::string& name)
+get_field(const DocumentType& doc_type, const std::string& name)
 {
     std::unique_ptr<Field> fp;
     if ( ! doc_type.hasField(name)) {

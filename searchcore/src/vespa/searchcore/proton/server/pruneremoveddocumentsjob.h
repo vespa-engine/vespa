@@ -34,7 +34,7 @@ private:
     IPruneRemovedDocumentsHandler &_handler;
     IThreadService                &_master;
     BucketExecutor                &_bucketExecutor;
-    const vespalib::string         _docTypeName;
+    const std::string         _docTypeName;
     vespalib::RetainGuard          _dbRetainer;
     const vespalib::duration       _cfgAgeLimit;
     const uint32_t                 _subDbId;
@@ -45,14 +45,14 @@ private:
     void remove(uint32_t lid, const RawDocumentMetaData & meta);
 
     PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
-                             uint32_t subDbId, document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
+                             uint32_t subDbId, document::BucketSpace bucketSpace, const std::string &docTypeName,
                              IPruneRemovedDocumentsHandler &handler, IThreadService & master,
                              BucketExecutor & bucketExecutor);
     bool run() override;
 public:
     static std::shared_ptr<PruneRemovedDocumentsJob>
     create(const Config &config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore &metaStore, uint32_t subDbId,
-           document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
+           document::BucketSpace bucketSpace, const std::string &docTypeName,
            IPruneRemovedDocumentsHandler &handler, IThreadService & master, BucketExecutor & bucketExecutor)
    {
         return std::shared_ptr<PruneRemovedDocumentsJob>(

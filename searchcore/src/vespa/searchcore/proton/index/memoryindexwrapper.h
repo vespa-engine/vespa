@@ -63,7 +63,7 @@ public:
     /**
      * Implements IFieldLengthInspector
      */
-    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
+    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
 
     /**
      * Implements proton::IMemoryIndex
@@ -93,7 +93,7 @@ public:
     void pruneRemovedFields(const search::index::Schema &schema)  override {
         _index.pruneRemovedFields(schema);
     }
-    void flushToDisk(const vespalib::string &flushDir, uint32_t docIdLimit, SerialNum serialNum) override;
+    void flushToDisk(const std::string &flushDir, uint32_t docIdLimit, SerialNum serialNum) override;
 
     void insert_write_context_state(vespalib::slime::Cursor& object) const override {
         _index.insert_write_context_state(object);

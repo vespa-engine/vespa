@@ -80,7 +80,7 @@ public:
      *
      * @return average field length
      **/
-    virtual double get_average_field_length(const vespalib::string &field_name) const = 0;
+    virtual double get_average_field_length(const std::string &field_name) const = 0;
 
     /**
      * Returns a const view of the index environment.

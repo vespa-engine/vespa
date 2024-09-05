@@ -17,17 +17,17 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TypedCells;
 
-const vespalib::string tensor_type_spec("tensor(x{})");
-const vespalib::string tensor_type_2d_spec("tensor(x{},y{})");
-const vespalib::string tensor_type_2d_mixed_spec("tensor(x{},y[2])");
-const vespalib::string float_tensor_type_spec("tensor<float>(y{})");
+const std::string tensor_type_spec("tensor(x{})");
+const std::string tensor_type_2d_spec("tensor(x{},y{})");
+const std::string tensor_type_2d_mixed_spec("tensor(x{},y[2])");
+const std::string float_tensor_type_spec("tensor<float>(y{})");
 
 struct TestParam
 {
-    vespalib::string    _name;
+    std::string    _name;
     std::vector<size_t> _array_sizes;
     TensorSpec          _tensor_spec;
-    TestParam(vespalib::string name, std::vector<size_t> array_sizes, TensorSpec tensor_spec)
+    TestParam(std::string name, std::vector<size_t> array_sizes, TensorSpec tensor_spec)
         : _name(std::move(name)),
           _array_sizes(std::move(array_sizes)),
           _tensor_spec(std::move(tensor_spec))
@@ -57,9 +57,9 @@ protected:
     std::vector<size_t> get_array_sizes(uint32_t max_subspaces);
     std::vector<char> store_tensor(const Value& tensor);
     std::vector<char> store_tensor(const TensorSpec& spec);
-    std::unique_ptr<Value> load_tensor(vespalib::ConstArrayRef<char> buf);
-    TensorSpec load_tensor_spec(vespalib::ConstArrayRef<char> buf);
-    vespalib::nbostream encode_stored_tensor(vespalib::ConstArrayRef<char> buf);
+    std::unique_ptr<Value> load_tensor(std::span<const char> buf);
+    TensorSpec load_tensor_spec(std::span<const char> buf);
+    vespalib::nbostream encode_stored_tensor(std::span<const char> buf);
     void assert_store_load(const TensorSpec& tensor_spec);
     void assert_store_copy_load(const TensorSpec& tensor_spec);
     void assert_store_encode_decode(const TensorSpec& tensor_spec);
@@ -104,13 +104,13 @@ TensorBufferOperationsTest::store_tensor(const TensorSpec& spec)
 }
 
 std::unique_ptr<Value>
-TensorBufferOperationsTest::load_tensor(vespalib::ConstArrayRef<char> buf)
+TensorBufferOperationsTest::load_tensor(std::span<const char> buf)
 {
     return _ops.make_fast_view(buf, _tensor_type);
 }
 
 vespalib::nbostream
-TensorBufferOperationsTest::encode_stored_tensor(vespalib::ConstArrayRef<char> buf)
+TensorBufferOperationsTest::encode_stored_tensor(std::span<const char> buf)
 {
     vespalib::nbostream out;
     _ops.encode_stored_tensor(buf, _tensor_type, out);
@@ -118,7 +118,7 @@ TensorBufferOperationsTest::encode_stored_tensor(vespalib::ConstArrayRef<char> b
 }
 
 TensorSpec
-TensorBufferOperationsTest::load_tensor_spec(vespalib::ConstArrayRef<char> buf)
+TensorBufferOperationsTest::load_tensor_spec(std::span<const char> buf)
 {
     auto loaded = load_tensor(buf);
     return TensorSpec::from_value(*loaded);

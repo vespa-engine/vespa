@@ -418,5 +418,5 @@ MessageBus::setMaxPendingSize(uint32_t maxSize)
 
 } // namespace mbus
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, std::shared_ptr<mbus::RoutingTable>);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, mbus::IMessageHandler *);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, std::shared_ptr<mbus::RoutingTable>);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, mbus::IMessageHandler *);

@@ -10,7 +10,7 @@ LOG_SETUP(".proton.index.indexmanagerinitializer");
 namespace proton {
 
 IndexManagerInitializer::
-IndexManagerInitializer(const vespalib::string &baseDir,
+IndexManagerInitializer(const std::string &baseDir,
                         const index::IndexConfig & indexCfg,
                         const search::index::Schema &schema,
                         search::SerialNum serialNum,

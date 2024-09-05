@@ -25,10 +25,10 @@ struct TensorFunction;
  **/
 struct CTFMetaData {
     struct Step {
-        vespalib::string class_name;
-        vespalib::string symbol_name;
-        Step(vespalib::string &&class_name_in,
-             vespalib::string &&symbol_name_in) noexcept
+        std::string class_name;
+        std::string symbol_name;
+        Step(std::string &&class_name_in,
+             std::string &&symbol_name_in) noexcept
             : class_name(std::move(class_name_in)),
               symbol_name(std::move(symbol_name_in))
         {

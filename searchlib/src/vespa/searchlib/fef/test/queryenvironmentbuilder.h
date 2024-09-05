@@ -35,7 +35,7 @@ public:
      *
      * @return Pointer to the corresponding term data or NULL if one of the fields does not exists.
      */
-    SimpleTermData *addIndexNode(const std::vector<vespalib::string> &fieldNames);
+    SimpleTermData *addIndexNode(const std::vector<std::string> &fieldNames);
 
     /**
      * Add an attribute node searching in the given attribute to this query environment.
@@ -43,12 +43,12 @@ public:
      *
      * @return Pointer to the corresponding term data or NULL if attribute does not exists.
      */
-    SimpleTermData *addAttributeNode(const vespalib::string & attrName);
+    SimpleTermData *addAttributeNode(const std::string & attrName);
 
     /**
      * Add a term node searching in the given virtual field.
      */
-    SimpleTermData *add_virtual_node(const vespalib::string &virtual_field);
+    SimpleTermData *add_virtual_node(const std::string &virtual_field);
 
     /** Returns a reference to the query environment of this. */
     QueryEnvironment &getQueryEnv() { return _queryEnv; }
@@ -62,7 +62,7 @@ public:
     /** Returns a const reference to the match data layout of this. */
     const MatchDataLayout &getLayout() const { return _layout; }
 
-    QueryEnvironmentBuilder& set_avg_field_length(const vespalib::string& field_name, double avg_field_length);
+    QueryEnvironmentBuilder& set_avg_field_length(const std::string& field_name, double avg_field_length);
 
 private:
     QueryEnvironmentBuilder(const QueryEnvironmentBuilder &);             // hide

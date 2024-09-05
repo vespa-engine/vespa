@@ -35,7 +35,7 @@ public:
      * with the given name, grow strategy, and comparator.
      */
     DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
-                             const vespalib::string &name,
+                             const std::string &name,
                              const search::GrowStrategy &grow);
     ~DocumentMetaStoreContext() override;
     /**

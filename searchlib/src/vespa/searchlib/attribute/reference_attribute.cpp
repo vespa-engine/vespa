@@ -30,7 +30,7 @@ using vespalib::datastore::CompactionSpec;
 
 namespace {
 
-const vespalib::string uniqueValueCountTag = "uniqueValueCount";
+const std::string uniqueValueCountTag = "uniqueValueCount";
 
 uint64_t
 extractUniqueValueCount(const vespalib::GenericHeader &header)
@@ -240,7 +240,7 @@ ReferenceAttribute::onLoad(vespalib::Executor *)
     const GenericHeader &header = udatBuffer->getHeader();
     uint32_t uniqueValueCount = extractUniqueValueCount(header);
     assert(uniqueValueCount * sizeof(GlobalId) == udatBuffer->size());
-    vespalib::ConstArrayRef<GlobalId> uniques(static_cast<const GlobalId *>(udatBuffer->buffer()), uniqueValueCount);
+    std::span<const GlobalId> uniques(static_cast<const GlobalId *>(udatBuffer->buffer()), uniqueValueCount);
 
     auto builder = _store.getBuilder(uniqueValueCount);
     for (const auto &value : uniques) {
@@ -313,7 +313,7 @@ ReferenceAttribute::compact_worst_values(const CompactionStrategy& compaction_st
     CompactionSpec compaction_spec(true, true);
     auto remapper(_store.compact_worst(compaction_spec, compaction_strategy));
     if (remapper) {
-        remapper->remap(vespalib::ArrayRef<AtomicEntryRef>(&_indices[0], _indices.size()));
+        remapper->remap(std::span<AtomicEntryRef>(&_indices[0], _indices.size()));
         remapper->done();
     }
 }

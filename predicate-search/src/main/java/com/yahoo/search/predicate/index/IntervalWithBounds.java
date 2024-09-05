@@ -9,7 +9,7 @@ import java.util.stream.Stream;
  * @author Magnar Nedland
  * @author bjorncs
  */
-public class IntervalWithBounds {
+public final class IntervalWithBounds {
 
     private int[] intervalBoundsArray;
     private int arrayIndex;

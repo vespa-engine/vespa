@@ -18,9 +18,9 @@ class UnionServiceMap : public ProxyMapSource
 {
 private:
     struct CountedSpec {
-        vespalib::string spec;
+        std::string spec;
         size_t count;
-        CountedSpec(const vespalib::string &spec_in,
+        CountedSpec(const std::string &spec_in,
                     size_t count_in) noexcept
             : spec(spec_in),
               count(count_in)
@@ -28,7 +28,7 @@ private:
         }
     };
     using Mappings = std::vector<CountedSpec>;
-    std::map<vespalib::string, Mappings> _mappings;
+    std::map<std::string, Mappings> _mappings;
 
 public:
     UnionServiceMap();

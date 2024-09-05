@@ -18,6 +18,7 @@ private:
 public:
     QueryTermData * clone() const override { return new QueryTermData(); }
     search::fef::SimpleTermData &getTermData() noexcept { return _termData; }
+    const search::fef::SimpleTermData &getTermData() const noexcept { return _termData; }
 };
 
 class QueryTermDataFactory final : public search::streaming::QueryNodeResultFactory {

@@ -17,7 +17,7 @@ private:
     size_t  _size;
     size_t  _used;
 public:
-    MappedFileInput(const vespalib::string &file_name);
+    MappedFileInput(const std::string &file_name);
     ~MappedFileInput();
     bool valid() const;
     Memory get() const { return Memory(_data, _size); }

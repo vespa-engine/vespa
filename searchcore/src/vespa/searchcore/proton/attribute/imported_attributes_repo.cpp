@@ -18,7 +18,7 @@ ImportedAttributesRepo::ImportedAttributesRepo() = default;
 ImportedAttributesRepo::~ImportedAttributesRepo() = default;
 
 void
-ImportedAttributesRepo::add(const vespalib::string &name, ImportedAttributeVector::SP attr)
+ImportedAttributesRepo::add(const std::string &name, ImportedAttributeVector::SP attr)
 {
     _repo[name] = std::move(attr);
 }

@@ -28,7 +28,7 @@ HtmlStatusReporter::reportHtmlFooter(std::ostream& out, const HttpUrlPath&) cons
     out << "</body>\n</html>\n";
 }
 
-vespalib::string
+std::string
 HtmlStatusReporter::getReportContentType(const HttpUrlPath&) const
 {
     return "text/html";

@@ -33,7 +33,7 @@ struct TransientCryptoCredentials {
     }
 
     static CertKeyWrapper make_host_creds(const CertKeyWrapper& root_ca_creds,
-                                          const vespalib::string& extra_san_entry) {
+                                          const std::string& extra_san_entry) {
         auto dn = X509Certificate::DistinguishedName()
                 .country("US").state("CA").locality("Sunnyvale")
                 .organization("Wile E. Coyote, Ltd.")

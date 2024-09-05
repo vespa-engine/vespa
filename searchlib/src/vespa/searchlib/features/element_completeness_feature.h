@@ -95,7 +95,7 @@ public:
 class ElementCompletenessBlueprint : public fef::Blueprint
 {
 private:
-    std::vector<vespalib::string>  _output;
+    std::vector<std::string>  _output;
     ElementCompletenessParams _params;
 
 public:

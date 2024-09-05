@@ -936,7 +936,7 @@ TEST_F(ConformanceTest, testRemoveByGid)
     auto info = spi->getBucketInfo(bucket).getBucketInfo();
     EXPECT_EQ(2, info.getDocumentCount());
     std::vector<DocTypeGidAndTimestamp> ids;
-    ids.emplace_back(vespalib::string(doc1->getId().getDocType()), doc1->getId().getGlobalId(), Timestamp(10));
+    ids.emplace_back(std::string(doc1->getId().getDocType()), doc1->getId().getGlobalId(), Timestamp(10));
     assert_remove_by_gid(*spi, bucket, ids, 0, 2, "ignored removebygid");
     ids.back().timestamp = Timestamp(11);
     assert_remove_by_gid(*spi, bucket, ids, 1, 1, "removebygid");
@@ -1266,7 +1266,7 @@ TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
 
     std::vector<DocAndTimestamp> docsToVisit;
     std::vector<Timestamp> timestampsToVisit;
-    std::set<vespalib::string> removes;
+    std::set<std::string> removes;
 
     for (uint32_t i = 0; i < 99; i++) {
         Timestamp timestamp(1000 + i);
@@ -1308,7 +1308,7 @@ TEST_F(ConformanceTest, testIterateRemoves)
 
     int docCount = 10;
     std::vector<DocAndTimestamp> docs(feedDocs(*spi, testDocMan, b, docCount));
-    std::set<vespalib::string> removedDocs;
+    std::set<std::string> removedDocs;
     std::vector<DocAndTimestamp> nonRemovedDocs;
 
     for (int i = 0; i < docCount; ++i) {
@@ -1393,7 +1393,7 @@ TEST_F(ConformanceTest, testIterationRequiringDocumentIdOnlyMatching)
 
     std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     std::vector<DocAndTimestamp> docs;
-    std::set<vespalib::string> removes;
+    std::set<std::string> removes;
     removes.insert(removedId.toString());
     verifyDocs(docs, chunks, removes);
 
@@ -2307,7 +2307,7 @@ void
 ConformanceTest::assert_remove_by_gid(PersistenceProvider& spi,
                                       const Bucket& bucket, std::vector<DocTypeGidAndTimestamp> ids,
                                       size_t exp_removed, size_t exp_remaining,
-                                      const vespalib::string& label)
+                                      const std::string& label)
 {
     SCOPED_TRACE(label);
     auto onDone = std::make_unique<CatchResult>();

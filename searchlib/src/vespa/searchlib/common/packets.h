@@ -2,17 +2,17 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/memory.h>
-#include <vector>
 #include <atomic>
+#include <string>
+#include <vector>
 
 class FNET_DataBuffer;
 
 namespace search::fs4transport {
 
-using vespalib::string;
+using std::string;
 
 class FS4PersistentPacketStreamer {
     using CompressionConfig = vespalib::compression::CompressionConfig;
@@ -44,8 +44,8 @@ private:
     using KeyValueVector = std::vector<Entry>;
 
     KeyValueVector   _entries;
-    vespalib::string _name;
-    vespalib::string _backing;
+    std::string _name;
+    std::string _backing;
     const char * c_str(size_t sz) const { return _backing.c_str() + sz; }
     void set(StringRef & e, std::string_view s);
     void allocEntries(uint32_t cnt);
@@ -70,7 +70,7 @@ public:
         setValue(entry, val.data(), val.size());
     }
     uint32_t size() const noexcept { return _entries.size(); }
-    const vespalib::string & name() const noexcept { return _name; }
+    const std::string & name() const noexcept { return _name; }
     std::string_view key(uint32_t entry) const noexcept;
     std::string_view value(uint32_t entry) const noexcept;
 
@@ -79,7 +79,7 @@ public:
 
     void encode(FNET_DataBuffer &dst);
     bool decode(FNET_DataBuffer &src, uint32_t &len);
-    vespalib::string toString(uint32_t indent = 0) const;
+    std::string toString(uint32_t indent = 0) const;
 };
 
 }

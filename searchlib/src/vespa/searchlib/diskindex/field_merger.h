@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace search {
@@ -42,8 +42,8 @@ class FieldMerger
     };
 
     const uint32_t                 _id;
-    const vespalib::string         _field_name;
-    const vespalib::string         _field_dir;
+    const std::string         _field_name;
+    const std::string         _field_dir;
     const FusionOutputIndex      & _fusion_out_index;
     std::shared_ptr<IFlushToken>   _flush_token;
     std::vector<std::unique_ptr<DictionaryWordReader>> _word_readers;

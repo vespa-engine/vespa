@@ -5,7 +5,6 @@
 #include "atomic_entry_ref.h"
 #include "entry_comparator.h"
 #include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/generation_hold_list.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <atomic>

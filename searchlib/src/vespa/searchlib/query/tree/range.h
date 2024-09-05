@@ -2,20 +2,21 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
+
 namespace vespalib { class asciistream; }
 
 namespace search::query {
 
 class Range {
-    vespalib::string _range;
+    std::string _range;
 
 public:
     Range() noexcept : _range() {}
     Range(int64_t f, int64_t t);
-    Range(vespalib::string range) noexcept : _range(std::move(range)) {}
+    Range(std::string range) noexcept : _range(std::move(range)) {}
 
-    const vespalib::string & getRangeString() const { return _range; }
+    const std::string & getRangeString() const { return _range; }
 };
 
 inline bool operator==(const Range &r1, const Range &r2) {

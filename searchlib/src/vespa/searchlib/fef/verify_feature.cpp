@@ -25,7 +25,7 @@ bool verifyFeature(const BlueprintFactory &factory,
         for (const auto & msg : warnings) {
             errors.emplace_back(Level::WARNING, msg);
         }
-        vespalib::string msg = fmt("verification failed: %s (%s)",BlueprintResolver::describe_feature(featureName).c_str(), desc.c_str());
+        std::string msg = fmt("verification failed: %s (%s)",BlueprintResolver::describe_feature(featureName).c_str(), desc.c_str());
         errors.emplace_back(Level::ERROR, msg);
     }
     return result;

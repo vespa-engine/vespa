@@ -3,8 +3,8 @@
 #pragma once
 
 #include "atomic_entry_ref.h"
-#include <vespa/vespalib/util/arrayref.h>
 #include <memory>
+#include <span>
 
 namespace vespalib::datastore {
 
@@ -17,7 +17,7 @@ namespace vespalib::datastore {
 struct ICompactionContext {
     using UP = std::unique_ptr<ICompactionContext>;
     virtual ~ICompactionContext() {}
-    virtual void compact(vespalib::ArrayRef<AtomicEntryRef> refs) = 0;
+    virtual void compact(std::span<AtomicEntryRef> refs) = 0;
 };
 
 }

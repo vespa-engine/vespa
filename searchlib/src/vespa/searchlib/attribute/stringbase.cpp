@@ -27,17 +27,17 @@ StringAttribute::countZero(const char * bt, size_t sz)
     return size;
 }
 
-StringAttribute::StringAttribute(const vespalib::string & name) :
+StringAttribute::StringAttribute(const std::string & name) :
     AttributeVector(name, Config(BasicType::STRING)),
     _changes(),
-    _defaultValue(ChangeBase::UPDATE, 0, vespalib::string(""))
+    _defaultValue(ChangeBase::UPDATE, 0, std::string(""))
 {
 }
 
-StringAttribute::StringAttribute(const vespalib::string & name, const Config & c) :
+StringAttribute::StringAttribute(const std::string & name, const Config & c) :
     AttributeVector(name, c),
     _changes(),
-    _defaultValue(ChangeBase::UPDATE, 0, vespalib::string(""))
+    _defaultValue(ChangeBase::UPDATE, 0, std::string(""))
 {
 }
 
@@ -72,7 +72,7 @@ StringAttribute::getFloat(DocId doc) const {
     return vespalib::locale::c::strtod(get(doc), nullptr);
 }
 
-vespalib::ConstArrayRef<char>
+std::span<const char>
 StringAttribute::get_raw(DocId doc) const
 {
     const char * s = get(doc);
@@ -156,14 +156,14 @@ StringAttribute::clearDoc(DocId doc)
 bool
 StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust)
 {
-    vespalib::string v = fv.getAsString();
+    std::string v = fv.getAsString();
     return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
 }
 
 bool
 StringAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
 {
-    vespalib::string v = fv.getAsString();
+    std::string v = fv.getAsString();
     return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
 }
 

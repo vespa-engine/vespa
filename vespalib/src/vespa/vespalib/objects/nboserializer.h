@@ -27,7 +27,7 @@ public:
     NBOSerializer &get(uint64_t &value) override;
     NBOSerializer &get(double &value) override;
     NBOSerializer &get(float &value) override;
-    NBOSerializer &get(string &value) override;
+    NBOSerializer &get(std::string &value) override;
 
     const char *peek() const;
 

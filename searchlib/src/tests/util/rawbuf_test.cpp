@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("rawbuf_test");
 
-using vespalib::string;
+using std::string;
 using namespace search;
 
 namespace {

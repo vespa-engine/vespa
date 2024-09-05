@@ -44,7 +44,7 @@ using document::RemoveFieldPathUpdate;
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
 using storage::lib::ClusterState;
-using vespalib::string;
+using std::string;
 
 namespace vespalib {
 
@@ -123,9 +123,9 @@ namespace {
 }
 
 TEST_F(StorageProtocolTest, testAddress50) {
-    vespalib::string cluster("foo");
+    std::string cluster("foo");
     StorageMessageAddress address(&cluster, lib::NodeType::STORAGE, 3);
-    EXPECT_EQ(vespalib::string("storage/cluster.foo/storage/3/default"),
+    EXPECT_EQ(std::string("storage/cluster.foo/storage/3/default"),
                          address.to_mbus_route().toString());
 }
 
@@ -320,7 +320,7 @@ TEST_P(StorageProtocolTest, get) {
     EXPECT_EQ(_bucket, cmd2->getBucket());
     EXPECT_EQ(_testDocId, cmd2->getDocumentId());
     EXPECT_EQ(Timestamp(123), cmd2->getBeforeTimestamp());
-    EXPECT_EQ(vespalib::string("foo,bar,vekterli"), cmd2->getFieldSet());
+    EXPECT_EQ(std::string("foo,bar,vekterli"), cmd2->getFieldSet());
 
     auto reply = std::make_shared<GetReply>(*cmd2, _testDoc, 100);
     set_dummy_bucket_info_reply_fields(*reply);
@@ -722,11 +722,11 @@ namespace {
 ApplyBucketDiffCommand::Entry dummy_apply_entry() {
     ApplyBucketDiffCommand::Entry e;
     e._docName = "my cool id";
-    vespalib::string header_data = "fancy header";
+    std::string header_data = "fancy header";
     e._headerBlob.resize(header_data.size());
     memcpy(&e._headerBlob[0], header_data.data(), header_data.size());
 
-    vespalib::string body_data = "fancier body!";
+    std::string body_data = "fancier body!";
     e._bodyBlob.resize(body_data.size());
     memcpy(&e._bodyBlob[0], body_data.data(), body_data.size());
 
@@ -893,7 +893,7 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
 TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     constexpr size_t msg_baseline   = 80u;
     constexpr size_t reply_baseline = 96;
-    constexpr size_t doc_reply_baseline = reply_baseline + sizeof(vespalib::string);
+    constexpr size_t doc_reply_baseline = reply_baseline + sizeof(std::string);
 
     EXPECT_EQ(sizeof(StorageMessage),    msg_baseline);
     EXPECT_EQ(sizeof(StorageReply),      reply_baseline);
@@ -905,15 +905,15 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(sizeof(PutReply),          doc_reply_baseline + 136);
     EXPECT_EQ(sizeof(UpdateReply),       doc_reply_baseline + 120);
     EXPECT_EQ(sizeof(RemoveReply),       doc_reply_baseline + 112);
-    EXPECT_EQ(sizeof(GetReply),          doc_reply_baseline + 136 + sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(GetReply),          doc_reply_baseline + 136 + sizeof(std::string));
     EXPECT_EQ(sizeof(StorageCommand),    msg_baseline   + 16);
     EXPECT_EQ(sizeof(BucketCommand),     sizeof(StorageCommand) + 24);
     EXPECT_EQ(sizeof(BucketInfoCommand), sizeof(BucketCommand));
-    EXPECT_EQ(sizeof(TestAndSetCommand), sizeof(BucketInfoCommand) + sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(TestAndSetCommand), sizeof(BucketInfoCommand) + sizeof(std::string));
     EXPECT_EQ(sizeof(PutCommand),        sizeof(TestAndSetCommand) + 40);
     EXPECT_EQ(sizeof(UpdateCommand),     sizeof(TestAndSetCommand) + 40);
-    EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 48 + sizeof(vespalib::string));
-    EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + 56 + 2 * sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 48 + sizeof(std::string));
+    EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + 56 + 2 * sizeof(std::string));
 }
 
 } // storage::api

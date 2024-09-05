@@ -31,8 +31,8 @@ bool will_reclaim() {
 
 //-----------------------------------------------------------------------------
 
-std::vector<vespalib::string> make_strings(size_t cnt) {
-    std::vector<vespalib::string> strings;
+std::vector<std::string> make_strings(size_t cnt) {
+    std::vector<std::string> strings;
     strings.reserve(cnt);
     for (size_t i = 0; i < cnt; ++i) {
         strings.push_back(fmt("str_%zu", i));
@@ -40,8 +40,8 @@ std::vector<vespalib::string> make_strings(size_t cnt) {
     return strings;
 }
 
-std::vector<vespalib::string> make_direct_strings(size_t cnt) {
-    std::vector<vespalib::string> strings;
+std::vector<std::string> make_direct_strings(size_t cnt) {
+    std::vector<std::string> strings;
     strings.reserve(cnt);
     for (size_t i = 0; i < cnt; ++i) {
         strings.push_back(fmt("%zu", (i % 100000)));
@@ -49,12 +49,12 @@ std::vector<vespalib::string> make_direct_strings(size_t cnt) {
     return strings;
 }
 
-std::vector<vespalib::string> copy_strings(const std::vector<vespalib::string> &strings) {
+std::vector<std::string> copy_strings(const std::vector<std::string> &strings) {
     return strings;
 }
 
-std::vector<std::pair<vespalib::string, uint64_t>> copy_and_hash(const std::vector<vespalib::string> &strings) {
-    std::vector<std::pair<vespalib::string, uint64_t>> result;
+std::vector<std::pair<std::string, uint64_t>> copy_and_hash(const std::vector<std::string> &strings) {
+    std::vector<std::pair<std::string, uint64_t>> result;
     result.reserve(strings.size());
     for (const auto &str: strings) {
         result.emplace_back(str, XXH3_64bits(str.data(), str.size()));
@@ -62,8 +62,8 @@ std::vector<std::pair<vespalib::string, uint64_t>> copy_and_hash(const std::vect
     return result;
 }
 
-std::vector<uint32_t> local_enum(const std::vector<vespalib::string> &strings) {
-    hash_map<vespalib::string, uint32_t> map(strings.size() * 2);
+std::vector<uint32_t> local_enum(const std::vector<std::string> &strings) {
+    hash_map<std::string, uint32_t> map(strings.size() * 2);
     std::vector<uint32_t> result;
     result.reserve(strings.size());
     for (const auto &str: strings) {
@@ -72,7 +72,7 @@ std::vector<uint32_t> local_enum(const std::vector<vespalib::string> &strings) {
     return result;
 }
 
-std::vector<Handle> resolve_strings(const std::vector<vespalib::string> &strings) {
+std::vector<Handle> resolve_strings(const std::vector<std::string> &strings) {
     std::vector<Handle> handles;
     handles.reserve(strings.size());
     for (const auto & string : strings) {
@@ -81,8 +81,8 @@ std::vector<Handle> resolve_strings(const std::vector<vespalib::string> &strings
     return handles;
 }
 
-std::vector<vespalib::string> get_strings(const std::vector<Handle> &handles) {
-    std::vector<vespalib::string> strings;
+std::vector<std::string> get_strings(const std::vector<Handle> &handles) {
+    std::vector<std::string> strings;
     strings.reserve(handles.size());
     for (const auto & handle : handles) {
         strings.push_back(handle.as_string());
@@ -90,7 +90,7 @@ std::vector<vespalib::string> get_strings(const std::vector<Handle> &handles) {
     return strings;
 }
 
-std::unique_ptr<Handles> make_strong_handles(const std::vector<vespalib::string> &strings) {
+std::unique_ptr<Handles> make_strong_handles(const std::vector<std::string> &strings) {
     auto result = std::make_unique<Handles>();
     result->reserve(strings.size());
     for (const auto &str: strings) {
@@ -133,10 +133,10 @@ void verify_equal(const std::vector<T> &a, const std::vector<T> &b) {
 struct Fixture {
     Avg avg;
     Vote vote;
-    std::vector<vespalib::string> work;
-    std::vector<vespalib::string> direct_work;
+    std::vector<std::string> work;
+    std::vector<std::string> direct_work;
     steady_time start_time;
-    std::map<vespalib::string,double> time_ms;
+    std::map<std::string,double> time_ms;
     explicit Fixture(size_t num_threads)
         : avg(num_threads), vote(num_threads), work(make_strings(work_size)), direct_work(make_direct_strings(work_size)), start_time(steady_clock::now()) {}
     ~Fixture() {
@@ -151,7 +151,7 @@ struct Fixture {
         return to_s(steady_clock::now() - start_time) < budget;
     }
     template <typename F>
-    void measure_task(const vespalib::string &tag, bool is_master, F &&task) {
+    void measure_task(const std::string &tag, bool is_master, F &&task) {
         auto before = steady_clock::now();
         task();
         double ms_cost = to_s(steady_clock::now() - before) * 1000.0;
@@ -166,15 +166,15 @@ struct Fixture {
     }
     void benchmark(bool is_master) {
         for (bool once_more = true; vote(once_more); once_more = has_budget()) {
-            std::vector<vespalib::string> copy_strings_result;
-            std::vector<std::pair<vespalib::string,uint64_t>> copy_and_hash_result;
+            std::vector<std::string> copy_strings_result;
+            std::vector<std::pair<std::string,uint64_t>> copy_and_hash_result;
             std::vector<uint32_t> local_enum_result;
             std::vector<Handle> resolve_result;
             std::vector<Handle> resolve_direct_result;
             std::vector<Handle> copy_handles_result;
             std::vector<Handle> resolve_again_result;
-            std::vector<vespalib::string> get_result;
-            std::vector<vespalib::string> get_direct_result;
+            std::vector<std::string> get_result;
+            std::vector<std::string> get_direct_result;
             std::unique_ptr<Handles> strong;
             std::unique_ptr<Handles> strong_copy;
             std::unique_ptr<StringIdVector> weak;
@@ -341,12 +341,12 @@ TEST("require that basic handle usage works") {
     EXPECT_EQUAL(empty.id().value(), 0u);
     EXPECT_TRUE(empty.id() == string_id());
     EXPECT_TRUE(empty2.id() == string_id());
-    EXPECT_EQUAL(empty.as_string(), vespalib::string(""));
-    EXPECT_EQUAL(empty2.as_string(), vespalib::string(""));
-    EXPECT_EQUAL(foo.as_string(), vespalib::string("foo"));
-    EXPECT_EQUAL(bar.as_string(), vespalib::string("bar"));
-    EXPECT_EQUAL(foo2.as_string(), vespalib::string("foo"));
-    EXPECT_EQUAL(bar2.as_string(), vespalib::string("bar"));
+    EXPECT_EQUAL(empty.as_string(), std::string(""));
+    EXPECT_EQUAL(empty2.as_string(), std::string(""));
+    EXPECT_EQUAL(foo.as_string(), std::string("foo"));
+    EXPECT_EQUAL(bar.as_string(), std::string("bar"));
+    EXPECT_EQUAL(foo2.as_string(), std::string("foo"));
+    EXPECT_EQUAL(bar2.as_string(), std::string("bar"));
 }
 
 TEST("require that handles can be copied") {
@@ -359,7 +359,7 @@ TEST("require that handles can be copied") {
     EXPECT_EQUAL(active_enums(), before + 1);
     EXPECT_TRUE(a.id() == b.id());
     EXPECT_TRUE(b.id() == c.id());
-    EXPECT_EQUAL(c.as_string(), vespalib::string("copied"));
+    EXPECT_EQUAL(c.as_string(), std::string("copied"));
 }
 
 TEST("require that handles can be moved") {
@@ -372,7 +372,7 @@ TEST("require that handles can be moved") {
     EXPECT_EQUAL(active_enums(), before + 1);
     EXPECT_TRUE(a.id() == string_id());
     EXPECT_TRUE(b.id() == string_id());
-    EXPECT_EQUAL(c.as_string(), vespalib::string("moved"));
+    EXPECT_EQUAL(c.as_string(), std::string("moved"));
 }
 
 TEST("require that handle/string can be obtained from string_id") {
@@ -381,7 +381,7 @@ TEST("require that handle/string can be obtained from string_id") {
     EXPECT_EQUAL(active_enums(), before + 1);
     Handle b = Handle::handle_from_id(a.id());
     EXPECT_EQUAL(active_enums(), before + 1);
-    EXPECT_EQUAL(Handle::string_from_id(b.id()), vespalib::string("str"));
+    EXPECT_EQUAL(Handle::string_from_id(b.id()), std::string("str"));
 }
 
 void verifySelfAssignment(Handle & a, const Handle &b) {
@@ -391,12 +391,12 @@ void verifySelfAssignment(Handle & a, const Handle &b) {
 TEST("require that handle can be self-assigned") {
     Handle a("foo");
     verifySelfAssignment(a, a);
-    EXPECT_EQUAL(a.as_string(), vespalib::string("foo"));
+    EXPECT_EQUAL(a.as_string(), std::string("foo"));
 }
 
 //-----------------------------------------------------------------------------
 
-void verify_direct(const vespalib::string &str, size_t value) {
+void verify_direct(const std::string &str, size_t value) {
     size_t before = active_enums();
     Handle handle(str);
     EXPECT_EQUAL(handle.id().hash(), value + 1);
@@ -405,7 +405,7 @@ void verify_direct(const vespalib::string &str, size_t value) {
     EXPECT_EQUAL(handle.as_string(), str);
 }
 
-void verify_not_direct(const vespalib::string &str) {
+void verify_not_direct(const std::string &str) {
     size_t before = active_enums();
     Handle handle(str);
     EXPECT_EQUAL(handle.id().hash(), handle.id().value());
@@ -462,7 +462,7 @@ TEST("require that basic multi-handle usage works") {
 
 //-----------------------------------------------------------------------------
 
-void verify_same_enum(int64_t num, const vespalib::string &str) {
+void verify_same_enum(int64_t num, const std::string &str) {
     Handle n = Handle::handle_from_number(num);
     Handle s(str);
     EXPECT_EQUAL(n.id().value(), s.id().value());

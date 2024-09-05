@@ -29,7 +29,7 @@ FileHeader::FileHeader()
 FileHeader::~FileHeader() = default;
 
 bool
-FileHeader::taste(const vespalib::string &name,
+FileHeader::taste(const std::string &name,
                   const TuneFileSeqRead &tuneFileRead)
 {
     vespalib::FileHeader header;
@@ -66,7 +66,7 @@ FileHeader::taste(const vespalib::string &name,
     _headerLen = headerLen;
     _bigEndian = htonl(1) == 1;
     if (header.hasTag("endian")) {
-        vespalib::string endian(header.getTag("endian").asString());
+        std::string endian(header.getTag("endian").asString());
         if (endian == "big") {
             _bigEndian = true;
         } else if (endian == "little") {
@@ -102,7 +102,7 @@ FileHeader::taste(const vespalib::string &name,
     for (uint32_t i = 0; ;++i) {
         vespalib::asciistream as;
         as << "format." << i;
-        vespalib::string key(as.str());
+        std::string key(as.str());
         if (!header.hasTag(key)) {
             break;
         }
@@ -112,7 +112,7 @@ FileHeader::taste(const vespalib::string &name,
 }
 
 bool
-FileHeader::taste(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite)
+FileHeader::taste(const std::string &name, const TuneFileSeqWrite &tuneFileWrite)
 {
     TuneFileSeqRead tuneFileRead;
     if (tuneFileWrite.getWantDirectIO()) {
@@ -122,7 +122,7 @@ FileHeader::taste(const vespalib::string &name, const TuneFileSeqWrite &tuneFile
 }
 
 bool
-FileHeader::taste(const vespalib::string &name, const TuneFileRandRead &tuneFileSearch)
+FileHeader::taste(const std::string &name, const TuneFileRandRead &tuneFileSearch)
 {
     TuneFileSeqRead tuneFileRead;
     if (tuneFileSearch.getWantDirectIO()) {

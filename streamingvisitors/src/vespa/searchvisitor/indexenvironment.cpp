@@ -24,7 +24,7 @@ IndexEnvironment::IndexEnvironment(IndexEnvironment &&) noexcept = default;
 IndexEnvironment::~IndexEnvironment() = default;
 
 bool
-IndexEnvironment::addField(const vespalib::string& name,
+IndexEnvironment::addField(const std::string& name,
                            bool isAttribute,
                            search::fef::FieldInfo::DataType data_type)
 {
@@ -50,11 +50,11 @@ IndexEnvironment::addField(const vespalib::string& name,
 void
 IndexEnvironment::add_virtual_fields()
 {
-    vespalib::hash_set<vespalib::string> vfields;
+    vespalib::hash_set<std::string> vfields;
     for (auto& field : _fields) {
-        vespalib::string name(field.name());
+        std::string name(field.name());
         auto pos = name.rfind('.');
-        while (pos != vespalib::string::npos) {
+        while (pos != std::string::npos) {
             name = name.substr(0, pos);
             if (_fieldNames.contains(name)) {
                 break;
@@ -88,19 +88,19 @@ IndexEnvironment::set_ranking_assets_repo(std::shared_ptr<const IRankingAssetsRe
 }
 
 vespalib::eval::ConstantValue::UP
-IndexEnvironment::getConstantValue(const vespalib::string& name) const
+IndexEnvironment::getConstantValue(const std::string& name) const
 {
     return _ranking_assets_repo->getConstant(name);
 }
 
-vespalib::string
-IndexEnvironment::getRankingExpression(const vespalib::string& name) const
+std::string
+IndexEnvironment::getRankingExpression(const std::string& name) const
 {
     return _ranking_assets_repo->getExpression(name);
 }
 
 const search::fef::OnnxModel*
-IndexEnvironment::getOnnxModel(const vespalib::string& name) const
+IndexEnvironment::getOnnxModel(const std::string& name) const
 {
     return _ranking_assets_repo->getOnnxModel(name);
 }

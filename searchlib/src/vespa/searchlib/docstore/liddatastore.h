@@ -18,7 +18,7 @@ public:
      *
      * @param dirName  The directory that will contain the data file.
      **/
-    LidDataStore(const vespalib::string & dirName) : IDataStore(dirName), _lastSyncToken(0) { }
+    LidDataStore(const std::string & dirName) : IDataStore(dirName), _lastSyncToken(0) { }
 
 
     /**

@@ -29,12 +29,12 @@ void throwTypeMismatch(std::string_view type, std::string_view docidType) __attr
 
 void documentTypeError(std::string_view name) {
     throw IllegalArgumentException(make_string("Cannot generate a document with non-document type %s.",
-                                               vespalib::string(name).c_str()), VESPA_STRLOC);
+                                               std::string(name).c_str()), VESPA_STRLOC);
 }
 
 void throwTypeMismatch(std::string_view type, std::string_view docidType) {
     throw IllegalArgumentException(make_string("Trying to create a document with type %s that don't match the id (type %s).",
-                                               vespalib::string(type).c_str(), vespalib::string(docidType).c_str()),
+                                               std::string(type).c_str(), std::string(docidType).c_str()),
                                    VESPA_STRLOC);
 }
 
@@ -210,8 +210,8 @@ Document::compare(const FieldValue& other) const
         return diff;
     }
     auto & doc(static_cast<const Document&>(other));
-    vespalib::string id1 = _id.toString();
-    vespalib::string id2 = doc._id.toString();
+    std::string id1 = _id.toString();
+    std::string id2 = doc._id.toString();
     if (id1 != id2) {
         return (id1 < id2 ? -1 : 1);
     }
@@ -267,7 +267,7 @@ void Document::deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & o
     try {
         deserializer.read(*this);
     } catch (const IllegalStateException &e) {
-        throw DeserializeException(vespalib::string("Buffer out of bounds: ") + e.what());
+        throw DeserializeException(std::string("Buffer out of bounds: ") + e.what());
     }
 }
 

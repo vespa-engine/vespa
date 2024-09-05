@@ -3,15 +3,6 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <iostream>
-
-namespace vespalib {
-// Tell google test how to print vespalib::string values:
-static inline void PrintTo(const vespalib::string & value, std::ostream * os) {
-    *os << value;
-}
-}
 
 /**
  * Macro for creating a main function that runs all gtests.
@@ -29,7 +20,7 @@ main(int argc, char* argv[])                \
         TRY_BLOCK;                                                        \
         FAIL() << "exception '" << MESSAGE << "' not thrown at all!";     \
     } catch(EXCEPTION_TYPE& e) {                                          \
-        EXPECT_TRUE(contains(std::string_view(e.what()), std::string_view(MESSAGE))) << \
+        EXPECT_TRUE(std::string_view(e.what()).find(std::string_view(MESSAGE)) != std::string_view::npos) << \
             " e.what(): " << e.what() << "\n";                            \
     } catch(...) {                                                        \
         FAIL() << "wrong exception type thrown";                          \

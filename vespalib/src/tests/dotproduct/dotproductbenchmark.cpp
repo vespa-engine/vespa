@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <iostream>
-#include <vector>
-#include <thread>
 #include <functional>
+#include <iostream>
+#include <thread>
+#include <string>
+#include <vector>
 
 using namespace vespalib;
 using vespalib::hwaccelerated::IAccelerated;
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
     size_t numValues(1000);
     size_t numQueries(1000000);
     size_t stride(1);
-    string type("full");
+    std::string type("full");
     if ( argc > 1) {
         type = argv[1];
     }

@@ -37,7 +37,8 @@
       "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(java.lang.String, com.yahoo.messagebus.ConfigHandler)",
@@ -325,7 +326,8 @@
       "com.yahoo.messagebus.ReplyHandler"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void register(com.yahoo.messagebus.MessageBus$SendBlockedMessages)",
@@ -607,7 +609,8 @@
       "java.lang.Runnable"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -672,13 +675,13 @@
     "superClass" : "com.yahoo.messagebus.NetworkMessageBus",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams)",
       "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
       "public void <init>(java.util.List, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
-      "public void <init>(com.yahoo.messagebus.Protocol, java.lang.String)",
       "public boolean destroy()",
       "public com.yahoo.messagebus.network.rpc.RPCNetwork getRPCNetwork()"
     ],

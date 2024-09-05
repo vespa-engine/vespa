@@ -57,7 +57,7 @@ MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, E
     // set new set of indices for documents with changes
     ValueModifier valueGuard(this->getValueModifier());
     for (const auto& doc_values : docIndices) {
-        vespalib::ConstArrayRef<WeightedIndex> oldIndices(this->_mvMapping.get(doc_values.first));
+        std::span<const WeightedIndex> oldIndices(this->_mvMapping.get(doc_values.first));
         uint32_t valueCount = oldIndices.size();
         this->_mvMapping.set(doc_values.first, doc_values.second);
         for (uint32_t i = 0; i < doc_values.second.size(); ++i) {
@@ -100,7 +100,7 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
 {
     loader.reserve_loaded_enums(num_values);
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
-                                                             vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             std::span<const EnumIndex>(loader.get_enum_indexes()),
                                                              loader.get_enum_value_remapping(),
                                                              attribute::SaveLoadedEnum(loader.get_loaded_enums()));
     loader.free_enum_value_remapping();
@@ -115,7 +115,7 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
 {
     loader.allocate_enums_histogram();
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
-                                                             vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             std::span<const EnumIndex>(loader.get_enum_indexes()),
                                                              loader.get_enum_value_remapping(),
                                                              attribute::SaveEnumHist(loader.get_enums_histogram()));
     loader.free_enum_value_remapping();
@@ -127,7 +127,7 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
 
 template <typename B, typename M>
 MultiValueEnumAttribute<B, M>::
-MultiValueEnumAttribute(const vespalib::string &baseFileName,
+MultiValueEnumAttribute(const std::string &baseFileName,
                         const AttributeVector::Config & cfg)
     : MultiValueAttribute<B, M>(baseFileName, cfg)
 {

@@ -29,8 +29,8 @@ struct Converter {
 };
 
 template <>
-struct Converter<vespalib::string, const char *> {
-    const char * convert(const vespalib::string & value) const { return value.c_str(); }
+struct Converter<std::string, const char *> {
+    const char * convert(const std::string & value) const { return value.c_str(); }
 };
 
 template <typename T>
@@ -85,7 +85,7 @@ extern template class IntegerVectorT<int64_t>;
 
 using IntegerVector = IntegerVectorT<int64_t>;
 
-using StringVectorBase = VectorBase<vespalib::string, const char*, feature_t, ConstCharComparator>;
+using StringVectorBase = VectorBase<std::string, const char*, feature_t, ConstCharComparator>;
 
 /**
  * Represents a vector where the dimensions are string values.
@@ -130,7 +130,7 @@ public:
 private:
     const V                                    & _queryVector;
     const typename V::HashMap::const_iterator    _end;
-    virtual vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) = 0;
+    virtual std::span<const AT> getAttributeValues(uint32_t docid) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);
     ~DotProductExecutorBase() override;
@@ -147,7 +147,7 @@ protected:
     const WeightedSetReadView * _weighted_set_read_view;
 private:
     std::unique_ptr<V> _backing;
-    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
+    std::span<const AT> getAttributeValues(uint32_t docid) override;
 public:
     DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, const V & queryVector);
     DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView * weighted_set_read_view, std::unique_ptr<V> queryVector);
@@ -170,7 +170,7 @@ public:
 private:
     const vespalib::hwaccelerated::IAccelerated   & _multiplier;
     V                                             _queryVector;
-    virtual vespalib::ConstArrayRef<BaseType> getAttributeValues(uint32_t docid) = 0;
+    virtual std::span<const BaseType> getAttributeValues(uint32_t docid) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);
     ~DotProductExecutorBase() override;
@@ -188,7 +188,7 @@ public:
 protected:
     const ArrayReadView* _array_read_view;
 private:
-    vespalib::ConstArrayRef<BaseType> getAttributeValues(uint32_t docid) override;
+    std::span<const BaseType> getAttributeValues(uint32_t docid) override;
 public:
     DotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector);
     ~DotProductByArrayReadViewExecutor();
@@ -231,7 +231,7 @@ public:
     SparseDotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector, const IV & queryIndexes);
     ~SparseDotProductByArrayReadViewExecutor();
 private:
-    vespalib::ConstArrayRef<BaseType> getAttributeValues(uint32_t docid) override;
+    std::span<const BaseType> getAttributeValues(uint32_t docid) override;
     const ArrayReadView* _array_read_view;
 };
 
@@ -245,13 +245,13 @@ private:
 class DotProductBlueprint : public fef::Blueprint {
 private:
     using IAttributeVector = attribute::IAttributeVector;
-    vespalib::string _defaultAttribute;
-    vespalib::string _attributeOverride;
-    vespalib::string _queryVector;
-    vespalib::string _attrKey;
-    vespalib::string _queryVectorKey;
+    std::string _defaultAttribute;
+    std::string _attributeOverride;
+    std::string _queryVector;
+    std::string _attrKey;
+    std::string _queryVectorKey;
 
-    const vespalib::string & getAttribute(const fef::IQueryEnvironment & env) const;
+    const std::string & getAttribute(const fef::IQueryEnvironment & env) const;
     const IAttributeVector * upgradeIfNecessary(const IAttributeVector * attribute, const fef::IQueryEnvironment & env) const;
 
 public:

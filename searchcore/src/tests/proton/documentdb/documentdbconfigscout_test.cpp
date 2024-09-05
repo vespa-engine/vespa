@@ -52,7 +52,7 @@ getConfig(int64_t generation, const Schema::SP &schema,
 
 bool
 assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
-                       const vespalib::string &name)
+                       const std::string &name)
 {
     if (!EXPECT_EQUAL(name, attribute.name)) {
         return false;
@@ -71,7 +71,7 @@ assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
 
 bool
 assert_string_attribute(const AttributesConfig::Attribute& attribute,
-                        const vespalib::string& name,
+                        const std::string& name,
                         std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
 {
     using Attribute = AttributesConfig::Attribute;
@@ -110,7 +110,7 @@ assert_string_attribute(const AttributesConfig::Attribute& attribute,
 
 bool
 assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
-                          const vespalib::string &name)
+                          const std::string &name)
 {
     if (!EXPECT_EQUAL(name, attribute.name)) {
         return false;
@@ -130,7 +130,7 @@ assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
 
 bool
 assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
-                                 const vespalib::string &name)
+                                 const std::string &name)
 {
     if (!EXPECT_EQUAL(name, attribute.name)) {
         return false;
@@ -149,7 +149,7 @@ assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
 
 bool
 assertTensorAttribute(const AttributesConfig::Attribute &attribute,
-                      const vespalib::string &name, const vespalib::string &spec, int max_links_per_node)
+                      const std::string &name, const std::string &spec, int max_links_per_node)
 {
     if (!EXPECT_EQUAL(attribute.name, name)) {
         return false;
@@ -275,7 +275,7 @@ assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
 
 
 AttributesConfig::Attribute
-setupDefaultAttribute(const vespalib::string & name)
+setupDefaultAttribute(const std::string & name)
 {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
@@ -283,7 +283,7 @@ setupDefaultAttribute(const vespalib::string & name)
 }
 
 AttributesConfig::Attribute
-setup_string_attribute(const vespalib::string& name, std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
+setup_string_attribute(const std::string& name, std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
 {
     using Attribute = AttributesConfig::Attribute;
     using Datatype = Attribute::Datatype;
@@ -308,7 +308,7 @@ setup_string_attribute(const vespalib::string& name, std::optional<bool> uncased
 }
 
 AttributesConfig::Attribute
-setupFastSearchAttribute(const vespalib::string & name)
+setupFastSearchAttribute(const std::string & name)
 {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
@@ -318,7 +318,7 @@ setupFastSearchAttribute(const vespalib::string & name)
 
 
 AttributesConfig::Attribute
-setupFastSearchAndMoreAttribute(const vespalib::string & name)
+setupFastSearchAndMoreAttribute(const std::string & name)
 {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
@@ -329,7 +329,7 @@ setupFastSearchAndMoreAttribute(const vespalib::string & name)
 }
 
 AttributesConfig::Attribute
-setupTensorAttribute(const vespalib::string &name, const vespalib::string &spec, int max_links_per_node)
+setupTensorAttribute(const std::string &name, const std::string &spec, int max_links_per_node)
 {
     AttributesConfig::Attribute attribute;
     attribute.name = name;

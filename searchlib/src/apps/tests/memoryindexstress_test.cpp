@@ -57,14 +57,14 @@ using vespalib::makeLambdaTask;
 
 namespace {
 
-const vespalib::string SPANTREE_NAME("linguistics");
-const vespalib::string title("title");
-const vespalib::string body("body");
-const vespalib::string foo("foo");
-const vespalib::string bar("bar");
-const vespalib::string doc_type_name = "test";
-const vespalib::string header_name = doc_type_name + ".header";
-const vespalib::string body_name = doc_type_name + ".body";
+const std::string SPANTREE_NAME("linguistics");
+const std::string title("title");
+const std::string body("body");
+const std::string foo("foo");
+const std::string bar("bar");
+const std::string doc_type_name = "test";
+const std::string header_name = doc_type_name + ".header";
+const std::string body_name = doc_type_name + ".body";
 uint32_t docid_limit = 100; // needed for relative estimates
 
 Schema
@@ -104,7 +104,7 @@ tokenizeStringFieldValue(const document::FixedTypeRepo & repo, StringFieldValue 
     auto spanList = std::make_unique<SpanList>();
     SpanList *spans = spanList.get();
     auto spanTree = std::make_unique<document::SpanTree>(SPANTREE_NAME, std::move(spanList));
-    const vespalib::string &text = field.getValue();
+    const std::string &text = field.getValue();
     uint32_t cur = 0;
     int32_t start = 0;
     bool inWord = false;
@@ -177,7 +177,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i)
 
 
 SimpleStringTerm makeTerm(std::string_view term) {
-    return SimpleStringTerm(vespalib::string(term), "field", 0, search::query::Weight(0));
+    return SimpleStringTerm(std::string(term), "field", 0, search::query::Weight(0));
 }
 
 Node::UP makePhrase(const std::string &term1, const std::string &term2) {

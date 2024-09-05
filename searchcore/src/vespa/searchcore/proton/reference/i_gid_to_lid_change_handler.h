@@ -36,8 +36,8 @@ public:
      * Remove listeners with matching docTypeName unless name is present in
      * keepNames.
      */
-    virtual void removeListeners(const vespalib::string &docTypeName,
-                                 const std::set<vespalib::string> &keepNames) = 0;
+    virtual void removeListeners(const std::string &docTypeName,
+                                 const std::set<std::string> &keepNames) = 0;
     /**
      * Notify pending gid to lid mapping change. Passed on to listeners later
      * when force commit has made changes visible.

@@ -11,7 +11,7 @@ namespace proton {
  */
 class IFlushHandler {
 private:
-    vespalib::string _name;
+    std::string _name;
 
 public:
     using IFlushTarget = searchcorespi::IFlushTarget;
@@ -27,7 +27,7 @@ public:
      *
      * @param name The unique name of this handler.
      */
-    IFlushHandler(const vespalib::string &name) noexcept
+    IFlushHandler(const std::string &name) noexcept
         : _name(name)
     { }
 
@@ -41,7 +41,7 @@ public:
      *
      * @return The name of this.
      */
-    const vespalib::string & getName() const { return _name; }
+    const std::string & getName() const { return _name; }
 
     /**
      * Returns a list of the flush targets that belong to this handler. This

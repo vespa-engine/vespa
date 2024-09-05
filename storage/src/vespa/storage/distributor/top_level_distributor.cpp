@@ -604,7 +604,7 @@ TopLevelDistributor::work_was_done() const noexcept
     return !_tickResult.waitWanted();
 }
 
-vespalib::string
+std::string
 TopLevelDistributor::getReportContentType(const framework::HttpUrlPath& path) const
 {
     if (path.hasAttribute("page")) {

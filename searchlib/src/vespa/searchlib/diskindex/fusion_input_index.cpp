@@ -11,7 +11,7 @@ using vespalib::make_string;
 
 namespace search::diskindex {
 
-FusionInputIndex::FusionInputIndex(const vespalib::string& path, uint32_t index, const SelectorArray& selector)
+FusionInputIndex::FusionInputIndex(const std::string& path, uint32_t index, const SelectorArray& selector)
     : _path(path),
       _index(index),
       _selector(&selector),
@@ -25,7 +25,7 @@ FusionInputIndex::~FusionInputIndex() = default;
 void
 FusionInputIndex::setup()
 {
-    vespalib::string fname = _path + "/schema.txt";
+    std::string fname = _path + "/schema.txt";
     if ( ! _schema.loadFromFile(fname)) {
         throw IllegalArgumentException(make_string("Failed loading schema %s", fname.c_str()));
     }

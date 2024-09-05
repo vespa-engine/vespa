@@ -28,7 +28,7 @@ public:
     ~VectorFromDoublesFunction();
     const ValueType &result_type() const override { return _self.resultType; }
     void push_children(std::vector<Child::CREF> &children) const override;
-    const vespalib::string &dimension() const {
+    const std::string &dimension() const {
         return _self.resultType.dimensions()[0].name;
     }
     size_t size() const { return _self.resultSize; }

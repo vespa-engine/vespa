@@ -91,7 +91,7 @@ private:
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
     void receiveStorageReply(const std::shared_ptr<api::StorageReply>&);
     void fail_with_unresolvable_bucket_space(std::unique_ptr<documentapi::DocumentMessage> msg,
-                                             const vespalib::string& error_message);
+                                             const std::string& error_message);
 
     void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription) const;
 

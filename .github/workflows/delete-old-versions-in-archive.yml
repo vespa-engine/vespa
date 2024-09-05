@@ -1,0 +1,38 @@
+name: Delete old Cloudsmith artifacts
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - .github/workflows/delete-old-versions-in-archive.yml
+      - .github/scripts/delete-old-cloudsmith-artifacts.sh
+    branches:
+      - master
+
+  schedule:
+   - cron: '0 6 * * *'
+
+jobs:
+  delete-old-cloudsmith-artifacts:
+    runs-on: ubuntu-latest
+
+    container:
+        image: fedora:latest
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          CLOUDSMITH_API_TOKEN: ${{ secrets.CLOUDSMITH_API_TOKEN }}
+        volumes:
+          - ${{ github.workspace }}:/workspace
+
+    defaults:
+      run:
+        working-directory: /workspace
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete old artifacts
+        run: |
+          .github/scripts/delete-old-cloudsmith-artifacts.sh

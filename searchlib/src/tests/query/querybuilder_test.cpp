@@ -16,7 +16,7 @@ LOG_SETUP("querybuilder_test");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using std::string_view;
-using vespalib::string;
+using std::string;
 using search::SimpleQueryStackDumpIterator;
 using namespace search::query;
 
@@ -801,7 +801,7 @@ TEST("first integer then string MultiTerm") {
 
 namespace {
 
-std::vector<vespalib::string> in_strings = { "this", "is", "a", "test" };
+std::vector<std::string> in_strings = { "this", "is", "a", "test" };
 
 std::vector<int64_t> in_integers = { 24, INT64_C(93000000000) };
 

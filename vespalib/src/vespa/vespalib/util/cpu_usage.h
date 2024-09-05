@@ -5,12 +5,12 @@
 #include "executor.h"
 #include "spin_lock.h"
 #include <vespa/vespalib/util/time.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <array>
+#include <map>
 #include <memory>
 #include <future>
+#include <string>
 #include <vector>
-#include <map>
 
 namespace vespalib {
 
@@ -61,7 +61,7 @@ public:
         COMPACT = 3, // usage related to internal data re-structuring
         OTHER   = 4  // all other cpu usage not in the categories above
     };
-    static vespalib::string &name_of(Category cat);
+    static std::string &name_of(Category cat);
     static constexpr size_t index_of(Category cat) { return static_cast<size_t>(cat); }
     static constexpr size_t num_categories = 5;
 

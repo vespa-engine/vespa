@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/util/comprfile.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <span>
+#include <string>
 
 namespace vespalib {
 
@@ -1518,9 +1518,9 @@ public:
     {
     }
 
-    virtual void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
+    virtual void readHeader(const vespalib::GenericHeader &header, const std::string &prefix);
 
-    virtual const vespalib::string & getIdentifier() const;
+    virtual const std::string & getIdentifier() const;
     virtual void readFeatures(DocIdAndFeatures &features);
     virtual void skipFeatures(unsigned int count);
     virtual void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId);
@@ -1578,7 +1578,7 @@ public:
     using ParentClass::writeBits;
 
     void writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
-    void writeBytes(vespalib::ConstArrayRef<char> buf);
+    void writeBytes(std::span<const char> buf);
     void writeString(std::string_view buf);
     virtual void writeHeader(const vespalib::GenericHeader &header);
 
@@ -1604,9 +1604,9 @@ public:
 
     void pad_for_memory_map_and_flush();
 
-    virtual void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
-    virtual void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
-    virtual const vespalib::string &getIdentifier() const;
+    virtual void readHeader(const vespalib::GenericHeader &header, const std::string &prefix);
+    virtual void writeHeader(vespalib::GenericHeader &header, const std::string &prefix) const;
+    virtual const std::string &getIdentifier() const;
     virtual void writeFeatures(const DocIdAndFeatures &features);
     virtual void setParams(const PostingListParams &params);
     virtual void getParams(PostingListParams &params) const;

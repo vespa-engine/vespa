@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -30,8 +31,8 @@ public class IPTest {
     private static final LockedNodeList emptyList = new LockedNodeList(List.of(), () -> {});
     private final MockNameResolver resolver = new MockNameResolver().explicitReverseRecords();
 
-    private IP.Allocation.Context contextOf(boolean exclave) {
-        return IP.Allocation.Context.from(CloudName.AWS, exclave, resolver);
+    private IP.Allocation.Context contextOf(boolean exclave, boolean dynamicProvisioning) {
+        return IP.Allocation.Context.from(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(dynamicProvisioning).build(), exclave, resolver);
     }
 
     @Test
@@ -49,7 +50,7 @@ public class IPTest {
         resolver.addReverseRecord("::1", "host3");
         resolver.addReverseRecord("::2", "host1");
 
-        var context = contextOf(false);
+        var context = contextOf(false, false);
         Optional<IP.Allocation> allocation = pool.findAllocation(context, emptyList);
         assertEquals(Optional.of("::1"), allocation.get().ipv6Address());
         assertFalse(allocation.get().ipv4Address().isPresent());
@@ -68,7 +69,7 @@ public class IPTest {
     @Test
     public void test_find_allocation_ipv4_only() {
         var pool = testPool(false);
-        var allocation = pool.findAllocation(contextOf(false), emptyList);
+        var allocation = pool.findAllocation(contextOf(false, false), emptyList);
         assertFalse("Found allocation", allocation.isEmpty());
         assertEquals(Optional.of("127.0.0.1"), allocation.get().ipv4Address());
         assertTrue("No IPv6 address", allocation.get().ipv6Address().isEmpty());
@@ -77,7 +78,7 @@ public class IPTest {
     @Test
     public void test_find_allocation_dual_stack() {
         IP.Pool pool = testPool(true);
-        Optional<IP.Allocation> allocation = pool.findAllocation(contextOf(false), emptyList);
+        Optional<IP.Allocation> allocation = pool.findAllocation(contextOf(false, false), emptyList);
         assertEquals(Optional.of("::1"), allocation.get().ipv6Address());
         assertEquals("127.0.0.2", allocation.get().ipv4Address().get());
         assertEquals("host3", allocation.get().hostname());
@@ -88,7 +89,7 @@ public class IPTest {
         IP.Pool pool = testPool(true);
         resolver.addRecord("host3", "127.0.0.127");
         try {
-            pool.findAllocation(contextOf(false), emptyList);
+            pool.findAllocation(contextOf(false, false), emptyList);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Hostname host3 resolved to more than 1 IPv4 address: [127.0.0.2, 127.0.0.127]",
@@ -102,7 +103,7 @@ public class IPTest {
         resolver.removeRecord("127.0.0.2")
                 .addReverseRecord("127.0.0.2", "host5");
         try {
-            pool.findAllocation(contextOf(false), emptyList);
+            pool.findAllocation(contextOf(false, false), emptyList);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Hostnames resolved from each IP address do not point to the same hostname " +
@@ -123,7 +124,7 @@ public class IPTest {
                                         List.of("2600:1f10:::2", "2600:1f10:::3"),
                                         List.of(HostName.of("node1"), HostName.of("node2")));
         IP.Pool pool = config.pool();
-        Optional<IP.Allocation> allocation = pool.findAllocation(contextOf(true), emptyList);
+        Optional<IP.Allocation> allocation = pool.findAllocation(contextOf(true, true), emptyList);
     }
 
     private IP.Pool testPool(boolean dualStack) {

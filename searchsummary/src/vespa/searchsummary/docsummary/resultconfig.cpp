@@ -128,8 +128,8 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
         auto matching_elems_fields = std::make_shared<MatchingElementsFields>();
         for (const auto & field : cfg_class.fields) {
             const char *fieldname = field.name.c_str();
-            vespalib::string command = field.command;
-            vespalib::string source_name = field.source;
+            std::string command = field.command;
+            std::string source_name = field.source;
             LOG(debug, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), fieldname);
             std::unique_ptr<DocsumFieldWriter> docsum_field_writer;
             if (!command.empty()) {

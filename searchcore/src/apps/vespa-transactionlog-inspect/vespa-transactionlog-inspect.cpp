@@ -36,7 +36,7 @@ using IReplayPacketHandlerUP = std::unique_ptr<IReplayPacketHandler>;
 struct DummyFileHeaderContext : public FileHeaderContext
 {
     using UP = std::unique_ptr<DummyFileHeaderContext>;
-    void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
+    void addTags(vespalib::GenericHeader &, const std::string &) const override {}
 };
 
 
@@ -46,12 +46,12 @@ class ConfigFile
 {
     using SP = std::shared_ptr<ConfigFile>;
 
-    vespalib::string _name;
+    std::string _name;
     std::vector<char> _content;
 
 public:
     ConfigFile();
-    const vespalib::string & getName() const { return _name; }
+    const std::string & getName() const { return _name; }
     vespalib::nbostream & deserialize(vespalib::nbostream &stream);
     void print() const;
 };
@@ -408,7 +408,7 @@ public:
     int run() override {
         std::cout << ListDomainsOptions::command() << ": " << _bopts.toString() << std::endl;
 
-        std::vector<vespalib::string> domains;
+        std::vector<std::string> domains;
         _client.listDomains(domains);
         std::cout << "Listing status for " << domains.size() << " domain(s):" << std::endl;
         for (size_t i = 0; i < domains.size(); ++i) {

@@ -85,7 +85,7 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot, SerialNum 
                               std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const
 {
     const Schema & schema = *configSnapshot.getSchemaSP();
-    vespalib::string vespaIndexDir(_baseDir + "/index");
+    std::string vespaIndexDir(_baseDir + "/index");
     // Note: const_cast for reconfigurer role
     return std::make_shared<IndexManagerInitializer>
         (vespaIndexDir, indexCfg, schema, configSerialNum, const_cast<SearchableDocSubDB &>(*this),
@@ -316,7 +316,7 @@ SearchableDocSubDB::getDocumentRetriever()
 }
 
 MatchingStats
-SearchableDocSubDB::getMatcherStats(const vespalib::string &rankProfile) const
+SearchableDocSubDB::getMatcherStats(const std::string &rankProfile) const
 {
     return _rSearchView.get()->getMatcherStats(rankProfile);
 }

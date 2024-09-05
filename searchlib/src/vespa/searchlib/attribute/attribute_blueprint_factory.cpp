@@ -103,14 +103,14 @@ using search::tensor::ITensorAttribute;
 using vespalib::Issue;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
-using vespalib::string;
+using std::string;
 
 namespace search {
 namespace {
 
 class NodeAsKey final : public IDirectPostingStore::LookupKey {
 public:
-    NodeAsKey(const Node & node, vespalib::string & scratchPad)
+    NodeAsKey(const Node & node, std::string & scratchPad)
         : _node(node),
           _scratchPad(scratchPad)
     { }
@@ -121,7 +121,7 @@ public:
 
 private:
     const Node       & _node;
-    vespalib::string & _scratchPad;
+    std::string & _scratchPad;
 };
 //-----------------------------------------------------------------------------
 
@@ -134,7 +134,7 @@ private:
     const IAttributeVector& _attr;
     // Must take a copy of the query term for visitMembers()
     // as only a few ISearchContext implementations exposes the query term.
-    vespalib::string _query_term;
+    std::string _query_term;
     ISearchContext::UP _search_context;
     attribute::HitEstimate _hit_estimate;
     enum Type {INT, FLOAT, OTHER};
@@ -186,7 +186,7 @@ public:
     const attribute::ISearchContext *get_attribute_search_context() const noexcept final {
         return _search_context.get();
     }
-    bool getRange(vespalib::string &from, vespalib::string &to) const override;
+    bool getRange(std::string &from, std::string &to) const override;
 };
 
 AttributeFieldBlueprint::~AttributeFieldBlueprint() = default;
@@ -561,7 +561,7 @@ DirectWandBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
 }
 
 bool
-AttributeFieldBlueprint::getRange(vespalib::string &from, vespalib::string &to) const {
+AttributeFieldBlueprint::getRange(std::string &from, std::string &to) const {
     if (_type == INT) {
         Int64Range range = _search_context->getAsIntegerTerm();
         char buf[32];
@@ -599,7 +599,7 @@ private:
     const IAttributeVector &_attr;
     const IDocidPostingStore *_dps;
     const IDocidWithWeightPostingStore *_dwwps;
-    vespalib::string _scratchPad;
+    std::string _scratchPad;
 
     bool has_always_btree_iterators_with_docid_and_weight() const {
         return (_dwwps != nullptr) && (_dwwps->has_always_btree_iterator());
@@ -650,7 +650,7 @@ public:
         QueryTermSimple parsed_term(term, QueryTermSimple::Type::WORD);
         SearchContextParams scParams = createContextParams(_field.isFilter());
         if (parsed_term.getMaxPerGroup() > 0) {
-            const IAttributeVector *diversity(getRequestContext().getAttribute(vespalib::string(parsed_term.getDiversityAttribute())));
+            const IAttributeVector *diversity(getRequestContext().getAttribute(std::string(parsed_term.getDiversityAttribute())));
             if (check_valid_diversity_attr(diversity)) {
                 scParams.diversityAttribute(diversity)
                         .diversityCutoffGroups(parsed_term.getDiversityCutoffGroups())
@@ -686,7 +686,7 @@ public:
 
     static QueryTermSimple::UP
     extractTerm(std::string_view term_view, bool isInteger) {
-        vespalib::string term(term_view);
+        std::string term(term_view);
         if (isInteger) {
             return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
         }
@@ -753,7 +753,7 @@ public:
         visit_wset_or_in_term<query::InTerm, attribute::InTermSearch>(n);
     }
 
-    void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const vespalib::string& error_msg) {
+    void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const std::string& error_msg) {
         Issue::report("NearestNeighborTerm(%s, %s): %s. Returning empty blueprint",
                       _field.getName().c_str(), n.get_query_tensor_name().c_str(), error_msg.c_str());
         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));

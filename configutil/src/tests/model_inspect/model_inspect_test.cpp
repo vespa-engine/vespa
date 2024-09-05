@@ -45,7 +45,7 @@ public:
 
 class TagFilterFlags : public ModelInspect::Flags {
 public:
-    TagFilterFlags(vespalib::string tag) : ModelInspect::Flags() {
+    TagFilterFlags(std::string tag) : ModelInspect::Flags() {
         tagfilt = true;
         tagFilter.push_back(tag);
     }
@@ -88,13 +88,13 @@ public:
     void listServices() override { _listServices = true; };
     void listClusters() override { _listClusters = true; };
     void listConfigIds() override { _listConfigIds = true; };
-    int listHost(const vespalib::string) override  { _listHost = true; return 0; };
+    int listHost(const std::string) override  { _listHost = true; return 0; };
     int listAllPorts() override { _listAllPorts = true; return 0; };
-    int listCluster(const vespalib::string) override  { _listCluster = true; return 0; };
-    int listService(const vespalib::string) override  { _listService = true; return 0; };
-    int listService(const vespalib::string, const vespalib::string) override  { _listService2 = true; return 0; };
-    int listConfigId(const vespalib::string) override { _listConfigId = true; return 0; };
-    int getIndexOf(const vespalib::string, const vespalib::string) override { _getIndexOf = true; return 0; };
+    int listCluster(const std::string) override  { _listCluster = true; return 0; };
+    int listService(const std::string) override  { _listService = true; return 0; };
+    int listService(const std::string, const std::string) override  { _listService2 = true; return 0; };
+    int listConfigId(const std::string) override { _listConfigId = true; return 0; };
+    int getIndexOf(const std::string, const std::string) override { _getIndexOf = true; return 0; };
 
     ~ModelDummy() {};
 };

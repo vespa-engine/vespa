@@ -15,7 +15,7 @@ using namespace search::fef::test;
 using namespace search::fef;
 using namespace vespalib::eval;
 
-using TypeMap = std::map<vespalib::string,vespalib::string>;
+using TypeMap = std::map<std::string,std::string>;
 
 struct DummyExecutor : FeatureExecutor {
     void execute(uint32_t) override {}
@@ -24,7 +24,7 @@ struct DummyExecutor : FeatureExecutor {
 struct DummyExpression : IntrinsicExpression {
     FeatureType type;
     DummyExpression(const FeatureType &type_in) : type(type_in) {}
-    vespalib::string describe_self() const override { return "dummy"; }
+    std::string describe_self() const override { return "dummy"; }
     const FeatureType &result_type() const override { return type; }
     void prepare_shared_state(const QueryEnv &, IObjectStore &) const override {
     }
@@ -34,9 +34,9 @@ struct DummyExpression : IntrinsicExpression {
 };
 
 struct DummyReplacer : ExpressionReplacer {
-    vespalib::string trigger;
+    std::string trigger;
     FeatureType type;
-    DummyReplacer(const vespalib::string trigger_in, const FeatureType &type_in)
+    DummyReplacer(const std::string trigger_in, const FeatureType &type_in)
         : trigger(trigger_in),
           type(type_in)
     {}
@@ -67,21 +67,21 @@ struct SetupResult {
     RankingExpressionBlueprint rank;
     DummyDependencyHandler deps;
     bool setup_ok;
-    SetupResult(const TypeMap &object_inputs, const vespalib::string &expression,
-                const vespalib::string &expression_name = "");
+    SetupResult(const TypeMap &object_inputs, const std::string &expression,
+                const std::string &expression_name = "");
     ~SetupResult();
 };
 
 SetupResult::SetupResult(const TypeMap &object_inputs,
-                         const vespalib::string &expression,
-                         const vespalib::string &expression_name)
+                         const std::string &expression,
+                         const std::string &expression_name)
     : stash(), index_env(), query_env(&index_env), rank(make_replacer()), deps(rank), setup_ok(false)
 {
     rank.setName("self");
     for (const auto &input: object_inputs) {
         deps.define_object_input(input.first, ValueType::from_spec(input.second));
     }
-    std::vector<vespalib::string> params;
+    std::vector<std::string> params;
     if (expression_name.empty()) {
         index_env.getProperties().add("self.rankingScript", expression);
     } else {
@@ -95,8 +95,8 @@ SetupResult::SetupResult(const TypeMap &object_inputs,
 SetupResult::~SetupResult() = default;
 
 void verify_output_type(const TypeMap &object_inputs,
-                        const vespalib::string &expression, const FeatureType &expect,
-                        const vespalib::string &expression_name = "")
+                        const std::string &expression, const FeatureType &expect,
+                        const std::string &expression_name = "")
 {
     SetupResult result(object_inputs, expression, expression_name);
     EXPECT_TRUE(result.setup_ok);
@@ -110,14 +110,14 @@ void verify_output_type(const TypeMap &object_inputs,
 }
 
 void verify_setup_fail(const TypeMap &object_inputs,
-                       const vespalib::string &expression)
+                       const std::string &expression)
 {
     SetupResult result(object_inputs, expression);
     EXPECT_TRUE(!result.setup_ok);
     EXPECT_EQUAL(0u, result.deps.output.size());
 }
 
-void verify_input_count(const vespalib::string &expression, size_t expect) {
+void verify_input_count(const std::string &expression, size_t expect) {
     SetupResult result({}, expression);
     EXPECT_TRUE(result.setup_ok);
     EXPECT_EQUAL(result.deps.input.size(), expect);

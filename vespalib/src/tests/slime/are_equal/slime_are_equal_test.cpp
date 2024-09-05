@@ -24,7 +24,7 @@ Slime parse(const std::string &json) {
 }
 
 const Inspector &full_obj() {
-    static vespalib::string str =
+    static std::string str =
         "{"
         "  a: 'foo',"
         "  b: 'bar',"
@@ -36,7 +36,7 @@ const Inspector &full_obj() {
 }
 
 const Inspector &subset_obj() {
-    static vespalib::string str =
+    static std::string str =
         "{"
         "  a: 'foo',"
         "  c: 'baz',"
@@ -47,7 +47,7 @@ const Inspector &subset_obj() {
 }
 
 const Inspector &wildcard_obj() {
-    static vespalib::string str =
+    static std::string str =
         "{"
         "  a: 'foo',"
         "  b: null,"
@@ -72,7 +72,7 @@ Slime add_data_and_nix(Slime slime) {
 }
 
 const Inspector &leaf_cmp_obj() {
-    static vespalib::string str =
+    static std::string str =
         "{"
         " ref: [ true,   7, 2.0, 'foo'],"
         "same: [ true,   7, 2.0, 'foo'],"
@@ -83,9 +83,9 @@ const Inspector &leaf_cmp_obj() {
     return slime.get();
 }
 
-vespalib::string path_to_str(const Path &path) {
+std::string path_to_str(const Path &path) {
     size_t cnt = 0;
-    vespalib::string str("[");
+    std::string str("[");
     for (const auto &item: path) {
         if (cnt++ > 0) {
             str.append(",");
@@ -98,7 +98,7 @@ vespalib::string path_to_str(const Path &path) {
     return str;
 }
 
-vespalib::string to_str(const Inspector &value) {
+std::string to_str(const Inspector &value) {
     if (!value.valid()) {
         return "<missing>";
     }

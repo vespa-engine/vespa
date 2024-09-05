@@ -24,10 +24,10 @@ namespace search::features {
  */
 class InternalMaxReduceProdJoinBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _attribute;
-    vespalib::string _queryVector;
-    vespalib::string _attrKey;
-    vespalib::string _queryVectorKey;
+    std::string _attribute;
+    std::string _queryVector;
+    std::string _attrKey;
+    std::string _queryVectorKey;
 
 public:
     InternalMaxReduceProdJoinBlueprint();

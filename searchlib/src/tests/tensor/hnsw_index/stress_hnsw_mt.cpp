@@ -56,7 +56,7 @@ public:
     }
 };
 
-using ConstVectorRef = vespalib::ConstArrayRef<float>;
+using ConstVectorRef = std::span<const float>;
 
 struct MallocPointVector {
     float v[NUM_DIMS];
@@ -138,7 +138,7 @@ private:
             read_vector_file(pv_storage);
         }
         size_t size() const { return NUM_POSSIBLE_V; }
-        vespalib::ConstArrayRef<float> operator[] (size_t i) {
+        std::span<const float> operator[] (size_t i) {
             return pv_storage[i];
         }
     } loaded_vectors;

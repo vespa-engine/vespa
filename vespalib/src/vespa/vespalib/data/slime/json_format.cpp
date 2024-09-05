@@ -202,8 +202,8 @@ JsonEncoder<COMPACT>::field(const Memory &symbol_name, const Inspector &inspecto
 struct JsonDecoder {
     InputReader &in;
     char c;
-    vespalib::string key;
-    vespalib::string value;
+    std::string key;
+    std::string value;
 
     JsonDecoder(InputReader &reader) : in(reader), c(in.read()), key(), value() {}
 
@@ -241,7 +241,7 @@ struct JsonDecoder {
 
     uint32_t readHexValue(uint32_t len);
     uint32_t dequoteUtf16();
-    void readString(vespalib::string &str);
+    void readString(std::string &str);
     void readKey();
     void decodeString(Inserter &inserter);
     void decodeObject(Inserter &inserter);
@@ -307,7 +307,7 @@ JsonDecoder::dequoteUtf16()
     return codepoint;
 }
 
-void writeUtf8(uint32_t codepoint, vespalib::string &str, uint32_t mask = 0xffffff80) {
+void writeUtf8(uint32_t codepoint, std::string &str, uint32_t mask = 0xffffff80) {
     if ((codepoint & mask) == 0) {
         str.push_back((mask << 1) | codepoint);
     } else {
@@ -317,7 +317,7 @@ void writeUtf8(uint32_t codepoint, vespalib::string &str, uint32_t mask = 0xffff
 }
 
 void
-JsonDecoder::readString(vespalib::string &str)
+JsonDecoder::readString(std::string &str)
 {
     str.clear();
     char quote = c;
@@ -425,7 +425,7 @@ JsonDecoder::decodeArray(Inserter &inserter)
 }
 
 void JsonDecoder::decodeData(Inserter &inserter) {
-    vespalib::string data;
+    std::string data;
     value.clear();
     for (;;) {
         next();
@@ -449,7 +449,7 @@ void JsonDecoder::decodeData(Inserter &inserter) {
     }
 }
 
-static int insertNumber(Inserter &inserter, bool isLong, const vespalib::string &value, char **endp);
+static int insertNumber(Inserter &inserter, bool isLong, const std::string &value, char **endp);
 
 void
 JsonDecoder::decodeNumber(Inserter &inserter)
@@ -482,7 +482,7 @@ JsonDecoder::decodeNumber(Inserter &inserter)
 }
 
 int
-insertNumber(Inserter &inserter, bool isLong, const vespalib::string & value, char **endp)
+insertNumber(Inserter &inserter, bool isLong, const std::string & value, char **endp)
 {
     int errorCode = 0;
     errno = 0;

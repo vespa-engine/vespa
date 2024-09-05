@@ -25,11 +25,11 @@ public:
     static constexpr double array_store_grow_factor = 1.03;
     static constexpr uint32_t array_store_max_type_id = 300;
 private:
-    using ArrayRef = vespalib::ArrayRef<ElemT>;
+    using ArrayRef = std::span<ElemT>;
     using ArrayStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<ElemT>;
     using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT, ArrayStoreTypeMapper>;
     using generation_t = vespalib::GenerationHandler::generation_t;
-    using ConstArrayRef = vespalib::ConstArrayRef<ElemT>;
+    using ConstArrayRef = std::span<const ElemT>;
 
     ArrayStore _store;
 public:

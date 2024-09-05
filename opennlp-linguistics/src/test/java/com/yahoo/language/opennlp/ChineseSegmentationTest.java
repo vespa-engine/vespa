@@ -20,58 +20,58 @@ public class ChineseSegmentationTest {
 
     @Test
     public void testChineseSegmentation() {
-        var linguistics = new OpenNlpLinguistics(new OpenNlpConfig.Builder().cjk(true).build());
+        var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).build());
         List<String> tokens;
 
-        tokens = asList(linguistics.getTokenizer().tokenize(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true));
-        assertEquals(9, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
+        tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true));
+        assertEquals(11, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
 
-        tokens = asList(linguistics.getTokenizer().tokenize(text, Language.CHINESE_TRADITIONAL, StemMode.ALL, true));
-        assertEquals(9, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
+        tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_TRADITIONAL, StemMode.ALL, true));
+        assertEquals(11, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
 
-        tokens = linguistics.getSegmenter().segment(text, Language.CHINESE_SIMPLIFIED);
+        tokens = tester.segmenter().segment(text, Language.CHINESE_SIMPLIFIED);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
 
-        var stems = linguistics.getStemmer().stem(text, StemMode.ALL, Language.CHINESE_SIMPLIFIED);
+        var stems = tester.stemmer().stem(text, StemMode.ALL, Language.CHINESE_SIMPLIFIED);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
     }
 
     @Test
-    public void testChineseSegmentationWithGrams() {
-        var linguistics = new OpenNlpLinguistics(new OpenNlpConfig.Builder().cjk(true).createCjkGrams(true).build());
+    public void testChineseSegmentationWithoutGrams() {
+        var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).createCjkGrams(false).build());
         List<String> tokens;
 
-        tokens = asList(linguistics.getTokenizer().tokenize(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true));
-        assertEquals(11, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
+        tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true));
+        assertEquals(9, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
 
-        tokens = asList(linguistics.getTokenizer().tokenize(text, Language.CHINESE_TRADITIONAL, StemMode.ALL, true));
-        assertEquals(11, tokens.size());
-        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
+        tokens = asList(tester.tokenizer().tokenize(text, Language.CHINESE_TRADITIONAL, StemMode.ALL, true));
+        assertEquals(9, tokens.size());
+        assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
 
-        tokens = linguistics.getSegmenter().segment(text, Language.CHINESE_SIMPLIFIED);
+        tokens = tester.segmenter().segment(text, Language.CHINESE_SIMPLIFIED);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
 
-        var stems = linguistics.getStemmer().stem(text, StemMode.ALL, Language.CHINESE_SIMPLIFIED);
+        var stems = tester.stemmer().stem(text, StemMode.ALL, Language.CHINESE_SIMPLIFIED);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
     }
 
     @Test
     public void testOtherLanguagesWorksAsUsualWithChineseSegmentation() {
-        var linguistics = new OpenNlpLinguistics(new OpenNlpConfig.Builder().cjk(true).build());
+        var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).build());
         List<String> tokens;
 
-        tokens = asList(linguistics.getTokenizer().tokenize(text, Language.ENGLISH, StemMode.ALL, true));
+        tokens = asList(tester.tokenizer().tokenize(text, Language.ENGLISH, StemMode.ALL, true));
         assertEquals(4, tokens.size());
         assertEquals("[是一个展示雅, ,, 目前在测试阶段, 。]", tokens.toString());
 
-        tokens = asList(linguistics.getTokenizer().tokenize("english texts", Language.ENGLISH, StemMode.ALL, true));
+        tokens = asList(tester.tokenizer().tokenize("english texts", Language.ENGLISH, StemMode.ALL, true));
         assertEquals(3, tokens.size());
         assertEquals("[english,  , text]", tokens.toString());
     }

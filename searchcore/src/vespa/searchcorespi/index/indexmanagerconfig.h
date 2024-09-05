@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/config/retriever/configsnapshot.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace searchcorespi {
 
@@ -11,12 +11,12 @@ namespace searchcorespi {
  */
 class IndexManagerConfig {
 private:
-    vespalib::string _configId;
+    std::string _configId;
     const config::ConfigSnapshot &_configSnapshot;
     size_t _numSearcherThreads;
 
 public:
-    IndexManagerConfig(const vespalib::string &configId,
+    IndexManagerConfig(const std::string &configId,
                        const config::ConfigSnapshot &configSnapshot,
                        size_t numSearcherThreads);
     ~IndexManagerConfig();
@@ -24,7 +24,7 @@ public:
     /**
      * Returns the config id used to retrieve the configs from the config snapshot instance.
      */
-    const vespalib::string &getConfigId() const { return _configId; }
+    const std::string &getConfigId() const { return _configId; }
 
     /**
      * Returns the snapshot containing configs to be used by the index manager.

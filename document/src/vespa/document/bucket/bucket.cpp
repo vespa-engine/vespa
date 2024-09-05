@@ -12,7 +12,7 @@ Bucket::Bucket() noexcept
 {
 }
 
-vespalib::string Bucket::toString() const
+std::string Bucket::toString() const
 {
     vespalib::asciistream os;
     os << *this;

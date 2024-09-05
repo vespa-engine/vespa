@@ -11,7 +11,7 @@ namespace {
 
 }
 
-string
+std::string
 HexDump::toString() const {
     asciistream os;
     os << *this;

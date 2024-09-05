@@ -3,8 +3,8 @@
 
 #include "types.h"
 #include <vespa/document/base/documentid.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <iosfwd>
+#include <string>
 
 namespace vespalib { class asciistream; }
 
@@ -32,7 +32,7 @@ struct IdAndTimestamp {
     }
 
     void print(vespalib::asciistream&) const;
-    vespalib::string to_string() const;
+    std::string to_string() const;
 
     struct hash {
         size_t operator()(const IdAndTimestamp& id_ts) const noexcept {

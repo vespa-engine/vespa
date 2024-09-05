@@ -49,7 +49,7 @@ namespace proton {
 
 namespace {
 
-vespalib::string
+std::string
 makeSnapDirBaseName(SerialNum serialNum)
 {
     std::ostringstream os;
@@ -58,7 +58,7 @@ makeSnapDirBaseName(SerialNum serialNum)
 }
 
 void
-fsyncFile(const vespalib::string &fileName)
+fsyncFile(const std::string &fileName)
 {
     FastOS_File f;
     f.OpenReadWrite(fileName.c_str());
@@ -73,9 +73,9 @@ fsyncFile(const vespalib::string &fileName)
 
 template <class Config>
 void
-saveHelper(const vespalib::string &snapDir, const vespalib::string &name, const Config &config)
+saveHelper(const std::string &snapDir, const std::string &name, const Config &config)
 {
-    vespalib::string fileName(snapDir + "/" + name + ".cfg");
+    std::string fileName(snapDir + "/" + name + ".cfg");
     config::FileConfigWriter writer(fileName);
     bool ok = writer.write(config);
     assert(ok);
@@ -85,7 +85,7 @@ saveHelper(const vespalib::string &snapDir, const vespalib::string &name, const 
 
 template <class Config>
 void
-save(const vespalib::string &snapDir, const Config &config)
+save(const std::string &snapDir, const Config &config)
 {
     saveHelper(snapDir, config.defName(), config);
 }
@@ -94,18 +94,18 @@ class ConfigFile
 {
     using SP = std::shared_ptr<ConfigFile>;
 
-    vespalib::string      _name;
+    std::string      _name;
     std::vector<char>     _content;
 
 public:
     ConfigFile();
     ~ConfigFile();
 
-    ConfigFile(const vespalib::string &name, const vespalib::string &fullName);
+    ConfigFile(const std::string &name, const std::string &fullName);
 
     nbostream &serialize(nbostream &stream) const;
     nbostream &deserialize(nbostream &stream);
-    void save(const vespalib::string &snapDir) const;
+    void save(const std::string &snapDir) const;
 };
 
 ConfigFile::ConfigFile()
@@ -116,7 +116,7 @@ ConfigFile::ConfigFile()
 
 ConfigFile::~ConfigFile() = default;
 
-ConfigFile::ConfigFile(const vespalib::string &name, const vespalib::string &fullName)
+ConfigFile::ConfigFile(const std::string &name, const std::string &fullName)
     : _name(name),
       _content()
 {
@@ -160,9 +160,9 @@ ConfigFile::deserialize(nbostream &stream)
 }
 
 void
-ConfigFile::save(const vespalib::string &snapDir) const
+ConfigFile::save(const std::string &snapDir) const
 {
-    vespalib::string fullName = snapDir + "/" + _name;
+    std::string fullName = snapDir + "/" + _name;
     FastOS_File file;
     bool openRes = file.OpenWriteOnlyTruncate(fullName.c_str());
     assert(openRes);
@@ -188,10 +188,10 @@ operator>>(nbostream &stream, ConfigFile &configFile)
     return configFile.deserialize(stream);
 }
 
-std::vector<vespalib::string>
-getFileList(const vespalib::string &snapDir)
+std::vector<std::string>
+getFileList(const std::string &snapDir)
 {
-    std::vector<vespalib::string> res;
+    std::vector<std::string> res;
     std::filesystem::directory_iterator dir_scan{std::filesystem::path(snapDir)};
     for (auto& entry : dir_scan) {
         res.emplace_back(entry.path().filename().string());
@@ -201,9 +201,9 @@ getFileList(const vespalib::string &snapDir)
 }
 
 // add an empty file if it's not already present
-void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
+void addEmptyFile(std::string snapDir, std::string fileName)
 {
-    vespalib::string path = snapDir + "/" + fileName;
+    std::string path = snapDir + "/" + fileName;
     if (access(path.c_str(), R_OK) == 0) {
         // exists OK
         return;
@@ -220,9 +220,9 @@ void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
 }
 
 FileConfigManager::FileConfigManager(FNET_Transport & transport,
-                                     const vespalib::string &baseDir,
-                                     const vespalib::string &configId,
-                                     const vespalib::string &docTypeName)
+                                     const std::string &baseDir,
+                                     const std::string &configId,
+                                     const std::string &docTypeName)
     : _transport(transport),
       _baseDir(baseDir),
       _configId(configId),
@@ -269,8 +269,8 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
             static_cast<uint64_t>(serialNum));
         return;
     }
-    vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
-    vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
+    std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
+    std::string snapDir(_baseDir + "/" + snapDirBaseName);
     Snapshot snap(false, serialNum, snapDirBaseName);
     _info.addSnapshot(snap);
     bool saveInvalidSnap = _info.save();
@@ -299,8 +299,8 @@ void
 FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::SerialNum serialNum,
                               DocumentDBConfig::SP &loadedSnapshot)
 {
-    vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
-    vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
+    std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
+    std::string snapDir(_baseDir + "/" + snapDirBaseName);
     config::DirSpec spec(snapDir);
 
     addEmptyFile(snapDir, "ranking-constants.cfg");
@@ -366,8 +366,8 @@ FileConfigManager::removeInvalid()
         return;
 
     for (const auto &serial : toRem) {
-        vespalib::string snapDirBaseName(makeSnapDirBaseName(serial));
-        vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
+        std::string snapDirBaseName(makeSnapDirBaseName(serial));
+        std::string snapDir(_baseDir + "/" + snapDirBaseName);
         try {
             std::filesystem::remove_all(std::filesystem::path(snapDir));
         } catch (const std::exception &e) {
@@ -432,12 +432,12 @@ FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
 void
 FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
 {
-    vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
-    vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
+    std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
+    std::string snapDir(_baseDir + "/" + snapDirBaseName);
 
     assert(hasValidSerial(serialNum));
 
-    std::vector<vespalib::string> configs = getFileList(snapDir);
+    std::vector<std::string> configs = getFileList(snapDir);
     uint32_t numConfigs = configs.size();
     stream << numConfigs;
     for (const auto &config : configs) {
@@ -449,8 +449,8 @@ FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
 void
 FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
 {
-    vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
-    vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
+    std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
+    std::string snapDir(_baseDir + "/" + snapDirBaseName);
 
     bool skip = hasValidSerial(serialNum);
 

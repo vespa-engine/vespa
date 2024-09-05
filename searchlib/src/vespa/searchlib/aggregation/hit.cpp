@@ -10,7 +10,7 @@ using vespalib::Deserializer;
 IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS2(search, aggregation, Hit, vespalib::Identifiable);
 
 namespace {
-    const vespalib::string _G_rankField("rank");
+    const std::string _G_rankField("rank");
 }
 
 Serializer &

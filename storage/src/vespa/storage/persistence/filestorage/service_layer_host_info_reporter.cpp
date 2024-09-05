@@ -16,18 +16,18 @@ using End = vespalib::JsonStream::End;
 
 namespace {
 
-const vespalib::string memory_label("memory");
-const vespalib::string disk_label("disk");
-const vespalib::string attribute_address_space_label("attribute-address-space");
+const std::string memory_label("memory");
+const std::string disk_label("disk");
+const std::string attribute_address_space_label("attribute-address-space");
 
-void write_usage(vespalib::JsonStream& output, const vespalib::string &label, double value)
+void write_usage(vespalib::JsonStream& output, const std::string &label, double value)
 {
     output << label << Object();
     output << "usage" << value;
     output << End();
 }
 
-void write_attribute_usage(vespalib::JsonStream& output, const vespalib::string &label, const spi::AttributeResourceUsage &usage)
+void write_attribute_usage(vespalib::JsonStream& output, const std::string &label, const spi::AttributeResourceUsage &usage)
 {
     output << label << Object();
     output << "usage" << usage.get_usage();
@@ -74,7 +74,7 @@ ServiceLayerHostInfoReporter::set_noise_level(double level)
 
 namespace {
 
-vespalib::string
+std::string
 to_string(const spi::ResourceUsage& usage)
 {
     std::ostringstream oss;

@@ -10,12 +10,11 @@
 
 #pragma once
 
-#include <string>
-#include <map>
-
-#include "singleton.h"
-#include "rwlock.h"
 #include "conceptnethandle.h"
+#include "rwlock.h"
+#include "singleton.h"
+#include <map>
+#include <string>
 
 namespace fsa {
 

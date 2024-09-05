@@ -165,7 +165,7 @@ FNET_Transport::post_or_perform(vespalib::Executor::Task::UP task)
 }
 
 void
-FNET_Transport::resolve_async(const vespalib::string &spec,
+FNET_Transport::resolve_async(const std::string &spec,
                               vespalib::AsyncResolver::ResultHandler::WP result_handler)
 {
     _async_resolver->resolve_async(spec, std::move(result_handler));

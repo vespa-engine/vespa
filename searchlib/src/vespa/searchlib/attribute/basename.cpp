@@ -27,18 +27,18 @@ BaseName::operator = (std::string_view s) {
 
 BaseName::~BaseName() = default;
 
-vespalib::string
+std::string
 BaseName::createAttributeName(std::string_view s)
 {
     size_t p(s.rfind('/'));
     if (p == string::npos) {
-       return vespalib::string(s);
+       return std::string(s);
     } else {
-        return vespalib::string(s.substr(p+1));
+        return std::string(s.substr(p+1));
     }
 }
 
-vespalib::string
+std::string
 BaseName::getDirName() const
 {
     size_t p = rfind('/');

@@ -51,7 +51,7 @@ class QueryBuilderBase
     };
     Node::UP _root;
     std::stack<NodeInfo> _nodes;
-    vespalib::string _error_msg;
+    std::string _error_msg;
 
 protected:
     QueryBuilderBase();
@@ -84,7 +84,7 @@ public:
     /**
      * If build failed, the reason is stored here.
      */
-    vespalib::string error() const { return _error_msg; }
+    std::string error() const { return _error_msg; }
 
     /**
      * After an error, reset() must be called before attempting to
@@ -92,8 +92,8 @@ public:
      */
     void reset();
 
-    void reportError(const vespalib::string &msg);
-    void reportError(const vespalib::string &msg, const Node & incomming, const Node & root);
+    void reportError(const std::string &msg);
+    void reportError(const std::string &msg, const Node & incomming, const Node & root);
 };
 
 
@@ -119,7 +119,7 @@ template <class NodeTypes>
 typename NodeTypes::Or *createOr() { return new typename NodeTypes::Or; }
 
 template <class NodeTypes>
-typename NodeTypes::WeakAnd *createWeakAnd(uint32_t targetNumHits, const vespalib::string & view) {
+typename NodeTypes::WeakAnd *createWeakAnd(uint32_t targetNumHits, const std::string & view) {
     return new typename NodeTypes::WeakAnd(targetNumHits, view);
 }
 template <class NodeTypes>
@@ -127,24 +127,24 @@ typename NodeTypes::Equiv *createEquiv(int32_t id, Weight weight) {
     return new typename NodeTypes::Equiv(id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::Phrase *createPhrase(const vespalib::string & view, int32_t id, Weight weight) {
+typename NodeTypes::Phrase *createPhrase(const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::Phrase(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::SameElement *createSameElement(const vespalib::string & view, int32_t id, Weight weight) {
+typename NodeTypes::SameElement *createSameElement(const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::SameElement(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(uint32_t num_terms, const vespalib::string & view, int32_t id, Weight weight) {
+typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::WeightedSetTerm(num_terms, view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::DotProduct *createDotProduct(uint32_t num_terms, const vespalib::string & view, int32_t id, Weight weight) {
+typename NodeTypes::DotProduct *createDotProduct(uint32_t num_terms, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::DotProduct(num_terms, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::WandTerm *
-createWandTerm(uint32_t num_terms, const vespalib::string & view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
+createWandTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
     return new typename NodeTypes::WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
 }
 template <class NodeTypes>
@@ -164,56 +164,56 @@ typename NodeTypes::ONear *createONear(size_t distance) {
 // Term nodes
 template <class NodeTypes>
 typename NodeTypes::NumberTerm *
-createNumberTerm(const vespalib::string & term, const vespalib::string & view, int32_t id, Weight weight) {
+createNumberTerm(const std::string & term, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::NumberTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::PrefixTerm *
-createPrefixTerm(const vespalib::string & term, const vespalib::string & view, int32_t id, Weight weight) {
+createPrefixTerm(const std::string & term, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::PrefixTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::RangeTerm *
-createRangeTerm(const Range &term, const vespalib::string & view, int32_t id, Weight weight) {
+createRangeTerm(const Range &term, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::RangeTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::StringTerm *
-createStringTerm(const vespalib::string & term, const vespalib::string & view, int32_t id, Weight weight) {
+createStringTerm(const std::string & term, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::StringTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::SubstringTerm *
-createSubstringTerm(const vespalib::string & term, const vespalib::string & view, int32_t id, Weight weight) {
+createSubstringTerm(const std::string & term, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::SubstringTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::SuffixTerm *
-createSuffixTerm(std::string_view term, const vespalib::string & view, int32_t id, Weight weight) {
-    return new typename NodeTypes::SuffixTerm(vespalib::string(term), view, id, weight);
+createSuffixTerm(std::string_view term, const std::string & view, int32_t id, Weight weight) {
+    return new typename NodeTypes::SuffixTerm(std::string(term), view, id, weight);
 }
 
 template <class NodeTypes>
 typename NodeTypes::LocationTerm *
-createLocationTerm(const Location &loc, const vespalib::string & view, int32_t id, Weight weight) {
+createLocationTerm(const Location &loc, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::LocationTerm(loc, view, id, weight);
 }
 
 template <class NodeTypes>
 typename NodeTypes::PredicateQuery *
-createPredicateQuery(PredicateQueryTerm::UP term, const vespalib::string & view, int32_t id, Weight weight) {
+createPredicateQuery(PredicateQueryTerm::UP term, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::PredicateQuery(std::move(term), view, id, weight);
 }
 
 template <class NodeTypes>
 typename NodeTypes::RegExpTerm *
-createRegExpTerm(const vespalib::string & term, const vespalib::string & view, int32_t id, Weight weight) {
+createRegExpTerm(const std::string & term, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::RegExpTerm(term, view, id, weight);
 }
 
 template <class NodeTypes>
 typename NodeTypes::NearestNeighborTerm *
-create_nearest_neighbor_term(std::string_view query_tensor_name, vespalib::string field_name,
+create_nearest_neighbor_term(std::string_view query_tensor_name, std::string field_name,
                              int32_t id, Weight weight, uint32_t target_num_hits,
                              bool allow_approximate, uint32_t explore_additional_hits,
                              double distance_threshold)
@@ -225,14 +225,14 @@ create_nearest_neighbor_term(std::string_view query_tensor_name, vespalib::strin
 
 template <class NodeTypes>
 typename NodeTypes::FuzzyTerm *
-createFuzzyTerm(std::string_view term, const vespalib::string & view, int32_t id, Weight weight,
+createFuzzyTerm(std::string_view term, const std::string & view, int32_t id, Weight weight,
                 uint32_t max_edit_distance, uint32_t prefix_lock_length, bool prefix_match) {
-    return new typename NodeTypes::FuzzyTerm(vespalib::string(term), view, id, weight, max_edit_distance, prefix_lock_length, prefix_match);
+    return new typename NodeTypes::FuzzyTerm(std::string(term), view, id, weight, max_edit_distance, prefix_lock_length, prefix_match);
 }
 
 template <class NodeTypes>
 typename NodeTypes::InTerm *
-create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const vespalib::string & view, int32_t id, Weight weight) {
+create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::InTerm(std::move(terms), type, view, id, weight);
 }
 
@@ -252,7 +252,7 @@ class QueryBuilder : public QueryBuilderBase {
 
 public:
     using string_view = std::string_view;
-    using string = vespalib::string;
+    using string = std::string;
     typename NodeTypes::And &addAnd(int child_count) {
         return addIntermediate(createAnd<NodeTypes>(), child_count);
     }

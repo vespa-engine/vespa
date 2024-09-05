@@ -78,7 +78,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         DocumentStoreMetrics documentStore;
         proton::AttributeMetrics attributes;
 
-        SubDBMetrics(const vespalib::string &name, metrics::MetricSet *parent);
+        SubDBMetrics(const std::string &name, metrics::MetricSet *parent);
         ~SubDBMetrics() override;
     };
 
@@ -128,7 +128,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
                 metrics::DoubleAverageMetric waitTime;
 
                 using UP = std::unique_ptr<DocIdPartition>;
-                DocIdPartition(const vespalib::string &name, metrics::MetricSet *parent);
+                DocIdPartition(const std::string &name, metrics::MetricSet *parent);
                 ~DocIdPartition() override;
                 void update(const matching::MatchingStats::Partition &stats);
             };
@@ -149,14 +149,14 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::DoubleAverageMetric queryLatency;
             DocIdPartitions              partitions;
 
-            RankProfileMetrics(const vespalib::string &name,
+            RankProfileMetrics(const std::string &name,
                                size_t numDocIdPartitions,
                                metrics::MetricSet *parent);
             ~RankProfileMetrics() override;
             void update(const metrics::MetricLockGuard & guard, const matching::MatchingStats &stats);
 
         };
-        using  RankProfileMap = std::map<vespalib::string, RankProfileMetrics::UP>;
+        using  RankProfileMap = std::map<std::string, RankProfileMetrics::UP>;
         RankProfileMap rank_profiles;
 
         void update(const matching::MatchingStats &stats);
@@ -197,7 +197,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     metrics::DoubleValueMetric heart_beat_age;
     size_t maxNumThreads;
 
-    DocumentDBTaggedMetrics(const vespalib::string &docTypeName, size_t maxNumThreads_);
+    DocumentDBTaggedMetrics(const std::string &docTypeName, size_t maxNumThreads_);
     ~DocumentDBTaggedMetrics() override;
 };
 

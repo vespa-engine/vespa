@@ -84,8 +84,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
-        applicationMetaData = new ApplicationMetaData("dir",
-                                                      0L,
+        applicationMetaData = new ApplicationMetaData(0L,
                                                       false,
                                                       ApplicationId.from(tenantName,
                                                                          ApplicationName.from(APPLICATION_NAME),
@@ -277,13 +276,13 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
-        public Builder withSearchDefinition(String searchDefinition) {
-            this.schemas = List.of(searchDefinition);
+        public Builder withSchema(String schema) {
+            this.schemas = List.of(schema);
             return this;
         }
 
-        public Builder withSchemas(List<String> searchDefinition) {
-            this.schemas = List.copyOf(searchDefinition);
+        public Builder withSchemas(List<String> schemas) {
+            this.schemas = List.copyOf(schemas);
             return this;
         }
 

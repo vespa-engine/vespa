@@ -45,12 +45,12 @@ get_document_types_config()
 
 class MockJuniperConverter : public IJuniperConverter
 {
-    vespalib::string _result;
+    std::string _result;
 public:
     void convert(std::string_view input, vespalib::slime::Inserter&) override {
         _result = input;
     }
-    const vespalib::string& get_result() const noexcept { return _result; }
+    const std::string& get_result() const noexcept { return _result; }
 };
 
 }
@@ -67,9 +67,9 @@ protected:
     void set_span_tree(StringFieldValue& value, std::unique_ptr<SpanTree> tree);
     StringFieldValue make_annotated_string();
     StringFieldValue make_annotated_chinese_string();
-    vespalib::string make_exp_il_annotated_string();
-    vespalib::string make_exp_il_annotated_chinese_string();
-    void expect_annotated(const vespalib::string& exp, const StringFieldValue& fv);
+    std::string make_exp_il_annotated_string();
+    std::string make_exp_il_annotated_chinese_string();
+    void expect_annotated(const std::string& exp, const StringFieldValue& fv);
 };
 
 AnnotationConverterTest::AnnotationConverterTest()
@@ -118,7 +118,7 @@ AnnotationConverterTest::make_annotated_chinese_string()
     return value;
 }
 
-vespalib::string
+std::string
 AnnotationConverterTest::make_exp_il_annotated_string()
 {
     using namespace juniper::separators;
@@ -130,7 +130,7 @@ AnnotationConverterTest::make_exp_il_annotated_string()
     return exp.str();
 }
 
-vespalib::string
+std::string
 AnnotationConverterTest::make_exp_il_annotated_chinese_string()
 {
     using namespace juniper::separators;
@@ -141,7 +141,7 @@ AnnotationConverterTest::make_exp_il_annotated_chinese_string()
 }
 
 void
-AnnotationConverterTest::expect_annotated(const vespalib::string& exp, const StringFieldValue& fv)
+AnnotationConverterTest::expect_annotated(const std::string& exp, const StringFieldValue& fv)
 {
     MockJuniperConverter juniper_converter;
     AnnotationConverter annotation_converter(juniper_converter);
@@ -155,7 +155,7 @@ AnnotationConverterTest::expect_annotated(const vespalib::string& exp, const Str
 TEST_F(AnnotationConverterTest, convert_plain_string)
 {
     using namespace juniper::separators;
-    vespalib::string exp("Foo Bar Baz");
+    std::string exp("Foo Bar Baz");
     StringFieldValue plain_string("Foo Bar Baz");
     expect_annotated(exp + unit_separator_string, plain_string);
 }

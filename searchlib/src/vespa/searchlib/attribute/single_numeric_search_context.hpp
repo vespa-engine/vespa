@@ -9,7 +9,7 @@
 namespace search::attribute {
 
 template <typename T, typename M>
-SingleNumericSearchContext<T, M>::SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, vespalib::ConstArrayRef<T> data)
+SingleNumericSearchContext<T, M>::SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, std::span<const T> data)
     : NumericSearchContext<M>(toBeSearched, *qTerm, true),
       _data(data)
 {

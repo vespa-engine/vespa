@@ -26,7 +26,7 @@ namespace {
 class AttrVisitor : public document::select::CloningVisitor
 {
 public:
-    using AttrMap = std::map<vespalib::string, uint32_t>;
+    using AttrMap = std::map<std::string, uint32_t>;
 
     AttrMap _amap;
     const search::IAttributeManager &_amgr;
@@ -90,7 +90,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
     // Expression has survived select pruner, thus we know that field is
     // valid for document type.
     bool complex = false;
-    vespalib::string name = SelectUtils::extractFieldName(expr, complex);
+    std::string name = SelectUtils::extractFieldName(expr, complex);
 
     auto av = _amgr.readable_attribute_vector(name);
     if (av) {
@@ -219,8 +219,8 @@ CachedSelect::CachedSelect()
 CachedSelect::~CachedSelect() = default;
 
 void
-CachedSelect::set(const vespalib::string &selection,
-                  const document::DocumentTypeRepo &repo)
+CachedSelect::set(const std::string &selection,
+                  const document::IDocumentTypeRepo &repo)
 {
     try {
         document::select::Parser parser(repo, document::BucketIdFactory());
@@ -235,10 +235,10 @@ CachedSelect::set(const vespalib::string &selection,
 
                   
 void
-CachedSelect::set(const vespalib::string &selection,
-                  const vespalib::string &docTypeName,
+CachedSelect::set(const std::string &selection,
+                  const std::string &docTypeName,
                   const document::Document &emptyDoc,
-                  const document::DocumentTypeRepo &repo,
+                  const document::IDocumentTypeRepo &repo,
                   const search::IAttributeManager *amgr,
                   bool hasFields)
 {                  
@@ -247,24 +247,14 @@ CachedSelect::set(const vespalib::string &selection,
     if (!parsed) {
         return;
     }
-    SelectPruner docsPruner(docTypeName,
-                            amgr,
-                            emptyDoc,
-                            repo,
-                            hasFields,
-                            true);
+    SelectPruner docsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, true);
     docsPruner.process(*parsed);
     setDocumentSelect(docsPruner);
     if (amgr == nullptr || _attrFieldNodes == 0u) {
         return;
     }
 
-    SelectPruner noDocsPruner(docTypeName,
-                              amgr,
-                              emptyDoc,
-                              repo,
-                              hasFields,
-                              false);
+    SelectPruner noDocsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, false);
     noDocsPruner.process(*parsed);
     setPreDocumentSelect(*amgr, noDocsPruner);
 }

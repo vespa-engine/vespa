@@ -107,7 +107,7 @@ TensorRemoveUpdate::applyTo(FieldValue &value) const
             }
         }
     } else {
-        vespalib::string err = make_string("Unable to perform a tensor remove update on a '%s' field value",
+        std::string err = make_string("Unable to perform a tensor remove update on a '%s' field value",
                                            value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }

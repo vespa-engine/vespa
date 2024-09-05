@@ -35,7 +35,7 @@ private:
     bool _eof;
 
 public:
-    Process(const vespalib::string &cmd, bool capture_stderr = false);
+    Process(const std::string &cmd, bool capture_stderr = false);
     pid_t pid() const { return _pid; }
     bool valid() const { return (_pid > 0); }
     void close() { _in.reset(); }
@@ -43,13 +43,13 @@ public:
     Input &evict(size_t bytes) override;           // Input (stdout)
     WritableMemory reserve(size_t bytes) override; // Output (stdin)
     Output &commit(size_t bytes) override;         // Output (stdin)
-    vespalib::string read_line();
+    std::string read_line();
     bool eof() const { return _eof; }
     int join();
     ~Process();
 
-    static bool run(const vespalib::string &cmd, vespalib::string &output);
-    static bool run(const vespalib::string &cmd);
+    static bool run(const std::string &cmd, std::string &output);
+    static bool run(const std::string &cmd);
 };
 
 } // namespace vespalib

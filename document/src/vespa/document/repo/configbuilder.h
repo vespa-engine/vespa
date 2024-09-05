@@ -5,8 +5,8 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <cassert>
+#include <string>
 
 namespace document::config_builder {
 
@@ -25,7 +25,7 @@ struct DatatypeConfig : DocumenttypesConfig::Documenttype::Datatype {
     void addNestedType(const TypeOrId &t);
 };
 
-int32_t createFieldId(const vespalib::string &name, int32_t type);
+int32_t createFieldId(const std::string &name, int32_t type);
 
 struct TypeOrId {
     int32_t id;
@@ -37,7 +37,7 @@ struct TypeOrId {
 };
 
 struct Struct : DatatypeConfig {
-    explicit Struct(vespalib::string name) {
+    explicit Struct(std::string name) {
         type = Type::STRUCT;
         sstruct.name = std::move(name);
     }
@@ -49,7 +49,7 @@ struct Struct : DatatypeConfig {
         sstruct.compression.minsize = min_size;
         return *this;
     }
-    Struct &addField(const vespalib::string &name, TypeOrId data_type) {
+    Struct &addField(const std::string &name, TypeOrId data_type) {
         addNestedType(data_type);
         sstruct.field.resize(sstruct.field.size() + 1);
         sstruct.field.back().name = name;
@@ -57,7 +57,7 @@ struct Struct : DatatypeConfig {
         sstruct.field.back().datatype = data_type.id;
         return *this;
     }
-    Struct &addTensorField(const vespalib::string &name, const vespalib::string &spec);
+    Struct &addTensorField(const std::string &name, const std::string &spec);
     Struct &setId(int32_t i) { DatatypeConfig::setId(i); return *this; }
 };
 
@@ -109,7 +109,7 @@ struct DocTypeRep {
         doc_type.inherits.back().id = id;
         return *this;
     }
-    DocTypeRep &annotationType(int32_t id, const vespalib::string &name,
+    DocTypeRep &annotationType(int32_t id, const std::string &name,
                                int32_t datatype) {
         doc_type.annotationtype.resize(doc_type.annotationtype.size() + 1);
         doc_type.annotationtype.back().id = id;
@@ -117,7 +117,7 @@ struct DocTypeRep {
         doc_type.annotationtype.back().datatype = datatype;
         return *this;
     }
-    DocTypeRep &annotationType(int32_t id, const vespalib::string &name,
+    DocTypeRep &annotationType(int32_t id, const std::string &name,
                                const DatatypeConfig &type);
 
     DocTypeRep& referenceType(int32_t id, int32_t target_type_id) {
@@ -127,7 +127,7 @@ struct DocTypeRep {
         return *this;
     }
 
-    DocTypeRep& imported_field(vespalib::string field_name) {
+    DocTypeRep& imported_field(std::string field_name) {
         doc_type.importedfield.resize(doc_type.importedfield.size() + 1);
         doc_type.importedfield.back().name = std::move(field_name);
         return *this;
@@ -142,7 +142,7 @@ public:
     DocumenttypesConfigBuilderHelper(const DocumenttypesConfig &c)
         : _config(c) {}
 
-    DocTypeRep document(int32_t id, const vespalib::string &name,
+    DocTypeRep document(int32_t id, const std::string &name,
                         const DatatypeConfig &header,
                         const DatatypeConfig &body);
 

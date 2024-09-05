@@ -118,14 +118,14 @@ public:
 class WriterFactory {
 public:
     virtual ~WriterFactory() = default;
-    virtual std::shared_ptr<Writer> getWriter(const vespalib::string & domainName) const = 0;
+    virtual std::shared_ptr<Writer> getWriter(const std::string & domainName) const = 0;
 };
 
 class Destination {
 public:
     virtual ~Destination() = default;
-    virtual bool send(int32_t id, const vespalib::string & domain, const Packet & packet) = 0;
-    virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
+    virtual bool send(int32_t id, const std::string & domain, const Packet & packet) = 0;
+    virtual bool sendDone(int32_t id, const std::string & domain) = 0;
     virtual bool connected() const = 0;
     virtual bool ok() const = 0;
 };

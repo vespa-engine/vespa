@@ -475,7 +475,7 @@ TopLevelBucketDBUpdater::add_current_state_to_cluster_state_history()
     }
 }
 
-vespalib::string
+std::string
 TopLevelBucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) const
 {
     return "text/xml";
@@ -483,9 +483,8 @@ TopLevelBucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) con
 
 namespace {
 
-const vespalib::string ALL = "all";
-const vespalib::string BUCKETDB = "bucketdb";
-const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
+const std::string BUCKETDB = "bucketdb";
+const std::string BUCKETDB_UPDATER = "Bucket Database Updater";
 
 }
 
@@ -506,7 +505,7 @@ TopLevelBucketDBUpdater::reportStatus(std::ostream& out,
     return true;
 }
 
-vespalib::string
+std::string
 TopLevelBucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
                                            const framework::HttpUrlPath&) const
 {

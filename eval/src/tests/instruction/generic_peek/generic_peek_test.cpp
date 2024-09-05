@@ -41,7 +41,7 @@ TensorSpec reference_peek(const TensorSpec &param, const PeekSpec &spec) {
     children.push_back(param);
     PeekSpec with_indexes;
     for (const auto & [dim_name, label_or_child] : spec) {
-        const vespalib::string &dim = dim_name;
+        const std::string &dim = dim_name;
         std::visit(vespalib::overload
                    {
                        [&](const TensorSpec::Label &label) {
@@ -99,7 +99,7 @@ TensorSpec tensor_function_peek(const TensorSpec &a, const ValueType &result_typ
     std::vector<Value::CREF> my_stack;
     my_stack.push_back(*param);
     const auto &func_double = tensor_function::inject(ValueType::double_type(), 1, stash);
-    std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> func_spec;
+    std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> func_spec;
     for (auto & [dim_name, label_or_child] : spec) {
         if (std::holds_alternative<size_t>(label_or_child)) {
             // here, label_or_child is a size_t specifying the value
@@ -120,7 +120,7 @@ TensorSpec tensor_function_peek(const TensorSpec &a, const ValueType &result_typ
     return spec_from_value(single.eval(my_stack));
 }
 
-vespalib::string to_str(const PeekSpec &spec) {
+std::string to_str(const PeekSpec &spec) {
     vespalib::asciistream os;
     os << "{ ";
     for (const auto & [dim, label_or_index] : spec) {
@@ -145,7 +145,7 @@ void verify_peek_equal(const TensorSpec &input,
                        const ValueBuilderFactory &factory)
 {
     ValueType param_type = ValueType::from_spec(input.type());
-    std::vector<vespalib::string> reduce_dims;
+    std::vector<std::string> reduce_dims;
     for (const auto & [dim_name, ignored] : spec) {
         reduce_dims.push_back(dim_name);
     }

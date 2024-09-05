@@ -52,11 +52,11 @@ struct FastCells {
     void push_back_fast(T value) {
         *get(size++) = value;
     }
-    ArrayRef<T> add_cells(size_t n) {
+    std::span<T> add_cells(size_t n) {
         size_t old_size = size;
         ensure_free(n);
         size += n;
-        return ArrayRef<T>(get(old_size), n);
+        return std::span<T>(get(old_size), n);
     }
     MemoryUsage estimate_extra_memory_usage() const {
         MemoryUsage usage;
@@ -121,7 +121,7 @@ struct FastValue final : Value, ValueBuilder<T> {
             return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size);
         }
     }
-    void add_mapping(ConstArrayRef<std::string_view> addr) {
+    void add_mapping(std::span<const std::string_view> addr) {
         if constexpr (transient) {
             (void) addr;
             abort(); // cannot use this for transient values
@@ -133,7 +133,7 @@ struct FastValue final : Value, ValueBuilder<T> {
             my_index.map.add_mapping(hash);
         }
     }
-    void add_mapping(ConstArrayRef<string_id> addr) {
+    void add_mapping(std::span<const string_id> addr) {
         uint32_t hash = 0;
         for (string_id label: addr) {
             hash = FastAddrMap::combine_label_hash(hash, FastAddrMap::hash_label(label));
@@ -141,7 +141,7 @@ struct FastValue final : Value, ValueBuilder<T> {
         }
         my_index.map.add_mapping(hash);
     }
-    void add_mapping(ConstArrayRef<string_id> addr, uint32_t hash) {
+    void add_mapping(std::span<const string_id> addr, uint32_t hash) {
         for (string_id label: addr) {
             my_handles.push_back(label);
         }
@@ -151,25 +151,25 @@ struct FastValue final : Value, ValueBuilder<T> {
         my_handles.push_back(label);
         my_index.map.add_mapping(FastAddrMap::hash_label(label));
     }
-    ArrayRef<T> add_subspace(ConstArrayRef<std::string_view> addr) override {
+    std::span<T> add_subspace(std::span<const std::string_view> addr) override {
         add_mapping(addr);
         return my_cells.add_cells(my_subspace_size);
     }
-    ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) override {
+    std::span<T> add_subspace(std::span<const string_id> addr) override {
         add_mapping(addr);
         return my_cells.add_cells(my_subspace_size);        
     }
-    ArrayRef<T> get_subspace(size_t subspace) {
+    std::span<T> get_subspace(size_t subspace) {
         return {my_cells.get(subspace * my_subspace_size), my_subspace_size};
     }
-    std::pair<ArrayRef<T>,bool> insert_subspace(ConstArrayRef<string_id> addr) {
+    std::pair<std::span<T>,bool> insert_subspace(std::span<const string_id> addr) {
         if (size_t subspace = my_index.map.lookup(addr); subspace != FastAddrMap::npos()) {
             return {get_subspace(subspace), false};
         } else {
             return {add_subspace(addr), true};
         }
     }
-    ConstArrayRef<T> get_raw_cells() const {
+    std::span<const T> get_raw_cells() const {
         return {my_cells.get(0), my_cells.size};
     }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
@@ -223,11 +223,11 @@ struct FastDenseValue final : Value, ValueBuilder<T> {
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return TrivialIndex::get(); }
     TypedCells cells() const override { return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size); }
-    ArrayRef<T> add_subspace(ConstArrayRef<std::string_view>) override {
-        return ArrayRef<T>(my_cells.get(0), my_cells.size);
+    std::span<T> add_subspace(std::span<const std::string_view>) override {
+        return std::span<T>(my_cells.get(0), my_cells.size);
     }
-    ArrayRef<T> add_subspace(ConstArrayRef<string_id>) override {
-        return ArrayRef<T>(my_cells.get(0), my_cells.size);
+    std::span<T> add_subspace(std::span<const string_id>) override {
+        return std::span<T>(my_cells.get(0), my_cells.size);
     }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         ValueBuilder<T>* me = this;
@@ -247,8 +247,8 @@ template <typename T> FastDenseValue<T>::~FastDenseValue() = default;
 
 struct FastDoubleValueBuilder final : ValueBuilder<double> {
     double _value;
-    ArrayRef<double> add_subspace(ConstArrayRef<std::string_view>) final override { return ArrayRef<double>(&_value, 1); }
-    ArrayRef<double> add_subspace(ConstArrayRef<string_id>) final override { return ArrayRef<double>(&_value, 1); };
+    std::span<double> add_subspace(std::span<const std::string_view>) final override { return std::span<double>(&_value, 1); }
+    std::span<double> add_subspace(std::span<const string_id>) final override { return std::span<double>(&_value, 1); };
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<double>>) final override { return std::make_unique<DoubleValue>(_value); }
 };
 

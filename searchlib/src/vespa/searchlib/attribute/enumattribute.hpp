@@ -12,7 +12,7 @@ namespace search {
 
 template <typename B>
 EnumAttribute<B>::
-EnumAttribute(const vespalib::string &baseFileName,
+EnumAttribute(const std::string &baseFileName,
               const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
       _enumStore(cfg.fastSearch(), cfg.get_dictionary_config(), this->get_memory_allocator(), this->_defaultValue._data.raw())

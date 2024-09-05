@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
+#include <string>
 
 using namespace vespalib;
 
 TEST("testCache") {
-    lrucache_map< LruParam<int, string> > cache(7);
+    lrucache_map< LruParam<int, std::string> > cache(7);
     // Verfify start conditions.
     EXPECT_TRUE(cache.size() == 0);
     cache.insert(1, "First inserted string");
@@ -134,7 +134,7 @@ TEST("testCacheErase") {
 }
 
 TEST("testCacheIterator") {
-    using Cache = lrucache_map< LruParam<int, string> >;
+    using Cache = lrucache_map< LruParam<int, std::string> >;
     Cache cache(3);
     cache.insert(1, "first");
     cache.insert(2, "second");
@@ -170,7 +170,7 @@ TEST("testCacheIterator") {
 }
 
 TEST("testCacheIteratorErase") {
-    using Cache = lrucache_map< LruParam<int, string> >;
+    using Cache = lrucache_map< LruParam<int, std::string> >;
     Cache cache(3);
     cache.insert(1, "first");
     cache.insert(8, "second");

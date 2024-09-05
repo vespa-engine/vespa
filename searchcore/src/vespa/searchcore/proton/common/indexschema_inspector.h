@@ -17,7 +17,7 @@ class IndexschemaInspector : public IIndexschemaInspector {
 public:
     IndexschemaInspector(const IndexschemaConfig &config);
     ~IndexschemaInspector();
-    bool isStringIndex(const vespalib::string &name) const override;
+    bool isStringIndex(const std::string &name) const override;
 };
 
 } // namespace proton

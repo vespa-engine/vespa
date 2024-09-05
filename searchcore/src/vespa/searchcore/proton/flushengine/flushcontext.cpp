@@ -18,14 +18,14 @@ FlushContext::FlushContext(
       _lastSerial(lastSerial)
 { }
 
-vespalib::string
+std::string
 FlushContext::createName(const IFlushHandler & handler, const IFlushTarget & target) {
     return create_name(handler.getName(), target.getName());
 }
 
-vespalib::string
-FlushContext::create_name(const vespalib::string& handler_name,
-                          const vespalib::string& target_name) {
+std::string
+FlushContext::create_name(const std::string& handler_name,
+                          const std::string& target_name) {
     return (handler_name + "." + target_name);
 }
 

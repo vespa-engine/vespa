@@ -25,11 +25,6 @@ public class Rename extends IntermediateOperation {
     }
 
     @Override
-    boolean allInputFunctionsPresent(int expected) {
-        return super.allInputFunctionsPresent(expected);
-    }
-
-    @Override
     protected OrderedTensorType lazyGetType() {
         if ( ! allInputTypesPresent(1)) return null;
 

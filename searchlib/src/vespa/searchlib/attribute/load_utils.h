@@ -4,8 +4,8 @@
 
 #include "atomic_utils.h"
 #include "readerbase.h"
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
+#include <span>
 
 namespace vespalib::datastore {
     class AtomicEntryRef;
@@ -26,13 +26,13 @@ public:
     using FileInterfaceUP = std::unique_ptr<FastOS_FileInterface>;
     using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
 
-    static FileInterfaceUP openFile(const AttributeVector& attr, const vespalib::string& suffix);
+    static FileInterfaceUP openFile(const AttributeVector& attr, const std::string& suffix);
     static FileInterfaceUP openDAT(const AttributeVector& attr);
     static FileInterfaceUP openIDX(const AttributeVector& attr);
     static FileInterfaceUP openWeight(const AttributeVector& attr);
 
-    static bool file_exists(const AttributeVector& attr, const vespalib::string& suffix);
-    static LoadedBufferUP loadFile(const AttributeVector& attr, const vespalib::string& suffix);
+    static bool file_exists(const AttributeVector& attr, const std::string& suffix);
+    static LoadedBufferUP loadFile(const AttributeVector& attr, const std::string& suffix);
 
     static LoadedBufferUP loadDAT(const AttributeVector& attr);
     static LoadedBufferUP loadIDX(const AttributeVector& attr);
@@ -48,8 +48,8 @@ template <class MvMapping, class Saver>
 uint32_t
 loadFromEnumeratedMultiValue(MvMapping &mapping,
                              ReaderBase &attrReader,
-                             vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>> enumValueToValueMap,
-                             vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
+                             std::span<const atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>> enumValueToValueMap,
+                             std::span<const uint32_t> enum_value_remapping,
                              Saver saver) __attribute((noinline));
 
 /**
@@ -61,8 +61,8 @@ void
 loadFromEnumeratedSingleValue(Vector &vector,
                               vespalib::GenerationHolder &genHolder,
                               ReaderBase &attrReader,
-                              vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
-                              vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
+                              std::span<const atomic_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
+                              std::span<const uint32_t> enum_value_remapping,
                               Saver saver) __attribute((noinline));
 
 }

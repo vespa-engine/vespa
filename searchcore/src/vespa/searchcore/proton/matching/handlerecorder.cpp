@@ -3,23 +3,18 @@
 #include "handlerecorder.h"
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <algorithm>
-#include <cassert>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <vespa/vespalib/util/array_equal.hpp>
+#include <vespa/vespalib/util/tls_linkage.h>
+#include <algorithm>
+#include <cassert>
 
 using search::fef::MatchData;
 using search::fef::MatchDataDetails;
 using search::fef::TermFieldHandle;
 
 namespace proton::matching {
-
-#ifdef __PIC__
-    #define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("initial-exec")))
-#else
-    #define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("local-exec")))
-#endif
 
 namespace {
      __thread HandleRecorder * _T_recorder TLS_LINKAGE = nullptr;
@@ -33,7 +28,7 @@ HandleRecorder::HandleRecorder() :
 
 namespace {
 
-vespalib::string
+std::string
 handles_to_string(const HandleRecorder::HandleMap& handles, MatchDataDetails requested_details)
 {
     vespalib::asciistream os;
@@ -55,7 +50,7 @@ handles_to_string(const HandleRecorder::HandleMap& handles, MatchDataDetails req
 
 }
 
-vespalib::string
+std::string
 HandleRecorder::to_string() const
 {
     vespalib::asciistream os;

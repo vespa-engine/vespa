@@ -17,7 +17,7 @@ void printEscapedString(vespalib::asciistream &out, const Inspector &in) {
 }
 }  // namespace
 
-vespalib::string
+std::string
 PredicatePrinter::str() const {
     return _out->str();
 }
@@ -97,7 +97,7 @@ void PredicatePrinter::visitFalse(const Inspector &) {
     *_out << "false";
 }
 
-vespalib::string PredicatePrinter::print(const Slime &slime) {
+std::string PredicatePrinter::print(const Slime &slime) {
     PredicatePrinter printer;
     printer.visit(slime.get());
     return printer.str();

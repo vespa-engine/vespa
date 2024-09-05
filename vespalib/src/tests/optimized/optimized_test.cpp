@@ -55,9 +55,9 @@ TYPED_TEST(OptimizedTest, test_lsb_idx)
 TYPED_TEST(OptimizedTest, test_pop_count)
 {
     using T = TypeParam;
-    EXPECT_EQ(0, Optimized::popCount(T(0)));
-    EXPECT_EQ(1, Optimized::popCount(T(1)));
-    EXPECT_EQ(int(8 * sizeof(T)), Optimized::popCount(T(-1)));
+    EXPECT_EQ(0, std::popcount(T(0)));
+    EXPECT_EQ(1, std::popcount(T(1)));
+    EXPECT_EQ(int(8 * sizeof(T)), std::popcount(T(-1)));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

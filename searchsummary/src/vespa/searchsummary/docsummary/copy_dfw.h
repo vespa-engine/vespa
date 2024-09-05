@@ -14,10 +14,10 @@ class ResultConfig;
 class CopyDFW : public DocsumFieldWriter
 {
 private:
-    vespalib::string _input_field_name;
+    std::string _input_field_name;
 
 public:
-    explicit CopyDFW(const vespalib::string& inputField);
+    explicit CopyDFW(const std::string& inputField);
     ~CopyDFW() override;
 
     bool isGenerated() const override { return false; }

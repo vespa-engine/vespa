@@ -43,7 +43,7 @@ using search::SerialNum;
 using vespalib::makeLambdaTask;
 using vespalib::makeSharedLambdaCallback;
 using std::ostringstream;
-using vespalib::string;
+using std::string;
 using vespalib::Executor;
 using vespalib::Runnable;
 using vespalib::IDestructorCallback;
@@ -146,14 +146,14 @@ public:
     /**
      * Implements IFieldLengthInspector
      */
-    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         return _index->get_field_length_info(field_name);
     }
 
     /**
      * Implements IDiskIndex
      */
-    const vespalib::string &getIndexDir() const override { return _index->getIndexDir(); }
+    const std::string &getIndexDir() const override { return _index->getIndexDir(); }
     const search::index::Schema &getSchema() const override { return _index->getSchema(); }
 
 };
@@ -219,7 +219,7 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
             continue;	// not a disk index
         }
         const string indexDir = d->getIndexDir();
-        vespalib::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
+        std::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
         Schema trimmedSchema;
         if (!trimmedSchema.loadFromFile(schemaName)) {
             LOG(error, "Could not open schema '%s'", schemaName.c_str());
@@ -234,7 +234,7 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
 }
 
 void
-IndexMaintainer::updateDiskIndexSchema(const vespalib::string &indexDir,
+IndexMaintainer::updateDiskIndexSchema(const std::string &indexDir,
                                        const Schema &schema,
                                        SerialNum serialNum)
 {
@@ -300,7 +300,7 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
 }
 
 void
-IndexMaintainer::deactivateDiskIndexes(vespalib::string indexDir)
+IndexMaintainer::deactivateDiskIndexes(std::string indexDir)
 {
     _disk_indexes->notActive(indexDir);
     removeOldDiskIndexes();
@@ -586,7 +586,7 @@ void
 IndexMaintainer::updateFlushStats(const FlushArgs &args)
 {
     // Called by a flush worker thread
-    vespalib::string flushDir;
+    std::string flushDir;
     if (!args._skippedEmptyLast) {
         flushDir = getFlushDir(args.old_absolute_id);
     } else {
@@ -1210,7 +1210,7 @@ IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serial
     try {
         _current_index->insertDocument(lid, doc, on_write_done);
     } catch (const vespalib::IllegalStateException & e) {
-        vespalib::string s = "Failed inserting document :\n"  + doc.toXml("  ") + "\n";
+        std::string s = "Failed inserting document :\n"  + doc.toXml("  ") + "\n";
         LOG(error, "%s", s.c_str());
         throw vespalib::IllegalStateException(s, e, VESPA_STRLOC);
     }
