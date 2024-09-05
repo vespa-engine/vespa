@@ -1,48 +1,20 @@
 package ai.vespa.schemals.documentation;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
-import org.jsoup.parser.Tag;
-import org.jsoup.select.Elements;
-
-import com.vladsch.flexmark.ext.tables.TablesExtension;
-import com.vladsch.flexmark.html.renderer.ResolvedLink;
-import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
-import com.vladsch.flexmark.html2md.converter.HtmlLinkResolver;
-import com.vladsch.flexmark.html2md.converter.HtmlLinkResolverFactory;
-import com.vladsch.flexmark.html2md.converter.HtmlNodeConverterContext;
-import com.vladsch.flexmark.parser.Parser;
-import com.vladsch.flexmark.util.data.MutableDataHolder;
-import com.vladsch.flexmark.util.data.MutableDataSet;
 
 /**
  * DocumentationFetcher
  */
 public class DocumentationFetcher {
-    private final static String SCHEMA_URL = "/en/reference/schema-reference.html";
-    private final static String RANK_EXPRESSION_URL = "/en/reference/rank-features.html";
+    private final static String SCHEMA_URL = "en/reference/schema-reference.html";
+    private final static String RANK_FEATURE_URL = "en/reference/rank-features.html";
 
     private final static Map<String, List<String>> REPLACE_FILENAME_MAP = new HashMap<>(){{
         put("EXPRESSION", List.of( "EXPRESSION_SL", "EXPRESSION_ML" ));
@@ -74,6 +46,13 @@ public class DocumentationFetcher {
             } else {
                 Files.write(writePath.resolve(fileName + ".md"), content.getBytes(), StandardOpenOption.CREATE);
             }
+        }
+
+        Map<String, String> rankFeatureMarkdownContent = new RankFeatureDocumentationFetcher(RANK_FEATURE_URL).getMarkdownContent();
+
+        writePath = targetPath.resolve("rankExpression");
+        for (var entry : rankFeatureMarkdownContent.entrySet()) {
+            Files.write(writePath.resolve(entry.getKey() + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
         }
 
         return "LGTM";

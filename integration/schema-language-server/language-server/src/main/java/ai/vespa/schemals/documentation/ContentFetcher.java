@@ -1,6 +1,7 @@
 package ai.vespa.schemals.documentation;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -21,9 +22,10 @@ import com.vladsch.flexmark.util.data.MutableDataSet;
 
 /**
  * ContentFetcher
+ * Common logic for setting options for HTML -> Markdown converter and link resolving.
  */
 public abstract class ContentFetcher {
-    protected final static String URL_PREFIX = "https://docs.vespa.ai";
+    protected final static String URL_PREFIX = "https://docs.vespa.ai/";
 
     String fileUrl;
 
@@ -38,7 +40,7 @@ public abstract class ContentFetcher {
             .set(FlexmarkHtmlConverter.OUTPUT_ATTRIBUTES_ID, false)
             .set(FlexmarkHtmlConverter.SETEXT_HEADINGS, false)
             .set(TablesExtension.DISCARD_EXTRA_COLUMNS, true)
-            .set(Parser.EXTENSIONS, Collections.singletonList(new HtmlConverterTextExtension(URL_PREFIX + fileUrl)));
+            .set(Parser.EXTENSIONS, Collections.singletonList(new HtmlConverterTextExtension(fileUrl)));
 
         return FlexmarkHtmlConverter.builder(options).build();
     }
@@ -58,9 +60,16 @@ public abstract class ContentFetcher {
             if (curr.startsWith("http")) 
                 return link;
 
-            if (curr.startsWith("#"))
-                return link.withUrl(fileUrl + curr);
+            try {
+                return link.withUrl(new URI(URL_PREFIX).resolve(fileUrl).resolve(curr).toString());
+            } catch(Exception e) {
+            }
 
+            if (curr.startsWith("#"))
+                return link.withUrl(URL_PREFIX + fileUrl + curr);
+
+            if (curr.startsWith("."))
+                return link.withUrl(URL_PREFIX + fileUrl + curr);
 
             return link.withUrl(URL_PREFIX + curr);
         }
