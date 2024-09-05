@@ -368,6 +368,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if ( ! context.getDeployState().isHosted()) return;
         if ( ! context.getDeployState().zone().system().isPublic()) return; // Non-public is handled by deployment spec config.
         if ( ! context.properties().launchApplicationAthenzService()) return;
+        var appContext = context.getDeployState().zone().environment().isManuallyDeployed() ? "sandbox" : "production";
         addIdentityProvider(cluster,
                             context.getDeployState().getProperties().configServerSpecs(),
                             context.getDeployState().getProperties().loadBalancerName(),
@@ -375,7 +376,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
                             AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
-                            AthenzService.from(context.properties().applicationId().application().value()));
+                            AthenzService.from("%s-%s".formatted(context.properties().applicationId().application().value(), appContext)));
     }
 
     private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
