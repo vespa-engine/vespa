@@ -159,6 +159,17 @@
                 <jdk>17</jdk>   
             </configuration>   
           </execution>   
+          <execution>
+            <id>4</id>
+            <goals>
+              <goal>ccc-generate</goal>
+            </goals>
+            <configuration>
+              <grammarFile>${project.basedir}/src/main/ccc/yqlplus/YQLPlus.ccc</grammarFile>
+              <outputDir>${project.basedir}/target/generated-sources/ccc</outputDir>
+              <jdk>17</jdk>
+            </configuration>
+          </execution>
         </executions>   
       </plugin>   
       <plugin>

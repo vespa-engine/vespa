@@ -1,0 +1,279 @@
+PARSER_CLASS=YQLPlusParser;
+PARSER_PACKAGE=ai.vespa.schemals.parser.yqlplus;
+FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false; // Will create a tree node for every rule
+
+INJECT YQLPlusParser:
+
+    import java.util.Deque;
+    import java.util.ArrayDeque;
+    import com.yahoo.search.yql.*;
+{
+    protected Deque<Boolean> expression_stack = new ArrayDeque<>();
+}
+
+// --------------------------------------------------------------------------------
+//
+// Token declarations.
+//
+// --------------------------------------------------------------------------------
+
+SKIP :
+  " " | "\t" | "\r" | "\n"
+;
+
+TOKEN :
+  < SELECT: 'select' >
+
+| < LIMIT: 'limit' >
+| < OFFSET: 'offset' >
+| < WHERE: 'where' >
+| < ORDER: 'order' >
+| < BY: 'by' >
+| < ORDERBY: <ORDER> <BY> >
+| < DESC: 'desc' >
+| < FROM: 'from' >
+| < SOURCES: 'sources' >
+| < AS: 'as' >
+
+| < COMMA: ',' >
+| < OUTPUT: 'output' >
+| < COUNT: 'count' >
+
+| < TRUE: 'true' >
+| < FALSE: 'false' >
+
+// brackets and other tokens in literals
+| < LPAREN: '(' >
+| < RPAREN: ')' >
+| < LBRACKET: '[' >
+| < RBRACKET: ']' >
+| < LBRACE: '{' >
+| < RBRACE: '}' >
+| < COLON: ':' >
+| < PIPE: '|' >
+
+// operators
+| < AND: 'and' >
+| < OR: 'or' >
+| < NOT_IN: 'not in' >
+| < IN: 'in' >
+
+| < LT: '<' >
+| < GT: '>' >
+| < LTEQ: '<=' >
+| < GTEQ: '>=' >
+| < NEQ: '!=' >
+| < STAR: '*' >
+| < EQ: '=' >
+| < LIKE: 'like' >
+| < CONTAINS: 'contains' >
+| < NOTLIKE: 'not like' >
+| < MATCHES: 'matches' >
+| < NOTMATCHES: 'not matches' >
+
+// effectively unary operators
+| < IS_NULL: 'is null' >
+| < IS_NOT_NULL: 'is not null' >
+
+// dereference
+| < DOT: '.' >
+| < AT: '@' >
+
+// quotes
+| < SQ: '\'' >
+| < DQ: '"' >
+
+// statement delimiter
+| < SEMI: ';' >
+
+| < TIMEOUT: 'timeout' >
+
+// identifier
+| < IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
+| < LONG_INT: ("-")?(["0"-"9"])+("L"|"l") >
+| < INT: ("-")?(["0"-"9"])+ >
+| < FLOAT: ("-")?(((["0"-"9"])+"."(["0"-"9"])* (<EXPONENT>)?)|("."(["0"-"9"])+ (<EXPONENT>)?)|((["0"-"9"])+ <EXPONENT>)) >
+| < EXPONENT: ("e"|"E") ("+"|"-")? (["0"-"9"])+ >
+| < DIGIT: ["0"-"9"] >
+| < LETTER: ["a"-"z","A"-"Z"] >
+// TODO: Add string
+// ....
+;
+
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+String identifierStr:
+    (
+        <SELECT>
+        | <LIMIT>
+        | <OFFSET>
+        | <WHERE>
+        | <ORDER>
+        | <BY>
+        | <DESC>
+        | <FROM>
+        | <SOURCES>
+        | <AS>
+        | <COMMA>
+        | <OUTPUT>
+        | <COUNT>
+        | <TRUE>
+        | <FALSE>
+        | <LPAREN>
+        | <RPAREN>
+        | <LBRACKET>
+        | <RBRACKET>
+        | <LBRACE>
+        | <RBRACE>
+        | <COLON>
+        | <PIPE>
+        | <AND>
+        | <OR>
+        | <NOT_IN>
+        | <IN>
+        | <LT>
+        | <GT>
+        | <LTEQ>
+        | <GTEQ>
+        | <NEQ>
+        | <STAR>
+        | <EQ>
+        | <LIKE>
+        | <CONTAINS>
+        | <NOTLIKE>
+        | <MATCHES>
+        | <NOTMATCHES>
+        | <IS_NULL>
+        | <IS_NOT_NULL>
+        | <DOT>
+        | <AT>
+        | <SQ>
+        | <DQ>
+        | <SEMI>
+        | <TIMEOUT>
+        | <IDENTIFIER>
+        | <LONG_INT>
+        | <INT>
+        | <FLOAT>
+        | <EXPONENT>
+        | <DIGIT>
+        | <LETTER>
+    )
+    {
+        return lastConsumedToken.toString();
+    }
+;
+
+vespa_grouping:
+    (
+        ('all' | 'each') vespa_grouping_arg
+        ('as' vespa_grouping_arg)?
+        ('where' vespa_grouping_arg)? 
+    )
+;
+
+vespa_grouping_arg:
+    (
+        (<RPAREN> | <LBRACKET> | <LT>)
+        ((<LPAREN> | <LBRACKET> | <LT> | <RPAREN> | <RBRACKET> | <GT>) | vespa_grouping_arg)*
+        (<RPAREN> | <RBRACKET> | <GT>)
+    )
+;
+
+String ident: {
+    String identifier;
+}
+
+    ( identifier = identifierStr { return identifier; } )
+    | (identifier = keyword_as_ident { return identifier; })
+    {
+        return lastConsumedToken.toString();
+    }
+;
+
+String keyword_as_ident:
+    (
+          <SELECT>
+        | <LIMIT>
+        | <OFFSET>
+        | <WHERE>
+        | <ORDER>
+        | <BY>
+        | <DESC>
+        | <OUTPUT>
+        | <COUNT>
+        | <SOURCES>
+        | <MMATCHES>
+        | <LIKE>
+    )
+    {
+        return lastConsumedToken.toString();
+    }
+;
+
+program:
+    (
+        (statement <SEMI>?)*
+    )
+;
+
+statement:
+    (
+        output_statement
+    )
+;
+
+output_statement:
+    (
+        source_statement output_spec?
+    )
+;
+
+source_statement:
+    (
+        query_statement (<PIPE> pipeline_step)*
+    )
+;
+
+pipeline_step:
+    (
+        namespaced_name (arguments(false))? | vespa_grouping
+    )
+;
+
+vespa_grouping_fun:
+    (
+        vespa_grouping | annotation vespa_grouping
+    )
+;
+
+output_spec:
+    (
+        <OUTPUT> <COUNT>? <AS> ident
+    )
+;
+
+query_statement:
+    (
+        select_statement
+    )
+;
+
+select_statement:
+    (
+        <SELECT> select_field_spec //TODO: missing parsing
+    )
+;
+
+// TODO: Missing field
+select_field_spec:
+    (
+        <STAR> 
+    )
+;
