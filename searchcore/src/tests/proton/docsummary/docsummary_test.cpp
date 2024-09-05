@@ -64,15 +64,15 @@
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/geo/zcurve.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-summary.h>
 #include <filesystem>
 #include <regex>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
@@ -380,7 +380,9 @@ assertString(const std::string & exp, const std::string & fieldName,
              DocumentStoreAdapter &dsa, uint32_t id)
 {
     auto res = dsa.get_document(id);
-    return EXPECT_EQUAL(exp, res->get_field_value(fieldName)->getAsString());
+    bool failed = false;
+    EXPECT_EQ(exp, res->get_field_value(fieldName)->getAsString()) << (failed = true, "");
+    return !failed;
 }
 
 bool
@@ -392,13 +394,17 @@ assertAnnotatedString(const std::string & exp, const std::string & fieldName,
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
     res->insert_juniper_field(fieldName, inserter, converter);
-    return EXPECT_EQUAL(exp, converter.get_result());
+    bool failed = false;
+    EXPECT_EQ(exp, converter.get_result()) << (failed = true, "");
+    return !failed;
 }
 
 void
-assertTensor(const vespalib::eval::Value::UP & exp, const std::string & fieldName,
+assertTensor(std::string_view label,
+             const vespalib::eval::Value::UP & exp, const std::string & fieldName,
              const DocsumReply & reply, uint32_t id)
 {
+    SCOPED_TRACE(label);
     const auto & root = reply.root();
     if (exp) {
         EXPECT_TRUE(root["docsums"].valid());
@@ -409,7 +415,7 @@ assertTensor(const vespalib::eval::Value::UP & exp, const std::string & fieldNam
         vespalib::nbostream x(data.data, data.size);
         auto tensor = SimpleValue::from_stream(x);
         EXPECT_TRUE(tensor.get() != nullptr);
-        EXPECT_EQUAL(*exp, *tensor);
+        EXPECT_EQ(*exp, *tensor);
     } else {
         EXPECT_FALSE(root["docsums"][id][fieldName].valid());
     }
@@ -419,12 +425,15 @@ bool assertSlime(const std::string &exp, const DocsumReply &reply) {
     vespalib::Slime expSlime;
     size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
-    ASSERT_TRUE(reply.hasResult());
-    return (EXPECT_EQUAL(expSlime, reply.slime()));
+    bool failed = false;
+    EXPECT_TRUE(reply.hasResult()) << (failed = true, "");
+    EXPECT_EQ(expSlime, reply.slime()) << (failed = true, "");
+    return !failed;
 }
 
-TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
+TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes)
 {
+    Fixture f;
     BuildContext bc([](auto& header)
                     {
                         header
@@ -459,22 +468,23 @@ TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
 
     DocumentStoreAdapter dsa(bc._str, bc.get_repo());
     auto res = dsa.get_document(0);
-    EXPECT_EQUAL(-1,          res->get_field_value("a")->getAsInt());
-    EXPECT_EQUAL(32767,       res->get_field_value("b")->getAsInt());
-    EXPECT_EQUAL(2147483647,  res->get_field_value("c")->getAsInt());
-    EXPECT_EQUAL(INT64_C(2147483648), res->get_field_value("d")->getAsLong());
-    EXPECT_APPROX(1234.56,    res->get_field_value("e")->getAsFloat(), 10e-5);
-    EXPECT_APPROX(9876.54,    res->get_field_value("f")->getAsDouble(), 10e-5);
-    EXPECT_EQUAL("foo",       res->get_field_value("g")->getAsString());
-    EXPECT_EQUAL("bar",       res->get_field_value("h")->getAsString());
-    EXPECT_EQUAL("baz",       res->get_field_value("i")->getAsString());
-    EXPECT_EQUAL("qux",       res->get_field_value("j")->getAsString());
-    EXPECT_EQUAL("<foo>",     res->get_field_value("k")->getAsString());
-    EXPECT_EQUAL("{foo:10}",  res->get_field_value("l")->getAsString());
+    EXPECT_EQ(-1,          res->get_field_value("a")->getAsInt());
+    EXPECT_EQ(32767,       res->get_field_value("b")->getAsInt());
+    EXPECT_EQ(2147483647,  res->get_field_value("c")->getAsInt());
+    EXPECT_EQ(INT64_C(2147483648), res->get_field_value("d")->getAsLong());
+    EXPECT_NEAR(1234.56,    res->get_field_value("e")->getAsFloat(), 10e-5);
+    EXPECT_NEAR(9876.54,    res->get_field_value("f")->getAsDouble(), 10e-5);
+    EXPECT_EQ("foo",       res->get_field_value("g")->getAsString());
+    EXPECT_EQ("bar",       res->get_field_value("h")->getAsString());
+    EXPECT_EQ("baz",       res->get_field_value("i")->getAsString());
+    EXPECT_EQ("qux",       res->get_field_value("j")->getAsString());
+    EXPECT_EQ("<foo>",     res->get_field_value("k")->getAsString());
+    EXPECT_EQ("{foo:10}",  res->get_field_value("l")->getAsString());
 }
 
-TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
+TEST(DocSummaryTest, requireThatAdapterHandlesMultipleDocuments)
 {
+    Fixture f;
     BuildContext bc([](auto& header) { header.addField("a", DataType::T_INT); });
     auto doc = bc.make_document("id:ns:searchdocument::0");
     doc->setValue("a", IntFieldValue(1000));
@@ -486,11 +496,11 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
     DocumentStoreAdapter dsa(bc._str, bc.get_repo());
     { // doc 0
         auto res = dsa.get_document(0);
-        EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
+        EXPECT_EQ(1000, res->get_field_value("a")->getAsInt());
     }
     { // doc 1
         auto res = dsa.get_document(1);
-        EXPECT_EQUAL(2000, res->get_field_value("a")->getAsInt());
+        EXPECT_EQ(2000, res->get_field_value("a")->getAsInt());
     }
     { // doc 2
         auto res = dsa.get_document(2);
@@ -498,15 +508,16 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
     }
     { // doc 0 (again)
         auto res = dsa.get_document(0);
-        EXPECT_EQUAL(1000, res->get_field_value("a")->getAsInt());
+        EXPECT_EQ(1000, res->get_field_value("a")->getAsInt());
     }
-    EXPECT_EQUAL(0u, bc._str.lastSyncToken());
+    EXPECT_EQ(0u, bc._str.lastSyncToken());
     uint64_t flushToken = bc._str.initFlush(bc._serialNum - 1);
     bc._str.flush(flushToken);
 }
 
-TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
+TEST(DocSummaryTest, requireThatAdapterHandlesDocumentIdField)
 {
+    Fixture f;
     BuildContext bc([](auto&) noexcept {});
     auto doc = bc.make_document("id:ns:searchdocument::0");
     bc.put_document(0, std::move(doc));
@@ -515,7 +526,7 @@ TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
     res->insert_document_id(inserter);
-    EXPECT_EQUAL("id:ns:searchdocument::0", slime.get().asString().make_string());
+    EXPECT_EQ("id:ns:searchdocument::0", slime.get().asString().make_string());
 }
 
 GlobalId gid1 = DocumentId("id:ns:searchdocument::1").getGlobalId(); // lid 1
@@ -524,7 +535,7 @@ GlobalId gid3 = DocumentId("id:ns:searchdocument::3").getGlobalId(); // lid 3
 GlobalId gid4 = DocumentId("id:ns:searchdocument::4").getGlobalId(); // lid 4
 GlobalId gid9 = DocumentId("id:ns:searchdocument::9").getGlobalId(); // not existing
 
-TEST("requireThatDocsumRequestIsProcessed")
+TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed)
 {
     BuildContext bc([](auto& header) { header.addField("a", DataType::T_INT); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
@@ -553,7 +564,7 @@ TEST("requireThatDocsumRequestIsProcessed")
     EXPECT_TRUE(assertSlime("{docsums:[ {docsum:{a:20}}, {docsum:{a:40}}, {} ]}", *rep));
 }
 
-TEST("requireThatRewritersAreUsed")
+TEST(DocSummaryTest, requireThatRewritersAreUsed)
 {
     BuildContext bc([](auto& header)
                     { header.addField("aa", DataType::T_INT)
@@ -571,7 +582,7 @@ TEST("requireThatRewritersAreUsed")
     EXPECT_TRUE(assertSlime("{docsums:[ {docsum:{aa:20}} ]}", *rep));
 }
 
-TEST("requireThatSummariesTimeout")
+TEST(DocSummaryTest, requireThatSummariesTimeout)
 {
     BuildContext bc([](auto& header)
                     { header.addField("aa", DataType::T_INT)
@@ -591,7 +602,7 @@ TEST("requireThatSummariesTimeout")
     const auto & root = rep->root();
     const auto & field = root["errors"];
     EXPECT_TRUE(field.valid());
-    EXPECT_EQUAL(field[0]["type"].asString(), vespalib::Memory("timeout"));
+    EXPECT_EQ(field[0]["type"].asString(), vespalib::Memory("timeout"));
     auto bufstring = field[0]["message"].asString();
     EXPECT_TRUE(std::regex_search(bufstring.data, bufstring.data + bufstring.size, std::regex("Timed out 1 summaries with -[0-9]+us left.")));
 }
@@ -613,7 +624,7 @@ void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string 
     EXPECT_TRUE(assertSlime(json, *rep));
 }
 
-TEST("requireThatFieldListIsHonoured")
+TEST(DocSummaryTest, requireThatFieldListIsHonoured)
 {
     verifyFieldListHonoured({}, "{docsums:[ {docsum:{ba:10,bb:10.1250}} ]}");
     verifyFieldListHonoured({"ba","bb"}, "{docsums:[ {docsum:{ba:10,bb:10.1250}} ]}");
@@ -623,7 +634,7 @@ TEST("requireThatFieldListIsHonoured")
     verifyFieldListHonoured({"ba", "unknown"}, "{docsums:[ {docsum:{ba:10}} ]}");
 }
 
-TEST("requireThatAttributesAreUsed")
+TEST(DocSummaryTest, requireThatAttributesAreUsed)
 {
     BuildContext bc([](auto& header)
                     { using namespace document::config_builder;
@@ -695,9 +706,9 @@ TEST("requireThatAttributesAreUsed")
                             "bj:x01020178017901016601674008000000000000}},"
                             "{docsum:{}}]}", *rep));
 
-    TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")
-                                     .add({{"x", "f"}, {"y", "g"}}, 3)),
-                         "bj", *rep, 0));
+    assertTensor("first", make_tensor(TensorSpec("tensor(x{},y{})")
+                                          .add({{"x", "f"}, {"y", "g"}}, 3)),
+                 "bj", *rep, 0);
 
     proton::IAttributeManager::SP attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
     vespalib::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();
@@ -718,9 +729,9 @@ TEST("requireThatAttributesAreUsed")
     gate.await();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
-    TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")
-                                     .add({{"x", "a"}, {"y", "b"}}, 4)),
-                         "bj", *rep2, 1));
+    assertTensor("second", make_tensor(TensorSpec("tensor(x{},y{})")
+                                           .add({{"x", "a"}, {"y", "b"}}, 4)),
+                 "bj", *rep2, 1);
 
     DocsumRequest req3;
     req3.resultClassName = "class3";
@@ -729,7 +740,7 @@ TEST("requireThatAttributesAreUsed")
     EXPECT_TRUE(assertSlime("{docsums:[{docsum:{bj:x01020178017901016101624010000000000000}}]}", *rep3));
 }
 
-TEST("requireThatSummaryAdapterHandlesPutAndRemove")
+TEST(DocSummaryTest, requireThatSummaryAdapterHandlesPutAndRemove)
 {
     BuildContext bc([](auto& header) { header.addField("f1", DataType::T_STRING); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
@@ -739,8 +750,8 @@ TEST("requireThatSummaryAdapterHandlesPutAndRemove")
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
-    EXPECT_EQUAL(exp->getType(), act->getType());
-    EXPECT_EQUAL("foo", act->getValue("f1")->toString());
+    EXPECT_EQ(exp->getType(), act->getType());
+    EXPECT_EQ("foo", act->getValue("f1")->toString());
     dc._sa->remove(2, 1);
     EXPECT_TRUE(store.read(1, bc.get_repo()).get() == nullptr);
 }
@@ -751,8 +762,9 @@ const std::string TERM_END = "\357\277\273";
 const std::string TERM_SEP = "\037";
 const std::string TERM_EMPTY;
 
-TEST_F("requireThatAnnotationsAreUsed", Fixture)
+TEST(DocSummaryTest, requireThatAnnotationsAreUsed)
 {
+    Fixture f;
     BuildContext bc([](auto& header)
                     { header.addField("g", DataType::T_STRING)
                             .addField("dynamicstring", DataType::T_STRING); });
@@ -765,9 +777,9 @@ TEST_F("requireThatAnnotationsAreUsed", Fixture)
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
-    EXPECT_EQUAL(exp->getType(), act->getType());
-    EXPECT_EQUAL("foo bar", act->getValue("g")->getAsString());
-    EXPECT_EQUAL("foo bar", act->getValue("dynamicstring")->getAsString());
+    EXPECT_EQ(exp->getType(), act->getType());
+    EXPECT_EQ("foo bar", act->getValue("g")->getAsString());
+    EXPECT_EQ("foo bar", act->getValue("dynamicstring")->getAsString());
 
     DocumentStoreAdapter dsa(store, bc.get_repo());
     EXPECT_TRUE(assertString("foo bar", "g", dsa, 1));
@@ -778,8 +790,9 @@ TEST_F("requireThatAnnotationsAreUsed", Fixture)
                                       "dynamicstring", dsa, 1));
 }
 
-TEST_F("requireThatUrisAreUsed", Fixture)
+TEST(DocSummaryTest, requireThatUrisAreUsed)
 {
+    Fixture f;
     BuildContext bc([](auto& header)
                     { using namespace document::config_builder;
                         header.addField("urisingle", DataType::T_URI)
@@ -802,7 +815,7 @@ TEST_F("requireThatUrisAreUsed", Fixture)
         dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
-    EXPECT_EQUAL(exp->getType(), act->getType());
+    EXPECT_EQ(exp->getType(), act->getType());
 
     DocumentStoreAdapter dsa(store, bc.get_repo());
     auto res = dsa.get_document(1);
@@ -810,31 +823,31 @@ TEST_F("requireThatUrisAreUsed", Fixture)
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("urisingle", inserter);
-        EXPECT_EQUAL("http://www.example.com:81/fluke?ab=2#4", asVstring(slime.get()));
+        EXPECT_EQ("http://www.example.com:81/fluke?ab=2#4", asVstring(slime.get()));
     }
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("uriarray", inserter);
         EXPECT_TRUE(slime.get().valid());
-        EXPECT_EQUAL("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
-        EXPECT_EQUAL("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
+        EXPECT_EQ("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
+        EXPECT_EQ("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("uriwset", inserter);
         EXPECT_TRUE(slime.get().valid());
-        EXPECT_EQUAL(4L, slime.get()[0]["weight"].asLong());
-        EXPECT_EQUAL(7L, slime.get()[1]["weight"].asLong());
+        EXPECT_EQ(4L, slime.get()[0]["weight"].asLong());
+        EXPECT_EQ(7L, slime.get()[1]["weight"].asLong());
         std::string arr0s = asVstring(slime.get()[0]["item"]);
         std::string arr1s = asVstring(slime.get()[1]["item"]);
-        EXPECT_EQUAL("http://www.example.com:83/fluke?ab=2#12", arr0s);
-        EXPECT_EQUAL("http://www.flickr.com:85/fluke?ab=2#13", arr1s);
+        EXPECT_EQ("http://www.example.com:83/fluke?ab=2#12", arr0s);
+        EXPECT_EQ("http://www.flickr.com:85/fluke?ab=2#13", arr1s);
     }
 }
 
-TEST("requireThatPositionsAreUsed")
+TEST(DocSummaryTest, requireThatPositionsAreUsed)
 {
     BuildContext bc([](auto& header)
                     { using namespace document::config_builder;
@@ -857,7 +870,7 @@ TEST("requireThatPositionsAreUsed")
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act);
-    EXPECT_EQUAL(exp->getType(), act->getType());
+    EXPECT_EQ(exp->getType(), act->getType());
 
     DocsumRequest req;
     req.resultClassName = "class5";
@@ -875,8 +888,9 @@ TEST("requireThatPositionsAreUsed")
                             "}]}", *rep));
 }
 
-TEST_F("requireThatRawFieldsWorks", Fixture)
+TEST(DocSummaryTest, requireThatRawFieldsWorks)
 {
+    Fixture f;
     BuildContext bc([](auto& header)
                     { using namespace document::config_builder;
                         header.addField("i", DataType::T_RAW)
@@ -918,7 +932,7 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
-    EXPECT_EQUAL(exp->getType(), act->getType());
+    EXPECT_EQ(exp->getType(), act->getType());
 
     DocumentStoreAdapter dsa(store, bc.get_repo());
 
@@ -930,20 +944,20 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("araw", inserter);
         EXPECT_TRUE(slime.get().valid());
-        EXPECT_EQUAL(vespalib::Base64::encode(raw1a0), b64encode(slime.get()[0]));
-        EXPECT_EQUAL(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
+        EXPECT_EQ(vespalib::Base64::encode(raw1a0), b64encode(slime.get()[0]));
+        EXPECT_EQ(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("wraw", inserter);
         EXPECT_TRUE(slime.get().valid());
-        EXPECT_EQUAL(46L, slime.get()[0]["weight"].asLong());
-        EXPECT_EQUAL(45L, slime.get()[1]["weight"].asLong());
+        EXPECT_EQ(46L, slime.get()[0]["weight"].asLong());
+        EXPECT_EQ(45L, slime.get()[1]["weight"].asLong());
         std::string arr0s = b64encode(slime.get()[0]["item"]);
         std::string arr1s = b64encode(slime.get()[1]["item"]);
-        EXPECT_EQUAL(vespalib::Base64::encode(raw1w1), arr0s);
-        EXPECT_EQUAL(vespalib::Base64::encode(raw1w0), arr1s);
+        EXPECT_EQ(vespalib::Base64::encode(raw1w1), arr0s);
+        EXPECT_EQ(vespalib::Base64::encode(raw1w0), arr1s);
     }
 }
 
@@ -962,4 +976,4 @@ Fixture::~Fixture() = default;
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

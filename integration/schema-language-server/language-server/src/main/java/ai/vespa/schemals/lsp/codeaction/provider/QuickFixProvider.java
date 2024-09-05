@@ -22,10 +22,14 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.codeaction.utils.CodeActionUtils;
 import ai.vespa.schemals.lsp.rename.SchemaRename;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.fieldBodyElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.indexInsideField;
+import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.openLbrace;
@@ -393,6 +397,78 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
+    private CodeAction fixFieldArgumentMissingIndexingType(EventCodeActionContext context, Diagnostic diagnostic) {
+
+        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        if (offendingNode == null || !offendingNode.hasSymbol()) return null;
+        Optional<Symbol> symbol = context.schemaIndex.findSymbol(offendingNode.getSymbol());
+        if (symbol.isEmpty()) return null;
+
+        SchemaNode node = symbol.get().getNode().getParent();
+
+        Optional<SchemaNode> indexingNode = Optional.empty();
+        for (SchemaNode child : node) {
+            if (child.isASTInstance(fieldBodyElm.class)) {
+                SchemaNode grandChild = child.get(0);
+                if (grandChild != null && grandChild.isASTInstance(indexingElm.class)) {
+                    indexingNode = Optional.of(grandChild);
+                }
+            }
+        }
+
+        CodeAction action = basicQuickFix("Add attribute as indexing attribute", diagnostic);
+
+        if (indexingNode.isPresent()) {
+            action.setEdit(CodeActionUtils.simpleEdit(context, indexingNode.get().getRange().getEnd(), " | attribute"));
+
+        } else {
+            // Add indexing node as well
+            Optional<SchemaNode> rBraceNode = Optional.empty();
+
+            for (int i = 0; i < node.size(); i++) {
+                SchemaNode child = node.get(i);
+                if (child.isASTInstance(RBRACE.class)) {
+                    rBraceNode = Optional.of(child);
+                    break;
+                }
+            }
+
+            if (rBraceNode.isEmpty()) return null;
+
+            // Calculate indent
+            SchemaNode fieldKeywordNode = node.get(0);
+            if (fieldKeywordNode == null) return null;
+
+            String insertIndentString = StringUtils.getIndentString(context.document.getCurrentContent(), fieldKeywordNode);
+            int indent = StringUtils.countSpaceIndents(insertIndentString);
+
+            String newText = StringUtils.spaceIndent(StringUtils.TAB_SIZE) + "indexing: attribute\n" + StringUtils.spaceIndent(indent);
+
+            // Check is a leading new line is necessary
+            SchemaNode prevSibling = rBraceNode.get().getPrevious();
+            if (prevSibling == null) return null;
+            boolean newLineNecessary = false;
+            if (!prevSibling.isASTInstance(NL.class)) {
+                if (prevSibling.isASTInstance(openLbrace.class)) {
+                    SchemaNode lastLbraceChild = prevSibling.get(prevSibling.size() - 1);
+                    if (!lastLbraceChild.isASTInstance(NL.class)) {
+                        newLineNecessary = true;
+                    }
+                } else {
+                    newLineNecessary = true;
+                }
+            }
+
+            if (newLineNecessary) {
+                newText = "\n" + StringUtils.spaceIndent(indent) + newText;
+            }
+
+            action.setEdit(CodeActionUtils.simpleEdit(context, rBraceNode.get().getRange().getStart(), newText));
+        }
+
+        return action;
+    }
+
 	@Override
 	public List<Either<Command, CodeAction>> getActions(EventCodeActionContext context) {
         List<Either<Command, CodeAction>> result = new ArrayList<>();
@@ -447,6 +523,9 @@ public class QuickFixProvider implements CodeActionProvider {
                     break;
                 case FEATURES_INHERITS_NON_PARENT:
                     result.add(Either.forRight(fixFeaturesInheritsNonParent(context, diagnostic)));
+                    break;
+                case FIELD_ARGUMENT_MISSING_INDEXING_TYPE:
+                    result.add(Either.forRight(fixFieldArgumentMissingIndexingType(context, diagnostic)));
                     break;
                 default:
                     break;

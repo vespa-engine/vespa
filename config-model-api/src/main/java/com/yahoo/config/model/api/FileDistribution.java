@@ -11,18 +11,6 @@ import java.util.Set;
  * @author Ulf Lilleengen
  */
 public interface FileDistribution {
-    /**
-     * Notifies client which file references to download. Used to start downloading early (while
-     * preparing application package).
-     *
-     * @param hostName       host which should be notified about file references to download
-     * @param port           port which should be used when notifying
-     * @param fileReferences set of file references to start downloading
-     */
-    // TODO: Remove when 8.399 is oldest config model version in use
-    default void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
-        triggerDownload(hostName, port, fileReferences);
-    }
 
     /**
      * Notifies client which file references to download. Used to trigger downloading early (while

@@ -30,40 +30,40 @@ public class ModelIdResolver {
 
     private static Map<String, ProvidedModel> setupProvidedModels() {
         var m = new HashMap<String, ProvidedModel>();
-        register(m, "minilm-l6-v2",          "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx", Set.of(ONNX_MODEL));
-        register(m, "mpnet-base-v2",         "https://data.vespa.oath.cloud/onnx_models/sentence-all-mpnet-base-v2.onnx", Set.of(ONNX_MODEL));
-        register(m, "bert-base-uncased",     "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt", Set.of(BERT_VOCAB));
-        register(m, "flan-t5-vocab",         "https://data.vespa.oath.cloud/onnx_models/flan-t5-spiece.model", Set.of());
-        register(m, "flan-t5-small-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-encoder-model.onnx", Set.of(ONNX_MODEL));
-        register(m, "flan-t5-small-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-decoder-model.onnx", Set.of(ONNX_MODEL));
-        register(m, "flan-t5-base-encoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-encoder-model.onnx", Set.of(ONNX_MODEL));
-        register(m, "flan-t5-base-decoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-decoder-model.onnx", Set.of(ONNX_MODEL));
-        register(m, "flan-t5-large-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-encoder-model.onnx", Set.of(ONNX_MODEL));
-        register(m, "flan-t5-large-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-decoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "minilm-l6-v2",          "https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx", Set.of(ONNX_MODEL));
+        register(m, "mpnet-base-v2",         "https://data.vespa-cloud.com/onnx_models/sentence-all-mpnet-base-v2.onnx", Set.of(ONNX_MODEL));
+        register(m, "bert-base-uncased",     "https://data.vespa-cloud.com/onnx_models/bert-base-uncased-vocab.txt", Set.of(BERT_VOCAB));
+        register(m, "flan-t5-vocab",         "https://data.vespa-cloud.com/onnx_models/flan-t5-spiece.model", Set.of());
+        register(m, "flan-t5-small-encoder", "https://data.vespa-cloud.com/onnx_models/flan-t5-small-encoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-small-decoder", "https://data.vespa-cloud.com/onnx_models/flan-t5-small-decoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-base-encoder",  "https://data.vespa-cloud.com/onnx_models/flan-t5-base-encoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-base-decoder",  "https://data.vespa-cloud.com/onnx_models/flan-t5-base-decoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-large-encoder", "https://data.vespa-cloud.com/onnx_models/flan-t5-large-encoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-large-decoder", "https://data.vespa-cloud.com/onnx_models/flan-t5-large-decoder-model.onnx", Set.of(ONNX_MODEL));
 
-        register(m, "multilingual-e5-base", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/model.onnx", Set.of(ONNX_MODEL));
-        register(m, "multilingual-e5-base-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "multilingual-e5-base", "https://data.vespa-cloud.com/onnx_models/multilingual-e5-base/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "multilingual-e5-base-vocab", "https://data.vespa-cloud.com/onnx_models/multilingual-e5-base/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        register(m, "multilingual-e5-small", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small/model.onnx", Set.of(ONNX_MODEL));
-        register(m, "multilingual-e5-small-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "multilingual-e5-small", "https://data.vespa-cloud.com/onnx_models/multilingual-e5-small/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "multilingual-e5-small-vocab", "https://data.vespa-cloud.com/onnx_models/multilingual-e5-small/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        register(m, "multilingual-e5-small-cpu-friendly", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small-cpu-friendly/model.onnx", Set.of(ONNX_MODEL));
-        register(m, "multilingual-e5-small-cpu-friendly-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small-cpu-friendly/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "multilingual-e5-small-cpu-friendly", "https://data.vespa-cloud.com/onnx_models/multilingual-e5-small-cpu-friendly/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "multilingual-e5-small-cpu-friendly-vocab", "https://data.vespa-cloud.com/onnx_models/multilingual-e5-small-cpu-friendly/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        register(m, "e5-small-v2", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/model.onnx", Set.of(ONNX_MODEL));
-        register(m, "e5-small-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "e5-small-v2", "https://data.vespa-cloud.com/onnx_models/e5-small-v2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-small-v2-vocab", "https://data.vespa-cloud.com/onnx_models/e5-small-v2/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        register(m, "e5-small-v2-cpu-friendly", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2-cpu-friendly/model.onnx", Set.of(ONNX_MODEL));
-        register(m, "e5-small-v2-cpu-friendly-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2-cpu-friendly/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "e5-small-v2-cpu-friendly", "https://data.vespa-cloud.com/onnx_models/e5-small-v2-cpu-friendly/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-small-v2-cpu-friendly-vocab", "https://data.vespa-cloud.com/onnx_models/e5-small-v2-cpu-friendly/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        register(m, "e5-base-v2", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", Set.of(ONNX_MODEL));
-        register(m, "e5-base-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "e5-base-v2", "https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-base-v2-vocab", "https://data.vespa-cloud.com/onnx_models/e5-base-v2/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        register(m, "e5-large-v2", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/model.onnx", Set.of(ONNX_MODEL));
-        register(m, "e5-large-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "e5-large-v2", "https://data.vespa-cloud.com/onnx_models/e5-large-v2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-large-v2-vocab", "https://data.vespa-cloud.com/onnx_models/e5-large-v2/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        register(m, "mistral-7b",    "https://data.vespa.oath.cloud/gguf_models/mistral-7b-instruct-v0.1.Q6_K.gguf", Set.of(GGUF_MODEL));
-        register(m, "mistral-7b-q8", "https://data.vespa.oath.cloud/gguf_models/mistral-7b-instruct-v0.1.Q8_0.gguf", Set.of(GGUF_MODEL));
+        register(m, "mistral-7b",    "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q6_K.gguf", Set.of(GGUF_MODEL));
+        register(m, "mistral-7b-q8", "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q8_0.gguf", Set.of(GGUF_MODEL));
         return Map.copyOf(m);
     }
 

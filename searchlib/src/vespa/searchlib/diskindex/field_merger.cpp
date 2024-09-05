@@ -171,7 +171,7 @@ FieldMerger::read_mapping_files()
 
         // Open word mapping file
         std::string old2newname = createTmpPath(_field_dir, oi.getIndex()) + "/old2new.dat";
-        wordNumMapping.readMappingFile(old2newname, _fusion_out_index.get_tune_file_indexing()._read);
+        wordNumMapping.readMappingFile(old2newname);
     }
 
     return true;
