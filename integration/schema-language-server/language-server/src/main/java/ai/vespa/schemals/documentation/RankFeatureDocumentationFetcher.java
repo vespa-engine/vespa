@@ -35,7 +35,7 @@ public class RankFeatureDocumentationFetcher extends ContentFetcher {
             String name = tr.child(0).text();
             name = name.replaceAll(", ", ",").replaceAll("input_1,input_2,...", "input,...");
 
-            String content = "## " + name + "\n" + converter.convert(tr.child(2).html());
+            String content = converter.convert(tr.child(2).html());
             content += "\nDefault: " + tr.child(1).text();
             result.put(name, content);
         }

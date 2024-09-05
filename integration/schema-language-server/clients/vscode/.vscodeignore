@@ -9,3 +9,4 @@ src/**
 **/*.ts
 node_modules
 esbuild.js
+out/

@@ -70,13 +70,6 @@
     </dependency>
   </dependencies>
   <build>
-
-    <resources>
-      <resource>
-        <directory>target/generated-resources</directory>
-      </resource>
-    </resources>
-
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

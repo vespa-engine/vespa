@@ -23,6 +23,7 @@ import com.vladsch.flexmark.util.data.MutableDataSet;
 /**
  * ContentFetcher
  * Common logic for setting options for HTML -> Markdown converter and link resolving.
+ * Override {@link getMarkdownContent} to return a set of key/value pairs, where key gives a markdown file name, and value is markdown content.
  */
 public abstract class ContentFetcher {
     protected final static String URL_PREFIX = "https://docs.vespa.ai/";

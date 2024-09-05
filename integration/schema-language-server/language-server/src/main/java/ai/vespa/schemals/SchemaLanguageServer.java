@@ -1,5 +1,8 @@
 package ai.vespa.schemals;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,6 +27,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.documentation.FetchDocumentation;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.command.CommandRegistry;
 import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
@@ -34,6 +38,8 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
  * It handles start and shutdown, and initializes the server's capabilities
  */
 public class SchemaLanguageServer implements LanguageServer, LanguageClientAware {
+
+    public static Path serverPath = null;
 
     private WorkspaceService workspaceService;
     private SchemaTextDocumentService textDocumentService;
@@ -64,7 +70,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
         this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
-
+        serverPath = Paths.get(SchemaLanguageServer.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
     }    
 
     @Override
@@ -141,6 +147,31 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.schemaDiagnosticsHandler.connectClient(languageClient);
         this.schemaMessageHandler.connectClient(languageClient);
         this.client.logMessage(new MessageParams(MessageType.Log, "Language Server successfully connected to client."));
+
+        if (serverPath == null) return;
+
+        // Start a document fetching job in the background.
+        Path docPath = serverPath.resolve("hover");
+
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    FetchDocumentation.fetchDocs(docPath);
+                } catch(Exception e) {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        };
+        var logger = this.logger;
+        thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread th, Throwable ex) {
+                logger.error("Failed to fetch docs:" + ex.getMessage());
+            }
+        });
+        logger.info("Fetching docs to path: " + docPath.toAbsolutePath().toString());
+        thread.start();
 
     }
 }

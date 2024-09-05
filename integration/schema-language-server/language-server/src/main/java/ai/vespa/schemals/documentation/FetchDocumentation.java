@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * DocumentationFetcher
  */
-public class DocumentationFetcher {
+public class FetchDocumentation {
     private final static String SCHEMA_URL = "en/reference/schema-reference.html";
     private final static String RANK_FEATURE_URL = "en/reference/rank-features.html";
 
@@ -25,8 +25,7 @@ public class DocumentationFetcher {
         put("IMPORT FIELD", List.of( "IMPORT" ));
     }};
 
-    public static String fetchDocs() throws IOException {
-        Path targetPath = Paths.get("").resolve("target").resolve("generated-resources").resolve("hover");
+    public static void fetchDocs(Path targetPath) throws IOException {
         Files.createDirectories(targetPath);
         Files.createDirectories(targetPath.resolve("schema"));
         Files.createDirectories(targetPath.resolve("rankExpression"));
@@ -54,8 +53,6 @@ public class DocumentationFetcher {
         for (var entry : rankFeatureMarkdownContent.entrySet()) {
             Files.write(writePath.resolve(entry.getKey() + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
         }
-
-        return "LGTM";
     }
 
     private static String convertToToken(String h2Id) {
