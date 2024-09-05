@@ -346,4 +346,7 @@ public class SchemaDocument implements DocumentManager {
 	public SchemaDocumentLexer lexer() {
         return this.lexer;
 	}
+
+    @Override
+    public DocumentType getDocumentType() { return DocumentType.SCHEMA; }
 }

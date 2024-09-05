@@ -3,6 +3,7 @@ package ai.vespa.schemals.context;
 import java.io.PrintStream;
 
 import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.CodeLensParams;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
@@ -75,6 +76,10 @@ public class EventContextCreator {
 
     public EventExecuteCommandContext createContext(ExecuteCommandParams params) {
         return new EventExecuteCommandContext(scheduler, schemaIndex, messageHandler, params);
+    }
+
+    public EventDocumentContext createContext(CodeLensParams params) {
+        return new EventDocumentContext(scheduler, schemaIndex, messageHandler, params.getTextDocument());
     }
 
 }

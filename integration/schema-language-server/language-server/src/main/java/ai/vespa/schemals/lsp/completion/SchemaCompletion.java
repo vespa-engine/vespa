@@ -18,6 +18,7 @@ import ai.vespa.schemals.lsp.completion.provider.RankingExpressionCompletion;
 import ai.vespa.schemals.lsp.completion.provider.SimpleColonCompletion;
 import ai.vespa.schemals.lsp.completion.provider.StructFieldCompletion;
 import ai.vespa.schemals.lsp.completion.provider.TypeCompletion;
+import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
 
 /**
  * Responsible for LSP textDocument/completion requests.
@@ -41,6 +42,10 @@ public class SchemaCompletion {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
         if (StringUtils.isInsideComment(context.document.getCurrentContent(), context.position)) {
+            return ret;
+        }
+
+        if (context.document.getDocumentType() != DocumentType.SCHEMA && context.document.getDocumentType() != DocumentType.PROFILE) {
             return ret;
         }
 

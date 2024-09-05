@@ -10,6 +10,12 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public interface DocumentManager {
 
+    public enum DocumentType {
+        SCHEMA,
+        PROFILE,
+        YQL
+    }
+
     public void updateFileContent(String content);
     public void updateFileContent(String content, Integer version);
 
@@ -27,4 +33,6 @@ public interface DocumentManager {
     public String getCurrentContent();
 
     public VersionedTextDocumentIdentifier getVersionedTextDocumentIdentifier();
+
+    public DocumentType getDocumentType();
 }

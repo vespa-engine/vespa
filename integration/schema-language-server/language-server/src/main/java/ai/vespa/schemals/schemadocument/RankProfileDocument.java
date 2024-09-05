@@ -142,4 +142,7 @@ public class RankProfileDocument implements DocumentManager {
 	public SchemaDocumentLexer lexer() {
         return this.lexer;
 	}
+
+    @Override
+    public DocumentType getDocumentType() { return DocumentType.PROFILE; }
 }

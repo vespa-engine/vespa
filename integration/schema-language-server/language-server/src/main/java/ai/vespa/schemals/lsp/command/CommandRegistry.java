@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 
 import ai.vespa.schemals.lsp.command.commandtypes.DocumentOpen;
 import ai.vespa.schemals.lsp.command.commandtypes.DocumentParse;
+import ai.vespa.schemals.lsp.command.commandtypes.RunVespaQuery;
 import ai.vespa.schemals.lsp.command.commandtypes.CommandList;
 import ai.vespa.schemals.lsp.command.commandtypes.SchemaCommand;
 
@@ -32,6 +33,10 @@ public class CommandRegistry {
         COMMAND_LIST {
             public String title() { return "Command list"; }
             public SchemaCommand construct() { return new CommandList(); }
+        },
+        RUN_VESPA_QUERY {
+            public String title() { return "Run Vespa query"; }
+            public SchemaCommand construct() { return new RunVespaQuery(); }
         }
     }
 

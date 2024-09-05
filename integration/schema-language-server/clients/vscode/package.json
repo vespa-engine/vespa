@@ -33,7 +33,8 @@
         ],
         "extensions": [
           ".sd",
-          ".profile"
+          ".profile",
+          ".yql"
         ],
         "configuration": "./language-configuration.json"
       }

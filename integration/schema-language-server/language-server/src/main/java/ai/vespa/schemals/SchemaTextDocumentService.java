@@ -47,6 +47,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
+import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
@@ -57,6 +58,7 @@ import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.codeaction.SchemaCodeAction;
+import ai.vespa.schemals.lsp.codelens.SchemaCodeLens;
 import ai.vespa.schemals.lsp.completion.SchemaCompletion;
 import ai.vespa.schemals.lsp.definition.SchemaDefinition;
 import ai.vespa.schemals.lsp.documentsymbols.SchemaDocumentSymbols;
@@ -158,7 +160,16 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams codeLensParams) {
-        return null;
+
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            try {
+                EventDocumentContext context = eventContextCreator.createContext(codeLensParams);
+                return SchemaCodeLens.codeLens(context);
+            } catch (Exception e) {
+                logger.error("Error during code lens request: " + e.getMessage());
+            }
+            return List.of();
+        });
     }
 
     @Override
