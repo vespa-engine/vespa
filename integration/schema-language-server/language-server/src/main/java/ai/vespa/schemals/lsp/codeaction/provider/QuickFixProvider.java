@@ -405,7 +405,6 @@ public class QuickFixProvider implements CodeActionProvider {
         if (symbol.isEmpty()) return null;
 
         SchemaNode node = symbol.get().getNode().getParent();
-        CSTUtils.printTree(context.logger, node);
 
         Optional<SchemaNode> indexingNode = Optional.empty();
         for (SchemaNode child : node) {
@@ -419,7 +418,10 @@ public class QuickFixProvider implements CodeActionProvider {
 
         CodeAction action = basicQuickFix("Add attribute as indexing attribute", diagnostic);
 
-        if (indexingNode.isEmpty()) {
+        if (indexingNode.isPresent()) {
+            action.setEdit(CodeActionUtils.simpleEdit(context, indexingNode.get().getRange().getEnd(), " | attribute"));
+
+        } else {
             // Add indexing node as well
             Optional<SchemaNode> rBraceNode = Optional.empty();
 
@@ -462,10 +464,6 @@ public class QuickFixProvider implements CodeActionProvider {
             }
 
             action.setEdit(CodeActionUtils.simpleEdit(context, rBraceNode.get().getRange().getStart(), newText));
-        } else {
-            // TODO: append attrbiute to the ILscript
-            
-            action.setEdit(CodeActionUtils.simpleEdit(context, indexingNode.get().getRange().getEnd(), " | attribute"));
         }
 
         return action;
