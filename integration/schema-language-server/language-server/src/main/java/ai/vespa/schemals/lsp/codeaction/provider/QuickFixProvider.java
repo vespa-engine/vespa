@@ -524,7 +524,7 @@ public class QuickFixProvider implements CodeActionProvider {
                 case FEATURES_INHERITS_NON_PARENT:
                     result.add(Either.forRight(fixFeaturesInheritsNonParent(context, diagnostic)));
                     break;
-                case FIELD_ARGUEMNT_MISSING_INDEXING_TYPE:
+                case FIELD_ARGUEMENT_MISSING_INDEXING_TYPE:
                     result.add(Either.forRight(fixFieldArgumentMissingIndexingType(context, diagnostic)));
                     break;
                 default:

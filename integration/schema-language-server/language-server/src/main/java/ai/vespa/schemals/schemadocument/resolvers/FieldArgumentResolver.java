@@ -50,7 +50,7 @@ public class FieldArgumentResolver {
             .setRange(node.getRange())
             .setMessage("The referenced field are missing one of the following indexing types: " + missingFields)
             .setSeverity(DiagnosticSeverity.Error)
-            .setCode(SchemaDiagnostic.DiagnosticCode.FIELD_ARGUEMNT_MISSING_INDEXING_TYPE)
+            .setCode(SchemaDiagnostic.DiagnosticCode.FIELD_ARGUMENT_MISSING_INDEXING_TYPE)
             .build());
 
     }
