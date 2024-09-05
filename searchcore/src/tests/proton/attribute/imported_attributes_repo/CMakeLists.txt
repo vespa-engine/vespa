@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_imported_attributes_repo_test_app TEST
     imported_attributes_repo_test.cpp
     DEPENDS
     searchcore_attribute
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_imported_attributes_repo_test_app COMMAND searchcore_imported_attributes_repo_test_app)
