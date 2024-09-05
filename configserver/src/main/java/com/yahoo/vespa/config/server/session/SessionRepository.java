@@ -692,7 +692,7 @@ public class SessionRepository {
         return created.plus(sessionLifetime).isBefore(clock.instant());
     }
 
-    public void deleteExpiredRemoteAndLocalSessions(Clock clock, Predicate<Session> sessionIsActiveForApplication) {
+    public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication) {
         // All known sessions, both local (file) and remote (zookeeper)
         Set<Long> sessions = getLocalSessionsIdsFromFileSystem();
         sessions.addAll(getRemoteSessionsFromZooKeeper());
@@ -816,7 +816,7 @@ public class SessionRepository {
             for (File session : sessions) {
                 try {
                     if (Files.getLastModifiedTime(session.toPath()).toInstant()
-                             .isAfter(clock.instant().minus(Duration.ofSeconds(30))))
+                             .isAfter(clock.instant().minus(Duration.ofMinutes(5))))
                         newSessions.add(Long.parseLong(session.getName()));
                 } catch (IOException e) {
                     log.log(Level.FINE, "Unable to find last modified time for " + session.toPath());
