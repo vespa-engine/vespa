@@ -211,6 +211,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
+        addSecrets(cluster, spec, deployState);
 
         addProcessing(deployState, spec, cluster, context);
         addSearch(deployState, spec, cluster, context);
@@ -299,6 +300,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static SimpleComponent zookeeperComponent(String idSpec, Container container) {
         String configId = container.getConfigId();
         return new SimpleComponent(new ComponentModel(idSpec, null, "zookeeper-server", configId));
+    }
+
+    private void addSecrets(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
+        if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublic())
+            return;
+        Element secretsElement = XML.getChild(spec, "secrets");
+        if (secretsElement != null) {
+            CloudSecrets secretsConfig = new CloudSecrets();
+            for (Element element : XML.getChildren(secretsElement)) {
+                String key = element.getTagName();
+                String name = element.getAttribute("name");
+                String vault = element.getAttribute("vault");
+                secretsConfig.addSecret(key, name, vault);
+            }
+            cluster.addComponent(secretsConfig);
+        }
     }
 
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {

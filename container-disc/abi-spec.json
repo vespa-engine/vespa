@@ -208,5 +208,31 @@
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
+  },
+  "ai.vespa.secret.Secret" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.lang.String current()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.secret.Secrets" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract ai.vespa.secret.Secret get(java.lang.String)"
+    ],
+    "fields" : [ ]
   }
 }
