@@ -94,6 +94,7 @@ import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -346,7 +347,7 @@ public class SessionRepository {
         if (watcher != null) watcher.close();
         localSessionCache.remove(sessionId);
         NestedTransaction transaction = new NestedTransaction();
-        transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
+        transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).toPath())));
         transaction.commit();
     }
 
@@ -970,7 +971,7 @@ public class SessionRepository {
                 File[] sdFiles = sdDir.listFiles();
                 if (sdFiles != null) {
                     Files.createDirectories(schemasDir.toPath());
-                    List.of(sdFiles).forEach(file -> Exceptions.uncheck(
+                    List.of(sdFiles).forEach(file -> uncheck(
                             () -> Files.move(file.toPath(),
                                              schemasDir.toPath().resolve(file.toPath().getFileName()),
                                              StandardCopyOption.REPLACE_EXISTING)));
@@ -1156,7 +1157,7 @@ public class SessionRepository {
     private static class FileOperations {
 
         /** Creates an operation which recursively deletes the given path */
-        public static DeleteOperation delete(String pathToDelete) {
+        public static DeleteOperation delete(java.nio.file.Path pathToDelete) {
             return new DeleteOperation(pathToDelete);
         }
 
@@ -1172,18 +1173,15 @@ public class SessionRepository {
      * Recursively deletes this path and everything below.
      * Succeeds with no action if the path does not exist.
      */
-    private static class DeleteOperation implements FileOperation {
-
-        private final String pathToDelete;
-
-        DeleteOperation(String pathToDelete) {
-            this.pathToDelete = pathToDelete;
-        }
+    private record DeleteOperation(java.nio.file.Path pathToDelete) implements FileOperation {
 
         @Override
         public void commit() {
-            // TODO: Check delete access in prepare()
-            IOUtils.recursiveDeleteDir(new File(pathToDelete));
+            var tempDir = uncheck(() -> Files.createTempDirectory("delete"));
+            uncheck(() -> {
+                Files.move(pathToDelete, tempDir, StandardCopyOption.ATOMIC_MOVE);
+                IOUtils.recursiveDeleteDir(tempDir.toFile());
+            });
         }
 
     }
