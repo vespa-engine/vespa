@@ -95,6 +95,7 @@ import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.nio.file.Files.createTempDirectory;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -347,7 +348,8 @@ public class SessionRepository {
         if (watcher != null) watcher.close();
         localSessionCache.remove(sessionId);
         NestedTransaction transaction = new NestedTransaction();
-        transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).toPath())));
+        var dir = tenantFileSystemDirs.sessionsPath().getParentFile();
+        transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).toPath(), dir.toPath())));
         transaction.commit();
     }
 
@@ -947,7 +949,7 @@ public class SessionRepository {
         // Copy app atomically: Copy to a temp dir and move to destination
         java.nio.file.Path tempDestinationDir = null;
         try {
-            tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
+            tempDestinationDir = createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
             log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
             IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
             moveSearchDefinitionsToSchemasDir(tempDestinationDir);
@@ -1157,8 +1159,8 @@ public class SessionRepository {
     private static class FileOperations {
 
         /** Creates an operation which recursively deletes the given path */
-        public static DeleteOperation delete(java.nio.file.Path pathToDelete) {
-            return new DeleteOperation(pathToDelete);
+        public static DeleteOperation delete(java.nio.file.Path pathToDelete, java.nio.file.Path tenantPath) {
+            return new DeleteOperation(pathToDelete, tenantPath);
         }
 
     }
@@ -1173,11 +1175,13 @@ public class SessionRepository {
      * Recursively deletes this path and everything below.
      * Succeeds with no action if the path does not exist.
      */
-    private record DeleteOperation(java.nio.file.Path pathToDelete) implements FileOperation {
+    private record DeleteOperation(java.nio.file.Path pathToDelete, java.nio.file.Path tenantPath) implements FileOperation {
 
         @Override
         public void commit() {
-            var tempDir = uncheck(() -> Files.createTempDirectory("delete"));
+            // Make sure to create a temp dir in the same file system as the path to delete (and don't use the same path
+            // as for sessions, as they are regularly scanned and expected to be a number)
+            var tempDir = uncheck(() -> createTempDirectory(tenantPath, "delete"));
             uncheck(() -> {
                 Files.move(pathToDelete, tempDir, StandardCopyOption.ATOMIC_MOVE);
                 IOUtils.recursiveDeleteDir(tempDir.toFile());
