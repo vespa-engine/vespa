@@ -815,8 +815,9 @@ public class SessionRepository {
         if (sessions != null) {
             for (File session : sessions) {
                 try {
+                    Duration consideredNew = Duration.ofSeconds(Math.min(configserverConfig.sessionLifetime(), 300));
                     if (Files.getLastModifiedTime(session.toPath()).toInstant()
-                             .isAfter(clock.instant().minus(Duration.ofMinutes(5))))
+                             .isAfter(clock.instant().minus(consideredNew)))
                         newSessions.add(Long.parseLong(session.getName()));
                 } catch (IOException e) {
                     log.log(Level.FINE, "Unable to find last modified time for " + session.toPath());
