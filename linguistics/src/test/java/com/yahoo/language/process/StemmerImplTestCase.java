@@ -20,13 +20,13 @@ public class StemmerImplTestCase {
 
     @Test
     public void requireThatStemIsNormalizedAndLowerCased() {
-        assertStem("FOO", List.of("foo"));
-        assertStem("a\u030A", List.of("\u00E5"));
+        assertStem("FOO", List.of("foo"), true);
+        assertStem("a\u030A", List.of("\u00E5"), false);
     }
 
     @Test
     public void requireThatOnlyIndexableTokensAreReturned() {
-        assertStem("foo. (bar)!", List.of("foo", "bar"));
+        assertStem("foo. (bar)!", List.of("foo", "bar"), true);
     }
 
     @Test
@@ -49,17 +49,17 @@ public class StemmerImplTestCase {
         assertEquals(List.of(new StemList("c"),
                                    new StemList("p"),
                                    new StemList("p")),
-                     stemmer.stem("c++", StemMode.SHORTEST, Language.ENGLISH));
+                     stemmer.stem("c++", Language.ENGLISH,StemMode.SHORTEST, true));
 
         token.setSpecialToken(true);
         assertEquals(List.of(new StemList("c++")),
-                     stemmer.stem("c++", StemMode.SHORTEST, Language.ENGLISH));
+                     stemmer.stem("c++", Language.ENGLISH, StemMode.SHORTEST, true));
     }
 
-    private static void assertStem(String input, List<String> expectedStems) {
+    private static void assertStem(String input, List<String> expectedStems, boolean removeAccents) {
         Stemmer stemmer = new StemmerImpl(new SimpleTokenizer(new SimpleNormalizer()));
         List<String> got = new ArrayList<>();
-        for (StemList word : stemmer.stem(input, StemMode.ALL, Language.ENGLISH)) {
+        for (StemList word : stemmer.stem(input, Language.ENGLISH, StemMode.ALL, removeAccents)) {
             got.add(word.get(0));
         }
         assertEquals(expectedStems, got);

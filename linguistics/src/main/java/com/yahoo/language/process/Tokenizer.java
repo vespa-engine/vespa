@@ -16,8 +16,8 @@ public interface Tokenizer {
      * @param input the string to tokenize. May be arbitrarily large.
      * @param language the language of the input string.
      * @param stemMode the stem mode applied on the returned tokens
-     * @param removeAccents if true accents and similar are removed from the returned tokens
-     * @return the tokens of the input String.
+     * @param removeAccents whether to normalize accents and similar
+     * @return the tokens of the input String
      * @throws ProcessingException If the underlying library throws an Exception.
      */
     Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents);
