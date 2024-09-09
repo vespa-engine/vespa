@@ -73,13 +73,6 @@ public class ValidationOverrides {
         return Optional.empty();
     }
 
-    // TODO: remove after 8.284 is gone
-    public boolean allows(String validationIdString, Instant now) {
-        Optional<ValidationId> validationId = ValidationId.from(validationIdString);
-        if (validationId.isEmpty()) return false; // unknown id -> not allowed
-        return allows(validationId.get(), now);
-    }
-
     /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
     public boolean allows(ValidationId validationId, Instant now) {
         for (Allow override : overrides) {
