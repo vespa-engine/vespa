@@ -550,7 +550,7 @@ public class Flags {
     public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
             "tcp-shrink-window", true,
             List.of("hmusum"), "2024-08-14", "2024-09-14",
-            "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default false",
+            "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default true",
             "Takes effect on next host-admin run");
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
