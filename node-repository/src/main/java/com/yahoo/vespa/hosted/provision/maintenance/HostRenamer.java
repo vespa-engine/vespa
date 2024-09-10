@@ -14,8 +14,10 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author mpolden
@@ -35,13 +37,12 @@ public class HostRenamer extends NodeRepositoryMaintainer {
     protected double maintain() {
         if (!nodeRepository().nodes().isWorking()) return 0.0;
         NodeList allNodes = nodeRepository().nodes().list();
-        String hostnameScheme = hostnameSchemeFlag.value();
         NodeList activeHosts = allNodes.nodeType(NodeType.host).state(Node.State.active);
         Set<ApplicationId> retiringApplications = applicationsOnRetiringHosts(activeHosts, allNodes);
         for (var host : activeHosts) {
-            if (!changeHostname(host, hostnameScheme)) continue;
-
             Set<ApplicationId> applicationsOnHost = applicationsOn(host, allNodes);
+            if (!changeHostname(host, applicationsOnHost)) continue;
+
             if (Collections.disjoint(retiringApplications, applicationsOnHost)) {
                 LOG.info("Deprovisioning " + host + " to change its hostname");
                 nodeRepository().nodes().deprovision(host.hostname(), Agent.system, nodeRepository().clock().instant());
@@ -67,8 +68,19 @@ public class HostRenamer extends NodeRepositoryMaintainer {
         return applications;
     }
 
-    private static boolean changeHostname(Node node, String wantedScheme) {
-        return !node.hostname().endsWith(".vespa-cloud.net") && "standard".equals(wantedScheme);
+    private boolean changeHostname(Node node, Set<ApplicationId> instances) {
+        if (node.hostname().endsWith(".vespa-cloud.net")) {
+            return false;
+        }
+        Set<String> wantedSchemes;
+        if (instances.isEmpty()) {
+            wantedSchemes = Set.of(hostnameSchemeFlag.value());
+        } else {
+            wantedSchemes = instances.stream()
+                                     .map(instance -> hostnameSchemeFlag.withApplicationId(Optional.of(instance)).value())
+                                     .collect(Collectors.toSet());
+        }
+        return wantedSchemes.size() == 1 && wantedSchemes.iterator().next().equals("standard");
     }
 
 }
