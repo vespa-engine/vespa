@@ -6,5 +6,4 @@ vespa_add_executable(searchlib_logdatastore_test_app TEST
     vespa_searchlib
     GTest::gtest
 )
-vespa_add_test(NAME searchlib_logdatastore_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/logdatastore_test.sh
-               DEPENDS searchlib_logdatastore_test_app)
+vespa_add_test(NAME searchlib_logdatastore_test_app COMMAND searchlib_logdatastore_test_app ENVIRONMENT VESPA_LOG_TARGET=file:vlog2.txt)

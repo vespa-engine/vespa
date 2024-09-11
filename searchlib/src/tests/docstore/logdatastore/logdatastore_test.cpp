@@ -14,6 +14,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
+#include <vespa/vespalib/test/test_data.h>
 #include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -138,8 +139,38 @@ checkStats(IDataStore &store,
 
 }
 
+class LogDataStoreTest : public ::testing::Test, public vespalib::test::TestData<LogDataStoreTest>
+{
+protected:
+    LogDataStoreTest();
+    ~LogDataStoreTest();
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+    static std::string _truncated_testdir;
+};
+
+LogDataStoreTest::LogDataStoreTest()
+: ::testing::Test(),
+TestData<LogDataStoreTest>()
+{
+}
+
+LogDataStoreTest::~LogDataStoreTest() = default;
+
+void
+LogDataStoreTest::SetUpTestSuite()
+{
+    setup_test_data(TEST_PATH("bug-7257706"), "build-test-data");
+}
+
+void
+LogDataStoreTest::TearDownTestSuite()
+{
+    tear_down_test_data();
+}
+
 #ifdef __linux__
-TEST(LogDataStoreTest, test_that_DirectIOPadding_works_accordng_to_spec)
+TEST_F(LogDataStoreTest, test_that_DirectIOPadding_works_accordng_to_spec)
 {
     constexpr ssize_t FILE_SIZE = 4_Ki*3;
     FastOS_File file("directio.test");
@@ -259,7 +290,7 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
     }
 }
 
-TEST(LogDataStoreTest, testGrowingChunkedBySize)
+TEST_F(LogDataStoreTest, testGrowingChunkedBySize)
 {
     LogDataStore::Config config;
     config.setMaxFileSize(100000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
@@ -269,7 +300,7 @@ TEST(LogDataStoreTest, testGrowingChunkedBySize)
     verifyGrowing(config, 40, 265);
 }
 
-TEST(LogDataStoreTest, testGrowingChunkedByNumLids)
+TEST_F(LogDataStoreTest, testGrowingChunkedByNumLids)
 {
     LogDataStore::Config config;
     config.setMaxNumLids(1000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
@@ -286,7 +317,7 @@ void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz
     EXPECT_TRUE(vespalib::memcmp_safe(a, buf.getData(), sz) == 0);
 }
 
-TEST(LogDataStoreTest, testTruncatedIdxFile)
+TEST_F(LogDataStoreTest, testTruncatedIdxFile)
 {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
@@ -294,14 +325,16 @@ TEST(LogDataStoreTest, testTruncatedIdxFile)
     MyTlSyncer tlSyncer;
     {
         // Files comes from the 'growing test'.
-        LogDataStore datastore(executor, TEST_PATH("bug-7257706"), config, GrowStrategy(),
+        LogDataStore datastore(executor, source_testdata(), config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQ(354ul, datastore.lastSyncToken());
     }
     const char * magic = "mumbo jumbo";
+    auto bug_7257706_truncated = build_testdata() + "/bug-7257706-truncated";
     {
-        std::filesystem::resize_file(std::filesystem::path("bug-7257706-truncated/1422358701368384000.idx"), 3830);
-        LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
+        std::filesystem::copy(source_testdata(), bug_7257706_truncated);
+        std::filesystem::resize_file(std::filesystem::path(bug_7257706_truncated + "/1422358701368384000.idx"), 3830);
+        LogDataStore datastore(executor, bug_7257706_truncated, config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQ(331ul, datastore.lastSyncToken());
         datastore.write(332, 7, magic, strlen(magic));
@@ -309,33 +342,79 @@ TEST(LogDataStoreTest, testTruncatedIdxFile)
         datastore.flush(datastore.initFlush(334));
     }
     {
-        LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
+        LogDataStore datastore(executor, bug_7257706_truncated, config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQ(334ul, datastore.lastSyncToken());
     }
+    if (!HasFailure()) {
+        std::filesystem::remove_all(bug_7257706_truncated);
+    }
 }
 
-TEST(LogDataStoreTest, testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved)
+TEST_F(LogDataStoreTest, testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved)
 {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
     vespalib::ThreadStackExecutor executor(1);
     MyTlSyncer tlSyncer;
-    LogDataStore datastore(executor, "dangling-test", config,
+    auto dangling_test = build_testdata() + "/dangling-test";
+    std::filesystem::copy(source_testdata(), dangling_test);
+    std::filesystem::copy(TEST_PATH("dangling"), dangling_test);
+    LogDataStore datastore(executor, dangling_test, config,
                            GrowStrategy(), TuneFileSummary(),
                            fileHeaderContext, tlSyncer, nullptr);
     EXPECT_EQ(354ul, datastore.lastSyncToken());
     EXPECT_EQ(4096u + 480u, datastore.getDiskHeaderFootprint());
     EXPECT_EQ(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
+    if (!HasFailure()) {
+        std::filesystem::remove_all(dangling_test);
+    }
 }
 
-TEST(LogDataStoreTest, testThatIncompleteCompactedFilesAreRemoved)
+namespace {
+
+class CopyFileChunk {
+    std::string _source_dir;
+    std::string _destination_dir;
+public:
+    CopyFileChunk(const std::string& source_dir, const std::string& destination_dir);
+    ~CopyFileChunk();
+    void copy(const std::string& source_basename, const std::string& destination_basename);
+};
+
+CopyFileChunk::CopyFileChunk(const std::string& source_dir, const std::string& destination_dir)
+    : _source_dir(source_dir),
+      _destination_dir(destination_dir)
+{
+}
+
+CopyFileChunk::~CopyFileChunk() = default;
+
+void
+CopyFileChunk::copy(const std::string& source_basename, const std::string& destination_basename)
+{
+    auto source_name = _source_dir + "/" + source_basename;
+    auto destination_name = _destination_dir + "/" + destination_basename;
+    std::filesystem::copy_file(source_name + ".dat", destination_name + ".dat");
+    std::filesystem::copy_file(source_name + ".idx", destination_name + ".idx");
+}
+
+}
+
+TEST_F(LogDataStoreTest, testThatIncompleteCompactedFilesAreRemoved)
 {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
     vespalib::ThreadStackExecutor executor(1);
     MyTlSyncer tlSyncer;
-    LogDataStore datastore(executor, "incompletecompact-test", config,
+    auto incompletecompact_test = build_testdata() + "/incompletecompact-test";
+    std::filesystem::copy(source_testdata(), incompletecompact_test);
+    std::string source_basename = "1422358701368384000";
+    CopyFileChunk cfc(source_testdata(), incompletecompact_test);
+    cfc.copy(source_basename, "2000000000000000000");
+    cfc.copy(source_basename, "2000000000000000001");
+    cfc.copy(source_basename, "2422358701368384000");
+    LogDataStore datastore(executor, incompletecompact_test, config,
                            GrowStrategy(), TuneFileSummary(),
                            fileHeaderContext, tlSyncer, nullptr);
     EXPECT_EQ(354ul, datastore.lastSyncToken());
@@ -345,6 +424,9 @@ TEST(LogDataStoreTest, testThatIncompleteCompactedFilesAreRemoved)
     EXPECT_TRUE(files.find(FileChunk::NameId(1422358701368384000)) != files.end());
     EXPECT_TRUE(files.find(FileChunk::NameId(2000000000000000000)) != files.end());
     EXPECT_TRUE(files.find(FileChunk::NameId(2422358701368384000)) != files.end());
+    if (!HasFailure()) {
+        std::filesystem::remove_all(incompletecompact_test);
+    }
 }
 
 class VisitStore {
@@ -371,7 +453,7 @@ private:
 
 VisitStore::~VisitStore() =default;
 
-TEST(LogDataStoreTest, test_visit_cache_does_not_cache_empty_ones_and_is_able_to_access_some_backing_store)
+TEST_F(LogDataStoreTest, test_visit_cache_does_not_cache_empty_ones_and_is_able_to_access_some_backing_store)
 {
     const char * A7 = "aAaAaAa";
     VisitStore store;
@@ -571,7 +653,7 @@ verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, siz
     EXPECT_GE(memory_used+20,  cs.memory_used);
 }
 
-TEST(LogDataStoreTest, Control_static_memory_usage)
+TEST_F(LogDataStoreTest, Control_static_memory_usage)
 {
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
     IDocumentStore &ds = vcs.getStore();
@@ -582,7 +664,7 @@ TEST(LogDataStoreTest, Control_static_memory_usage)
     EXPECT_EQ(752u + mutex_size + 3 * string_size, usage.usedBytes());
 }
 
-TEST(LogDataStoreTest, test_the_update_cache_strategy)
+TEST_F(LogDataStoreTest, test_the_update_cache_strategy)
 {
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
     IDocumentStore & ds = vcs.getStore();
@@ -614,7 +696,7 @@ TEST(LogDataStoreTest, test_the_update_cache_strategy)
     verifyCacheStats(ds2.getCacheStats(), 0, 1, 1, 302, "fourth read 7");
 }
 
-TEST(LogDataStoreTest, test_the_invalidate_cache_strategy)
+TEST_F(LogDataStoreTest, test_the_invalidate_cache_strategy)
 {
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::INVALIDATE);
     IDocumentStore & ds = vcs.getStore();
@@ -640,7 +722,7 @@ TEST(LogDataStoreTest, test_the_invalidate_cache_strategy)
     verifyCacheStats(ds.getCacheStats(), 0, 3, 1, 241, "third read 7");
 }
 
-TEST(LogDataStoreTest, test_that_the_integrated_visit_cache_works)
+TEST_F(LogDataStoreTest, test_that_the_integrated_visit_cache_works)
 {
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::INVALIDATE);
     IDocumentStore & ds = vcs.getStore();
@@ -690,7 +772,7 @@ TEST(LogDataStoreTest, test_that_the_integrated_visit_cache_works)
     verifyCacheStats(ds.getCacheStats(), 101, 108, 99, BASE_SZ - 611, "tenth visit");
 }
 
-TEST(LogDataStoreTest, testWriteRead)
+TEST_F(LogDataStoreTest, testWriteRead)
 {
     std::filesystem::remove_all(std::filesystem::path("empty"));
     const char * bufA = "aaaaaaaaaaaaaaaaaaaaa";
@@ -765,7 +847,7 @@ TEST(LogDataStoreTest, testWriteRead)
     std::filesystem::remove_all(std::filesystem::path("empty"));
 }
 
-TEST(LogDataStoreTest, requireThatFlushTimeIsAvailableAfterFlush)
+TEST_F(LogDataStoreTest, requireThatFlushTimeIsAvailableAfterFlush)
 {
     DirectoryHandler testDir("flushtime");
     vespalib::system_time before(vespalib::system_clock::now());
@@ -800,7 +882,7 @@ private:
     uint32_t _mod;
 };
 
-TEST(LogDataStoreTest, testBucketDensityComputer)
+TEST_F(LogDataStoreTest, testBucketDensityComputer)
 {
     DummyBucketizer bucketizer(100);
     BucketDensityComputer bdc(&bucketizer);
@@ -931,7 +1013,7 @@ struct Fixture {
     }
 };
 
-TEST(LogDataStoreTest, require_that_docIdLimit_is_updated_when_inserting_entries)
+TEST_F(LogDataStoreTest, require_that_docIdLimit_is_updated_when_inserting_entries)
 {
     {
         Fixture f("tmp", false);
@@ -951,7 +1033,7 @@ TEST(LogDataStoreTest, require_that_docIdLimit_is_updated_when_inserting_entries
     }
 }
 
-TEST(LogDataStoreTest, require_that_docIdLimit_at_idx_file_creation_time_is_written_to_idx_file_header)
+TEST_F(LogDataStoreTest, require_that_docIdLimit_at_idx_file_creation_time_is_written_to_idx_file_header)
 {
     std::vector<uint32_t> expLimits = {std::numeric_limits<uint32_t>::max(),14,104,204};
     {
@@ -968,7 +1050,7 @@ TEST(LogDataStoreTest, require_that_docIdLimit_at_idx_file_creation_time_is_writ
     }
 }
 
-TEST(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_entries_from_old_files_skipped_during_load)
+TEST_F(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_entries_from_old_files_skipped_during_load)
 {
     {
         Fixture f("tmp", false);
@@ -996,7 +1078,7 @@ TEST(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_entries_from_
     }
 }
 
-TEST(LogDataStoreTest, require_that_getLid_is_protected_by_docIdLimit)
+TEST_F(LogDataStoreTest, require_that_getLid_is_protected_by_docIdLimit)
 {
     Fixture f;
     f.write(1);
@@ -1005,7 +1087,7 @@ TEST(LogDataStoreTest, require_that_getLid_is_protected_by_docIdLimit)
     EXPECT_FALSE(f.store.getLid(guard, 2).valid());
 }
 
-TEST(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_shrunk)
+TEST_F(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_shrunk)
 {
     Fixture f;
     f.write(1).write(2);
@@ -1022,7 +1104,7 @@ TEST(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_shrunk)
     EXPECT_EQ(8u, before.usedBytes() - after.usedBytes());
 }
 
-TEST(LogDataStoreTest, require_that_lid_space_can_be_increased_after_being_compacted_and_then_shrunk)
+TEST_F(LogDataStoreTest, require_that_lid_space_can_be_increased_after_being_compacted_and_then_shrunk)
 {
     Fixture f;
     f.write(1).write(3);
@@ -1034,7 +1116,7 @@ TEST(LogDataStoreTest, require_that_lid_space_can_be_increased_after_being_compa
     f.assertContent({1,2}, 3, 1024, "shrinkLidSpace");
 }
 
-TEST(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
+TEST_F(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
 {
     Fixture f;
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
@@ -1043,7 +1125,7 @@ TEST(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
     EXPECT_EQ(192u + 3 * sizeof(std::string), usage.usedBytes());
 }
 
-TEST(LogDataStoreTest, require_that_lid_space_can_be_shrunk_only_after_read_guards_are_deleted)
+TEST_F(LogDataStoreTest, require_that_lid_space_can_be_shrunk_only_after_read_guards_are_deleted)
 {
     Fixture f;
     f.write(1).write(2);
@@ -1068,7 +1150,7 @@ LogDataStore::NameIdSet create(std::vector<size_t> list) {
     return l;
 }
 
-TEST(LogDataStoreTest, require_that_findIncompleteCompactedFiles_does_expected_filtering)
+TEST_F(LogDataStoreTest, require_that_findIncompleteCompactedFiles_does_expected_filtering)
 {
     EXPECT_TRUE(LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,202,204})).empty());
     LogDataStore::NameIdSet toRemove = LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,204}));
@@ -1085,7 +1167,7 @@ TEST(LogDataStoreTest, require_that_findIncompleteCompactedFiles_does_expected_f
 
 }
 
-TEST(LogDataStoreTest, require_that_config_equality_operator_detects_inequality)
+TEST_F(LogDataStoreTest, require_that_config_equality_operator_detects_inequality)
 {
     using C = LogDataStore::Config;
     EXPECT_TRUE(C() == C());
