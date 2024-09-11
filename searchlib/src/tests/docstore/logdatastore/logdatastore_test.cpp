@@ -258,13 +258,15 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
         EXPECT_GE(maxFiles, datastore.getAllActiveFiles().size());
     }
 }
+
 TEST(LogDataStoreTest, testGrowingChunkedBySize)
 {
     LogDataStore::Config config;
     config.setMaxFileSize(100000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::ZSTD, 9, 60}, 1000});
-    verifyGrowing(config, 40, 120);
+    // Number of generated files depends on timing
+    verifyGrowing(config, 40, 265);
 }
 
 TEST(LogDataStoreTest, testGrowingChunkedByNumLids)
