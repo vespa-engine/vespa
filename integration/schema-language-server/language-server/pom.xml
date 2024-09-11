@@ -107,16 +107,49 @@
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
           <execution>
+            <id>create-python-venv</id>
+            <phase>generate-sources</phase>
             <goals>
               <goal>exec</goal>
             </goals>
-            <phase>generate-sources</phase>
             <configuration>
-              <executable>${project.basedir}/src/main/python/buildDocs.sh</executable>
+              <executable>python3</executable>
               <arguments>
+                <argument>-m</argument>
+                <argument>venv</argument>
+                <argument>target/venv</argument>
+              </arguments>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>install-python-requirements</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>target/venv/bin/pip</executable>
+              <arguments>
+                <argument>install</argument>
+                <argument>-r</argument>
+                <argument>${project.basedir}/src/main/python/requirements.txt</argument>
+              </arguments>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>build-docs</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>target/venv/bin/python</executable>
+              <arguments>
+                <argument>${project.basedir}/src/main/python/buildDocs.py</argument>
                 <argument>${project.basedir}/target/generated-resources/hover</argument>
               </arguments>
-              <workingDirectory>src/main/python/</workingDirectory>
             </configuration>
           </execution>
         </executions>
