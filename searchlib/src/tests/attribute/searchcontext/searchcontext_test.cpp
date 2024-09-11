@@ -25,6 +25,7 @@
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <filesystem>
 #include <initializer_list>
 #include <set>
 
@@ -159,7 +160,9 @@ protected:
     ConfigMap _integerCfg;
     ConfigMap _floatCfg;
     ConfigMap _stringCfg;
+    static std::string _test_dir;
 
+    static AttributePtr create_as(const AttributeVector& attr, const std::string& name_suffix);
 
     template <typename T>
     void fillVector(std::vector<T> & values, size_t numValues);
@@ -301,8 +304,36 @@ protected:
 public:
     SearchContextTest();
     ~SearchContextTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
 };
 
+std::string SearchContextTest::_test_dir = "test_data";
+
+SearchContextTest::SearchContextTest() :
+    _integerCfg(),
+    _floatCfg(),
+    _stringCfg()
+{
+    initIntegerConfig();
+    initFloatConfig();
+    initStringConfig();
+}
+
+SearchContextTest::~SearchContextTest() = default;
+
+void
+SearchContextTest::SetUpTestSuite()
+{
+    std::filesystem::remove_all(_test_dir);
+    std::filesystem::create_directory(_test_dir);
+}
+
+void
+SearchContextTest::TearDownTestSuite()
+{
+    std::filesystem::remove_all(_test_dir);
+}
 
 void
 SearchContextTest::addReservedDoc(AttributeVector &ptr)
@@ -605,9 +636,9 @@ SearchContextTest::testMultiValueSearchHelper(V & vec, const std::vector<T> & va
 }
 
 AttributePtr
-create_as(const AttributeVector& attr, const std::string& name_suffix)
+SearchContextTest::create_as(const AttributeVector& attr, const std::string& name_suffix)
 {
-    return AttributeFactory::createAttribute(attr.getName() + name_suffix, attr.getConfig());
+    return AttributeFactory::createAttribute(_test_dir + "/" + attr.getName() + name_suffix, attr.getConfig());
 }
 
 
@@ -1620,7 +1651,7 @@ SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::str
     a->addDocs(15);
     auto & va = dynamic_cast<VectorType &>(*a);
     resetAttribute(va, startValue); // triggers vector vector in posting list (count 15)
-    AttributePtr b = AttributeFactory::createAttribute(name + "-save", cfg);
+    AttributePtr b = AttributeFactory::createAttribute(_test_dir + "/" + name + "-save", cfg);
     EXPECT_TRUE(a->save(b->getBaseFileName()));
     EXPECT_TRUE(b->load());
     b->clearDoc(6); // goes from vector vector to single vector with count 14
@@ -2008,18 +2039,6 @@ SearchContextTest::initStringConfig()
         _stringCfg["w-fs-str"] = cfg;
     }
 }
-
-SearchContextTest::SearchContextTest() :
-    _integerCfg(),
-    _floatCfg(),
-    _stringCfg()
-{
-    initIntegerConfig();
-    initFloatConfig();
-    initStringConfig();
-}
-
-SearchContextTest::~SearchContextTest() = default;
 
 }
 
