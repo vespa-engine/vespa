@@ -198,7 +198,7 @@ public class StemmingSearcher extends Searcher {
     private Item stem(BlockItem current, StemContext context, Index index) {
         Item blockAsItem = (Item)current;
         CompositeItem composite;
-        List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), index.getStemMode(), context.language);
+        List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), context.language, index.getStemMode(), index.getNormalize());
         if (segments.isEmpty()) return blockAsItem;
 
         String indexName = current.getIndexName();

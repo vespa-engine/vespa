@@ -605,6 +605,7 @@
       "abstract"
     ],
     "methods" : [
+      "public java.util.List stem(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)",
       "public abstract java.util.List stem(java.lang.String, com.yahoo.language.process.StemMode, com.yahoo.language.Language)"
     ],
     "fields" : [ ]
@@ -619,6 +620,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.language.process.Tokenizer)",
+      "public java.util.List stem(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)",
       "public java.util.List stem(java.lang.String, com.yahoo.language.process.StemMode, com.yahoo.language.Language)"
     ],
     "fields" : [ ]

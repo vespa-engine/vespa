@@ -18,8 +18,11 @@ import static com.yahoo.search.searchers.OpportunisticWeakAndSearcher.adjustWeak
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-
+/**
+ * @author baldersheim
+ */
 public class OpportunisticWeakAndSearcherTestCase {
+
     private static Item buildQueryItem(CompositeItem root, CompositeItem injectAtLevel2) {
         root.addItem(new WordItem("text"));
         injectAtLevel2.addItem(new WordItem("a"));
@@ -47,9 +50,9 @@ public class OpportunisticWeakAndSearcherTestCase {
     @Test
     public void requireThatWeakAndIsReplacedWithAnd() {
         assertEquals(buildQueryItem(new OrItem(), new AndItem()),
-                weakAnd2AndRecurse(buildQueryItem(new OrItem(), new WeakAndItem())));
+                     weakAnd2AndRecurse(buildQueryItem(new OrItem(), new WeakAndItem())));
         assertEquals(buildQueryItem(new AndItem(), new AndItem()),
-                weakAnd2AndRecurse(buildQueryItem(new AndItem(), new WeakAndItem())));
+                     weakAnd2AndRecurse(buildQueryItem(new AndItem(), new WeakAndItem())));
     }
 
     private static WeakAndItem try2Adjust(WeakAndItem item, int hits) {
@@ -71,6 +74,7 @@ public class OpportunisticWeakAndSearcherTestCase {
         assertEquals(1000, try2Adjust(new WeakAndItem(), new OrItem(), 1000).getN());
         assertFalse(try2Adjust(new WeakAndItem(), new OrItem(), 10).nIsExplicit());
     }
+
     @Test
     public void requireThatNonDefaultWeakAndHeapIsNotAdjustedUpToHits() {
         assertEquals(33, try2Adjust(new WeakAndItem(33), 1000).getN());

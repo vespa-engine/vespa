@@ -204,7 +204,7 @@ public class OpenNlpTokenizationTestCase {
     public void testStemEmojis() {
         var stemmer = new OpenNlpLinguistics().getStemmer();
         String emoji = "\uD83D\uDD2A"; // 🔪
-        List<StemList> stems = stemmer.stem(emoji, StemMode.ALL, Language.ENGLISH);
+        List<StemList> stems = stemmer.stem(emoji, Language.ENGLISH, StemMode.ALL, true);
         assertEquals(1, stems.size());
         var stemList = stems.get(0);
         assertEquals(1, stemList.size());

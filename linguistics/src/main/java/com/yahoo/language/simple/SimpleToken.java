@@ -149,7 +149,7 @@ public class SimpleToken implements Token {
 
     @Override
     public String toString() {
-        return "token '" + original + "'";
+        return "token '" + tokenString + "'" + ( ! tokenString.equals(original) ? " (original: " + original + ")" : "");
     }
 
     public String toDetailString() {
