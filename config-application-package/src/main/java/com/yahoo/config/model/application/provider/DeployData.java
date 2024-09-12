@@ -34,16 +34,6 @@ public class DeployData {
         this.currentlyActiveGeneration = currentlyActiveGeneration;
     }
 
-    //TODO: Remove when Vespa 8.401 is oldest supported version
-    public DeployData(String ignored,
-                      ApplicationId applicationId,
-                      Long deployTimestamp,
-                      boolean internalRedeploy,
-                      Long generation,
-                      long currentlyActiveGeneration) {
-        this(applicationId, deployTimestamp, internalRedeploy, generation, currentlyActiveGeneration);
-    }
-
     public long getDeployTimestamp() { return deployTimestamp; }
 
     public boolean isInternalRedeploy() { return internalRedeploy; }
