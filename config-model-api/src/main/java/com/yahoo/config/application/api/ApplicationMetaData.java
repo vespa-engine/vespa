@@ -33,21 +33,6 @@ public class ApplicationMetaData {
         this.previousActiveGeneration = previousActiveGeneration;
     }
 
-    //TODO: Remove when Vespa 8.401 is oldest supported version
-    public ApplicationMetaData(String ignored, Long deployTimestamp, boolean internalRedeploy,
-                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
-        this(deployTimestamp, internalRedeploy, applicationId, checksum, generation, previousActiveGeneration);
-    }
-
-    /**
-     * Gets the directory where the application was deployed from.
-     * Will return null if a problem occurred while getting metadata
-     *
-     * @return path to raw deploy directory (for the original application)
-     */
-    @Deprecated //TODO: Remove when Vespa 8.401 is oldest supported version
-    public String getDeployPath() { return "unknown"; }
-
     public ApplicationId getApplicationId() { return applicationId; }
 
     /**
