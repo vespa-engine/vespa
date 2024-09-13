@@ -37,7 +37,7 @@ com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}
 com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}
 com.thaiopensource:jing:20091111
-com.vladsch.flexmark:flexmark-all:0.64.8
+com.vladsch.flexmark:flexmark-html2md-converter:0.64.8
 com.yahoo.athenz:athenz-auth-core:${athenz.vespa.version}
 com.yahoo.athenz:athenz-client-common:${athenz.vespa.version}
 com.yahoo.athenz:athenz-zms-core:${athenz.vespa.version}
@@ -176,6 +176,7 @@ org.glassfish.jaxb:txw2:${jaxb.runtime.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}
+org.jetbrains:annotations:24.0.1
 org.json:json:${org.json.vespa.version}
 org.jsoup:jsoup:1.17.2
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}
