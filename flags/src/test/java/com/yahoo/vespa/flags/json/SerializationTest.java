@@ -3,17 +3,31 @@ package com.yahoo.vespa.flags.json;
 
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.yahoo.test.json.Jackson;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.RawFlag;
+import com.yahoo.vespa.flags.UnboundDoubleFlag;
+import com.yahoo.vespa.flags.UnboundFlag;
+import com.yahoo.vespa.flags.file.FlagDbFile;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -142,5 +156,38 @@ public class SerializationTest {
         assertThat(wireData.serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}],\"attributes\":{}}"));
 
         assertThat(FlagData.deserialize(json).serializeToJson(), equalTo("{\"id\":\"id3\"}"));
+    }
+
+    @Test
+    void deserializationOfDouble() {
+        assertEquals(3.0, deserializedValue("3"), 1e-4);
+        assertEquals(3.0, deserializedValue("3.0"), 1e-4);
+    }
+
+    private double deserializedValue(String jsonValue) {
+        try (var cleanup = Flags.clearFlagsForTesting()) {
+            String id = "id1";
+            UnboundFlag<Double, ?, ?> doubleFlag = Flags.defineDoubleFlag(id, 1.2, List.of(), "1970-01-01", "2100-01-01", "description", "modification effect");
+            String json = """
+                          {
+                              "id": "%s",
+                              "rules": [
+                                  {
+                                      "value": %s
+                                  }
+                              ]
+                          }
+                          """.formatted(id, jsonValue);
+            FlagData data = FlagData.deserialize(json);
+            FlagSource flagSource = new SimpleFlagSource(data);
+            return doubleFlag.bindTo(flagSource).boxedValue();
+        }
+    }
+
+    public record SimpleFlagSource(FlagData flagData) implements FlagSource {
+        @Override
+        public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
+            return flagData.id().equals(id) ? flagData.resolve(vector) : Optional.empty();
+        }
     }
 }

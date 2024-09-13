@@ -1,0 +1,5 @@
+Aggregated similarity between the query and individual field elements. The same sub-scores used by the `textSimilarity` feature are calculated for each individual element in the field. The final output is calculated as the maximum of the combined element similarity measures (similarity measures are combined the same way as the default output of the `textSimilarity` feature) multiplied with the element weight which is 1 for arrays, and the supplied weights for indexed weighted sets.
+
+This is a flexible feature; how sub-scores are combined for each element and how element scores are aggregated may be configured. You may also add additional outputs if you want to capture multiple signals from a single field. Use [elementSimilarity](https://docs.vespa.ai/en/reference/rank-feature-configuration.html#elementSimilarity) to customize this feature.
+
+Default: 0

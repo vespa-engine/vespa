@@ -1,0 +1,3 @@
+A pseudorandom number in the range \[0,1\> that is stable for a given hit. This means that a hit will always receive the same random score (on a single node). If it is required that the scores be different between different queries, specify a seed value dependent upon the query. By default, the seed value is 1024. Users can specify a seed value by adding the query parameter [rankproperty.random.match.seed=\<value\>](https://docs.vespa.ai/en/reference/query-api-reference.html#ranking.properties). If you need several independent random numbers the feature can be named like this: `random(foo).match`, `random(bar).match`.
+
+Default: n/a

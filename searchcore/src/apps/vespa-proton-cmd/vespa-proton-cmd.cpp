@@ -19,6 +19,10 @@ LOG_SETUP("vespa-proton-cmd");
 
 namespace pandora::rtc_cmd {
 
+namespace {
+    const double NEVER(-1.0);
+}
+
 class App
 {
 private:
@@ -325,7 +329,7 @@ public:
             }
         } else if (strcmp(argv[2], "prepareRestart") == 0) {
             _req->SetMethodName("proton.prepareRestart");
-            invokeRPC(false, 600.0);
+            invokeRPC(false, NEVER);
             invoked = true;
             if (! _req->IsError()) {
                 printf("OK: prepareRestart enabled\n");

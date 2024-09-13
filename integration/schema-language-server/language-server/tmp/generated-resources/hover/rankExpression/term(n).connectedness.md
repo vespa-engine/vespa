@@ -1,0 +1,3 @@
+The normalized strength with which this term is connected to the previous term in the query. Must be assigned to query terms in a [searcher](https://docs.vespa.ai/en/searcher-development.html) using the [Java API for connectivity](https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/prelude/query/TaggableItem.html#setConnectivity(com.yahoo.prelude.query.Item,double)) or [YQL annotation for connectivity](https://docs.vespa.ai/en/reference/query-language-reference.html#connectivity).
+
+Default: 0.1

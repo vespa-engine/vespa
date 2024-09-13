@@ -106,7 +106,7 @@ public:
     static constexpr int max_digits10 = 4;
 
     static constexpr int min_exponent = -125;
-    static constexpr int min_exponent10 = -2;
+    static constexpr int min_exponent10 = -37;
 
     static constexpr int max_exponent = 128;
     static constexpr int max_exponent10 = 38;

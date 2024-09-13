@@ -21,7 +21,7 @@
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".cachedselect_test");
@@ -140,7 +140,9 @@ checkSelect(const NodeUP &sel,
             const Context &ctx,
             const Result &exp)
 {
-    if (EXPECT_TRUE(sel->contains(ctx) == exp)) {
+    bool failed = false;
+    EXPECT_TRUE(sel->contains(ctx) == exp) << (failed = true, "");
+    if (!failed) {
         return true;
     }
     std::ostringstream os;
@@ -155,13 +157,14 @@ checkSelect(const CachedSelect::SP &cs,
             const Document &doc,
             const Result &exp)
 {
+    SCOPED_TRACE("docId=" + std::to_string(docId));
     SelectContext ctx(*cs);
     ctx._docId = docId;
     ctx._doc = &doc;
     ctx.getAttributeGuards();
     bool expSessionContains = (cs->preDocOnlySelect() || (exp == Result::True));
     EXPECT_TRUE(checkSelect(cs->docSelect(), ctx, exp));
-    EXPECT_EQUAL(expSessionContains, cs->createSession()->contains_doc(ctx));
+    EXPECT_EQ(expSessionContains, cs->createSession()->contains_doc(ctx));
 }
 
 void
@@ -170,11 +173,12 @@ checkSelect(const CachedSelect::SP &cs,
             const Result &exp,
             bool expSessionContains)
 {
+    SCOPED_TRACE("docId=" + std::to_string(docId));
     SelectContext ctx(*cs);
     ctx._docId = docId;
     ctx.getAttributeGuards();
     EXPECT_TRUE(checkSelect((cs->preDocOnlySelect() ? cs->preDocOnlySelect() : cs->preDocSelect()), ctx, exp));
-    EXPECT_EQUAL(expSessionContains, cs->createSession()->contains_pre_doc(ctx));
+    EXPECT_EQ(expSessionContains, cs->createSession()->contains_pre_doc(ctx));
 }
 
 void
@@ -281,7 +285,7 @@ MyDB::addDoc(uint32_t lid,
         if (lid >= av.getNumDocs()) {
             AttributeVector::DocId checkDocId(0u);
             ASSERT_TRUE(av.addDoc(checkDocId));
-            ASSERT_EQUAL(lid, checkDocId);
+            ASSERT_EQ(lid, checkDocId);
         }
         auto &iav(dynamic_cast<IntegerAttribute &>(av));
         AttributeVector::largeint_t laa(aa);
@@ -298,7 +302,7 @@ const Document &
 MyDB::getDoc(uint32_t lid) const
 {
     auto it = _lidToDocSP.find(lid);
-    ASSERT_TRUE(it != _lidToDocSP.end());
+    assert(it != _lidToDocSP.end());
     return *it->second;
 }
 
@@ -353,7 +357,7 @@ TestFixture::testParse(const string &selection,
     CachedSelect::SP res(new CachedSelect);
 
     const DocumentType *docType = repo.getDocumentType(docTypeName);
-    ASSERT_TRUE(docType != nullptr);
+    assert(docType != nullptr);
     auto emptyDoc = std::make_unique<Document>(repo, *docType, DocumentId());
 
     res->set(selection,
@@ -363,7 +367,7 @@ TestFixture::testParse(const string &selection,
              &_amgr,
              _hasFields);
     
-    ASSERT_TRUE(res->docSelect());
+    EXPECT_TRUE(res->docSelect());
     return res;
 }
 
@@ -399,14 +403,14 @@ public:
     Stats &svAttrFieldNodes(uint32_t value) { _svAttrFieldNodes = value; return *this; }
 
     void assertEquals(const CachedSelect &select) const {
-        EXPECT_EQUAL(_preDocOnlySelect, (bool)select.preDocOnlySelect());
-        EXPECT_EQUAL(_preDocSelect, (bool)select.preDocSelect());
-        EXPECT_EQUAL(_allFalse, select.allFalse());
-        EXPECT_EQUAL(_allTrue, select.allTrue());
-        EXPECT_EQUAL(_allInvalid, select.allInvalid());
-        EXPECT_EQUAL(_fieldNodes, select.fieldNodes());
-        EXPECT_EQUAL(_attrFieldNodes, select.attrFieldNodes());
-        EXPECT_EQUAL(_svAttrFieldNodes, select.svAttrFieldNodes());
+        EXPECT_EQ(_preDocOnlySelect, (bool)select.preDocOnlySelect());
+        EXPECT_EQ(_preDocSelect, (bool)select.preDocSelect());
+        EXPECT_EQ(_allFalse, select.allFalse());
+        EXPECT_EQ(_allTrue, select.allTrue());
+        EXPECT_EQ(_allInvalid, select.allInvalid());
+        EXPECT_EQ(_fieldNodes, select.fieldNodes());
+        EXPECT_EQ(_attrFieldNodes, select.attrFieldNodes());
+        EXPECT_EQ(_svAttrFieldNodes, select.svAttrFieldNodes());
     }
 };
 
@@ -417,21 +421,23 @@ assertEquals(const Stats &stats, const CachedSelect &select)
 }
 
 
-TEST_F("Test that test setup is OK", TestFixture)
+TEST(CachedSelectTest, Test_that_test_setup_is_OK)
 {
+    TestFixture f;
     const DocumentTypeRepo &repo = *f._repoUP;
     const DocumentType *docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
-    EXPECT_EQUAL(10u, docType->getFieldCount());
-    EXPECT_EQUAL("String", docType->getField("ia").getDataType().getName());
-    EXPECT_EQUAL("String", docType->getField("ib").getDataType().getName());
-    EXPECT_EQUAL("Int", docType->getField("aa").getDataType().getName());
-    EXPECT_EQUAL("Int", docType->getField("ab").getDataType().getName());
+    EXPECT_EQ(10u, docType->getFieldCount());
+    EXPECT_EQ("String", docType->getField("ia").getDataType().getName());
+    EXPECT_EQ("String", docType->getField("ib").getDataType().getName());
+    EXPECT_EQ("Int", docType->getField("aa").getDataType().getName());
+    EXPECT_EQ("Int", docType->getField("ab").getDataType().getName());
 }
 
 
-TEST_F("Test that simple parsing works", TestFixture)
+TEST(CachedSelectTest, Test_that_simple_parsing_works)
 {
+    TestFixture f;
     f.testParse("not ((test))", "test");
     f.testParse("not ((test and (test.aa > 3999)))", "test");
     f.testParse("not ((test and (test.ab > 3999)))", "test");
@@ -440,37 +446,39 @@ TEST_F("Test that simple parsing works", TestFixture)
 }
 
 
-TEST_F("Test that const is flagged", TestFixture)
+TEST(CachedSelectTest, Test_that_const_is_flagged)
 {
+    TestFixture f;
     CachedSelect::SP cs;
 
     cs = f.testParse("false", "test");
     EXPECT_TRUE(cs->allFalse());
     EXPECT_FALSE(cs->allTrue());
     EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQ(0u, cs->fieldNodes());
     cs = f.testParse("true", "test");
     EXPECT_FALSE(cs->allFalse());
     EXPECT_TRUE(cs->allTrue());
     EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQ(0u, cs->fieldNodes());
     cs = f.testParse("test_2.ac > 4999", "test");
     EXPECT_FALSE(cs->allFalse());
     EXPECT_FALSE(cs->allTrue());
     EXPECT_TRUE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQ(0u, cs->fieldNodes());
     cs = f.testParse("test.aa > 4999", "test");
     EXPECT_FALSE(cs->allFalse());
     EXPECT_FALSE(cs->allTrue());
     EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(1u, cs->attrFieldNodes());
-    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
+    EXPECT_EQ(1u, cs->fieldNodes());
+    EXPECT_EQ(1u, cs->attrFieldNodes());
+    EXPECT_EQ(1u, cs->svAttrFieldNodes());
 }
 
 
-TEST_F("Test that basic select works", TestFixture)
+TEST(CachedSelectTest, Test_that_basic_select_works)
 {
+    TestFixture f;
     MyDB &db(*f._db);
     
     db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
@@ -480,93 +488,141 @@ TEST_F("Test that basic select works", TestFixture)
     
     CachedSelect::SP cs;
 
-    cs = f.testParse("test.ia == \"hello\"", "test");
-    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::True));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::False));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::False));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::False));
-    
-    cs = f.testParse("test.ia.foo == \"hello\"", "test");
-    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
-    
-    cs = f.testParse("test.ia[2] == \"hello\"", "test");
-    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
-    
-    cs = f.testParse("test.ia{foo} == \"hello\"", "test");
-    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
-    
-    cs = f.testParse("test.ia < \"hello\"", "test");
-    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::True));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
+    {
+        std::string selection("test.ia == \"hello\"");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::True);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::False);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::False);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::False);
+    }
 
-    cs = f.testParse("test.aa == 3", "test");
-    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::False));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::False));
-    TEST_DO(checkSelect(cs, 1u, Result::False));
-    TEST_DO(checkSelect(cs, 2u, Result::True));
-    TEST_DO(checkSelect(cs, 3u, Result::False));
-    TEST_DO(checkSelect(cs, 4u, Result::False));
+    {
+        std::string selection("test.ia.foo == \"hello\"");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().allInvalid(), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+    }
 
-    cs = f.testParse("test.aa.foo == 3", "test");
-    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
+    {
+        std::string selection("test.ia[2] == \"hello\"");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().allInvalid(), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+    }
 
-    cs = f.testParse("test.aa[2] == 3", "test");
-    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
+    {
+        std::string selection("test.ia{foo} == \"hello\"");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().allInvalid(), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+    }
 
-    cs = f.testParse("test.aa{4} > 3", "test");
-    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
+    {
+        std::string selection("test.ia < \"hello\"");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::False);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::True);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::True);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+    }
 
-    cs = f.testParse("test.aaa[2] == 3", "test");
-    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs));
+    {
+        std::string selection("test.aa == 3");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::False);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::True);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::False);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::False);
+        checkSelect(cs, 1u, Result::False);
+        checkSelect(cs, 2u, Result::True);
+        checkSelect(cs, 3u, Result::False);
+        checkSelect(cs, 4u, Result::False);
+    }
 
-    cs = f.testParse("test.aaw{4} > 3", "test");
-    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs));
+    {
+        std::string selection("test.aa.foo == 3");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().allInvalid(), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+    }
 
-    cs = f.testParse("test.aa < 45", "test");
-    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
-    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
-    TEST_DO(checkSelect(cs, 1u, Result::False,   false));
-    TEST_DO(checkSelect(cs, 2u, Result::True,    true));
-    TEST_DO(checkSelect(cs, 3u, Result::Invalid, false));
-    TEST_DO(checkSelect(cs, 4u, Result::Invalid, false));
+    {
+        std::string selection("test.aa[2] == 3");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().allInvalid(), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+    }
+
+    {
+        std::string selection("test.aa{4} > 3");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().allInvalid(), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+    }
+
+    {
+        std::string selection("test.aaa[2] == 3");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs);
+    }
+
+    {
+        std::string selection("test.aaw{4} > 3");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs);
+    }
+
+    {
+        std::string selection("test.aa < 45");
+        SCOPED_TRACE(selection);
+        cs = f.testParse(selection, "test");
+        assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+        checkSelect(cs, 1u, db.getDoc(1u), Result::False);
+        checkSelect(cs, 2u, db.getDoc(2u), Result::True);
+        checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
+        checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid);
+        checkSelect(cs, 1u, Result::False, false);
+        checkSelect(cs, 2u, Result::True, true);
+        checkSelect(cs, 3u, Result::Invalid, false);
+        checkSelect(cs, 4u, Result::Invalid, false);
+    }
 
     MyIntAv *v = f._amgr.getAsMyIntAttribute("aa");
     EXPECT_TRUE(v != nullptr);
-    EXPECT_EQUAL(8u, v->getGets());
+    EXPECT_EQ(8u, v->getGets());
 }
 
 struct PreDocSelectFixture : public TestFixture {
@@ -579,64 +635,71 @@ struct PreDocSelectFixture : public TestFixture {
     }
 };
 
-TEST_F("Test that single value attribute combined with non-attribute field results in pre-document select pruner", PreDocSelectFixture)
+TEST(CachedSelectTest, Test_that_single_value_attribute_combined_with_non_attribute_field_results_in_pre_document_select_pruner)
 {
+    PreDocSelectFixture f;
     CachedSelect::SP cs = f.testParse("test.aa == 3 AND test.ia == \"foo\"", "test");
-    TEST_DO(assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
 
-    TEST_DO(checkSelect(cs, 1u, Result::Invalid, true));
-    TEST_DO(checkSelect(cs, 2u, Result::Invalid, true));
-    TEST_DO(checkSelect(cs, 3u, Result::False, false));
-    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::True));
-    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::False));
-    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
+    checkSelect(cs, 1u, Result::Invalid, true);
+    checkSelect(cs, 2u, Result::Invalid, true);
+    checkSelect(cs, 3u, Result::False, false);
+    checkSelect(cs, 1u, f.db().getDoc(1u), Result::True);
+    checkSelect(cs, 2u, f.db().getDoc(2u), Result::False);
+    checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST_F("Test that single value attribute with complex attribute field results in pre-document select pruner", PreDocSelectFixture)
+TEST(CachedSelectTest, Test_that_single_value_attribute_with_complex_attribute_field_results_in_pre_document_select_pruner)
 {
+    PreDocSelectFixture f;
     CachedSelect::SP cs = f.testParse("test.aa == 3 AND test.aaa[0] == 5", "test");
-    TEST_DO(assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(2).svAttrFieldNodes(1), *cs));
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(2).svAttrFieldNodes(1), *cs);
 
-    TEST_DO(checkSelect(cs, 1u, Result::Invalid, true));
-    TEST_DO(checkSelect(cs, 2u, Result::Invalid, true));
-    TEST_DO(checkSelect(cs, 3u, Result::False, false));
-    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::False));
-    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
+    checkSelect(cs, 1u, Result::Invalid, true);
+    checkSelect(cs, 2u, Result::Invalid, true);
+    checkSelect(cs, 3u, Result::False, false);
+    checkSelect(cs, 1u, f.db().getDoc(1u), Result::False);
+    checkSelect(cs, 2u, f.db().getDoc(2u), Result::False);
+    checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST_F("Imported field can be used in pre-doc selections with only attribute fields", PreDocSelectFixture) {
+TEST(CachedSelectTest, Imported_field_can_be_used_in_pre_doc_selections_with_only_attribute_fields)
+{
+    PreDocSelectFixture f;
     auto cs = f.testParse("test.my_imported_field == 3", "test");
-    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
+    assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
 
-    TEST_DO(checkSelect(cs, 1u, Result::True,  true));
-    TEST_DO(checkSelect(cs, 2u, Result::True,  true));
-    TEST_DO(checkSelect(cs, 3u, Result::False, false));
+    checkSelect(cs, 1u, Result::True,  true);
+    checkSelect(cs, 2u, Result::True,  true);
+    checkSelect(cs, 3u, Result::False, false);
     // Cannot match against document here since preDocOnly is set; will just return false.
-    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::False));
-    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
+    checkSelect(cs, 1u, f.db().getDoc(1u), Result::False);
+    checkSelect(cs, 2u, f.db().getDoc(2u), Result::False);
+    checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST_F("Imported field can be used in doc selections with mixed attribute/non-attribute fields", PreDocSelectFixture) {
+TEST(CachedSelectTest, Imported_field_can_be_used_in_doc_selections_with_mixed_attribute_and_non_attribute_fields)
+{
+    PreDocSelectFixture f;
     // `id.namespace` requires a doc store fetch and cannot be satisfied by attributes alone
     auto cs = f.testParse("test.my_imported_field == 3 and id.namespace != 'foo'", "test");
-    TEST_DO(assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
 
     // 2 first checks cannot be completed in pre-doc stage alone
-    TEST_DO(checkSelect(cs, 1u, Result::Invalid, true));  // -> doc eval stage
-    TEST_DO(checkSelect(cs, 2u, Result::Invalid, true));  // -> doc eval stage
-    TEST_DO(checkSelect(cs, 3u, Result::False,   false)); // short-circuited since attr value 7 != 3
+    checkSelect(cs, 1u, Result::Invalid, true);  // -> doc eval stage
+    checkSelect(cs, 2u, Result::Invalid, true);  // -> doc eval stage
+    checkSelect(cs, 3u, Result::False,   false); // short-circuited since attr value 7 != 3
     // When matching against a concrete document, it's crucial that the selection AST contains
     // attribute references for at least all imported fields, or we'll implicitly fall back to
     // returning null for all imported fields (as they do not exist in the document itself).
-    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::True));
-    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
+    checkSelect(cs, 1u, f.db().getDoc(1u), Result::True);
+    checkSelect(cs, 2u, f.db().getDoc(2u), Result::True);
+    checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST_F("Test performance when using attributes", TestFixture)
+TEST(CachedSelectTest, Test_performance_when_using_attributes)
 {
+    TestFixture f;
     MyDB &db(*f._db);
     
     db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
@@ -646,7 +709,7 @@ TEST_F("Test performance when using attributes", TestFixture)
     
     CachedSelect::SP cs;
     cs = f.testParse("test.aa < 45", "test");
-    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
+    assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
 
     SelectContext ctx(*cs);
     ctx.getAttributeGuards();
@@ -670,7 +733,7 @@ TEST_F("Test performance when using attributes", TestFixture)
             break;
     }
     vespalib::duration elapsed = sw.elapsed();
-    EXPECT_EQUAL(loopcnt, i);
+    EXPECT_EQ(loopcnt, i);
     LOG(info,
         "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, %8.4f ns/doc",
         i, vespalib::count_ns(elapsed), static_cast<double>(vespalib::count_ns(elapsed)) / ( 4 * i));

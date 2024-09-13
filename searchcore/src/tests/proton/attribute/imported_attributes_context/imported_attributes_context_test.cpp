@@ -1,7 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-
 #include <vespa/searchcore/proton/attribute/imported_attributes_context.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -13,6 +11,8 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <cassert>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -59,27 +59,26 @@ void
 assertGuards(AttributeVector &attr, generation_t expCurrentGeneration, generation_t exp_oldest_used_generation,
              bool expHasActiveEnumGuards)
 {
-    EXPECT_EQUAL(expCurrentGeneration, attr.getCurrentGeneration());
-    EXPECT_EQUAL(exp_oldest_used_generation, attr.get_oldest_used_generation());
-    EXPECT_EQUAL(expHasActiveEnumGuards, hasActiveEnumGuards(attr));
+    EXPECT_EQ(expCurrentGeneration, attr.getCurrentGeneration());
+    EXPECT_EQ(exp_oldest_used_generation, attr.get_oldest_used_generation());
+    EXPECT_EQ(expHasActiveEnumGuards, hasActiveEnumGuards(attr));
 }
 
 void
-addDocAndAssertGuards(AttributeVector &attr, generation_t expCurrentGeneration, generation_t expFirstUsedGeneration, bool expHasActiveEnumGuards)
+addDocAndAssertGuards(std::string_view label, AttributeVector &attr, generation_t expCurrentGeneration, generation_t expFirstUsedGeneration, bool expHasActiveEnumGuards)
 {
+    SCOPED_TRACE(label);
     addDoc(attr);
     assertGuards(attr, expCurrentGeneration, expFirstUsedGeneration, expHasActiveEnumGuards);
 }
 
-struct Fixture {
+class ImportedAttributesContextTest : public ::testing::Test {
+protected:
     ImportedAttributesRepo repo;
     std::unique_ptr<ImportedAttributesContext> ctx;
-    Fixture()
-        : repo(),
-          ctx(std::make_unique<ImportedAttributesContext>(repo))
-    {
-    }
-    Fixture &addAttribute(const std::string &name) {
+    ImportedAttributesContextTest();
+    ~ImportedAttributesContextTest() override;
+    void addAttribute(const std::string &name) {
         auto attr = ImportedAttributeVectorFactory::create(name,
                                                            createReferenceAttribute(name + "_ref"),
                                                            std::shared_ptr<search::IDocumentMetaStoreContext>(),
@@ -87,12 +86,11 @@ struct Fixture {
                                                            std::make_shared<const DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>()),
                                                            false);
         repo.add(name, attr);
-        return *this;
     }
     AttributeVector::SP getTargetAttribute(const std::string &importedName) const {
         auto readable_target_attr = repo.get(importedName)->getTargetAttribute();
         auto target_attr = std::dynamic_pointer_cast<AttributeVector>(readable_target_attr);
-        ASSERT_TRUE(target_attr);
+        assert(target_attr);
         return target_attr;
     }
     void clearContext() {
@@ -100,78 +98,86 @@ struct Fixture {
     }
 };
 
-TEST_F("require that attributes can be retrieved", Fixture)
+ImportedAttributesContextTest::ImportedAttributesContextTest()
+    : repo(),
+      ctx(std::make_unique<ImportedAttributesContext>(repo))
 {
-    f.addAttribute("foo").addAttribute("bar");
-    EXPECT_EQUAL("foo", f.ctx->getAttribute("foo")->getName());
-    EXPECT_EQUAL("bar", f.ctx->getAttribute("bar")->getName());
-    EXPECT_EQUAL("bar", f.ctx->getAttribute("bar")->getName());
-    EXPECT_TRUE(f.ctx->getAttribute("not_found") == nullptr);
 }
 
-TEST_F("require that stable enum attributes can be retrieved", Fixture)
+ImportedAttributesContextTest::~ImportedAttributesContextTest() = default;
+
+TEST_F(ImportedAttributesContextTest, require_that_attributes_can_be_retrieved)
 {
-    f.addAttribute("foo").addAttribute("bar");
-    EXPECT_EQUAL("foo", f.ctx->getAttributeStableEnum("foo")->getName());
-    EXPECT_EQUAL("bar", f.ctx->getAttributeStableEnum("bar")->getName());
-    EXPECT_EQUAL("bar", f.ctx->getAttributeStableEnum("bar")->getName());
-    EXPECT_TRUE(f.ctx->getAttributeStableEnum("not_found") == nullptr);
+    addAttribute("foo");
+    addAttribute("bar");
+    EXPECT_EQ("foo", ctx->getAttribute("foo")->getName());
+    EXPECT_EQ("bar", ctx->getAttribute("bar")->getName());
+    EXPECT_EQ("bar", ctx->getAttribute("bar")->getName());
+    EXPECT_TRUE(ctx->getAttribute("not_found") == nullptr);
 }
 
-TEST_F("require that all attributes can be retrieved", Fixture)
+TEST_F(ImportedAttributesContextTest, require_that_stable_enum_attributes_can_be_retrieved)
 {
-    f.addAttribute("foo").addAttribute("bar");
+    addAttribute("foo");
+    addAttribute("bar");
+    EXPECT_EQ("foo", ctx->getAttributeStableEnum("foo")->getName());
+    EXPECT_EQ("bar", ctx->getAttributeStableEnum("bar")->getName());
+    EXPECT_EQ("bar", ctx->getAttributeStableEnum("bar")->getName());
+    EXPECT_TRUE(ctx->getAttributeStableEnum("not_found") == nullptr);
+}
+
+TEST_F(ImportedAttributesContextTest, require_that_all_attributes_can_be_retrieved)
+{
+    addAttribute("foo");
+    addAttribute("bar");
     std::vector<const IAttributeVector *> list;
-    f.ctx->getAttributeList(list);
-    EXPECT_EQUAL(2u, list.size());
+    ctx->getAttributeList(list);
+    EXPECT_EQ(2u, list.size());
     // Don't depend on internal (unspecified) ordering
     std::sort(list.begin(), list.end(), [](auto* lhs, auto* rhs){
         return lhs->getName() < rhs->getName();
     });
-    EXPECT_EQUAL("bar", list[0]->getName());
-    EXPECT_EQUAL("foo", list[1]->getName());
+    EXPECT_EQ("bar", list[0]->getName());
+    EXPECT_EQ("foo", list[1]->getName());
 }
 
-TEST_F("require that guards are cached", Fixture)
+TEST_F(ImportedAttributesContextTest, require_that_guards_are_cached)
 {
-    f.addAttribute("foo");
-    auto targetAttr = f.getTargetAttribute("foo");
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 2, 2, false));
+    addAttribute("foo");
+    auto targetAttr = getTargetAttribute("foo");
+    addDocAndAssertGuards("first", *targetAttr, 2, 2, false);
 
-    f.ctx->getAttribute("foo"); // guard is taken and cached
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 4, 2, false));
+    ctx->getAttribute("foo"); // guard is taken and cached
+    addDocAndAssertGuards("second", *targetAttr, 4, 2, false);
 
-    f.clearContext(); // guard is released
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 6, 6, false));
+    clearContext(); // guard is released
+    addDocAndAssertGuards("third", *targetAttr, 6, 6, false);
 }
 
-TEST_F("require that stable enum guards are cached", Fixture)
+TEST_F(ImportedAttributesContextTest, require_that_stable_enum_guards_are_cached)
 {
-    f.addAttribute("foo");
-    auto targetAttr = f.getTargetAttribute("foo");
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 2, 2, false));
+    addAttribute("foo");
+    auto targetAttr = getTargetAttribute("foo");
+    addDocAndAssertGuards("first", *targetAttr, 2, 2, false);
 
-    f.ctx->getAttributeStableEnum("foo"); // enum guard is taken and cached
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 4, 2, true));
+    ctx->getAttributeStableEnum("foo"); // enum guard is taken and cached
+    addDocAndAssertGuards("second", *targetAttr, 4, 2, true);
 
-    f.clearContext(); // guard is released
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 6, 6, false));
+    clearContext(); // guard is released
+    addDocAndAssertGuards("third", *targetAttr, 6, 6, false);
 }
 
-TEST_F("require that stable enum guards can be released", Fixture)
+TEST_F(ImportedAttributesContextTest, require_that_stable_enum_guards_can_be_released)
 {
-    f.addAttribute("foo");
-    auto targetAttr = f.getTargetAttribute("foo");
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 2, 2, false));
+    addAttribute("foo");
+    auto targetAttr = getTargetAttribute("foo");
+    addDocAndAssertGuards("first", *targetAttr, 2, 2, false);
 
-    f.ctx->getAttributeStableEnum("foo"); // enum guard is taken and cached
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 4, 2, true));
+    ctx->getAttributeStableEnum("foo"); // enum guard is taken and cached
+    addDocAndAssertGuards("second", *targetAttr, 4, 2, true);
 
-    f.ctx->releaseEnumGuards();
-    TEST_DO(addDocAndAssertGuards(*targetAttr, 6, 6, false));
+    ctx->releaseEnumGuards();
+    addDocAndAssertGuards("third", *targetAttr, 6, 6, false);
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -1,0 +1,3 @@
+Calculates the [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) ranking function over the given [indexed string field](https://docs.vespa.ai/en/reference/schema-reference.html#indexing-index). This feature is cheap to compute, about 3-4 times faster than nativeRank, while still providing a good rank score quality wise. This feature is a good candidate for usage in a first phase ranking function when ranking text documents. Note that the field must be enabled to be used with the bm25 feature; set the *enable-bm25* flag in the [index](https://docs.vespa.ai/en/reference/schema-reference.html#index) section of the field definition. See the [BM25 Reference](https://docs.vespa.ai/en/reference/bm25.html) for more detailed information.
+
+Default: 0

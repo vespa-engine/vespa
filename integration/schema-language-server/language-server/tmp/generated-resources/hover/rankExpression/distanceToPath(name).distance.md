@@ -1,0 +1,4 @@
+The euclidian distance from a path through 2d space given in the query to the given position attribute in millionths of degrees. This is useful e.g. for finding the closest locations to a given road. The query path is set in the [rankproperty.distanceToPath(*name*).path](https://docs.vespa.ai/en/reference/query-api-reference.html#ranking.properties) query parameter, using syntax `"(x1,y1,x2,y2,..)"` also in millionth of degrees, see the [distance to path](https://docs.vespa.ai/en/geo-search.html#distance-to-path) example. The closest point along the path is referred to as the *intersection*.  
+**Note:** For documents with multiple locations, only the closest location is used for ranking purposes.
+
+Default: 6400M
