@@ -16,7 +16,7 @@
     <dependency>
       <groupId>org.eclipse.lemminx</groupId>
       <artifactId>org.eclipse.lemminx</artifactId>
-      <version>0.12.0</version>
+      <version>0.28.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

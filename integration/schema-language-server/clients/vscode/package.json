@@ -11,7 +11,7 @@
   "categories": [
     "Programming Languages",
     "Snippets",
-    "Other"
+    "Other" 
   ],
   "keywords": [
     "Vespa",
@@ -36,7 +36,8 @@
         ],
         "extensions": [
           ".sd",
-          ".profile"
+          ".profile",
+          ".xml"
         ],
         "configuration": "./language-configuration.json"
       }

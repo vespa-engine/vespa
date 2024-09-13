@@ -36,6 +36,13 @@ public class SchemaDocumentScheduler {
     private boolean reparseDescendants = true;
     private URI workspaceURI = null;
 
+    private enum FileType {
+        SCHEMA,
+        RANK_PROFILE,
+        SERVICES,
+        UNKNOWN
+    }
+
     public SchemaDocumentScheduler(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaMessageHandler messageHandler) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
@@ -48,12 +55,33 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content, Integer version) {
-        boolean isSchemaFile = fileURI.toLowerCase().endsWith(".sd");
+        FileType fileType = FileType.UNKNOWN;
+        if (fileURI.toLowerCase().endsWith(".sd")) {
+            fileType = FileType.SCHEMA;
+        } else if (fileURI.toLowerCase().endsWith(".profile")) {
+            fileType = FileType.RANK_PROFILE;
+        } else if (fileURI.toLowerCase().endsWith(".xml")) {
+            // TODO: better check
+            fileType = FileType.SERVICES;
+        }
+
+        if (fileType == FileType.UNKNOWN) {
+            return;
+        }
+
         if (!workspaceFiles.containsKey(fileURI)) {
-            if (isSchemaFile) {
-                workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
-            } else {
-                workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+            switch (fileType) {
+                case SCHEMA:
+                    workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case RANK_PROFILE:
+                    workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case SERVICES:
+                    logger.info("Got XML File!");
+                    return;
+                default:
+                    return;
             }
         }
 
@@ -61,7 +89,7 @@ public class SchemaDocumentScheduler {
         workspaceFiles.get(fileURI).updateFileContent(content, version);
         boolean needsReparse = false;
 
-        if (isSchemaFile && reparseDescendants) {
+        if (fileType == FileType.SCHEMA && reparseDescendants) {
             Set<String> parsedURIs = new HashSet<>() {{ add(fileURI); }};
             for (String descendantURI : schemaIndex.getDocumentInheritanceGraph().getAllDescendants(fileURI)) {
                 if (descendantURI.equals(fileURI)) continue;
