@@ -32,6 +32,7 @@ TOKEN :
 | < BY: 'by' >
 | < ORDERBY: <ORDER> <BY> >
 | < DESC: 'desc' >
+| < ASC: 'asc' >
 | < FROM: 'from' >
 | < SOURCES: 'sources' >
 | < AS: 'as' >
@@ -72,9 +73,16 @@ TOKEN :
 | < MATCHES: 'matches' >
 | < NOTMATCHES: 'not matches' >
 
+| <PLUS: '+' >
+| <MINUS: '-' >
+| < DIV: '/' >
+| < MODULO: '%' >
+| <EXCLAMATION: '!' >
+
 // effectively unary operators
-| < IS_NULL: 'is null' >
-| < IS_NOT_NULL: 'is not null' >
+| < NULL: 'null' >
+| < IS_NULL: 'is' <NULL> >
+| < IS_NOT_NULL: 'is not' <NULL> >
 
 // dereference
 | < DOT: '.' >
@@ -89,6 +97,9 @@ TOKEN :
 
 | < TIMEOUT: 'timeout' >
 
+| < ALL: 'all' >
+| < EACH: 'each' >
+
 // identifier
 | < IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
 | < LONG_INT: ("-")?(["0"-"9"])+("L"|"l") >
@@ -97,10 +108,17 @@ TOKEN :
 | < EXPONENT: ("e"|"E") ("+"|"-")? (["0"-"9"])+ >
 | < DIGIT: ["0"-"9"] >
 | < LETTER: ["a"-"z","A"-"Z"] >
-// TODO: Add string
-// ....
+
+| < HEX_DIGIT: ["0"-"9","a"-"f","A"-"F"] >
+| < UNICODE_ESC: '\\' 'u' <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> >
+| < ESC_SEQ: '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\'|'/') | <UNICODE_ESC> >
+| < STRING: (<DQ> ( <ESC_SEQ> | ('\\' | '"'))* <DQ>) | ( <SQ> ( <ESC_SEQ> | ('\\' | '"'))* <SQ> ) >
+
 ;
 
+UNPARSED :
+  <COMMENT: ('//' (~['\n','\r'])* ('\r')? ('\n')?) | ( '/*' (~[])* '*/' ) >
+;
 
 // --------------------------------------------------------------------------------
 //
@@ -172,9 +190,9 @@ String identifierStr:
 
 vespa_grouping:
     (
-        ('all' | 'each') vespa_grouping_arg
-        ('as' vespa_grouping_arg)?
-        ('where' vespa_grouping_arg)? 
+        (<ALL> | <EACH>) vespa_grouping_arg
+        (<AS> vespa_grouping_arg)?
+        (<WHERE> vespa_grouping_arg)? 
     )
 ;
 
@@ -216,7 +234,7 @@ String keyword_as_ident:
 
 program:
     (
-        (statement (<SEMI>)?)*
+        (statement (<SEMI>)?)* <EOF>
     )
 ;
 
@@ -240,13 +258,13 @@ source_statement:
 
 pipeline_step:
     (
-        /*namespaced_name (arguments(false))? |*/ vespa_grouping_fun
+        namespaced_name (arguments(false))? | vespa_grouping_fun
     )
 ;
 
 vespa_grouping_fun:
     (
-        vespa_grouping /* | annotation vespa_grouping_fun*/
+        vespa_grouping | annotation vespa_grouping
     )
 ;
 
@@ -264,13 +282,397 @@ query_statement:
 
 select_statement:
     (
-        <SELECT> select_field_spec //TODO: missing parsing
+        <SELECT> select_field_spec (select_source)? (where_fun)? (orderby_fun)? (limit_fun)? (offset_fun)? (timeout_fun)?
     )
 ;
 
 // TODO: Missing field
 select_field_spec:
     (
+        project_spec |
         <STAR> 
+    )
+;
+
+project_spec:
+    (
+        field_def (<COMMA> field_def)*
+    )
+;
+
+timeout_fun:
+    (
+        <TIMEOUT> fixed_or_parameter
+    )
+;
+
+select_source:
+    (
+        select_source_all |
+        select_source_multi |
+        select_source_from
+    )
+;
+
+select_source_all:
+    (
+        <FROM> <SOURCES> <STAR>
+    )
+;
+
+select_source_multi:
+    (
+        <FROM> <SOURCES> source_list
+    )
+;
+
+select_source_from:
+    (
+        <FROM> source_spec
+    )
+;
+
+source_list:
+    (
+        namespaced_name (<COMMA> namespaced_name)*
+    )
+;
+
+source_spec:
+    (
+        data_source (alias_def)? // TODO: Add missing java code
+    )
+;
+
+alias_def:
+    (
+        (<AS>)? identifierStr
+    )
+;
+
+data_source:
+    (
+        call_source |
+        (<LPAREN> source_statement <RPAREN>) |
+        sequence_source
+    )
+;
+
+call_source:
+    (
+        namespaced_name (arguments(true))?
+    )
+;
+
+sequence_source:
+    (
+        <AT> ident
+    )
+;
+
+namespaced_name:
+    (
+        dotted_idents (<DOT> <STAR>)?
+    )
+;
+
+orderby_fun:
+    (
+        <ORDERBY> orderby_fields
+    )
+;
+
+orderby_fields:
+    (
+        orderby_field (<COMMA> orderby_field)*
+    )
+;
+
+orderby_field:
+    (
+        (expression(true) <DESC>)
+        | (expression(true) (<ASC>)? )
+    )
+;
+
+limit_fun:
+    (
+        <LIMIT> fixed_or_parameter
+    )
+;
+
+offset_fun:
+    (
+        <OFFSET> fixed_or_parameter
+    )
+;
+
+where_fun:
+    (
+        <WHERE> expression(true)
+    )
+;
+
+field_def:
+    (
+        expression(true) (alias_def)?
+    )
+;
+
+map_expression:
+    (
+        <LBRACE> (property_name_and_value)? (<COMMA> property_name_and_value)* <RBRACE>
+    )
+;
+
+arguments(boolean in_select):
+    (
+        (<LPAREN> <RPAREN>)
+        | (<LPAREN> argument(in_select) (<COMMA> argument(in_select))* <RPAREN> )
+    )
+;
+
+argument(boolean in_select):
+    (
+        expression(in_select)
+    )
+;
+
+// --------- expressions ------------
+
+expression(boolean select):
+    (
+        annotate_expression
+        | logical_OR_expression
+        | null_operator
+    )
+;
+// TODO: Add expression_stack code
+
+null_operator:
+    (
+        <NULL>
+    )
+;
+
+annotate_expression:
+    (
+        annotation logical_OR_expression
+    )
+;
+
+annotation:
+    (
+        (<LBRACKET> map_expression <RBRACKET>)
+        | map_expression
+    )
+;
+
+logical_OR_expression:
+    (
+        logical_AND_expression ( <OR> logical_AND_expression )*
+    )
+;
+
+logical_AND_expression:
+    (
+        equality_expression ( <AND> equality_expression )*
+    )
+;
+
+equality_expression:
+    (
+        ( relational_expression (
+            ( (<IN> | <NOT_IN>) in_not_in_target )
+            | ( <IS_NULL> | <IS_NOT_NULL> )
+            | ( equality_op relational_expression )
+        ) )
+        | relational_expression
+    )
+;
+
+in_not_in_target:
+    ( // TODO: Add expression stack peek
+        ( <LPAREN> select_statement <RPAREN> )
+        | literal_list
+    )
+;
+
+equality_op:
+    (
+        ( <EQ> | <NEQ> | <LIKE> | <NOTLIKE> | <MATCHES> | <NOTMATCHES> | <CONTAINS> )
+    )
+;
+
+relational_expression:
+    (
+        additive_expression (relational_op additive_expression)?
+    )
+;
+
+relational_op:
+    (
+        <LT> | <GT> | <LTEQ> | <GTEQ>
+    )
+;
+
+additive_expression:
+    (
+        multiplicative_expression ( additive_op additive_expression)?
+    )
+;
+
+additive_op:
+    (
+        <PLUS> | <MINUS>
+    )
+;
+
+multiplicative_expression:
+    (
+        unary_expression (mult_op multiplicative_expression)?
+    )
+;
+
+mult_op:
+    (
+        <STAR> | <DIV> | <MODULO>
+    )
+;
+
+unary_op:
+    (
+        <MINUS> | <EXCLAMATION>
+    )
+;
+
+unary_expression:
+    (
+        (unary_op)? dereferenced_expression
+    )
+;
+
+dereferenced_expression:
+{
+    boolean in_select = true; // TODO: Peek into epxression stack
+}
+    (
+        primary_expression (
+            indexref(in_select)
+            | propertyref
+        )*
+    )
+;
+
+indexref(boolean in_select):
+    ( // TODO: Store idx
+        <LBRACKET> expression(in_select) <RBRACKET>
+    )
+;
+
+propertyref:
+{
+    String nm; // TODO: handle this further
+}
+    (
+        <DOT> nm = identifierStr
+    )
+;
+
+primary_expression:
+{
+    boolean in_select = true; // TODO: peek into expression stack
+}
+    (
+        call_expression(in_select)
+        | fieldref
+        | constant_expression
+        | (<LPAREN> expression(in_select) <RPAREN> )
+    )
+;
+
+call_expression(boolean in_select):
+    (
+        namespaced_name arguments(in_select)
+    )
+;
+
+fieldref:
+    (
+        namespaced_name
+    )
+;
+
+parameter:
+    (
+        <AT> ident
+    )
+;
+
+property_name_and_value:
+    (
+        property_name <COLON> constant_expression
+    )
+;
+
+property_name:
+    (
+        dotted_idents | <STRING>
+    )
+;
+
+dotted_idents:
+    (
+        ident (<DOT> ident)*
+    )
+;
+
+constant_expression:
+    (
+        scalar_literal
+        | map_expression
+        | array_literal
+        | parameter
+    )
+;
+
+array_literal:
+    (
+        <LBRACKET> (constant_expression)? (<COMMA> constant_expression)* <RBRACKET>
+    )
+;
+
+scalar_literal:
+    (
+        <TRUE>
+        | <FALSE>
+        | <STRING>
+        | <LONG_INT>
+        | <INT>
+        | <FLOAT>
+    )
+;
+
+array_parameter:
+    (
+        <AT> ident //TODO: Add isArrayParameter
+    )
+;
+
+literal_list:
+    (
+        <LPAREN> literal_element (<COMMA> literal_element)* <RPAREN>
+    )
+;
+
+literal_element:
+    (
+        scalar_literal | parameter
+    )
+;
+
+fixed_or_parameter:
+    (
+        <INT> | parameter
     )
 ;

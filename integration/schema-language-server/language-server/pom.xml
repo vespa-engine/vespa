@@ -180,7 +180,8 @@
         <excludePackageNames>
             ai.vespa.schemals.parser,
             ai.vespa.schemals.parser.indexinglanguage,
-            ai.vespa.schemals.parser.rankingexpression
+            ai.vespa.schemals.parser.rankingexpression,
+            ai.vespa.schemals.parser.yqlplus
         </excludePackageNames>
         </configuration>
       </plugin>
