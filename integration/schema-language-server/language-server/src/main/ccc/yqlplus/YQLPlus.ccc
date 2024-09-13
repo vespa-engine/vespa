@@ -192,9 +192,6 @@ String ident: {
 
     ( identifier = identifierStr { return identifier; } )
     | (identifier = keyword_as_ident { return identifier; })
-    {
-        return lastConsumedToken.toString();
-    }
 ;
 
 String keyword_as_ident:
@@ -209,7 +206,7 @@ String keyword_as_ident:
         | <OUTPUT>
         | <COUNT>
         | <SOURCES>
-        | <MMATCHES>
+        | <MATCHES>
         | <LIKE>
     )
     {
@@ -219,7 +216,7 @@ String keyword_as_ident:
 
 program:
     (
-        (statement <SEMI>?)*
+        (statement (<SEMI>)?)*
     )
 ;
 
@@ -231,7 +228,7 @@ statement:
 
 output_statement:
     (
-        source_statement output_spec?
+        source_statement (output_spec)?
     )
 ;
 
@@ -243,19 +240,19 @@ source_statement:
 
 pipeline_step:
     (
-        namespaced_name (arguments(false))? | vespa_grouping
+        /*namespaced_name (arguments(false))? |*/ vespa_grouping_fun
     )
 ;
 
 vespa_grouping_fun:
     (
-        vespa_grouping | annotation vespa_grouping
+        vespa_grouping /* | annotation vespa_grouping_fun*/
     )
 ;
 
 output_spec:
     (
-        <OUTPUT> <COUNT>? <AS> ident
+        <OUTPUT> (<COUNT>)? <AS> ident
     )
 ;
 

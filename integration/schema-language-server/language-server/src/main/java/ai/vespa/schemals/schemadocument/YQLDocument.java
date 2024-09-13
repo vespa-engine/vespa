@@ -4,7 +4,11 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.parser.yqlplus.Node;
+import ai.vespa.schemals.parser.yqlplus.ParseException;
+import ai.vespa.schemals.parser.yqlplus.YQLPlusParser;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
 
@@ -35,7 +39,18 @@ public class YQLDocument implements DocumentManager {
 
     @Override
     public void reparseContent() {
-        
+        CharSequence charSequence = fileContent.toLowerCase();
+        YQLPlusParser parser = new YQLPlusParser(charSequence);
+
+        try {
+            parser.program();
+    
+            Node node = parser.rootNode();
+            YQLUtils.printTree(logger, node);
+        } catch (ParseException exception) {
+            logger.error(exception.getMessage());
+        }
+
     }
 
     @Override
