@@ -25,7 +25,7 @@
     </dependency>
     <dependency>
       <groupId>com.vladsch.flexmark</groupId>
-      <artifactId>flexmark-all</artifactId>
+      <artifactId>flexmark-html2md-converter</artifactId>
       <version>0.64.8</version>
     </dependency>
     <dependency>
