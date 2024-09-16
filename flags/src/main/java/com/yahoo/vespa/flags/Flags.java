@@ -499,7 +499,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE = defineFeatureFlag(
-            "delete-expired-config-sessions-new-procedure", false,
+            "delete-expired-config-sessions-new-procedure", true,
             List.of("hmusum"), "2024-06-10", "2024-10-01",
             "Whether to delete remote and local config sessions at the same time",
             "Takes effect immediately");
