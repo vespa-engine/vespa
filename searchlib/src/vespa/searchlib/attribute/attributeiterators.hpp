@@ -53,9 +53,9 @@ template <typename PL>
 template <typename... Args>
 AttributePostingListIteratorT<PL>::
 AttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx,
-                              bool hasWeight, fef::TermFieldMatchData *matchData,
+                              fef::TermFieldMatchData *matchData,
                               Args &&... args)
-    : AttributePostingListIterator(baseSearchCtx, hasWeight, matchData),
+    : AttributePostingListIterator(baseSearchCtx, matchData),
       _iterator(std::forward<Args>(args)...),
       _postingInfo(1, 1),
       _postingInfoValid(false)
@@ -252,15 +252,14 @@ template <typename PL>
 void
 AttributePostingListIteratorT<PL>::doUnpack(uint32_t docId)
 {
+    if (_matchData->getDocId() == docId) {
+        return;
+    }
     _matchData->resetOnlyDocId(docId);
 
-    if (_hasWeight) {
-        _matchPosition->setElementWeight(getWeight());
-    } else {
-        uint32_t numOccs(0);
-        for(; _iterator.valid() && (_iterator.getKey() == docId); numOccs += getWeight(), ++_iterator);
-        _matchPosition->setElementWeight(numOccs);
-    }
+    int32_t weight(0);
+    for(; _iterator.valid() && (_iterator.getKey() == docId); weight += getWeight(), ++_iterator);
+    _matchPosition->setElementWeight(weight);
 }
 
 template <typename PL>
