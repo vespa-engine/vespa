@@ -121,7 +121,11 @@ private:
     uint64_t          _pendingIdx;
     uint64_t          _pendingDat;
     uint64_t          _idxFileSize;          // protected by _lock
-    uint64_t          _currentDiskFootprint; // protected by _lock
+    uint64_t          _currentDiskFootprint; // protected by _lock, data written to disk
+    /*
+     * _pendingDiskFootprint is maintained to avoid going too far beyond max file size,
+     * cf. LogDataStore::requireSpace.
+     */
     uint64_t          _pendingDiskFootprint; // protected by _lock, only considers dat file
     uint32_t          _nextChunkId;
     Chunk::UP         _active;
