@@ -102,7 +102,6 @@
         <groupId>com.github.os72</groupId>
         <artifactId>protoc-jar-maven-plugin</artifactId>
       </plugin>
-<!--
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -122,7 +121,6 @@
           </execution>
         </executions>
       </plugin>
--->
       <plugin>   
         <groupId>org.congocc</groupId>   
         <artifactId>org.congocc.maven.plugin</artifactId>   
