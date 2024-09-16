@@ -48,12 +48,11 @@ protected:
     uint32_t                      _dictSize;
     EntryRef                      _pidx;
     EntryRef                      _frozenRoot; // Posting list in tree form
-    bool                          _hasWeight;
     bool                          _useBitVector;
     mutable std::optional<size_t> _estimated_hits; // Snapshot of size of posting lists in range
 
     PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
-                             uint64_t numValues, bool hasWeight, bool useBitVector, const ISearchContext &baseSearchCtx);
+                             uint64_t numValues, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     ~PostingListSearchContext() override;
 
@@ -102,7 +101,7 @@ protected:
     PostingListMerger<DataT> _merger;
 
     PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
-                              bool hasWeight, const PostingStore& posting_store,
+                              const PostingStore& posting_store,
                               bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT() override;
 
@@ -151,7 +150,7 @@ protected:
     mutable std::vector<EntryRef>   _posting_indexes;
 
     PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                    bool hasWeight, const PostingStore& posting_store,
+                                    const PostingStore& posting_store,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListFoldedSearchContextT() override;
 
@@ -252,7 +251,6 @@ PostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearc
       BaseSC2(toBeSearched.getEnumStore().get_dictionary(),
               toBeSearched.getCommittedDocIdLimit(),
               toBeSearched.getStatus().getNumValues(),
-              toBeSearched.hasWeightedSetType(),
               toBeSearched.get_posting_store(),
               useBitVector,
               *this),

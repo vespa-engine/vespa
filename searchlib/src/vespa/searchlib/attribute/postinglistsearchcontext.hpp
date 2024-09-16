@@ -20,9 +20,9 @@ namespace search::attribute {
 
 template <typename DataT>
 PostingListSearchContextT<DataT>::
-PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
+PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                           const PostingStore& posting_store, bool useBitVector, const ISearchContext &searchContext)
-    : PostingListSearchContext(dictionary, dictionary.get_has_btree_dictionary(), docIdLimit, numValues, hasWeight, useBitVector, searchContext),
+    : PostingListSearchContext(dictionary, dictionary.get_has_btree_dictionary(), docIdLimit, numValues, useBitVector, searchContext),
       _posting_store(posting_store),
       _merger(docIdLimit)
 {
@@ -221,7 +221,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             if (_posting_store.isFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             } else {
-                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, _hasWeight, matchData, postings);
+                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             }
         }
         if (_merger.hasArray()) {
@@ -248,7 +248,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             if (_posting_store.isFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             } else {
-                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, _hasWeight, matchData, postings);
+                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             }
         }
         typename PostingStore::BTreeType::FrozenView frozen(_frozenRoot, _posting_store.getAllocator());
@@ -257,7 +257,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         if (_posting_store.isFilter()) {
             return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, frozen.getRoot(), frozen.getAllocator());
         } else {
-            return std::make_unique<AttributePostingListIteratorT<DocIt>> (_baseSearchCtx, _hasWeight, matchData, frozen.getRoot(), frozen.getAllocator());
+            return std::make_unique<AttributePostingListIteratorT<DocIt>> (_baseSearchCtx, matchData, frozen.getRoot(), frozen.getAllocator());
         }
     }
     // returning nullptr will trigger fallback to filter iterator
@@ -347,9 +347,9 @@ PostingListSearchContextT<DataT>::applyRangeLimit(long rangeLimit)
 template <typename DataT>
 PostingListFoldedSearchContextT<DataT>::
 PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                bool hasWeight, const PostingStore& posting_store,
+                                const PostingStore& posting_store,
                                 bool useBitVector, const ISearchContext &searchContext)
-    : Parent(dictionary, docIdLimit, numValues, hasWeight, posting_store, useBitVector, searchContext),
+    : Parent(dictionary, docIdLimit, numValues, posting_store, useBitVector, searchContext),
       _resume_scan_itr(),
       _posting_indexes()
 {

@@ -179,13 +179,11 @@ class AttributePostingListIterator : public AttributeIteratorBase
 {
 public:
     AttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx,
-                                 bool hasWeight, fef::TermFieldMatchData *matchData)
-        : AttributeIteratorBase(baseSearchCtx, matchData),
-          _hasWeight(hasWeight)
-    {}
+                                 fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData)
+        {}
     Trinary is_strict() const override { return Trinary::True; }
 protected:
-    bool  _hasWeight;
 };
 
 
@@ -228,7 +226,7 @@ private:
 public:
     template <typename... Args>
     AttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx,
-                                  bool hasWeight, fef::TermFieldMatchData *matchData,
+                                  fef::TermFieldMatchData *matchData,
                                   Args &&... args);
 };
 
