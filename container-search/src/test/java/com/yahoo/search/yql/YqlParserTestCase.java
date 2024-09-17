@@ -819,6 +819,9 @@ public class YqlParserTestCase {
     @Test
     void testSources() {
         assertSources("select foo from sourceA where price <= 500", List.of("sourceA"));
+        assertSources("select foo from sources sourceA, sourceB where price <= 500", List.of("sourceA", "sourceB"));
+        assertSources("select foo from sources cluster1.* where price <= 500", List.of("cluster1")); // Dot syntax is ignored
+        assertSources("select foo from sources cluster1.*, cluster2.* where price <= 500", List.of("cluster1", "cluster2"));
     }
 
     @Test
