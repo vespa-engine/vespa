@@ -50,6 +50,7 @@ protected:
     EntryRef                      _frozenRoot; // Posting list in tree form
     bool                          _useBitVector;
     mutable std::optional<size_t> _estimated_hits; // Snapshot of size of posting lists in range
+    static bool                   _preserve_weight; // Use temporary posting list with weight information
 
     PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
                              uint64_t numValues, bool useBitVector, const ISearchContext &baseSearchCtx);
@@ -78,6 +79,11 @@ protected:
      * by looking at the posting lists in the range [lower, upper>.
      */
     virtual size_t calc_estimated_hits_in_range() const = 0;
+
+public:
+    // Used by unit tests.
+    static bool get_preserve_weight() noexcept { return _preserve_weight; }
+    static void set_preserve_weight(bool value) noexcept { _preserve_weight = value; }
 };
 
 
@@ -99,6 +105,8 @@ protected:
      * Synthetic posting lists for range search, in array or bitvector form
      */
     PostingListMerger<DataT> _merger;
+
+    static constexpr bool merged_array_has_weight = !std::is_same_v<DataT, vespalib::btree::BTreeNoLeafData>;
 
     PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                               const PostingStore& posting_store,
