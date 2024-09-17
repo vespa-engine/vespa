@@ -1608,8 +1608,8 @@ SearchContextTest::test_weighted_prefix_search(const std::string& name, const Co
             EXPECT_EQ(1, md.getDocId());
             int32_t expected_weight = (preserve_weight || !common_word || !cfg.fastSearch()) ?
                                       (attr->hasWeightedSetType() ?
-                                       (common_word ? 1515 : 1500) :
-                                       (attr->hasMultiValue() ? (common_word ? 6 : 3) : 1)) :
+                                       (common_word ? (1000 + 300 + 200 + 10 + 3 + 2) : (1000 + 300 + 200)) :
+                                       (attr->hasMultiValue() ? (common_word ? (1 + 1 + 1 + 1 + 1 + 1) : (1 + 1 + 1)) : 1)) :
                                       1;
             EXPECT_EQ(expected_weight, md.getWeight());
         }
