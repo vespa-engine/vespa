@@ -3,6 +3,7 @@
 #pragma once
 
 #include "zc4_posting_params.h"
+#include "zc_decoder.h"
 #include "zcbuf.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
@@ -22,7 +23,8 @@ protected:
 
     class NoSkipBase {
     protected:
-        ZcBuf _zc_buf;
+        std::vector<uint8_t> _zc_buf;
+        ZcDecoder _zc_decoder;
         uint32_t _doc_id;
         uint32_t _doc_id_pos;
         uint64_t _features_pos;

@@ -16,7 +16,7 @@ class DocIdEncoder {
 protected:
     uint32_t _doc_id;
     uint32_t _doc_id_pos;
-    uint32_t _feature_pos;
+    uint64_t _feature_pos;
     using DocIdAndFeatureSize = Zc4PostingWriterBase::DocIdAndFeatureSize;
 
 public:
@@ -31,7 +31,7 @@ public:
     void set_doc_id(uint32_t doc_id) { _doc_id = doc_id; }
     uint32_t get_doc_id() const { return _doc_id; }
     uint32_t get_doc_id_pos() const { return _doc_id_pos; }
-    uint32_t get_feature_pos() const { return _feature_pos; }
+    uint64_t get_feature_pos() const { return _feature_pos; }
 };
 
 class L1SkipEncoder : public DocIdEncoder {
@@ -219,12 +219,6 @@ Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
       _featureWriteContext(sizeof(uint64_t))
 {
     _featureWriteContext.allocComprBuf(64, 1);
-    // Ensure that some space is initially available in encoding buffers
-    _zcDocIds.maybeExpand();
-    _l1Skip.maybeExpand();
-    _l2Skip.maybeExpand();
-    _l3Skip.maybeExpand();
-    _l4Skip.maybeExpand();
 }
 
 Zc4PostingWriterBase::~Zc4PostingWriterBase() = default;
