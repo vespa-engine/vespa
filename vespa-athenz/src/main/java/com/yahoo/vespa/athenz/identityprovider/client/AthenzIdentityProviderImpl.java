@@ -74,8 +74,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     // TODO CMS expects 10min or less token ttl. Use 10min default until we have configurable expiry
     private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(10);
 
-    // TODO Make path to trust store paths config
-    private static final Path CLIENT_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.pem");
+    private static final Path CLIENT_TRUST_STORE = SiaUtils.getVespaCaCertificatesFile();
 
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.baseName();
 
