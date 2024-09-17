@@ -18,7 +18,7 @@ public class RedundancyIncreaseValidator implements ChangeValidator {
         for (ContentCluster currentCluster : context.previousModel().getContentClusters().values()) {
             ContentCluster nextCluster = context.model().getContentClusters().get(currentCluster.getSubId());
             if (nextCluster == null) continue;
-            if (redundancyOf(nextCluster) > redundancyOf(currentCluster)) {
+            if (copiesPerNode(nextCluster) >= 1.5 * copiesPerNode(currentCluster)) {
                 context.invalid(ValidationId.redundancyIncrease,
                                 "Increasing redundancy from " + redundancyOf(currentCluster) + " to " +
                                 redundancyOf(nextCluster) + " in '" + currentCluster + ". " +
@@ -31,6 +31,18 @@ public class RedundancyIncreaseValidator implements ChangeValidator {
 
     private int redundancyOf(ContentCluster cluster) {
         return cluster.getRedundancy().finalRedundancy();
+    }
+
+    private int groupsOf(ContentCluster cluster) {
+        return cluster.getRootGroup().getNumberOfLeafGroups();
+    }
+
+    private int nodesOf(ContentCluster cluster) {
+        return cluster.getRootGroup().countNodes(false);
+    }
+
+    private double copiesPerNode(ContentCluster cluster) {
+        return redundancyOf(cluster) * groupsOf(cluster) / (double)nodesOf(cluster);
     }
 
 }

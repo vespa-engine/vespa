@@ -21,9 +21,9 @@ public class RedundancyIncreaseValidatorTest {
 
     @Test
     void testRedundancyIncreaseValidation() {
-        VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null, "contentClusterId.indexing").getFirst();
+        VespaModel previous = tester.deploy(null, getServices(2, 3, 1), Environment.prod, null, "contentClusterId.indexing").getFirst();
         try {
-            tester.deploy(previous, getServices(3), Environment.prod, null, "contentClusterId.indexing");
+            tester.deploy(previous, getServices(3, 3, 1), Environment.prod, null, "contentClusterId.indexing");
             fail("Expected exception due to redundancy increase");
         }
         catch (IllegalArgumentException expected) {
@@ -36,12 +36,18 @@ public class RedundancyIncreaseValidatorTest {
     }
 
     @Test
-    void testOverridingContentRemovalValidation() {
-        VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null, "contentClusterId.indexing").getFirst();
-        tester.deploy(previous, getServices(3), Environment.prod, redundancyIncreaseOverride, "contentClusterId.indexing"); // Allowed due to override
+    void testRedundancyIncreaseValidationDoesNotTriggerWhenTotalCopiesAreNotIncreased() {
+        VespaModel previous = tester.deploy(null, getServices(1, 2, 2), Environment.prod, null, "contentClusterId.indexing").getFirst();
+        tester.deploy(previous, getServices(2, 3, 1), Environment.prod, null, "contentClusterId.indexing");
     }
 
-    private static String getServices(int redundancy) {
+    @Test
+    void testOverridingContentRemovalValidation() {
+        VespaModel previous = tester.deploy(null, getServices(2, 3, 1), Environment.prod, null, "contentClusterId.indexing").getFirst();
+        tester.deploy(previous, getServices(3, 3, 1), Environment.prod, redundancyIncreaseOverride, "contentClusterId.indexing"); // Allowed due to override
+    }
+
+    private static String getServices(int redundancy, int nodes, int groups) {
         return "<services version='1.0'>" +
                "  <content id='contentClusterId' version='1.0'>" +
                "    <redundancy>" + redundancy + "</redundancy>" +
@@ -51,7 +57,7 @@ public class RedundancyIncreaseValidatorTest {
                "    <documents>" +
                "      <document type='music' mode='index'/>" +
                "    </documents>" +
-               "    <nodes count='3'/>" +
+               "    <nodes count='" + nodes + "' groups='" + groups + "'/>" +
                "   </content>" +
                "</services>";
     }
