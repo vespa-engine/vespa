@@ -83,18 +83,27 @@ getBucket(const api::StorageMessage & msg) {
 std::vector<uint64_t>
 PendingMessageTracker::clearMessagesForNode(uint16_t node)
 {
-    std::lock_guard guard(_lock);
+    std::vector<std::unique_ptr<DeferredTask>> tasks_to_abort;
+    std::unique_lock guard(_lock);
     auto& idx = boost::multi_index::get<IndexByNodeAndBucket>(_messages);
     auto range = pairAsRange(idx.equal_range(boost::make_tuple(node)));
 
-    std::vector<uint64_t> erasedIds;
+    std::vector<uint64_t> erased_ids;
     for (auto& entry : range) {
-        erasedIds.push_back(entry.msgId);
+        erased_ids.emplace_back(entry.msgId);
+        // For simplicity, we use a metaphorical sledgehammer and abort deferred tasks for
+        // _all_ buckets touched by messages towards a cleared node.
+        get_and_erase_deferred_tasks_for_bucket(entry.bucket, tasks_to_abort);
     }
     idx.erase(std::begin(range), std::end(range));
 
     _nodeInfo.clearPending(node);
-    return erasedIds;
+    guard.unlock();
+    // Must run tasks outside of lock to avoid potential deadlocks caused by calls back into the message tracker.
+    for (auto& task : tasks_to_abort) {
+        task->run(TaskRunState::Aborted);
+    }
+    return erased_ids;
 }
 
 void
@@ -211,6 +220,16 @@ PendingMessageTracker::bucket_has_no_pending_write_ops(const document::Bucket& b
     return range_is_empty_or_only_has_read_ops(pending_tasks_for_bucket);
 }
 
+void
+PendingMessageTracker::get_and_erase_deferred_tasks_for_bucket(const document::Bucket& bucket, std::vector<std::unique_ptr<DeferredTask>>& tasks)
+{
+    auto waiting_tasks = _deferred_read_tasks.equal_range(bucket);
+    for (auto task_iter = waiting_tasks.first; task_iter != waiting_tasks.second; ++task_iter) {
+        tasks.emplace_back(std::move(task_iter->second));
+    }
+    _deferred_read_tasks.erase(waiting_tasks.first, waiting_tasks.second);
+}
+
 std::vector<std::unique_ptr<DeferredTask>>
 PendingMessageTracker::get_deferred_ops_if_bucket_writes_drained(const document::Bucket& bucket)
 {
@@ -219,11 +238,7 @@ PendingMessageTracker::get_deferred_ops_if_bucket_writes_drained(const document:
     }
     std::vector<std::unique_ptr<DeferredTask>> tasks;
     if (bucket_has_no_pending_write_ops(bucket)) {
-        auto waiting_tasks = _deferred_read_tasks.equal_range(bucket);
-        for (auto task_iter = waiting_tasks.first; task_iter != waiting_tasks.second; ++task_iter) {
-            tasks.emplace_back(std::move(task_iter->second));
-        }
-        _deferred_read_tasks.erase(waiting_tasks.first, waiting_tasks.second);
+        get_and_erase_deferred_tasks_for_bucket(bucket, tasks);
     }
     return tasks;
 }
