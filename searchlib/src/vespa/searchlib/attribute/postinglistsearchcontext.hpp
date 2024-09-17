@@ -170,8 +170,9 @@ PostingListSearchContextT<DataT>::fetchPostings(const ExecuteInfo & exec_info, b
     if (!_merger.merge_done() && _uniqueValues >= 2u && this->_dictionary.get_has_btree_dictionary()) {
         if (strict || use_posting_lists_when_non_strict(exec_info)) {
             size_t sum = estimated_hits_in_range();
+            bool force_array = merged_array_has_weight && _preserve_weight && !_useBitVector;
             //TODO Honour soft_doom and forward it to merge code
-            if (sum < (_docIdLimit * threshold_for_using_array)) {
+            if (sum < (_docIdLimit * threshold_for_using_array) || force_array) {
                 _merger.reserveArray(_uniqueValues, sum);
                 fillArray();
             } else {
