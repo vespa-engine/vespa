@@ -309,7 +309,8 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     UC64_DECODECONTEXT_STORE(o, d._);
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();
-    _zc_decoder.set_cur(_zc_decoder_start = bcompr);
+    _zc_decoder_start = bcompr;
+    _zc_decoder.set_cur(bcompr);
     bcompr += docIdsSize;
     _l1.setup(prevDocId, _chunk._lastDocId, bcompr, l1SkipSize);
     _l2.setup(prevDocId, _chunk._lastDocId, bcompr, l2SkipSize);
@@ -345,7 +346,10 @@ ZcPostingIteratorBase::doChunkSkipSeek(uint32_t docId)
         readWordStart(getDocIdLimit()); // Read word start for next chunk
     }
     if (docId > _chunk._lastDocId) {
-        _l4._skipDocId = _l3._skipDocId = _l2._skipDocId = _l1._skipDocId = search::endDocId;
+        _l1._skipDocId = search::endDocId;
+        _l2._skipDocId = search::endDocId;
+        _l3._skipDocId = search::endDocId;
+        _l4._skipDocId = search::endDocId;
         setAtEnd();
     }
 }
@@ -377,12 +381,21 @@ ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
                _l4._skipDocId);
 #endif
     } while (docId > _l4._skipDocId);
-    _zc_decoder.set_cur(_l1._docIdPos = _l2._docIdPos = _l3._docIdPos = _l4._docIdPos);
-    _l1._skipFeaturePos = _l2._skipFeaturePos = _l3._skipFeaturePos =
-                        _l4._skipFeaturePos;
-    _l1._skipDocId = _l2._skipDocId = _l3._skipDocId = lastL4SkipDocId;
-    _l1._zc_decoder.set_cur(_l2._l1Pos = _l3._l1Pos = _l4._l1Pos);
-    _l2._zc_decoder.set_cur(_l3._l2Pos = _l4._l2Pos);
+    _l3._docIdPos = _l4._docIdPos;
+    _l2._docIdPos = _l4._docIdPos;
+    _l1._docIdPos = _l4._docIdPos;
+    _zc_decoder.set_cur(_l4._docIdPos);
+    _l3._skipFeaturePos = _l4._skipFeaturePos;
+    _l2._skipFeaturePos = _l4._skipFeaturePos;
+    _l1._skipFeaturePos = _l4._skipFeaturePos;
+    _l3._skipDocId = lastL4SkipDocId;
+    _l2._skipDocId = lastL4SkipDocId;
+    _l1._skipDocId = lastL4SkipDocId;
+    _l3._l1Pos = _l4._l1Pos;
+    _l2._l1Pos = _l4._l1Pos;
+    _l1._zc_decoder.set_cur(_l4._l1Pos);
+    _l3._l2Pos = _l4._l2Pos;
+    _l2._zc_decoder.set_cur(_l4._l2Pos);
     _l3._zc_decoder.set_cur(_l4._l3Pos);
     nextDocId(lastL4SkipDocId);
     _l1.nextDocId();
@@ -428,10 +441,15 @@ ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
                _l3._skipDocId);
 #endif
     } while (docId > _l3._skipDocId);
-    _zc_decoder.set_cur(_l1._docIdPos = _l2._docIdPos = _l3._docIdPos);
-    _l1._skipFeaturePos = _l2._skipFeaturePos = _l3._skipFeaturePos;
-    _l1._skipDocId = _l2._skipDocId = lastL3SkipDocId;
-    _l1._zc_decoder.set_cur(_l2._l1Pos = _l3._l1Pos);
+    _l2._docIdPos = _l3._docIdPos;
+    _l1._docIdPos = _l3._docIdPos;
+    _zc_decoder.set_cur(_l3._docIdPos);
+    _l2._skipFeaturePos = _l3._skipFeaturePos;
+    _l1._skipFeaturePos = _l3._skipFeaturePos;
+    _l2._skipDocId = lastL3SkipDocId;
+    _l1._skipDocId = lastL3SkipDocId;
+    _l2._l1Pos = _l3._l1Pos;
+    _l1._zc_decoder.set_cur(_l3._l1Pos);
     _l2._zc_decoder.set_cur(_l3._l2Pos);
     nextDocId(lastL3SkipDocId);
     _l1.nextDocId();
@@ -473,7 +491,8 @@ ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
                _l2._skipDocId);
 #endif
     } while (docId > _l2._skipDocId);
-    _zc_decoder.set_cur(_l1._docIdPos = _l2._docIdPos);
+    _l1._docIdPos = _l2._docIdPos;
+    _zc_decoder.set_cur(_l2._docIdPos);
     _l1._skipFeaturePos = _l2._skipFeaturePos;
     _l1._skipDocId = lastL2SkipDocId;
     _l1._zc_decoder.set_cur(_l2._l1Pos);
