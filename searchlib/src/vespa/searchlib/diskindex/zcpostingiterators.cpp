@@ -192,8 +192,8 @@ ZcPostingIteratorBase::ZcPostingIteratorBase(TermFieldMatchDataArray matchData, 
                                              bool decode_normal_features, bool decode_interleaved_features,
                                              bool unpack_normal_features, bool unpack_interleaved_features)
     : ZcIteratorBase(std::move(matchData), start, docIdLimit),
-      _valI(nullptr),
-      _valIBase(nullptr),
+      _zc_decoder(),
+      _zc_decoder_start(nullptr),
       _featureSeekPos(0),
       _l1(),
       _l2(),
@@ -309,7 +309,7 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     UC64_DECODECONTEXT_STORE(o, d._);
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();
-    _valIBase = _valI = bcompr;
+    _zc_decoder.set_cur(_zc_decoder_start = bcompr);
     bcompr += docIdsSize;
     _l1.setup(prevDocId, _chunk._lastDocId, bcompr, l1SkipSize);
     _l2.setup(prevDocId, _chunk._lastDocId, bcompr, l2SkipSize);
@@ -377,14 +377,13 @@ ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
                _l4._skipDocId);
 #endif
     } while (docId > _l4._skipDocId);
-    _valI = _l1._docIdPos = _l2._docIdPos = _l3._docIdPos =
-            _l4._docIdPos;
+    _zc_decoder.set_cur(_l1._docIdPos = _l2._docIdPos = _l3._docIdPos = _l4._docIdPos);
     _l1._skipFeaturePos = _l2._skipFeaturePos = _l3._skipFeaturePos =
                         _l4._skipFeaturePos;
     _l1._skipDocId = _l2._skipDocId = _l3._skipDocId = lastL4SkipDocId;
-    _l1._valI = _l2._l1Pos = _l3._l1Pos = _l4._l1Pos;
-    _l2._valI = _l3._l2Pos = _l4._l2Pos;
-    _l3._valI = _l4._l3Pos;
+    _l1._zc_decoder.set_cur(_l2._l1Pos = _l3._l1Pos = _l4._l1Pos);
+    _l2._zc_decoder.set_cur(_l3._l2Pos = _l4._l2Pos);
+    _l3._zc_decoder.set_cur(_l4._l3Pos);
     nextDocId(lastL4SkipDocId);
     _l1.nextDocId();
     _l2.nextDocId();
@@ -429,11 +428,11 @@ ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
                _l3._skipDocId);
 #endif
     } while (docId > _l3._skipDocId);
-    _valI = _l1._docIdPos = _l2._docIdPos = _l3._docIdPos;
+    _zc_decoder.set_cur(_l1._docIdPos = _l2._docIdPos = _l3._docIdPos);
     _l1._skipFeaturePos = _l2._skipFeaturePos = _l3._skipFeaturePos;
     _l1._skipDocId = _l2._skipDocId = lastL3SkipDocId;
-    _l1._valI = _l2._l1Pos = _l3._l1Pos;
-    _l2._valI = _l3._l2Pos;
+    _l1._zc_decoder.set_cur(_l2._l1Pos = _l3._l1Pos);
+    _l2._zc_decoder.set_cur(_l3._l2Pos);
     nextDocId(lastL3SkipDocId);
     _l1.nextDocId();
     _l2.nextDocId();
@@ -474,10 +473,10 @@ ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
                _l2._skipDocId);
 #endif
     } while (docId > _l2._skipDocId);
-    _valI = _l1._docIdPos = _l2._docIdPos;
+    _zc_decoder.set_cur(_l1._docIdPos = _l2._docIdPos);
     _l1._skipFeaturePos = _l2._skipFeaturePos;
     _l1._skipDocId = lastL2SkipDocId;
-    _l1._valI = _l2._l1Pos;
+    _l1._zc_decoder.set_cur(_l2._l1Pos);
     nextDocId(lastL2SkipDocId);
     _l1.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
@@ -514,7 +513,7 @@ ZcPostingIteratorBase::doL1SkipSeek(uint32_t docId)
                 _l1._skipDocId);
 #endif
     } while (docId > _l1._skipDocId);
-    _valI = _l1._docIdPos;
+    _zc_decoder.set_cur(_l1._docIdPos);
     nextDocId(lastL1SkipDocId);
 #if DEBUG_ZCPOSTING_PRINTF
     printf("L1SkipSeek, docId %d docIdPos %d, nextDocId %d\n",
@@ -544,7 +543,7 @@ ZcPostingIteratorBase::doSeek(uint32_t docId)
     assert(oDocId <= _l4._skipDocId);
     assert(docId <= _l4._skipDocId);
 #endif
-    const uint8_t *oCompr = _valI;
+    ZcDecoder zc_decoder(_zc_decoder);
     uint32_t field_length = _field_length;
     uint32_t num_occs = _num_occs;
     while (__builtin_expect(oDocId < docId, true)) {
@@ -554,18 +553,18 @@ ZcPostingIteratorBase::doSeek(uint32_t docId)
         assert(oDocId <= _l3._skipDocId);
         assert(oDocId <= _l4._skipDocId);
 #endif
-        ZCDECODE(oCompr, oDocId += 1 +);
+        oDocId += (1 + zc_decoder.decode32());
 #if DEBUG_ZCPOSTING_PRINTF
         printf("Decode docId=%d\n",
                oDocId);
 #endif
         if (_decode_interleaved_features) {
-            ZCDECODE(oCompr, field_length = 1 +);
-            ZCDECODE(oCompr, num_occs = 1 +);
+            field_length = 1 + zc_decoder.decode32();
+            num_occs = 1 + zc_decoder.decode32();
         }
         incNeedUnpack();
     }
-    _valI = oCompr;
+    _zc_decoder = zc_decoder;
     setDocId(oDocId);
     if (_decode_interleaved_features) {
         _field_length = field_length;
