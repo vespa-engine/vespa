@@ -5,7 +5,6 @@ package slime
 var (
 	emptyBytes []byte = make([]byte, 0)
 	Empty      Value  = &emptyValue{}
-	Invalid    Value  = (*emptyValue)(nil)
 )
 
 type Value interface {
@@ -28,7 +27,7 @@ type Value interface {
 
 type emptyValue struct{}
 
-func (v *emptyValue) Valid() bool                            { return (v != nil) }
+func (*emptyValue) Valid() bool                              { return true }
 func (*emptyValue) Type() Type                               { return EMPTY }
 func (*emptyValue) AsBool() bool                             { return false }
 func (*emptyValue) AsLong() int64                            { return 0 }
@@ -43,3 +42,5 @@ func (*emptyValue) Field(name string) Value                  { return Invalid }
 func (*emptyValue) EachField(func(name string, value Value)) {}
 func (*emptyValue) Add(value Value) Value                    { return Invalid }
 func (*emptyValue) Set(name string, value Value) Value       { return Invalid }
+
+func ToString(value Value) string { return ToJson(value, false) }
