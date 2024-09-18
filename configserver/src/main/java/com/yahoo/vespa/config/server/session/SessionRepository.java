@@ -1179,6 +1179,8 @@ public class SessionRepository {
 
         @Override
         public void commit() {
+            if ( ! pathToDelete.toFile().exists()) return;
+
             // Make sure to create a temp dir in the same file system as the path to delete (and don't use the same path
             // as for sessions, as they are regularly scanned and expected to be a number)
             var tempDir = uncheck(() -> createTempDirectory(tenantPath, "delete"));
