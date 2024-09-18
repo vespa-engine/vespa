@@ -559,6 +559,13 @@ public class Flags {
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
 
+    public static final UnboundBooleanFlag DISABLE_YAHOO_AGENTS = defineFeatureFlag(
+            "disable-yahoo-agents", false,
+            List.of("eirik"), "2024-09-18", "2024-11-01",
+            "Wheter Yahoo paranoids agents should be disable on the host.",
+            "Takes effect on provisioning and next host-admin run",
+            INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
