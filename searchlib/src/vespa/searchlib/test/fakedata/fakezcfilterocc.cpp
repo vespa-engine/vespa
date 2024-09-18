@@ -3,6 +3,7 @@
 #include "fakezcfilterocc.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchlib/diskindex/zc_decoder_validator.h>
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
 #include <vespa/searchlib/diskindex/zc4_posting_header.h>
 #include <vespa/searchlib/diskindex/zc4_posting_params.h>
@@ -54,36 +55,6 @@ writeZcBuf(EC &e, ZcBuf &buf)
     e.writeBits(reinterpret_cast<const uint64_t *>(view.data() - bytesOffset),
                 bytesOffset * 8, view.size() * 8);
 }
-
-#define ZCDECODE(valI, resop)                                \
-do {                                                         \
-    if (__builtin_expect(valI[0] < (1 << 7), true)) {        \
-    resop valI[0];                                           \
-    valI += 1;                                               \
-    } else if (__builtin_expect(valI[1] < (1 << 7), true)) { \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              (valI[1] << 7);                                \
-        valI += 2;                                           \
-    } else if (__builtin_expect(valI[2] < (1 << 7), true)) { \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
-              (valI[2] << 14);                               \
-        valI += 3;                                           \
-    } else if (__builtin_expect(valI[3] < (1 << 7), true)) { \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
-              ((valI[2] & ((1 << 7) - 1)) << 14) +           \
-              (valI[3] << 21);                               \
-        valI += 4;                                           \
-    } else {                                                 \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
-              ((valI[2] & ((1 << 7) - 1)) << 14) +           \
-              ((valI[3] & ((1 << 7) - 1)) << 21) +           \
-              (valI[4] << 28);                               \
-        valI += 5;                                           \
-    }                                                        \
-} while (0)
 
 FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw)
     : FakePosting(fw.getName() + ".zcfilterocc"),
@@ -387,8 +358,7 @@ private:
     operator=(const FakeFilterOccZCArrayIterator &other);
 
 public:
-    // Pointer to compressed data
-    const uint8_t *_valI;
+    ZcDecoder _zc_decoder;
     unsigned int _residue;
     uint32_t _lastDocId;
 
@@ -417,7 +387,7 @@ FakeFilterOccZCArrayIterator(const uint64_t *compressed,
                              uint32_t docIdLimit,
                              const fef::TermFieldMatchDataArray &matchData)
     : queryeval::RankedSearchIteratorBase(matchData),
-      _valI(nullptr),
+      _zc_decoder(),
       _residue(0),
       _lastDocId(0),
       _decodeContext(compressed, bitOffset),
@@ -436,7 +406,7 @@ FakeFilterOccZCArrayIterator::initRange(uint32_t begin, uint32_t end)
     header.read(d, params);
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();
-    _valI = bcompr;
+    _zc_decoder.set_cur(bcompr);
     bcompr += header._doc_ids_size;
     bcompr += header._l1_skip_size;
     bcompr += header._l2_skip_size;
@@ -444,7 +414,7 @@ FakeFilterOccZCArrayIterator::initRange(uint32_t begin, uint32_t end)
     bcompr += header._l4_skip_size,
     d.setByteCompr(bcompr);
     uint32_t oDocId;
-    ZCDECODE(_valI, oDocId = 1 +);
+    oDocId = 1 + _zc_decoder.decode32();
 #if DEBUG_ZCFILTEROCC_PRINTF
     printf("DecodeInit docId=%d\n",
            oDocId);
@@ -463,7 +433,7 @@ FakeFilterOccZCArrayIterator::
 void
 FakeFilterOccZCArrayIterator::doSeek(uint32_t docId)
 {
-    const uint8_t *oCompr = _valI;
+    ZcDecoder zc_decoder(_zc_decoder);
     uint32_t oDocId = getDocId();
 
     if (getUnpacked()) {
@@ -473,17 +443,17 @@ FakeFilterOccZCArrayIterator::doSeek(uint32_t docId)
         if (--_residue == 0) {
             goto atbreak;
         }
-        ZCDECODE(oCompr, oDocId += 1 +);
+        oDocId += (1 + zc_decoder.decode32());
 #if DEBUG_ZCFILTEROCC_PRINTF
         printf("Decode docId=%d\n",
                docId);
 #endif
     }
-    _valI = oCompr;
+    _zc_decoder = zc_decoder;
     setDocId(oDocId);
     return;
  atbreak:
-    _valI = oCompr;
+    _zc_decoder = zc_decoder;
     setAtEnd();                     // Mark end of data
     return;
 }
