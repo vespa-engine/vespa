@@ -6,6 +6,7 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.geo.DegreesParser;
 import com.yahoo.document.serialization.XmlStream;
+import com.yahoo.yolean.Exceptions;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -84,7 +85,7 @@ public final class PositionDataType {
             } catch (NumberFormatException nfe) {
                 // empty
             }
-            throw new IllegalArgumentException("Could not parse '"+str+"' as geo coordinates: "+e.getMessage());
+            throw new IllegalArgumentException("Could not parse '" + str + "' as geo coordinates: " + Exceptions.toMessageString(e));
         }
     }
 
