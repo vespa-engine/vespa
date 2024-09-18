@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
@@ -43,6 +42,10 @@ public class PagedAttributesRemoteStorageTest {
                          indexing: summary | attribute
                          attribute: paged
                         }
+                        field name type string {
+                         indexing: summary | attribute
+                         attribute: paged
+                        }
                         field rating type int {
                          indexing: summary | attribute
                         }
@@ -53,7 +56,7 @@ public class PagedAttributesRemoteStorageTest {
         assertTrue(logger.message.toString().contains(
                 "Cluster 'mycluster' has nodes with remote storage and fields with paged attributes." +
                         " This might lead to performance issues when doing I/O." +
-                        " Consider using storage-type='local' or removing 'paged' setting for these fields: 'year'"));
+                        " Consider using storage-type='local' or removing 'paged' setting for these fields: 'year', 'name'"));
     }
 
     private static class MyLogger implements DeployLogger {
