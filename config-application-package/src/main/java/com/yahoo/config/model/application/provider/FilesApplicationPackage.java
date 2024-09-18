@@ -70,6 +70,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 
 /**
@@ -643,10 +644,19 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private void validateServicesFile() throws IOException {
         File servicesFile = getServicesFile();
+        String absolutePath = servicesFile.getAbsolutePath();
         if ( ! servicesFile.exists())
-            throw new IllegalArgumentException(SERVICES + " does not exist in application package");
+            throw new IllegalArgumentException(SERVICES + " does not exist in application package (" + absolutePath +
+                                                       "). Files in application package: " + filesInApplicationPackage());
         if (IOUtils.readFile(servicesFile).isEmpty())
-            throw new IllegalArgumentException(SERVICES + " in application package is empty");
+            throw new IllegalArgumentException(SERVICES + " in application package is empty (" + absolutePath +
+                                                       "). Files in application package: " + filesInApplicationPackage());
+    }
+
+    private String filesInApplicationPackage() {
+        return uncheck(() -> Files.list(appDir.toPath())
+                .map(java.nio.file.Path::toString)
+                .reduce("", (a, b) -> a + "," + b));
     }
 
     private void copyUserDefsIntoApplication() {
