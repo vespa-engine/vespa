@@ -644,19 +644,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private void validateServicesFile() throws IOException {
         File servicesFile = getServicesFile();
-        String absolutePath = servicesFile.getAbsolutePath();
         if ( ! servicesFile.exists())
-            throw new IllegalArgumentException(SERVICES + " does not exist in application package (" + absolutePath +
-                                                       "). Files in application package: " + filesInApplicationPackage());
+            throw new IllegalArgumentException(SERVICES + " does not exist in application package. " +
+                                               "There are " + filesInApplicationPackage() + " files in the directory");
         if (IOUtils.readFile(servicesFile).isEmpty())
-            throw new IllegalArgumentException(SERVICES + " in application package is empty (" + absolutePath +
-                                                       "). Files in application package: " + filesInApplicationPackage());
+            throw new IllegalArgumentException(SERVICES + " in application package is empty. " +
+                                               "There are " + filesInApplicationPackage() + " files in the directory");
     }
 
-    private String filesInApplicationPackage() {
-        return uncheck(() -> Files.list(appDir.toPath())
-                .map(java.nio.file.Path::toString)
-                .reduce("", (a, b) -> a + "," + b));
+    private long filesInApplicationPackage() {
+        return uncheck(() -> Files.list(appDir.toPath()).count());
     }
 
     private void copyUserDefsIntoApplication() {
