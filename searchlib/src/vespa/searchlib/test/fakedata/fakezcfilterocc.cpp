@@ -49,11 +49,10 @@ template <typename EC>
 static void
 writeZcBuf(EC &e, ZcBuf &buf)
 {
-    uint32_t size = buf.size();
-    uint8_t *bytes = buf._mallocStart;
-    uint32_t bytesOffset = reinterpret_cast<unsigned long>(bytes) & 7;
-    e.writeBits(reinterpret_cast<const uint64_t *>(bytes - bytesOffset),
-                bytesOffset * 8, size * 8);
+    auto view = buf.view();
+    uint32_t bytesOffset = reinterpret_cast<unsigned long>(view.data()) & 7;
+    e.writeBits(reinterpret_cast<const uint64_t *>(view.data() - bytesOffset),
+                bytesOffset * 8, view.size() * 8);
 }
 
 #define ZCDECODE(valI, resop)                                \
