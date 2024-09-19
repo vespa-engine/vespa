@@ -77,8 +77,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         for (var child : node) {
             if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child);
-            newNode.setParent(this);
-            children.add(newNode);
+            addChild(newNode);
         }
     }
 
@@ -99,8 +98,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         for (var child : node) {
             if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
-            newNode.setParent(this);
-            children.add(newNode);
+            addChild(newNode);
         }
 
     }
@@ -121,8 +119,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         for (var child : node) {
             if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
-            newNode.setParent(this);
-            children.add(newNode);
+            addChild(newNode);
         }
 
     }
@@ -451,21 +448,4 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         ret += ")";
         return ret;
     }
-
-	@Override
-	public Iterator<SchemaNode> iterator() {
-        return new Iterator<SchemaNode>() {
-            int currentIndex = 0;
-
-			@Override
-			public boolean hasNext() {
-                return currentIndex < children.size();
-			}
-
-			@Override
-			public SchemaNode next() {
-                return children.get(currentIndex++);
-			}
-        };
-	}
 }

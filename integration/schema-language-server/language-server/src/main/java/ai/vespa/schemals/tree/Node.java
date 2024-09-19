@@ -18,8 +18,8 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
     }
 
     // This array has to be in order, without overlapping elements
-    protected List<NodeType> children = new ArrayList<>();
-    protected NodeType parent;
+    private List<NodeType> children = new ArrayList<>();
+    private NodeType parent;
 
     protected LanguageType language; // Language specifies which parser the node comes from
     protected Range range;
