@@ -198,9 +198,6 @@
             <configuration>
               <sources>
                 <source>${project.basedir}/target/generated-sources/ccc</source>
-                <source>${project.parent.basedir}/../config-model/target/generated-sources/javacc</source>
-                <source>${project.parent.basedir}/../indexinglanguage/target/generated-sources/javacc</source>
-                <source>${project.parent.basedir}/../searchlib/target/generated-sources/javacc</source>
               </sources>
             </configuration>
           </execution>

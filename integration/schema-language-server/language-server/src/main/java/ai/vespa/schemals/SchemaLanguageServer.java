@@ -26,8 +26,8 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.lsp.command.CommandRegistry;
-import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.schema.command.CommandRegistry;
+import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 /**

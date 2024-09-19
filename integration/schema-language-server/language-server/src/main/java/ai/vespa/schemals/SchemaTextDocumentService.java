@@ -57,16 +57,16 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.lsp.codeaction.SchemaCodeAction;
-import ai.vespa.schemals.lsp.codelens.SchemaCodeLens;
-import ai.vespa.schemals.lsp.completion.SchemaCompletion;
-import ai.vespa.schemals.lsp.definition.SchemaDefinition;
-import ai.vespa.schemals.lsp.documentsymbols.SchemaDocumentSymbols;
-import ai.vespa.schemals.lsp.hover.SchemaHover;
-import ai.vespa.schemals.lsp.references.SchemaReferences;
-import ai.vespa.schemals.lsp.rename.SchemaPrepareRename;
-import ai.vespa.schemals.lsp.rename.SchemaRename;
-import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.schema.codeaction.SchemaCodeAction;
+import ai.vespa.schemals.lsp.schema.codelens.SchemaCodeLens;
+import ai.vespa.schemals.lsp.schema.completion.SchemaCompletion;
+import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.schema.documentsymbols.SchemaDocumentSymbols;
+import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
+import ai.vespa.schemals.lsp.schema.references.SchemaReferences;
+import ai.vespa.schemals.lsp.schema.rename.SchemaPrepareRename;
+import ai.vespa.schemals.lsp.schema.rename.SchemaRename;
+import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 /**

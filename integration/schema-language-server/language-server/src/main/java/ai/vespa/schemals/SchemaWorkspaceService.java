@@ -16,7 +16,7 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.lsp.command.ExecuteCommand;
+import ai.vespa.schemals.lsp.schema.command.ExecuteCommand;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class SchemaWorkspaceService implements WorkspaceService {

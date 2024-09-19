@@ -19,7 +19,7 @@ import com.yahoo.io.IOUtils;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.lsp.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.schemadocument.parser.IdentifySymbolDefinition;
