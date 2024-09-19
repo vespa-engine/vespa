@@ -73,11 +73,11 @@ TOKEN :
 | < MATCHES: 'matches' >
 | < NOTMATCHES: 'not matches' >
 
-| <PLUS: '+' >
-| <MINUS: '-' >
+| < PLUS: '+' >
+| < MINUS: '-' >
 | < DIV: '/' >
 | < MODULO: '%' >
-| <EXCLAMATION: '!' >
+| < EXCLAMATION: '!' >
 
 // effectively unary operators
 | < NULL: 'null' >
@@ -106,13 +106,13 @@ TOKEN :
 | < INT: ("-")?(["0"-"9"])+ >
 | < FLOAT: ("-")?(((["0"-"9"])+"."(["0"-"9"])* (<EXPONENT>)?)|("."(["0"-"9"])+ (<EXPONENT>)?)|((["0"-"9"])+ <EXPONENT>)) >
 | < EXPONENT: ("e"|"E") ("+"|"-")? (["0"-"9"])+ >
-| < DIGIT: ["0"-"9"] >
+//| < DIGIT: ["0"-"9"] > This is apparently never used
 | < LETTER: ["a"-"z","A"-"Z"] >
 
 | < HEX_DIGIT: ["0"-"9","a"-"f","A"-"F"] >
 | < UNICODE_ESC: '\\' 'u' <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> >
 | < ESC_SEQ: '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\'|'/') | <UNICODE_ESC> >
-| < STRING: (<DQ> ( <ESC_SEQ> | ('\\' | '"'))* <DQ>) | ( <SQ> ( <ESC_SEQ> | ('\\' | '"'))* <SQ> ) >
+| < STRING: (<DQ> ( <ESC_SEQ> | ~['\\','"'])* <DQ>) | ( <SQ> ( <ESC_SEQ> | ~['\\','"'])* <SQ> ) >
 
 ;
 
@@ -131,22 +131,46 @@ String identifierStr:
         <SELECT>
         | <LIMIT>
         | <OFFSET>
-        | <WHERE>
         | <ORDER>
         | <BY>
         | <DESC>
+        | <OUTPUT>
+        | <COUNT>
+        | <NOT_IN>
+        | <IN>
+        | <LIKE>
+        | <CONTAINS>
+        | <NOTLIKE>
+        | <MATCHES>
+        | <NOTMATCHES>
+        | <IS_NULL>
+        | <IS_NOT_NULL>
+        | <TIMEOUT>
+        | <IDENTIFIER>
+        | <LETTER>
+    )
+    {
+        return lastConsumedToken.toString();
+    }
+;
+
+vespa_grouping_identifier:
+    (
+        <SELECT>
+        | <LIMIT>
+        | <OFFSET>
+        | <WHERE>
+        | <ORDER>
+        | <BY>
+        | <ORDERBY>
+        | <DESC>
+        | <ASC>
         | <FROM>
         | <SOURCES>
         | <AS>
         | <COMMA>
         | <OUTPUT>
         | <COUNT>
-        | <TRUE>
-        | <FALSE>
-        | <LPAREN>
-        | <RPAREN>
-        | <LBRACKET>
-        | <RBRACKET>
         | <LBRACE>
         | <RBRACE>
         | <COLON>
@@ -155,37 +179,32 @@ String identifierStr:
         | <OR>
         | <NOT_IN>
         | <IN>
-        | <LT>
-        | <GT>
-        | <LTEQ>
-        | <GTEQ>
-        | <NEQ>
-        | <STAR>
-        | <EQ>
         | <LIKE>
         | <CONTAINS>
         | <NOTLIKE>
         | <MATCHES>
         | <NOTMATCHES>
+        | <NULL>
         | <IS_NULL>
         | <IS_NOT_NULL>
         | <DOT>
         | <AT>
-        | <SQ>
-        | <DQ>
-        | <SEMI>
         | <TIMEOUT>
-        | <IDENTIFIER>
-        | <LONG_INT>
-        | <INT>
-        | <FLOAT>
-        | <EXPONENT>
-        | <DIGIT>
-        | <LETTER>
+        | <ALL>
+        | <EACH>
+        | identifierStr
     )
-    {
-        return lastConsumedToken.toString();
-    }
+;
+
+// TODO: This should match all tokens not containing ()[]<>
+vespa_grouping_node:
+    (
+        unary_op
+        | additive_op
+        | mult_op
+        | scalar_literal
+        | vespa_grouping_identifier
+    )
 ;
 
 vespa_grouping:
@@ -198,8 +217,8 @@ vespa_grouping:
 
 vespa_grouping_arg:
     (
-        (<RPAREN> | <LBRACKET> | <LT>)
-        ((<LPAREN> | <LBRACKET> | <LT> | <RPAREN> | <RBRACKET> | <GT>) | vespa_grouping_arg)*
+        (<LPAREN> | <LBRACKET> | <LT>)
+        ( vespa_grouping_arg | (vespa_grouping_node)+ )*
         (<RPAREN> | <RBRACKET> | <GT>)
     )
 ;
@@ -289,8 +308,7 @@ select_statement:
 // TODO: Missing field
 select_field_spec:
     (
-        project_spec |
-        <STAR> 
+        <STAR> | project_spec
     )
 ;
 
@@ -308,27 +326,34 @@ timeout_fun:
 
 select_source:
     (
-        select_source_all |
-        select_source_multi |
-        select_source_from
+        <FROM> (
+            select_source_sources
+            | select_source_from
+        )
+    )
+;
+
+select_source_sources:
+    (
+        <SOURCES> (select_source_all | select_source_multi)
     )
 ;
 
 select_source_all:
     (
-        <FROM> <SOURCES> <STAR>
+        <STAR>
     )
 ;
 
 select_source_multi:
     (
-        <FROM> <SOURCES> source_list
+        source_list
     )
 ;
 
 select_source_from:
     (
-        <FROM> source_spec
+        source_spec
     )
 ;
 
@@ -427,8 +452,7 @@ map_expression:
 
 arguments(boolean in_select):
     (
-        (<LPAREN> <RPAREN>)
-        | (<LPAREN> argument(in_select) (<COMMA> argument(in_select))* <RPAREN> )
+        <LPAREN> (argument(in_select) (<COMMA> argument(in_select))*)? <RPAREN>
     )
 ;
 
@@ -442,9 +466,9 @@ argument(boolean in_select):
 
 expression(boolean select):
     (
-        annotate_expression
+        null_operator
+        | annotate_expression
         | logical_OR_expression
-        | null_operator
     )
 ;
 // TODO: Add expression_stack code
@@ -482,12 +506,11 @@ logical_AND_expression:
 
 equality_expression:
     (
-        ( relational_expression (
+        relational_expression (
             ( (<IN> | <NOT_IN>) in_not_in_target )
             | ( <IS_NULL> | <IS_NOT_NULL> )
             | ( equality_op relational_expression )
-        ) )
-        | relational_expression
+        )?
     )
 ;
 
@@ -540,15 +563,15 @@ mult_op:
     )
 ;
 
-unary_op:
-    (
-        <MINUS> | <EXCLAMATION>
-    )
-;
-
 unary_expression:
     (
         (unary_op)? dereferenced_expression
+    )
+;
+
+unary_op:
+    (
+        <MINUS> | <EXCLAMATION>
     )
 ;
 
@@ -584,10 +607,12 @@ primary_expression:
     boolean in_select = true; // TODO: peek into expression stack
 }
     (
-        call_expression(in_select)
-        | fieldref
+        (<LPAREN> expression(in_select) <RPAREN> )
         | constant_expression
-        | (<LPAREN> expression(in_select) <RPAREN> )
+        | (
+            (SCAN 2 => call_expression(in_select))
+            | fieldref
+        )
     )
 ;
 
@@ -630,9 +655,9 @@ dotted_idents:
 constant_expression:
     (
         scalar_literal
-        | map_expression
         | array_literal
         | parameter
+        | map_expression
     )
 ;
 

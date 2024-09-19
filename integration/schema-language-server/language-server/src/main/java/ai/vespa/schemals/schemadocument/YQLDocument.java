@@ -43,13 +43,14 @@ public class YQLDocument implements DocumentManager {
         YQLPlusParser parser = new YQLPlusParser(charSequence);
 
         try {
-            parser.program();
+            parser.statement();
     
-            Node node = parser.rootNode();
-            YQLUtils.printTree(logger, node);
         } catch (ParseException exception) {
             logger.error(exception.getMessage());
         }
+
+        Node node = parser.rootNode();
+        YQLUtils.printTree(logger, node);
 
     }
 
