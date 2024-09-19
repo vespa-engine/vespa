@@ -35,7 +35,7 @@ public class ChineseSegmentationTest {
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
 
-        var stems = tester.stemmer().stem(text, StemMode.ALL, Language.CHINESE_SIMPLIFIED);
+        var stems = tester.stemmer().stem(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
     }
@@ -57,7 +57,7 @@ public class ChineseSegmentationTest {
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
 
-        var stems = tester.stemmer().stem(text, StemMode.ALL, Language.CHINESE_SIMPLIFIED);
+        var stems = tester.stemmer().stem(text, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
     }

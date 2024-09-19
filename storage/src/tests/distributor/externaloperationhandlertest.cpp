@@ -15,6 +15,7 @@
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
@@ -481,6 +482,25 @@ TEST_F(ExternalOperationHandlerTest, sequencing_works_across_mutation_types) {
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makePutCommand("testdoctype1", _dummy_id), generated));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(makeRemoveCommand(_dummy_id)));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(makeUpdateCommand("testdoctype1", _dummy_id)));
+}
+
+TEST_F(ExternalOperationHandlerTest, bucket_level_lock_rejection_includes_reason_in_error_message) {
+    set_up_distributor_for_sequencing_test();
+    auto put = makePutCommand("testdoctype1", _dummy_id);
+
+    auto doc_bucket_id    = document::BucketIdFactory().getBucketId(put->getDocumentId());
+    auto parent_bucket_id = document::BucketId(16, doc_bucket_id.getRawId());
+    auto parent_bucket    = document::Bucket(document::FixedBucketSpaces::default_space(), parent_bucket_id);
+
+    auto handle = getExternalOperationHandler().operation_sequencer().try_acquire(parent_bucket, "foo-token");
+    ASSERT_TRUE(handle.valid());
+    // A put towards a bucket that is covered (exactly or transitively) by a locked bucket must be rejected.
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(put)));
+
+    EXPECT_EQ(vespalib::make_string(
+              "ReturnCode(BUSY, A reindexing operation is in progress for "
+              "the data bucket containing '%s')", _dummy_id.c_str()),
+              _sender.reply(0)->getResult().toString());
 }
 
 TEST_F(ExternalOperationHandlerTest, gets_are_started_with_mutable_db_outside_transition_period) {

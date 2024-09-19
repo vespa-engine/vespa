@@ -5,6 +5,7 @@ vespa_add_executable(searchcore_flushengine_shrink_lid_space_flush_target_test_a
     DEPENDS
     searchcorespi
     searchcore_flushengine
+    GTest::gtest
 )
 vespa_add_test(
     NAME searchcore_flushengine_shrink_lid_space_flush_target_test_app

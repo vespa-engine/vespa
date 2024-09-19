@@ -124,10 +124,11 @@ private:
             api::StorageCommand& cmd,
             const document::BucketId &bucketId,
             PersistenceOperationMetricSet& persistenceMetrics);
-    std::shared_ptr<api::StorageMessage> makeConcurrentMutationRejectionReply(
+    static std::shared_ptr<api::StorageMessage> make_concurrent_mutation_rejection_reply(
             api::StorageCommand& cmd,
-            const document::DocumentId& docId,
-            PersistenceOperationMetricSet& persistenceMetrics) const;
+            const document::DocumentId& doc_id,
+            const SequencingHandle& blocked_handle,
+            PersistenceOperationMetricSet& persistence_metrics);
     bool allowMutation(const SequencingHandle& handle) const;
 
     api::InternalReadConsistency desired_get_read_consistency() const noexcept;

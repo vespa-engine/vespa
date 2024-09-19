@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/searchcore/proton/flushengine/active_flush_stats.h>
 #include <vespa/searchcore/proton/flushengine/flush_target_candidate.h>
@@ -8,6 +7,7 @@
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/searchcore/proton/test/dummy_flush_handler.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton;
 using search::SerialNum;
@@ -159,43 +159,49 @@ struct CandidatesFixture
 void
 assertCosts(double tlsReplayBytesCost, double tlsReplayOperationsCost, double flushTargetsWriteCost, const FlushTargetCandidates &candidates)
 {
-    EXPECT_EQUAL(tlsReplayBytesCost, candidates.getTlsReplayCost().bytesCost);
-    EXPECT_EQUAL(tlsReplayOperationsCost, candidates.getTlsReplayCost().operationsCost);
-    EXPECT_EQUAL(flushTargetsWriteCost, candidates.getFlushTargetsWriteCost());
-    EXPECT_EQUAL(tlsReplayBytesCost + tlsReplayOperationsCost + flushTargetsWriteCost, candidates.getTotalCost());
+    EXPECT_EQ(tlsReplayBytesCost, candidates.getTlsReplayCost().bytesCost);
+    EXPECT_EQ(tlsReplayOperationsCost, candidates.getTlsReplayCost().operationsCost);
+    EXPECT_EQ(flushTargetsWriteCost, candidates.getFlushTargetsWriteCost());
+    EXPECT_EQ(tlsReplayBytesCost + tlsReplayOperationsCost + flushTargetsWriteCost, candidates.getTotalCost());
 }
 
-TEST_F("require that tls replay cost is correct for 100% replay", CandidatesFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_tls_replay_cost_is_correct_for_100_percent_replay)
 {
-    TEST_DO(assertCosts(1000 * 2, 100 * 3, 0, f.builder.replayEnd(110).build()));
+    CandidatesFixture f;
+    assertCosts(1000 * 2, 100 * 3, 0, f.builder.replayEnd(110).build());
 }
 
-TEST_F("require that tls replay cost is correct for 75% replay", CandidatesFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_tls_replay_cost_is_correct_for_75_percent_replay)
 {
+    CandidatesFixture f;
     FlushContext::List contexts = ContextsBuilder().add("target1", 10, 0).add("target2", 35, 0).build();
-    TEST_DO(assertCosts(750 * 2, 75 * 3, 0, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).build()));
+    assertCosts(750 * 2, 75 * 3, 0, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).build());
 }
 
-TEST_F("require that tls replay cost is correct for 25% replay", CandidatesFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_tls_replay_cost_is_correct_for_25_percent_replay)
 {
+    CandidatesFixture f;
     FlushContext::List contexts = ContextsBuilder().add("target1", 10, 0).add("target2", 85, 0).build();
-    TEST_DO(assertCosts(250 * 2, 25 * 3, 0, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).build()));
+    assertCosts(250 * 2, 25 * 3, 0, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).build());
 }
 
-TEST_F("require that tls replay cost is correct for zero operations to replay", CandidatesFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_tls_replay_cost_is_correct_for_zero_operations_to_replay)
 {
-    TEST_DO(assertCosts(0, 0, 0, f.builder.replayEnd(10).build()));
+    CandidatesFixture f;
+    assertCosts(0, 0, 0, f.builder.replayEnd(10).build());
 }
 
-TEST_F("require that flush cost is correct for zero flush targets", CandidatesFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_flush_cost_is_correct_for_zero_flush_targets)
 {
-    EXPECT_EQUAL(0.0, f.builder.build().getFlushTargetsWriteCost());
+    CandidatesFixture f;
+    EXPECT_EQ(0.0, f.builder.build().getFlushTargetsWriteCost());
 }
 
-TEST_F("require that flush cost is sum of flush targets", CandidatesFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_flush_cost_is_sum_of_flush_targets)
 {
+    CandidatesFixture f;
     FlushContext::List contexts = ContextsBuilder().add("target1", 20, 1000).add("target2", 30, 2000).build();
-    TEST_DO(assertCosts(0, 0, 1000 * 4 + 2000 * 4, f.builder.flushContexts(contexts).build()));
+    assertCosts(0, 0, 1000 * 4 + 2000 * 4, f.builder.flushContexts(contexts).build());
 }
 
 
@@ -243,12 +249,6 @@ toString(const FlushContext::List &flushContexts)
     return oss.str();
 }
 
-void
-assertFlushContexts(const std::string &expected, const FlushContext::List &actual)
-{
-    EXPECT_EQUAL(expected, toString(actual));
-}
-
 /**
  * For the following tests the content of the TLS is as follows:
  *   - handler1: serial numbers 10 -> 110, 1000 bytes
@@ -265,66 +265,71 @@ assertFlushContexts(const std::string &expected, const FlushContext::List &actua
  * This should give the baseline for understanding the following tests:
  */
 
-TEST_F("require that the best strategy is flushing 0 targets", FlushStrategyFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_the_best_strategy_is_flushing_0_targets)
 {
+    FlushStrategyFixture f;
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("foo", 10, 167).add("bar", 10, 167).add("baz", 10, 167).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[]", targets));
+    EXPECT_EQ("[]", toString(targets));
 }
 
-TEST_F("require that the best strategy is flushing all targets", FlushStrategyFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_the_best_strategy_is_flushing_all_targets)
 {
+    FlushStrategyFixture f;
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("foo", 10, 166).add("bar", 10, 166).add("baz", 10, 166).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[bar,baz,foo]", targets));
+    EXPECT_EQ("[bar,baz,foo]", toString(targets));
 }
 
-TEST_F("require that the best strategy is flushing all targets (with different unflushed serial)", FlushStrategyFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_the_best_strategy_is_flushing_all_targets_with_different_unflushed_serial)
 {
+    FlushStrategyFixture f;
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("foo", 10, 166).add("bar", 11, 166).add("baz", 12, 166).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[foo,bar,baz]", targets));
+    EXPECT_EQ("[foo,bar,baz]", toString(targets));
 }
 
-TEST_F("require that the best strategy is flushing 1 target", FlushStrategyFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_the_best_strategy_is_flushing_1_target)
 {
+    FlushStrategyFixture f;
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("foo", 10, 249).add("bar", 60, 125).add("baz", 60, 125).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[foo]", targets));
+    EXPECT_EQ("[foo]", toString(targets));
 }
 
-TEST_F("require that the best strategy is flushing 2 targets", FlushStrategyFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_the_best_strategy_is_flushing_2_targets)
 {
+    FlushStrategyFixture f;
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("foo", 10, 124).add("bar", 11, 124).add("baz", 60, 251).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[foo,bar]", targets));
+    EXPECT_EQ("[foo,bar]", toString(targets));
 }
 
-TEST_F("require that GC flush targets are removed", FlushStrategyFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_GC_flush_targets_are_removed)
 {
+    FlushStrategyFixture f;
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             addGC("foo", 10, 124).add("bar", 11, 124).add("baz", 60, 251).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[bar]", targets));
+    EXPECT_EQ("[bar]", toString(targets));
 }
 
-TEST_F("require that flush targets for different flush handlers are treated independently", FlushStrategyFixture)
+TEST(PrepareRestartFlushStrategyTest, require_that_flush_targets_for_different_flush_handlers_are_treated_independently)
 {
+    FlushStrategyFixture f;
     // best strategy for handler1 is flushing 1 target (foo)
     // best strategy for handler2 is flushing 2 targets (baz,quz)
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("handler1", "foo", 10, 249).add("handler1", "bar", 60, 251).
             add("handler2", "baz", 10, 499).add("handler2", "quz", 60, 499).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[foo,baz,quz]", targets));
+    EXPECT_EQ("[foo,baz,quz]", toString(targets));
 }
 
-TEST_F("require that expensive to replay target is flushed", FlushStrategyFixture(Config(2.0, 1.0, 4.0)))
+TEST(PrepareRestartFlushStrategyTest, require_that_expensive_to_replay_target_is_flushed)
 {
+    FlushStrategyFixture f(Config(2.0, 1.0, 4.0));
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("foo", 10, 249).add("bar", 60, 150).add("baz", 60, 150, 12.0).build(), f._tlsStatsMap);
-    TEST_DO(assertFlushContexts("[foo,baz]", targets));
+    EXPECT_EQ("[foo,baz]", toString(targets));
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

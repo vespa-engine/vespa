@@ -17,10 +17,9 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <unordered_set>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_iterator_test");
@@ -379,13 +378,14 @@ auto doc_rec(VisitRecordingUnitDR::VisitedLIDs& visited_lids, const std::string 
 void checkDoc(const IDocumentRetriever &dr, const std::string &id,
               size_t timestamp, size_t bucket, bool removed)
 {
+    SCOPED_TRACE(id);
     DocumentId documentId(id);
     DocumentMetaData dmd = dr.getDocumentMetaData(documentId);
     EXPECT_TRUE(dmd.valid());
-    EXPECT_EQUAL(timestamp, dmd.timestamp);
-    EXPECT_EQUAL(bucket, dmd.bucketId.getId());
-    EXPECT_EQUAL(DocumentId(id).getGlobalId(), dmd.gid);
-    EXPECT_EQUAL(removed, dmd.removed);
+    EXPECT_EQ(timestamp, dmd.timestamp);
+    EXPECT_EQ(bucket, dmd.bucketId.getId());
+    EXPECT_EQ(DocumentId(id).getGlobalId(), dmd.gid);
+    EXPECT_EQ(removed, dmd.removed);
     Document::UP doc = dr.getDocument(dmd.lid, documentId);
     ASSERT_TRUE(doc);
     EXPECT_TRUE(DocumentId(id) == doc->getId());
@@ -393,44 +393,49 @@ void checkDoc(const IDocumentRetriever &dr, const std::string &id,
 
 void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, DocumentMetaEnum flags)
 {
-    ASSERT_LESS(idx, res.getEntries().size());
+    SCOPED_TRACE("idx=" + std::to_string(idx));
+    ASSERT_LT(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, flags);
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(sizeof(DocEntry), res.getEntries()[idx]->getSize());
+    EXPECT_EQ(sizeof(DocEntry), res.getEntries()[idx]->getSize());
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, DocumentMetaEnum flags,
                 const GlobalId &gid, std::string_view doc_type_name)
 {
-    ASSERT_LESS(idx, res.getEntries().size());
+    SCOPED_TRACE("idx=" + std::to_string(idx));
+    ASSERT_LT(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, flags, doc_type_name, gid);
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(sizeof(DocEntry) + sizeof(GlobalId) + doc_type_name.size(), res.getEntries()[idx]->getSize());
+    EXPECT_EQ(sizeof(DocEntry) + sizeof(GlobalId) + doc_type_name.size(), res.getEntries()[idx]->getSize());
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const DocumentId &id, const Timestamp &timestamp)
 {
-    ASSERT_LESS(idx, res.getEntries().size());
+    SCOPED_TRACE("idx=" + std::to_string(idx));
+    ASSERT_LT(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, DocumentMetaEnum::REMOVE_ENTRY, id);
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(getSize(id), res.getEntries()[idx]->getSize());
-    EXPECT_GREATER(getSize(id), 0u);
+    EXPECT_EQ(getSize(id), res.getEntries()[idx]->getSize());
+    EXPECT_GT(getSize(id), 0u);
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const Timestamp &timestamp)
 {
-    ASSERT_LESS(idx, res.getEntries().size());
+    SCOPED_TRACE("idx=" + std::to_string(idx));
+    ASSERT_LT(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, Document::UP(doc.clone()));
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(getSize(doc), res.getEntries()[idx]->getSize());
-    EXPECT_GREATER(getSize(doc), 0u);
+    EXPECT_EQ(getSize(doc), res.getEntries()[idx]->getSize());
+    EXPECT_GT(getSize(doc), 0u);
 }
 
 GlobalId gid_of(std::string_view id_str) {
     return DocumentId(id_str).getGlobalId();
 }
 
-TEST("require that custom retrievers work as expected") {
+TEST(DocumentIteratorTest, require_that_custom_retrievers_work_as_expected)
+{
     DocumentId id1("id:ns:document::1");
     DocumentId id2("id:ns:document::2");
     DocumentId id3("id:ns:document::3");
@@ -443,67 +448,71 @@ TEST("require that custom retrievers work as expected") {
     EXPECT_FALSE(dr->getDocument(1, id1));
     EXPECT_FALSE(dr->getDocument(2, id2));
     EXPECT_TRUE(dr->getDocument(3, id3));
-    TEST_DO(checkDoc(*dr, "id:ns:document::1", 2, 5, false));
-    TEST_DO(checkDoc(*dr, "id:ns:document::2", 3, 5, true));
-    TEST_DO(checkDoc(*dr, "id:ns:document::3", 7, 6, false));
+    checkDoc(*dr, "id:ns:document::1", 2, 5, false);
+    checkDoc(*dr, "id:ns:document::2", 3, 5, true);
+    checkDoc(*dr, "id:ns:document::3", 7, 6, false);
     DocumentMetaData::Vector b5;
     DocumentMetaData::Vector b6;
     dr->getBucketMetaData(bucket(5), b5);
     dr->getBucketMetaData(bucket(6), b6);
-    ASSERT_EQUAL(2u, b5.size());
-    ASSERT_EQUAL(1u, b6.size());
-    EXPECT_EQUAL(5u, b5[0].timestamp + b5[1].timestamp);
-    EXPECT_EQUAL(7u, b6[0].timestamp);
+    ASSERT_EQ(2u, b5.size());
+    ASSERT_EQ(1u, b6.size());
+    EXPECT_EQ(5u, b5[0].timestamp + b5[1].timestamp);
+    EXPECT_EQ(7u, b6[0].timestamp);
 }
 
-TEST("require that an empty list of retrievers can be iterated") {
+TEST(DocumentIteratorTest, require_that_an_empty_list_of_retrievers_can_be_iterated)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     IterateResult res = itr.iterate(largeNum);
-    EXPECT_EQUAL(0u, res.getEntries().size());
+    EXPECT_EQ(0u, res.getEntries().size());
     EXPECT_TRUE(res.isCompleted());
 }
 
-TEST("require that a list of empty retrievers can be iterated") {
+TEST(DocumentIteratorTest, require_that_a_list_of_empty_retrievers_can_be_iterated)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(nil());
     itr.add(nil());
     itr.add(nil());
     IterateResult res = itr.iterate(largeNum);
-    EXPECT_EQUAL(0u, res.getEntries().size());
+    EXPECT_EQ(0u, res.getEntries().size());
     EXPECT_TRUE(res.isCompleted());
 }
 
-TEST("require that normal documents can be iterated") {
+TEST(DocumentIteratorTest, require_that_normal_documents_can_be_iterated)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2)));
-    TEST_DO(checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3)));
-    TEST_DO(checkEntry(res, 2, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4)));
+    EXPECT_EQ(3u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2));
+    checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3));
+    checkEntry(res, 2, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4));
 }
 
 void verifyIterateIgnoringStopSignal(DocumentIterator & itr) {
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(1u, res.getEntries().size());
+    EXPECT_EQ(1u, res.getEntries().size());
     res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(0u, res.getEntries().size());
+    EXPECT_EQ(0u, res.getEntries().size());
 }
 
-TEST("require that iterator stops at the end, and does not auto rewind") {
+TEST(DocumentIteratorTest, require_that_iterator_stops_at_the_end_and_does_not_auto_rewind)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
-    TEST_DO(verifyIterateIgnoringStopSignal(itr));
+    verifyIterateIgnoringStopSignal(itr);
 }
 
-TEST("require that iterator ignoring maxbytes stops at the end, and does not auto rewind") {
+TEST(DocumentIteratorTest, require_that_iterator_ignoring_maxbytes_stops_at_the_end_and_does_not_auto_rewind) {
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, true);
-    TEST_DO(verifyIterateIgnoringStopSignal(itr));
+    verifyIterateIgnoringStopSignal(itr);
 }
 
 void verifyReadConsistency(DocumentIterator & itr, ILidCommitState & lidCommitState) {
@@ -513,8 +522,8 @@ void verifyReadConsistency(DocumentIterator & itr, ILidCommitState & lidCommitSt
 
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2)));
+    EXPECT_EQ(1u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2));
 }
 
 class ILidCommitStateProxy : public ILidCommitState {
@@ -548,21 +557,24 @@ void verifyStrongReadConsistency(DocumentIterator & itr) {
     PendingLidTracker lidTracker;
 
     ILidCommitStateProxy lidCommitState(lidTracker);
-    TEST_DO(verifyReadConsistency(itr, lidCommitState));
-    EXPECT_EQUAL(1u, lidCommitState._waitCompleteCount);
+    verifyReadConsistency(itr, lidCommitState);
+    EXPECT_EQ(1u, lidCommitState._waitCompleteCount);
 }
 
-TEST("require that default readconsistency does commit") {
+TEST(DocumentIteratorTest, require_that_default_readconsistency_does_commit)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
-    TEST_DO(verifyStrongReadConsistency(itr));
+    verifyStrongReadConsistency(itr);
 }
 
-TEST("require that readconsistency::strong does commit") {
+TEST(DocumentIteratorTest, require_that_readconsistency_strong_does_commit)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false, storage::spi::ReadConsistency::STRONG);
-    TEST_DO(verifyStrongReadConsistency(itr));
+    verifyStrongReadConsistency(itr);
 }
 
-TEST("require that docid limit is honoured") {
+TEST(DocumentIteratorTest, require_that_docid_limit_is_honoured)
+{
     IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
     auto & udr = dynamic_cast<UnitDR &>(*retriever);
     udr.docid = 7;
@@ -570,79 +582,85 @@ TEST("require that docid limit is honoured") {
     itr.add(retriever);
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2)));
+    EXPECT_EQ(1u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2));
 
     udr.setDocIdLimit(7);
     DocumentIterator limited(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     limited.add(retriever);
     res = limited.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(0u, res.getEntries().size());
+    EXPECT_EQ(0u, res.getEntries().size());
 }
 
-TEST("require that remove entries can be iterated") {
+TEST(DocumentIteratorTest, require_that_remove_entries_can_be_iterated)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, DocumentId("id:ns:document::1"), Timestamp(2)));
-    TEST_DO(checkEntry(res, 1, DocumentId("id:ns:document::2"), Timestamp(3)));
-    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::3"), Timestamp(4)));
+    EXPECT_EQ(3u, res.getEntries().size());
+    checkEntry(res, 0, DocumentId("id:ns:document::1"), Timestamp(2));
+    checkEntry(res, 1, DocumentId("id:ns:document::2"), Timestamp(3));
+    checkEntry(res, 2, DocumentId("id:ns:document::3"), Timestamp(4));
 }
 
-TEST("require that remove entries can be ignored") {
+TEST(DocumentIteratorTest, require_that_remove_entries_can_be_ignored)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), docV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3)));
+    EXPECT_EQ(1u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3));
 }
 
-TEST("require that iterating all versions returns both documents and removes") {
+TEST(DocumentIteratorTest, require_that_iterating_all_versions_returns_both_documents_and_removes)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), allV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, DocumentId("id:ns:document::1"), Timestamp(2)));
-    TEST_DO(checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3)));
-    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::3"), Timestamp(4)));
+    EXPECT_EQ(3u, res.getEntries().size());
+    checkEntry(res, 0, DocumentId("id:ns:document::1"), Timestamp(2));
+    checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3));
+    checkEntry(res, 2, DocumentId("id:ns:document::3"), Timestamp(4));
 }
 
-TEST("require that using an empty field set returns meta-data only") {
+TEST(DocumentIteratorTest, require_that_using_an_empty_field_set_returns_meta_data_only)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
     itr.add(DocTypeName("foo"), doc_with_fields("id:ns:foo::1", Timestamp(2), bucket(5)));
     itr.add(DocTypeName("document"), cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                                          rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:foo::1"), "foo"));
-    TEST_DO(checkEntry(res, 1, Timestamp(3), DocumentMetaEnum::NONE, gid_of("id:ns:document::2"), "document"));
-    TEST_DO(checkEntry(res, 2, Timestamp(4), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::3"), "document"));
+    EXPECT_EQ(3u, res.getEntries().size());
+    checkEntry(res, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:foo::1"), "foo");
+    checkEntry(res, 1, Timestamp(3), DocumentMetaEnum::NONE, gid_of("id:ns:document::2"), "document");
+    checkEntry(res, 2, Timestamp(4), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::3"), "document");
 }
 
-TEST("require that entries in other buckets are skipped") {
+TEST(DocumentIteratorTest, require_that_entries_in_other_buckets_are_skipped)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(6)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(6))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3)));
+    EXPECT_EQ(1u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3));
 }
 
-TEST("require that maxBytes splits iteration results") {
+TEST(DocumentIteratorTest, require_that_maxBytes_splits_iteration_results)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
@@ -650,51 +668,66 @@ TEST("require that maxBytes splits iteration results") {
     IterateResult res1 = itr.iterate(getSize(*make_doc(DocumentId("id:ns:document::1"))) +
                                      getSize(DocumentId("id:ns:document::2")));
     EXPECT_TRUE(!res1.isCompleted());
-    EXPECT_EQUAL(2u, res1.getEntries().size());
-    TEST_DO(checkEntry(res1, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2)));
-    TEST_DO(checkEntry(res1, 1, DocumentId("id:ns:document::2"), Timestamp(3)));
+    EXPECT_EQ(2u, res1.getEntries().size());
+    {
+        SCOPED_TRACE("first part");
+        checkEntry(res1, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2));
+        checkEntry(res1, 1, DocumentId("id:ns:document::2"), Timestamp(3));
+    }
 
     IterateResult res2 = itr.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
-    TEST_DO(checkEntry(res2, 0, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4)));
+    {
+        SCOPED_TRACE("second part");
+        checkEntry(res2, 0, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4));
+    }
 
     IterateResult res3 = itr.iterate(largeNum);
     EXPECT_TRUE(res3.isCompleted());
-    EXPECT_EQUAL(0u, res3.getEntries().size());
+    EXPECT_EQ(0u, res3.getEntries().size());
 }
 
-TEST("require that maxBytes splits iteration results for meta-data only iteration") {
+TEST(DocumentIteratorTest, require_that_maxBytes_splits_iteration_results_for_meta_data_only_iteration)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res1 = itr.iterate(2 * sizeof(DocEntry));
     EXPECT_TRUE(!res1.isCompleted());
-    EXPECT_EQUAL(2u, res1.getEntries().size());
+    EXPECT_EQ(2u, res1.getEntries().size());
     // Note: empty doc types since we did not pass in an explicit doc type alongside the retrievers
-    TEST_DO(checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:document::1"), ""));
-    TEST_DO(checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::2"), ""));
+    {
+        SCOPED_TRACE("first part");
+        checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:document::1"), "");
+        checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::2"), "");
+    }
 
     IterateResult res2 = itr.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
-    TEST_DO(checkEntry(res2, 0, Timestamp(4), DocumentMetaEnum::NONE, gid_of("id:ns:document::3"), ""));
+    {
+        SCOPED_TRACE("second part");
+        checkEntry(res2, 0, Timestamp(4), DocumentMetaEnum::NONE, gid_of("id:ns:document::3"), "");
+    }
 
     IterateResult res3 = itr.iterate(largeNum);
     EXPECT_TRUE(res3.isCompleted());
-    EXPECT_EQUAL(0u, res3.getEntries().size());
+    EXPECT_EQ(0u, res3.getEntries().size());
 }
 
-TEST("require that at least one document is returned by visit") {
+TEST(DocumentIteratorTest, require_that_at_least_one_document_is_returned_by_visit)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res1 = itr.iterate(0);
     EXPECT_TRUE( ! res1.getEntries().empty());
-    TEST_DO(checkEntry(res1, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2)));
+    checkEntry(res1, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2));
 }
 
-TEST("require that documents outside the timestamp limits are ignored") {
+TEST(DocumentIteratorTest, require_that_documents_outside_the_timestamp_limits_are_ignored)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectTimestampRange(100, 200), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::2", Timestamp(100), bucket(5)));
@@ -706,14 +739,15 @@ TEST("require that documents outside the timestamp limits are ignored") {
     itr.add(rem("id:ns:document::8", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(4u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(100)));
-    TEST_DO(checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::3")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::6"), Timestamp(100)));
-    TEST_DO(checkEntry(res, 3, DocumentId("id:ns:document::7"), Timestamp(200)));
+    EXPECT_EQ(4u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(100));
+    checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::3")), Timestamp(200));
+    checkEntry(res, 2, DocumentId("id:ns:document::6"), Timestamp(100));
+    checkEntry(res, 3, DocumentId("id:ns:document::7"), Timestamp(200));
 }
 
-TEST("require that timestamp subset returns the appropriate documents") {
+TEST(DocumentIteratorTest, require_that_timestamp_subset_returns_the_appropriate_documents)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectTimestampSet(200, 350, 400), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(500),  bucket(5)));
     itr.add(doc("id:ns:document::2", Timestamp(400), bucket(5)));
@@ -725,13 +759,14 @@ TEST("require that timestamp subset returns the appropriate documents") {
     itr.add(rem("id:ns:document::8", Timestamp(550), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(400)));
-    TEST_DO(checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::4")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::6"), Timestamp(350)));
+    EXPECT_EQ(3u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::2")), Timestamp(400));
+    checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::4")), Timestamp(200));
+    checkEntry(res, 2, DocumentId("id:ns:document::6"), Timestamp(350));
 }
 
-TEST("require that document selection will filter results") {
+TEST(DocumentIteratorTest, require_that_document_selection_will_filter_results)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("id=\"id:ns:document::xxx*\""), newestV(), -1, false);
     itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
@@ -743,27 +778,29 @@ TEST("require that document selection will filter results") {
     itr.add(rem("id:ns:document::yyy4", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(4u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::xxx1")), Timestamp(99)));
-    TEST_DO(checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::xxx2")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::xxx3"), Timestamp(99)));
-    TEST_DO(checkEntry(res, 3, DocumentId("id:ns:document::xxx4"), Timestamp(200)));
+    EXPECT_EQ(4u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::xxx1")), Timestamp(99));
+    checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::xxx2")), Timestamp(200));
+    checkEntry(res, 2, DocumentId("id:ns:document::xxx3"), Timestamp(99));
+    checkEntry(res, 3, DocumentId("id:ns:document::xxx4"), Timestamp(200));
 }
 
-TEST("require that document selection handles 'field == null'") {
+TEST(DocumentIteratorTest, require_that_document_selection_handles_null_field)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.aa == null"), newestV(), -1, false);
     itr.add(doc_with_null_fields("id:ns:foo::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc_with_null_fields("id:ns:foo::xxx2", Timestamp(100),  bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    ASSERT_EQUAL(2u, res.getEntries().size());
+    ASSERT_EQ(2u, res.getEntries().size());
     auto expected1 = Document::make_without_repo(getAttrDocType(), DocumentId("id:ns:foo::xxx1"));
-    TEST_DO(checkEntry(res, 0, *expected1, Timestamp(99)));
+    checkEntry(res, 0, *expected1, Timestamp(99));
     auto expected2 = Document::make_without_repo(getAttrDocType(), DocumentId("id:ns:foo::xxx2"));
-    TEST_DO(checkEntry(res, 1, *expected2, Timestamp(100)));
+    checkEntry(res, 1, *expected2, Timestamp(100));
 }
 
-TEST("require that invalid document selection returns no documents") {
+TEST(DocumentIteratorTest, require_that_invalid_document_selection_returns_no_documents)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("=="), newestV(), -1, false);
     itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
@@ -775,10 +812,11 @@ TEST("require that invalid document selection returns no documents") {
     itr.add(rem("id:ns:document::yyy4", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(0u, res.getEntries().size());
+    EXPECT_EQ(0u, res.getEntries().size());
 }
 
-TEST("require that document selection and timestamp range works together") {
+TEST(DocumentIteratorTest, require_that_document_selection_and_timestamp_range_works_together)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocsWithinRange("id=\"id:ns:document::xxx*\"", 100, 200), newestV(), -1, false);
     itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
@@ -790,21 +828,22 @@ TEST("require that document selection and timestamp range works together") {
     itr.add(rem("id:ns:document::yyy4", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(2u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::xxx2")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 1, DocumentId("id:ns:document::xxx4"), Timestamp(200)));
+    EXPECT_EQ(2u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::xxx2")), Timestamp(200));
+    checkEntry(res, 1, DocumentId("id:ns:document::xxx4"), Timestamp(200));
 }
 
-TEST("require that fieldset limits fields returned") {
+TEST(DocumentIteratorTest, require_that_fieldset_limits_fields_returned)
+{
     auto limited = std::make_shared<document::FieldCollection>(getDocType(),document::Field::Set::Builder().add(&getDocType().getField("header")).build());
     DocumentIterator itr(bucket(5), std::move(limited), selectAll(), newestV(), -1, false);
     itr.add(doc_with_fields("id:ns:foo::xxx1", Timestamp(1),  bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(1u, res.getEntries().size());
+    EXPECT_EQ(1u, res.getEntries().size());
     auto expected = Document::make_without_repo(getDocType(), DocumentId("id:ns:foo::xxx1"));
     expected->setValue("header", StringFieldValue::make("foo"));
-    TEST_DO(checkEntry(res, 0, *expected, Timestamp(1)));
+    checkEntry(res, 0, *expected, Timestamp(1));
 }
 
 namespace {
@@ -814,7 +853,8 @@ bool contains(const Container& c, const T& value) {
 }
 }
 
-TEST("require that userdoc-constrained selections pre-filter on GIDs") {
+TEST(DocumentIteratorTest, require_that_userdoc_constrained_selections_pre_filter_on_GIDs)
+{
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("id.user=1234"), newestV(), -1, false);
     VisitRecordingUnitDR::VisitedLIDs visited_lids;
     // Even though GID filtering is probabilistic when it comes to filtering
@@ -836,13 +876,13 @@ TEST("require that userdoc-constrained selections pre-filter on GIDs") {
     itr.add(wanted_dr_3);
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(3u, visited_lids.size());
+    EXPECT_EQ(3u, visited_lids.size());
     EXPECT_TRUE(contains(visited_lids, wanted_dr_1->docid));
     EXPECT_TRUE(contains(visited_lids, wanted_dr_2->docid));
     EXPECT_TRUE(contains(visited_lids, wanted_dr_3->docid));
 }
 
-TEST("require that attributes are used")
+TEST(DocumentIteratorTest, require_that_attributes_are_used)
 {
     UnitDR::reset();
     DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.aa == 45"), docV(), -1, false);
@@ -857,7 +897,7 @@ TEST("require that attributes are used")
     
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQUAL(2u, res.getEntries().size());
+    EXPECT_EQ(2u, res.getEntries().size());
     auto expected1 = Document::make_without_repo(getAttrDocType(), DocumentId("id:ns:foo::xx2"));
     expected1->setValue("header", StringFieldValue::make("foo"));
     expected1->setValue("body", StringFieldValue::make("bar"));
@@ -872,8 +912,11 @@ TEST("require that attributes are used")
     expected2->setValue("ab", IntFieldValue::make(46));
     expected2->setValue("dd", DoubleFieldValue::make(4.5));
     expected2->setValue("ss", StringFieldValue::make("x45"));
-    TEST_DO(checkEntry(res, 0, *expected1, Timestamp(2)));
-    TEST_DO(checkEntry(res, 1, *expected2, Timestamp(4)));
+    {
+        SCOPED_TRACE("foo.aa == 45");
+        checkEntry(res, 0, *expected1, Timestamp(2));
+        checkEntry(res, 1, *expected2, Timestamp(4));
+    }
 
     DocumentIterator itr2(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.dd == 4.5"), docV(), -1, false);
     itr2.add(doc_with_attr_fields("id:ns:foo::xx5", Timestamp(5), bucket(5),
@@ -887,7 +930,7 @@ TEST("require that attributes are used")
     
     IterateResult res2 = itr2.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
-    EXPECT_EQUAL(2u, res2.getEntries().size());
+    EXPECT_EQ(2u, res2.getEntries().size());
     auto expected3 = Document::make_without_repo(getAttrDocType(), DocumentId("id:ns:foo::xx6"));
     expected3->setValue("header", StringFieldValue::make("foo"));
     expected3->setValue("body", StringFieldValue::make("bar"));
@@ -902,8 +945,11 @@ TEST("require that attributes are used")
     expected4->setValue("ab", IntFieldValue::make(46));
     expected4->setValue("dd", DoubleFieldValue::make(4.5));
     expected4->setValue("ss", StringFieldValue::make("x45"));
-    TEST_DO(checkEntry(res2, 0, *expected3, Timestamp(6)));
-    TEST_DO(checkEntry(res2, 1, *expected4, Timestamp(8)));
+    {
+        SCOPED_TRACE("foo.dd == 4.5");
+        checkEntry(res2, 0, *expected3, Timestamp(6));
+        checkEntry(res2, 1, *expected4, Timestamp(8));
+    }
 
     DocumentIterator itr3(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.ss == \"x45\""), docV(), -1, false);
     itr3.add(doc_with_attr_fields("id:ns:foo::xx9", Timestamp(9), bucket(5),
@@ -917,7 +963,7 @@ TEST("require that attributes are used")
     
     IterateResult res3 = itr3.iterate(largeNum);
     EXPECT_TRUE(res3.isCompleted());
-    EXPECT_EQUAL(2u, res3.getEntries().size());
+    EXPECT_EQ(2u, res3.getEntries().size());
     auto expected5 = Document::make_without_repo(getAttrDocType(), DocumentId("id:ns:foo::xx10"));
     expected5->setValue("header", StringFieldValue::make("foo"));
     expected5->setValue("body", StringFieldValue::make("bar"));
@@ -932,9 +978,11 @@ TEST("require that attributes are used")
     expected6->setValue("ab", IntFieldValue::make(46));
     expected6->setValue("dd", DoubleFieldValue::make(4.5));
     expected6->setValue("ss", StringFieldValue::make("x45"));
-    TEST_DO(checkEntry(res3, 0, *expected5, Timestamp(10)));
-    TEST_DO(checkEntry(res3, 1, *expected6, Timestamp(12)));
+    {
+        SCOPED_TRACE("foo.ss == \"x45\"");
+        checkEntry(res3, 0, *expected5, Timestamp(10));
+        checkEntry(res3, 1, *expected6, Timestamp(12));
+    }
 } 
 
-TEST_MAIN() { TEST_RUN_ALL(); }
-
+GTEST_MAIN_RUN_ALL_TESTS()

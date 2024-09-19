@@ -223,14 +223,21 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
 }
 
 std::shared_ptr<api::StorageMessage>
-ExternalOperationHandler::makeConcurrentMutationRejectionReply(api::StorageCommand& cmd,
-                                                               const document::DocumentId& docId,
-                                                               PersistenceOperationMetricSet& persistenceMetrics) const
+ExternalOperationHandler::make_concurrent_mutation_rejection_reply(api::StorageCommand& cmd,
+                                                                   const document::DocumentId& doc_id,
+                                                                   const SequencingHandle& blocked_handle,
+                                                                   PersistenceOperationMetricSet& persistence_metrics)
 {
-    auto err_msg = vespalib::make_string("A mutating operation for document '%s' is already in progress",
-                                         docId.toString().c_str());
+    std::string err_msg;
+    if (blocked_handle.is_blocked_by_pending_operation()) {
+        err_msg = vespalib::make_string("A mutating operation for document '%s' is already in progress",
+                                        doc_id.toString().c_str());
+    } else { // bucket-level blocking
+        err_msg = vespalib::make_string("A reindexing operation is in progress for the data bucket containing '%s'",
+                                        doc_id.toString().c_str());
+    }
     LOG(debug, "Aborting incoming %s operation: %s", cmd.getType().toString().c_str(), err_msg.c_str());
-    persistenceMetrics.failures.concurrent_mutations.inc();
+    persistence_metrics.failures.concurrent_mutations.inc();
     api::StorageReply::UP reply(cmd.makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, err_msg));
     return std::shared_ptr<api::StorageMessage>(reply.release());
@@ -332,7 +339,7 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
                                              getMetrics().puts, getMetrics().put_condition_probes,
                                              std::move(handle));
     } else {
-        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
     }
 
     return true;
@@ -362,7 +369,7 @@ bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand
                                                         _op_ctx.bucket_space_repo().get(bucket_space),
                                                         std::move(cmd), getMetrics(), std::move(handle));
     } else {
-        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
     }
 
     return true;
@@ -387,7 +394,7 @@ bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand
                                                 getMetrics().removes, getMetrics().remove_condition_probes,
                                                 std::move(handle));
     } else {
-        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
     }
 
     return true;

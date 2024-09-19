@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_hw_info_sampler_test_app TEST
     hw_info_sampler_test.cpp
     DEPENDS
     searchcore_pcommon
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_hw_info_sampler_test_app COMMAND searchcore_hw_info_sampler_test_app)
