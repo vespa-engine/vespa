@@ -143,7 +143,6 @@
         <module>zookeeper-common</module>
         <module>zookeeper-server</module>
         <module>integration/schema-language-server/language-server</module>
-        <module>integration/schema-language-server/lemminx-vespa</module>
     </modules>
 
     <properties>
