@@ -1523,6 +1523,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.Tensors" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static varargs com.yahoo.tensor.Tensor toSparse(com.yahoo.tensor.Tensor, java.lang.String[])"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.TypeResolver" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

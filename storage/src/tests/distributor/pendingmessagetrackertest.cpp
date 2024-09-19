@@ -35,22 +35,29 @@ namespace {
 
 class RequestBuilder {
     uint16_t _toNode;
+    uint32_t _bucket_idx;
     std::chrono::milliseconds _atTime;
 public:
-    RequestBuilder() noexcept : _toNode(0), _atTime() {}
+    constexpr RequestBuilder() noexcept : _toNode(0), _bucket_idx(1234), _atTime() {}
 
-    RequestBuilder& atTime(std::chrono::milliseconds t) {
+    RequestBuilder& atTime(std::chrono::milliseconds t) noexcept {
         _atTime = t;
         return *this;
     }
 
-    RequestBuilder& toNode(uint16_t node) {
+    RequestBuilder& toNode(uint16_t node) noexcept {
         _toNode = node;
         return *this;
     }
 
-    uint16_t toNode() const { return _toNode; }
-    std::chrono::milliseconds atTime() const { return _atTime; }
+    RequestBuilder& with_bucket_idx(uint32_t bucket_idx) noexcept {
+        _bucket_idx = bucket_idx;
+        return *this;
+    }
+
+    [[nodiscard]] uint16_t toNode() const noexcept { return _toNode; }
+    [[nodiscard]] std::chrono::milliseconds atTime() const noexcept { return _atTime; }
+    [[nodiscard]] uint32_t bucket_idx() const noexcept { return _bucket_idx; }
 };
 
 api::StorageMessageAddress
@@ -68,9 +75,9 @@ public:
     Fixture();
     ~Fixture();
 
-    std::shared_ptr<api::PutCommand> sendPut(const RequestBuilder& builder) {
+    [[nodiscard]] std::shared_ptr<api::PutCommand> sendPut(const RequestBuilder& builder) {
         assignMockedTime(builder.atTime());
-        auto put = createPutToNode(builder.toNode());
+        auto put = createPutToNode(builder.toNode(), builder.bucket_idx());
         _tracker->insert(put);
         return put;
     }
@@ -85,8 +92,8 @@ public:
         _tracker->reply(*putReply);
     }
 
-    std::shared_ptr<api::PutCommand> createPutToNode(uint16_t node) const {
-        document::BucketId bucket(16, 1234);
+    [[nodiscard]] std::shared_ptr<api::PutCommand> createPutToNode(uint16_t node, uint32_t bucket_idx) const {
+        document::BucketId bucket(16, bucket_idx);
         auto cmd = std::make_shared<api::PutCommand>(
                 makeDocumentBucket(bucket),
                 createDummyDocumentForBucket(bucket),
@@ -95,7 +102,7 @@ public:
         return cmd;
     }
 
-    std::shared_ptr<api::GetCommand> create_get_to_node(uint16_t node) const {
+    [[nodiscard]] static std::shared_ptr<api::GetCommand> create_get_to_node(uint16_t node) {
         document::BucketId bucket(16, 1234);
         auto cmd = std::make_shared<api::GetCommand>(
                 makeDocumentBucket(bucket),
@@ -447,10 +454,12 @@ document::BucketId bucket_of(const document::DocumentId& id) {
 }
 
 TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_no_pending_write_ops) {
-    Fixture f;
-    auto cmd = f.createPutToNode(0);
-    auto bucket_id = bucket_of(cmd->getDocumentId());
+    // Define before `f` to avoid possible dangling ref during dtor sequence in the case tasks are not aborted
+    // (tasks are currently not invoked on message tracker dtor, but that could change at some point).
     auto state = TaskRunState::Aborted;
+    Fixture f;
+    auto cmd = f.createPutToNode(0, 1234);
+    auto bucket_id = bucket_of(cmd->getDocumentId());
     f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
         state = s;
     }));
@@ -458,11 +467,11 @@ TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_no_pending_
 }
 
 TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_only_pending_read_ops) {
+    auto state = TaskRunState::Aborted;
     Fixture f;
     auto cmd = f.create_get_to_node(0);
     f.tracker().insert(cmd);
     auto bucket_id = bucket_of(cmd->getDocumentId());
-    auto state = TaskRunState::Aborted;
     f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
         state = s;
     }));
@@ -470,10 +479,10 @@ TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_only_pendin
 }
 
 TEST_F(PendingMessageTrackerTest, deferred_task_not_started_before_pending_ops_completed) {
+    auto state = TaskRunState::Aborted;
     Fixture f;
     auto cmd = f.sendPut(RequestBuilder().toNode(0));
     auto bucket_id = bucket_of(cmd->getDocumentId());
-    auto state = TaskRunState::Aborted;
     f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
         state = s;
     }));
@@ -483,10 +492,10 @@ TEST_F(PendingMessageTrackerTest, deferred_task_not_started_before_pending_ops_c
 }
 
 TEST_F(PendingMessageTrackerTest, deferred_task_can_be_started_with_pending_read_op) {
+    auto state = TaskRunState::Aborted;
     Fixture f;
     auto cmd = f.sendPut(RequestBuilder().toNode(0));
     auto bucket_id = bucket_of(cmd->getDocumentId());
-    auto state = TaskRunState::Aborted;
     f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
         state = s;
     }));
@@ -507,6 +516,53 @@ TEST_F(PendingMessageTrackerTest, abort_invokes_deferred_tasks_with_aborted_stat
     EXPECT_EQ(state, TaskRunState::OK);
     f.tracker().abort_deferred_tasks();
     EXPECT_EQ(state, TaskRunState::Aborted);
+}
+
+TEST_F(PendingMessageTrackerTest, clearing_messages_for_node_aborts_deferred_tasks_to_affected_buckets) {
+    auto state = TaskRunState::OK;
+    Fixture f;
+    auto cmd = f.sendPut(RequestBuilder().toNode(0));
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s) {
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::OK);
+    auto ids = f.tracker().clearMessagesForNode(0);
+    EXPECT_EQ(ids.size(), 1);
+    EXPECT_EQ(state, TaskRunState::Aborted);
+}
+
+TEST_F(PendingMessageTrackerTest, clearing_messages_for_node_aborts_deferred_tasks_to_affected_buckets_multi_bucket_case) {
+    auto state_0 = TaskRunState::OK;
+    auto state_1 = TaskRunState::OK;
+    Fixture f;
+    auto cmd_0 = f.sendPut(RequestBuilder().toNode(0).with_bucket_idx(1233));
+    auto cmd_1 = f.sendPut(RequestBuilder().toNode(0).with_bucket_idx(1234));
+    auto bucket_id_0 = bucket_of(cmd_0->getDocumentId());
+    auto bucket_id_1 = bucket_of(cmd_1->getDocumentId());
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id_0), make_deferred_task([&](TaskRunState s) {
+        state_0 = s;
+    }));
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id_1), make_deferred_task([&](TaskRunState s) {
+        state_1 = s;
+    }));
+    auto ids = f.tracker().clearMessagesForNode(0);
+    EXPECT_EQ(ids.size(), 2);
+    EXPECT_EQ(state_0, TaskRunState::Aborted);
+    EXPECT_EQ(state_1, TaskRunState::Aborted);
+}
+
+TEST_F(PendingMessageTrackerTest, clearing_messages_does_not_abort_deferred_tasks_for_unaffected_buckets) {
+    std::optional<TaskRunState> state;
+    Fixture f;
+    auto cmd = f.sendPut(RequestBuilder().toNode(1));
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s) {
+        state = s;
+    }));
+    auto ids = f.tracker().clearMessagesForNode(0);
+    EXPECT_EQ(ids.size(), 0);
+    EXPECT_FALSE(state.has_value());
 }
 
 TEST_F(PendingMessageTrackerTest, request_bucket_info_with_no_buckets_tracked_as_null_bucket) {

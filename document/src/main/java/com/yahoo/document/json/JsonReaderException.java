@@ -14,26 +14,18 @@ public class JsonReaderException extends IllegalArgumentException {
     public final Throwable cause;
 
     public JsonReaderException(DocumentId docId, Field field, Throwable cause) {
-        super(createErrorMessage(docId, field, cause), cause);
+        super("In document '" + docId + "': Could not parse " + field, cause);
         this.docId = docId;
         this.field = field;
         this.cause = cause;
     }
 
     public JsonReaderException(Field field, Throwable cause) {
-        super(createErrorMessage(null, field, cause), cause);
-        this.docId = null;
-        this.field = field;
-        this.cause = cause;
+        this(null, field, cause);
     }
 
     public static JsonReaderException addDocId(JsonReaderException oldException, DocumentId docId) {
         return new JsonReaderException(docId, oldException.field, oldException.cause);
-    }
-
-    private static String createErrorMessage(DocumentId docId, Field field, Throwable cause) {
-        return String.format("Error in document '%s' - could not parse field '%s' of type '%s': %s",
-                             docId, field.getName(), field.getDataType().getName(), cause.getMessage());
     }
 
     public DocumentId getDocId() {

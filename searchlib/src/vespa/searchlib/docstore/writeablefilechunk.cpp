@@ -97,6 +97,7 @@ WriteableFileChunk(vespalib::Executor &executor,
       _pendingDat(0),
       _idxFileSize(0),
       _currentDiskFootprint(0),
+      _pendingDiskFootprint(0),
       _nextChunkId(1),
       _active(std::make_unique<Chunk>(0, Chunk::Config(config.getMaxChunkBytes()))),
       _alignment(1),
@@ -133,7 +134,11 @@ WriteableFileChunk(vespalib::Executor &executor,
         if (_idxHeaderLen == 0) {
             _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, *idxFile);
         }
-        _idxFileSize.store(idxFile->getSize(), std::memory_order_relaxed);
+        auto idxFileSize = idxFile->getSize();
+        {
+            std::lock_guard guard(_lock);
+            _idxFileSize = idxFileSize;
+        }
         if ( ! idxFile->Sync()) {
             throw SummaryException("Failed syncing idx file", *idxFile, VESPA_STRLOC);
         }
@@ -141,7 +146,8 @@ WriteableFileChunk(vespalib::Executor &executor,
         throw SummaryException("Failed opening data file", _dataFile, VESPA_STRLOC);
     }
     _firstChunkIdToBeWritten = _active->getId();
-    updateCurrentDiskFootprint();
+    std::lock_guard guard(_lock);
+    updateCurrentDiskFootprint(guard);
 }
 
 std::unique_ptr<FastOS_FileInterface>
@@ -181,7 +187,6 @@ WriteableFileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t
     _active = std::make_unique<Chunk>(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes()));
     _serialNum = getLastPersistedSerialNum();
     _firstChunkIdToBeWritten = _active->getId();
-    setDiskFootprint(0);
 }
 
 void
@@ -295,6 +300,7 @@ WriteableFileChunk::internalFlush(uint32_t chunkId, uint64_t serialNum, CpuUsage
     if (_alignment > 1) {
         tmp->getBuf().ensureFree(active->getMaxPackSize(_config.getCompression()) + _alignment - 1);
     }
+    auto old_size = active->size(); // uncompressed data size already tentatively accounted for by append
     active->pack(serialNum, tmp->getBuf(), _config.getCompression());
     tmp->setPayLoad();
     if (_alignment > 1) {
@@ -304,7 +310,9 @@ WriteableFileChunk::internalFlush(uint32_t chunkId, uint64_t serialNum, CpuUsage
     }
     {
         std::lock_guard innerGuard(_lock);
-        setDiskFootprint(FileChunk::getDiskFootprint() + tmp->getBuf().getDataLen());
+        // Adjust footprint to account for padded compressed data size
+        assert(_pendingDiskFootprint >= old_size);
+        _pendingDiskFootprint = _pendingDiskFootprint + tmp->getBuf().getDataLen() - old_size;
     }
     enque(std::move(tmp), cpu_category);
 }
@@ -477,6 +485,7 @@ WriteableFileChunk::writeData(const ProcessedChunkQ & chunks, size_t sz)
     for (const auto & chunk : chunks) {
         buf.writeBytes(chunk->getBuf().getData(), chunk->getBuf().getDataLen());
     }
+    assert(buf.getDataLen() == sz);
 
     std::lock_guard guard(_writeLock);
     ssize_t wlen = _dataFile.Write2(buf.getData(), buf.getDataLen());
@@ -485,11 +494,18 @@ WriteableFileChunk::writeData(const ProcessedChunkQ & chunks, size_t sz)
                                            buf.getDataLen(), wlen),
                                _dataFile, VESPA_STRLOC);
     }
-    updateCurrentDiskFootprint();
+    std::lock_guard inner_guard(_lock);
+    /*
+     * Migrate accounting of sz bytes in dat file from _pendingDiskFootPrint (accumulated by append, adjusted by
+     * internalFLush) to _currentDiskFootprint
+     */
+    assert(_pendingDiskFootprint >= sz);
+    _pendingDiskFootprint -= sz;
+    updateCurrentDiskFootprint(inner_guard);
 }
 
 void
-WriteableFileChunk::updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV, size_t sz)
+WriteableFileChunk::updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV)
 {
     uint32_t maxChunkId(0);
     for (const auto & chunk : chunks) {
@@ -499,7 +515,6 @@ WriteableFileChunk::updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkM
     if (maxChunkId >= _chunkInfo.size()) {
         _chunkInfo.reserve(vespalib::roundUp2inN(maxChunkId+1));
     }
-    size_t nettoSz(sz);
     for (size_t i(0); i < chunks.size(); i++) {
         const ProcessedChunk & chunk = *chunks[i];
         assert(_chunkMap.find(chunk.getChunkId()) == _chunkMap.begin());
@@ -510,10 +525,8 @@ WriteableFileChunk::updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkM
         }
         const ChunkMeta & cmeta(cmetaV[i]);
         _chunkInfo[active.getId()] = ChunkInfo(cmeta.getOffset(), chunk.getPayLoad(), cmeta.getLastSerial());
-        nettoSz += active.size();
         _chunkMap.erase(_chunkMap.begin());
     }
-    setDiskFootprint(FileChunk::getDiskFootprint() - nettoSz);
     _cond.notify_all();
 }
 
@@ -534,7 +547,7 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
             size_t sz(0);
             ChunkMetaV cmetaV(computeChunkMeta(chunks, getAlignedStartPos(_dataFile), sz, done));
             writeData(chunks, sz);
-            updateChunkInfo(chunks, cmetaV, sz);
+            updateChunkInfo(chunks, cmetaV);
             LOG(spam, "bucket spread = '%3.2f'", getBucketSpread());
             guard = std::unique_lock(_writeMonitor);
             if (done) break;
@@ -606,7 +619,7 @@ WriteableFileChunk::getDiskFootprint(const unique_lock & guard) const
     assert(guard.mutex() == &_lock && guard.owns_lock());
     return frozen()
         ? FileChunk::getDiskFootprint()
-        : _currentDiskFootprint.load(std::memory_order_relaxed) + FileChunk::getDiskFootprint();
+        : _currentDiskFootprint + _pendingDiskFootprint;
 }
 
 size_t
@@ -734,7 +747,12 @@ WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, vespalib::ConstBuff
     _numLids++;
     size_t oldSz(_active->size());
     LidMeta lm = _active->append(lid, data);
-    setDiskFootprint(FileChunk::getDiskFootprint() - oldSz + _active->size());
+    {
+        size_t delta_size = _active->size() - oldSz;
+        std::lock_guard guard(_lock);
+        // Use uncompressed data size as tentative disk footprint, adjusted later by internalFlush
+        _pendingDiskFootprint += delta_size;
+    }
     return {getFileId().getId(), _active->getId(), lm.size()};
 }
 
@@ -857,8 +875,8 @@ WriteableFileChunk::needFlushPendingChunks(const unique_lock & guard, uint64_t s
 }
 
 void
-WriteableFileChunk::updateCurrentDiskFootprint() {
-    _currentDiskFootprint.store(_idxFileSize.load(std::memory_order_relaxed) + _dataFile.getSize(), std::memory_order_relaxed);
+WriteableFileChunk::updateCurrentDiskFootprint(const std::lock_guard<std::mutex>&) {
+    _currentDiskFootprint = _idxFileSize + _dataFile.getSize();
 }
 
 /*
@@ -911,7 +929,6 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const unique_lock &flushGu
     auto idxFile = openIdx();
     idxFile->SetPosition(idxFile->getSize());
     ssize_t wlen = idxFile->Write2(os.data(), os.size());
-    updateCurrentDiskFootprint();
 
     if (wlen != static_cast<ssize_t>(os.size())) {
         throw SummaryException(make_string("Failed writing %ld bytes to idx file. Only wrote %ld bytes ", os.size(), wlen), *idxFile, VESPA_STRLOC);
@@ -919,7 +936,13 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const unique_lock &flushGu
     if ( ! idxFile->Sync()) {
         throw SummaryException("Failed fsync of idx file", *idxFile, VESPA_STRLOC);
     }
-    _idxFileSize.store(idxFile->getSize(), std::memory_order_relaxed);
+    uint64_t idxFileSize = idxFile->getSize();
+    {
+        std::lock_guard guard(_lock);
+        _idxFileSize = idxFileSize;
+        // Account for data written to idx file
+        updateCurrentDiskFootprint(guard);
+    }
     if (_lastPersistedSerialNum.load(std::memory_order_relaxed) < lastSerial) {
         _lastPersistedSerialNum.store(lastSerial, std::memory_order_relaxed);
     }
