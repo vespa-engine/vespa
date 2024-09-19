@@ -1,6 +1,7 @@
 package ai.vespa.schemals.tree;
 
 import ai.vespa.schemals.parser.yqlplus.Node;
+import ai.vespa.schemals.parser.yqlplus.Token.TokenType;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLNode extends ai.vespa.schemals.tree.Node<YQLNode> {
@@ -14,5 +15,9 @@ public class YQLNode extends ai.vespa.schemals.tree.Node<YQLNode> {
         for (Node child : node.children()) {
             addChild(new YQLNode(child));
         }
+    }
+
+    public Class<?> getASTClass() {
+        return originalYQLNode.getClass();
     }
 }

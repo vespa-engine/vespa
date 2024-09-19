@@ -19,9 +19,18 @@ public class YQLPlusSemanticTokens {
     }
 
     private static List<SemanticTokenMarker> traverseCST(YQLNode node, ClientLogger logger) {
+        List<SemanticTokenMarker> ret = new ArrayList<>();
 
+        if (YQLPlusSemanticTokenConfig.keywordTokens.contains(node.getASTClass())) {
+            int keywordType = CommonSemanticTokens.getType(SemanticTokenTypes.Keyword);
+            ret.add(new SemanticTokenMarker(keywordType, node));
+        } else {
+            for (YQLNode child : node) {
+                ret.addAll(traverseCST(child, logger));
+            }
+        }
 
-        return new ArrayList();
+        return ret;
     }
 
     public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
