@@ -1,7 +1,6 @@
 package ai.vespa.schemals.tree;
 
 import ai.vespa.schemals.parser.yqlplus.Node;
-import ai.vespa.schemals.parser.yqlplus.Token.TokenType;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLNode extends ai.vespa.schemals.tree.Node<YQLNode> {

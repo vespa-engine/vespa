@@ -16,12 +16,19 @@ public class YQLPlusSemanticTokens {
 
     public static void init() {
         CommonSemanticTokens.addTokenType(SemanticTokenTypes.Keyword);
+        CommonSemanticTokens.addTokenTypes(new ArrayList<String>(YQLPlusSemanticTokenConfig.tokensMap.values()));
+
     }
 
     private static List<SemanticTokenMarker> traverseCST(YQLNode node, ClientLogger logger) {
         List<SemanticTokenMarker> ret = new ArrayList<>();
 
-        if (YQLPlusSemanticTokenConfig.keywordTokens.contains(node.getASTClass())) {
+        Class<?> nodeClass = node.getASTClass();
+        String tokenString = YQLPlusSemanticTokenConfig.tokensMap.get(nodeClass);
+        if (tokenString != null) {
+            int tokenType = CommonSemanticTokens.getType(tokenString);
+            ret.add(new SemanticTokenMarker(tokenType, node));
+        } else if (YQLPlusSemanticTokenConfig.keywordTokens.contains(nodeClass)) {
             int keywordType = CommonSemanticTokens.getType(SemanticTokenTypes.Keyword);
             ret.add(new SemanticTokenMarker(keywordType, node));
         } else {
