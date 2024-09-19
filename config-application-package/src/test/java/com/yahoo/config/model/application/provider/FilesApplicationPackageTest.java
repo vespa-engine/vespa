@@ -130,7 +130,6 @@ public class FilesApplicationPackageTest {
         var exception = assertThrows(IllegalArgumentException.class,
                                      () -> app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger()));
         String message = exception.getMessage();
-        System.out.println(message);
         assertTrue(message.startsWith("services.xml does not exist in application package"));
         assertTrue(message.contains("There are 4 files in the directory"));
     }
