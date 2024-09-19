@@ -1,9 +1,17 @@
 package ai.vespa.schemals.schemadocument;
 
+import java.util.List;
+
+import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
+import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class ServicesXMLDocument implements DocumentManager {
 
@@ -12,18 +20,26 @@ public class ServicesXMLDocument implements DocumentManager {
     private boolean isOpen;
     private String content;
     private Integer currentVersion;
+    private SchemaDiagnosticsHandler diagnosticsHandler;
 
-    public ServicesXMLDocument(ClientLogger logger, String fileURI) {
+    public ServicesXMLDocument(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, String fileURI) {
         this.logger = logger;
         this.fileURI = fileURI;
         this.isOpen = false;
         this.currentVersion = 0;
+        this.diagnosticsHandler = diagnosticsHandler;
     }
 
     @Override
     public void updateFileContent(String content) {
         // TODO Auto-generated method stub
         this.content = content;
+        diagnosticsHandler.publishDiagnostics(this.fileURI, List.of(new SchemaDiagnostic.Builder()
+            .setRange(new Range(new Position(0, 0), new Position(0, 1)))
+            .setMessage("Hello WOrld!")
+            .setSeverity(DiagnosticSeverity.Information)
+            .build()
+        ));
     }
 
     @Override
@@ -78,5 +94,10 @@ public class ServicesXMLDocument implements DocumentManager {
     @Override
     public DocumentType getDocumentType() {
         return DocumentType.SERVICESXML;
+    }
+
+    @Override
+    public YQLNode getRootYQLNode() {
+        return null;
     }
 }

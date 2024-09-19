@@ -61,6 +61,8 @@ public class SchemaDocumentScheduler {
 
         DocumentType documentType = fileExtensions.get(fileExtension);
         if (documentType == null) return Optional.empty();
+        // TODO: refactor if necessary
+        if (documentType == DocumentType.SERVICESXML && !fileURI.endsWith("services.xml"))return Optional.empty();
         return Optional.of(documentType);
     }
 
@@ -77,7 +79,7 @@ public class SchemaDocumentScheduler {
                     workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
                     break;
                 case SERVICESXML:
-                    workspaceFiles.put(fileURI, new ServicesXMLDocument(logger, fileURI));
+                    workspaceFiles.put(fileURI, new ServicesXMLDocument(logger, diagnosticsHandler, fileURI));
                     break;
                 case YQL:
                     workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, fileURI));

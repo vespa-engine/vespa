@@ -19,10 +19,13 @@ public class EventDocumentContext extends EventContext {
         SchemaIndex schemaIndex,
         SchemaMessageHandler messageHandler,
         TextDocumentIdentifier documentIdentifier
-    ) {
+    ) throws InvalidContextException {
         super(scheduler, schemaIndex, messageHandler);
         this.documentIdentifier = documentIdentifier;
         this.document = scheduler.getDocument(documentIdentifier.getUri());
+        if (this.document == null) {
+            throw new InvalidContextException();
+        }
     }
 
 }
