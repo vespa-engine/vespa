@@ -12,9 +12,6 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SemanticTokenModifiers;
 import org.eclipse.lsp4j.SemanticTokenTypes;
 import org.eclipse.lsp4j.SemanticTokens;
-import org.eclipse.lsp4j.SemanticTokensLegend;
-import org.eclipse.lsp4j.SemanticTokensServerFull;
-import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -23,6 +20,8 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
+import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenConfig;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.FILTER;
@@ -46,76 +45,59 @@ public class SchemaSemanticTokens {
 
     private static Map<SymbolType, Integer> identifierTypeMap;
 
-    private static ArrayList<String> tokenTypes;
     private static Map<TokenType, Integer> schemaTokenTypeMap;
     private static Map<ai.vespa.schemals.parser.rankingexpression.Token.TokenType, Integer> rankExpressionTokenTypeMap;
 
-    private static int addTokenType(String name) {
-        int index = tokenTypes.indexOf(name);
-        if (index == -1) {
-            index = tokenTypes.size();
-            tokenTypes.add(name);
-        }
-        return index;
-    }
-
-    static {
-        tokenTypes = new ArrayList<String>();
+    public static void init() {
 
         // Manually added semantic tokens
-        tokenTypes.addAll(SemanticTokenConfig.manuallyRegisteredLSPNames);
-        int keywordIndex = addTokenType(SemanticTokenTypes.Keyword);
+        CommonSemanticTokens.addTokenTypes(SchemaSemanticTokenConfig.manuallyRegisteredLSPNames);
+        int keywordIndex = CommonSemanticTokens.addTokenType(SemanticTokenTypes.Keyword);
 
         // Add symbol semantic tokens
         identifierTypeMap = new HashMap<SymbolType, Integer>();
 
-        for (Map.Entry<SymbolType, String> set : SemanticTokenConfig.identifierTypeLSPNameMap.entrySet()) {
-            int index = addTokenType(set.getValue());
+        for (Map.Entry<SymbolType, String> set : SchemaSemanticTokenConfig.identifierTypeLSPNameMap.entrySet()) {
+            int index = CommonSemanticTokens.addTokenType(set.getValue());
             identifierTypeMap.put(set.getKey(), index);
         }
 
         // Create Map for Schema Tokens
         schemaTokenTypeMap = new HashMap<TokenType, Integer>();
 
-        for (var set : SemanticTokenConfig.schemaTokenTypeLSPNameMap.entrySet()) {
-            int index = addTokenType(set.getValue());
+        for (var set : SchemaSemanticTokenConfig.schemaTokenTypeLSPNameMap.entrySet()) {
+            int index = CommonSemanticTokens.addTokenType(set.getValue());
             schemaTokenTypeMap.put(set.getKey(), index);
         }
         
-        for (TokenType type : SemanticTokenConfig.keywordTokens) {
+        for (TokenType type : SchemaSemanticTokenConfig.keywordTokens) {
             schemaTokenTypeMap.put(type, keywordIndex);
         }
 
         // Create Map for RankExpression Tokens
         rankExpressionTokenTypeMap = new HashMap<ai.vespa.schemals.parser.rankingexpression.Token.TokenType, Integer>();
 
-        for (var set : SemanticTokenConfig.rankingExpressionTokenTypeLSPNameMap.entrySet()) {
-            int index = addTokenType(set.getValue());
+        for (var set : SchemaSemanticTokenConfig.rankingExpressionTokenTypeLSPNameMap.entrySet()) {
+            int index = CommonSemanticTokens.addTokenType(set.getValue());
             rankExpressionTokenTypeMap.put(set.getKey(), index);
         }
 
-        for (var type : SemanticTokenConfig.rankingExpressionKeywordTokens) {
+        for (var type : SchemaSemanticTokenConfig.rankingExpressionKeywordTokens) {
             rankExpressionTokenTypeMap.put(type, keywordIndex);
         }
 
-        int operationIndex = addTokenType(SemanticTokenTypes.Operator);
-        for (var type : SemanticTokenConfig.rankingExpressionOperationTokens) {
+        int operationIndex = CommonSemanticTokens.addTokenType(SemanticTokenTypes.Operator);
+        for (var type : SchemaSemanticTokenConfig.rankingExpressionOperationTokens) {
             rankExpressionTokenTypeMap.put(type, operationIndex);
         }
 
-        int functionIndex = addTokenType(SemanticTokenTypes.Function);
-        for (var type : SemanticTokenConfig.rankingExpressioFunctionTokens) {
+        int functionIndex = CommonSemanticTokens.addTokenType(SemanticTokenTypes.Function);
+        for (var type : SchemaSemanticTokenConfig.rankingExpressioFunctionTokens) {
             rankExpressionTokenTypeMap.put(type, functionIndex);
         }
-
     }
 
-    public static SemanticTokensWithRegistrationOptions getSemanticTokensRegistrationOptions() {
-        return new SemanticTokensWithRegistrationOptions(
-            new SemanticTokensLegend(tokenTypes, SemanticTokenConfig.tokenModifiers),
-            new SemanticTokensServerFull(false)
-        );
-    }
+    
 
     private static class SemanticTokenMarker {
         private static final int LINE_INDEX = 0;
@@ -139,7 +121,7 @@ public class SchemaSemanticTokens {
         void addModifier(String modifier) {
             int modifierIndex = SemanticTokenConfig.tokenModifiers.indexOf(modifier);
             if (modifierIndex == -1) {
-                throw new IllegalArgumentException("Could not find the semantic token modifier '" + modifier + "'. Remeber to add the modifer to the tokenModifiers list.");
+                throw new IllegalArgumentException("Could not find the semantic token modifier '" + modifier + "'. Remember to add the modifier to the tokenModifiers list.");
             }
             int bitMask = 1 << modifierIndex;
             modifierValue = modifierValue | bitMask;
@@ -190,7 +172,7 @@ public class SchemaSemanticTokens {
         // TODO: this became a bit ugly with the map stuff
         if (node.isASTInstance(dataType.class) && (!node.hasSymbol() || node.getSymbol().getType() == SymbolType.MAP_KEY || node.getSymbol().getType() == SymbolType.MAP_VALUE)) {
 
-            Integer tokenType = tokenTypes.indexOf("type");
+            Integer tokenType = CommonSemanticTokens.getTokenNumber("type");
             if (tokenType != -1) {
                 // this will leave <> uncolored, as we are only interested in marking the actual token
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
@@ -203,7 +185,7 @@ public class SchemaSemanticTokens {
 
         } else if (node.isASTInstance(valueType.class)) {
 
-            Integer tokenType = tokenTypes.indexOf("type");
+            Integer tokenType = CommonSemanticTokens.getTokenNumber("type");
             if (tokenType != -1) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
@@ -213,7 +195,7 @@ public class SchemaSemanticTokens {
             Integer tokenType = null;
             String modifier = null;
             if (isEnumLike(node)) {
-                tokenType = tokenTypes.indexOf(SemanticTokenTypes.Property); 
+                tokenType = CommonSemanticTokens.getTokenNumber(SemanticTokenTypes.Property); 
                 modifier = SemanticTokenModifiers.Readonly;
             }
             if (tokenType == null) {
@@ -233,20 +215,20 @@ public class SchemaSemanticTokens {
             }
 
         } else if (indexinglanguageType != null) {
-            if (SemanticTokenConfig.indexingLanguageOutputs.contains(indexinglanguageType)) {
-                Integer tokenType = tokenTypes.indexOf("type");
+            if (SchemaSemanticTokenConfig.indexingLanguageOutputs.contains(indexinglanguageType)) {
+                Integer tokenType = CommonSemanticTokens.getTokenNumber("type");
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
-            } else if (SemanticTokenConfig.indexingLanguageKeywords.contains(indexinglanguageType)) {
-                Integer tokenType = tokenTypes.indexOf("keyword");
+            } else if (SchemaSemanticTokenConfig.indexingLanguageKeywords.contains(indexinglanguageType)) {
+                Integer tokenType = CommonSemanticTokens.getTokenNumber("keyword");
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
-            } else if (SemanticTokenConfig.indexingLanguageOperators.contains(indexinglanguageType)) {
-                Integer tokenType = tokenTypes.indexOf("function");
+            } else if (SchemaSemanticTokenConfig.indexingLanguageOperators.contains(indexinglanguageType)) {
+                Integer tokenType = CommonSemanticTokens.getTokenNumber("function");
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             } else if (indexinglanguageType == ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.STRING) {
-                Integer tokenType = tokenTypes.indexOf("string");
+                Integer tokenType = CommonSemanticTokens.getTokenNumber("string");
                 Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
@@ -298,7 +280,7 @@ public class SchemaSemanticTokens {
 
         if (!node.hasSymbol()) return ret;
 
-        if (SemanticTokenConfig.userDefinedSymbolTypes.contains(node.getSymbol().getType()) && (
+        if (SchemaSemanticTokenConfig.userDefinedSymbolTypes.contains(node.getSymbol().getType()) && (
             node.getSymbol().getStatus() == SymbolStatus.REFERENCE ||
             node.getSymbol().getStatus() == SymbolStatus.DEFINITION
         )) {
@@ -317,7 +299,7 @@ public class SchemaSemanticTokens {
             Integer tokenType = identifierTypeMap.get(type);
 
             if (type == SymbolType.FUNCTION && node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
-                tokenType = tokenTypes.indexOf("macro");
+                tokenType = CommonSemanticTokens.getTokenNumber("macro");
             }
 
             if (tokenType != null && tokenType != -1) {
@@ -333,7 +315,7 @@ public class SchemaSemanticTokens {
     private static ArrayList<SemanticTokenMarker> convertCommentRanges(ArrayList<Range> comments) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<>();
 
-        int tokenType = tokenTypes.indexOf("comment");
+        int tokenType = CommonSemanticTokens.getTokenNumber("comment");
 
         for (Range range : comments) {
             ret.add(new SemanticTokenMarker(tokenType, range));

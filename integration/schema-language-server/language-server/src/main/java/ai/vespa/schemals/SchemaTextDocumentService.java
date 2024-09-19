@@ -58,7 +58,6 @@ import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.schema.codeaction.SchemaCodeAction;
-import ai.vespa.schemals.lsp.schema.codelens.SchemaCodeLens;
 import ai.vespa.schemals.lsp.schema.completion.SchemaCompletion;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
 import ai.vespa.schemals.lsp.schema.documentsymbols.SchemaDocumentSymbols;
@@ -67,6 +66,7 @@ import ai.vespa.schemals.lsp.schema.references.SchemaReferences;
 import ai.vespa.schemals.lsp.schema.rename.SchemaPrepareRename;
 import ai.vespa.schemals.lsp.schema.rename.SchemaRename;
 import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.yqlplus.codelens.YQLPlusCodeLens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 /**
@@ -164,7 +164,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
                 EventDocumentContext context = eventContextCreator.createContext(codeLensParams);
-                return SchemaCodeLens.codeLens(context);
+                return YQLPlusCodeLens.codeLens(context);
             } catch (Exception e) {
                 logger.error("Error during code lens request: " + e.getMessage());
             }

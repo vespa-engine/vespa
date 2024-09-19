@@ -1,9 +1,9 @@
-package ai.vespa.schemals.lsp.schema.command;
+package ai.vespa.schemals.lsp.common.command;
 
 import java.util.Optional;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
-import ai.vespa.schemals.lsp.schema.command.commandtypes.SchemaCommand;
+import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 
 /**
  * Responsible for LSP workspace/executeCommand requests.

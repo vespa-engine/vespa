@@ -7,13 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.lsp4j.SemanticTokenModifiers;
 import org.eclipse.lsp4j.SemanticTokenTypes;
 
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
 
-class SemanticTokenConfig {
+class SchemaSemanticTokenConfig {
     static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{
         add(SemanticTokenTypes.Type);
         add(SemanticTokenTypes.Comment);
@@ -21,12 +20,6 @@ class SemanticTokenConfig {
         add(SemanticTokenTypes.Enum);
         add(SemanticTokenTypes.EnumMember);
         add(SemanticTokenTypes.Property);
-    }};
-
-    static final List<String> tokenModifiers = new ArrayList<>() {{
-        add(SemanticTokenModifiers.Definition);
-        add(SemanticTokenModifiers.Readonly);
-        add(SemanticTokenModifiers.DefaultLibrary);
     }};
 
     static final List<SymbolType> userDefinedSymbolTypes = new ArrayList<SymbolType>() {{

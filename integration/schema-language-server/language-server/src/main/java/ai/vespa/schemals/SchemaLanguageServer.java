@@ -26,7 +26,8 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.lsp.schema.command.CommandRegistry;
+import ai.vespa.schemals.lsp.common.command.CommandRegistry;
+import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
@@ -83,7 +84,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setDefinitionProvider(true);
         initializeResult.getCapabilities().setReferencesProvider(true);
         initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
-        initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
+        initializeResult.getCapabilities().setSemanticTokensProvider(CommonSemanticTokens.getSemanticTokensRegistrationOptions());
         initializeResult.getCapabilities().setDocumentSymbolProvider(true);
         initializeResult.getCapabilities().setExecuteCommandProvider(new ExecuteCommandOptions(CommandRegistry.getSupportedCommandList()));
         initializeResult.getCapabilities().setCodeLensProvider(new CodeLensOptions());

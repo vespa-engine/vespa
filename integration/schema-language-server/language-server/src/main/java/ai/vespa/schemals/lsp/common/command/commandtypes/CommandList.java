@@ -1,4 +1,4 @@
-package ai.vespa.schemals.lsp.schema.command.commandtypes;
+package ai.vespa.schemals.lsp.common.command.commandtypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
-import ai.vespa.schemals.lsp.schema.command.CommandRegistry;
+import ai.vespa.schemals.lsp.common.command.CommandRegistry;
 
 /**
  * CommandList

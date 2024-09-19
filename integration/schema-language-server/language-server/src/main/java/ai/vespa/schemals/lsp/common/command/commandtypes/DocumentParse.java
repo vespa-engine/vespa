@@ -1,4 +1,4 @@
-package ai.vespa.schemals.lsp.schema.command.commandtypes;
+package ai.vespa.schemals.lsp.common.command.commandtypes;
 
 import java.util.List;
 

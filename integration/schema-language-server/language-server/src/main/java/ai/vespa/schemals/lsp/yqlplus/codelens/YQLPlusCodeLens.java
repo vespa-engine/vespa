@@ -1,4 +1,4 @@
-package ai.vespa.schemals.lsp.schema.codelens;
+package ai.vespa.schemals.lsp.yqlplus.codelens;
 
 import java.util.List;
 
@@ -7,11 +7,11 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.context.EventDocumentContext;
-import ai.vespa.schemals.lsp.schema.command.CommandRegistry;
-import ai.vespa.schemals.lsp.schema.command.CommandRegistry.CommandType;
+import ai.vespa.schemals.lsp.common.command.CommandRegistry;
+import ai.vespa.schemals.lsp.common.command.CommandRegistry.CommandType;
 import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
 
-public class SchemaCodeLens {
+public class YQLPlusCodeLens {
 
 
     static public List<CodeLens> codeLens(EventDocumentContext context) {

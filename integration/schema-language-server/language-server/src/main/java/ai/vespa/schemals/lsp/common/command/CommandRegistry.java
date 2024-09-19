@@ -1,4 +1,4 @@
-package ai.vespa.schemals.lsp.schema.command;
+package ai.vespa.schemals.lsp.common.command;
 
 import java.util.Arrays;
 import java.util.List;
@@ -7,11 +7,11 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
-import ai.vespa.schemals.lsp.schema.command.commandtypes.CommandList;
-import ai.vespa.schemals.lsp.schema.command.commandtypes.DocumentOpen;
-import ai.vespa.schemals.lsp.schema.command.commandtypes.DocumentParse;
-import ai.vespa.schemals.lsp.schema.command.commandtypes.RunVespaQuery;
-import ai.vespa.schemals.lsp.schema.command.commandtypes.SchemaCommand;
+import ai.vespa.schemals.lsp.common.command.commandtypes.CommandList;
+import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentOpen;
+import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
+import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
+import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 
 /**
  * SchemaCommand
