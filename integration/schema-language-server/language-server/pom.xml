@@ -105,25 +105,6 @@
         <groupId>com.github.os72</groupId>
         <artifactId>protoc-jar-maven-plugin</artifactId>
       </plugin>
-<!--      <plugin>-->
-<!--        <groupId>org.codehaus.mojo</groupId>-->
-<!--        <artifactId>exec-maven-plugin</artifactId>-->
-<!--        <executions>-->
-<!--          <execution>-->
-<!--            <goals>-->
-<!--              <goal>exec</goal>-->
-<!--            </goals>-->
-<!--            <phase>generate-sources</phase>-->
-<!--            <configuration>-->
-<!--              <executable>${project.basedir}/src/main/python/buildDocs.sh</executable>-->
-<!--              <arguments>-->
-<!--                <argument>${project.basedir}/target/generated-resources/hover</argument>-->
-<!--              </arguments>-->
-<!--              <workingDirectory>src/main/python/</workingDirectory>-->
-<!--            </configuration>-->
-<!--          </execution>-->
-<!--        </executions>-->
-<!--      </plugin>-->
       <plugin>   
         <groupId>org.congocc</groupId>   
         <artifactId>org.congocc.maven.plugin</artifactId>   
