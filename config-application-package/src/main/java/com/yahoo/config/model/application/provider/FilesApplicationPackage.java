@@ -653,7 +653,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private long filesInApplicationPackage() {
-        return uncheck(() -> Files.list(appDir.toPath()).count());
+        return uncheck(() -> { try (var files = Files.list(appDir.toPath())) { return files.count(); } });
     }
 
     private void copyUserDefsIntoApplication() {
