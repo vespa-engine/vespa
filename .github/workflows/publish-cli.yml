@@ -28,9 +28,14 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
+      changes-detected: ${{ steps.check-diff.outputs.has-changes }}
       build-version: ${{ steps.meta.outputs.version }}
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for git operations.
+
       - name: Define Build Version
         id: meta
         run: |
@@ -43,7 +48,34 @@ jobs:
             BUILD_VERSION="0.0.0-dev_${{ github.run_number }}"
           fi
 
-          echo "version=${BUILD_VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${BUILD_VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check for Changes
+        id: check-diff
+        env:
+          VERSION_PREFIX: 'v8*' # We need the 8 or else "vespa-7." will match and sort before "v8.x.y"
+        run: |
+          # Checks for changes since the last release.
+          new_tag="v${{ steps.meta.outputs.version }}"
+          previous_tag=$(git tag --list "${VERSION_PREFIX}" --sort="-version:refname" | grep -v "${new_tag}" | head -n 1)
+
+          # Detect if we are using a dev version (starts with "0.0.0-dev").
+          if [[ "${new_tag:0:}" == "0.0.0-dev" ]]; then
+            echo "Dev version being used, skipping check for changes."
+            echo "has-changes=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Git will return a non-zero exit code if there are changes.
+          if git diff --quiet "${previous_tag}" "${new_tag}" -- client/go; then
+              echo "No changes detected between ${previous_tag} and ${new_tag}."
+              echo "has-changes=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+          fi
+
+          echo "Changes detected between ${previous_tag} and ${new_tag}."
+          echo "has-changes=true" >> "${GITHUB_OUTPUT}"
+
 
   build-test:
     runs-on: ubuntu-latest
@@ -80,8 +112,8 @@ jobs:
   publish:
     runs-on: macos-latest
 
-    # Publish the CLI when a tag is pushed or a workflow is triggered manually.
-    if: contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
+    # Publish the CLI only if changes were detected and the event was a push or workflow_dispatch.
+    if: needs.prepare.outputs.changes-detected == 'true' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
     needs:
       - prepare
       - build-test
