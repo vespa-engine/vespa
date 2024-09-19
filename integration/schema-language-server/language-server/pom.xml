@@ -19,6 +19,16 @@
       <version>0.23.1</version>
     </dependency>
     <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>1.17.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.vladsch.flexmark</groupId>
+      <artifactId>flexmark-html2md-converter</artifactId>
+      <version>0.64.8</version>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-model</artifactId>
       <version>8-SNAPSHOT</version>
@@ -60,13 +70,6 @@
     </dependency>
   </dependencies>
   <build>
-
-    <resources>
-      <resource>
-        <directory>target/generated-resources</directory>
-      </resource>
-    </resources>
-
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -86,6 +89,50 @@
         <configuration><skip>true</skip></configuration>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>fetch-documentation</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+                <mainClass>ai.vespa.schemals.documentation.FetchDocumentation</mainClass>
+                <arguments>
+                    <argument>${project.basedir}/target/generated-resources/hover</argument>
+                </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      
+      <!-- Important that this runs after FetchDocumentation -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase> 
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <!-- Copy from target/generated-resources to output-dir (resolves to target/classes)
+                   This is so the resources get detected by assemble-fat-jar -->
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/target/generated-resources</directory>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <executions>
@@ -101,25 +148,6 @@
       <plugin>
         <groupId>com.github.os72</groupId>
         <artifactId>protoc-jar-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <phase>generate-sources</phase>
-            <configuration>
-              <executable>${project.basedir}/src/main/python/buildDocs.sh</executable>
-              <arguments>
-                <argument>${project.basedir}/target/generated-resources/hover</argument>
-              </arguments>
-              <workingDirectory>src/main/python/</workingDirectory>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>   
         <groupId>org.congocc</groupId>   
