@@ -15,6 +15,7 @@ import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.ResolverTraversal;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQLNode;
 
 /**
  * RankProfileDocumnet parses and represents .profile files
@@ -126,6 +127,11 @@ public class RankProfileDocument implements DocumentManager {
 	public SchemaNode getRootNode() {
         return this.CST;
 	}
+
+    @Override
+    public YQLNode getRootYQLNode() {
+        return null;
+    }
 
 	@Override
 	public String getCurrentContent() {

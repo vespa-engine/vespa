@@ -8,6 +8,7 @@ import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.parser.yqlplus.ParseException;
 import ai.vespa.schemals.parser.yqlplus.YQLPlusParser;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
@@ -18,6 +19,8 @@ public class YQLDocument implements DocumentManager {
 
     ClientLogger logger;
     SchemaDiagnosticsHandler diagnosticsHandler;
+
+    private YQLNode CST;
 
     YQLDocument(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, String fileURI) {
         this.fileURI = fileURI;
@@ -50,6 +53,7 @@ public class YQLDocument implements DocumentManager {
         }
 
         Node node = parser.rootNode();
+        CST = new YQLNode(node);
         YQLUtils.printTree(logger, node);
 
     }
@@ -65,7 +69,12 @@ public class YQLDocument implements DocumentManager {
     @Override
     public SchemaNode getRootNode() {
         return null;
-    };
+    }
+
+    @Override
+    public YQLNode getRootYQLNode() {
+        return CST;
+    }
 
     @Override
     public SchemaDocumentLexer lexer() {
