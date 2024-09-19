@@ -1,3 +1,0 @@
-A pseudorandom number in the range \[0,1\> which is drawn once per document during rank evaluation. By default, the current time in microseconds is used as a seed value. Users can specify a seed value by setting [random.seed](https://docs.vespa.ai/en/reference/rank-feature-configuration.html#random) in the rank profile. If you need several independent random numbers the feature can be named like this: `random(foo)`, `random(bar)`.
-
-Default: n/a

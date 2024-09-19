@@ -1,3 +1,0 @@
-The rank of the document after first phase within the content node when selecting which documents to rerank in second phase. The best document after first phase has rank 1, the second best 2, etc. The feature returns the default value for documents not selected for second phase ranking and for unsupported cases ([streaming search](https://docs.vespa.ai/en/streaming-search.html#differences-in-streaming-search), [summary features](https://docs.vespa.ai/en/reference/schema-reference.html#summary-features), first phase expressions). Multiple documents can have the same *firstPhaseRank* value in multi-node configurations.
-
-Default: max double value

@@ -1,3 +1,0 @@
-The cross-product of the intersected path segment and the intersection-to-document vector. Given that the document was found to lie closest to the path element `A->B`, the intersected path segment vector is `[ B.x - A.x, B.y - A.y ]`. Furthermore, given that the intersection of that path element occurred at point `I` for document location `D`, the intersection-to-document vector is `[ I.x - D.x, I.y - D.y]`. This is useful e.g. for finding what side of a path a document exists by looking at the sign of this value.
-
-Default: 0

@@ -1,3 +1,0 @@
-Same as [random](https://docs.vespa.ai/en/reference/rank-features.html#random), except the random number is drawn from the Gaussian distribution using the supplied mean and stddev parameters. Can be called without parameters; default values are assumed. Seed is set similarly as *random* . If you need several independent random numbers with the same parameters, the feature can be named like this: `randomNormal(0.0,1.0,foo)`, `randomNormal(0.0,1.0,bar)`. If the parameters to *randomNormal* are not the same, you do not need to supply an additional name, e.g. `randomNormal(0.0, 0.1)` and `randomNormal(0.0, 0.5)` results in two independent values.
-
-Default: 0.0,1.0

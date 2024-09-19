@@ -1,3 +1,0 @@
-The value at index n (base 0) of a *numeric* array attribute with the given name. Note that the index number must be explicit, it cannot be the output of an [expression function](https://docs.vespa.ai/en/reference/schema-reference.html#function-rank). The order of the items in an array attribute is the same as the order they have in the input feed. If items are added using partial updates they are added to the end of the existing items list.
-
-Default: 0
