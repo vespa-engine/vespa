@@ -345,7 +345,6 @@ public class SchemaHover {
             }
         }
 
-
         if (SchemaLanguageServer.serverPath == null)return Optional.empty();
         String fileName = markdownKey + ".md";
 

@@ -56,3 +56,4 @@ install_manifest.txt
 !/.copr/Makefile
 !/.buildkite/Makefile
 .vscode
+.metadata

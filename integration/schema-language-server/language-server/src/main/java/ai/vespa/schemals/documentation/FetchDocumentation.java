@@ -1,5 +1,6 @@
 package ai.vespa.schemals.documentation;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,5 +58,20 @@ public class FetchDocumentation {
 
     private static String convertToToken(String h2Id) {
         return h2Id.toUpperCase().replaceAll("-", "_");
+    }
+
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            System.err.println("FetchDocumentation requires one argument: <path-to-write-docs>");
+            System.exit(1);
+        }
+        Path targetPath = Paths.get(args[0]);
+        try {
+            System.out.println("Fetching docs to " + args[0]);
+            fetchDocs(targetPath);
+        } catch (IOException ex) {
+            System.err.println("FetchDocumentation failed to download documentation: " + ex.getMessage());
+            System.exit(1);
+        }
     }
 }
