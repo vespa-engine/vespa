@@ -55,9 +55,8 @@ public class YQLDocument implements DocumentManager {
     }
 
     @Override
-    public boolean setIsOpen(boolean isOpen) {
+    public void setIsOpen(boolean isOpen) {
         this.isOpen = isOpen;
-        return isOpen;
     }
 
     @Override

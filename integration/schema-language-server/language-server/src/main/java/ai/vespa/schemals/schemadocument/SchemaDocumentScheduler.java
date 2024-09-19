@@ -69,12 +69,19 @@ public class SchemaDocumentScheduler {
         if (documentType.isEmpty()) return;
 
         if (!workspaceFiles.containsKey(fileURI)) {
-            if (documentType.get() == DocumentType.SCHEMA) {
-                workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
-            } else if (documentType.get() == DocumentType.PROFILE) {
-                workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
-            } else if (documentType.get() == DocumentType.YQL) {
-                workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, fileURI));
+            switch(documentType.get()) {
+                case PROFILE:
+                    workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case SCHEMA:
+                    workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case SERVICESXML:
+                    workspaceFiles.put(fileURI, new ServicesXMLDocument(logger, fileURI));
+                    break;
+                case YQL:
+                    workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, fileURI));
+                    break;
             }
         }
 

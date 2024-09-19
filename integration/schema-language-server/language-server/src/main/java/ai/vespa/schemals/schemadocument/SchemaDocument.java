@@ -156,9 +156,8 @@ public class SchemaDocument implements DocumentManager {
     public boolean getIsOpen() { return isOpen; }
 
     @Override
-    public boolean setIsOpen(boolean value) {
+    public void setIsOpen(boolean value) {
         isOpen = value;
-        return isOpen;
     }
 
     public String getSchemaIdentifier() {
