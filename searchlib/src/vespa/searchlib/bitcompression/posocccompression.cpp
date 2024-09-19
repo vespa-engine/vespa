@@ -2,6 +2,7 @@
 
 #include "posocccompression.h"
 #include "posocc_fields_params.h"
+#include "raw_features_collector.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/postinglistparams.h>
@@ -40,16 +41,22 @@ readHeader(const vespalib::GenericHeader &header,
     const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header, prefix);
 }
 
+template <bool bigEndian>
+void
+EG2PosOccDecodeContext<bigEndian>::
+collect_raw_features_and_read_compr_buffer(RawFeaturesCollector& raw_features_collector, DocIdAndFeatures& features)
+{
+    raw_features_collector.collect_before_read_compr_buffer(*this, features);
+    this->readComprBuffer();
+    raw_features_collector.fixup_after_read_compr_buffer(*this);
+}
 
 template <bool bigEndian>
 void
 EG2PosOccDecodeContext<bigEndian>::
 readFeatures(search::index::DocIdAndFeatures &features)
 {
-    features.clear_features(this->getBitOffset());
-    features.set_has_raw_data(true);
-    const uint64_t *rawFeatures = this->getCompr();
-    uint64_t rawFeaturesStartBitPos = this->getReadOffset();
+    RawFeaturesCollector raw_features_collector(*this, features);
 
     const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     uint32_t numElements = 1;
@@ -68,15 +75,10 @@ readFeatures(search::index::DocIdAndFeatures &features)
                 UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
             }
             if (__builtin_expect(oCompr >= valE, false)) {
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
                 UC64_DECODECONTEXT_STORE(o, _);
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
         }
         UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTLEN, EC);
@@ -86,39 +88,24 @@ readFeatures(search::index::DocIdAndFeatures &features)
         do {
             if (__builtin_expect(oCompr >= valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, _);
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
             UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_FIRST_WORDPOS, EC);
         } while (0);
         for (uint32_t pos = 1; pos < numPositions; ++pos) {
             if (__builtin_expect(oCompr >= valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, _);
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
             UC64_SKIPEXPGOLOMB_SMALL_NS(o,K_VALUE_POSOCC_DELTA_WORDPOS, EC);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    while (rawFeatures < oCompr) {
-        features.blob().push_back(*rawFeatures);
-        ++rawFeatures;
-    }
-    uint64_t rawFeaturesEndBitPos = this->getReadOffset();
-    features.set_bit_length(rawFeaturesEndBitPos - rawFeaturesStartBitPos);
+    raw_features_collector.finish(*this, features);
     this->readComprBufferIfNeeded();
 }
 
@@ -462,10 +449,7 @@ void
 EGPosOccDecodeContext<bigEndian>::
 readFeatures(search::index::DocIdAndFeatures &features)
 {
-    features.clear_features(this->getBitOffset());
-    features.set_has_raw_data(true);
-    const uint64_t *rawFeatures = this->getCompr();
-    uint64_t rawFeaturesStartBitPos = this->getReadOffset();
+    RawFeaturesCollector raw_features_collector(*this, features);
 
     const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::
@@ -487,14 +471,9 @@ readFeatures(search::index::DocIdAndFeatures &features)
             }
             if (__builtin_expect(oCompr >= valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, _);
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
         }
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, elementLenK, EC);
@@ -507,25 +486,15 @@ readFeatures(search::index::DocIdAndFeatures &features)
         for (uint32_t pos = 0; pos < numPositions; ++pos) {
             if (__builtin_expect(oCompr >= valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, _);
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
             UC64_SKIPEXPGOLOMB_SMALL_NS(o, wordPosK, EC);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    while (rawFeatures < oCompr) {
-        features.blob().push_back(*rawFeatures);
-        ++rawFeatures;
-    }
-    uint64_t rawFeaturesEndBitPos = this->getReadOffset();
-    features.set_bit_length(rawFeaturesEndBitPos - rawFeaturesStartBitPos);
+    raw_features_collector.finish(*this, features);
     this->readComprBufferIfNeeded();
 }
 
