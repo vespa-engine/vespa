@@ -28,7 +28,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumAr
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**

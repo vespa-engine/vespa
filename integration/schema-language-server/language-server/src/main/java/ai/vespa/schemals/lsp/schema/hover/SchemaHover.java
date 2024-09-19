@@ -26,7 +26,7 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**

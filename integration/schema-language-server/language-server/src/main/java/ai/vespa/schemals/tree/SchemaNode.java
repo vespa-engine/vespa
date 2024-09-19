@@ -29,25 +29,12 @@ import ai.vespa.schemals.parser.ast.featureListElm;
  * SchemaNode represents a node in the AST of a file the language server parses.
  * The node exposes a general interface to handle different AST from different parsers.
  */
-public class SchemaNode implements Iterable<SchemaNode> {
-
-    public enum LanguageType {
-        SCHEMA,
-        INDEXING,
-        RANK_EXPRESSION,
-        CUSTOM
-    }
-
-    private LanguageType language; // Language specifies which parser the node comes from
+public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
+    
     private String identifierString;
-    private Range range;
     private boolean isDirty = false;
 
     private Symbol symbolAtNode;
-    
-    // This array has to be in order, without overlapping elements
-    private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
-    private SchemaNode parent;
     
     private Node originalSchemaNode;
     private ai.vespa.schemals.parser.indexinglanguage.Node originalIndexingNode;
@@ -65,8 +52,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private Optional<RankNode> rankNode = Optional.empty();
 
     private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
-        this.language = language;
-        this.range = range;
+        super(language, range);
         this.identifierString = identifierString;
         this.isDirty = isDirty;
     }
@@ -139,29 +125,6 @@ public class SchemaNode implements Iterable<SchemaNode> {
             children.add(newNode);
         }
 
-    }
-
-    private void setParent(SchemaNode parent) {
-        this.parent = parent;
-    }
-
-    public void addChild(SchemaNode child) {
-        child.setParent(this);
-        this.children.add(child);
-    }
-
-    public void addChildren(List<SchemaNode> children) {
-        for (SchemaNode child : children) {
-            addChild(child);
-        }
-    }
-
-    public void clearChildren() {
-        for (SchemaNode child : children) {
-            child.setParent(null);
-        }
-
-        children.clear();
     }
 
     private TokenType calculateSchemaType() {
@@ -404,118 +367,6 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return identifierString.substring(lastIndex + 1);
     }
 
-    public Range getRange() {
-        return range;
-    }
-
-    public SchemaNode getParent(int levels) {
-        if (levels == 0) {
-            return this;
-        }
-
-        if (parent == null) {
-            return null;
-        }
-
-        return parent.getParent(levels - 1);
-    }
-
-    public SchemaNode getParent() {
-        return getParent(1);
-    }
-
-    public void insertChildAfter(int index, SchemaNode child) {
-        this.children.add(index+1, child);
-        child.setParent(this);
-    }
-
-    /**
-     * Returns the previous SchemaNode of the sibilings of the node.
-     * If there is no previous node, it moves upwards to the parent and tries to get the previous node.
-     *
-     * @return the previous SchemaNode, or null if there is no previous node
-     */
-    public SchemaNode getPrevious() {
-        if (parent == null)return null;
-
-        int parentIndex = parent.indexOf(this);
-
-        if (parentIndex == -1)return null; // invalid setup
-
-        if (parentIndex == 0)return parent;
-        return parent.get(parentIndex - 1);
-    }
-
-    /**
-     * Returns the next SchemaNode of the sibilings of the node.
-     * If there is no next node, it returns the next node of the parent node.
-     *
-     * @return the next SchemaNode or null if there is no next node
-     */
-    public SchemaNode getNext() {
-        if (parent == null) return null;
-
-        int parentIndex = parent.indexOf(this);
-
-        if (parentIndex == -1) return null;
-        
-        if (parentIndex == parent.size() - 1) return parent.getNext();
-
-        return parent.get(parentIndex + 1);
-    }
-
-    /**
-     * Returns the sibling node at the specified relative index.
-     * A sibling node is a node that shares the same parent node.
-     *
-     * @param relativeIndex the relative index of the sibling node
-     * @return the sibling node at the specified relative index, or null if the sibling node does not exist
-     */
-    public SchemaNode getSibling(int relativeIndex) {
-        if (parent == null)return null;
-
-        int parentIndex = parent.indexOf(this);
-
-        if (parentIndex == -1) return null; // invalid setup
-
-        int siblingIndex = parentIndex + relativeIndex;
-        if (siblingIndex < 0 || siblingIndex >= parent.size()) return null;
-        
-        return parent.get(siblingIndex);
-    }
-
-    /**
-     * Returns the previous sibling of this schema node.
-     * A sibling node is a node that shares the same parent node. 
-     *
-     * @return the previous sibling of this schema node, or null if there is no previous sibling
-     */
-    public SchemaNode getPreviousSibling() {
-        return getSibling(-1);
-    }
-
-    /**
-     * Returns the next sibling of this schema node.
-     * A sibling node is a node that shares the same parent node.
-     *
-     * @return the next sibling of this schema node, or null if there is no previous sibling
-     */
-    public SchemaNode getNextSibling() {
-        return getSibling(1);
-    }
-
-    public int indexOf(SchemaNode child) {
-        return this.children.indexOf(child);
-    }
-
-    public int size() {
-        return children.size();
-    }
-
-    public SchemaNode get(int i) {
-        return children.get(i);
-    }
-
     public String getText() {
         
         if (language == LanguageType.SCHEMA) {
@@ -535,10 +386,6 @@ public class SchemaNode implements Iterable<SchemaNode> {
         }
 
         return null;
-    }
-
-    public boolean isLeaf() {
-        return children.size() == 0;
     }
 
     public SchemaNode findFirstLeaf() {
@@ -586,8 +433,6 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
         return null;
     }
-
-    public LanguageType getLanguageType() { return language; }
 
     public void setRankNode(RankNode node) {
         rankNode = Optional.of(node);

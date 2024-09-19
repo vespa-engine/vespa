@@ -40,7 +40,7 @@ import ai.vespa.schemals.parser.ast.tensorTypeElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 
 /**
  * IdentifySymbolDefinition identifies symbol definitions, and mark the SchemaNode as a symbol and adds it to the index

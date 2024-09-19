@@ -48,7 +48,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 
 /**
  * IdentifySymbolReferences identifies symbols that are not definitions and sets the SchemaNode to contain an unresolved reference symbol
