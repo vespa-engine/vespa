@@ -67,7 +67,9 @@ import ai.vespa.schemals.lsp.schema.rename.SchemaPrepareRename;
 import ai.vespa.schemals.lsp.schema.rename.SchemaRename;
 import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.lsp.yqlplus.codelens.YQLPlusCodeLens;
+import ai.vespa.schemals.lsp.yqlplus.semantictokens.YQLPlusSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
+import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
 
 /**
  * SchemaTextDocumentService handles incomming requests from the client.
@@ -264,9 +266,11 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
-
-                var result = SchemaSemanticTokens.getSemanticTokens(eventContextCreator.createContext(params));
-                return result;
+                EventDocumentContext context = eventContextCreator.createContext(params);
+                if (context.document.getDocumentType() == DocumentType.YQL) {
+                    return YQLPlusSemanticTokens.getSemanticTokens(context);
+                }
+                return SchemaSemanticTokens.getSemanticTokens(context);
                  
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception

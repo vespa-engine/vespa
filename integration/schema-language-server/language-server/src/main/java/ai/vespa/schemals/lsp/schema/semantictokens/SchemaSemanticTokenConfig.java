@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.lsp4j.SemanticTokenModifiers;
 import org.eclipse.lsp4j.SemanticTokenTypes;
 
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -41,6 +42,12 @@ class SchemaSemanticTokenConfig {
         add(SymbolType.PROPERTY);
         add(SymbolType.LAMBDA_FUNCTION);
         add(SymbolType.DIMENSION);
+    }};
+
+    static final List<String> tokenModifiers = new ArrayList<>() {{
+        add(SemanticTokenModifiers.Definition);
+        add(SemanticTokenModifiers.Readonly);
+        add(SemanticTokenModifiers.DefaultLibrary);
     }};
 
     // Keyword
