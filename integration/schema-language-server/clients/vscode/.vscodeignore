@@ -10,3 +10,4 @@ src/**
 out/
 node_modules
 esbuild.js
+out/

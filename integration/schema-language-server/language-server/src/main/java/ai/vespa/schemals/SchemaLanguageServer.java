@@ -1,7 +1,23 @@
 package ai.vespa.schemals;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.CodeActionOptions;
@@ -24,6 +40,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.documentation.FetchDocumentation;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.command.CommandRegistry;
 import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
@@ -34,6 +51,8 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
  * It handles start and shutdown, and initializes the server's capabilities
  */
 public class SchemaLanguageServer implements LanguageServer, LanguageClientAware {
+
+    public static Path serverPath = null;
 
     private WorkspaceService workspaceService;
     private SchemaTextDocumentService textDocumentService;
@@ -64,7 +83,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
         this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
-
+        serverPath = Paths.get(SchemaLanguageServer.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
     }    
 
     @Override
@@ -142,5 +161,95 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.schemaMessageHandler.connectClient(languageClient);
         this.client.logMessage(new MessageParams(MessageType.Log, "Language Server successfully connected to client."));
 
+        if (serverPath == null) return;
+
+        // Start a document fetching job in the background.
+        Path docPath = serverPath.resolve("hover");
+
+        try {
+            setupDocumentation(docPath);
+        } catch (IOException ioex) {
+            this.logger.error("Failed to set up documentation. Error: " + ioex.getMessage());
+        }
+    }
+
+    /**
+     * Initial setup of the documentation.
+     */
+    public void setupDocumentation(Path documentationPath) throws IOException {
+
+        Files.createDirectories(documentationPath);
+        Files.createDirectories(documentationPath.resolve("schema"));
+        Files.createDirectories(documentationPath.resolve("rankExpression"));
+
+        ensureLocalDocumentationLoaded(documentationPath);
+
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    FetchDocumentation.fetchDocs(documentationPath);
+                } catch(Exception e) {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        };
+        var logger = this.logger;
+        thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread th, Throwable ex) {
+                logger.warning("Failed to fetch docs: " + ex.getMessage() + " is unavailable. Locally cached documentation will be used.");
+            }
+        });
+        logger.info("Fetching docs to path: " + documentationPath.toAbsolutePath().toString());
+        thread.start();
+
+    }
+
+    /**
+     * Assumes documentation is loaded if documentationPath/schema contains .md files.
+     * If documentation is not loaded, unpacks markdown files from the current jar.
+     */
+    private void ensureLocalDocumentationLoaded(Path documentationPath) throws IOException {
+        File dir = new File(documentationPath.resolve("schema").toString());
+        File[] contents = dir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.getName().endsWith(".md");
+            }
+        });
+        // Documentation exists
+        if (contents.length > 0) return;
+
+        logger.info("Extracting embedded documentation files.");
+
+        // If it doesn't exist, unpack from jar
+        var resources = Thread.currentThread().getContextClassLoader().getResources(documentationPath.getFileName().toString());
+
+        if (!resources.hasMoreElements()) {
+            throw new IOException("Could not find documentation in jar file!");
+        }
+
+        URL resourceURL = resources.nextElement();
+
+        if (!resourceURL.getProtocol().equals("jar")) {
+            throw new IOException("Unhandled protocol for resource " +  resourceURL.toString());
+        }
+
+        String jarPath = resourceURL.getPath().substring(5, resourceURL.getPath().indexOf('!'));
+        try (JarFile jarFile = new JarFile(URLDecoder.decode(jarPath, "UTF-8"))) {
+            Enumeration<JarEntry> entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (!entry.isDirectory() && entry.getName().startsWith(documentationPath.getFileName().toString())) {
+                    Path destination = documentationPath.getParent().resolve(entry.getName());
+                    try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(entry.getName())) {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                        String content = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+                        Files.write(destination, content.getBytes(), StandardOpenOption.CREATE);
+                    }
+                }
+            }
+        }
     }
 }
