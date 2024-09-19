@@ -881,7 +881,7 @@ VisitorOperation::updateReplyMetrics(const api::ReturnCode& result)
 void
 VisitorOperation::onClose(DistributorStripeMessageSender& sender)
 {
-    sendReply(api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"), sender);
+    sendReply(api::ReturnCode(api::ReturnCode::ABORTED, "Operation has been aborted"), sender);
 }
 
 void

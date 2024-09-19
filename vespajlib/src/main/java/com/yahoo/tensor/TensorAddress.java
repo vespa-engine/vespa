@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
- * in a particular tensor type. By itself it is just a list of cell labels, it's meaning depends on its accompanying type.
+ * in a particular tensor type. By itself it is just a list of cell labels, its meaning depends on its accompanying type.
  *
  * @author bratseth
  */

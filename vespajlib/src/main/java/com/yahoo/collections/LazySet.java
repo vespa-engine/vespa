@@ -92,6 +92,11 @@ public abstract class LazySet<E> implements Set<E> {
         return obj == this || (obj instanceof Set && delegate.equals(obj));
     }
 
+    @Override
+    public String toString() {
+        return delegate.toString();
+    }
+
     private Set<E> newEmpty() {
         return new EmptySet();
     }

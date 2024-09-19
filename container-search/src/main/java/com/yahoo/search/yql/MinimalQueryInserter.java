@@ -137,7 +137,7 @@ public class MinimalQueryInserter extends Searcher {
         if (parser.getSorting() != null) {
             query.getRanking().setSorting(parser.getSorting());
         }
-        query.trace("YQL+ query parsed", true, 2);
+        query.trace("YQL query parsed", true, 2);
         return null;
     }
 

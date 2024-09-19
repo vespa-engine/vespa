@@ -27,6 +27,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <filesystem>
 #include <initializer_list>
+#include <memory>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -65,6 +66,7 @@ using attribute::BasicType;
 using attribute::CollectionType;
 using attribute::Config;
 using attribute::HitEstimate;
+using attribute::PostingListSearchContext;
 using attribute::SearchContextParams;
 using attribute::test::AttributeBuilder;
 using fef::MatchData;
@@ -161,6 +163,7 @@ protected:
     ConfigMap _floatCfg;
     ConfigMap _stringCfg;
     static std::string _test_dir;
+    static bool _default_preserve_weight;
 
     static AttributePtr create_as(const AttributeVector& attr, const std::string& name_suffix);
 
@@ -271,6 +274,9 @@ protected:
     // test prefix search
     void testPrefixSearch(const std::string& name, const Config& cfg);
 
+    // Test prefix search with weight information
+    void test_weighted_prefix_search(const std::string& name, const Config& cfg);
+
     // test fuzzy search
     void testFuzzySearch(const std::string& name, const Config& cfg);
 
@@ -306,9 +312,11 @@ public:
     ~SearchContextTest() override;
     static void SetUpTestSuite();
     static void TearDownTestSuite();
+    void SetUp() override;
 };
 
 std::string SearchContextTest::_test_dir = "test_data";
+bool SearchContextTest::_default_preserve_weight = false;
 
 SearchContextTest::SearchContextTest() :
     _integerCfg(),
@@ -327,12 +335,19 @@ SearchContextTest::SetUpTestSuite()
 {
     std::filesystem::remove_all(_test_dir);
     std::filesystem::create_directory(_test_dir);
+    _default_preserve_weight = PostingListSearchContext::get_preserve_weight();
 }
 
 void
 SearchContextTest::TearDownTestSuite()
 {
     std::filesystem::remove_all(_test_dir);
+}
+
+void
+SearchContextTest::SetUp()
+{
+    PostingListSearchContext::set_preserve_weight(_default_preserve_weight);
 }
 
 void
@@ -1544,6 +1559,67 @@ TEST_F(SearchContextTest, test_prefix_search)
 {
     for (const auto & cfg : _stringCfg) {
         testPrefixSearch(cfg.first, cfg.second);
+    }
+}
+
+void
+SearchContextTest::test_weighted_prefix_search(const std::string& name, const Config& cfg)
+{
+    SCOPED_TRACE(name);
+    auto attr = AttributeBuilder(name, cfg).get();
+    auto string_attr = std::dynamic_pointer_cast<StringAttribute>(attr);
+    ASSERT_TRUE(string_attr);
+    attr->addDocs(800);
+    uint32_t docid = 0;
+    std::string val_a("a");
+    std::string val_A("A");
+    std::string val_aa("aa");
+    std::string val_aaa("aaa");
+    std::string val_AAA("AAA");
+    std::string val_aaaa("aaaa");
+    for (docid = 1; docid < 10; ++docid) {
+        if (attr->hasMultiValue()) {
+            string_attr->append(docid, val_a, 3);
+            string_attr->append(docid, val_A, 2);
+            string_attr->append(docid, val_aa, 10);
+            if (docid == 1) {
+                string_attr->append(docid, val_aaa, 300);
+                string_attr->append(docid, val_AAA, 200);
+                string_attr->append(docid, val_aaaa, 1000);
+            }
+        } else {
+            string_attr->update(docid, val_aaa);
+        }
+    }
+    attr->commit();
+
+    for (auto preserve_weight : { false, true }) {
+        SCOPED_TRACE(std::string("preserve_weight=") + (preserve_weight ? "true" : "false"));
+        PostingListSearchContext::set_preserve_weight(preserve_weight);
+        for (auto common_word : { false, true }) {
+            SCOPED_TRACE(std::string("common_word=") + (common_word ? "true" : "false"));
+            TermFieldMatchData md;
+            auto sc = getSearch(*attr, common_word ? val_a : val_aaa, TermType::PREFIXTERM);
+            sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
+            auto itr = sc->createIterator(&md, true);
+            itr->initRange(1, attr->getCommittedDocIdLimit());
+            EXPECT_TRUE(itr->seek(1));
+            itr->unpack(1);
+            EXPECT_EQ(1, md.getDocId());
+            int32_t expected_weight = (preserve_weight || !common_word || !cfg.fastSearch()) ?
+                                      (attr->hasWeightedSetType() ?
+                                       (common_word ? (1000 + 300 + 200 + 10 + 3 + 2) : (1000 + 300 + 200)) :
+                                       (attr->hasMultiValue() ? (common_word ? (1 + 1 + 1 + 1 + 1 + 1) : (1 + 1 + 1)) : 1)) :
+                                      1;
+            EXPECT_EQ(expected_weight, md.getWeight());
+        }
+    }
+}
+
+TEST_F(SearchContextTest, test_weighted_prefix_search)
+{
+    for (const auto& cfg : _stringCfg) {
+        test_weighted_prefix_search(cfg.first, cfg.second);
     }
 }
 

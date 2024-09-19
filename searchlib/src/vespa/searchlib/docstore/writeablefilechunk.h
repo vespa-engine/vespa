@@ -99,8 +99,8 @@ private:
                                size_t offset, const ProcessedChunk & tmp, const Chunk & active);
     ChunkMetaV computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, size_t & sz, bool & done);
     void writeData(const ProcessedChunkQ & chunks, size_t sz);
-    void updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV, size_t sz);
-    void updateCurrentDiskFootprint();
+    void updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV);
+    void updateCurrentDiskFootprint(const std::lock_guard<std::mutex>&);
     size_t getDiskFootprint(const unique_lock & guard) const;
     std::unique_ptr<FastOS_FileInterface> openIdx();
     const Chunk& get_chunk(uint32_t chunk) const;
@@ -120,8 +120,13 @@ private:
     PendingChunks     _pendingChunks;
     uint64_t          _pendingIdx;
     uint64_t          _pendingDat;
-    std::atomic<uint64_t> _idxFileSize;
-    std::atomic<uint64_t> _currentDiskFootprint;
+    uint64_t          _idxFileSize;          // protected by _lock
+    uint64_t          _currentDiskFootprint; // protected by _lock, data written to disk
+    /*
+     * _pendingDiskFootprint is maintained to avoid going too far beyond max file size,
+     * cf. LogDataStore::requireSpace.
+     */
+    uint64_t          _pendingDiskFootprint; // protected by _lock, only considers dat file
     uint32_t          _nextChunkId;
     Chunk::UP         _active;
     size_t            _alignment;

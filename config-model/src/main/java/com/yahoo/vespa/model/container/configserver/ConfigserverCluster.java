@@ -130,11 +130,6 @@ public class ConfigserverCluster extends TreeConfigProducer
         if (options.hostedVespa().isPresent()) {
             builder.hostedVespa(options.hostedVespa().get());
         }
-        if (options.loadBalancerAddress().isPresent()) {
-            builder.loadBalancerAddress(options.loadBalancerAddress().get());
-        }
-        options.athenzDnsSuffix().ifPresent(builder::athenzDnsSuffix);
-        options.ztsUrl().ifPresent(builder::ztsUrl);
     }
 
     private String[] getConfigModelPluginDirs() {

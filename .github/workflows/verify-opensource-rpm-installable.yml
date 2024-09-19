@@ -24,7 +24,7 @@ jobs:
         run: |
           dnf list llvm-libs --showduplicates
           dnf install -y dnf-plugins-core
-          dnf config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-8/group_vespa-vespa-epel-8.repo
+          dnf -y config-manager --add-repo https://raw.githubusercontent.com/vespa-engine/vespa/master/dist/vespa-engine.repo
           dnf config-manager --enable powertools
           dnf install -y epel-release
           dnf install -y vespa

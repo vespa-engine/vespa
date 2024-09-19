@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "zc_decoder.h"
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/queryeval/iterators.h>
@@ -9,36 +10,6 @@
 namespace search::diskindex {
 
 using bitcompression::Position;
-
-#define ZCDECODE(valI, resop)                                \
-do {                                                         \
-    if (__builtin_expect(valI[0] < (1 << 7), true)) {        \
-    resop valI[0];                                           \
-    valI += 1;                                               \
-    } else if (__builtin_expect(valI[1] < (1 << 7), true)) { \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              (valI[1] << 7);                                \
-        valI += 2;                                           \
-    } else if (__builtin_expect(valI[2] < (1 << 7), true)) { \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
-              (valI[2] << 14);                               \
-        valI += 3;                                           \
-    } else if (__builtin_expect(valI[3] < (1 << 7), true)) { \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
-              ((valI[2] & ((1 << 7) - 1)) << 14) +           \
-              (valI[3] << 21);                               \
-        valI += 4;                                           \
-    } else {                                                 \
-        resop (valI[0] & ((1 << 7) - 1)) +                   \
-              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
-              ((valI[2] & ((1 << 7) - 1)) << 14) +           \
-              ((valI[3] & ((1 << 7) - 1)) << 21) +           \
-              (valI[4] << 28);                               \
-        valI += 5;                                           \
-    }                                                        \
-} while (0)
 
 class ZcIteratorBase : public queryeval::RankedSearchIteratorBase
 {
@@ -137,8 +108,8 @@ public:
 class ZcPostingIteratorBase : public ZcIteratorBase
 {
 protected:
-    const uint8_t *_valI;     // docid deltas
-    const uint8_t *_valIBase; // start of docid deltas
+    ZcDecoder      _zc_decoder;     // docid deltas
+    const uint8_t* _zc_decoder_start; // start of docid deltas
     uint64_t _featureSeekPos;
 
     // Helper class for L1 skip info
@@ -146,43 +117,42 @@ protected:
     {
     public:
         uint32_t _skipDocId;
-        const uint8_t *_valI;
+        ZcDecoder _zc_decoder;
         const uint8_t *_docIdPos;
         uint64_t _skipFeaturePos;
-        const uint8_t *_valIBase;
+        const uint8_t* _zc_decoder_start;
 
         L1Skip()
             : _skipDocId(0),
-              _valI(nullptr),
+              _zc_decoder(),
               _docIdPos(nullptr),
               _skipFeaturePos(0),
-              _valIBase(nullptr)
+              _zc_decoder_start(nullptr)
         {
         }
 
         void setup(uint32_t prevDocId, uint32_t lastDocId, const uint8_t *&bcompr, uint32_t skipSize) {
             if (skipSize != 0) {
-                _valI = _valIBase = bcompr;
+                _zc_decoder.set_cur(_zc_decoder_start = bcompr);
                 bcompr += skipSize;
-                _skipDocId = prevDocId + 1;
-                ZCDECODE(_valI, _skipDocId +=);
+                _skipDocId = prevDocId + 1 + _zc_decoder.decode32();
             } else {
-                _valI = _valIBase = nullptr;
+                _zc_decoder.set_cur(_zc_decoder_start = nullptr);
                 _skipDocId = lastDocId;
             }
             _skipFeaturePos = 0;
         }
         void postSetup(const ZcPostingIteratorBase &l0) {
-            _docIdPos = l0._valIBase;
+            _docIdPos = l0._zc_decoder_start;
         }
         void decodeSkipEntry(bool decode_normal_features) {
-            ZCDECODE(_valI, _docIdPos += 1 +);
+            _docIdPos += (1 + _zc_decoder.decode32());
             if (decode_normal_features) {
-                ZCDECODE(_valI, _skipFeaturePos += 1 +);
+                _skipFeaturePos += (1 + _zc_decoder.decode42());
             }
         }
         void nextDocId() {
-            ZCDECODE(_valI, _skipDocId += 1 +);
+            _skipDocId += (1 + _zc_decoder.decode32());
         }
     };
 
@@ -200,11 +170,11 @@ protected:
 
         void postSetup(const L1Skip &l1) {
             _docIdPos = l1._docIdPos;
-            _l1Pos = l1._valIBase;
+            _l1Pos = l1._zc_decoder_start;
         }
         void decodeSkipEntry(bool decode_normal_features) {
             L1Skip::decodeSkipEntry(decode_normal_features);
-            ZCDECODE(_valI, _l1Pos += 1 + );
+            _l1Pos += (1 + _zc_decoder.decode32());
         }
     };
 
@@ -223,11 +193,11 @@ protected:
         void postSetup(const L2Skip &l2) {
             _docIdPos = l2._docIdPos;
             _l1Pos = l2._l1Pos;
-            _l2Pos = l2._valIBase;
+            _l2Pos = l2._zc_decoder_start;
         }
         void decodeSkipEntry(bool decode_normal_features) {
             L2Skip::decodeSkipEntry(decode_normal_features);
-            ZCDECODE(_valI, _l2Pos += 1 + );
+            _l2Pos += (1 + _zc_decoder.decode32());
         }
     };
 
@@ -247,12 +217,12 @@ protected:
             _docIdPos = l3._docIdPos;
             _l1Pos = l3._l1Pos;
             _l2Pos = l3._l2Pos;
-            _l3Pos = l3._valIBase;
+            _l3Pos = l3._zc_decoder_start;
         }
 
         void decodeSkipEntry(bool decode_normal_features) {
             L3Skip::decodeSkipEntry(decode_normal_features);
-            ZCDECODE(_valI, _l3Pos += 1 + );
+            _l3Pos += (1 + _zc_decoder.decode32());
         }
     };
 
@@ -283,12 +253,11 @@ protected:
     uint32_t _num_occs;
 
     void nextDocId(uint32_t prevDocId) {
-        uint32_t docId = prevDocId + 1;
-        ZCDECODE(_valI, docId +=);
+        uint32_t docId = prevDocId + 1 + _zc_decoder.decode32();
         setDocId(docId);
         if (_decode_interleaved_features) {
-            ZCDECODE(_valI, _field_length = 1 +);
-            ZCDECODE(_valI, _num_occs = 1 +);
+            _field_length = 1 + _zc_decoder.decode32();
+            _num_occs = 1 + _zc_decoder.decode32();
         }
     }
     virtual void featureSeek(uint64_t offset) = 0;
