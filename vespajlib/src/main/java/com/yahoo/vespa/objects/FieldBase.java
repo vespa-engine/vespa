@@ -28,7 +28,7 @@ public class FieldBase {
 
     @Override
     public String toString() {
-        return "field " + name;
+        return "field '" + name + "'";
     }
 
 }

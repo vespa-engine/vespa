@@ -2668,7 +2668,7 @@ public class JsonReaderTestCase {
     @Test
     public void require_that_parser_propagates_datatype_parser_errors_predicate() {
         assertParserErrorMatches(
-                "Error in document 'id:unittest:testpredicate::0' - could not parse field 'boolean' of type 'predicate': " +
+                "In document 'id:unittest:testpredicate::0': Could not parse field 'boolean' of type predicate: " +
                 "line 1:10 no viable alternative at character '>'",
                 """
                 [
@@ -2685,7 +2685,7 @@ public class JsonReaderTestCase {
     @Test
     public void require_that_parser_propagates_datatype_parser_errors_string_as_int() {
         assertParserErrorMatches(
-                "Error in document 'id:unittest:testint::0' - could not parse field 'integerfield' of type 'int': " +
+                "In document 'id:unittest:testint::0': Could not parse field 'integerfield' of type int: " +
                 "For input string: \" 1\"",
                 """
                 [
@@ -2702,7 +2702,7 @@ public class JsonReaderTestCase {
     @Test
     public void require_that_parser_propagates_datatype_parser_errors_overflowing_int() {
         assertParserErrorMatches(
-                "Error in document 'id:unittest:testint::0' - could not parse field 'integerfield' of type 'int': " +
+                "In document 'id:unittest:testint::0': Could not parse field 'integerfield' of type int: " +
                 "For input string: \"281474976710656\"",
                 """
                 [
@@ -2946,7 +2946,7 @@ public class JsonReaderTestCase {
             new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
             fail();
         } catch (JsonReaderException e) {
-            assertEquals(expectedError, e.getMessage());
+            assertEquals(expectedError, Exceptions.toMessageString(e));
         }
     }
 
@@ -2955,7 +2955,7 @@ public class JsonReaderTestCase {
             createPutWithTensor(inputJson(tensor), name);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains(msg));
+            assertTrue(Exceptions.toMessageString(e).contains(msg));
         }
     }
 

@@ -33,6 +33,7 @@ public class SchemaDocumentScheduler {
         put("sd", DocumentType.SCHEMA);
         put("profile", DocumentType.PROFILE);
         put("yql", DocumentType.YQL);
+        put("xml", DocumentType.SERVICESXML);
     }};
 
     private ClientLogger logger;
@@ -64,7 +65,6 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content, Integer version) {
-        
         Optional<DocumentType> documentType = getDocumentTypeFromURI(fileURI);
         if (documentType.isEmpty()) return;
 

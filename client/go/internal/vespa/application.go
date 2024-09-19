@@ -83,6 +83,14 @@ func (ap *ApplicationPackage) Validate() error {
 
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
 
+func alwaysIgnore(filename string) bool {
+	switch filepath.Base(filename) {
+	case ".DS_Store":
+		return true
+	}
+	return false
+}
+
 func zipDir(dir string, destination string, ignores *ignore.List) error {
 	if !ioutil.Exists(dir) {
 		message := "'" + dir + "' should be an application package zip or dir, but does not exist"
@@ -108,7 +116,7 @@ func zipDir(dir string, destination string, ignores *ignore.List) error {
 		if err != nil {
 			return err
 		}
-		if ignores.Match(zipPath) {
+		if alwaysIgnore(path) || ignores.Match(zipPath) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}

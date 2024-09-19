@@ -4,26 +4,29 @@
   "description": "Support for Vespa schema files.",
   "author": "Vespa",
   "publisher": "vespaai",
-  "version": "2.0.7",
+  "version": "0.0.0-dev",
   "engines": {
     "vscode": "^1.72.0"
   },
   "categories": [
     "Programming Languages",
     "Snippets",
-    "Other"
+    "Other" 
   ],
   "keywords": [
     "Vespa",
     "Schema"
   ],
   "repository": {
-    "type": "git",
+    "type": "git",  
     "url": "https://github.com/vespa-engine/vespa"
   },
   "icon": "images/icon.png",
-  "activationEvents": [],
-  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:xml",
+    "onLanguage:vespaSchema"
+  ],
+  "main": "./dist/extension.js",
   "contributes": {
     "languages": [
       {
@@ -34,7 +37,8 @@
         "extensions": [
           ".sd",
           ".profile",
-          ".yql"
+          ".yql",
+          ".xml"
         ],
         "configuration": "./language-configuration.json"
       }
@@ -66,7 +70,7 @@
     "test": "vscode-test",
     "check-types": "tsc --noEmit",
     "copy-images": "cp ../../resources/* ./images",
-    "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/",
+    "langserver-install": "mkdir -p server && rm -r server/* && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/",
     "publish": "npm run compile && node out/publish.js"
   },
   "devDependencies": {

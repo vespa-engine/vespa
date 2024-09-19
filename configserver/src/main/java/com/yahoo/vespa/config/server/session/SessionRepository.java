@@ -94,6 +94,8 @@ import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
+import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.nio.file.Files.createTempDirectory;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -346,7 +348,8 @@ public class SessionRepository {
         if (watcher != null) watcher.close();
         localSessionCache.remove(sessionId);
         NestedTransaction transaction = new NestedTransaction();
-        transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
+        var dir = tenantFileSystemDirs.sessionsPath().getParentFile();
+        transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).toPath(), dir.toPath())));
         transaction.commit();
     }
 
@@ -692,7 +695,7 @@ public class SessionRepository {
         return created.plus(sessionLifetime).isBefore(clock.instant());
     }
 
-    public void deleteExpiredRemoteAndLocalSessions(Clock clock, Predicate<Session> sessionIsActiveForApplication) {
+    public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication) {
         // All known sessions, both local (file) and remote (zookeeper)
         Set<Long> sessions = getLocalSessionsIdsFromFileSystem();
         sessions.addAll(getRemoteSessionsFromZooKeeper());
@@ -815,8 +818,9 @@ public class SessionRepository {
         if (sessions != null) {
             for (File session : sessions) {
                 try {
+                    Duration consideredNew = Duration.ofSeconds(Math.min(configserverConfig.sessionLifetime(), 300));
                     if (Files.getLastModifiedTime(session.toPath()).toInstant()
-                             .isAfter(clock.instant().minus(Duration.ofSeconds(30))))
+                             .isAfter(clock.instant().minus(consideredNew)))
                         newSessions.add(Long.parseLong(session.getName()));
                 } catch (IOException e) {
                     log.log(Level.FINE, "Unable to find last modified time for " + session.toPath());
@@ -945,7 +949,7 @@ public class SessionRepository {
         // Copy app atomically: Copy to a temp dir and move to destination
         java.nio.file.Path tempDestinationDir = null;
         try {
-            tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
+            tempDestinationDir = createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
             log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
             IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
             moveSearchDefinitionsToSchemasDir(tempDestinationDir);
@@ -969,7 +973,7 @@ public class SessionRepository {
                 File[] sdFiles = sdDir.listFiles();
                 if (sdFiles != null) {
                     Files.createDirectories(schemasDir.toPath());
-                    List.of(sdFiles).forEach(file -> Exceptions.uncheck(
+                    List.of(sdFiles).forEach(file -> uncheck(
                             () -> Files.move(file.toPath(),
                                              schemasDir.toPath().resolve(file.toPath().getFileName()),
                                              StandardCopyOption.REPLACE_EXISTING)));
@@ -1155,8 +1159,8 @@ public class SessionRepository {
     private static class FileOperations {
 
         /** Creates an operation which recursively deletes the given path */
-        public static DeleteOperation delete(String pathToDelete) {
-            return new DeleteOperation(pathToDelete);
+        public static DeleteOperation delete(java.nio.file.Path pathToDelete, java.nio.file.Path tenantPath) {
+            return new DeleteOperation(pathToDelete, tenantPath);
         }
 
     }
@@ -1171,18 +1175,19 @@ public class SessionRepository {
      * Recursively deletes this path and everything below.
      * Succeeds with no action if the path does not exist.
      */
-    private static class DeleteOperation implements FileOperation {
-
-        private final String pathToDelete;
-
-        DeleteOperation(String pathToDelete) {
-            this.pathToDelete = pathToDelete;
-        }
+    private record DeleteOperation(java.nio.file.Path pathToDelete, java.nio.file.Path tenantPath) implements FileOperation {
 
         @Override
         public void commit() {
-            // TODO: Check delete access in prepare()
-            IOUtils.recursiveDeleteDir(new File(pathToDelete));
+            if ( ! pathToDelete.toFile().exists()) return;
+
+            // Make sure to create a temp dir in the same file system as the path to delete (and don't use the same path
+            // as for sessions, as they are regularly scanned and expected to be a number)
+            var tempDir = uncheck(() -> createTempDirectory(tenantPath, "delete"));
+            uncheck(() -> {
+                Files.move(pathToDelete, tempDir, StandardCopyOption.ATOMIC_MOVE);
+                IOUtils.recursiveDeleteDir(tempDir.toFile());
+            });
         }
 
     }

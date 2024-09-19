@@ -6,11 +6,17 @@ import com.google.common.math.Quantiles;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
 
 /**
  * @author baldersheim
  */
 public class SearchGroupsImpl implements SearchGroups {
+
+    private static final Logger log = Logger.getLogger(SearchGroupsImpl.class.getName());
+
 
     private final Map<Integer, Group> groups;
     private final double minActiveDocsPercentage;
@@ -35,6 +41,8 @@ public class SearchGroupsImpl implements SearchGroups {
 
     public boolean isGroupCoverageSufficient(boolean currentIsGroupCoverageSufficient,
                                              long groupDocumentCount, long medianDocumentCount, long maxDocumentCount) {
+        log.log(FINE, () -> String.format("Group doc count: %d, max doc count: %d, median: %d, minActiveDocsPercentage: %.2f",
+                                          groupDocumentCount, maxDocumentCount, medianDocumentCount, minActiveDocsPercentage));
         if (medianDocumentCount <= 0) return true;
         if (currentIsGroupCoverageSufficient) {
             // To take a group *out of* rotation, require that it has less active documents than the median.

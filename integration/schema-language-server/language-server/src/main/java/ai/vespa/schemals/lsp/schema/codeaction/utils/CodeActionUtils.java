@@ -26,6 +26,10 @@ public class CodeActionUtils {
         return simpleEditList(context, edits, context.document);
     }
 
+    public static WorkspaceEdit simpleEdit(EventCodeActionContext context, Position position, String newText) {
+        return simpleEdit(context, new Range(position, position), newText);
+    }
+
     public static WorkspaceEdit simpleEdit(EventCodeActionContext context, Range range, String newText) {
         return simpleEditList(context, List.of(new TextEdit(range, newText)));
     }

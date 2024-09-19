@@ -35,6 +35,7 @@ TestData<Derived>::setup_test_data(const std::string& source_testdata_in, const 
 {
     _source_testdata = source_testdata_in;
     _build_testdata = build_testdata_in;
+    std::filesystem::remove_all(build_testdata());
     std::filesystem::create_directory(build_testdata());
 }
 

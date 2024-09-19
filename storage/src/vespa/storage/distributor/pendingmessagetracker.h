@@ -186,7 +186,7 @@ private:
     static constexpr uint32_t IndexByNodeAndBucket = 1;
     static constexpr uint32_t IndexByBucketAndType = 2;
 
-    using DeferredBucketTaskMap   = std::unordered_multimap<
+    using DeferredBucketTaskMap = std::unordered_multimap<
             document::Bucket,
             std::unique_ptr<DeferredTask>,
             document::Bucket::hash
@@ -210,7 +210,8 @@ private:
     TimePoint currentTime() const;
 
     [[nodiscard]] bool bucket_has_no_pending_write_ops(const document::Bucket& bucket) const noexcept;
-    std::vector<std::unique_ptr<DeferredTask>> get_deferred_ops_if_bucket_writes_drained(const document::Bucket&);
+    [[nodiscard]] std::vector<std::unique_ptr<DeferredTask>> get_deferred_ops_if_bucket_writes_drained(const document::Bucket&);
+    void get_and_erase_deferred_tasks_for_bucket(const document::Bucket&, std::vector<std::unique_ptr<DeferredTask>>&);
 };
 
 }

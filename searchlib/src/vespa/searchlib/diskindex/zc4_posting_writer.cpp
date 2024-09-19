@@ -26,6 +26,18 @@ Zc4PostingWriter<bigEndian>::~Zc4PostingWriter() = default;
 
 template <bool bigEndian>
 void
+Zc4PostingWriter<bigEndian>::write_zc_view(std::span<const uint8_t> view)
+{
+    if (!view.empty()) {
+        _encode_context.writeBits(reinterpret_cast<const uint64_t *>(view.data()),
+                                  0,
+                                  view.size() * 8);
+    }
+
+}
+
+template <bool bigEndian>
+void
 Zc4PostingWriter<bigEndian>::reset_chunk()
 {
     _docIds.clear();
@@ -55,20 +67,20 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
 
     calc_skip_info(_encode_features != nullptr);
 
-    uint32_t docIdsSize = _zcDocIds.size();
-    uint32_t l1SkipSize = _l1Skip.size();
-    uint32_t l2SkipSize = _l2Skip.size();
-    uint32_t l3SkipSize = _l3Skip.size();
-    uint32_t l4SkipSize = _l4Skip.size();
+    auto docids_view = _zcDocIds.view();
+    auto l1_skip_view = _l1Skip.view();
+    auto l2_skip_view = _l2Skip.view();
+    auto l3_skip_view = _l3Skip.view();
+    auto l4_skip_view = _l4Skip.view();
 
-    e.encodeExpGolomb(docIdsSize - 1, K_VALUE_ZCPOSTING_DOCIDSSIZE);
-    e.encodeExpGolomb(l1SkipSize, K_VALUE_ZCPOSTING_L1SKIPSIZE);
-    if (l1SkipSize != 0) {
-        e.encodeExpGolomb(l2SkipSize, K_VALUE_ZCPOSTING_L2SKIPSIZE);
-        if (l2SkipSize != 0) {
-            e.encodeExpGolomb(l3SkipSize, K_VALUE_ZCPOSTING_L3SKIPSIZE);
-            if (l3SkipSize != 0) {
-                e.encodeExpGolomb(l4SkipSize, K_VALUE_ZCPOSTING_L4SKIPSIZE);
+    e.encodeExpGolomb(docids_view.size() - 1, K_VALUE_ZCPOSTING_DOCIDSSIZE);
+    e.encodeExpGolomb(l1_skip_view.size(), K_VALUE_ZCPOSTING_L1SKIPSIZE);
+    if (!l1_skip_view.empty()) {
+        e.encodeExpGolomb(l2_skip_view.size(), K_VALUE_ZCPOSTING_L2SKIPSIZE);
+        if (!l2_skip_view.empty()) {
+            e.encodeExpGolomb(l3_skip_view.size(), K_VALUE_ZCPOSTING_L3SKIPSIZE);
+            if (!l3_skip_view.empty()) {
+                e.encodeExpGolomb(l4_skip_view.size(), K_VALUE_ZCPOSTING_L4SKIPSIZE);
             }
         }
     }
@@ -91,34 +103,11 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
 
     e.smallAlign(8);    // Byte align
 
-    uint8_t *docIds = _zcDocIds._mallocStart;
-    e.writeBits(reinterpret_cast<const uint64_t *>(docIds),
-                0,
-                docIdsSize * 8);
-    if (l1SkipSize > 0) {
-        uint8_t *l1Skip = _l1Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l1Skip),
-                    0,
-                    l1SkipSize * 8);
-    }
-    if (l2SkipSize > 0) {
-        uint8_t *l2Skip = _l2Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l2Skip),
-                    0,
-                    l2SkipSize * 8);
-    }
-    if (l3SkipSize > 0) {
-        uint8_t *l3Skip = _l3Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l3Skip),
-                    0,
-                    l3SkipSize * 8);
-    }
-    if (l4SkipSize > 0) {
-        uint8_t *l4Skip = _l4Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l4Skip),
-                    0,
-                    l4SkipSize * 8);
-    }
+    write_zc_view(docids_view);
+    write_zc_view(l1_skip_view);
+    write_zc_view(l2_skip_view);
+    write_zc_view(l3_skip_view);
+    write_zc_view(l4_skip_view);
 
     // Write features
     e.writeBits(_featureWriteContext.getComprBuf(), 0, _featureOffset);

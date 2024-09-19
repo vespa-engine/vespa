@@ -129,4 +129,5 @@ public class Chain<COMPONENT extends ChainedComponent> {
         result = 31 * result + id.hashCode();
         return result;
     }
+
 }

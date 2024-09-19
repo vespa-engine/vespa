@@ -22,6 +22,7 @@ ContainerServices =
     Http? &
     AccessLog* &
     SecretStore? &
+    Secrets? &
     ZooKeeper? &
     GenericConfig* &
     Clients?
@@ -90,6 +91,13 @@ SecretStore = element secret-store {
         attribute aws-region { string }
       } *
     }?
+}
+
+Secrets = element secrets {
+    element * {
+        attribute vault {text},
+        attribute name {text}
+    } *
 }
 
 ZooKeeper = element zookeeper {

@@ -43,7 +43,7 @@ public class LuceneTokenizerTest {
     @Test
     public void testStemming() {
         String text = "mūšio";
-        List<StemList> tokens = luceneLinguistics().getStemmer().stem(text, StemMode.ALL, Language.LITHUANIAN);
+        List<StemList> tokens = luceneLinguistics().getStemmer().stem(text, Language.LITHUANIAN, StemMode.ALL, true);
         assertEquals(1, tokens.size());
         assertEquals("mūš", tokens.get(0).get(0));
     }
