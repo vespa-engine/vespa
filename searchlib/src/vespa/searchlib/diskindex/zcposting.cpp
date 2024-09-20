@@ -57,9 +57,9 @@ Zc4PostingSeqRead::readDocIdAndFeatures(DocIdAndFeatures &features)
 }
 
 void
-Zc4PostingSeqRead::readCounts(const PostingListCounts &counts)
+Zc4PostingSeqRead::read_word_and_counts(const std::string& word, const PostingListCounts& counts)
 {
-    _reader.set_counts(counts);
+    _reader.set_word_and_counts(word, counts);
 }
 
 

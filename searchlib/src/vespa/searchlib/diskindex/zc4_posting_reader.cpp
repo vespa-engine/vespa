@@ -90,9 +90,9 @@ Zc4PostingReader<bigEndian>::read_word_start()
 
 template <bool bigEndian>
 void
-Zc4PostingReader<bigEndian>::set_counts(const PostingListCounts &counts)
+Zc4PostingReader<bigEndian>::set_word_and_counts(const std::string& word, const index::PostingListCounts& counts)
 {
-    Zc4PostingReaderBase::set_counts(*_decodeContext, counts);
+    Zc4PostingReaderBase::set_word_and_counts(*_decodeContext, word, counts);
 }
 
 template <bool bigEndian>

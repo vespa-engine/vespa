@@ -53,7 +53,7 @@ FieldReader::readCounts()
 {
     PostingListCounts counts;
     _dictFile->readWord(_word, _oldWordNum, counts);
-    _oldposoccfile->readCounts(counts);
+    _oldposoccfile->read_word_and_counts(_word, counts);
     if (_oldWordNum != noWordNumHigh()) {
         _wordNum = _wordNumMapper.map(_oldWordNum);
         assert(_wordNum != noWordNum());

@@ -110,6 +110,7 @@ protected:
 
     // Variable for validating chunk information while reading
     uint64_t _features_size;
+    std::string              _word;
     index::PostingListCounts _counts;
 
     uint32_t _residue;            // Number of unread documents after word header
@@ -124,7 +125,7 @@ public:
     Zc4PostingReaderBase &operator=(Zc4PostingReaderBase &&) = delete;
     ~Zc4PostingReaderBase();
     void read_doc_id_and_features(index::DocIdAndFeatures &features);
-    void set_counts(bitcompression::DecodeContext64Base &decode_context, const index::PostingListCounts &counts);
+    void set_word_and_counts(bitcompression::DecodeContext64Base &decode_context, const std::string& word, const index::PostingListCounts& counts);
     ComprFileReadContext &get_read_context() { return _readContext; }
     Zc4PostingParams &get_posting_params() { return _posting_params; }
 };
