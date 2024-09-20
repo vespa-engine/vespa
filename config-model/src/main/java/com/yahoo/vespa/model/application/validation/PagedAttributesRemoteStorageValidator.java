@@ -59,8 +59,8 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
 
     private static String join(List<Attribute> fields) {
         var ret = fields.stream()
-                .map(Attribute::getName)
                 .limit(10)
+                .map(Attribute::getName)
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(", "));
         return ret + ((fields.size() > 10) ? ", ..." : "");
