@@ -9,6 +9,8 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.xerces.parsers.XMLDocumentParser;
+import org.apache.xerces.xni.parser.XMLInputSource;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -19,6 +21,7 @@ import org.xml.sax.InputSource;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.parser.ServicesXMLParser;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
 
@@ -45,9 +48,10 @@ public class ServicesXMLDocument implements DocumentManager {
         this.content = content;
 
         try {
-            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            InputSource inputSource = new InputSource(new StringReader(content));
-            Document doc = builder.parse(inputSource);
+            ServicesXMLParser parser = new ServicesXMLParser(logger, diagnosticsHandler);
+
+            parser.parse(new XMLInputSource(null, null, this.fileURI, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), "utf-8"));
+            
             this.logger.info("Successfully parsed XML document.");
         } catch (Exception ex) {
             this.logger.error("Error when parsing XML document [" + ex.getClass().toString() + "]: " + ex.getMessage());
