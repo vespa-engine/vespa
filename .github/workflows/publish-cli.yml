@@ -112,8 +112,8 @@ jobs:
   publish:
     runs-on: macos-latest
 
-    # Publish the CLI only if changes were detected and the event was a push or workflow_dispatch.
-    if: needs.prepare.outputs.changes-detected == 'true' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
+    # Publish if there are changes detected or if the workflow was manually triggered.
+    if: (github.event_name == 'push' && needs.prepare.outputs.changes-detected == 'true') || (github.event_name == 'workflow_dispatch')
     needs:
       - prepare
       - build-test
@@ -130,9 +130,12 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.build-version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository at tagged version
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Prefix the version with "v" to checkout the tag.
+          ref: "v${{ needs.prepare.outputs.build-version }}"
 
       - uses: actions/download-artifact@v4
         with:
@@ -151,13 +154,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          make clean dist-github
+          # Release to Github directly, bypassing the diff check as we already perform this check in the "prepare" job.
+          make -- --dist-github
 
       - name: Publish to Homebrew
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
         run: |
-          make clean dist-homebrew
+          # Release to Homebrew directly, bypassing the diff check as we already perform this check in the "prepare" job.
+          make -- --dist-homebrew
 
       - name: Install via Homebrew
         run: |
