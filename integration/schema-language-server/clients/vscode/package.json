@@ -65,7 +65,7 @@
     "test": "vscode-test",
     "check-types": "tsc --noEmit",
     "copy-images": "cp ../../resources/* ./images",
-    "langserver-install": "mkdir -p server && rm -r server/* && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/",
+    "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/",
     "publish": "npm run compile && node out/publish.js"
   },
   "devDependencies": {
