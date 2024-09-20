@@ -1,11 +1,20 @@
 package ai.vespa.schemals.schemadocument;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
@@ -34,12 +43,15 @@ public class ServicesXMLDocument implements DocumentManager {
     public void updateFileContent(String content) {
         // TODO Auto-generated method stub
         this.content = content;
-        diagnosticsHandler.publishDiagnostics(this.fileURI, List.of(new SchemaDiagnostic.Builder()
-            .setRange(new Range(new Position(0, 0), new Position(0, 1)))
-            .setMessage("Hello WOrld!")
-            .setSeverity(DiagnosticSeverity.Information)
-            .build()
-        ));
+
+        try {
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            InputSource inputSource = new InputSource(new StringReader(content));
+            Document doc = builder.parse(inputSource);
+            this.logger.info("Successfully parsed XML document.");
+        } catch (Exception ex) {
+            this.logger.error("Error when parsing XML document [" + ex.getClass().toString() + "]: " + ex.getMessage());
+        }
     }
 
     @Override
