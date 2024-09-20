@@ -8,6 +8,7 @@ import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,9 +46,9 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
     }
 
     private static void validatePagedAttributes(DeployLogger logger, String clusterName, Schema schema) {
-        Set<Attribute> fields = schema.allFields()
+        List<Attribute> fields = schema.allFields()
                 .flatMap(field -> pagedAttributes(field).stream())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
         if (fields.isEmpty()) return;
 
         logger.logApplicationPackage(WARNING, ("Cluster '%s' has nodes with remote storage and fields with paged attributes." +
@@ -56,11 +57,13 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
                 .formatted(clusterName, join(fields)));
     }
 
-    private static String join(Set<Attribute> fields) {
-        return fields.stream()
+    private static String join(List<Attribute> fields) {
+        var ret = fields.stream()
+                .limit(10)
                 .map(Attribute::getName)
                 .map(s -> "'" + s + "'")
-                .collect(Collectors.joining("','"));
+                .collect(Collectors.joining(", "));
+        return ret + ((fields.size() > 10) ? ", ..." : "");
     }
 
     private static Set<Attribute> pagedAttributes(ImmutableSDField field) {
