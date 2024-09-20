@@ -53,11 +53,21 @@ jobs:
       - name: Check for Changes
         id: check-diff
         env:
-          VERSION_PREFIX: 'v8*' # We need the 8 or else "vespa-7." will match and sort before "v8.x.y"
+          VERSION_PATTERN: '^v8\.' # We need the 8 prefix or else "vespa-7." will match and sort before "v8.x.y"
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -x
+
           # Checks for changes since the last release.
           new_tag="v${{ steps.meta.outputs.version }}"
-          previous_tag=$(git tag --list "${VERSION_PREFIX}" --sort="-version:refname" | grep -v "${new_tag}" | head -n 1)
+          previous_tag=$(gh release list --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName' | grep -E "${VERSION_PATTERN}" | head -n 1)
+
+          # If the previous tag and the current tag are the same, there are no changes.
+          if [[ "${previous_tag}" == "${new_tag}" ]]; then
+            echo "No changes detected between ${previous_tag} and ${new_tag}."
+            echo "has-changes=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
 
           # Detect if we are using a dev version (starts with "0.0.0-dev").
           if [[ "${new_tag:0:}" == "0.0.0-dev" ]]; then
@@ -88,14 +98,16 @@ jobs:
         # This workflow only interacts with the client/go directory, so we can set the working directory here.
         working-directory: client/go
 
+    env:
+      VERSION: ${{ needs.prepare.outputs.build-version }}
+      HAS_CHANGES: ${{ needs.prepare.outputs.changes-detected }}
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
 
       - name: build
-        env:
-          VERSION: ${{ needs.prepare.outputs.build-version }}
         run: |
           make clean dist
 
