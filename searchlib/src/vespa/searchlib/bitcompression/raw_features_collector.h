@@ -6,6 +6,12 @@
 
 namespace search::bitcompression {
 
+/*
+ * Class collecting raw features data for a (word, document tuple), used by
+ * EG2PosOccDecodeContext::readFeatures and EG2PosOccDecodeContext::readFeatures.
+ * Disk index fusion uses raw features when feature parameters are identical to
+ * improve fusion speed, cf. FieldMerger::select_cooked_or_raw_features.
+ */
 class RawFeaturesCollector {
     uint64_t                         _start_offset;
     const uint64_t*                  _raw_features;
