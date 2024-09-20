@@ -305,6 +305,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addSecrets(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
         if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublic())
             return;
+
+        // Required for secrets implementation
+        cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("cloud-common"));
+
         Element secretsElement = XML.getChild(spec, "secrets");
         if (secretsElement != null) {
             CloudSecrets secretsConfig = new CloudSecrets();
