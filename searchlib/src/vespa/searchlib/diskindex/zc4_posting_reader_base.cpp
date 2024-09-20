@@ -190,6 +190,7 @@ Zc4PostingReaderBase::Zc4PostingReaderBase(bool dynamic_k)
       _l4_skip(),
       _chunkNo(0),
       _features_size(0),
+      _word(),
       _counts(),
       _residue(0)
 {
@@ -295,9 +296,10 @@ Zc4PostingReaderBase::read_word_start(DecodeContext64Base &decode_context)
 }
 
 void
-Zc4PostingReaderBase::set_counts(DecodeContext64Base &decode_context, const PostingListCounts &counts)
+Zc4PostingReaderBase::set_word_and_counts(bitcompression::DecodeContext64Base &decode_context, const std::string& word, const index::PostingListCounts &counts)
 {
     assert(!_has_more && _residue == 0);  // Previous words must have been read.
+    _word = word;
     _counts = counts;
     assert((_counts._numDocs == 0) == (_counts._bitLength == 0));
     if (_counts._numDocs > 0) {

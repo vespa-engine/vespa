@@ -34,7 +34,7 @@ public:
     /**
      * Read counts for a word.
      */
-    virtual void readCounts(const PostingListCounts &counts) = 0;
+    virtual void read_word_and_counts(const std::string& word, const PostingListCounts& counts) = 0;
 
     /**
      * Open posting list file for sequential read.
