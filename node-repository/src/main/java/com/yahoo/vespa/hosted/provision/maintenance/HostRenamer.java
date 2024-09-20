@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.Flags;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -33,51 +35,57 @@ public class HostRenamer extends NodeRepositoryMaintainer {
         this.hostnameSchemeFlag = Flags.HOSTNAME_SCHEME.bindTo(nodeRepository.flagSource());
     }
 
+    record ApplicationGroup(ApplicationId applicationId, Integer groupIndex){};
+
     @Override
     protected double maintain() {
         if (!nodeRepository().nodes().isWorking()) return 0.0;
         NodeList allNodes = nodeRepository().nodes().list();
         NodeList activeHosts = allNodes.nodeType(NodeType.host).state(Node.State.active);
-        Set<ApplicationId> retiringApplications = applicationsOnRetiringHosts(activeHosts, allNodes);
+        Set<ApplicationGroup> retiringApplicationGroups = applicationsOnRetiringHosts(activeHosts, allNodes);
         for (var host : activeHosts) {
-            Set<ApplicationId> applicationsOnHost = applicationsOn(host, allNodes);
-            if (!changeHostname(host, applicationsOnHost)) continue;
+            Set<ApplicationGroup> applicationGroupsOnHost = applicationsGroupsOn(host, allNodes);
+            if (!changeHostname(host, applicationGroupsOnHost)) continue;
 
-            if (Collections.disjoint(retiringApplications, applicationsOnHost)) {
+            if (Collections.disjoint(retiringApplicationGroups, applicationGroupsOnHost)) {
                 LOG.info("Deprovisioning " + host + " to change its hostname");
                 nodeRepository().nodes().deprovision(host.hostname(), Agent.system, nodeRepository().clock().instant());
-                retiringApplications.addAll(applicationsOnHost);
+                retiringApplicationGroups.addAll(applicationGroupsOnHost);
             }
         }
         return 1.0;
     }
 
-    private Set<ApplicationId> applicationsOn(Node host, NodeList allNodes) {
-        Set<ApplicationId> applications = new HashSet<>();
+    private Set<ApplicationGroup> applicationsGroupsOn(Node host, NodeList allNodes) {
+        Set<ApplicationGroup> applicationGroups = new HashSet<>();
         for (var child : allNodes.childrenOf(host)) {
-            applications.add(child.allocation().get().owner());
+            Allocation allocation = child.allocation().orElseThrow();
+            applicationGroups.add(new ApplicationGroup(
+                    allocation.owner(),
+                    allocation.membership().cluster().group().map(ClusterSpec.Group::index).orElse(0)));
         }
-        return applications;
+        return applicationGroups;
     }
 
-    private Set<ApplicationId> applicationsOnRetiringHosts(NodeList activeHosts, NodeList allNodes) {
-        Set<ApplicationId> applications = new HashSet<>();
+    private Set<ApplicationGroup> applicationsOnRetiringHosts(NodeList activeHosts, NodeList allNodes) {
+        Set<ApplicationGroup> applications = new HashSet<>();
         for (var host : activeHosts.retiring()) {
-            applications.addAll(applicationsOn(host, allNodes));
+            applications.addAll(applicationsGroupsOn(host, allNodes));
         }
         return applications;
     }
 
-    private boolean changeHostname(Node node, Set<ApplicationId> instances) {
+    private boolean changeHostname(Node node, Set<ApplicationGroup> applicationGroups) {
         if (node.hostname().endsWith(".vespa-cloud.net")) {
             return false;
         }
         Set<String> wantedSchemes;
-        if (instances.isEmpty()) {
+        if (applicationGroups.isEmpty()) {
             wantedSchemes = Set.of(hostnameSchemeFlag.value());
         } else {
-            wantedSchemes = instances.stream()
-                                     .map(instance -> hostnameSchemeFlag.withApplicationId(Optional.of(instance)).value())
+            wantedSchemes = applicationGroups.stream()
+                                     .map(applicationGroup -> hostnameSchemeFlag.withApplicationId(
+                                             Optional.of(applicationGroup.applicationId())).value())
                                      .collect(Collectors.toSet());
         }
         return wantedSchemes.size() == 1 && wantedSchemes.iterator().next().equals("standard");
