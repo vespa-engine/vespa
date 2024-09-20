@@ -58,10 +58,11 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
     }
 
     private static String join(List<Attribute> fields) {
-        return fields.stream()
+        var ret = fields.stream()
                 .map(Attribute::getName)
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(", "));
+        return ret + ((fields.size() > 10) ? ", ..." : "");
     }
 
     private static Set<Attribute> pagedAttributes(ImmutableSDField field) {
