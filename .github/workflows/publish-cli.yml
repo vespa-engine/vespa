@@ -151,13 +151,17 @@ jobs:
           brew install --quiet coreutils gh zip go
 
       - name: Publish to GitHub Releases
+        id: github-release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Release to Github directly, bypassing the diff check as we already perform this check in the "prepare" job.
           make -- --dist-github
+          release_url="$(cat /tmp/vespa-cli-release-url.txt || true)"
+          echo "release-url=${release_url}" > "${GITHUB_OUTPUT}"
 
       - name: Publish to Homebrew
+        if: steps.github-release.outputs.release-url != ''
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
         run: |
@@ -165,5 +169,6 @@ jobs:
           make -- --dist-homebrew
 
       - name: Install via Homebrew
+        if: steps.github-release.outputs.release-url != ''
         run: |
           make install-brew
