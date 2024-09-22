@@ -119,5 +119,24 @@ ProtonTermData::FieldEntry::getHandle(MatchDataDetails requested_details) const
     return handle;
 }
 
+template class ProtonTerm<search::query::LocationTerm>;
+template class ProtonTerm<search::query::NumberTerm>;
+template class ProtonTerm<search::query::Phrase>;
+template class ProtonTerm<search::query::PrefixTerm>;
+template class ProtonTerm<search::query::RangeTerm>;
+template class ProtonTerm<search::query::StringTerm>;
+template class ProtonTerm<search::query::SubstringTerm>;
+template class ProtonTerm<search::query::SuffixTerm>;
+template class ProtonTerm<search::query::WeightedSetTerm>;
+template class ProtonTerm<search::query::DotProduct>;
+template class ProtonTerm<search::query::WandTerm>;
+template class ProtonTerm<search::query::PredicateQuery>;
+template class ProtonTerm<search::query::RegExpTerm>;
+template class ProtonTerm<search::query::FuzzyTerm>;
+template class ProtonTerm<search::query::InTerm>;
+
+ProtonEquiv::~ProtonEquiv() = default;
+ProtonSameElement::~ProtonSameElement() = default;
+ProtonNearestNeighborTerm::~ProtonNearestNeighborTerm() = default;
 
 }
