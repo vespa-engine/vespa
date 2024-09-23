@@ -61,7 +61,7 @@ protected:
     public:
         L1Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const NoSkipBase &no_skip, bool top_level, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const NoSkipBase &no_skip, bool top_level, bool decode_features);
         void next_skip_entry();
         uint32_t get_l1_skip_pos() const { return _l1_skip_pos; }
     };
@@ -72,7 +72,7 @@ protected:
     public:
         L2Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const L1Skip &l1_skip, bool top_level, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L1Skip &l1_skip, bool top_level, bool decode_features);
         uint32_t get_l2_skip_pos() const { return _l2_skip_pos; }
     };
     class L3Skip : public L2Skip
@@ -82,7 +82,7 @@ protected:
     public:
         L3Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const L2Skip &l2_skip, bool top_level, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L2Skip &l2_skip, bool top_level, bool decode_features);
         uint32_t get_l3_skip_pos() const { return _l3_skip_pos; }
     };
     class L4Skip : public L3Skip
@@ -90,7 +90,7 @@ protected:
     public:
         L4Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const L3Skip &l3_skip, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L3Skip &l3_skip, bool decode_features);
     };
     uint32_t _doc_id_k;
     uint32_t _num_docs;      // Documents in chunk or word
@@ -109,6 +109,7 @@ protected:
     uint32_t _chunkNo;      // Chunk number
 
     // Variable for validating chunk information while reading
+    uint64_t _features_start_pos;
     uint64_t _features_size;
     std::string              _word;
     index::PostingListCounts _counts;

@@ -4,6 +4,11 @@
 #include "zc4_posting_header.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <cassert>
+#include <cinttypes>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.zc4_posting_reader_base");
+
 namespace search::diskindex {
 
 using index::PostingListCounts;
@@ -11,6 +16,14 @@ using index::DocIdAndFeatures;
 using bitcompression::FeatureEncodeContext;
 using bitcompression::DecodeContext64Base;
 
+namespace {
+
+const std::string l1_name("l1");
+const std::string l2_name("l2");
+const std::string l3_name("l3");
+const std::string l4_name("l4");
+
+}
 Zc4PostingReaderBase::NoSkipBase::NoSkipBase()
     : _zc_buf(),
       _zc_decoder(),
@@ -89,13 +102,17 @@ Zc4PostingReaderBase::L1Skip::setup(DecodeContext &decode_context, uint32_t size
 }
 
 void
-Zc4PostingReaderBase::L1Skip::check(const NoSkipBase &no_skip, bool top_level, bool decode_features)
+Zc4PostingReaderBase::L1Skip::check(const Zc4PostingReaderBase& rb, const std::string& level_name, const NoSkipBase &no_skip, bool top_level, bool decode_features)
 {
     assert(_doc_id == no_skip.get_doc_id());
     _doc_id_pos += (_zc_decoder.decode32() + 1);
     assert(_doc_id_pos == no_skip.get_doc_id_pos());
     if (decode_features) {
         _features_pos += (_zc_decoder.decode42() + 1);
+        if (_features_pos != no_skip.get_features_pos()) {
+            LOG(error, "Inconsistency in posting list file '%s', word '%s', docid %u, level %s, after read features_pos != no_skip.get_fatures_pos() (%" PRIu64 " != %" PRIu64 ")",
+                rb._readContext.get_file_name().c_str(), rb._word.c_str(), _doc_id, level_name.c_str(), _features_pos, no_skip.get_features_pos());
+        }
         assert(_features_pos == no_skip.get_features_pos());
     }
     if (top_level) {
@@ -123,9 +140,9 @@ Zc4PostingReaderBase::L2Skip::setup(DecodeContext &decode_context, uint32_t size
 }
 
 void
-Zc4PostingReaderBase::L2Skip::check(const L1Skip &l1_skip, bool top_level, bool decode_features)
+Zc4PostingReaderBase::L2Skip::check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L1Skip &l1_skip, bool top_level, bool decode_features)
 {
-    L1Skip::check(l1_skip, false, decode_features);
+    L1Skip::check(rb, level_name, l1_skip, false, decode_features);
     _l1_skip_pos += (_zc_decoder.decode32() + 1);
     assert(_l1_skip_pos == l1_skip.get_l1_skip_pos());
     if (top_level) {
@@ -147,9 +164,9 @@ Zc4PostingReaderBase::L3Skip::setup(DecodeContext &decode_context, uint32_t size
 }
 
 void
-Zc4PostingReaderBase::L3Skip::check(const L2Skip &l2_skip, bool top_level, bool decode_features)
+Zc4PostingReaderBase::L3Skip::check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L2Skip &l2_skip, bool top_level, bool decode_features)
 {
-    L2Skip::check(l2_skip, false, decode_features);
+    L2Skip::check(rb, level_name, l2_skip, false, decode_features);
     _l2_skip_pos += (_zc_decoder.decode32() + 1);
     assert(_l2_skip_pos == l2_skip.get_l2_skip_pos());
     if (top_level) {
@@ -169,9 +186,9 @@ Zc4PostingReaderBase::L4Skip::setup(DecodeContext &decode_context, uint32_t size
 }
 
 void
-Zc4PostingReaderBase::L4Skip::check(const L3Skip &l3_skip, bool decode_features)
+Zc4PostingReaderBase::L4Skip::check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L3Skip &l3_skip, bool decode_features)
 {
-    L3Skip::check(l3_skip, false, decode_features);
+    L3Skip::check(rb, level_name, l3_skip, false, decode_features);
     _l3_skip_pos += (_zc_decoder.decode32() + 1);
     assert(_l3_skip_pos == l3_skip.get_l3_skip_pos());
 }
@@ -189,6 +206,7 @@ Zc4PostingReaderBase::Zc4PostingReaderBase(bool dynamic_k)
       _l3_skip(),
       _l4_skip(),
       _chunkNo(0),
+      _features_start_pos(0),
       _features_size(0),
       _word(),
       _counts(),
@@ -206,13 +224,13 @@ Zc4PostingReaderBase::read_common_word_doc_id(DecodeContext64Base &decode_contex
     // Split docid & features.
     if (_no_skip.get_doc_id() >= _l1_skip.get_doc_id()) {
         _no_skip.set_features_pos(decode_context.getReadOffset());
-        _l1_skip.check(_no_skip, true, _posting_params._encode_features);
+        _l1_skip.check(*this, l1_name, _no_skip, true, _posting_params._encode_features);
         if (_no_skip.get_doc_id() >= _l2_skip.get_doc_id()) {
-            _l2_skip.check(_l1_skip, true, _posting_params._encode_features);
+            _l2_skip.check(*this, l2_name, _l1_skip, true, _posting_params._encode_features);
             if (_no_skip.get_doc_id() >= _l3_skip.get_doc_id()) {
-                _l3_skip.check(_l2_skip, true, _posting_params._encode_features);
+                _l3_skip.check(*this, l3_name, _l2_skip, true, _posting_params._encode_features);
                 if (_no_skip.get_doc_id() >= _l4_skip.get_doc_id()) {
-                    _l4_skip.check(_l3_skip, _posting_params._encode_features);
+                    _l4_skip.check(*this, l4_name, _l3_skip, _posting_params._encode_features);
                     _l4_skip.next_skip_entry();
                 }
                 _l3_skip.next_skip_entry();
@@ -259,6 +277,7 @@ Zc4PostingReaderBase::read_word_start_with_skip(DecodeContext64Base &decode_cont
         assert(_last_doc_id == _counts._segments[_chunkNo]._lastDoc);
     }
     uint64_t features_pos = decode_context.getReadOffset();
+    _features_start_pos = features_pos;
     _no_skip.set_features_pos(features_pos);
     _l1_skip.set_features_pos(features_pos);
     _l2_skip.set_features_pos(features_pos);
