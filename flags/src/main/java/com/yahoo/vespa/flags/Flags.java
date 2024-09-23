@@ -559,6 +559,13 @@ public class Flags {
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
 
+    public static final UnboundBooleanFlag OVERRIDE_S1_TOKEN = defineFeatureFlag(
+            "override-s1-token", false,
+            List.of("mortent"), "2024-09-23", "2024-11-01",
+            "Override the S1 token",
+            "Takes effect on next host-admin run",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
