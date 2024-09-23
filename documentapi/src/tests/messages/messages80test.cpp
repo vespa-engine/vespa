@@ -21,7 +21,7 @@ namespace documentapi {
 TEST(MessagesTest, concrete_types_have_expected_sizes) {
     EXPECT_EQ(sizeof(GetDocumentMessage),    152u + 2 *sizeof(std::string));
     EXPECT_EQ(sizeof(GetDocumentReply),      128u);
-    EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(std::string));
+    EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(std::string) + sizeof(uint64_t));
     EXPECT_EQ(sizeof(DocumentMessage),       112u);
     EXPECT_EQ(sizeof(TestAndSetMessage),     sizeof(TestAndSetCondition) + sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 40);

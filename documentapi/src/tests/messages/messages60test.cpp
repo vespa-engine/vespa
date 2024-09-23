@@ -262,7 +262,7 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(sizeof(std::string), sizeof(TestAndSetCondition));
+    EXPECT_EQ(sizeof(std::string) + sizeof(uint64_t), sizeof(TestAndSetCondition));
     EXPECT_EQ(112u, sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
     EXPECT_EQ(sizeof(TestAndSetMessage) + 40, sizeof(PutDocumentMessage));
