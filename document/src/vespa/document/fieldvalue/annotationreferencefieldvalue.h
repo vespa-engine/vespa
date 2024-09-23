@@ -19,6 +19,7 @@ public:
     AnnotationReferenceFieldValue(const DataType &type, int32_t annotation_index)
         : FieldValue(Type::ANNOTATION_REFERENCE), _type(&type), _annotation_index(annotation_index)
     {}
+    ~AnnotationReferenceFieldValue() override;
 
     void setAnnotationIndex(int32_t index) { _annotation_index = index; }
 

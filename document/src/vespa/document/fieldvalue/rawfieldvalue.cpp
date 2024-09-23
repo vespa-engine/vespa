@@ -9,6 +9,8 @@ using namespace vespalib::xml;
 
 namespace document {
 
+RawFieldValue::~RawFieldValue() = default;
+
 void
 RawFieldValue::printXml(XmlOutputStream& out) const
 {

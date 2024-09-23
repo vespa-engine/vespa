@@ -5,4 +5,6 @@
 
 namespace document {
 
+FloatFieldValue::~FloatFieldValue() = default;
+
 } // document
