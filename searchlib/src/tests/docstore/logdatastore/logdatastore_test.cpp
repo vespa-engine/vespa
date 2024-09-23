@@ -241,13 +241,13 @@ TEST_F(LogDataStoreTest, test_that_DirectIOPadding_works_accordng_to_spec)
 }
 #endif
 
-void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint32_t maxFiles) {
-    DirectoryHandler tmpDir("growing");
+void verifyGrowing(const std::string& dir, const LogDataStore::Config & config, uint32_t minFiles, uint32_t maxFiles) {
+    DirectoryHandler tmpDir(dir);
     vespalib::ThreadStackExecutor executor(4);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
     {
-        LogDataStore datastore(executor, "growing", config, GrowStrategy(),
+        LogDataStore datastore(executor, dir, config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         unsigned int seed = 383451;
         char buffer[12000];
@@ -282,7 +282,7 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
         EXPECT_GE(maxFiles, datastore.getAllActiveFiles().size());
     }
     {
-        LogDataStore datastore(executor, "growing", config, GrowStrategy(),
+        LogDataStore datastore(executor, dir, config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         checkStats(datastore, 30000, 30000);
         EXPECT_LE(minFiles, datastore.getAllActiveFiles().size());
@@ -297,7 +297,7 @@ TEST_F(LogDataStoreTest, testGrowingChunkedBySize)
             .compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::ZSTD, 9, 60}, 1000});
     // Number of generated files depends on timing
-    verifyGrowing(config, 40, 265);
+    verifyGrowing(build_testdata() + "/growing1", config, 40, 265);
 }
 
 TEST_F(LogDataStoreTest, testGrowingChunkedByNumLids)
@@ -306,7 +306,7 @@ TEST_F(LogDataStoreTest, testGrowingChunkedByNumLids)
     config.setMaxNumLids(1000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::ZSTD, 9, 60}, 1000});
-    verifyGrowing(config,10, 10);
+    verifyGrowing(build_testdata() + "/growing2", config,10, 10);
 }
 
 void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz)
@@ -774,17 +774,17 @@ TEST_F(LogDataStoreTest, test_that_the_integrated_visit_cache_works)
 
 TEST_F(LogDataStoreTest, testWriteRead)
 {
-    std::filesystem::remove_all(std::filesystem::path("empty"));
+    auto empty = build_testdata() + "/empty";
     const char * bufA = "aaaaaaaaaaaaaaaaaaaaa";
     const char * bufB = "bbbbbbbbbbbbbbbb";
     const vespalib::ConstBufferRef a[2] = { vespalib::ConstBufferRef(bufA, strlen(bufA)), vespalib::ConstBufferRef(bufB, strlen(bufB))};
     LogDataStore::Config config;
     {
-        std::filesystem::create_directory(std::filesystem::path("empty"));
+        std::filesystem::create_directory(std::filesystem::path(empty));
         DummyFileHeaderContext fileHeaderContext;
         vespalib::ThreadStackExecutor executor(1);
         MyTlSyncer tlSyncer;
-        LogDataStore datastore(executor, "empty", config, GrowStrategy(),
+        LogDataStore datastore(executor, empty, config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         ASSERT_TRUE(datastore.lastSyncToken() == 0);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
@@ -820,7 +820,7 @@ TEST_F(LogDataStoreTest, testWriteRead)
         DummyFileHeaderContext fileHeaderContext;
         vespalib::ThreadStackExecutor executor(1);
         MyTlSyncer tlSyncer;
-        LogDataStore datastore(executor, "empty", config,
+        LogDataStore datastore(executor, empty, config,
                                GrowStrategy(), TuneFileSummary(),
                                fileHeaderContext, tlSyncer, nullptr);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
@@ -844,7 +844,9 @@ TEST_F(LogDataStoreTest, testWriteRead)
         EXPECT_EQ(0ul, datastore.getDiskBloat());
         EXPECT_EQ(0ul, datastore.getMaxSpreadAsBloat());
     }
-    std::filesystem::remove_all(std::filesystem::path("empty"));
+    if (!HasFailure()) {
+        std::filesystem::remove_all(std::filesystem::path(empty));
+    }
 }
 
 TEST_F(LogDataStoreTest, requireThatFlushTimeIsAvailableAfterFlush)
@@ -938,7 +940,7 @@ struct Fixture {
         return serialNum++;
     }
 
-    Fixture(const std::string &dirName = "tmp",
+    Fixture(const std::string& dirName,
             bool dirCleanup = true,
             size_t maxFileSize = 4_Ki * 2)
         : executor(1),
@@ -1015,8 +1017,9 @@ struct Fixture {
 
 TEST_F(LogDataStoreTest, require_that_docIdLimit_is_updated_when_inserting_entries)
 {
+    auto tmp1 = build_testdata() + "/tmp1";
     {
-        Fixture f("tmp", false);
+        Fixture f(tmp1, false);
         f.assertDocIdLimit(0, "initial");
         f.write(10);
         f.assertDocIdLimit(11, "write 10");
@@ -1028,16 +1031,17 @@ TEST_F(LogDataStoreTest, require_that_docIdLimit_is_updated_when_inserting_entri
         f.flush();
     }
     {
-        Fixture f("tmp");
+        Fixture f(tmp1);
         f.assertDocIdLimit(12, "reload");
     }
 }
 
 TEST_F(LogDataStoreTest, require_that_docIdLimit_at_idx_file_creation_time_is_written_to_idx_file_header)
 {
+    auto tmp2 = build_testdata() + "/tmp2";
     std::vector<uint32_t> expLimits = {std::numeric_limits<uint32_t>::max(),14,104,204};
     {
-        Fixture f("tmp", false);
+        Fixture f(tmp2, false);
         f.writeUntilNewChunk(10);
         f.writeUntilNewChunk(100);
         f.writeUntilNewChunk(200);
@@ -1045,15 +1049,16 @@ TEST_F(LogDataStoreTest, require_that_docIdLimit_at_idx_file_creation_time_is_wr
         f.flush();
     }
     {
-        Fixture f("tmp");
+        Fixture f(tmp2);
         f.assertDocIdLimitInFileChunks(expLimits, "reload");
     }
 }
 
 TEST_F(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_entries_from_old_files_skipped_during_load)
 {
+    auto tmp3 = build_testdata() + "/tmp3";
     {
-        Fixture f("tmp", false);
+        Fixture f(tmp3, false);
         f.write(10);
         f.writeUntilNewChunk(100);
         f.write(20);
@@ -1073,14 +1078,15 @@ TEST_F(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_entries_fro
         f.flush();
     }
     {
-        Fixture f("tmp");
+        Fixture f(tmp3);
         f.assertContent({10,20,30,31,32,33,99,300}, 301, 1024, "reload");
     }
 }
 
 TEST_F(LogDataStoreTest, require_that_getLid_is_protected_by_docIdLimit)
 {
-    Fixture f;
+    auto tmp4 = build_testdata() + "/tmp4";
+    Fixture f(tmp4);
     f.write(1);
     vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
     EXPECT_TRUE(f.store.getLid(guard, 1).valid());
@@ -1089,7 +1095,8 @@ TEST_F(LogDataStoreTest, require_that_getLid_is_protected_by_docIdLimit)
 
 TEST_F(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_shrunk)
 {
-    Fixture f;
+    auto tmp5 = build_testdata() + "/tmp5";
+    Fixture f(tmp5);
     f.write(1).write(2);
     EXPECT_FALSE(f.store.canShrinkLidSpace());
 
@@ -1106,7 +1113,8 @@ TEST_F(LogDataStoreTest, require_that_lid_space_can_be_compacted_and_shrunk)
 
 TEST_F(LogDataStoreTest, require_that_lid_space_can_be_increased_after_being_compacted_and_then_shrunk)
 {
-    Fixture f;
+    auto tmp6 = build_testdata() + "/tmp6";
+    Fixture f(tmp6);
     f.write(1).write(3);
     f.compactLidSpace(2, "compactLidSpace 2");
     f.write(2);
@@ -1118,7 +1126,8 @@ TEST_F(LogDataStoreTest, require_that_lid_space_can_be_increased_after_being_com
 
 TEST_F(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
 {
-    Fixture f;
+    auto tmp7= build_testdata() + "/tmp7";
+    Fixture f(tmp7);
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
     EXPECT_EQ(456u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
     EXPECT_EQ(73916u + 3 * sizeof(std::string), usage.allocatedBytes());
@@ -1127,7 +1136,8 @@ TEST_F(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
 
 TEST_F(LogDataStoreTest, require_that_lid_space_can_be_shrunk_only_after_read_guards_are_deleted)
 {
-    Fixture f;
+    auto tmp8 = build_testdata() + "/tmp8";
+    Fixture f(tmp8);
     f.write(1).write(2);
     EXPECT_FALSE(f.store.canShrinkLidSpace());
     {
