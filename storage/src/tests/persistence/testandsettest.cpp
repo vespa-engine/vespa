@@ -73,6 +73,7 @@ struct TestAndSetTest : PersistenceTestUtils {
     document::Document::SP retrieveTestDocument();
     void setTestCondition(api::TestAndSetCommand & command);
     void putTestDocument(bool matchingHeader, api::Timestamp timestamp);
+    std::shared_ptr<api::GetReply> invoke_conditional_get(TestAndSetCondition cond);
     std::shared_ptr<api::GetReply> invoke_conditional_get();
     void feed_remove_entry_with_timestamp(api::Timestamp timestamp);
     void assertTestDocumentFoundAndMatchesContent(const document::FieldValue & value);
@@ -349,7 +350,7 @@ TEST_F(TestAndSetTest, conditional_put_to_non_existing_document_should_fail) {
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
 
-TEST_F(TestAndSetTest, conditional_get_returns_doc_metadata_on_match) {
+TEST_F(TestAndSetTest, conditional_get_with_selection_returns_doc_metadata_on_match) {
     const api::Timestamp timestamp = 12345;
     putTestDocument(true, timestamp);
     auto reply = invoke_conditional_get();
@@ -362,7 +363,18 @@ TEST_F(TestAndSetTest, conditional_get_returns_doc_metadata_on_match) {
     // the presence of a document object, which metadata-only gets by definition do not return.
 }
 
-TEST_F(TestAndSetTest, conditional_get_returns_doc_metadata_on_mismatch) {
+TEST_F(TestAndSetTest, conditional_get_with_timestamp_returns_doc_metadata_on_match) {
+    const api::Timestamp timestamp = 12345;
+    putTestDocument(true, timestamp);
+    auto reply = invoke_conditional_get(TestAndSetCondition(timestamp));
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);
+    EXPECT_TRUE(reply->condition_matched());
+    EXPECT_FALSE(reply->is_tombstone());
+}
+
+TEST_F(TestAndSetTest, conditional_get_with_selection_returns_doc_metadata_on_mismatch) {
     const api::Timestamp timestamp = 12345;
     putTestDocument(false, timestamp);
     auto reply = invoke_conditional_get();
@@ -373,7 +385,29 @@ TEST_F(TestAndSetTest, conditional_get_returns_doc_metadata_on_mismatch) {
     EXPECT_FALSE(reply->is_tombstone());
 }
 
-TEST_F(TestAndSetTest, conditional_get_for_non_existing_document_returns_zero_timestamp) {
+TEST_F(TestAndSetTest, conditional_get_with_selection_and_timestamp_only_checks_timestamp) {
+    const api::Timestamp timestamp = 12345;
+    putTestDocument(false, timestamp); // _selection_ does not match, but timestamp does
+    auto reply = invoke_conditional_get(TestAndSetCondition(timestamp));
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);
+    EXPECT_TRUE(reply->condition_matched());
+    EXPECT_FALSE(reply->is_tombstone());
+}
+
+TEST_F(TestAndSetTest, conditional_get_with_timestamp_returns_doc_metadata_on_timestamp_mismatch) {
+    const api::Timestamp timestamp = 12345;
+    putTestDocument(false, timestamp);
+    auto reply = invoke_conditional_get(TestAndSetCondition(timestamp - 1));
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);
+    EXPECT_FALSE(reply->condition_matched());
+    EXPECT_FALSE(reply->is_tombstone());
+}
+
+TEST_F(TestAndSetTest, conditional_get_with_selection_for_non_existing_document_returns_zero_timestamp) {
     auto reply = invoke_conditional_get();
 
     ASSERT_EQ(reply->getResult(), api::ReturnCode());
@@ -382,7 +416,16 @@ TEST_F(TestAndSetTest, conditional_get_for_non_existing_document_returns_zero_ti
     EXPECT_FALSE(reply->is_tombstone());
 }
 
-TEST_F(TestAndSetTest, conditional_get_for_non_existing_document_with_explicit_tombstone_returns_tombstone_timestamp) {
+TEST_F(TestAndSetTest, conditional_get_with_timestamp_for_non_existing_document_returns_zero_timestamp) {
+    auto reply = invoke_conditional_get(TestAndSetCondition(123456));
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), 0);
+    EXPECT_FALSE(reply->condition_matched());
+    EXPECT_FALSE(reply->is_tombstone());
+}
+
+TEST_F(TestAndSetTest, conditional_get_with_selection_for_non_existing_document_with_explicit_tombstone_returns_tombstone_timestamp) {
     api::Timestamp timestamp = 56789;
     feed_remove_entry_with_timestamp(timestamp);
     auto reply = invoke_conditional_get();
@@ -392,6 +435,19 @@ TEST_F(TestAndSetTest, conditional_get_for_non_existing_document_with_explicit_t
     EXPECT_FALSE(reply->condition_matched());
     EXPECT_TRUE(reply->is_tombstone());
 }
+
+TEST_F(TestAndSetTest, conditional_get_with_timestamp_for_non_existing_document_with_explicit_tombstone_returns_tombstone_timestamp) {
+    api::Timestamp timestamp = 56789;
+    feed_remove_entry_with_timestamp(timestamp);
+    auto reply = invoke_conditional_get(TestAndSetCondition(123456));
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);
+    EXPECT_FALSE(reply->condition_matched());
+    EXPECT_TRUE(reply->is_tombstone());
+}
+
+// TODO what about conditional operation with timestamp predicate that matches a _tombstone_ timestamp...?
 
 TEST_F(TestAndSetTest, conditional_get_requires_metadata_only_fieldset) {
     auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, document::AllFields::NAME);
@@ -445,10 +501,14 @@ void TestAndSetTest::putTestDocument(bool matchingHeader, api::Timestamp timesta
     fetchResult(asyncHandler->handlePut(*put, createTracker(put, BUCKET)));
 }
 
-std::shared_ptr<api::GetReply> TestAndSetTest::invoke_conditional_get() {
+std::shared_ptr<api::GetReply> TestAndSetTest::invoke_conditional_get(TestAndSetCondition cond) {
     auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, document::NoFields::NAME);
-    get->set_condition(MATCHING_CONDITION);
+    get->set_condition(std::move(cond));
     return fetch_single_reply<api::GetReply>(simple_handler->handleGet(*get, createTracker(get, BUCKET)));
+}
+
+std::shared_ptr<api::GetReply> TestAndSetTest::TestAndSetTest::invoke_conditional_get() {
+    return invoke_conditional_get(MATCHING_CONDITION);
 }
 
 void TestAndSetTest::feed_remove_entry_with_timestamp(api::Timestamp timestamp) {

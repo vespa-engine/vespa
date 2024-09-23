@@ -14,7 +14,7 @@ using namespace std::string_literals;
 
 namespace storage {
 
-void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo & documentTypeRepo) {
+void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo& documentTypeRepo) {
     if (_docTypePtr != nullptr) return;
     if (!_docId.hasDocType()) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Document id has no doctype"));
@@ -26,13 +26,13 @@ void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo & do
     }
 }
 
-void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo,
-                                              const document::BucketIdFactory & bucketIdFactory) {
+void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo& documentTypeRepo,
+                                              const document::BucketIdFactory& bucketIdFactory) {
     document::select::Parser parser(documentTypeRepo, bucketIdFactory);
 
     try {
         _docSelectionUp = parser.parse(_condition.getSelection());
-    } catch (const document::select::ParsingFailedException & e) {
+    } catch (const document::select::ParsingFailedException& e) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Failed to parse test and set condition: "s + e.getMessage()));
     }
 }
@@ -57,7 +57,7 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil& env,
       _docTypePtr(doc_type_ptr),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
-    const auto & repo = _env.getDocumentTypeRepo();
+    const auto& repo = _env.getDocumentTypeRepo();
     resolveDocumentType(repo);
     parseDocumentSelection(repo, bucket_id_factory);
 }
@@ -65,7 +65,7 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil& env,
 TestAndSetHelper::~TestAndSetHelper() = default;
 
 TestAndSetHelper::Result
-TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
+TestAndSetHelper::fetch_and_match_selection(spi::Context& context) {
     // Walk document selection tree to build a minimal field set
     FieldVisitor fieldVisitor(*_docTypePtr);
     try {
@@ -125,15 +125,19 @@ TestAndSetHelper::timestamp_predicate_match_to_result(const spi::GetResult& spi_
     return {my_ts, Result::ConditionOutcome::IsNotMatch};
 }
 
-api::ReturnCode
-TestAndSetHelper::retrieveAndMatch(spi::Context& context) {
+TestAndSetHelper::Result
+TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
     if (_condition.has_required_persistence_timestamp()) { // timestamp predicate takes precedence
         const auto doc_meta = fetch_document(document::NoFields(), context);
-        return to_api_return_code(timestamp_predicate_match_to_result(doc_meta));
+        return timestamp_predicate_match_to_result(doc_meta);
     } else {
-        auto result = fetch_and_match_raw(context);
-        return to_api_return_code(result);
+        return fetch_and_match_selection(context);
     }
+}
+
+api::ReturnCode
+TestAndSetHelper::retrieveAndMatch(spi::Context& context) {
+    return to_api_return_code(fetch_and_match_raw(context));
 }
 
 } // storage
