@@ -13,6 +13,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/fastos/file.h>
+#include <exception>
 #include <filesystem>
 #include <future>
 
@@ -334,13 +335,18 @@ FileChunk::appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteDat
         std::promise<Chunk::UP> promisedChunk;
         FutureChunk futureChunk(promisedChunk.get_future());
         auto task = vespalib::makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
+            const ChunkInfo & cInfo(_chunkInfo[chunkId]);
             try {
-                const ChunkInfo & cInfo(_chunkInfo[chunkId]);
                 vespalib::DataBuffer whole(0ul, ALIGNMENT);
                 FileRandRead::FSP keepAlive(_file->read(cInfo.getOffset(), whole, cInfo.getSize()));
                 promise.set_value(std::make_unique<Chunk>(chunkId, whole.getData(), whole.getDataLen()));
-            } catch (...) {
-                promise.set_exception(std::current_exception());
+            } catch (std::exception& e) {
+                promise.set_exception(std::make_exception_ptr(
+                    std::runtime_error(std::string("File '") + _dataFileName +
+                    "', offset " + std::to_string(cInfo.getOffset()) +
+                    ", len " + std::to_string(cInfo.getSize()) +
+                    ", chunkId " + std::to_string(chunkId) +
+                    " : " + e.what())));
             }
         });
         executor.execute(CpuUsage::wrap(std::move(task), cpu_category));
