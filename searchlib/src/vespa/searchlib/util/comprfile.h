@@ -109,6 +109,7 @@ public:
     void setDecodeContext(ComprFileDecodeContext *decodeContext) { _decodeContext = decodeContext; }
     ComprFileDecodeContext *getDecodeContext() const { return _decodeContext; }
     void setFile(FastOS_FileInterface *file) { _file = file; }
+    std::string get_file_name() const;
 
     /**
      * Get file offset for end of compressed buffer.

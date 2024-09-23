@@ -394,6 +394,16 @@ ComprFileReadContext::reference_compressed_buffer(void *buffer, size_t usedUnits
     }
 }
 
+std::string
+ComprFileReadContext::get_file_name() const
+{
+    if (_file != nullptr) {
+        return _file->GetFileName();
+    } else {
+        return "[memory buffer]";
+    }
+}
+
 ComprFileWriteContext::
 ComprFileWriteContext(ComprFileEncodeContext &encodeContext)
     : ComprBuffer(encodeContext.getUnitByteSize()),
