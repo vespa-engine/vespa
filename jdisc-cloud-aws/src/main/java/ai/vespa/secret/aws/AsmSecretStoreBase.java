@@ -23,9 +23,7 @@ import java.util.function.Function;
  *
  * @author gjoranv
  */
-public sealed abstract class AsmSecretStoreBase extends AbstractComponent
-        implements AutoCloseable
-        permits AsmSecretStore, AsmSecretStoreWriter {
+public abstract class AsmSecretStoreBase extends AbstractComponent implements AutoCloseable {
 
     public static final String AWSCURRENT = "AWSCURRENT";
 
