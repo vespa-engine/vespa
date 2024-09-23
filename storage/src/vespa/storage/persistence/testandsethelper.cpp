@@ -37,7 +37,7 @@ void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo &
     }
 }
 
-spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context) {
+spi::GetResult TestAndSetHelper::fetch_document(const document::FieldSet& fieldSet, spi::Context& context) {
     return _spi.get(_env.getBucket(_docId, _bucket), fieldSet, _docId, context);
 }
 
@@ -77,7 +77,7 @@ TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
                                       "Imported fields are not supported in conditional mutations.",
                                       e.getFieldName().c_str())));
     }
-    auto result = retrieveDocument(fieldVisitor.getFieldSet(), context);
+    auto result = fetch_document(fieldVisitor.getFieldSet(), context);
     // If document exists, match it with selection
     if (result.hasDocument()) {
         auto docPtr = result.getDocumentPtr();
@@ -112,10 +112,28 @@ TestAndSetHelper::to_api_return_code(const Result& result) const {
     abort();
 }
 
+TestAndSetHelper::Result
+TestAndSetHelper::timestamp_predicate_match_to_result(const spi::GetResult& spi_result) const {
+    const auto my_ts = spi_result.getTimestamp();
+    if (my_ts == _condition.required_persistence_timestamp()) {
+        return {my_ts, Result::ConditionOutcome::IsMatch};
+    } else if (spi_result.is_tombstone()) {
+        return {my_ts, Result::ConditionOutcome::IsTombstone};
+    } else if (my_ts == 0) {
+        return {0, Result::ConditionOutcome::DocNotFound};
+    }
+    return {my_ts, Result::ConditionOutcome::IsNotMatch};
+}
+
 api::ReturnCode
-TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
-    auto result = fetch_and_match_raw(context);
-    return to_api_return_code(result);
+TestAndSetHelper::retrieveAndMatch(spi::Context& context) {
+    if (_condition.has_required_persistence_timestamp()) { // timestamp predicate takes precedence
+        const auto doc_meta = fetch_document(document::NoFields(), context);
+        return to_api_return_code(timestamp_predicate_match_to_result(doc_meta));
+    } else {
+        auto result = fetch_and_match_raw(context);
+        return to_api_return_code(result);
+    }
 }
 
 } // storage

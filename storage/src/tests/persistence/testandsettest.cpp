@@ -242,7 +242,7 @@ TEST_F(TestAndSetTest, conditional_update_executed_when_no_document_but_auto_cre
 
 // Although it's not a TaS _selection_ condition, we consider an update with a timestamp predicate
 // to be a "kind of" test-and-set operation, thus we test it here.
-TEST_F(TestAndSetTest, timestamp_predicated_update_should_not_apply_if_no_existing_document) {
+TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_should_not_apply_if_no_existing_document) {
     auto update_cmd = make_conditional_update(true, api::Timestamp(200));
     update_cmd->setCondition(documentapi::TestAndSetCondition()); // No condition; it has precedence
     update_cmd->setOldTimestamp(api::Timestamp(150));
@@ -251,7 +251,7 @@ TEST_F(TestAndSetTest, timestamp_predicated_update_should_not_apply_if_no_existi
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
 
-TEST_F(TestAndSetTest, timestamp_predicated_update_should_not_apply_if_existing_document_has_unexpected_timestamp) {
+TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_should_not_apply_if_existing_document_has_unexpected_timestamp) {
     putTestDocument(true, api::Timestamp(180));
     auto update_cmd = make_conditional_update(false, api::Timestamp(200));
     update_cmd->setCondition(documentapi::TestAndSetCondition());
@@ -261,7 +261,7 @@ TEST_F(TestAndSetTest, timestamp_predicated_update_should_not_apply_if_existing_
     EXPECT_EQ(expectedDocEntryString(api::Timestamp(180), testDocId), dumpBucket(BUCKET_ID));
 }
 
-TEST_F(TestAndSetTest, timestamp_predicated_update_is_applied_if_existing_timestamp_matches) {
+TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_is_applied_if_existing_timestamp_matches) {
     putTestDocument(true, api::Timestamp(180));
     auto update_cmd = make_conditional_update(false, api::Timestamp(200));
     update_cmd->setCondition(documentapi::TestAndSetCondition());
@@ -271,6 +271,46 @@ TEST_F(TestAndSetTest, timestamp_predicated_update_is_applied_if_existing_timest
     EXPECT_EQ(expectedDocEntryString(api::Timestamp(180), testDocId) +
               expectedDocEntryString(api::Timestamp(200), testDocId),
               dumpBucket(BUCKET_ID));
+}
+
+TEST_F(TestAndSetTest, tas_timestamp_predicated_update_should_not_apply_if_no_existing_document) {
+    auto update_cmd = make_conditional_update(false, api::Timestamp(200)); // no create-if-missing
+    update_cmd->setCondition(documentapi::TestAndSetCondition(150));
+    EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
+              api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                              "Document does not exist nodeIndex=0 bucket=4000000000000004"));
+    EXPECT_EQ("", dumpBucket(BUCKET_ID));
+}
+
+TEST_F(TestAndSetTest, tas_timestamp_predicated_update_should_not_apply_if_existing_document_has_unexpected_timestamp) {
+    putTestDocument(true, api::Timestamp(180));
+    auto update_cmd = make_conditional_update(false, api::Timestamp(200));
+    update_cmd->setCondition(documentapi::TestAndSetCondition(150)); // != 180, should fail
+    EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
+              api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                              "Condition did not match document nodeIndex=0 bucket=4000000000000004"));
+    EXPECT_EQ(expectedDocEntryString(api::Timestamp(180), testDocId), dumpBucket(BUCKET_ID));
+}
+
+TEST_F(TestAndSetTest, tas_timestamp_predicated_update_is_applied_if_existing_timestamp_matches) {
+    putTestDocument(true, api::Timestamp(180));
+    auto update_cmd = make_conditional_update(false, api::Timestamp(200));
+    update_cmd->setCondition(documentapi::TestAndSetCondition(180));
+    EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
+              api::ReturnCode(api::ReturnCode::OK, ""));
+    EXPECT_EQ(expectedDocEntryString(api::Timestamp(180), testDocId) +
+              expectedDocEntryString(api::Timestamp(200), testDocId),
+              dumpBucket(BUCKET_ID));
+}
+
+TEST_F(TestAndSetTest, tas_timestamp_predicated_update_executed_when_no_document_but_auto_create_is_enabled) {
+    api::Timestamp updateTimestamp = 200;
+    auto update_cmd = make_conditional_update(true, updateTimestamp);
+    update_cmd->setCondition(documentapi::TestAndSetCondition(1234)); // mismatch, but `create` is true
+
+    ASSERT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))).getResult(), api::ReturnCode::Result::OK);
+    EXPECT_EQ(expectedDocEntryString(updateTimestamp, testDocId), dumpBucket(BUCKET_ID));
+    assertTestDocumentFoundAndMatchesContent(NEW_CONTENT);
 }
 
 TEST_F(TestAndSetTest, invalid_document_selection_should_fail) {

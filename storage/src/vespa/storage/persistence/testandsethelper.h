@@ -47,7 +47,7 @@ class TestAndSetHelper {
     void resolveDocumentType(const document::DocumentTypeRepo & documentTypeRepo);
     void parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo,
                                 const document::BucketIdFactory & bucketIdFactory);
-    spi::GetResult retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context);
+    spi::GetResult fetch_document(const document::FieldSet & fieldSet, spi::Context & context);
 
 public:
     struct Result {
@@ -87,6 +87,7 @@ public:
 
     Result fetch_and_match_raw(spi::Context& context);
     api::ReturnCode to_api_return_code(const Result& result) const;
+    Result timestamp_predicate_match_to_result(const spi::GetResult& spi_result) const;
 
     api::ReturnCode retrieveAndMatch(spi::Context & context);
 };
