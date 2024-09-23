@@ -85,7 +85,7 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
             // Verify that features pos is within expected range after reading features for common word
             uint64_t features_rel_pos = _decodeContext->getReadOffset() - _features_start_pos;
             if ((_residue == 1) ? (features_rel_pos != _features_size) : (features_rel_pos >= _features_size)) {
-                LOG(error, "For file '%s', word '%s', docid %u, residue %u, after read features_rel_pos=%" PRIu64 ", _features_size=%" PRIu64,
+                LOG(error, "Inconsistency in posting list file '%s', word '%s', docid %u, residue %u, after read features_rel_pos=%" PRIu64 ", _features_size=%" PRIu64,
                     _readContext.get_file_name().c_str(), _word.c_str(), _no_skip.get_doc_id(), _residue, features_rel_pos, _no_skip.get_features_pos());
                 abort();
             }

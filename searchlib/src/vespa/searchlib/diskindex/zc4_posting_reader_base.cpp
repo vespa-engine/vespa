@@ -110,7 +110,7 @@ Zc4PostingReaderBase::L1Skip::check(const Zc4PostingReaderBase& rb, const std::s
     if (decode_features) {
         _features_pos += (_zc_decoder.decode42() + 1);
         if (_features_pos != no_skip.get_features_pos()) {
-            LOG(error, "For file '%s', word '%s', docid %u, level %s, after read features_pos != no_skip.get_fatures_pos() (%" PRIu64 " != %" PRIu64 ")",
+            LOG(error, "Inconsistency in posting list file '%s', word '%s', docid %u, level %s, after read features_pos != no_skip.get_fatures_pos() (%" PRIu64 " != %" PRIu64 ")",
                 rb._readContext.get_file_name().c_str(), rb._word.c_str(), _doc_id, level_name.c_str(), _features_pos, no_skip.get_features_pos());
         }
         assert(_features_pos == no_skip.get_features_pos());
