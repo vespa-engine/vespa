@@ -5,5 +5,6 @@
 
 namespace document {
 
+IntFieldValue::~IntFieldValue() = default;
 
 } // document

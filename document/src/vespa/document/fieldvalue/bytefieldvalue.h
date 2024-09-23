@@ -18,6 +18,7 @@ public:
 
     ByteFieldValue(Number value = 0)
         : NumericFieldValue<Number>(Type::BYTE, value) {}
+    ~ByteFieldValue() override;
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }

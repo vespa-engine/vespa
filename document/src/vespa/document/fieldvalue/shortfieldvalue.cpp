@@ -5,4 +5,6 @@
 
 namespace document {
 
+ShortFieldValue::~ShortFieldValue() = default;
+
 } // document

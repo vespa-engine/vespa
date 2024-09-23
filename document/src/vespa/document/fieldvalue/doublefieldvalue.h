@@ -17,6 +17,7 @@ public:
     using Number = double;
 
     DoubleFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::DOUBLE, value) {}
+    ~DoubleFieldValue() override;
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }

@@ -4,4 +4,6 @@
 
 namespace document {
 
+LongFieldValue::~LongFieldValue() = default;
+
 } // document
