@@ -78,6 +78,7 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
+        <aws-sdk2.vespa.version>2.27.4</aws-sdk2.vespa.version>
         <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.14.18</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
