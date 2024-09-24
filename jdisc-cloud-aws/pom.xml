@@ -92,6 +92,17 @@
     </dependencies>
 
     <build>
+        <resources>
+            <!-- Exclude config defs, as they are already installed in the configserver's serverdb  -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>configdefinitions/*</exclude>
+                </excludes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
