@@ -106,25 +106,13 @@ public class ApplicationClusterEndpoint {
             return this;
         }
 
-        // TODO: Remove after 8.407 is gone.
-        public Builder sharedRouting() {
-            this.routingMethod = RoutingMethod.shared;
-            return this;
-        }
-
-        // TODO: Remove after 8.407 is gone.
-        public Builder sharedL4Routing() {
-            this.routingMethod = RoutingMethod.sharedLayer4;
-            return this;
-        }
-
         public Builder routingMethod(RoutingMethod routingMethod) {
             this.routingMethod = routingMethod;
             return this;
         }
 
-        public Builder weight(int weigth) {
-            this.weight = weigth;
+        public Builder weight(int weight) {
+            this.weight = weight;
             return this;
         }
 
