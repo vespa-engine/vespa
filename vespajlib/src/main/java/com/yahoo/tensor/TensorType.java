@@ -35,6 +35,14 @@ public class TensorType {
         // Types added must also be added to TensorTypeParser.parseValueTypeSpec, serialization, and largestOf below
         DOUBLE("double"), FLOAT("float"), BFLOAT16("bfloat16"), INT8("int8");
 
+        int sizeOfCell() {
+            return switch (this) {
+                case DOUBLE -> 8;
+                case FLOAT -> 4;
+                case BFLOAT16 -> 2;
+                case INT8 -> 1;
+            };
+        }
         private final String id;
 
         Value(String id) { this.id = id; }
