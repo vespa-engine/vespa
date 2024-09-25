@@ -29,14 +29,28 @@ const std::string field_and_label_feature_name("closest(bar,nns)");
 const std::string field_feature_name("closest(bar)");
 
 const std::string dense_tensor_type("tensor(x[2])");
-const std::string mixed_tensor_type("tensor(a{},x[2])");
+const std::vector<std::string> mixed_tensor_types{"error",
+                                                  "tensor(a{},x[2])",
+                                                  "tensor(a{},b{},x[2])"};
 const std::string sparse_tensor_type("tensor(a{})");
 
-TensorSpec no_subspace(sparse_tensor_type);
-TensorSpec subspace_a = TensorSpec::from_expr("tensor(a{}):{{a:\"a\"}:1}");
-TensorSpec subspace_b = TensorSpec::from_expr("tensor(a{}):{{a:\"b\"}:1}");
+const std::vector<TensorSpec> no_subspaces{TensorSpec("error"),
+                                           TensorSpec(sparse_tensor_type),
+                                           TensorSpec("tensor(a{},b{})")};
+const std::vector<TensorSpec> subspace_as{TensorSpec("error"),
+                                          TensorSpec::from_expr("tensor(a{}):{{a:\"a\"}:1}"),
+                                          TensorSpec::from_expr("tensor(a{},b{}):{{a:\"a\",b:\"K\"}:1}")};
+const std::vector<TensorSpec> subspace_bs{TensorSpec("error"),
+                                          TensorSpec::from_expr("tensor(a{}):{{a:\"b\"}:1}"),
+                                          TensorSpec::from_expr("tensor(a{},b{}):{{a:\"b\",b:\"L\"}:1}")};
 
-TensorSpec doc_tensor = TensorSpec::from_expr("tensor(a{},x[2]):{{a:\"a\",x:0}:3,{a:\"a\",x:1}:10,{a:\"b\",x:0}:5,{a:\"b\",x:1}:10}");
+const std::vector<TensorSpec> doc_tensors{TensorSpec("error"),
+                                          TensorSpec::from_expr("tensor(a{},x[2]):"
+                                                                "{{a:\"a\",x:0}:3,{a:\"a\",x:1}:10,"
+                                                                "{a:\"b\",x:0}:5,{a:\"b\",x:1}:10}"),
+                                          TensorSpec::from_expr("tensor(a{},b{},x[2]):"
+                                                                "{{a:\"a\",b:\"K\",x:0}:3,{a:\"a\",b:\"K\",x:1}:10,"
+                                                                "{a:\"b\",b:\"L\",x:0}:5,{a:\"b\",b:\"L\",x:1}:10}")};
 
 using RankFixture = DistanceClosenessFixture;
 
@@ -48,9 +62,11 @@ struct TestParam
 {
     std::string _name;
     bool             _direct_tensor;
-    TestParam(std::string name, bool direct_tensor)
+    uint32_t         _mapped_dimensions;
+    TestParam(std::string name, bool direct_tensor, uint32_t mapped_dimensions)
         : _name(std::move(name)),
-          _direct_tensor(direct_tensor)
+          _direct_tensor(direct_tensor),
+          _mapped_dimensions(mapped_dimensions)
     {
     }
     ~TestParam();
@@ -109,11 +125,12 @@ ClosestTest::~ClosestTest() = default;
 void
 ClosestTest::assert_closest(const Labels& labels, const std::string& feature_name, const std::string& query_tensor, const TensorSpec& exp_spec)
 {
-    RankFixture f(mixed_tensor_type, direct_tensor(), 0, 1, labels, feature_name,
+    uint32_t mapped_dimensions = GetParam()._mapped_dimensions;
+    RankFixture f(mixed_tensor_types[mapped_dimensions], direct_tensor(), 0, 1, labels, feature_name,
                   dense_tensor_type + ":" + query_tensor);
     ASSERT_FALSE(f.failed());
     SCOPED_TRACE(query_tensor);
-    f.set_attribute_tensor(9, doc_tensor);
+    f.set_attribute_tensor(9, doc_tensors[mapped_dimensions]);
     EXPECT_EQ(exp_spec, get_spec(f, 9));
 }
 
@@ -126,11 +143,13 @@ ClosestTest::assert_closest(const Labels& labels, const std::string& feature_nam
 
 INSTANTIATE_TEST_SUITE_P(ClosestMultiTest,
                          ClosestTest,
-                         testing::Values(TestParam("Serialized", false),
-                                         TestParam("Direct", true)),
+                         testing::Values(TestParam("Serialized_1_mapped_dim", false, 1),
+                                         TestParam("Direct_1_mapped_dim", true, 1),
+                                         TestParam("Serialized_2_mapped_dims", false, 2),
+                                         TestParam("Direct_2_mapped_dims", true, 2)),
                          testing::PrintToStringParamName());
 
-TEST(ClosestTest, require_that_blueprint_can_be_created_from_factory)
+TEST_F(ClosestTest, require_that_blueprint_can_be_created_from_factory)
 {
     BlueprintFactoryFixture f;
     auto bp = f.factory.createBlueprint("closest");
@@ -138,7 +157,7 @@ TEST(ClosestTest, require_that_blueprint_can_be_created_from_factory)
     EXPECT_TRUE(dynamic_cast<ClosestBlueprint*>(bp.get()) != 0);
 }
 
-TEST(ClosestTest, require_that_no_features_are_dumped)
+TEST_F(ClosestTest, require_that_no_features_are_dumped)
 {
     ClosestBlueprint f1;
     IndexEnvironmentFixture f2;
@@ -146,37 +165,39 @@ TEST(ClosestTest, require_that_no_features_are_dumped)
     f1.visitDumpFeatures(f2.indexEnv, f3);
 }
 
-TEST(ClosestTest, require_that_setup_fails_for_unknown_field)
+TEST_P(ClosestTest, require_that_setup_fails_for_unknown_field)
 {
-    assert_setup("random_field", false, mixed_tensor_type, std::nullopt);
+    uint32_t mapped_dimensions = this->GetParam()._mapped_dimensions;
+    assert_setup("random_field", false, mixed_tensor_types[mapped_dimensions], std::nullopt);
 }
 
-TEST(ClosestTest, require_that_setup_fails_if_field_type_is_not_attribute)
+TEST_F(ClosestTest, require_that_setup_fails_if_field_type_is_not_attribute)
 {
-    assert_setup("ibar", false, sparse_tensor_type, std::nullopt);
+    assert_setup("ibar", false, mixed_tensor_types[1], std::nullopt);
 }
 
-TEST(ClosestTest, require_that_setup_fails_if_field_data_type_is_not_tensor)
+TEST_F(ClosestTest, require_that_setup_fails_if_field_data_type_is_not_tensor)
 {
-    assert_setup("foo", false, sparse_tensor_type, std::nullopt);
+    assert_setup("foo", false, mixed_tensor_types[1], std::nullopt);
 }
 
-TEST(ClosestTest, require_that_setup_can_be_done_on_random_label)
+TEST_P(ClosestTest, require_that_setup_can_be_done_on_random_label)
 {
-    assert_setup("bar", true, mixed_tensor_type, "random_label");
+    uint32_t mapped_dimensions = this->GetParam()._mapped_dimensions;
+    assert_setup("bar", true, mixed_tensor_types[mapped_dimensions], "random_label");
 }
 
-TEST(ClosestTest, require_that_setup_fails_if_tensor_type_is_missing)
+TEST_F(ClosestTest, require_that_setup_fails_if_tensor_type_is_missing)
 {
     assert_setup("bar", false, std::nullopt, std::nullopt);
 }
 
-TEST(ClosestTest, require_that_setup_fails_if_tensor_type_is_dense)
+TEST_F(ClosestTest, require_that_setup_fails_if_tensor_type_is_dense)
 {
     assert_setup("bar", false, dense_tensor_type, std::nullopt);
 }
 
-TEST(ClosestTest, require_that_setup_fails_if_tensor_type_is_sparse)
+TEST_F(ClosestTest, require_that_setup_fails_if_tensor_type_is_sparse)
 {
     assert_setup("bar", false, sparse_tensor_type, std::nullopt);
 }
@@ -184,25 +205,31 @@ TEST(ClosestTest, require_that_setup_fails_if_tensor_type_is_sparse)
 TEST_P(ClosestTest, require_that_no_label_gives_empty_result)
 {
     NoLabel f;
+    uint32_t mapped_dimensions = GetParam()._mapped_dimensions;
+    auto& no_subspace = no_subspaces[mapped_dimensions];
     assert_closest(f, field_and_label_feature_name, {no_subspace, no_subspace});
 }
 
 TEST_P(ClosestTest, require_that_unrelated_label_gives_empty_result)
 {
     SingleLabel f("unrelated", 1);
+    uint32_t mapped_dimensions = GetParam()._mapped_dimensions;
+    auto& no_subspace = no_subspaces[mapped_dimensions];
     assert_closest(f, field_and_label_feature_name, {no_subspace, no_subspace});
 }
 
 TEST_P(ClosestTest, closest_using_field_setup)
 {
     NoLabel f;
-    assert_closest(f, field_feature_name, {subspace_b, subspace_a});
+    uint32_t mapped_dimensions = GetParam()._mapped_dimensions;
+    assert_closest(f, field_feature_name, {subspace_bs[mapped_dimensions], subspace_as[mapped_dimensions]});
 }
 
 TEST_P(ClosestTest, closest_using_field_and_label_setup)
 {
     SingleLabel f("nns", 1);
-    assert_closest(f, field_and_label_feature_name, {subspace_b, subspace_a});
+    uint32_t mapped_dimensions = GetParam()._mapped_dimensions;
+    assert_closest(f, field_and_label_feature_name, {subspace_bs[mapped_dimensions], subspace_as[mapped_dimensions]});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
