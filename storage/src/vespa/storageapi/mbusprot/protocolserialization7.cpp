@@ -74,11 +74,24 @@ api::BucketInfo get_bucket_info(const protobuf::BucketInfo& src) {
 }
 
 documentapi::TestAndSetCondition get_tas_condition(const protobuf::TestAndSetCondition& src) {
-    return documentapi::TestAndSetCondition(src.selection());
+    if (!src.selection().empty()) {
+        if (src.required_persistence_timestamp() != 0) {
+            return {src.selection(), src.required_persistence_timestamp()};
+        }
+        return documentapi::TestAndSetCondition(src.selection());
+    } else if (src.required_persistence_timestamp() != 0) {
+        return documentapi::TestAndSetCondition(src.required_persistence_timestamp());
+    }
+    return {};
 }
 
 void set_tas_condition(protobuf::TestAndSetCondition& dest, const documentapi::TestAndSetCondition& src) {
-    dest.set_selection(src.getSelection().data(), src.getSelection().size());
+    if (src.has_selection()) {
+        dest.set_selection(src.getSelection().data(), src.getSelection().size());
+    }
+    if (src.has_required_persistence_timestamp()) {
+        dest.set_required_persistence_timestamp(src.required_persistence_timestamp());
+    }
 }
 
 std::shared_ptr<document::Document> get_document(const protobuf::Document& src_doc,

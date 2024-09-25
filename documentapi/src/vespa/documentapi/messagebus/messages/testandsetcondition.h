@@ -2,6 +2,8 @@
 // @author Vegard Sjonfjell
 #pragma once
 
+#include <cstdint>
+#include <iosfwd>
 #include <string>
 
 namespace documentapi {
@@ -39,8 +41,10 @@ public:
           _required_persistence_timestamp(required_persistence_timestamp)
     {}
 
-    TestAndSetCondition(const TestAndSetCondition&) = default;
-    TestAndSetCondition& operator=(const TestAndSetCondition&) = default;
+    ~TestAndSetCondition();
+
+    TestAndSetCondition(const TestAndSetCondition&);
+    TestAndSetCondition& operator=(const TestAndSetCondition&);
 
     TestAndSetCondition(TestAndSetCondition&&) noexcept = default;
     TestAndSetCondition& operator=(TestAndSetCondition&&) noexcept = default;
@@ -59,8 +63,11 @@ public:
     }
 
     bool operator==(const TestAndSetCondition& rhs) const noexcept {
-        return (_selection == rhs._selection);
+        return ((_selection == rhs._selection) &&
+                (_required_persistence_timestamp == rhs._required_persistence_timestamp));
     }
 };
+
+std::ostream& operator<<(std::ostream&, const TestAndSetCondition&);
 
 }

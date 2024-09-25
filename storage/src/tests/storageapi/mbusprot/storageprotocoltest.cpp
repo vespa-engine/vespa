@@ -97,6 +97,12 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
     std::shared_ptr<Command> copyCommand(const std::shared_ptr<Command>&);
     template<typename Reply>
     std::shared_ptr<Reply> copyReply(const std::shared_ptr<Reply>&);
+
+    static std::vector<TestAndSetCondition> tas_conditions() {
+        return {TestAndSetCondition(CONDITION_STRING),
+                TestAndSetCondition(1234567890ULL),
+                TestAndSetCondition(CONDITION_STRING, 1234567890ULL)};
+    }
 };
 
 StorageProtocolTest::~StorageProtocolTest() = default;
@@ -355,10 +361,12 @@ TEST_P(StorageProtocolTest, can_set_internal_read_consistency_on_get_commands) {
 }
 
 TEST_P(StorageProtocolTest, get_command_with_condition) {
-    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar,vekterli", 123);
-    cmd->set_condition(TestAndSetCondition(CONDITION_STRING));
-    auto cmd2 = copyCommand(cmd);
-    EXPECT_EQ(cmd->condition().getSelection(), cmd2->condition().getSelection());
+    for (const auto& cond : tas_conditions()) {
+        auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar,vekterli", 123);
+        cmd->set_condition(cond);
+        auto cmd2 = copyCommand(cmd);
+        EXPECT_EQ(cmd->condition(), cmd2->condition());
+    }
 }
 
 TEST_P(StorageProtocolTest, tombstones_propagated_for_gets) {
@@ -819,11 +827,13 @@ TEST_P(StorageProtocolTest, set_bucket_state_with_active_state) {
 }
 
 TEST_P(StorageProtocolTest, put_command_with_condition) {
-    auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
-    cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
+    for (const auto& cond : tas_conditions()) {
+        auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+        cmd->setCondition(cond);
 
-    auto cmd2 = copyCommand(cmd);
-    EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
+        auto cmd2 = copyCommand(cmd);
+        EXPECT_EQ(cmd->getCondition(), cmd2->getCondition());
+    }
 }
 
 TEST_P(StorageProtocolTest, put_command_with_create_flag) {
@@ -836,23 +846,27 @@ TEST_P(StorageProtocolTest, put_command_with_create_flag) {
 }
 
 TEST_P(StorageProtocolTest, update_command_with_condition) {
-    auto update = std::make_shared<document::DocumentUpdate>(
-            _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
-    auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
-    EXPECT_FALSE(cmd->hasTestAndSetCondition());
-    cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
-    EXPECT_TRUE(cmd->hasTestAndSetCondition());
+    for (const auto& cond : tas_conditions()) {
+        auto update = std::make_shared<document::DocumentUpdate>(
+                _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
+        auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
+        EXPECT_FALSE(cmd->hasTestAndSetCondition());
+        cmd->setCondition(cond);
+        EXPECT_TRUE(cmd->hasTestAndSetCondition());
 
-    auto cmd2 = copyCommand(cmd);
-    EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
+        auto cmd2 = copyCommand(cmd);
+        EXPECT_EQ(cmd->getCondition(), cmd2->getCondition());
+    }
 }
 
 TEST_P(StorageProtocolTest, remove_command_with_condition) {
-    auto cmd = std::make_shared<RemoveCommand>(_bucket, _testDocId, 159);
-    cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
+    for (const auto& cond : tas_conditions()) {
+        auto cmd = std::make_shared<RemoveCommand>(_bucket, _testDocId, 159);
+        cmd->setCondition(cond);
 
-    auto cmd2 = copyCommand(cmd);
-    EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
+        auto cmd2 = copyCommand(cmd);
+        EXPECT_EQ(cmd->getCondition(), cmd2->getCondition());
+    }
 }
 
 TEST_P(StorageProtocolTest, put_command_with_bucket_space) {
