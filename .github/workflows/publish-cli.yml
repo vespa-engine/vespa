@@ -60,7 +60,7 @@ jobs:
 
           # Checks for changes since the last release.
           new_tag="v${{ steps.meta.outputs.version }}"
-          previous_tag=$(gh release list --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName' | grep -E "${VERSION_PATTERN}" | head -n 1)
+          previous_tag=$(gh release list --exclude-drafts --exclude-pre-releases --json tagName --jq '.[] | .tagName' | grep -E "${VERSION_PATTERN}" | head -n 1)
 
           # If the previous tag and the current tag are the same, there are no changes.
           if [[ "${previous_tag}" == "${new_tag}" ]]; then
