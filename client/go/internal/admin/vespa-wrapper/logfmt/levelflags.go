@@ -21,10 +21,10 @@ func defaultLevelFlags() map[string]bool {
 		"error":   true,
 		"warning": true,
 		"info":    true,
-		"config":  false,
-		"event":   false,
-		"debug":   false,
-		"spam":    false,
+		"config":  true,
+		"event":   true,
+		"debug":   true,
+		"spam":    true,
 	}
 }
 
@@ -68,5 +68,7 @@ func (v *flagValueForLevel) unchanged() bool {
 }
 
 func (v *flagValueForLevel) Set(val string) error {
-	return applyPlusMinus(val, v)
+	err := applyPlusMinus(val, v)
+	v.changed = true
+	return err
 }
