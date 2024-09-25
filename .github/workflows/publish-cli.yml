@@ -169,12 +169,13 @@ jobs:
         run: |
           # Release to Github directly, bypassing the diff check as we already perform this check in the "prepare" job.
           make -- --dist-github
-          release_url="$(cat /tmp/vespa-cli-release-url.txt || true)"
+          release_url="$(cat /tmp/vespa-cli-release-url.txt)"
           echo "release-url=${release_url}" > "${GITHUB_OUTPUT}"
 
       - name: Publish to Homebrew
         if: steps.github-release.outputs.release-url != ''
         env:
+          GITHUB_RELEASE_URL: ${{ steps.github-release.outputs.release-url }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
         run: |
           # Release to Homebrew directly, bypassing the diff check as we already perform this check in the "prepare" job.
