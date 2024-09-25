@@ -20,6 +20,7 @@
 namespace storage::distributor {
 
 using document::test::makeDocumentBucket;
+using documentapi::TestAndSetCondition;
 using config::ConfigGetter;
 using namespace document;
 using namespace storage;
@@ -38,8 +39,7 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
     TwoPhaseUpdateOperationTest();
     ~TwoPhaseUpdateOperationTest() override;
 
-    void checkMessageSettingsPropagatedTo(
-        const api::StorageCommand::SP& msg) const;
+    void checkMessageSettingsPropagatedTo(const api::StorageCommand::SP& msg) const;
 
     static std::string getUpdatedValueFromLastPut(DistributorMessageSenderStub&);
 
@@ -134,8 +134,8 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
             _timestampToUpdate = ts;
             return *this;
         }
-        UpdateOptions& condition(std::string_view cond) {
-            _condition = documentapi::TestAndSetCondition(cond);
+        UpdateOptions& condition(TestAndSetCondition cond) {
+            _condition = std::move(cond);
             return *this;
         }
     };
@@ -152,6 +152,10 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
                                                                  Timestamp expected_response_timestamp);
 
     void do_update_fails_if_cancelled_prior_to_safe_path_metadata_get_completion(bool in_sync_replicas);
+
+    void do_test_safe_path_condition_mismatch_fails_with_tas_error(TestAndSetCondition cond, std::string expected_err_msg);
+    void do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition cond);
+    void do_test_safe_path_condition_with_missing_doc_and_auto_create_sends_puts(TestAndSetCondition cond);
 
     void enable_3phase_updates(bool enable = true) {
         auto cfg = make_config();
@@ -955,9 +959,11 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_ownership_changes_between_ge
     do_test_ownership_changed_between_gets_and_second_phase(70, 70, 70); // Timestamps in sync -> Update restart
 }
 
-TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_mismatch_fails_with_tas_error) {
+void TwoPhaseUpdateOperationTest::do_test_safe_path_condition_mismatch_fails_with_tas_error(
+        TestAndSetCondition cond, std::string expected_err_msg)
+{
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.headerval==120"));
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(std::move(cond)));
 
     cb->start(_sender);
     // Newest doc has headerval==110, not 120.
@@ -966,17 +972,28 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_mismatch_fails_with_tas_
     EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) "
-              "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
-                         "Condition did not match document)",
+              "ReturnCode(TEST_AND_SET_CONDITION_FAILED, " + expected_err_msg + ")",
               _sender.getLastReply(true));
 
     EXPECT_EQ(metrics().updates.failures.notfound.getValue(), 0);
     EXPECT_EQ(metrics().updates.failures.test_and_set_failed.getValue(), 1);
 }
 
-TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_match_sends_puts_with_updated_doc) {
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_selection_condition_mismatch_fails_with_tas_error) {
+    do_test_safe_path_condition_mismatch_fails_with_tas_error(
+            TestAndSetCondition("testdoctype1.headerval==120"),
+            "Condition did not match document");
+}
+
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_mismatch_fails_with_tas_error) {
+    do_test_safe_path_condition_mismatch_fails_with_tas_error(
+            TestAndSetCondition(120),
+            "Required test-and-set timestamp did not match persisted timestamp");
+}
+
+void TwoPhaseUpdateOperationTest::do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition cond) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.headerval==110"));
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(std::move(cond)));
 
     cb->start(_sender);
     replyToGet(*cb, _sender, 0, 100);
@@ -984,9 +1001,17 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_match_sends_puts_with_up
     ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 2));
 }
 
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_selection_condition_match_sends_puts_with_updated_doc) {
+    do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition("testdoctype1.headerval==110"));
+}
+
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_match_sends_puts_with_updated_doc) {
+    do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition(110)); // matches newest doc
+}
+
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with_illegal_params_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.san==fran...cisco"));
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(TestAndSetCondition("testdoctype1.san==fran...cisco")));
 
     cb->start(_sender);
     replyToGet(*cb, _sender, 0, 100);
@@ -1007,7 +1032,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_unknown_doc_type_fails_with_illegal_params_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
-    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("langbein.headerval=1234"));
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(TestAndSetCondition("langbein.headerval=1234")));
 
     cb->start(_sender);
     replyToGet(*cb, _sender, 0, 100);
@@ -1027,7 +1052,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_unknown_doc_type_fails_w
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
-    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.headerval==120"));
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(TestAndSetCondition("testdoctype1.headerval==120")));
 
     cb->start(_sender);
     // Both Gets return nothing at all, nothing at all.
@@ -1044,12 +1069,12 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_
     EXPECT_EQ(metrics().updates.failures.test_and_set_failed.getValue(), 1);
 }
 
-TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_auto_create_sends_puts) {
+void TwoPhaseUpdateOperationTest::do_test_safe_path_condition_with_missing_doc_and_auto_create_sends_puts(TestAndSetCondition cond) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions()
-                    .condition("testdoctype1.headerval==120")
-                    .createIfNonExistent(true));
+            .condition(TestAndSetCondition(std::move(cond)))
+            .createIfNonExistent(true));
 
     cb->start(_sender);
     replyToGet(*cb, _sender, 0, 0, false);
@@ -1060,14 +1085,22 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_aut
     replyToPut(*cb, _sender, 3);
 
     EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
-                          "BucketId(0x0000000000000000), "
-                          "timestamp 0, timestamp of updated doc: 200000000) "
-                          "ReturnCode(NONE)",
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 200000000) "
+              "ReturnCode(NONE)",
               _sender.getLastReply(true));
 
     EXPECT_EQ(metrics().updates.failures.notfound.getValue(), 0); // Not counted as "not found" failure when we auto create
     EXPECT_EQ(metrics().updates.failures.test_and_set_failed.getValue(), 0);
     EXPECT_EQ(metrics().updates.ok.getValue(), 1);
+}
+
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_selection_condition_with_missing_doc_and_auto_create_sends_puts) {
+    do_test_safe_path_condition_with_missing_doc_and_auto_create_sends_puts(TestAndSetCondition("testdoctype1.headerval==120"));
+}
+
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_with_missing_doc_and_auto_create_sends_puts) {
+    do_test_safe_path_condition_with_missing_doc_and_auto_create_sends_puts(TestAndSetCondition(12345));
 }
 
 void
@@ -1241,7 +1274,10 @@ TEST_F(TwoPhaseUpdateOperationTest, operation_is_rejected_in_safe_path_if_feed_i
               _sender.getLastReply(true));
 }
 
-struct ThreePhaseUpdateTest : TwoPhaseUpdateOperationTest {};
+struct ThreePhaseUpdateTest : TwoPhaseUpdateOperationTest {
+    void do_test_single_full_get_with_mismatching_condition_is_rejected(TestAndSetCondition cond, std::string expected_err_mgs);
+    void do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition cond);
+};
 
 TEST_F(ThreePhaseUpdateTest, metadata_only_gets_are_sent_if_3phase_update_enabled) {
     auto cb = set_up_2_inconsistent_replicas_and_start_update();
@@ -1452,7 +1488,7 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_cannot_restart_in_fast_path) {
  *     implicitly creating new replicas
  *     - this happens in the same execution context as starting the update operation itself,
  *       consequently ownership in DB cannot have changed concurrently
- * - when the a state transition happens where a distributor loses ownership of
+ * - when a state transition happens where a distributor loses ownership of
  *   a bucket, it will always immediately purge it from its DB
  *   - this means that the replica set will inherently change
  *
@@ -1579,6 +1615,64 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_sends_puts_with_auto_crea
     // Tombstone is treated as Not Found in this case, which auto-creates a new
     // document version locally and pushes it out with Puts as expected.
     ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 3));
+}
+
+void ThreePhaseUpdateTest::do_test_single_full_get_with_mismatching_condition_is_rejected(
+        TestAndSetCondition cond, std::string expected_err_mgs)
+{
+    setup_stripe(2, 2, "storage:2 distributor:1");
+    auto cfg = make_config();
+    cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
+    configure_stripe(with_fast_path_restart(std::move(cfg), true));
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(std::move(cond)));
+    cb->start(_sender);
+
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+    reply_to_metadata_get(*cb, _sender, 0, 1000U);
+    reply_to_metadata_get(*cb, _sender, 1, 2000U);
+    ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
+    replyToGet(*cb, _sender, 2, 2000U);
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) "
+              "ReturnCode(TEST_AND_SET_CONDITION_FAILED, " + expected_err_mgs + ")",
+              _sender.getLastReply(true));
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_with_mismatching_selection_condition_is_rejected) {
+    do_test_single_full_get_with_mismatching_condition_is_rejected(
+            TestAndSetCondition("testdoctype1.headerval==1000"), // matches old doc, not new
+            "Condition did not match document");
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_with_mismatching_timestamp_condition_is_rejected) {
+    do_test_single_full_get_with_mismatching_condition_is_rejected(
+            TestAndSetCondition(1000), // matches old doc, not new
+            "Required test-and-set timestamp did not match persisted timestamp");
+}
+
+void ThreePhaseUpdateTest::do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition cond) {
+    setup_stripe(2, 2, "storage:2 distributor:1");
+    auto cfg = make_config();
+    cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
+    configure_stripe(with_fast_path_restart(std::move(cfg), true));
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(std::move(cond)));
+    cb->start(_sender);
+
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+    reply_to_metadata_get(*cb, _sender, 0, 1000U);
+    reply_to_metadata_get(*cb, _sender, 1, 2000U);
+    ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
+    replyToGet(*cb, _sender, 2, 2000U);
+    ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 3));
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_with_matching_selection_condition_is_accepted) {
+    do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition("testdoctype1.headerval==2000"));
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_with_matching_timestamp_condition_is_accepted) {
+    do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition(2000));
 }
 
 // XXX currently differs in behavior from content nodes in that updates for

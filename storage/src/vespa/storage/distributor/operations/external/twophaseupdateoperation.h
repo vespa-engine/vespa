@@ -92,7 +92,7 @@ private:
     static const char* stateToString(SendState) noexcept;
 
     void sendReply(DistributorStripeMessageSender&,
-                   const std::shared_ptr<api::UpdateReply> &);
+                   const std::shared_ptr<api::UpdateReply>&);
     void sendReplyWithResult(DistributorStripeMessageSender&, const api::ReturnCode&);
     void ensureUpdateReplyCreated();
 
@@ -126,7 +126,8 @@ private:
     [[nodiscard]] bool shouldCreateIfNonExistent() const;
     bool processAndMatchTasCondition(
             DistributorStripeMessageSender& sender,
-            const document::Document& candidateDoc);
+            const document::Document& candidateDoc,
+            uint64_t persisted_timestamp);
     [[nodiscard]] bool satisfiesUpdateTimestampConstraint(api::Timestamp) const;
     void addTraceFromReply(api::StorageReply& reply);
     [[nodiscard]] bool hasTasCondition() const noexcept;
