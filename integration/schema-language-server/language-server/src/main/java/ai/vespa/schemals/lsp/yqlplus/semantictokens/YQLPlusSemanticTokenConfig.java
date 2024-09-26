@@ -9,10 +9,15 @@ import org.eclipse.lsp4j.SemanticTokenTypes;
 
 import ai.vespa.schemals.parser.ast.FALSE;
 import ai.vespa.schemals.parser.ast.TRUE;
+import ai.vespa.schemals.parser.yqlplus.ast.AT;
+import ai.vespa.schemals.parser.yqlplus.ast.FLOAT;
 import ai.vespa.schemals.parser.yqlplus.ast.FROM;
+import ai.vespa.schemals.parser.yqlplus.ast.INT;
 import ai.vespa.schemals.parser.yqlplus.ast.LIMIT;
+import ai.vespa.schemals.parser.yqlplus.ast.LONG_INT;
 import ai.vespa.schemals.parser.yqlplus.ast.SELECT;
 import ai.vespa.schemals.parser.yqlplus.ast.SOURCES;
+import ai.vespa.schemals.parser.yqlplus.ast.STRING;
 import ai.vespa.schemals.parser.yqlplus.ast.WHERE;
 import ai.vespa.schemals.parser.yqlplus.ast.additive_op;
 import ai.vespa.schemals.parser.yqlplus.ast.identifierStr;
@@ -36,8 +41,13 @@ class YQLPlusSemanticTokenConfig {
         put(additive_op.class, SemanticTokenTypes.Operator);
         put(unary_op.class, SemanticTokenTypes.Operator);
         put(relational_op.class, SemanticTokenTypes.Operator);
+        put(AT.class, SemanticTokenTypes.Macro);
         put(identifierStr.class, SemanticTokenTypes.Variable);
         put(TRUE.class, SemanticTokenTypes.Type);
         put(FALSE.class, SemanticTokenTypes.Type);
+        put(STRING.class, SemanticTokenTypes.String);
+        put(LONG_INT.class, SemanticTokenTypes.Number);
+        put(INT.class, SemanticTokenTypes.Number);
+        put(FLOAT.class, SemanticTokenTypes.Number);
     }};
 }

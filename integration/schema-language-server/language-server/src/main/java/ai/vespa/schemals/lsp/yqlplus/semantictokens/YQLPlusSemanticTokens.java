@@ -10,6 +10,7 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
+import ai.vespa.schemals.parser.yqlplus.ast.pipeline_step;
 import ai.vespa.schemals.tree.YQLNode;
 
 public class YQLPlusSemanticTokens {
@@ -31,7 +32,7 @@ public class YQLPlusSemanticTokens {
         } else if (YQLPlusSemanticTokenConfig.keywordTokens.contains(nodeClass)) {
             int keywordType = CommonSemanticTokens.getType(SemanticTokenTypes.Keyword);
             ret.add(new SemanticTokenMarker(keywordType, node));
-        } else {
+        } else if (node.getASTClass() != pipeline_step.class) {
             for (YQLNode child : node) {
                 ret.addAll(traverseCST(child, logger));
             }
