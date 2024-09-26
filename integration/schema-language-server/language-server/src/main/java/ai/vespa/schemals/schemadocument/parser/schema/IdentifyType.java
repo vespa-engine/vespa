@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument.parser;
+package ai.vespa.schemals.schemadocument.parser.schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,13 +21,14 @@ import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.inputElm;
 import ai.vespa.schemals.parser.ast.valueType;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * IdentifyType identifies types in the schema document
  */
-public class IdentifyType extends Identifier {
+public class IdentifyType extends Identifier<SchemaNode> {
     public IdentifyType(ParseContext context) {
 		super(context);
 	}

@@ -23,16 +23,22 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
 
     protected LanguageType language; // Language specifies which parser the node comes from
     protected Range range;
+    protected boolean isDirty;
 
-    protected Node(LanguageType language, Range range) {
+    protected Node(LanguageType language, Range range, boolean isDirty) {
         this.language = language;
         this.range = range;
+        this.isDirty = isDirty;
     }
 
     public LanguageType getLanguageType() { return language; }
 
     public Range getRange() {
         return range;
+    }
+
+    public boolean getIsDirty() {
+        return isDirty;
     }
 
     public int size() {

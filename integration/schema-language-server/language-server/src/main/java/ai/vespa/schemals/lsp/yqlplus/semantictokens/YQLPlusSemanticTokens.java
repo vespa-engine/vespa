@@ -24,6 +24,8 @@ public class YQLPlusSemanticTokens {
     private static List<SemanticTokenMarker> traverseCST(YQLNode node, ClientLogger logger) {
         List<SemanticTokenMarker> ret = new ArrayList<>();
 
+        if (node.getIsDirty()) return ret;
+
         Class<?> nodeClass = node.getASTClass();
         String tokenString = YQLPlusSemanticTokenConfig.tokensMap.get(nodeClass);
         if (tokenString != null) {

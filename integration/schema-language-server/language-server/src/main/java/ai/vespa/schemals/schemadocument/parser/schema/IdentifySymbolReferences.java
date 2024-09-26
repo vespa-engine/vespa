@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument.parser;
+package ai.vespa.schemals.schemadocument.parser.schema;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +45,7 @@ import ai.vespa.schemals.parser.ast.summarySourceList;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.LBRACE;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -53,7 +54,7 @@ import ai.vespa.schemals.tree.Node.LanguageType;
 /**
  * IdentifySymbolReferences identifies symbols that are not definitions and sets the SchemaNode to contain an unresolved reference symbol
  */
-public class IdentifySymbolReferences extends Identifier {
+public class IdentifySymbolReferences extends Identifier<SchemaNode> {
 
     public IdentifySymbolReferences(ParseContext context) {
 		super(context);

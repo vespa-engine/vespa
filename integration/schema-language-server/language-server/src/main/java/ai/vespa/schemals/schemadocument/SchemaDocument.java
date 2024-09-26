@@ -270,7 +270,7 @@ public class SchemaDocument implements DocumentManager {
             SchemaRankExpressionParser.embedCST(context, node, diagnostics);
         }
 
-        for (Identifier identifier : context.identifiers()) {
+        for (Identifier<SchemaNode> identifier : context.identifiers()) {
             diagnostics.addAll(identifier.identify(node));
         }
 

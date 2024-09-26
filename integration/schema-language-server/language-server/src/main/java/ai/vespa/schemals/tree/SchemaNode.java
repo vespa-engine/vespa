@@ -1,8 +1,5 @@
 package ai.vespa.schemals.tree;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Position;
@@ -32,7 +29,6 @@ import ai.vespa.schemals.parser.ast.featureListElm;
 public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
     
     private String identifierString;
-    private boolean isDirty = false;
 
     private Symbol symbolAtNode;
     
@@ -52,9 +48,8 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
     private Optional<RankNode> rankNode = Optional.empty();
 
     private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
-        super(language, range);
+        super(language, range, isDirty);
         this.identifierString = identifierString;
-        this.isDirty = isDirty;
     }
 
     // To create tokens outside the other languages
@@ -391,10 +386,6 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
             ret = ret.get(0);
         }
         return ret;
-    }
-
-    public boolean getIsDirty() {
-        return isDirty;
     }
 
     public IllegalArgumentException getIllegalArgumentException() {

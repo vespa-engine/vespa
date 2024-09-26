@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument.parser;
+package ai.vespa.schemals.schemadocument.parser.schema;
 
 import java.util.ArrayList;
 
@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.rootSchemaItem;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
@@ -16,7 +17,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 /**
  * Identify a schema without a document, and sends an error if no document was found inside the schema
  */
-public class IdentifyDocumentlessSchema extends Identifier {
+public class IdentifyDocumentlessSchema extends Identifier<SchemaNode> {
 
 	public IdentifyDocumentlessSchema(ParseContext context) {
 		super(context);

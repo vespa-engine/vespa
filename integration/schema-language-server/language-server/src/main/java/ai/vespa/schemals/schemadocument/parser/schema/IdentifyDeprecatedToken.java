@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument.parser;
+package ai.vespa.schemals.schemadocument.parser.schema;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,12 +14,13 @@ import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * Identifies deprecated tokens or simple deprecated patterns and sends a warning to the client
  */
-public class IdentifyDeprecatedToken extends Identifier {
+public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
     public IdentifyDeprecatedToken(ParseContext context) {
 		super(context);
 	}

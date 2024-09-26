@@ -74,7 +74,7 @@ public class SchemaDocumentScheduler {
             } else if (documentType.get() == DocumentType.PROFILE) {
                 workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
             } else if (documentType.get() == DocumentType.YQL) {
-                workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, fileURI));
+                workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
             }
         }
 

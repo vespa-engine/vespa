@@ -12,7 +12,7 @@ public class YQLNode extends ai.vespa.schemals.tree.Node<YQLNode> {
     private ai.vespa.schemals.parser.grouping.Node originalGroupingNode;
 
     public YQLNode(Node node) {
-        super(LanguageType.YQLPlus, YQLUtils.getNodeRange(node));
+        super(LanguageType.YQLPlus, YQLUtils.getNodeRange(node), node.isDirty());
         originalYQLNode = node;
 
         for (Node child : node.children()) {
@@ -21,7 +21,7 @@ public class YQLNode extends ai.vespa.schemals.tree.Node<YQLNode> {
     }
 
     public YQLNode(ai.vespa.schemals.parser.grouping.Node node) {
-        super(LanguageType.GROUPING, GroupingUtils.getNodeRange(node));
+        super(LanguageType.GROUPING, GroupingUtils.getNodeRange(node), node.isDirty());
         originalGroupingNode = node;
 
         for (ai.vespa.schemals.parser.grouping.Node child : node.children()) {
@@ -30,7 +30,7 @@ public class YQLNode extends ai.vespa.schemals.tree.Node<YQLNode> {
     }
 
     public YQLNode(Range range) {
-        super(LanguageType.CUSTOM, range);
+        super(LanguageType.CUSTOM, range, false);
     }
 
     public Class<?> getASTClass() {

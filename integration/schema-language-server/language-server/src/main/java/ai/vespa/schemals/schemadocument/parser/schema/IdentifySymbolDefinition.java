@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument.parser;
+package ai.vespa.schemals.schemadocument.parser.schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +38,7 @@ import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.tensorTypeElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
@@ -45,7 +46,7 @@ import ai.vespa.schemals.tree.Node.LanguageType;
 /**
  * IdentifySymbolDefinition identifies symbol definitions, and mark the SchemaNode as a symbol and adds it to the index
  */
-public class IdentifySymbolDefinition extends Identifier {
+public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
 
     public IdentifySymbolDefinition(ParseContext context) {
 		super(context);
