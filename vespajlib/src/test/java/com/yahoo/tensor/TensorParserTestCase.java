@@ -170,6 +170,11 @@ public class TensorParserTestCase {
                                    .cell(TensorAddress.ofLabels("b", "0"), 1.25)
                                    .cell(TensorAddress.ofLabels("c", "0"), -19.125).build(),
                      Tensor.from("tensor<float>(key{}, x[1]):{a: 00000000, b:3FA00000, c:  c1990000 }"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<float>(key{}, x[1])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), 0)
+                                   .cell(TensorAddress.ofLabels("b", "0"), 1.25)
+                                   .cell(TensorAddress.ofLabels("c", "0"), -19.125).build(),
+                     Tensor.from("tensor<float>(key{}, x[1])", "{a: 00000000, b:3FA00000, c:  c1990000 }"));
     }
 
     @Test

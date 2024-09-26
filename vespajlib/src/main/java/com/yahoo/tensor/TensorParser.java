@@ -155,7 +155,7 @@ class TensorParser {
         if (sz == 0
             || type.dimensions().isEmpty()
             || valueString.length() != numHexDigits
-            || valueString.chars().anyMatch(ch -> (/*ch < numHexDigits && */ Character.digit(ch, 16) == -1)))
+            || valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1)))
         {
             return false;
         }
