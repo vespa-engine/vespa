@@ -1,9 +1,14 @@
 package ai.vespa.schemals.schemadocument;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.parser.yqlplus.ParseException;
 import ai.vespa.schemals.parser.yqlplus.YQLPlusParser;
@@ -12,6 +17,8 @@ import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
+
+    record ParseResult(List<Diagnostic> diagnostics, Optional<YQLNode> CST) {}
 
     boolean isOpen = false;
     String fileURI;
@@ -40,9 +47,8 @@ public class YQLDocument implements DocumentManager {
         updateFileContent(content);
     }
 
-    @Override
-    public void reparseContent() {
-        CharSequence charSequence = fileContent.toLowerCase();
+    private static ParseResult parseYQL(String content, ClientLogger logger) {
+        CharSequence charSequence = content.toLowerCase();
         YQLPlusParser parser = new YQLPlusParser(charSequence);
 
         try {
@@ -53,9 +59,34 @@ public class YQLDocument implements DocumentManager {
         }
 
         Node node = parser.rootNode();
-        CST = new YQLNode(node);
+        YQLNode retNode = new YQLNode(node);
         YQLUtils.printTree(logger, node);
 
+        return new ParseResult(List.of(), Optional.of(retNode));
+    }
+
+    @Override
+    public void reparseContent() {
+
+        YQLNode ret = new YQLNode(StringUtils.getStringRange(fileContent));
+
+        int pipeIndex = fileContent.indexOf('|', 0);
+        String YQLString = pipeIndex == -1 ? fileContent : fileContent.substring(0, pipeIndex);
+        ParseResult YQLResult = parseYQL(YQLString, logger);
+
+        if (YQLResult.CST.isEmpty()) return;
+
+        ret.addChild(YQLResult.CST.get());
+
+        if (pipeIndex != -1 && pipeIndex + 1 < fileContent.length()) {
+            String groupingString = fileContent.substring(pipeIndex + 1);
+            ParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, logger);
+            if (groupingResult.CST.isPresent()) {
+                ret.addChild(groupingResult.CST.get());
+            }
+        }
+
+        CST = ret;
     }
 
     @Override

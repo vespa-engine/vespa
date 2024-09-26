@@ -13,7 +13,7 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
         INDEXING,
         RANK_EXPRESSION,
         YQLPlus,
-        VESPA_GROUPING,
+        GROUPING,
         CUSTOM
     }
 

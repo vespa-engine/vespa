@@ -3,6 +3,7 @@ package ai.vespa.schemals.common;
 import java.util.List;
 
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -123,6 +124,25 @@ public class StringUtils {
 
         }
         return false;
+    }
+
+    public static Position getStringPosition(String str) {
+        int lines = 0;
+        int column = 0;
+        for (int i = str.length() - 1; i >= 0; i--) {
+            if (str.charAt(i) == '\n') {
+                if (lines == 0) {
+                    column = str.length() - i;
+                }
+                lines++;
+            }
+        }
+
+        return new Position(lines, column);
+    }
+
+    public static Range getStringRange(String str) {
+        return new Range(new Position(0, 0), getStringPosition(str));
     }
 
 }

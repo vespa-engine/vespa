@@ -174,7 +174,6 @@ vespa_grouping_identifier:
         | <LBRACE>
         | <RBRACE>
         | <COLON>
-        | <PIPE>
         | <AND>
         | <OR>
         | <NOT_IN>
