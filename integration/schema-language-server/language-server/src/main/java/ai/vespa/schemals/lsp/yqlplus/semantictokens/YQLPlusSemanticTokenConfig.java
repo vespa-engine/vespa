@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.eclipse.lsp4j.SemanticTokenTypes;
 
-import ai.vespa.schemals.parser.ast.FALSE;
-import ai.vespa.schemals.parser.ast.TRUE;
+import ai.vespa.schemals.parser.yqlplus.ast.FALSE;
+import ai.vespa.schemals.parser.yqlplus.ast.TRUE;
 import ai.vespa.schemals.parser.yqlplus.ast.AT;
 import ai.vespa.schemals.parser.yqlplus.ast.FLOAT;
 import ai.vespa.schemals.parser.yqlplus.ast.FROM;
