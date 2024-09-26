@@ -24,7 +24,26 @@ const std::string fieldFeatureName("closeness(bar)");
 
 using RankFixture = DistanceClosenessFixture;
 
-TEST(NnsClosenessTest, require_that_blueprint_can_be_created_from_factory)
+class NnsClosenessTest : public ::testing::TestWithParam<uint32_t> {
+protected:
+    NnsClosenessTest();
+    ~NnsClosenessTest() override;
+    void expect_raw_score_calculated_on_the_fly(RankFixture& f);
+};
+
+NnsClosenessTest::NnsClosenessTest()
+    : ::testing::TestWithParam<uint32_t>()
+{
+}
+
+NnsClosenessTest::~NnsClosenessTest() = default;
+
+INSTANTIATE_TEST_SUITE_P(NnsClosenessMultiTest,
+                         NnsClosenessTest,
+                         testing::Values(0, 1, 2),
+                         testing::PrintToStringParamName());
+
+TEST_F(NnsClosenessTest, require_that_blueprint_can_be_created_from_factory)
 {
     BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("closeness");
@@ -32,7 +51,7 @@ TEST(NnsClosenessTest, require_that_blueprint_can_be_created_from_factory)
     EXPECT_TRUE(dynamic_cast<ClosenessBlueprint*>(bp.get()) != 0);
 }
 
-TEST(NnsClosenessTest, require_that_no_features_are_dumped)
+TEST_F(NnsClosenessTest, require_that_no_features_are_dumped)
 {
     ClosenessBlueprint f1;
     IndexEnvironmentFixture f2;
@@ -40,7 +59,7 @@ TEST(NnsClosenessTest, require_that_no_features_are_dumped)
     f1.visitDumpFeatures(f2.indexEnv, f3);
 }
 
-TEST(NnsClosenessTest, require_that_setup_can_be_done_on_random_label)
+TEST_F(NnsClosenessTest, require_that_setup_can_be_done_on_random_label)
 {
     ClosenessBlueprint f1;
     IndexEnvironmentFixture f2;
@@ -49,7 +68,7 @@ TEST(NnsClosenessTest, require_that_setup_can_be_done_on_random_label)
     EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<std::string>{"label", "random_label"}));
 }
 
-TEST(NnsClosenessTest, require_that_no_label_gives_0_closeness)
+TEST_F(NnsClosenessTest, require_that_no_label_gives_0_closeness)
 {
     NoLabel f1;
     RankFixture f2(2, 2, f1, labelFeatureName);
@@ -57,7 +76,7 @@ TEST(NnsClosenessTest, require_that_no_label_gives_0_closeness)
     EXPECT_EQ(0.0, f2.getScore(10));
 }
 
-TEST(NnsClosenessTest, require_that_unrelated_label_gives_0_closeness)
+TEST_F(NnsClosenessTest, require_that_unrelated_label_gives_0_closeness)
 {
     SingleLabel f1("unrelated", 1);
     RankFixture f2(2, 2, f1, labelFeatureName);
@@ -65,7 +84,7 @@ TEST(NnsClosenessTest, require_that_unrelated_label_gives_0_closeness)
     EXPECT_EQ(0.0, f2.getScore(10));
 }
 
-TEST(NnsClosenessTest, require_that_labeled_item_raw_score_can_be_obtained)
+TEST_F(NnsClosenessTest, require_that_labeled_item_raw_score_can_be_obtained)
 {
     SingleLabel f1("nns", 1);
     RankFixture f2(2, 2, f1, labelFeatureName);
@@ -74,7 +93,7 @@ TEST(NnsClosenessTest, require_that_labeled_item_raw_score_can_be_obtained)
     EXPECT_EQ(1/(1+5.0), f2.getScore(10));
 }
 
-TEST(NnsClosenessTest, require_that_field_raw_score_can_be_obtained)
+TEST_F(NnsClosenessTest, require_that_field_raw_score_can_be_obtained)
 {
     NoLabel f1;
     RankFixture f2(2, 2, f1, fieldFeatureName);
@@ -83,7 +102,7 @@ TEST(NnsClosenessTest, require_that_field_raw_score_can_be_obtained)
     EXPECT_EQ(1/(1+5.0), f2.getScore(10));
 }
 
-TEST(NnsClosenessTest, require_that_other_raw_scores_are_ignored)
+TEST_F(NnsClosenessTest, require_that_other_raw_scores_are_ignored)
 {
     SingleLabel f1("nns", 2);
     RankFixture f2(2, 2, f1, labelFeatureName);
@@ -95,7 +114,7 @@ TEST(NnsClosenessTest, require_that_other_raw_scores_are_ignored)
     EXPECT_EQ(1/(1+2.0), f2.getScore(10));
 }
 
-TEST(NnsClosenessTest, require_that_the_correct_raw_score_is_used)
+TEST_F(NnsClosenessTest, require_that_the_correct_raw_score_is_used)
 {
     NoLabel f1;
     RankFixture f2(2, 2, f1, fieldFeatureName);
@@ -107,7 +126,7 @@ TEST(NnsClosenessTest, require_that_the_correct_raw_score_is_used)
     EXPECT_EQ(1/(1+7.0), f2.getScore(10));
 }
 
-TEST(NnsClosenessTest, require_that_stale_data_is_ignored)
+TEST_F(NnsClosenessTest, require_that_stale_data_is_ignored)
 {
     SingleLabel f1("nns", 2);
     RankFixture f2(2, 2, f1, labelFeatureName);
@@ -117,12 +136,32 @@ TEST(NnsClosenessTest, require_that_stale_data_is_ignored)
     EXPECT_EQ(0, f2.getScore(10));
 }
 
+namespace {
+
+const std::vector<TensorSpec> doc9_tensor{TensorSpec::from_expr("tensor(x[2]):[5,11]"),
+                                          TensorSpec::from_expr("tensor(a{},x[2]):"
+                                                                "{{a:\"a\",x:0}:5,{a:\"a\",x:1}:11}"),
+                                          TensorSpec::from_expr("tensor(a{},b{},x[2]):"
+                                                                "{{a:\"a\",b:\"K\",x:0}:5,{a:\"a\",b:\"K\",x:1}:11}")};
+
+const std::vector<TensorSpec> doc10_tensor{TensorSpec::from_expr("tensor(x[2]):[7,11]"),
+                                           TensorSpec::from_expr("tensor(a{},x[2]):"
+                                                                 "{{a:\"a\",x:0}:7,{a:\"a\",x:1}:11}"),
+                                           TensorSpec::from_expr("tensor(a{},b{},x[2]):"
+                                                                 "{{a:\"a\",b:\"K\",x:0}:7,{a:\"a\",b:\"K\",x:1}:11}")};
+
+const std::vector<std::string> tensor_types{"tensor(x[2])",
+                                            "tensor(a{},x[2])",
+                                            "tensor(a{},b{},x[2])"};
+}
+
 void
-expect_raw_score_calculated_on_the_fly(RankFixture& f)
+NnsClosenessTest::expect_raw_score_calculated_on_the_fly(RankFixture& f)
 {
     f.setBarScore(0, 8, 13.0);
-    f.set_attribute_tensor(9, TensorSpec::from_expr("tensor(x[2]):[5,11]"));
-    f.set_attribute_tensor(10, TensorSpec::from_expr("tensor(x[2]):[7,11]"));
+    uint32_t mapped_dimensions = GetParam();
+    f.set_attribute_tensor(9, doc9_tensor[mapped_dimensions]);
+    f.set_attribute_tensor(10, doc10_tensor[mapped_dimensions]);
 
     // For docids 9 and 10 the raw score is calculated on the fly
     // using a distance calculator over the attribute and query tensors.
@@ -131,23 +170,25 @@ expect_raw_score_calculated_on_the_fly(RankFixture& f)
     EXPECT_EQ(1/(1+(7.0-3.0)), f.getScore(10));
 }
 
-TEST(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_field_setup)
+TEST_P(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_field_setup)
 {
     NoLabel f1;
-    RankFixture f2(0, 1, f1, fieldFeatureName, "tensor(x[2]):[3,11]");
+    uint32_t mapped_dimensions = GetParam();
+    RankFixture f2(tensor_types[mapped_dimensions], false, 0, 1, f1, fieldFeatureName, "tensor(x[2]):[3,11]");
     ASSERT_FALSE(f2.failed());
     expect_raw_score_calculated_on_the_fly(f2);
 }
 
-TEST(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_label_setup)
+TEST_P(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_label_setup)
 {
     SingleLabel f1("nns", 1);
-    RankFixture f2(0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]");
+    uint32_t mapped_dimensions = GetParam();
+    RankFixture f2(tensor_types[mapped_dimensions], false, 0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]");
     ASSERT_FALSE(f2.failed());
     expect_raw_score_calculated_on_the_fly(f2);
 }
 
-TEST(NnsClosenessTest, can_return_negative_values_with_dotproduct_distance_metric)
+TEST_F(NnsClosenessTest, can_return_negative_values_with_dotproduct_distance_metric)
 {
     NoLabel f1;
     RankFixture f2(0, 2, f1, fieldFeatureName, "tensor(x[2]):[2,3]", DistanceMetric::Dotproduct);
