@@ -16,6 +16,8 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.ls.LSParser;
 import org.xml.sax.InputSource;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
@@ -48,9 +50,15 @@ public class ServicesXMLDocument implements DocumentManager {
         this.content = content;
 
         try {
-            ServicesXMLParser parser = new ServicesXMLParser(logger, diagnosticsHandler);
+            //ServicesXMLParser parser = new ServicesXMLParser(logger, diagnosticsHandler);
+            //parser.parse(new XMLInputSource(null, null, this.fileURI, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), "utf-8"));
 
-            parser.parse(new XMLInputSource(null, null, this.fileURI, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), "utf-8"));
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+
+            Document doc = builder.parse(new InputSource(new ByteArrayInputStream(content.getBytes())));
+
+            Element root = doc.getDocumentElement();
+
             
             this.logger.info("Successfully parsed XML document.");
         } catch (Exception ex) {

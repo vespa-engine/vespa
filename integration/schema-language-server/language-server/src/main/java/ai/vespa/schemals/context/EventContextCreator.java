@@ -14,6 +14,8 @@ import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
+import ai.vespa.schemals.context.InvalidContextException;
+
 public class EventContextCreator {
     public final SchemaDocumentScheduler scheduler;
     public final SchemaIndex schemaIndex;
