@@ -302,9 +302,11 @@ public class JsonFeeder implements Closeable {
             int offset = (int) (tail % size);
             int newOffset = (int) (tail % newSize);
             int toWrite = size - offset;
+            // exactly doubling the buffer size ensures there is room in the new buffer
             System.arraycopy(data, offset, newData, newOffset, toWrite);
-            if (toWrite < size)
-                System.arraycopy(data, 0, newData, newOffset + toWrite, size - toWrite);
+            // the wrapped data ends up either after the first part, or at the start of the new buffer
+            newOffset = (newOffset + toWrite) % newSize;
+            System.arraycopy(data, 0, newData, newOffset, offset);
             size = newSize;
             data = newData;
             lock.notify();
