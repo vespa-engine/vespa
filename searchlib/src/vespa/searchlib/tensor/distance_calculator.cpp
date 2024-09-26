@@ -40,7 +40,7 @@ supported_tensor_type(const vespalib::eval::ValueType& type)
     if (type.is_dense() && type.dimensions().size() == 1) {
         return true;
     }
-    if (type.is_mixed() && type.dimensions().size() == 2) {
+    if (type.is_mixed() && type.count_indexed_dimensions() == 1 && type.count_mapped_dimensions() >= 1) {
         return true;
     }
     return false;
