@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
@@ -16,6 +18,7 @@ import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.parser.yqlplus.ParseException;
 import ai.vespa.schemals.parser.yqlplus.YQLPlusParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
@@ -81,7 +84,7 @@ public class YQLDocument implements DocumentManager {
 
         Node node = parser.rootNode();
         YQLNode retNode = new YQLNode(node);
-        YQLUtils.printTree(logger, node);
+        // YQLUtils.printTree(logger, node);
 
         return new ParseResult(List.of(), Optional.of(retNode));
     }
@@ -100,15 +103,15 @@ public class YQLDocument implements DocumentManager {
         ArrayList<Diagnostic> diagnostics = new ArrayList<>(YQLResult.diagnostics());
 
         if (pipeIndex != -1 && pipeIndex + 1 < context.content().length()) {
-            String groupingString = context.content().substring(pipeIndex + 1);
-            ParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger());
+            String groupingString = context.content().substring(pipeIndex + 1); // Do not include pipe char
+            Position offset = StringUtils.getStringPosition(YQLString);
+
+            ParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), offset);
             if (groupingResult.CST.isPresent()) {
                 ret.addChild(groupingResult.CST.get());
             }
 
-            for (Diagnostic diagnostic : groupingResult.diagnostics) {
-                diagnostics.add(diagnostic); // TODO: Add offset to the positions
-            }
+            diagnostics.addAll(groupingResult.diagnostics());
         }
 
         traverseCST(ret, context, diagnostics);

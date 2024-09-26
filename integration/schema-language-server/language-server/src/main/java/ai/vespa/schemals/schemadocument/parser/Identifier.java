@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.parser;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;

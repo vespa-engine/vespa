@@ -1,5 +1,6 @@
 package ai.vespa.schemals.tree;
 
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.yqlplus.Node;
@@ -20,12 +21,12 @@ public class YQLNode extends ai.vespa.schemals.tree.Node<YQLNode> {
         }
     }
 
-    public YQLNode(ai.vespa.schemals.parser.grouping.Node node) {
-        super(LanguageType.GROUPING, GroupingUtils.getNodeRange(node), node.isDirty());
+    public YQLNode(ai.vespa.schemals.parser.grouping.Node node, Position rangeOffset) {
+        super(LanguageType.GROUPING, CSTUtils.addPositionToRange(rangeOffset, GroupingUtils.getNodeRange(node)), node.isDirty());
         originalGroupingNode = node;
 
         for (ai.vespa.schemals.parser.grouping.Node child : node.children()) {
-            addChild(new YQLNode(child));
+            addChild(new YQLNode(child, rangeOffset));
         }
     }
 
