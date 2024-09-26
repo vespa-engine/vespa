@@ -1,0 +1,1134 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// --------------------------------------------------------------------------------
+//
+// JavaCC options. When this file is changed, run "ant compileparser" to rebuild
+// the parser classes.
+//
+// --------------------------------------------------------------------------------
+
+PARSER_CLASS=GroupingParser;
+PARSER_PACKAGE=ai.vespa.schemals.parser.grouping;
+FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false; // Will create a tree node for every rule
+
+INJECT GroupingParser:
+    import java.util.List;
+    import java.util.LinkedList;
+    import com.yahoo.javacc.UnicodeUtilities;
+    import com.yahoo.search.grouping.request.*;
+
+    @SuppressWarnings( {
+        "ConstantIfStatement", "UnnecessarySemicolon", "Convert2Diamond", "FinalPrivateMethod"
+    }
+    )
+
+{
+
+    private static Number resolveNumber(String str) {
+        if (str.indexOf('.') >= 0) {
+            return Double.valueOf(str);
+        }
+        if (str.equals(Long.toString(Long.MIN_VALUE).substring(1))) return Double.NaN;
+        return Long.valueOf(str);
+    }
+
+    private static GroupingExpression resolveNegation(GroupingExpression exp) {
+        if (exp instanceof DoubleValue && ((DoubleValue) exp).getValue().isNaN()) return new LongValue(Long.MIN_VALUE);
+        return new NegFunction(exp);
+    }
+
+    
+}
+
+
+        
+TOKEN :
+    <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
+        <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
+        <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
+        <#OCTAL: "0" (["0"-"7"])*> |
+    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |  
+        <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+>
+;
+
+
+//
+// NOTE: Whenever you addElm a new token, you need to also addElm it do the identifier() rule at the bottom of this grammar.
+// NOTE: Failure to do so will cause the token image to become a reserved word. To prevent regression on this, addElm the
+// NOTE: new token to the GroupingParserTestCase#requireThatTokenImagesAreNotReservedWords() test.
+//
+TOKEN :
+    <SPACE: [" ","\n","\r","\t"]> |
+    <SCOLON: ";"> |
+    <COMMA: ","> |
+    <DOLLAR: "$"> |
+    <DOT: "."> |
+    <EQ: "="> |
+    <INFIX_ADD: "+"> |
+    <INFIX_DIV: "/"> |
+    <INFIX_MOD: "%"> |
+    <INFIX_MUL: "*"> |
+    <INFIX_SUB: "-"> |
+    <LBRACE: "("> |
+    <RBRACE: ")"> |
+    <LCURLY: "{"> |
+    <RCURLY: "}"> |
+    <LT: "<"> |
+    <GT: ">"> |
+    <LBRACKET: "["> |
+    <RBRACKET: "]"> |
+    <INF: "inf"> |
+    <NEGINF: "-inf"> |
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") | 
+             ("'" (~["'"] | "\\'")* "'")> |
+    <ACOS: "acos"> |
+    <ACOSH: "acosh"> |
+    <ACCURACY: "accuracy"> |
+    <ADD: "add"> |
+    <ALIAS: "alias"> |
+    <ALL: "all"> |
+    <AND: "and"> |
+    <ARRAY: "array"> |
+    <AS: "as"> |
+    <AT: "at"> |
+    <ASIN: "asin"> |
+    <ASINH: "asinh"> |
+    <ATAN: "atan"> |
+    <ATANH: "atanh"> |
+    <ATTRIBUTE: "attribute"> |
+    <AVG: "avg"> |
+    <BUCKET: "bucket"> |
+    <CAT: "cat"> |
+    <CBRT: "cbrt"> |
+    <COS: "cos"> |
+    <COSH: "cosh"> |
+    <COUNT: "count"> |
+    <DEBUGWAIT: "debugwait"> |
+    <DIV: "div"> |
+    <DOCIDNSSPECIFIC: "docidnsspecific"> |
+    <EACH: "each"> |
+    <EXP: "exp"> |
+    <FIXEDWIDTH: "fixedwidth"> |
+    <FLOOR: "floor"> |
+    <GROUP: "group"> |
+    <HINT: "hint"> |
+    <HYPOT: "hypot"> |
+    <LOG: "log"> |
+    <LOG1P: "log1p"> |
+    <LOG10: "log10"> |
+    <MATH: "math"> |
+    <MAX: "max"> |
+    <MD5: "md5"> |
+    <MIN: "min"> |
+    <MOD: "mod"> |
+    <MUL: "mul"> |
+    <NEG: "neg"> |
+    <NORMALIZESUBJECT: "normalizesubject"> |
+    <NOW: "now"> |
+    <OR: "or"> |
+    <ORDER: "order"> |
+    <OUTPUT: "output"> |
+    <POW: "pow"> |
+    <PRECISION: "precision"> |
+    <PREDEFINED: "predefined"> |
+    <RELEVANCE: "relevance"> |
+    <REVERSE: "reverse"> |
+    <SIN: "sin"> |
+    <SINH: "sinh"> |
+    <SIZE: "size"> |
+    <SORT: "sort"> |
+    <INTERPOLATEDLOOKUP: "interpolatedlookup"> |
+    <SQRT: "sqrt"> |
+    <STDDEV: "stddev"> |
+    <STRCAT: "strcat"> |
+    <STRLEN: "strlen"> |
+    <SUB: "sub"> |
+    <SUM: "sum"> |
+    <SUMMARY: "summary"> |
+    <TAN: "tan"> |
+    <TANH: "tanh"> |
+    <TIME: "time"> |
+    <TIME_DATE: "date"> |
+    <TIME_DAYOFMONTH: "dayofmonth"> |
+    <TIME_DAYOFWEEK: "dayofweek"> |
+    <TIME_DAYOFYEAR: "dayofyear"> |
+    <TIME_HOUROFDAY: "hourofday"> |
+    <TIME_MINUTEOFHOUR: "minuteofhour"> |
+    <TIME_MONTHOFYEAR: "monthofyear"> |
+    <TIME_SECONDOFMINUTE: "secondofminute"> |
+    <TIME_YEAR: "year"> |
+    <TODOUBLE: "todouble"> |
+    <TOLONG: "tolong"> |
+    <TORAW: "toraw"> |
+    <TOSTRING: "tostring"> |
+    <TRUE: "true"> |
+    <FALSE: "false"> |
+    <UCA: "uca"> |
+    <WHERE: "where"> |
+    <X: "x"> |
+    <XOR: "xor"> |
+    <XORBIT: "xorbit"> |
+    <Y: "y"> |
+    <ZCURVE: "zcurve"> |
+    <IDENTIFIER: ["A"-"Z","a"-"z"](["A"-"Z","a"-"z","0"-"9","_","@"])*>
+;
+
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+List<GroupingOperation> requestList :
+{
+    List<GroupingOperation> lst = new LinkedList<GroupingOperation>();
+    GroupingOperation val;
+}
+    ( spaceElm val = root { lst.add(val); } ( scolonElm val = root { lst.add(val); } )* <EOF> )
+    { return lst;}
+;
+
+
+GroupingOperation request :
+{
+    GroupingOperation val;
+}
+    ( spaceElm val = root <EOF> )
+    { return val; }
+;
+
+
+GroupingOperation root :
+{
+    String str;
+    GroupingOperation ret;
+}
+    ( ret = operation(null)
+      [ <WHERE> lbraceElm str = whereElm rbraceElm { GroupingOperation grp = new AllOperation();
+                                                  grp.setWhere(str);
+                                                  grp.addChild(ret);
+                                                  ret = grp; } ] )
+    { return ret; }
+;
+
+
+GroupingOperation operation(GroupingOperation parent) :
+{
+    GroupingOperation ret;
+}
+    ( ret = allOperation(parent) | ret = eachOperation(parent) )
+    { return ret; }
+;
+
+
+GroupingOperation allOperation(GroupingOperation parent) :
+{
+    GroupingOperation ret;
+}
+    ( <ALL> { ret = new AllOperation(); if (parent != null) { parent.addChild(ret); } }
+      lbraceElm operationBody(ret) rbraceElm )
+    { return ret; }
+;
+
+
+GroupingOperation eachOperation(GroupingOperation parent) :
+{
+    String str;
+    GroupingOperation ret;
+}
+    ( <EACH> { ret = new EachOperation(); if (parent != null) { parent.addChild(ret); } }
+      lbraceElm operationBody(ret) rbraceElm
+      [ <AS> lbraceElm str = stringElm rbraceElm { ret.setLabel(str); } ] )
+    { return ret; }
+;
+operationBody(GroupingOperation parent) :
+{
+    ConstantValue<?> maxOperand = null;
+    String str;
+    Number num;
+    GroupingExpression exp;
+    List<GroupingExpression> lst;
+}
+    [   <GROUP>     lbraceElm exp = expElm(parent)                            rbraceElm { parent.setGroupBy(exp); }                  ]
+    ( ( <ACCURACY>  lbraceElm num = number                               rbraceElm { parent.setAccuracy(num.doubleValue()); } ) |
+      ( <ALIAS>     lbraceElm str = identifierStr commaElm exp = expElm(parent) rbraceElm { parent.putAlias(str, exp); }             ) |
+      ( <HINT>      lbraceElm str = identifierStr                           rbraceElm { parent.addHint(str); }                   ) |
+      ( <MAX>       lbraceElm ( maxOperand = infinitePositiveValue | maxOperand = constantValue ) rbraceElm
+      {
+            if (maxOperand instanceof InfiniteValue) {
+                parent.setMax(GroupingOperation.UNLIMITED_MAX);
+            } else {
+                parent.setMax(((Number)maxOperand.getValue()).intValue());
+            }
+      } ) |
+      ( <ORDER>     lbraceElm lst = expList(parent)                        rbraceElm { parent.addOrderBy(lst); }                ) |
+      ( <OUTPUT>    lbraceElm lst = expList(parent)                        rbraceElm { parent.addOutputs(lst); }                ) |
+      ( <PRECISION> lbraceElm num = number                               rbraceElm { parent.setPrecision(num.intValue()); }   ) |
+      ( <WHERE>     lbraceElm str = whereElm                                rbraceElm { parent.setWhere(str); }                  ) )*
+    (                              operation(parent)                                                                            )*
+;
+
+
+String whereElm :
+{
+    StringBuilder ret = new StringBuilder();
+    String str;
+}
+    ( [ <DOLLAR> { ret.append(lastConsumedToken.toString()); } ] str = identifierStr { ret.append(str); } )
+    { return ret.toString(); }
+;
+
+
+List<GroupingExpression> expList(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    List<GroupingExpression> ret = new LinkedList<GroupingExpression>();
+}
+    ( exp = expElm(grp) { ret.add(exp); } ( commaElm exp = expElm(grp) { ret.add(exp); } )* )
+    { return ret; }
+;
+
+
+GroupingExpression expElm(GroupingOperation grp) :
+{
+    String str;
+    boolean neg = false;
+    GroupingExpression exp;
+}
+    ( [ addElm | subElm                         { neg = true; } ]
+      exp = expAlias(grp)                     { if (neg) { exp = resolveNegation(exp); } }
+      [ <AS> lbraceElm str = stringElm rbraceElm { exp.setLabel(str); } ] )
+    { return exp; }
+;
+
+
+GroupingExpression expAlias(GroupingOperation grp) :
+{
+    String str;
+    GroupingExpression exp;
+}
+    ( ( <DOLLAR> str = identifierStr [ eqElm exp = expMath(grp) { grp.putAlias(str, exp); } ] { exp = grp.getAlias(str); } ) |
+      ( exp = expMath(grp) ) )
+    { return exp; }
+;
+
+
+GroupingExpression expMath(GroupingOperation grp) :
+{
+    MathResolver.Type type = MathResolver.Type.ADD;
+    MathResolver math = new MathResolver();
+    GroupingExpression exp;
+}
+    ( exp = value(grp) { math.push(type, exp); }
+      ( ( addElm { type = MathResolver.Type.ADD; } |
+          divElm { type = MathResolver.Type.DIV; } |
+          modElm { type = MathResolver.Type.MOD; } |
+          mulElm { type = MathResolver.Type.MUL; } |
+          subElm { type = MathResolver.Type.SUB; } ) exp = value(grp) { math.push(type, exp); } )* )
+    { return math.resolve(); }
+;
+
+
+GroupingExpression value(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( SCAN 2 =>
+      ( ( lbraceElm exp = expElm(grp) rbraceElm )           |
+                   exp = addFunction(grp)              |
+                   exp = andFunction(grp)              |
+                   exp = attributeFunction           |
+                   exp = avgExpression(grp)            |
+                   exp = catFunction(grp)              |
+                   exp = constantValue               |
+                   exp = countAggregator             |
+                   exp = debugWaitFunction(grp)        |
+                   exp = divFunction(grp)              |
+                   exp = docIdNsSpecificValue        |
+                   exp = fixedWidthFunction(grp)       |
+                   exp = mathFunction(grp)             |
+                   exp = maxExpression(grp)            |
+                   exp = md5Function(grp)              |
+                   exp = minExpression(grp)            |
+                   exp = modFunction(grp)              |
+                   exp = mulFunction(grp)              |
+                   exp = negFunction(grp)              |
+                   exp = normalizeSubjectFunction(grp) |
+                   exp = nowFunction                 |
+                   exp = orFunction(grp)               |
+                   exp = predefinedFunction(grp)       |
+                   exp = relevanceValue              |
+                   exp = reverseFunction(grp)          |
+                   exp = sizeFunction(grp)             |
+                   exp = sortFunction(grp)             |
+                   exp = arrayAtLookup(grp)            |
+                   exp = interpolatedLookupElm(grp)       |
+                   exp = stddevAggregator(grp)         |
+                   exp = stringValue                 |
+                   exp = strCatFunction(grp)           |
+                   exp = strLenFunction(grp)           |
+                   exp = subFunction(grp)              |
+                   exp = sumAggregator(grp)            |
+                   exp = summaryValue                |
+                   exp = timeFunction(grp)             |
+                   exp = toDoubleFunction(grp)         |
+                   exp = toLongFunction(grp)           |
+                   exp = toRawFunction(grp)            |
+                   exp = toStringFunction(grp)         |
+                   exp = ucaFunction(grp)              |
+                   exp = xorExpression(grp)            |
+                   exp = xorBitFunction(grp)           |
+                   exp = zcurveFunction(grp)           ) |
+      (            exp = attributeValue              ) )
+    { return exp; }
+;
+
+
+AddFunction addFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <ADD> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new AddFunction(arg1, arg2);
+      return new AddFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+AndFunction andFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <AND> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new AndFunction(arg1, arg2);
+      return new AndFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+AttributeValue attributeValue :
+{
+    StringBuilder prefix = new StringBuilder();
+    StringBuilder suffix = new StringBuilder();
+    String str;
+    String key = null;
+    AttributeFunction keySourceAttr = null;
+}
+    ( str = identifierStr { prefix.append(str); }
+      ( SCAN 2 => <DOT> { prefix.append(lastConsumedToken.toString()); } ( str = identifierStr { prefix.append(str); } ) )*
+      ( SCAN 3 =>
+          ( lcurlyElm key = stringElm rcurlyElm ) |
+          ( lcurlyElm keySourceAttr = attributeFunction rcurlyElm )
+      )?
+      ( <DOT> { suffix.append(lastConsumedToken.toString()); } ( str = identifierStr { suffix.append(str); } ) )*
+    )
+    {
+        if (key != null) {
+            return AttributeMapLookupValue.fromKey(prefix.toString(), key, suffix.toString());
+        } else if (keySourceAttr != null) {
+            return AttributeMapLookupValue.fromKeySourceAttribute(prefix.toString(), keySourceAttr.getAttributeName(), suffix.toString());
+        } else {
+            prefix.append(suffix.toString());
+            return new AttributeValue(prefix.toString());
+        }
+    }
+;
+
+
+AttributeFunction attributeFunction :
+{
+    AttributeValue val;
+}
+    ( <ATTRIBUTE> lbraceElm val = attributeValue rbraceElm )
+    { return new AttributeFunction(val.getAttributeName()); }
+;
+
+
+ArrayAtLookup arrayAtLookup(GroupingOperation parent) :
+{
+    AttributeValue val = null;
+    GroupingExpression arg2 = null;
+}
+    ( <ARRAY> <DOT> <AT> lbraceElm val = attributeValue commaElm arg2 = expElm(parent) rbraceElm )
+    {
+        return new ArrayAtLookup(val.getAttributeName(), arg2);
+    }
+;
+
+
+InterpolatedLookup interpolatedLookupElm(GroupingOperation parent) :
+{
+    AttributeValue val = null;
+    GroupingExpression arg2 = null;
+}
+    ( <INTERPOLATEDLOOKUP> lbraceElm val = attributeValue commaElm arg2 = expElm(parent) rbraceElm )
+    {
+        return new InterpolatedLookup(val.getAttributeName(), arg2);
+    }
+;
+
+
+GroupingExpression avgExpression(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2 = null;
+}
+    ( <AVG> lbraceElm arg1 = expElm(grp) [ commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] ] rbraceElm )
+    { if (arg2 == null) return new AvgAggregator(arg1);
+      if (argN == null) return new AvgFunction(arg1, arg2);
+      return new AvgFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+CatFunction catFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <CAT> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new CatFunction(arg1, arg2);
+      return new CatFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+ConstantValue constantValue :
+{
+    Number num;
+}
+    ( num = number )
+    { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
+;
+
+
+ConstantValue constantValueSigned :
+{
+    Number num;
+}
+    ( num = signedNumber )
+    { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
+;
+
+
+InfiniteValue infiniteNegativeValue :
+    ( neginfElm { return new InfiniteValue(new Infinite(true)); } )
+;
+
+
+InfiniteValue infinitePositiveValue :
+    ( infElm { return new InfiniteValue(new Infinite(false)); } )
+;
+
+
+CountAggregator countAggregator :
+    ( <COUNT> lbraceElm rbraceElm )
+    { return new CountAggregator(); }
+;
+
+
+DebugWaitFunction debugWaitFunction(GroupingOperation grp) :
+{
+	GroupingExpression arg;
+	Number waitTime;
+	BooleanValue busy;
+}   ( <DEBUGWAIT> lbraceElm arg = expElm(grp) commaElm
+                           waitTime = number commaElm
+                           busy = booleanValue
+                  rbraceElm )
+  	{ return new DebugWaitFunction(arg, new DoubleValue(waitTime.doubleValue()), busy); }
+;
+
+
+DivFunction divFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <DIV> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new DivFunction(arg1, arg2);
+      return new DivFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+DocIdNsSpecificValue docIdNsSpecificValue :
+    ( <DOCIDNSSPECIFIC> lbraceElm rbraceElm )
+    { return new DocIdNsSpecificValue(); }
+;
+
+
+FixedWidthFunction fixedWidthFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    Number num;
+}
+    ( <FIXEDWIDTH> lbraceElm exp = expElm(grp) commaElm num = number rbraceElm )
+    { return new FixedWidthFunction(exp, num); }
+;
+
+
+GroupingExpression maxExpression(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2 = null;
+}
+    ( <MAX> lbraceElm arg1 = expElm(grp) [ commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] ] rbraceElm )
+    { if (arg2 == null) return new MaxAggregator(arg1);
+      if (argN == null) return new MaxFunction(arg1, arg2);
+      return new MaxFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+GroupingExpression md5Function(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    Number num;
+}
+    ( <MD5> lbraceElm exp = expElm(grp) commaElm num = number rbraceElm )
+    { return new Md5Function(exp, num.intValue()); }
+;
+
+
+GroupingExpression minExpression(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2 = null;
+}
+    ( <MIN> lbraceElm arg1 = expElm(grp) [ commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] ] rbraceElm )
+    { if (arg2 == null) return new MinAggregator(arg1);
+      if (argN == null) return new MinFunction(arg1, arg2);
+      return new MinFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+ModFunction modFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <MOD> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new ModFunction(arg1, arg2);
+      return new ModFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+MulFunction mulFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <MUL> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new MulFunction(arg1, arg2);
+      return new MulFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+GroupingExpression negFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <NEG> lbraceElm exp = expElm(grp) rbraceElm )
+    { return resolveNegation(exp); }
+;
+
+
+NormalizeSubjectFunction normalizeSubjectFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <NORMALIZESUBJECT> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new NormalizeSubjectFunction(exp); }
+;
+
+
+NowFunction nowFunction :
+    ( <NOW> lbraceElm rbraceElm )
+    { return new NowFunction(); }
+;
+
+
+OrFunction orFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <OR> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new OrFunction(arg1, arg2);
+      return new OrFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+PredefinedFunction predefinedFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    BucketResolver resolver = new BucketResolver();
+}
+    ( <PREDEFINED> lbraceElm exp = expElm(grp) commaElm
+      bucketElm(grp, resolver) ( commaElm bucketElm(grp, resolver) )* rbraceElm )
+    { return resolver.resolve(exp); }
+;
+
+
+RelevanceValue relevanceValue :
+    ( <RELEVANCE> lbraceElm rbraceElm )
+    { return new RelevanceValue(); }
+;
+
+
+ReverseFunction reverseFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <REVERSE> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new ReverseFunction(exp); }
+;
+
+
+SizeFunction sizeFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <SIZE> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new SizeFunction(exp); }
+;
+
+
+SortFunction sortFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <SORT> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new SortFunction(exp); }
+;
+
+
+StringValue stringValue :
+{
+    String str;
+}
+    ( <STRING> { str = UnicodeUtilities.unquote(lastConsumedToken.toString()); } spaceElm )
+    { return new StringValue(str); }
+;
+
+
+RawValue rawValue(GroupingOperation grp) :
+{
+    RawBuffer buffer = new RawBuffer();
+}
+    ( lcurlyElm byteValue(buffer) ( commaElm byteValue(buffer) )* rcurlyElm )
+    { return new RawValue(buffer); }
+;
+
+
+StandardDeviationAggregator stddevAggregator(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <STDDEV> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new StandardDeviationAggregator(exp); }
+;
+
+
+StringValue stringValueUnquoted :
+{
+    String str;
+}
+    ( str = stringElm )
+    { return new StringValue(str); }
+;
+
+
+StrCatFunction strCatFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <STRCAT> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new StrCatFunction(arg1, arg2);
+      return new StrCatFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+StrLenFunction strLenFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <STRLEN> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new StrLenFunction(exp); }
+;
+
+
+SubFunction subFunction(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2;
+}
+    ( <SUB> lbraceElm arg1 = expElm(grp) commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] rbraceElm )
+    { if (argN == null) return new SubFunction(arg1, arg2);
+      return new SubFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+SumAggregator sumAggregator(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <SUM> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new SumAggregator(exp); }
+;
+
+
+SummaryValue summaryValue :
+{
+    String str = null;
+}
+    ( <SUMMARY> lbraceElm [ str = stringElm ] rbraceElm )
+    { return str == null ? new SummaryValue() : new SummaryValue(str); }
+;
+
+
+FunctionNode timeFunction(GroupingOperation grp) :
+{
+    TimeFunctions.Type type;
+    GroupingExpression exp;
+}
+    ( <TIME> <DOT> ( <TIME_DATE>           { type = TimeFunctions.Type.DATE;             } |
+                     <TIME_DAYOFMONTH>     { type = TimeFunctions.Type.DAY_OF_MONTH;     } |
+                     <TIME_DAYOFWEEK>      { type = TimeFunctions.Type.DAY_OF_WEEK;      } |
+                     <TIME_DAYOFYEAR>      { type = TimeFunctions.Type.DAY_OF_YEAR;      } |
+                     <TIME_HOUROFDAY>      { type = TimeFunctions.Type.HOUR_OF_DAY;      } |
+                     <TIME_MINUTEOFHOUR>   { type = TimeFunctions.Type.MINUTE_OF_HOUR;   } |
+                     <TIME_MONTHOFYEAR>    { type = TimeFunctions.Type.MONTH_OF_YEAR;    } |
+                     <TIME_SECONDOFMINUTE> { type = TimeFunctions.Type.SECOND_OF_MINUTE; } |
+                     <TIME_YEAR>           { type = TimeFunctions.Type.YEAR;             } )
+      lbraceElm exp = expElm(grp) rbraceElm )
+    { return TimeFunctions.newInstance(type, exp); }
+;
+
+
+FunctionNode mathFunction(GroupingOperation grp) :
+{
+    GroupingExpression arg1, arg2 = null;
+    MathFunctions.Function func;
+}
+    ( <MATH> <DOT> ( ( ( <POW>   { func = MathFunctions.Function.POW;   } |
+                         <HYPOT> { func = MathFunctions.Function.HYPOT; } ) lbraceElm arg1 = expElm(grp) <COMMA>
+                                                                                     arg2 = expElm(grp) rbraceElm ) |
+                     ( ( <EXP>   { func = MathFunctions.Function.EXP;   } |
+                         <LOG>   { func = MathFunctions.Function.LOG;   } |
+                         <LOG1P> { func = MathFunctions.Function.LOG1P; } |
+                         <LOG10> { func = MathFunctions.Function.LOG10; } |
+                         <SIN>   { func = MathFunctions.Function.SIN;   } |
+                         <ASIN>  { func = MathFunctions.Function.ASIN;  } |
+                         <COS>   { func = MathFunctions.Function.COS;   } |
+                         <ACOS>  { func = MathFunctions.Function.ACOS;  } |
+                         <TAN>   { func = MathFunctions.Function.TAN;   } |
+                         <ATAN>  { func = MathFunctions.Function.ATAN;  } |
+                         <SQRT>  { func = MathFunctions.Function.SQRT;  } |
+                         <SINH>  { func = MathFunctions.Function.SINH;  } |
+                         <ASINH> { func = MathFunctions.Function.ASINH; } |
+                         <COSH>  { func = MathFunctions.Function.COSH;  } |
+                         <ACOSH> { func = MathFunctions.Function.ACOSH; } |
+                         <TANH>  { func = MathFunctions.Function.TANH;  } |
+                         <ATANH> { func = MathFunctions.Function.ATANH; } |
+                         <FLOOR> { func = MathFunctions.Function.FLOOR; } |
+                         <CBRT>  { func = MathFunctions.Function.CBRT;  } ) lbraceElm arg1 = expElm(grp) rbraceElm ) ) )
+    { return MathFunctions.newInstance(func, arg1, arg2); }
+;
+
+
+FunctionNode ucaFunction(GroupingOperation grp) :
+{
+    GroupingExpression arg;
+    String locale;
+    String strength = null;
+}
+    ( <UCA> lbraceElm arg = expElm(grp) commaElm locale = stringElm [ commaElm strength = stringElm ] rbraceElm )
+    { return (strength == null ? new UcaFunction(arg, locale)
+                               : new UcaFunction(arg, locale, strength)); }
+;
+
+
+FunctionNode zcurveFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    int dim;
+}
+    ( <ZCURVE> <DOT> ( <X> { dim = 0; } | <Y> { dim = 1; } ) lbraceElm exp = expElm(grp) rbraceElm )
+    { return dim == 0 ? new ZCurveXFunction(exp) : new ZCurveYFunction(exp); }
+;
+
+
+ToDoubleFunction toDoubleFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <TODOUBLE> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new ToDoubleFunction(exp); }
+;
+
+
+ToLongFunction toLongFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <TOLONG> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new ToLongFunction(exp); }
+;
+
+
+ToRawFunction toRawFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <TORAW> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new ToRawFunction(exp); }
+;
+
+
+
+ToStringFunction toStringFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <TOSTRING> lbraceElm exp = expElm(grp) rbraceElm )
+    { return new ToStringFunction(exp); }
+;
+
+
+GroupingExpression xorExpression(GroupingOperation grp) :
+{
+    List<GroupingExpression> argN = null;
+    GroupingExpression arg1, arg2 = null;
+}
+    ( <XOR> lbraceElm arg1 = expElm(grp) [ commaElm arg2 = expElm(grp) [ commaElm argN = expList(grp) ] ] rbraceElm )
+    { if (arg2 == null) return new XorAggregator(arg1);
+      if (argN == null) return new XorFunction(arg1, arg2);
+      return new XorFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
+;
+
+
+XorBitFunction xorBitFunction(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    Number num;
+}
+    ( <XORBIT> lbraceElm exp = expElm(grp) commaElm num = number rbraceElm )
+    { return new XorBitFunction(exp, num.intValue()); }
+;
+bucketElm(GroupingOperation grp, BucketResolver resolver) :
+{
+    ConstantValue from, to = null;
+    boolean inclusiveFrom, inclusiveTo;
+}
+    ( <BUCKET> ( ( ( lbraceElm | lbracketElm ) { inclusiveFrom = true; } ) |
+                 ( ltElm { inclusiveFrom = false; } )
+               )
+               ( ( from = infiniteNegativeValue | from = rawValue(grp) | from = constantValueSigned | from = stringValueUnquoted )
+                 ( [ commaElm ( to = infinitePositiveValue | to = rawValue(grp) | to = constantValueSigned | to = stringValueUnquoted ) ] )
+               )
+               ( ( ( gtElm | rbraceElm ) { inclusiveTo = false; } ) |
+                 ( rbracketElm { inclusiveTo = true; } )
+               )
+    )
+    { resolver.push(from, inclusiveFrom); resolver.push((to == null) ? from : to, inclusiveTo || to == null); }
+;
+
+
+Number signedNumber :
+{
+    String str;
+    boolean neg = false;
+}
+    ([ <INFIX_SUB> { neg = true; }]( <INTEGER> | <FLOAT> ) { str = neg ? "-" + lastConsumedToken.toString() : lastConsumedToken.toString(); } spaceElm )
+    { return resolveNumber(str); }
+;
+
+
+
+Number number :
+{
+    String str;
+}
+    ( ( <INTEGER> | <FLOAT> ) { str = lastConsumedToken.toString(); } spaceElm )
+    { return resolveNumber(str); }
+;
+
+
+BooleanValue booleanValue :
+{
+    String str;
+}
+    ( ( <TRUE> | <FALSE> ) { str = lastConsumedToken.toString(); } spaceElm )
+    { return new BooleanValue(Boolean.parseBoolean(str)); }
+;
+byteValue(RawBuffer buffer) :
+    ( ( <INTEGER> { buffer.put(Byte.parseByte(lastConsumedToken.toString())); } ) |
+      ( <STRING> { buffer.put(lastConsumedToken.toString().getBytes()); } )
+    )
+;
+
+
+String stringElm :
+{
+    String ret;
+}
+    ( ret = identifierStr | ( <STRING> { ret = UnicodeUtilities.unquote(lastConsumedToken.toString()); } spaceElm ) )
+    { return ret; }
+;
+
+
+String identifierStr : 
+{
+    String ret;
+}
+    ( ( <ACOS> |
+        <ACOSH> |
+        <ACCURACY> |
+        <ADD> |
+        <ALIAS> |
+        <ALL> |
+        <AND> |
+        <ARRAY> |
+        <AS> |
+        <AT> |
+        <ASIN> |
+        <ASINH> |
+        <ATAN> |
+        <ATANH> |
+        <ATTRIBUTE> |
+        <AVG> |
+        <BUCKET> |
+        <CAT> |
+        <CBRT> |
+        <COS> |
+        <COSH> |
+        <COUNT> |
+        <DEBUGWAIT> |
+        <DIV> |
+        <DOCIDNSSPECIFIC> |
+        <EACH> |
+        <EXP> |
+        <FIXEDWIDTH> |
+        <FLOOR> |
+        <GROUP> |
+        <HINT> |
+        <HYPOT> |
+        <IDENTIFIER> |
+        <LOG> |
+        <LOG1P> |
+        <LOG10> |
+        <MATH> |
+        <MAX> |
+        <MD5> |
+        <MIN> |
+        <MOD> |
+        <MUL> |
+        <NEG> |
+        <NORMALIZESUBJECT> |
+        <NOW> |
+        <OR> |
+        <ORDER> |
+        <OUTPUT> |
+        <POW> |
+        <PRECISION> |
+        <PREDEFINED> |
+        <RELEVANCE> |
+        <REVERSE> |
+        <SIN> |
+        <SINH> |
+        <SIZE> |
+        <SORT> |
+        <INTERPOLATEDLOOKUP> |
+        <SQRT> |
+        <STDDEV> |
+        <STRCAT> |
+        <STRLEN> |
+        <SUB> |
+        <SUM> |
+        <SUMMARY> |
+        <TAN> |
+        <TANH> |
+        <TIME> |
+        <TIME_DATE> |
+        <TIME_DAYOFMONTH> |
+        <TIME_DAYOFWEEK> |
+        <TIME_DAYOFYEAR> |
+        <TIME_HOUROFDAY> |
+        <TIME_MINUTEOFHOUR> |
+        <TIME_MONTHOFYEAR> |
+        <TIME_SECONDOFMINUTE> |
+        <TIME_YEAR> |
+        <TODOUBLE> |
+        <TOLONG> |
+        <TORAW> |
+        <TOSTRING> |
+        <TRUE> |
+        <FALSE> |
+        <UCA> |
+        <WHERE> |
+        <X> |
+        <XOR> |
+        <XORBIT> |
+        <Y> |
+        <ZCURVE> ) { ret = lastConsumedToken.toString(); } spaceElm )
+    { return ret; }
+;
+addElm :
+    ( <INFIX_ADD> spaceElm )
+;
+commaElm :
+    ( <COMMA> spaceElm )
+;
+divElm :
+    ( <INFIX_DIV> spaceElm )
+;
+eqElm :
+    ( <EQ> spaceElm )
+;
+ltElm :
+    ( <LT> spaceElm )
+;
+gtElm :
+    ( <GT> spaceElm )
+;
+infElm :
+    ( <INF> spaceElm )
+;
+neginfElm :
+    ( <NEGINF> spaceElm )
+;
+lbracketElm :
+    ( <LBRACKET> spaceElm )
+;
+rbracketElm :
+    ( <RBRACKET> spaceElm )
+;
+lbraceElm :
+    ( <LBRACE> spaceElm )
+;
+lcurlyElm :
+    ( <LCURLY> spaceElm )
+;
+modElm :
+    ( <INFIX_MOD> spaceElm )
+;
+mulElm :
+    ( <INFIX_MUL> spaceElm )
+;
+rbraceElm :
+    ( <RBRACE> spaceElm )
+;
+rcurlyElm :
+    ( <RCURLY> spaceElm )
+;
+subElm :
+    ( <INFIX_SUB> spaceElm )
+;
+scolonElm :
+    ( <SCOLON> spaceElm )
+;
+spaceElm : 
+    ( <SPACE> )*
+;
+
+
