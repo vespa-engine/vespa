@@ -185,7 +185,7 @@
         <maven-plugin-tools.vespa.version>3.13.1</maven-plugin-tools.vespa.version>
         <maven-resources-plugin.vespa.version>3.3.1</maven-resources-plugin.vespa.version>
         <maven-resolver.vespa.version>2.0.1</maven-resolver.vespa.version>
-        <maven-shade-plugin.vespa.version>3.5.3</maven-shade-plugin.vespa.version>
+        <maven-shade-plugin.vespa.version>3.6.0</maven-shade-plugin.vespa.version>
         <maven-shared-utils.vespa.version>3.4.2</maven-shared-utils.vespa.version>
         <maven-dependency-tree.vespa.version>3.3.0</maven-dependency-tree.vespa.version>
         <maven-site-plugin.vespa.version>3.12.1</maven-site-plugin.vespa.version>
