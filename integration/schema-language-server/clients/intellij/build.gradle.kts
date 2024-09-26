@@ -1,11 +1,12 @@
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm") version "1.9.24"
-  id("org.jetbrains.intellij.platform") version "2.0.0-rc1"
+  id("org.jetbrains.intellij.platform") version "2.1.0"
 }
 
 group = "ai.vespa.schemals"
 version = File("VERSION").inputStream().readBytes().toString(Charsets.UTF_8).trim()
+val JAVA_VERSION = "17"
 
 repositories {
   mavenCentral()
@@ -31,10 +32,11 @@ dependencies {
   implementation("com.yahoo.vespa:config-model-api:8-SNAPSHOT")
   implementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
   implementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+  implementation("org.jsoup:jsoup:1.17.2")
+  implementation("com.vladsch.flexmark:flexmark-html2md-converter:0.64.8")
 
   intellijPlatform {
-    intellijIdeaUltimate("2024.1")
-    //local("/Applications/IntelliJ IDEA.app")
+    intellijIdeaUltimate("2024.2")
     instrumentationTools()
   }
 }
@@ -57,11 +59,11 @@ interface InjectFileSystem {
 tasks {
   // Set the JVM compatibility versions
   withType<JavaCompile> {
-    sourceCompatibility = "17"
-    targetCompatibility = "17"
+    sourceCompatibility = JAVA_VERSION 
+    targetCompatibility = JAVA_VERSION 
   }
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
+    kotlinOptions.jvmTarget = JAVA_VERSION
   }
 
   prepareSandbox {
@@ -80,7 +82,6 @@ tasks {
 
   patchPluginXml {
     sinceBuild.set("232")
-    untilBuild.set("242.*")
   }
 
   signPlugin {
