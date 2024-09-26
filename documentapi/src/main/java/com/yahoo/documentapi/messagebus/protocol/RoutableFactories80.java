@@ -222,14 +222,27 @@ abstract class RoutableFactories80 {
     }
 
     private static DocapiFeed.TestAndSetCondition toProtoTasCondition(TestAndSetCondition tasCond) {
-        return DocapiFeed.TestAndSetCondition.newBuilder()
-                .setSelection(tasCond.getSelection())
-                .build();
+        var builder = DocapiFeed.TestAndSetCondition.newBuilder();
+        if (!tasCond.getSelection().isEmpty()) {
+            builder.setSelection(tasCond.getSelection());
+        }
+        if (tasCond.getRequiredPersistenceTimestamp() != 0) {
+            builder.setRequiredPersistenceTimestamp(tasCond.getRequiredPersistenceTimestamp());
+        }
+        return builder.build();
     }
 
     private static TestAndSetCondition fromProtoTasCondition(DocapiFeed.TestAndSetCondition protoTasCond) {
-        // Note: the empty (default) string implies "no condition present"
-        return new TestAndSetCondition(protoTasCond.getSelection());
+        // Note: empty (default) string and (default) required persistence timestamp of 0 implies "no condition present"
+        if (!protoTasCond.getSelection().isEmpty()) {
+            if (protoTasCond.getRequiredPersistenceTimestamp() != 0) {
+                return new TestAndSetCondition(protoTasCond.getSelection(), protoTasCond.getRequiredPersistenceTimestamp());
+            }
+            return new TestAndSetCondition(protoTasCond.getSelection());
+        } else if (protoTasCond.getRequiredPersistenceTimestamp() != 0) {
+            return new TestAndSetCondition(protoTasCond.getRequiredPersistenceTimestamp());
+        }
+        return new TestAndSetCondition();
     }
 
     private static ByteBuffer serializeUpdate(DocumentUpdate update) {
