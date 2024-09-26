@@ -189,7 +189,7 @@ func TestJsonEncodeString(t *testing.T) {
 	checkJson(t, String("\t"), true, "\"\\t\"")
 	checkJson(t, String("\x1f"), true, "\"\\u001F\"")
 	checkJson(t, String("\x20"), true, "\" \"")
-	checkJson(t, String("%"), true, "\"%\"");
+	checkJson(t, String("%"), true, "\"%\"")
 	checkJson(t, String("bar"), false, "\"bar\"\n")
 }
 
