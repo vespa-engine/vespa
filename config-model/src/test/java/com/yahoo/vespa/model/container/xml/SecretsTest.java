@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 public class SecretsTest extends ContainerModelBuilderTestBase {
 
-    private static String IMPL_ID = "ai.vespa.secret.aws.SecretsImpl";
+    private static String IMPL_ID = "ai.vespa.secret.cloud.SecretsImpl";
 
     @Test
     void testCloudSecretsNeedHosted() {
