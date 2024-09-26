@@ -85,7 +85,9 @@ func (e *jsonEncoder) fmt(format string, stuff ...any) {
 }
 
 func (e *jsonEncoder) put(value byte) {
-	e.fmt(string(value))
+	if e.err == nil {
+		_, e.err = e.output.Write([]byte{value})
+	}
 }
 
 func (e *jsonEncoder) openScope(tag byte) {

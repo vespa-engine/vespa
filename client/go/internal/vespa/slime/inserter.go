@@ -12,20 +12,20 @@ func (f myInserter) Insert(value Value) Value {
 	return f(value)
 }
 
-func InsertRoot(root *Value) myInserter {
+func InsertRoot(root *Value) Inserter {
 	return myInserter(func(value Value) Value {
 		*root = value
 		return value
 	})
 }
 
-func InsertEntry(arr Value) myInserter {
+func InsertEntry(arr Value) Inserter {
 	return myInserter(func(value Value) Value {
 		return arr.Add(value)
 	})
 }
 
-func InsertField(obj Value, name string) myInserter {
+func InsertField(obj Value, name string) Inserter {
 	return myInserter(func(value Value) Value {
 		return obj.Set(name, value)
 	})
