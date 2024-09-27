@@ -119,21 +119,21 @@ ProtonTermData::FieldEntry::getHandle(MatchDataDetails requested_details) const
     return handle;
 }
 
-template class ProtonTerm<search::query::LocationTerm>;
-template class ProtonTerm<search::query::NumberTerm>;
-template class ProtonTerm<search::query::Phrase>;
-template class ProtonTerm<search::query::PrefixTerm>;
-template class ProtonTerm<search::query::RangeTerm>;
-template class ProtonTerm<search::query::StringTerm>;
-template class ProtonTerm<search::query::SubstringTerm>;
-template class ProtonTerm<search::query::SuffixTerm>;
-template class ProtonTerm<search::query::WeightedSetTerm>;
-template class ProtonTerm<search::query::DotProduct>;
-template class ProtonTerm<search::query::WandTerm>;
-template class ProtonTerm<search::query::PredicateQuery>;
-template class ProtonTerm<search::query::RegExpTerm>;
-template class ProtonTerm<search::query::FuzzyTerm>;
-template class ProtonTerm<search::query::InTerm>;
+template struct ProtonTerm<search::query::LocationTerm>;
+template struct ProtonTerm<search::query::NumberTerm>;
+template struct ProtonTerm<search::query::Phrase>;
+template struct ProtonTerm<search::query::PrefixTerm>;
+template struct ProtonTerm<search::query::RangeTerm>;
+template struct ProtonTerm<search::query::StringTerm>;
+template struct ProtonTerm<search::query::SubstringTerm>;
+template struct ProtonTerm<search::query::SuffixTerm>;
+template struct ProtonTerm<search::query::WeightedSetTerm>;
+template struct ProtonTerm<search::query::DotProduct>;
+template struct ProtonTerm<search::query::WandTerm>;
+template struct ProtonTerm<search::query::PredicateQuery>;
+template struct ProtonTerm<search::query::RegExpTerm>;
+template struct ProtonTerm<search::query::FuzzyTerm>;
+template struct ProtonTerm<search::query::InTerm>;
 
 ProtonEquiv::~ProtonEquiv() = default;
 ProtonSameElement::~ProtonSameElement() = default;

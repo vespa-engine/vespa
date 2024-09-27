@@ -184,20 +184,20 @@ struct ProtonNodeTypes {
     using InTerm =              ProtonInTerm;
 };
 
-extern template class ProtonTerm<search::query::LocationTerm>;
-extern template class ProtonTerm<search::query::NumberTerm>;
-extern template class ProtonTerm<search::query::Phrase>;
-extern template class ProtonTerm<search::query::PrefixTerm>;
-extern template class ProtonTerm<search::query::RangeTerm>;
-extern template class ProtonTerm<search::query::StringTerm>;
-extern template class ProtonTerm<search::query::SubstringTerm>;
-extern template class ProtonTerm<search::query::SuffixTerm>;
-extern template class ProtonTerm<search::query::WeightedSetTerm>;
-extern template class ProtonTerm<search::query::DotProduct>;
-extern template class ProtonTerm<search::query::WandTerm>;
-extern template class ProtonTerm<search::query::PredicateQuery>;
-extern template class ProtonTerm<search::query::RegExpTerm>;
-extern template class ProtonTerm<search::query::FuzzyTerm>;
-extern template class ProtonTerm<search::query::InTerm>;
+extern template struct ProtonTerm<search::query::LocationTerm>;
+extern template struct ProtonTerm<search::query::NumberTerm>;
+extern template struct ProtonTerm<search::query::Phrase>;
+extern template struct ProtonTerm<search::query::PrefixTerm>;
+extern template struct ProtonTerm<search::query::RangeTerm>;
+extern template struct ProtonTerm<search::query::StringTerm>;
+extern template struct ProtonTerm<search::query::SubstringTerm>;
+extern template struct ProtonTerm<search::query::SuffixTerm>;
+extern template struct ProtonTerm<search::query::WeightedSetTerm>;
+extern template struct ProtonTerm<search::query::DotProduct>;
+extern template struct ProtonTerm<search::query::WandTerm>;
+extern template struct ProtonTerm<search::query::PredicateQuery>;
+extern template struct ProtonTerm<search::query::RegExpTerm>;
+extern template struct ProtonTerm<search::query::FuzzyTerm>;
+extern template struct ProtonTerm<search::query::InTerm>;
 
 }
