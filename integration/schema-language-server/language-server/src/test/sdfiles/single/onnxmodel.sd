@@ -1,0 +1,26 @@
+schema onnxmodel {
+    document onnxmodel {
+    }
+
+    rank-profile profile {
+        first-phase {
+            expression: sum( onnxModel(mymodel).output_name )
+        }
+
+        second-phase {
+            expression: sum( onnx(noexist).nooutput ) # should give error
+        }
+
+        onnx-model mymodel {
+            file: files/something.onnx
+        }
+
+        function func_a() {
+            expression: sum(xgboost("xgboost.json"))
+        }
+
+        function func_b() {
+            expression: sum(lightbgm("/path/to/lightbgm-model.json"))
+        }
+    }
+}
