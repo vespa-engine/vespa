@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
+import org.eclipse.lemminx.services.IXMLValidationService;
 import org.eclipse.lemminx.services.extensions.IXMLExtension;
 import org.eclipse.lemminx.services.extensions.XMLExtensionsRegistry;
 import org.eclipse.lemminx.services.extensions.save.ISaveContext;
+import org.eclipse.lemminx.uriresolver.URIResolverExtension;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.InitializeParams;
 
@@ -14,6 +16,8 @@ public class VespaPlugin implements IXMLExtension {
 
     PrintStream logger;
     HoverParticipant hoverParticipant;
+    IXMLValidationService validationService;
+    URIResolverExtension uriResolverExtension;
 
     @Override
 	public void doSave(ISaveContext context) {
@@ -30,7 +34,13 @@ public class VespaPlugin implements IXMLExtension {
         }
 
         hoverParticipant = new HoverParticipant(logger);
+        validationService = new ValidationService(logger);
+        uriResolverExtension = new ServicesURIResolverExtension();
+        registry.getResolverExtensionManager().registerResolver(uriResolverExtension);
         registry.registerHoverParticipant(hoverParticipant);
+        registry.setValidationService(validationService);
+
+
 	}
 
 	@Override
@@ -38,6 +48,10 @@ public class VespaPlugin implements IXMLExtension {
 		// Unregister here completion, hover, etc participants
         if (hoverParticipant != null) {
             registry.unregisterHoverParticipant(hoverParticipant);
+        }
+
+        if (validationService != null) {
+            registry.setValidationService(null);
         }
 	}
 }

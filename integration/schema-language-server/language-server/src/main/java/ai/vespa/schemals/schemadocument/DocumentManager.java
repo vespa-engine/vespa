@@ -14,8 +14,7 @@ public interface DocumentManager {
     public enum DocumentType {
         SCHEMA,
         PROFILE,
-        YQL,
-        SERVICESXML
+        YQL
     }
 
     public void updateFileContent(String content);
