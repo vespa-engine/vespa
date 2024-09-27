@@ -61,6 +61,29 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase> 
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <!-- Copy from target/generated-resources to output-dir (resolves to target/classes)
+                   This is so the resources get detected by assemble-fat-jar -->
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/../../../config-model/target/generated-sources/trang</directory>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <executions>
