@@ -330,6 +330,12 @@ public class BuiltInFunctions {
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             ))
         )));
+
+        // === ML Model features ===
+        put("onnx", new GenericFunction("onnx", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
+        put("onnxModel", new GenericFunction("onnxModel", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
+        put("lightbgm", new GenericFunction("lightbgm", new FunctionSignature(new StringArgument("\"/path/to/lightbgm-model.json\""))));
+        put("xgboost", new GenericFunction("xgboost", new FunctionSignature(new StringArgument("\"/path/to/xgboost-model.json\""))));
     }};
 
     // Some features that have not gotten a signature for various reasons
