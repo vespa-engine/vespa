@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.eclipse.lemminx.services.IXMLValidationService;
+import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
 import org.eclipse.lemminx.services.extensions.IXMLExtension;
 import org.eclipse.lemminx.services.extensions.XMLExtensionsRegistry;
 import org.eclipse.lemminx.services.extensions.save.ISaveContext;
@@ -20,16 +21,14 @@ public class VespaPlugin implements IXMLExtension {
     HoverParticipant hoverParticipant;
     IXMLValidationService validationService;
     URIResolverExtension uriResolverExtension;
+    IDefinitionParticipant definitionParticipant;
     Path serverPath;
 
     @Override
-	public void doSave(ISaveContext context) {
-		// Called when settings or XML document are saved.
-	}
+	public void doSave(ISaveContext context) { }
 
 	@Override
 	public void start(InitializeParams params, XMLExtensionsRegistry registry) {
-		// Register here completion, hover, etc participants
         try {
             logger = new PrintStream(new FileOutputStream("/Users/magnus/repos/integrationtest7/log.txt", true));
             logger.println("Asserted dominance");
@@ -47,24 +46,25 @@ public class VespaPlugin implements IXMLExtension {
         }
 
         hoverParticipant = new HoverParticipant(logger);
-        validationService = new ValidationService(logger);
         uriResolverExtension = new ServicesURIResolverExtension(serverPath, logger);
+        definitionParticipant = new DefinitionParticipant(logger);
         registry.getResolverExtensionManager().registerResolver(uriResolverExtension);
         registry.registerHoverParticipant(hoverParticipant);
-        registry.setValidationService(validationService);
-
-
+        registry.registerDefinitionParticipant(definitionParticipant);
 	}
 
 	@Override
 	public void stop(XMLExtensionsRegistry registry) {
-		// Unregister here completion, hover, etc participants
         if (hoverParticipant != null) {
             registry.unregisterHoverParticipant(hoverParticipant);
         }
 
-        if (validationService != null) {
-            registry.setValidationService(null);
+        if (uriResolverExtension != null) {
+            registry.getResolverExtensionManager().unregisterResolver(uriResolverExtension);
+        }
+
+        if (definitionParticipant != null) {
+            registry.unregisterDefinitionParticipant(definitionParticipant);
         }
 	}
 }
