@@ -159,7 +159,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag METRIC_SET = defineStringFlag(
-            "metric-set", "Vespa",
+            "metric-set", "Vespa9",
             "Determines which metric set we should use for the given application",
             "Takes effect on next host admin tick",
             INSTANCE_ID);
