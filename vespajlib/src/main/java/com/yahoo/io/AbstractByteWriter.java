@@ -22,6 +22,7 @@ public abstract class AbstractByteWriter extends GenericWriter implements Writab
     protected final BufferChain buffer;
     protected final CharBuffer charBuffer = CharBuffer.allocate(2);
 
+    @SuppressWarnings("this-escape")
     protected AbstractByteWriter(final CharsetEncoder encoder) {
         this.encoder = encoder;
         buffer = new BufferChain(this);

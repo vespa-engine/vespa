@@ -61,17 +61,15 @@ public class JavaClassBuilder implements ClassBuilder {
     }
 
     private String getHeader() {
-        return "/**\n" + //
-                " * This file is generated from a config definition file.\n" + //
-                " * ------------   D O   N O T   E D I T !   ------------\n" + //
-                " */\n" + //
-                "\n" + //
-                "package " + javaPackage + ";\n" + //
-                "\n" + //
-                "import java.util.*;\n" + //
-                "import java.io.File;\n" + //
-                "import java.nio.file.Path;\n" + //
-                "import com.yahoo.config.*;";
+        return "// ------------   D O   N O T   E D I T !   ------------\n" + //
+               "// This file is generated from a config definition file.\n" + //
+               "\n" + //
+               "package " + javaPackage + ";\n" + //
+               "\n" + //
+               "import java.util.*;\n" + //
+               "import java.io.File;\n" + //
+               "import java.nio.file.Path;\n" + //
+               "import com.yahoo.config.*;";
     }
 
     // TODO: remove the extra comment line " *" if root.getCommentBlock is empty
