@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
+import com.yahoo.vespa.hosted.provision.backup.Snapshots;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
@@ -75,6 +76,7 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
     private final Orchestrator orchestrator;
     private final int spareCount;
     private final ProtoHealthChecker healthChecker;
+    private final Snapshots snapshots;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -149,6 +151,7 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
         this.orchestrator = orchestrator;
         this.spareCount = spareCount;
         this.healthChecker = provisionServiceProvider.getHealthChecker();
+        this.snapshots = new Snapshots(this);
         nodes.rewrite();
     }
 
@@ -260,6 +263,11 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                                                               .first()
                                                               .map(LoadBalancer::idSeed)
                                                               .orElseThrow(() -> new IllegalArgumentException("no load balancer for '" + endpoint + "'")));
+    }
+
+    /** Manage backup snapshots for nodes in this */
+    public Snapshots snapshots() {
+        return snapshots;
     }
 
 }
