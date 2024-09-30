@@ -91,4 +91,4 @@ if [ "$1" == "" ]; then
   help
 fi
 export MALLOC_ARENA_MAX=1 #Does not need fast allocation
-exec java -Xms32m -Xmx128m $(getJavaOptionsIPV46) -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespavisit.Main --statistics "$1"
+exec java -Xms32m -Xmx128m $(getJavaOptionsIPV46) -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespavisit.VdsVisit --statistics "$1"
