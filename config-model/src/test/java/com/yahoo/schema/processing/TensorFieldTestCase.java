@@ -92,6 +92,13 @@ public class TensorFieldTestCase {
     }
 
     @Test
+    void tensor_with_two_mapped_and_one_indexed_dimension_can_have_hnsw_index() throws ParseException {
+        assertHnswIndexParams("tensor(x{},y{},z[64])", "", 16, 200);
+        assertHnswIndexParams("tensor(x{},y[64],z{})", "", 16, 200);
+        assertHnswIndexParams("tensor(x[64],y{},z{})", "", 16, 200);
+    }
+
+    @Test
     void hnsw_index_parameters_can_be_specified() throws ParseException {
         assertHnswIndexParams("index { hnsw { max-links-per-node: 32 } }", 32, 200);
         assertHnswIndexParams("index { hnsw { neighbors-to-explore-at-insert: 300 } }", 16, 300);
