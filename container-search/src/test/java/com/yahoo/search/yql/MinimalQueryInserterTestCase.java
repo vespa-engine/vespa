@@ -185,7 +185,7 @@ public class MinimalQueryInserterTestCase {
         Result result = execution.search(query);
         assertNull(result.hits().getError());
         assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
-        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体。 (WEAKAND(100) executions)", query.getModel().getQueryTree().toString());
+        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND(100) executions)", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -195,7 +195,7 @@ public class MinimalQueryInserterTestCase {
         Result result = execution.search(query);
         assertNull(result.hits().getError());
         assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
-        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体。 (WEAKAND(100) default:executions)", query.getModel().getQueryTree().toString());
+        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND(100) default:executions)", query.getModel().getQueryTree().toString());
     }
 
     @Test

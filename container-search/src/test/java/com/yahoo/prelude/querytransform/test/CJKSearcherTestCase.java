@@ -4,7 +4,8 @@ package com.yahoo.prelude.querytransform.test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
-import com.yahoo.prelude.*;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexFactsFactory;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.parser.TestLinguistics;
@@ -56,15 +57,8 @@ public class CJKSearcherTestCase {
 
     @Test
     public void testEquivAndChinese() {
-        SearchDefinition schema = new SearchDefinition("music-only");
-        Index stringIndex = new Index("default");
-        stringIndex.setIndex(true);
-        stringIndex.setString(true);
-        schema.addIndex(stringIndex);
-        var indexFacts = new IndexFacts(new IndexModel(schema));
-
         Query query = new Query(QueryTestCase.httpEncode("search?yql=select * from music-only where default contains equiv('a', 'b c') or default contains '东'"));
-        new Execution(new Chain<>(new MinimalQueryInserter(), new CJKSearcher()), Execution.Context.createContextStub(indexFacts)).search(query);
+        new Execution(new Chain<>(new MinimalQueryInserter(), new CJKSearcher()), Execution.Context.createContextStub()).search(query);
         assertEquals("OR (EQUIV default:a default:'b c') default:东", query.getModel().getQueryTree().toString());
     }
 

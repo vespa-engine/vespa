@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 
+
 /**
  * A term which contains a fixed length phrase, a collection of word terms,
  * resulting from a single segmentation operation.
