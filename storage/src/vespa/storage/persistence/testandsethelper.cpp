@@ -10,6 +10,9 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".storage.persistence.testandsethelper");
+
 using namespace std::string_literals;
 
 namespace storage {
@@ -129,6 +132,8 @@ TestAndSetHelper::Result
 TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
     if (_condition.has_required_persistence_timestamp()) { // timestamp predicate takes precedence
         const auto doc_meta = fetch_document(document::NoFields(), context);
+        LOG(debug, "TaS condition has timestamp predicate %" PRIu64 ", local document has timestamp %" PRIu64,
+            _condition.required_persistence_timestamp(), doc_meta.getTimestamp().getValue());
         return timestamp_predicate_match_to_result(doc_meta);
     } else {
         return fetch_and_match_selection(context);

@@ -62,6 +62,8 @@ public:
         return (has_selection() || has_required_persistence_timestamp());
     }
 
+    [[nodiscard]] std::string to_string() const;
+
     bool operator==(const TestAndSetCondition& rhs) const noexcept {
         return ((_selection == rhs._selection) &&
                 (_required_persistence_timestamp == rhs._required_persistence_timestamp));
