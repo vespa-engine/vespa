@@ -1,6 +1,6 @@
 package ai.vespa.secret.aws;
 
-import ai.vespa.secret.aws.config.AsmSecretConfig;
+import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.internal.TypedSecretStore;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.Role;
