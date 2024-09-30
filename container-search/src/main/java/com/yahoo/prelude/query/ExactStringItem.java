@@ -6,7 +6,6 @@ package com.yahoo.prelude.query;
  *
  * @author baldersheim
  */
-
 public class ExactStringItem extends WordItem {
 
     public ExactStringItem(String substring) {
