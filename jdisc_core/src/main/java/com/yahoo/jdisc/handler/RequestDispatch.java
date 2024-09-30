@@ -50,6 +50,8 @@ import java.util.concurrent.TimeoutException;
 public abstract class RequestDispatch implements Future<Response>, ResponseHandler {
 
     private final FutureConjunction completions = new FutureConjunction();
+
+    @SuppressWarnings("this-escape")
     private final FutureResponse futureResponse = new FutureResponse(this);
 
     /**

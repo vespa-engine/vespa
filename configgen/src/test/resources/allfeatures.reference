@@ -1,7 +1,5 @@
-/**
- * This file is generated from a config definition file.
- * ------------   D O   N O T   E D I T !   ------------
- */
+// ------------   D O   N O T   E D I T !   ------------
+// This file is generated from a config definition file.
 
 package com.yahoo.configgen;
 
