@@ -25,6 +25,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
+import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
@@ -741,7 +742,7 @@ public class YqlParser implements Parser {
             words = segmenter.segment(origin.getValue(), currentlyParsing.getLanguage());
         }
 
-        if (words != null && words.size() > 0) {
+        if (words != null && ! words.isEmpty()) {
             for (String word : words) {
                 phrase.addItem(new WordItem(word, field, true));
             }
@@ -1515,6 +1516,7 @@ public class YqlParser implements Parser {
         boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class, Boolean.FALSE,
                                             "setting for whether to use substring match of input data");
         boolean exact = exactMatch != null ? exactMatch : indexFactsSession.getIndex(indexNameExpander.expand(field)).isExact();
+
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "grammar for handling word input");
         Preconditions.checkArgument((prefixMatch ? 1 : 0) +
@@ -1558,7 +1560,7 @@ public class YqlParser implements Parser {
     }
 
     private boolean shouldSegment(String field, boolean fromQuery) {
-        return fromQuery && ! indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute();
+        return fromQuery && indexFactsSession.getIndex(indexNameExpander.expand(field)).isIndex();
     }
 
     private TaggableItem segment(String field, OperatorNode<ExpressionOperator> ast, String wordData,
