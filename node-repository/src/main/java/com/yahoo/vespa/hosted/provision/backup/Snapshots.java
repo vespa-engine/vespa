@@ -70,10 +70,10 @@ public class Snapshots {
     }
 
     /** Move snapshot to given state */
-    public Snapshot move(Snapshot snapshot, Snapshot.State newState) {
-        try (var lock = db.lockSnapshots(snapshot.hostname().value())) {
-            Snapshot updated = require(snapshot.id(), snapshot.hostname().value());
-            return writeSnapshot(snapshot.hostname().value(), node -> updated.with(newState), lock);
+    public Snapshot move(String snapshotId, String hostname, Snapshot.State newState) {
+        try (var lock = db.lockSnapshots(hostname)) {
+            Snapshot updated = require(snapshotId, hostname);
+            return writeSnapshot(hostname, node -> updated.with(newState), lock);
         }
     }
 

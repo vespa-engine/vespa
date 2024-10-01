@@ -251,7 +251,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private HttpResponse updateSnapshot(String hostname, String id, Inspector body) {
-        Snapshot snapshot = nodeRepository.snapshots().require(id, hostname);
         Inspector stateField = body.field("state");
         if (!stateField.valid()) {
             throw new IllegalArgumentException("No 'state' field present in request body");
@@ -266,7 +265,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
             case "restored" -> Snapshot.State.restored;
             default -> throw new IllegalArgumentException("Invalid snapshot state '" + value + "'");
         };
-        nodeRepository.snapshots().move(snapshot, newState);
+        nodeRepository.snapshots().move(id, hostname, newState);
         return new MessageResponse("Updated snapshot '" + id + "' for node " + hostname);
     }
 
