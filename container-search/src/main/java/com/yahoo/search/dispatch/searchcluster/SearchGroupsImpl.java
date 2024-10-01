@@ -21,7 +21,7 @@ public class SearchGroupsImpl implements SearchGroups {
     private final Map<Integer, Group> groups;
     private final double minActiveDocsPercentage;
 
-    public SearchGroupsImpl(Map<Integer, Group> groups, double minActiveDocsPercentage) {
+    public SearchGroupsImpl(Map<Integer, Group> groups  , double minActiveDocsPercentage) {
         this.groups = Map.copyOf(groups);
         this.minActiveDocsPercentage = minActiveDocsPercentage;
     }

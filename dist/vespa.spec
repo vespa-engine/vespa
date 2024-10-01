@@ -443,7 +443,6 @@ fi
 %{_prefix}/bin
 %exclude %{_prefix}/bin/vespa
 %exclude %{_prefix}/bin/vespa-destination
-%exclude %{_prefix}/bin/vespa-document-statistics
 %exclude %{_prefix}/bin/vespa-fbench
 %exclude %{_prefix}/bin/vespa-feed-client
 %exclude %{_prefix}/bin/vespa-feeder
@@ -683,7 +682,6 @@ fi
 %dir %{_prefix}
 %dir %{_prefix}/bin
 %{_prefix}/bin/vespa-destination
-%{_prefix}/bin/vespa-document-statistics
 %{_prefix}/bin/vespa-fbench
 %{_prefix}/bin/vespa-feeder
 %{_prefix}/bin/vespa-get
