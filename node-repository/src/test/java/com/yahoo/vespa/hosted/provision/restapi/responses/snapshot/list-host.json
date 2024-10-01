@@ -1,0 +1,13 @@
+{
+  "snapshots": [
+    {
+      "cluster": "id3",
+      "clusterIndex": 0,
+      "createdAt": 123,
+      "hostname": "host4.yahoo.com",
+      "id": "(ignore)",
+      "instance": "tenant3:application3:instance3",
+      "state": "creating"
+    }
+  ]
+}

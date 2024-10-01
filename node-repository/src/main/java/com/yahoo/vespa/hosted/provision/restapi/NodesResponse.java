@@ -18,10 +18,12 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.backup.Snapshot;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
+import com.yahoo.vespa.hosted.provision.persistence.SnapshotSerializer;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -194,6 +196,7 @@ class NodesResponse extends SlimeJsonResponse {
             object.setString("cloudAccount", node.cloudAccount().value());
         }
         node.wireguardPubKey().ifPresent(key -> toSlime(key, object.setObject("wireguard")));
+        node.status().snapshot().ifPresent(snapshot -> toSlime(snapshot, object.setObject("snapshot")));
     }
 
     private Version resolveVersionFlag(StringFlag flag, Node node, Allocation allocation) {
@@ -240,6 +243,11 @@ class NodesResponse extends SlimeJsonResponse {
     static void toSlime(WireguardKeyWithTimestamp keyWithTimestamp, Cursor object) {
         object.setString("key", keyWithTimestamp.key().value());
         object.setLong("timestamp", keyWithTimestamp.timestamp().toEpochMilli());
+    }
+
+    private void toSlime(Snapshot snapshot, Cursor object) {
+        object.setString("id", snapshot.id());
+        object.setString("state", SnapshotSerializer.asString(snapshot.state()));
     }
 
     private Optional<DockerImage> currentContainerImage(Node node) {
