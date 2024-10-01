@@ -9,7 +9,7 @@ namespace search::attribute {
 
 using vespalib::btree::BTreeNode;
 
-bool PostingListSearchContext::_preserve_weight = false;
+bool PostingListSearchContext::_preserve_weight = true;
 
 PostingListSearchContext::
 PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
