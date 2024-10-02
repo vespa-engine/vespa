@@ -15,7 +15,9 @@ MAX_NUMBER_OF_RELEASES=32
 
 # Cloudsmith repo
 rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
-curl -1sLf 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=8' > /tmp/vespa-open-source-rpms.repo
+curl  --silent --show-error --location --fail \
+  --tlsv1 --output /tmp/vespa-open-source-rpms.repo \
+  'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=8'
 dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
 rm -f /tmp/vespa-open-source-rpms.repo
 
@@ -31,7 +33,8 @@ RPMS_TO_DELETE=$(mktemp)
 trap "rm -f $RPMS_TO_DELETE" EXIT
 
 for VERSION in $VERSIONS_TO_DELETE; do
-  curl -sLf --header 'accept: application/json' \
+  curl --silent --show-error --location --fail \
+    --header 'accept: application/json' \
     "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/?query=version:${VERSION}" | jq -re '.[] | .slug' >> $RPMS_TO_DELETE
 done
 
@@ -40,7 +43,8 @@ cat $RPMS_TO_DELETE
 
 if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
     for RPMID in $(cat $RPMS_TO_DELETE); do
-      curl -sSLf -X DELETE \
+      curl --silent --show-error --location --fail \
+        --request DELETE \
         --header "X-Api-Key: $CLOUDSMITH_API_TOKEN" \
         --header 'accept: application/json' \
         "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/$RPMID/"
