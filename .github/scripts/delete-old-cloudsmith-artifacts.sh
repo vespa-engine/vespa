@@ -54,10 +54,7 @@ done
 
 echo
 if [[ "${GITHUB_EVENT_NAME}" == "schedule" || "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-    echo '\033[1;33mDeleting the following RPMs:\033[0m'
-    echo
-    cat "${RPMS_TO_DELETE}"
-    echo
+    printf '\033[1;33mDeleting the following RPMs:\033[0m\n\n' "${RPMS_TO_DELETE}"
 
     while IFS= read -r RPMID
     do
@@ -68,8 +65,7 @@ if [[ "${GITHUB_EVENT_NAME}" == "schedule" || "${GITHUB_EVENT_NAME}" == "workflo
         "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/${RPMID}/"
     done < "${RPMS_TO_DELETE}"
 else
-    echo '\033[1;32m#### Dry-run mode ####\033[0m'
-    echo '\033[0;32mWould have deleted the following RPMs:\033[0m'
-    echo
+    printf '\033[1;32m#### Dry-run mode ####\033[0m\n'
+    printf '\033[0;32mWould have deleted the following RPMs:\033[0m\n\n'
     cat "${RPMS_TO_DELETE}"
 fi
