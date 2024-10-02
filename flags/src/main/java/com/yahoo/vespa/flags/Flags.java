@@ -396,7 +396,7 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-10-01",
+            List.of("hmusum"), "2023-09-25", "2024-11-01",
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -480,7 +480,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_VESPA_ATHENZ_HOST_IDENTITY = defineFeatureFlag(
             "use-vespa-athenz-host-identity", false,
-            List.of("freva"), "2024-06-12", "2024-10-01",
+            List.of("freva"), "2024-06-12", "2024-11-01",
             "Whether the host should get identity from Vespa Athenz. Only valid in public systems, noclave, AWS. Vespa version dimension refers to OS version.",
             "Takes effect on next provisioning",
             INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
@@ -500,7 +500,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE = defineFeatureFlag(
             "delete-expired-config-sessions-new-procedure", true,
-            List.of("hmusum"), "2024-06-10", "2024-10-01",
+            List.of("hmusum"), "2024-06-10", "2024-11-01",
             "Whether to delete remote and local config sessions at the same time",
             "Takes effect immediately");
 
@@ -549,13 +549,13 @@ public class Flags {
 
     public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
             "tcp-shrink-window", true,
-            List.of("hmusum"), "2024-08-14", "2024-10-01",
+            List.of("hmusum"), "2024-08-14", "2024-11-01",
             "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default true",
             "Takes effect on next host-admin run");
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
             "file-download-backoff-initial-time-ms", 5000,
-            List.of("hmusum"), "2024-08-16", "2024-10-01",
+            List.of("hmusum"), "2024-08-16", "2024-11-01",
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
 
