@@ -19,9 +19,10 @@ curl  --silent --show-error --location --fail \
   --tlsv1 --output /tmp/vespa-open-source-rpms.repo \
   'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=8'
 dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
+dnf makecache -y --quiet --repo=vespa-open-source-rpms
 rm -f /tmp/vespa-open-source-rpms.repo
 
-dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa >/tmp/dnf-stdout 2>/tmp/dnf-stderr || true
+dnf list -y --quiet --showduplicates --repo=vespa-open-source-rpms vespa >/tmp/dnf-stdout 2>/tmp/dnf-stderr || true
 DNF_STDERR="$(cat /tmp/dnf-stderr)"
 DNF_STDOUT="$(cat /tmp/dnf-stdout)"
 if [[ "${DNF_STDERR}" == "Error: No matching Packages to list" ]]; then
