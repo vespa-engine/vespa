@@ -383,29 +383,6 @@ public class SessionRepository {
         return session;
     }
 
-    public int deleteExpiredRemoteSessions(Predicate<Session> sessionIsActiveForApplication) {
-        List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
-        log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
-
-        int deleted = 0;
-        // Avoid deleting too many in one run
-        int deleteMax = (int) Math.min(1000, Math.max(50, remoteSessionsFromZooKeeper.size() * 0.05));
-        for (Long sessionId : remoteSessionsFromZooKeeper) {
-            Session session = remoteSessionCache.get(sessionId);
-            if (session == null)
-                session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
-            if (session.getStatus() == Session.Status.ACTIVATE && sessionIsActiveForApplication.test(session)) continue;
-            if (sessionHasExpired(session.getCreateTime())) {
-                log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
-                deleteRemoteSessionFromZooKeeper(session);
-                deleted++;
-            }
-            if (deleted >= deleteMax)
-                break;
-        }
-        return deleted;
-    }
-
     public void deactivateSession(long sessionId) {
         var s = remoteSessionCache.get(sessionId);
         if (s == null) return;
@@ -418,11 +395,6 @@ public class SessionRepository {
         Transaction transaction = sessionZooKeeperClient.deleteTransaction();
         transaction.commit();
         transaction.close();
-    }
-
-    private boolean sessionHasExpired(Instant created) {
-        var expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
-        return created.plus(expiryTime).isBefore(clock.instant());
     }
 
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
@@ -636,64 +608,6 @@ public class SessionRepository {
     }
 
     // ---------------- Common stuff ----------------------------------------------------------------
-
-    public void deleteExpiredSessions(Predicate<Session> sessionIsActiveForApplication) {
-        log.log(Level.FINE, () -> "Deleting expired local sessions for tenant '" + tenantName + "'");
-        Set<Long> sessionIdsToDelete = new HashSet<>();
-        Set<Long> newSessions = findNewSessionsInFileSystem();
-        try {
-            for (long sessionId : getLocalSessionsIdsFromFileSystem()) {
-                // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
-                // we don't want to touch any of them)
-                if (newSessions.contains(sessionId))
-                    continue;
-
-                log.log(Level.FINE, () -> "Candidate local session for deletion: " + sessionId +
-                        ", created (on disk): " + created(getSessionAppDir(sessionId)));
-
-                var sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-                Instant createTime = sessionZooKeeperClient.readCreateTime();
-                Session.Status status = sessionZooKeeperClient.readStatus();
-
-                var expired = sessionLifeTimeElapsed(createTime);
-                log.log(Level.FINE, () -> "Candidate local session for deletion: " + sessionId +
-                        ", created (in zk): " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status) +
-                        ", hasExpired: " + expired);
-
-                if (expired && canBeDeleted(sessionId, status)) {
-                    log.log(Level.FINE, () -> " expired, can be deleted: " + sessionId);
-                    sessionIdsToDelete.add(sessionId);
-                } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
-                    LocalSession session;
-                    log.log(Level.FINE, () -> "not expired, but more than 1 day old: " + sessionId);
-                    try {
-                        session = getSessionFromFile(sessionId);
-                    } catch (Exception e) {
-                        log.log(Level.FINE, () -> "could not get session from file: " + sessionId + ": " + e.getMessage());
-                        continue;
-                    }
-                    Optional<ApplicationId> applicationId = session.getOptionalApplicationId();
-                    if (applicationId.isEmpty()) continue;
-
-                    if ( ! sessionIsActiveForApplication.test(session)) {
-                        sessionIdsToDelete.add(sessionId);
-                        log.log(Level.FINE, () -> "Will delete inactive session " + sessionId + " created " +
-                                createTime + " for '" + applicationId + "'");
-                    }
-                }
-            }
-
-            sessionIdsToDelete.forEach(this::deleteLocalSession);
-        } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
-            log.log(Level.WARNING, "Error when purging old sessions ", e);
-        }
-        log.log(Level.FINE, () -> "Done purging old sessions");
-    }
-
-    private boolean sessionLifeTimeElapsed(Instant created) {
-        var sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
-        return created.plus(sessionLifetime).isBefore(clock.instant());
-    }
 
     public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication) {
         // All known sessions, both local (file) and remote (zookeeper)
