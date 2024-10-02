@@ -9,7 +9,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-dnf install -y 'dnf-command(config-manager)' jq
+dnf install -yq 'dnf-command(config-manager)' jq
 
 MAX_NUMBER_OF_RELEASES=32
 LAST_VESPA_7_RELEASE="7.594.36"
@@ -44,10 +44,10 @@ for VERSION in $VERSIONS_TO_DELETE; do
     "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/?query=version:${VERSION}" | jq -re '.[] | .slug' >> $RPMS_TO_DELETE
 done
 
-echo "Deleting the following RPMs:"
-cat $RPMS_TO_DELETE
-
 if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+    echo "Deleting the following RPMs:"
+    cat $RPMS_TO_DELETE
+
     for RPMID in $(cat $RPMS_TO_DELETE); do
       curl --silent --show-error --location --fail \
         --request DELETE \
@@ -55,4 +55,7 @@ if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_di
         --header 'accept: application/json' \
         "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/$RPMID/"
     done
+else
+    echo "Dry-run: Would have deleted the following RPMs:"
+    cat $RPMS_TO_DELETE
 fi
