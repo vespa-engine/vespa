@@ -87,14 +87,27 @@ public class IndexFacts {
 
     private String getCanonicNameFromDocumentTypes(String indexName, List<String> documentTypes) {
         if (documentTypes.isEmpty()) {
-            Index index = unionSearchDefinition.getIndexByLowerCase(toLowerCase(indexName));
+            Index index = unionSearchDefinition.getIndex(indexName);
+            if (index == null) {
+                index = unionSearchDefinition.getIndexByLowerCase(toLowerCase(indexName));
+            }
             return index == null ? indexName : index.getName();
         }
-        DocumentTypeListOffset sd = chooseSearchDefinition(documentTypes, 0);
-        while (sd != null) {
-            Index index = sd.searchDefinition.getIndexByLowerCase(toLowerCase(indexName));
-            if (index != null) return index.getName();
-            sd = chooseSearchDefinition(documentTypes, sd.offset);
+        Set<String> gotNames = new TreeSet<>();
+        for (String dt : documentTypes) {
+            var sd = searchDefinitions.get(dt);
+            if (sd != null) {
+                Index index = sd.getIndex(indexName);
+                if (index == null) {
+                    index = sd.getIndexByLowerCase(toLowerCase(indexName));
+                }
+                if (index != null) {
+                    gotNames.add(index.getName());
+                }
+            }
+        }
+        if (gotNames.size() == 1) {
+            return gotNames.iterator().next();
         }
         return indexName;
     }
