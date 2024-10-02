@@ -36,26 +36,32 @@ if [[ -z "$VERSIONS_TO_DELETE" ]]; then
 fi
 
 RPMS_TO_DELETE=$(mktemp)
-trap "rm -f $RPMS_TO_DELETE" EXIT
+trap 'rm -f $RPMS_TO_DELETE' EXIT
 
 for VERSION in $VERSIONS_TO_DELETE; do
   curl --silent --show-error --location --fail \
     --header 'accept: application/json' \
-    "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/?query=version:${VERSION}" | jq -re '.[] | .slug' >> $RPMS_TO_DELETE
+    "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/?query=version:${VERSION}" | jq -re '.[] | .slug' >> "${RPMS_TO_DELETE}"
 done
 
+echo
 if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-    echo "Deleting the following RPMs:"
-    cat $RPMS_TO_DELETE
+    echo '\033[1;33mDeleting the following RPMs:\033[0m'
+    echo
+    cat "${RPMS_TO_DELETE}"
+    echo
 
-    for RPMID in $(cat $RPMS_TO_DELETE); do
+    while IFS= read -r RPMID
+    do
       curl --silent --show-error --location --fail \
         --request DELETE \
         --header "X-Api-Key: $CLOUDSMITH_API_TOKEN" \
         --header 'accept: application/json' \
         "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/$RPMID/"
-    done
+    done < "$RPMS_TO_DELETE"
 else
-    echo "Dry-run: Would have deleted the following RPMs:"
-    cat $RPMS_TO_DELETE
+    echo '\033[1;32m#### Dry-run mode ####\033[0m'
+    echo '\033[0;32mWould have deleted the following RPMs:\033[0m'
+    echo
+    cat "${RPMS_TO_DELETE}"
 fi
