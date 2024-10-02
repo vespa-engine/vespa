@@ -1,8 +1,16 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+if [ "${RUNNER_DEBUG:-}" == "1" ]; then
+    set -o xtrace
+fi
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
 dnf install -y 'dnf-command(config-manager)' jq
 
-set -euo pipefail
 MAX_NUMBER_OF_RELEASES=32
 
 # Cloudsmith repo
@@ -12,7 +20,7 @@ dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
 rm -f /tmp/vespa-open-source-rpms.repo
 
 # Allow the last Vespa 7 release to remain in the repo
-VERSIONS_TO_DELETE=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | grep -v "7.594.36" | head -n -$MAX_NUMBER_OF_RELEASES)
+VERSIONS_TO_DELETE=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa || true | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | grep -v "7.594.36" | head -n -$MAX_NUMBER_OF_RELEASES)
 
 if [[ -z "$VERSIONS_TO_DELETE" ]]; then
   echo "No old RPM versions to delete found. Exiting."
@@ -38,5 +46,3 @@ if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_di
         "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/$RPMID/"
     done
 fi
-
-
