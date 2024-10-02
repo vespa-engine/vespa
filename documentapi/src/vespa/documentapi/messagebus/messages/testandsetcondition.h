@@ -17,28 +17,27 @@ private:
     // to ensure that fanned out operations are handled in a consistent way based on what the underlying
     // content nodes report supporting.
     std::string _selection;
-    uint64_t    _required_persistence_timestamp;
+    uint64_t    _required_timestamp;
 
 public:
     constexpr TestAndSetCondition() noexcept
         : _selection(),
-          _required_persistence_timestamp(0)
+          _required_timestamp(0)
     {}
     
     explicit TestAndSetCondition(std::string_view selection)
         : _selection(selection),
-          _required_persistence_timestamp(0)
+          _required_timestamp(0)
     {}
 
-    explicit TestAndSetCondition(uint64_t required_persistence_timestamp) noexcept
+    explicit TestAndSetCondition(uint64_t required_timestamp) noexcept
         : _selection(),
-          _required_persistence_timestamp(required_persistence_timestamp)
+          _required_timestamp(required_timestamp)
     {}
 
-    TestAndSetCondition(std::string_view selection,
-                        uint64_t required_persistence_timestamp)
+    TestAndSetCondition(std::string_view selection, uint64_t required_timestamp)
         : _selection(selection),
-          _required_persistence_timestamp(required_persistence_timestamp)
+          _required_timestamp(required_timestamp)
     {}
 
     ~TestAndSetCondition();
@@ -51,22 +50,22 @@ public:
 
     [[nodiscard]] const std::string& getSelection() const noexcept { return _selection; }
     // A return value of 0 implies no timestamp predicate is set.
-    [[nodiscard]] uint64_t required_persistence_timestamp() const noexcept {
-        return _required_persistence_timestamp;
+    [[nodiscard]] uint64_t required_timestamp() const noexcept {
+        return _required_timestamp;
     }
     [[nodiscard]] bool has_selection() const noexcept { return !_selection.empty(); }
-    [[nodiscard]] bool has_required_persistence_timestamp() const noexcept {
-        return (_required_persistence_timestamp != 0);
+    [[nodiscard]] bool has_required_timestamp() const noexcept {
+        return (_required_timestamp != 0);
     }
     [[nodiscard]] bool isPresent() const noexcept {
-        return (has_selection() || has_required_persistence_timestamp());
+        return (has_selection() || has_required_timestamp());
     }
 
     [[nodiscard]] std::string to_string() const;
 
     bool operator==(const TestAndSetCondition& rhs) const noexcept {
         return ((_selection == rhs._selection) &&
-                (_required_persistence_timestamp == rhs._required_persistence_timestamp));
+                (_required_timestamp == rhs._required_timestamp));
     }
 };
 

@@ -612,8 +612,8 @@ TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorStripeMessageSen
         return true; // No condition; nothing to do here.
     }
     const auto& tas_cond = _updateCmd->getCondition();
-    if (tas_cond.has_required_persistence_timestamp()
-        && (persisted_timestamp != tas_cond.required_persistence_timestamp()))
+    if (tas_cond.has_required_timestamp()
+        && (persisted_timestamp != tas_cond.required_timestamp()))
     {
         replyWithTasFailure(sender, "Required test-and-set timestamp did not match persisted timestamp");
         return false;

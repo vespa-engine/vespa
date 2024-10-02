@@ -11,7 +11,7 @@ import "docapi_common.proto";
 message TestAndSetCondition {
     string selection = 1;
     // Iff non-zero, `selection` is ignored in favor of _only_ checking the timestamp.
-    uint64 required_persistence_timestamp = 2;
+    uint64 required_timestamp = 2;
 }
 
 message DocumentUpdate {

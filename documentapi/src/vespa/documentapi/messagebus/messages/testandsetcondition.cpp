@@ -16,17 +16,16 @@ std::string TestAndSetCondition::to_string() const {
     return ss.str();
 }
 
-
 std::ostream& operator<<(std::ostream& os, const TestAndSetCondition& cond) {
     os << "TestAndSetCondition(";
     if (cond.has_selection()) {
         os << "selection '" << cond.getSelection() << "'";
     }
-    if (cond.has_required_persistence_timestamp()) {
+    if (cond.has_required_timestamp()) {
         if (cond.has_selection()) {
             os << ", ";
         }
-        os << "required_persistence_timestamp " << cond.required_persistence_timestamp();
+        os << "required_timestamp " << cond.required_timestamp();
     }
     os << ")";
     return os;

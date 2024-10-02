@@ -1057,12 +1057,12 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, long)",
-      "public void <init>(long)",
       "public java.lang.String getSelection()",
-      "public long getRequiredPersistenceTimestamp()",
+      "public long requiredTimestamp()",
       "public boolean isPresent()",
       "public static com.yahoo.document.TestAndSetCondition fromConditionString(java.util.Optional)",
+      "public static com.yahoo.document.TestAndSetCondition ofRequiredTimestampWithConditionFallback(long, java.lang.String)",
+      "public static com.yahoo.document.TestAndSetCondition ofRequiredTimestamp(long)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"

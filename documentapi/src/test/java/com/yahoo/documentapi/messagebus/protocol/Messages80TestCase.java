@@ -146,8 +146,9 @@ public class Messages80TestCase extends MessagesTestBase {
 
         static List<NamedCondition> tasConditions() {
             return List.of(new NamedCondition("cond-only",   new TestAndSetCondition("There's just one condition")),
-                           new NamedCondition("ts-only",     new TestAndSetCondition(0x1badcafef000000dL)),
-                           new NamedCondition("cond-and-ts", new TestAndSetCondition("There's just one condition", 0x1badcafef000000dL)));
+                           new NamedCondition("ts-only",     TestAndSetCondition.ofRequiredTimestamp(0x1badcafef000000dL)),
+                           new NamedCondition("cond-and-ts", TestAndSetCondition.ofRequiredTimestampWithConditionFallback(
+                                   0x1badcafef000000dL, "There's just one condition")));
         }
 
         // We assume TaS codec is the same across message types, so use Put as a proxy for all TaS-support types.

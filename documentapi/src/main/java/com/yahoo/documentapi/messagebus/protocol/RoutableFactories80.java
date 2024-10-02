@@ -226,8 +226,8 @@ abstract class RoutableFactories80 {
         if (!tasCond.getSelection().isEmpty()) {
             builder.setSelection(tasCond.getSelection());
         }
-        if (tasCond.getRequiredPersistenceTimestamp() != 0) {
-            builder.setRequiredPersistenceTimestamp(tasCond.getRequiredPersistenceTimestamp());
+        if (tasCond.requiredTimestamp() != 0) {
+            builder.setRequiredTimestamp(tasCond.requiredTimestamp());
         }
         return builder.build();
     }
@@ -235,14 +235,16 @@ abstract class RoutableFactories80 {
     private static TestAndSetCondition fromProtoTasCondition(DocapiFeed.TestAndSetCondition protoTasCond) {
         // Note: empty (default) string and (default) required persistence timestamp of 0 implies "no condition present"
         if (!protoTasCond.getSelection().isEmpty()) {
-            if (protoTasCond.getRequiredPersistenceTimestamp() != 0) {
-                return new TestAndSetCondition(protoTasCond.getSelection(), protoTasCond.getRequiredPersistenceTimestamp());
+            if (protoTasCond.getRequiredTimestamp() != 0) {
+                return TestAndSetCondition.ofRequiredTimestampWithConditionFallback(
+                        protoTasCond.getRequiredTimestamp(),
+                        protoTasCond.getSelection());
             }
             return new TestAndSetCondition(protoTasCond.getSelection());
-        } else if (protoTasCond.getRequiredPersistenceTimestamp() != 0) {
-            return new TestAndSetCondition(protoTasCond.getRequiredPersistenceTimestamp());
+        } else if (protoTasCond.getRequiredTimestamp() != 0) {
+            return TestAndSetCondition.ofRequiredTimestamp(protoTasCond.getRequiredTimestamp());
         }
-        return new TestAndSetCondition();
+        return TestAndSetCondition.NOT_PRESENT_CONDITION;
     }
 
     private static ByteBuffer serializeUpdate(DocumentUpdate update) {

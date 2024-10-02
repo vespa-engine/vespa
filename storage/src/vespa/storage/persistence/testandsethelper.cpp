@@ -118,7 +118,7 @@ TestAndSetHelper::to_api_return_code(const Result& result) const {
 TestAndSetHelper::Result
 TestAndSetHelper::timestamp_predicate_match_to_result(const spi::GetResult& spi_result) const {
     const auto my_ts = spi_result.getTimestamp();
-    if (my_ts == _condition.required_persistence_timestamp()) {
+    if (my_ts == _condition.required_timestamp()) {
         return {my_ts, Result::ConditionOutcome::IsMatch};
     } else if (spi_result.is_tombstone()) {
         return {my_ts, Result::ConditionOutcome::IsTombstone};
@@ -130,10 +130,10 @@ TestAndSetHelper::timestamp_predicate_match_to_result(const spi::GetResult& spi_
 
 TestAndSetHelper::Result
 TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
-    if (_condition.has_required_persistence_timestamp()) { // timestamp predicate takes precedence
+    if (_condition.has_required_timestamp()) { // timestamp predicate takes precedence
         const auto doc_meta = fetch_document(document::NoFields(), context);
-        LOG(debug, "TaS condition has timestamp predicate %" PRIu64 ", local document has timestamp %" PRIu64,
-            _condition.required_persistence_timestamp(), doc_meta.getTimestamp().getValue());
+        LOG(debug, "TaS condition has required timestamp %" PRIu64 ", local document has timestamp %" PRIu64,
+            _condition.required_timestamp(), doc_meta.getTimestamp().getValue());
         return timestamp_predicate_match_to_result(doc_meta);
     } else {
         return fetch_and_match_selection(context);
