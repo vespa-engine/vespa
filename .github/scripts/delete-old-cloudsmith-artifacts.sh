@@ -12,7 +12,6 @@ set -o pipefail
 dnf install -yq 'dnf-command(config-manager)' jq
 
 MAX_NUMBER_OF_RELEASES=32
-LAST_VESPA_7_RELEASE="7.594.36"
 
 # Cloudsmith repo
 rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
@@ -22,22 +21,30 @@ curl  --silent --show-error --location --fail \
 dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
 rm -f /tmp/vespa-open-source-rpms.repo
 
-VESPA_VERSIONS=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa || true)
-if [[ -z "$VESPA_VERSIONS" ]]; then
+dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa >/tmp/dnf-stdout 2>/tmp/dnf-stderr || true
+DNF_STDERR="$(cat /tmp/dnf-stderr)"
+DNF_STDOUT="$(cat /tmp/dnf-stdout)"
+if [[ "${DNF_STDERR}" == "Error: No matching Packages to list" ]]; then
   echo "No Vespa versions found, nothing to do. Exiting."
   exit 0
+elif [[ -n "${DNF_STDERR}" ]]; then
+  echo "::error::Unexpected error output from dnf list:"
+  echo "${DNF_STDERR}"
+  exit 1
+elif [[ -z "${DNF_STDOUT}" ]]; then
+  echo "::error::No Vespa versions found, but dnf did not return an error. Exiting."
+  exit 1
 fi
 
-# Note: Allow the last Vespa 7 release to remain in the repo!
-VERSIONS_TO_DELETE=$(echo "${VESPA_VERSIONS}" | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | grep -v "${LAST_VESPA_7_RELEASE}" | head -n -$MAX_NUMBER_OF_RELEASES)
+# Note: Only consider 8.x and 9.x releases to preserve the last 7.x release.
+VERSIONS_TO_DELETE=$(echo "${DNF_STDOUT}" | awk '/[8-9]+\.[0-9]+\.[0-9]+/{print $2}' | sort -V | head -n -$MAX_NUMBER_OF_RELEASES)
 if [[ -z "$VERSIONS_TO_DELETE" ]]; then
   echo "No old RPM versions to delete found. Exiting."
   exit 0
 fi
 
-RPMS_TO_DELETE=$(mktemp)
-trap 'rm -f $RPMS_TO_DELETE' EXIT
-
+RPMS_TO_DELETE="$(mktemp)"
+trap 'rm -f "${RPMS_TO_DELETE}"' EXIT
 for VERSION in $VERSIONS_TO_DELETE; do
   curl --silent --show-error --location --fail \
     --header 'accept: application/json' \
@@ -45,7 +52,7 @@ for VERSION in $VERSIONS_TO_DELETE; do
 done
 
 echo
-if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+if [[ "${GITHUB_EVENT_NAME}" == "schedule" || "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
     echo '\033[1;33mDeleting the following RPMs:\033[0m'
     echo
     cat "${RPMS_TO_DELETE}"
@@ -55,10 +62,10 @@ if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_di
     do
       curl --silent --show-error --location --fail \
         --request DELETE \
-        --header "X-Api-Key: $CLOUDSMITH_API_TOKEN" \
-        --header 'accept: application/json' \
-        "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/$RPMID/"
-    done < "$RPMS_TO_DELETE"
+        --header "X-Api-Key: ${CLOUDSMITH_API_TOKEN}" \
+        --header "accept: application/json" \
+        "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/${RPMID}/"
+    done < "${RPMS_TO_DELETE}"
 else
     echo '\033[1;32m#### Dry-run mode ####\033[0m'
     echo '\033[0;32mWould have deleted the following RPMs:\033[0m'
