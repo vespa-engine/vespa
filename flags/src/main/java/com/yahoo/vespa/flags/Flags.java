@@ -480,7 +480,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_VESPA_ATHENZ_HOST_IDENTITY = defineFeatureFlag(
             "use-vespa-athenz-host-identity", false,
-            List.of("freva"), "2024-06-12", "2024-10-01",
+            List.of("freva"), "2024-06-12", "2024-11-01",
             "Whether the host should get identity from Vespa Athenz. Only valid in public systems, noclave, AWS. Vespa version dimension refers to OS version.",
             "Takes effect on next provisioning",
             INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
