@@ -491,12 +491,6 @@ public class Flags {
             "Whether to sync contacts to HubSpot",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE = defineFeatureFlag(
-            "delete-expired-config-sessions-new-procedure", true,
-            List.of("hmusum"), "2024-06-10", "2024-11-01",
-            "Whether to delete remote and local config sessions at the same time",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", false,
             List.of("vekterli"), "2024-07-01", "2024-12-01",
@@ -539,12 +533,6 @@ public class Flags {
             "Takes effect immediately",
             (value) -> "legacy".equals(value) || "standard".equals(value),
             TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
-            "tcp-shrink-window", true,
-            List.of("hmusum"), "2024-08-14", "2024-11-01",
-            "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default true",
-            "Takes effect on next host-admin run");
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
             "file-download-backoff-initial-time-ms", 2000,
