@@ -3,7 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.RoleList;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -279,7 +278,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2024-10-01",
+            List.of("tokle"), "2022-05-09", "2025-02-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             INSTANCE_ID);
@@ -419,12 +418,6 @@ public class Flags {
             "cloud-trial-notifications", false,
             List.of("bjorncs", "oyving"), "2023-10-13", "2024-12-31",
             "Whether to send cloud trial email notifications",
-            "Takes effect immediately");
-
-    public static UnboundJacksonFlag<RoleList> ROLE_DEFINITIONS = defineJacksonFlag(
-            "role-definitions", RoleList.empty(), RoleList.class,
-            List.of("mortent"), "2024-04-05", "2024-10-01",
-            "Role definitions for the system",
             "Takes effect immediately");
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
