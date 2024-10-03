@@ -443,7 +443,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag REMOVE_ORPHANED_DNS_RECORDS = defineFeatureFlag(
             "remove-orphaned-dns-records", false,
-            List.of("mpolden"), "2024-05-07", "2024-10-01",
+            List.of("mpolden"), "2024-05-07", "2024-11-01",
             "Whether EndpointDnsMaintainer should remove orphaned records instead of logging them",
             "Takes effect on next maintenance run");
 
@@ -522,7 +522,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
             "sdm-enabled-provisioning", true,
-            List.of("olaa"), "2024-07-31", "2024-10-01",
+            List.of("olaa"), "2024-07-31", "2024-11-01",
             "Whether to provision with SDM enabled",
             "Takes effect immediately");
 
