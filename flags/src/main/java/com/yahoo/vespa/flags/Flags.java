@@ -441,12 +441,6 @@ public class Flags {
             "Whether to sync tenants to HubSpot",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag REMOVE_ORPHANED_DNS_RECORDS = defineFeatureFlag(
-            "remove-orphaned-dns-records", false,
-            List.of("mpolden"), "2024-05-07", "2024-11-01",
-            "Whether EndpointDnsMaintainer should remove orphaned records instead of logging them",
-            "Takes effect on next maintenance run");
-
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
             List.of("vekterli"), "2024-05-23", "2024-12-01",
