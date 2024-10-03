@@ -2,6 +2,7 @@
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
+import com.yahoo.vespa.flags.custom.RoleList;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
 import java.time.Instant;
@@ -481,6 +482,11 @@ public class PermanentFlags {
                     "Values used in server and client must correspond (so if decreasing this one must be sure" +
                     "that no node has stored more bytes than this)",
             "Takes effect on next reboot of config server");
+
+    public static UnboundJacksonFlag<RoleList> ROLE_DEFINITIONS = defineJacksonFlag(
+            "role-definitions", RoleList.empty(), RoleList.class,
+            "Role definitions for the system",
+            "Takes effect on next iteration of UserManagementMaintainer");
 
     private PermanentFlags() {}
 
