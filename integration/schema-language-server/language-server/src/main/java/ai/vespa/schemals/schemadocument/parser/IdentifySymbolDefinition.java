@@ -350,8 +350,6 @@ public class IdentifySymbolDefinition extends Identifier {
         Optional<Symbol> existingSymbolMapped = context.schemaIndex().findSymbolInScope(scope, SymbolType.TENSOR_DIMENSION_MAPPED, identifierNode.getText());
         Optional<Symbol> existingSymbolIndexed = context.schemaIndex().findSymbolInScope(scope, SymbolType.TENSOR_DIMENSION_INDEXED, identifierNode.getText());
 
-        // I want to keep this check here to give a message,
-        // but we have to change some stuff in the CongoCC parser for it to take effect.
         if (existingSymbolMapped.isPresent() || existingSymbolIndexed.isPresent()) {
             identifierNode.setSymbolStatus(SymbolStatus.INVALID);
             diagnostics.add(new SchemaDiagnostic.Builder()
@@ -363,6 +361,7 @@ public class IdentifySymbolDefinition extends Identifier {
         }
 
         identifierNode.setSymbolStatus(SymbolStatus.DEFINITION);
+        context.schemaIndex().insertSymbolDefinition(identifierNode.getSymbol());
     }
 
     private static final Set<String> reservedFunctionNames = ReservedFunctionNames.getReservedNames();
