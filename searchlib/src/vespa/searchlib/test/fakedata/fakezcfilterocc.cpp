@@ -224,7 +224,7 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw) const
     PostingListCounts counts;
     counts._bitLength = _compressedBits;
     counts._numDocs = _hitDocs;
-    reader.set_counts(counts);
+    reader.set_word_and_counts(fw.getName(), counts);
     auto word_pos_iterator(fw._wordPosFeatures.begin());
     auto word_pos_iterator_end(fw._wordPosFeatures.end());
     DocIdAndPosOccFeatures check_features;

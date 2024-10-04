@@ -134,30 +134,42 @@ class TensorParser {
             return Optional.empty();
         }
         var type = optType.get();
+        var builder = IndexedTensor.Builder.of(type);
+        if (builder instanceof IndexedTensor.DirectIndexBuilder dib) {
+            if (fillFromBinaryValueString(dib, valueString)) {
+                return Optional.of(builder.build());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean fillFromBinaryValueString(IndexedTensor.DirectIndexBuilder builder,
+                                                 String valueString)
+    {
+        var type = builder.type();
         long sz = 1;
         for (var d : type.dimensions()) {
                 sz *= d.size().orElse(0L);
         }
+        int numHexDigits = (int)(sz * 2 * type.valueType().sizeOfCell());
         if (sz == 0
             || type.dimensions().isEmpty()
-            || valueString.length() < sz * 2
+            || valueString.length() != numHexDigits
             || valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1)))
         {
-            return Optional.empty();
+            return false;
         }
         try {
             double[] values = decodeHexString(valueString, type.valueType());
             if (values.length != sz) {
-                return Optional.empty();
+                return false;
             }
-            var builder = IndexedTensor.Builder.of(type);
-            var dib = (IndexedTensor.DirectIndexBuilder) builder;
             for (int i = 0; i < sz; ++i) {
-                dib.cellByDirectIndex(i, values[i]);
+                builder.cellByDirectIndex(i, values[i]);
             }
-            return Optional.of(builder.build());
+            return true;
         } catch (IllegalArgumentException e) {
-            return Optional.empty();
+            return false;
         }
     }
 
@@ -218,7 +230,7 @@ class TensorParser {
         }
 
         protected String consumeIdentifier() {
-            int endIdentifier = nextStopCharIndex(position, string);
+            int endIdentifier = requiredNextStopCharIndex(position);
             String identifier = string.substring(position, endIdentifier);
             position = endIdentifier;
             return identifier;
@@ -250,8 +262,7 @@ class TensorParser {
 
         protected Number consumeNumber(TensorType.Value cellValueType) {
             skipSpace();
-
-            int nextNumberEnd = nextStopCharIndex(position, string);
+            int nextNumberEnd = requiredNextStopCharIndex(position);
             try {
                 String cellValueString = string.substring(position, nextNumberEnd);
                 try {
@@ -284,17 +295,26 @@ class TensorParser {
             return true;
         }
 
-        protected int nextStopCharIndex(int position, String valueString) {
-            while (position < valueString.length()) {
-                if (Character.isWhitespace(valueString.charAt(position))) return position;
-                if (valueString.charAt(position) == ',') return position;
-                if (valueString.charAt(position) == ']') return position;
-                if (valueString.charAt(position) == '}') return position;
-                if (valueString.charAt(position) == ':') return position;
-                position++;
+        protected int stopCharIndex(int pos) {
+            while (pos < string.length()) {
+                var ch = string.charAt(pos);
+                if (Character.isWhitespace(ch)) return pos;
+                if (ch == ',') return pos;
+                if (ch == ']') return pos;
+                if (ch == '}') return pos;
+                if (ch == ':') return pos;
+                pos++;
             }
-            throw new IllegalArgumentException("Malformed tensor string '" + valueString +
-                                               "': Expected a ',', ']' or '}', ':' after position " + position);
+            return pos;
+        }
+
+        protected int requiredNextStopCharIndex(int pos) {
+            pos = stopCharIndex(pos);
+            if (pos == string.length()) {
+                throw new IllegalArgumentException("Malformed tensor string '" + string +
+                                                   "': Expected a ',', ']' or '}', ':' after position " + pos);
+            }
+            return pos;
         }
 
     }
@@ -316,6 +336,14 @@ class TensorParser {
         }
 
         public void parse() {
+            skipSpace();
+            if (string.charAt(position) != '[') {
+                int stopPos = stopCharIndex(position);
+                if (fillFromBinaryValueString(builder, string.substring(position, stopPos))) {
+                    position = stopPos;
+                    return;
+                }
+            }
             if (!hasInnerStructure)
                 consume('[');
 
@@ -463,9 +491,11 @@ class TensorParser {
         }
 
         private void parseDenseSubspace(TensorAddress mappedAddress, List<String> denseDimensionOrder) {
-            DenseValueParser denseParser = new DenseValueParser(string.substring(position),
+            var subBuilder = ((MixedTensor.BoundBuilder)builder).denseSubspaceBuilder(mappedAddress);
+            var rest = string.substring(position);
+            DenseValueParser denseParser = new DenseValueParser(rest,
                                                                 denseDimensionOrder,
-                                                                ((MixedTensor.BoundBuilder)builder).denseSubspaceBuilder(mappedAddress));
+                                                                subBuilder);
             denseParser.parse();
             position += denseParser.position();
         }

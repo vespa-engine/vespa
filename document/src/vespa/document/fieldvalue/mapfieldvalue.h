@@ -88,7 +88,7 @@ public:
     };
 
     MapFieldValue(const DataType &mapType);
-    virtual ~MapFieldValue();
+    ~MapFieldValue() override;
 
     MapFieldValue(const MapFieldValue & rhs);
     MapFieldValue & operator = (const MapFieldValue & rhs);

@@ -2,6 +2,7 @@
 
 #include "posocccompression.h"
 #include "posocc_fields_params.h"
+#include "raw_features_collector.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/postinglistparams.h>
@@ -40,149 +41,101 @@ readHeader(const vespalib::GenericHeader &header,
     const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header, prefix);
 }
 
+template <bool bigEndian>
+void
+EG2PosOccDecodeContext<bigEndian>::
+collect_raw_features_and_read_compr_buffer(RawFeaturesCollector& raw_features_collector, DocIdAndFeatures& features)
+{
+    raw_features_collector.collect_before_read_compr_buffer(*this, features);
+    this->readComprBuffer();
+    raw_features_collector.fixup_after_read_compr_buffer(*this);
+}
 
 template <bool bigEndian>
 void
 EG2PosOccDecodeContext<bigEndian>::
 readFeatures(search::index::DocIdAndFeatures &features)
 {
+    RawFeaturesCollector raw_features_collector(*this, features);
+
+    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t numElements = 1;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
-    const uint64_t *valE = _valE;
-
-    features.clear_features((oPreRead == 0) ? 0 : 64 - oPreRead);
-    features.set_has_raw_data(true);
-    const uint64_t *rawFeatures =
-        (oPreRead == 0) ? (oCompr - 1) : (oCompr - 2);
-    uint64_t rawFeaturesStartBitPos =
-        _fileReadBias + (reinterpret_cast<unsigned long>(oCompr) << 3) -
-        oPreRead;
-
-    const PosOccFieldParams &fieldParams =
-        _fieldsParams->getFieldParams()[0];
-    uint32_t numElements = 1;
     if (fieldParams._hasElements) {
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMELEMENTS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone) {
+    const uint64_t *valE = _valE;
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
         if (fieldParams._hasElements) {
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                        K_VALUE_POSOCC_ELEMENTID,
-                                        EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
             if (fieldParams._hasElementWeights) {
-                UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                            K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                            EC);
+                UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
             }
             if (__builtin_expect(oCompr >= valE, false)) {
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
                 UC64_DECODECONTEXT_STORE(o, _);
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
         }
-        UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                    K_VALUE_POSOCC_ELEMENTLEN,
-                                    EC);
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMPOSITIONS,
-                                      EC);
+        UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTLEN, EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
         do {
             if (__builtin_expect(oCompr >= valE, false)) {
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
                 UC64_DECODECONTEXT_STORE(o, _);
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                        K_VALUE_POSOCC_FIRST_WORDPOS,
-                                        EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_FIRST_WORDPOS, EC);
         } while (0);
         for (uint32_t pos = 1; pos < numPositions; ++pos) {
             if (__builtin_expect(oCompr >= valE, false)) {
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
                 UC64_DECODECONTEXT_STORE(o, _);
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                        K_VALUE_POSOCC_DELTA_WORDPOS,
-                                        EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o,K_VALUE_POSOCC_DELTA_WORDPOS, EC);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    uint64_t rawFeaturesEndBitPos =
-        _fileReadBias +
-        (reinterpret_cast<unsigned long>(oCompr) << 3) -
-        oPreRead;
-    features.set_bit_length(rawFeaturesEndBitPos - rawFeaturesStartBitPos);
-    while (rawFeatures < oCompr) {
-        features.blob().push_back(*rawFeatures);
-        ++rawFeatures;
-    }
-    if (__builtin_expect(oCompr >= valE, false)) {
-        _readContext->readComprBuffer();
-    }
+    raw_features_collector.finish(*this, features);
+    this->readComprBufferIfNeeded();
 }
-
 
 template <bool bigEndian>
 void
 EG2PosOccDecodeContextCooked<bigEndian>::
 readFeatures(search::index::DocIdAndFeatures &features)
 {
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
-    uint32_t length;
-    uint64_t val64;
-    const uint64_t *valE = _valE;
-
     features.clear_features();
     features.set_has_raw_data(false);
 
     const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     uint32_t numElements = 1;
+    UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
+    uint32_t length;
+    uint64_t val64;
     if (fieldParams._hasElements) {
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMELEMENTS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
+    const uint64_t *valE = _valE;
     uint32_t elementId = 0;
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone, ++elementId) {
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         if (fieldParams._hasElements) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_ELEMENTID,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
             elementId += static_cast<uint32_t>(val64);
         }
         features.elements().emplace_back(elementId);
         if (fieldParams._hasElementWeights) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
             int32_t elementWeight = this->convertToSigned(val64);
             features.elements().back().setWeight(elementWeight);
         }
@@ -192,14 +145,10 @@ readFeatures(search::index::DocIdAndFeatures &features)
             valE = _valE;
             UC64_DECODECONTEXT_LOAD(o, _);
         }
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_ELEMENTLEN,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTLEN, EC);
         uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
         features.elements().back().setElementLen(elementLen);
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMPOSITIONS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
         uint32_t wordPos = static_cast<uint32_t>(-1);
@@ -210,9 +159,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
             }
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_FIRST_WORDPOS,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_FIRST_WORDPOS, EC);
             wordPos = static_cast<uint32_t>(val64);
             features.elements().back().incNumOccs();
             features.word_positions().emplace_back(wordPos);
@@ -224,18 +171,14 @@ readFeatures(search::index::DocIdAndFeatures &features)
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
             }
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_DELTA_WORDPOS,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_DELTA_WORDPOS, EC);
             wordPos += 1 + static_cast<uint32_t>(val64);
             features.elements().back().incNumOccs();
             features.word_positions().emplace_back(wordPos);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    if (__builtin_expect(oCompr >= valE, false)) {
-        _readContext->readComprBuffer();
-    }
+    this->readComprBufferIfNeeded();
 }
 
 
@@ -248,43 +191,27 @@ skipFeatures(unsigned int count)
     uint32_t length;
     uint64_t val64;
 
+    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     for (unsigned int i = count; i > 0; --i) {
-        const PosOccFieldParams &fieldParams =
-            _fieldsParams->getFieldParams()[0];
         uint32_t numElements = 1;
         if (fieldParams._hasElements) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_NUMELEMENTS,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
             numElements = static_cast<uint32_t>(val64) + 1;
         }
-        for (uint32_t elementDone = 0; elementDone < numElements;
-             ++elementDone) {
+        for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
             if (fieldParams._hasElements) {
-                UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                            K_VALUE_POSOCC_ELEMENTID,
-                                            EC);
+                UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
                 if (fieldParams._hasElementWeights) {
-                    UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                                K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                                EC);
+                    UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
                 }
             }
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                        K_VALUE_POSOCC_ELEMENTLEN,
-                                        EC);
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_NUMPOSITIONS,
-                                          EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTLEN, EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
             uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                        K_VALUE_POSOCC_FIRST_WORDPOS,
-                                        EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_FIRST_WORDPOS, EC);
             for (uint32_t pos = 1; pos < numPositions; ++pos) {
-                UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                            K_VALUE_POSOCC_DELTA_WORDPOS,
-                                            EC);
+                UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_DELTA_WORDPOS, EC);
             }
         }
     }
@@ -302,61 +229,42 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
     uint32_t length;
     uint64_t val64;
 
-    const PosOccFieldParams &fieldParams =
-        _fieldsParams->getFieldParams()[0];
+    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     uint32_t numElements = 1;
     if (fieldParams._hasElements) {
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMELEMENTS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
     TermFieldMatchData *tfmd = matchData[0];
     tfmd->reset(docId);
     uint32_t elementId = 0;
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone, ++elementId) {
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         int32_t elementWeight = 1;
         if (fieldParams._hasElements) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_ELEMENTID,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
             elementId += static_cast<uint32_t>(val64);
             if (fieldParams._hasElementWeights) {
-                UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                              K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                              EC);
+                UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
                 elementWeight = this->convertToSigned(val64);
             }
         }
 
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_ELEMENTLEN,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTLEN, EC);
         uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMPOSITIONS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_FIRST_WORDPOS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_FIRST_WORDPOS, EC);
         uint32_t wordPos = static_cast<uint32_t>(val64);
         {
-            search::fef::TermFieldMatchDataPosition
-                pos(elementId, wordPos, elementWeight, elementLen);
+            search::fef::TermFieldMatchDataPosition pos(elementId, wordPos, elementWeight, elementLen);
             tfmd->appendPosition(pos);
         }
         for (uint32_t wi = 1; wi < numPositions; ++wi) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_DELTA_WORDPOS,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_DELTA_WORDPOS, EC);
             wordPos += 1 + static_cast<uint32_t>(val64);
             {
-                search::fef::TermFieldMatchDataPosition
-                    pos(elementId, wordPos, elementWeight,
-                        elementLen);
+                search::fef::TermFieldMatchDataPosition pos(elementId, wordPos, elementWeight, elementLen);
                 tfmd->appendPosition(pos);
             }
         }
@@ -438,22 +346,19 @@ EG2PosOccEncodeContext<bigEndian>::
 writeFeatures(const search::index::DocIdAndFeatures &features)
 {
     if (features.has_raw_data()) {
-        writeBits(features.blob().data(),
-                  features.bit_offset(), features.bit_length());
+        writeBits(features.blob().data(), features.bit_offset(), features.bit_length());
         return;
     }
 
     auto element = features.elements().begin();
     auto position = features.word_positions().begin();
 
-    const PosOccFieldParams &fieldParams =
-        _fieldsParams->getFieldParams()[0];
+    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
 
     uint32_t numElements = features.elements().size();
     if (fieldParams._hasElements) {
         assert(numElements > 0u);
-        encodeExpGolomb(numElements - 1,
-                        K_VALUE_POSOCC_NUMELEMENTS);
+        encodeExpGolomb(numElements - 1, K_VALUE_POSOCC_NUMELEMENTS);
     } else {
         assert(numElements == 1);
     }
@@ -463,13 +368,11 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         if (fieldParams._hasElements) {
             uint32_t elementId = element->getElementId();
             assert(elementId >= minElementId);
-            encodeExpGolomb(elementId - minElementId,
-                            K_VALUE_POSOCC_ELEMENTID);
+            encodeExpGolomb(elementId - minElementId, K_VALUE_POSOCC_ELEMENTID);
             minElementId = elementId + 1;
             if (fieldParams._hasElementWeights) {
                 int32_t elementWeight = element->getWeight();
-                encodeExpGolomb(this->convertToUnsigned(elementWeight),
-                                K_VALUE_POSOCC_ELEMENTWEIGHT);
+                encodeExpGolomb(this->convertToUnsigned(elementWeight), K_VALUE_POSOCC_ELEMENTWEIGHT);
             }
             if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
@@ -480,19 +383,16 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
             (void) elementId;
         }
 
-        encodeExpGolomb(element->getElementLen() - 1,
-                        K_VALUE_POSOCC_ELEMENTLEN);
+        encodeExpGolomb(element->getElementLen() - 1, K_VALUE_POSOCC_ELEMENTLEN);
         uint32_t numPositions = element->getNumOccs();
         assert(numPositions > 0);
-        encodeExpGolomb(numPositions - 1,
-                        K_VALUE_POSOCC_NUMPOSITIONS);
+        encodeExpGolomb(numPositions - 1, K_VALUE_POSOCC_NUMPOSITIONS);
 
         uint32_t wordPos = static_cast<uint32_t>(-1);
         do {
             uint32_t lastWordPos = wordPos;
             wordPos = position->getWordPos();
-            encodeExpGolomb(wordPos - lastWordPos - 1,
-                            K_VALUE_POSOCC_FIRST_WORDPOS);
+            encodeExpGolomb(wordPos - lastWordPos - 1, K_VALUE_POSOCC_FIRST_WORDPOS);
             if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
             }
@@ -502,8 +402,7 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         while (positionResidue > 0) {
             uint32_t lastWordPos = wordPos;
             wordPos = position->getWordPos();
-            encodeExpGolomb(wordPos - lastWordPos - 1,
-                            K_VALUE_POSOCC_DELTA_WORDPOS);
+            encodeExpGolomb(wordPos - lastWordPos - 1, K_VALUE_POSOCC_DELTA_WORDPOS);
             if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
             }
@@ -550,94 +449,53 @@ void
 EGPosOccDecodeContext<bigEndian>::
 readFeatures(search::index::DocIdAndFeatures &features)
 {
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
-    uint32_t length;
-    uint64_t val64;
-    const uint64_t *valE = _valE;
+    RawFeaturesCollector raw_features_collector(*this, features);
 
-    features.clear_features((oPreRead == 0) ? 0 : 64 - oPreRead);
-    features.set_has_raw_data(true);
-    const uint64_t *rawFeatures =
-        (oPreRead == 0) ? (oCompr - 1) : (oCompr - 2);
-    uint64_t rawFeaturesStartBitPos =
-        _fileReadBias + (reinterpret_cast<unsigned long>(oCompr) << 3) -
-        oPreRead;
-
-    const PosOccFieldParams &fieldParams =
-        _fieldsParams->getFieldParams()[0];
+    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::
                            calcElementLenK(fieldParams._avgElemLen);
     uint32_t numElements = 1;
+    UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
+    uint32_t length;
+    uint64_t val64;
     if (fieldParams._hasElements) {
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMELEMENTS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
+    const uint64_t *valE = _valE;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
         if (fieldParams._hasElements) {
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                        K_VALUE_POSOCC_ELEMENTID,
-                                        EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
             if (fieldParams._hasElementWeights) {
-                UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                            K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                            EC);
+                UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
             }
             if (__builtin_expect(oCompr >= valE, false)) {
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
                 UC64_DECODECONTEXT_STORE(o, _);
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
         }
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      elementLenK,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, elementLenK, EC);
         uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMPOSITIONS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
-        uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::
-                            calcWordPosK(numPositions, elementLen);
+        uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::calcWordPosK(numPositions, elementLen);
 
         for (uint32_t pos = 0; pos < numPositions; ++pos) {
             if (__builtin_expect(oCompr >= valE, false)) {
-                while (rawFeatures < oCompr) {
-                    features.blob().push_back(*rawFeatures);
-                    ++rawFeatures;
-                }
                 UC64_DECODECONTEXT_STORE(o, _);
-                _readContext->readComprBuffer();
+                collect_raw_features_and_read_compr_buffer(raw_features_collector, features);
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
-                rawFeatures = oCompr;
             }
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                        wordPosK,
-                                        EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o, wordPosK, EC);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    uint64_t rawFeaturesEndBitPos =
-        _fileReadBias +
-        (reinterpret_cast<unsigned long>(oCompr) << 3) -
-        oPreRead;
-    features.set_bit_length(rawFeaturesEndBitPos - rawFeaturesStartBitPos);
-    while (rawFeatures < oCompr) {
-        features.blob().push_back(*rawFeatures);
-        ++rawFeatures;
-    }
-    if (__builtin_expect(oCompr >= valE, false)) {
-        _readContext->readComprBuffer();
-    }
+    raw_features_collector.finish(*this, features);
+    this->readComprBufferIfNeeded();
 }
 
 
@@ -649,13 +507,11 @@ readFeatures(search::index::DocIdAndFeatures &features)
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
-    const uint64_t *valE = _valE;
 
     features.clear_features();
     features.set_has_raw_data(false);
 
-    const PosOccFieldParams &fieldParams =
-        _fieldsParams->getFieldParams()[0];
+    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::
                            calcElementLenK(fieldParams._avgElemLen);
     uint32_t numElements = 1;
@@ -665,19 +521,16 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                       EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
+    const uint64_t *valE = _valE;
     uint32_t elementId = 0;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         if (fieldParams._hasElements) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_ELEMENTID,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
             elementId += static_cast<uint32_t>(val64);
         }
         features.elements().emplace_back(elementId);
         if (fieldParams._hasElementWeights) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
             int32_t elementWeight = this->convertToSigned(val64);
             features.elements().back().setWeight(elementWeight);
         }
@@ -687,20 +540,15 @@ readFeatures(search::index::DocIdAndFeatures &features)
             valE = _valE;
             UC64_DECODECONTEXT_LOAD(o, _);
         }
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      elementLenK,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, elementLenK, EC);
         uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
         features.elements().back().setElementLen(elementLen);
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMPOSITIONS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
         features.set_bit_length(numPositions * 64);
 
-        uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::
-                            calcWordPosK(numPositions, elementLen);
+        uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::calcWordPosK(numPositions, elementLen);
 
         uint32_t wordPos = static_cast<uint32_t>(-1);
         for (uint32_t pos = 0; pos < numPositions; ++pos) {
@@ -710,18 +558,14 @@ readFeatures(search::index::DocIdAndFeatures &features)
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
             }
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          wordPosK,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, wordPosK, EC);
             wordPos += 1 + static_cast<uint32_t>(val64);
             features.elements().back().incNumOccs();
             features.word_positions().emplace_back(wordPos);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    if (__builtin_expect(oCompr >= valE, false)) {
-        _readContext->readComprBuffer();
-    }
+    this->readComprBufferIfNeeded();
 }
 
 
@@ -735,44 +579,29 @@ skipFeatures(unsigned int count)
     uint64_t val64;
 
     for (unsigned int i = count; i > 0; --i) {
-        const PosOccFieldParams &fieldParams =
-            _fieldsParams->getFieldParams()[0];
-        uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::
-                               calcElementLenK(fieldParams._avgElemLen);
+        const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
+        uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::calcElementLenK(fieldParams._avgElemLen);
         uint32_t numElements = 1;
         if (fieldParams._hasElements) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_NUMELEMENTS,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
             numElements = static_cast<uint32_t>(val64) + 1;
         }
         for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
             if (fieldParams._hasElements) {
-                UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                            K_VALUE_POSOCC_ELEMENTID,
-                                            EC);
+                UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
                 if (fieldParams._hasElementWeights) {
-                    UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                                K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                                EC);
+                    UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
                 }
             }
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          elementLenK,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, elementLenK, EC);
             uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_NUMPOSITIONS,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
             uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
-            uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::
-                                calcWordPosK(numPositions, elementLen);
+            uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::calcWordPosK(numPositions, elementLen);
 
             for (uint32_t pos = 0; pos < numPositions; ++pos) {
-                UC64_SKIPEXPGOLOMB_SMALL_NS(o,
-                                            wordPosK,
-                                            EC);
+                UC64_SKIPEXPGOLOMB_SMALL_NS(o, wordPosK, EC);
             }
         }
     }
@@ -792,13 +621,10 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
 
     const PosOccFieldParams &fieldParams =
         _fieldsParams->getFieldParams()[0];
-    uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::
-                           calcElementLenK(fieldParams._avgElemLen);
+    uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::calcElementLenK(fieldParams._avgElemLen);
     uint32_t numElements = 1;
     if (fieldParams._hasElements) {
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMELEMENTS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
     TermFieldMatchData *tfmd = matchData[0];
@@ -807,47 +633,31 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         int32_t elementWeight = 1;
         if (fieldParams._hasElements) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          K_VALUE_POSOCC_ELEMENTID,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
             elementId += static_cast<uint32_t>(val64);
             if (fieldParams._hasElementWeights) {
-                UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                              K_VALUE_POSOCC_ELEMENTWEIGHT,
-                                              EC);
+                UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTWEIGHT, EC);
                 elementWeight = this->convertToSigned(val64);
             }
         }
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      elementLenK,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, elementLenK, EC);
         uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMPOSITIONS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
-        uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::
-                            calcWordPosK(numPositions, elementLen);
+        uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::calcWordPosK(numPositions, elementLen);
 
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      wordPosK,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, wordPosK, EC);
         uint32_t wordPos = static_cast<uint32_t>(val64);
         {
-            search::fef::TermFieldMatchDataPosition
-                pos(elementId, wordPos, elementWeight, elementLen);
+            search::fef::TermFieldMatchDataPosition pos(elementId, wordPos, elementWeight, elementLen);
             tfmd->appendPosition(pos);
         }
         for (uint32_t wi = 1; wi < numPositions; ++wi) {
-            UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                          wordPosK,
-                                          EC);
+            UC64_DECODEEXPGOLOMB_SMALL_NS(o, wordPosK, EC);
             wordPos += 1 + static_cast<uint32_t>(val64);
             {
-                search::fef::TermFieldMatchDataPosition
-                    pos(elementId, wordPos, elementWeight,
-                        elementLen);
+                search::fef::TermFieldMatchDataPosition pos(elementId, wordPos, elementWeight, elementLen);
                 tfmd->appendPosition(pos);
             }
         }

@@ -956,20 +956,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public void deleteExpiredLocalSessions() {
-        for (Tenant tenant : tenantRepository.getAllTenants()) {
-            tenant.getSessionRepository().deleteExpiredSessions(session -> sessionIsActiveForItsApplication(tenant, session));
-        }
-    }
-
-    public int deleteExpiredRemoteSessions() {
-        return tenantRepository.getAllTenants()
-                .stream()
-                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(session -> sessionIsActiveForItsApplication(tenant, session)))
-                .mapToInt(i -> i)
-                .sum();
-    }
-
     public void deleteExpiredSessions() {
         tenantRepository.getAllTenants()
                 .forEach(tenant -> tenant.getSessionRepository().deleteExpiredRemoteAndLocalSessions(session -> sessionIsActiveForItsApplication(tenant, session)));

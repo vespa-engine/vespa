@@ -52,10 +52,14 @@ dist-homebrew:
 #
 # $ make dist-github
 --dist-github: dist
-	gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --title "Vespa CLI $(VERSION)" \
+	gh release create v$(VERSION) \
+		--verify-tag \
+		--repo vespa-engine/vespa \
+		--notes-file $(CURDIR)/README.md \
+		--title "Vespa CLI $(VERSION)" \
 		$(DIST)/vespa-cli_$(VERSION)_sha256sums.txt \
 		$(DIST)/vespa-cli_$(VERSION)_*.zip \
-		$(DIST)/vespa-cli_$(VERSION)_*.tar.gz
+		$(DIST)/vespa-cli_$(VERSION)_*.tar.gz | tee /tmp/vespa-cli-release-url.txt
 
 dist-github:
 	go run cond_make.go --dist-github

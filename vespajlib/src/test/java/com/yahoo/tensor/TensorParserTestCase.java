@@ -158,6 +158,26 @@ public class TensorParserTestCase {
     }
 
     @Test
+    public void testMixedHexParsing() {
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(key{}, x[2])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), (byte)0xa1)
+                                   .cell(TensorAddress.ofLabels("a", "1"), 2)
+                                   .cell(TensorAddress.ofLabels("b", "0"), (byte)0xA3)
+                                   .cell(TensorAddress.ofLabels("b", "1"), 4).build(),
+                     Tensor.from("tensor<int8>(key{}, x[2]):{a: a102, b: A304}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<float>(key{}, x[1])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), 0)
+                                   .cell(TensorAddress.ofLabels("b", "0"), 1.25)
+                                   .cell(TensorAddress.ofLabels("c", "0"), -19.125).build(),
+                     Tensor.from("tensor<float>(key{}, x[1]):{a: 00000000, b:3FA00000, c:  c1990000 }"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<float>(key{}, x[1])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), 0)
+                                   .cell(TensorAddress.ofLabels("b", "0"), 1.25)
+                                   .cell(TensorAddress.ofLabels("c", "0"), -19.125).build(),
+                     Tensor.from("tensor<float>(key{}, x[1])", "{a: 00000000, b:3FA00000, c:  c1990000 }"));
+    }
+
+    @Test
     public void testSparseShortFormParsing() {
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(key{})"))
                                    .cell(TensorAddress.ofLabels("a"), 1)

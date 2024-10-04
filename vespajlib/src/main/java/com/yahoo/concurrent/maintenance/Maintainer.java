@@ -40,6 +40,7 @@ public abstract class Maintainer implements Runnable {
     private final double successFactorBaseline;
     private final boolean acquireLock;
 
+    @SuppressWarnings("this-escape")
     public Maintainer(String name, Duration interval, Clock clock, JobControl jobControl,
                       JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision,
                       double successFactorBaseline, boolean acquireLock) {

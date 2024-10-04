@@ -14,7 +14,6 @@
     <artifactId>jdisc-cloud-aws</artifactId>
     <version>8-SNAPSHOT</version>
     <packaging>container-plugin</packaging>
-    <name>${project.artifactId}</name>
 
     <dependencies>
         <dependency>
@@ -26,6 +25,12 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-athenz</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -52,6 +57,37 @@
             <artifactId>aws-java-sdk-ssm</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>secretsmanager</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Used by SecretsManagerClient.builder() to load a http client  -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -71,6 +107,17 @@
     </dependencies>
 
     <build>
+        <resources>
+            <!-- Exclude config defs - they are already installed in the configserver's serverdb  -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>configdefinitions/*</exclude>
+                </excludes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

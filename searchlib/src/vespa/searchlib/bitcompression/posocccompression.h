@@ -19,6 +19,7 @@
 namespace search::bitcompression {
 
 class PosOccFieldsParams;
+class RawFeaturesCollector;
 
 template <bool bigEndian>
 class EG2PosOccDecodeContext : public FeatureDecodeContext<bigEndian>
@@ -79,6 +80,8 @@ public:
     void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId) override;
     void setParams(const PostingListParams &params) override;
     void getParams(PostingListParams &params) const override;
+    void collect_raw_features_and_read_compr_buffer(RawFeaturesCollector& raw_features_collector,
+                                                    search::index::DocIdAndFeatures& features);
 };
 
 
@@ -193,6 +196,7 @@ public:
     using ParentClass::_readContext;
     using ParentClass::_fieldsParams;
     using ParentClass::readHeader;
+    using ParentClass::collect_raw_features_and_read_compr_buffer;
     using EC = EncodeContext64<bigEndian>;
 
     EGPosOccDecodeContext(const PosOccFieldsParams *fieldsParams)

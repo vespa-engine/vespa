@@ -299,7 +299,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             var aggr = new HighestDistributionKeyAggregator();
             aggr.aggregateNodeStats(rootGroup);
             int warnThreshold = 100; // ... Not scientifically chosen
-            if ((aggr.highestNodeDistributionKey - aggr.nodeCount) >= warnThreshold) {
+            if (!deployState.isHosted() && (aggr.highestNodeDistributionKey - aggr.nodeCount) >= warnThreshold) {
                 deployState.getDeployLogger().logApplicationPackage(WARNING,
                         ("Content cluster '%s' has %d node(s), but the highest distribution key is %d. " +
                          "Having much higher distribution keys than the number of nodes is not recommended, " +

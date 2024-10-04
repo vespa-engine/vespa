@@ -3,7 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.RoleList;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -218,7 +217,7 @@ public class Flags {
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2024-10-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2025-10-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -279,7 +278,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2024-10-01",
+            List.of("tokle"), "2022-05-09", "2025-02-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             INSTANCE_ID);
@@ -396,7 +395,7 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-10-01",
+            List.of("hmusum"), "2023-09-25", "2024-11-01",
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -421,12 +420,6 @@ public class Flags {
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
-    public static UnboundJacksonFlag<RoleList> ROLE_DEFINITIONS = defineJacksonFlag(
-            "role-definitions", RoleList.empty(), RoleList.class,
-            List.of("mortent"), "2024-04-05", "2024-10-01",
-            "Role definitions for the system",
-            "Takes effect immediately");
-
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 64,
             List.of("vekterli"), "2024-04-12", "2025-01-01",
@@ -447,12 +440,6 @@ public class Flags {
             List.of("bjorncs"), "2024-05-07", "2025-01-01",
             "Whether to sync tenants to HubSpot",
             "Takes effect immediately");
-
-    public static final UnboundBooleanFlag REMOVE_ORPHANED_DNS_RECORDS = defineFeatureFlag(
-            "remove-orphaned-dns-records", false,
-            List.of("mpolden"), "2024-05-07", "2024-10-01",
-            "Whether EndpointDnsMaintainer should remove orphaned records instead of logging them",
-            "Takes effect on next maintenance run");
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
@@ -480,7 +467,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_VESPA_ATHENZ_HOST_IDENTITY = defineFeatureFlag(
             "use-vespa-athenz-host-identity", false,
-            List.of("freva"), "2024-06-12", "2024-10-01",
+            List.of("freva"), "2024-06-12", "2024-11-01",
             "Whether the host should get identity from Vespa Athenz. Only valid in public systems, noclave, AWS. Vespa version dimension refers to OS version.",
             "Takes effect on next provisioning",
             INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
@@ -496,12 +483,6 @@ public class Flags {
             "hubspot-sync-contacts", false,
             List.of("bjorncs"), "2024-05-27", "2025-01-01",
             "Whether to sync contacts to HubSpot",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE = defineFeatureFlag(
-            "delete-expired-config-sessions-new-procedure", true,
-            List.of("hmusum"), "2024-06-10", "2024-10-01",
-            "Whether to delete remote and local config sessions at the same time",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
@@ -535,7 +516,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
             "sdm-enabled-provisioning", true,
-            List.of("olaa"), "2024-07-31", "2024-10-01",
+            List.of("olaa"), "2024-07-31", "2024-11-01",
             "Whether to provision with SDM enabled",
             "Takes effect immediately");
 
@@ -547,17 +528,18 @@ public class Flags {
             (value) -> "legacy".equals(value) || "standard".equals(value),
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundBooleanFlag TCP_SHRINK_WINDOW = defineFeatureFlag(
-            "tcp-shrink-window", true,
-            List.of("hmusum"), "2024-08-14", "2024-10-01",
-            "Whether to enable sysctl setting net.ipv4.tcp_shrink_window, default true",
-            "Takes effect on next host-admin run");
-
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
-            "file-download-backoff-initial-time-ms", 5000,
-            List.of("hmusum"), "2024-08-16", "2024-10-01",
+            "file-download-backoff-initial-time-ms", 2000,
+            List.of("hmusum"), "2024-08-16", "2024-11-01",
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
+
+    public static final UnboundBooleanFlag OVERRIDE_S1_TOKEN = defineFeatureFlag(
+            "override-s1-token", false,
+            List.of("mortent"), "2024-09-23", "2024-11-01",
+            "Override the S1 token",
+            "Takes effect on next host-admin run",
+            HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

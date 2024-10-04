@@ -854,8 +854,6 @@
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder dnsName(com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName)",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder zoneScope()",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder scope(com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope)",
-      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder sharedRouting()",
-      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder sharedL4Routing()",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder routingMethod(com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod)",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder weight(int)",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder hosts(java.util.List)",

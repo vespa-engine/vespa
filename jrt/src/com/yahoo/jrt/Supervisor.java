@@ -27,6 +27,7 @@ public class Supervisor {
      *
      * @param transport object performing low-level operations for this Supervisor
      */
+    @SuppressWarnings("this-escape")
     public Supervisor(Transport transport) {
         this.transport = transport;
         new MandatoryMethods(this);

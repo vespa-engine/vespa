@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ExportPackagesIT {
 
-
     private static final File expectedExportPackages = new File("src/test/resources" + ExportPackages.PROPERTIES_FILE);
 
     private static final String JAR_PATH = "target/dependency/";

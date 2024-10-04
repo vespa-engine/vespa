@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -71,6 +72,39 @@ public class HostRenamerTest {
         assertEquals(0, list.get().retiring().size(), "No more hosts to rename");
     }
 
+    @Test
+    public void renameGrouped() {
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                .flagSource(flagSource)
+                .build();
+        Supplier<NodeList> list = () -> tester.nodeRepository().nodes().list().not().state(Node.State.deprovisioned);
+        HostRenamer renamer = new HostRenamer(tester.nodeRepository(), Duration.ofDays(1), new MockMetric());
+
+        ApplicationId groupedApp = ProvisioningTester.applicationId("groupedApp");
+        int hostCount = 4;
+        provisionHosts(hostCount, tester, "legacy.example.com");
+
+        deployGroupedApp(groupedApp, tester);
+
+        // Nothing happens when flag is unset
+        renamer.maintain();
+        assertEquals(0, list.get().retiring().size(), "No hosts to rename when feature flag is unset");
+
+        // Rename hosts
+        flagSource.withStringFlag(Flags.HOSTNAME_SCHEME.id(), "standard");
+        renamer.maintain();
+
+        assertEquals(2, list.get().owner(groupedApp).retiring().size(), "One node per group is retired at a time");
+        List<Node> retiringNodes = list.get().owner(groupedApp).retiring().asList();
+        assertNotEquals(
+                "Retiring nodes are from different groups",
+                retiringNodes.get(0).allocation().get().membership().cluster().group(),
+                retiringNodes.get(1).allocation().get().membership().cluster().group()
+        );
+        assertEquals(2, list.get().hosts().retiring().size(), "Two hosts should be retired");
+    }
+
     private void replaceHosts(NodeList hosts, ProvisioningTester tester) {
         for (var host : hosts) {
             if (!host.status().wantToRetire()) throw new IllegalArgumentException(host + " is not requested to retire");
@@ -97,6 +131,12 @@ public class HostRenamerTest {
         ClusterSpec contentSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion("7").build();
         Capacity capacity = Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)));
         tester.deploy(application, contentSpec, capacity);
+    }
+
+    private void deployGroupedApp(ApplicationId application, ProvisioningTester tester) {
+        ClusterSpec group0Spec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion("7").build();
+        Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 8, 50, 1)));
+        tester.deploy(application, group0Spec, capacity);
     }
 
     private void provisionHosts(int count, ProvisioningTester tester, String domain) {

@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 public class SecretsTest extends ContainerModelBuilderTestBase {
 
+    private static String IMPL_ID = "ai.vespa.secret.aws.SecretsImpl";
+
     @Test
     void testCloudSecretsNeedHosted() {
         Element clusterElem = DomBuilderTest.parse(
@@ -33,7 +35,7 @@ public class SecretsTest extends ContainerModelBuilderTestBase {
                 "</container>");
         createModel(root, clusterElem);
         ApplicationContainerCluster container = getContainerCluster("container");
-        Component<?, ?> component = container.getComponentsMap().get(ComponentId.fromString("ai.vespa.secret.SecretsImpl"));
+        Component<?, ?> component = container.getComponentsMap().get(ComponentId.fromString(IMPL_ID));
         assertNull(component);
     }
 
@@ -51,8 +53,8 @@ public class SecretsTest extends ContainerModelBuilderTestBase {
                 .build();
         createModel(root, state, null, clusterElem);
         ApplicationContainerCluster container = getContainerCluster("container");
-        assertComponentConfigured(container, "ai.vespa.secret.SecretsImpl");
-        CloudSecrets secrets = (CloudSecrets) container.getComponentsMap().get(ComponentId.fromString("ai.vespa.secret.SecretsImpl"));
+        assertComponentConfigured(container, IMPL_ID);
+        CloudSecrets secrets = (CloudSecrets) container.getComponentsMap().get(ComponentId.fromString(IMPL_ID));
 
         SecretsConfig.Builder configBuilder = new SecretsConfig.Builder();
         secrets.getConfig(configBuilder);

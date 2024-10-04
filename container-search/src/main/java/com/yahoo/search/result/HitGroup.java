@@ -970,7 +970,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     @Override
     public void close() {
         super.close();
-        hits = null;
+        hits = new ListenableArrayList<>(0);
         unmodifiableHits = null;
         hitOrderer = null;
         incomingHits.drain(); // Just to gc as much as possible

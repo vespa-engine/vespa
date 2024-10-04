@@ -72,5 +72,7 @@ func (v *flagValueForShow) unchanged() bool {
 }
 
 func (v *flagValueForShow) Set(val string) error {
-	return applyPlusMinus(val, v)
+	err := applyPlusMinus(val, v)
+	v.changed = true
+	return err
 }

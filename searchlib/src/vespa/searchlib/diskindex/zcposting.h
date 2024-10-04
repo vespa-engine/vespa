@@ -37,7 +37,7 @@ public:
     using PostingListParams = index::PostingListParams;
 
     void readDocIdAndFeatures(DocIdAndFeatures &features) override;
-    void readCounts(const PostingListCounts &counts) override; // Fill in for next word
+    void read_word_and_counts(const std::string& word, const PostingListCounts &counts) override; // Fill in for next word
     bool open(const std::string &name, const TuneFileSeqRead &tuneFileRead) override;
     bool close() override;
     void getParams(PostingListParams &params) override;

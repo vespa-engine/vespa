@@ -37,18 +37,19 @@ func TestLevelFlags(t *testing.T) {
 			t.Fail()
 		}
 	}
-	check(" +fatal +error +warning +info -config -event -debug -spam")
+	check(" +fatal +error +warning +info +config +event +debug +spam")
 	check(" -fatal -error -warning -info -config -event -debug -spam", "-all")
 	check(" +fatal +error +warning +info +config +event +debug +spam", "all")
 	check(" +fatal +error +warning +info +config +event +debug +spam", "+all")
 	check(" -fatal -error -warning -info -config -event +debug -spam", "debug")
 	check(" +fatal +error +warning +info +config +event +debug -spam", "all-spam")
 	check(" +fatal +error +warning +info +config +event +debug -spam", "all", "-spam")
-	check(" +fatal +error +warning -info -config +event -debug -spam", "+event", "-info")
-	check(" +fatal +error -warning -info -config +event -debug -spam", "+event,-info,-warning,config")
-	check(" +fatal +error -warning -info +config +event -debug -spam", "+event,-info,-warning,+config")
-	check(" +fatal +error -warning -info +config +event -debug -spam", "+event,-info", "-warning,+config")
-	check(" -fatal -error -warning -info +config -event -debug -spam", "+event", "-info", "-warning", "config")
+	check(" +fatal +error +warning -info +config +event +debug +spam", "+event", "-info")
+	check(" +fatal +error -warning -info -config +event +debug +spam", "+event,-info,-warning,config")
+	check(" +fatal +error -warning -info +config +event +debug +spam", "+event,-info,-warning,+config")
+	check(" +fatal +error -warning -info +config +event +debug +spam", "+event,-info", "-warning,+config")
+	check(" +fatal +error -warning -info +config +event +debug +spam", "+event", "-info", "-warning", "config")
+	check(" -fatal +error -warning +info -config -event +debug -spam", "info", "debug", "error")
 	check = func(expectErr string, texts ...string) {
 		var target flagValueForLevel
 		target.levels = defaultLevelFlags()

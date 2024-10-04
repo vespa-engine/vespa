@@ -8,6 +8,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -859,6 +860,39 @@ public class NodesV2ApiTest {
                        "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}," +
                        "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}" +
                        "]}");
+    }
+
+    @Test
+    public void test_snapshots() throws IOException {
+        // Trigger creation of snapshots
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
+                                                  new byte[0], Request.Method.POST),
+                                      "{\"message\":\"Triggered a new snapshot of host4.yahoo.com:");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host2.yahoo.com",
+                                                  new byte[0], Request.Method.POST),
+                                      "{\"message\":\"Triggered a new snapshot of host2.yahoo.com:");
+
+        // List snapshots
+        String listResponse = tester.container()
+                                    .handleRequest(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com"))
+                                    .getBodyAsString();
+        String id = SlimeUtils.entriesStream(SlimeUtils.jsonToSlime(listResponse).get().field("snapshots"))
+                              .findFirst().get()
+                              .field("id").asString();
+        assertFile(new Request("http://localhost:8080/nodes/v2/snapshot"), "snapshot/list.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com"), "snapshot/list-host.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id), "snapshot/single.json");
+
+        // Update snapshot state
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id,
+                                          """
+                                                  {"state": "created"}
+                                                  """,
+                                          Request.Method.PATCH),
+                              "{\"message\":\"Updated snapshot '" + id + "' for node host4.yahoo.com\"}");
+
+        // Get node
+        tester.assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "snapshot/node4.json");
     }
 
     @Test

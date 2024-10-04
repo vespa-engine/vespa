@@ -14,6 +14,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -131,7 +132,7 @@ public class SlimeUtils {
     }
 
     public static Optional<String> optionalString(Inspector inspector) {
-        return isPresent(inspector) ? Optional.of(inspector.asString()) : Optional.empty();
+        return optional(inspector, Inspector::asString);
     }
 
     public static OptionalLong optionalLong(Inspector field) {
@@ -147,11 +148,15 @@ public class SlimeUtils {
     }
 
     public static Optional<Instant> optionalInstant(Inspector field) {
-        return isPresent(field) ? Optional.of(Instant.ofEpochMilli(field.asLong())) : Optional.empty();
+        return optional(field, f -> Instant.ofEpochMilli(f.asLong()));
     }
 
     public static Optional<Duration> optionalDuration(Inspector field) {
-        return isPresent(field) ? Optional.of(Duration.ofMillis(field.asLong())) : Optional.empty();
+        return optional(field, f -> Duration.ofMillis(f.asLong()));
+    }
+
+    public static <T> Optional<T> optional(Inspector field, Function<Inspector, T> factory) {
+        return isPresent(field) ? Optional.of(factory.apply(field)) : Optional.empty();
     }
 
     public static Iterator<Inspector> entriesIterator(Inspector inspector) {

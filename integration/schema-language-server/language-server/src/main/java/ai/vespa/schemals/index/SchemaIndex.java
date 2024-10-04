@@ -21,6 +21,8 @@ import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.parser.ast.inputName;
 import ai.vespa.schemals.parser.ast.namedDocument;
+import ai.vespa.schemals.parser.ast.onnxModel;
+import ai.vespa.schemals.parser.ast.onnxModelInProfile;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
@@ -40,6 +42,7 @@ public class SchemaIndex {
         put(functionElm.class, SymbolType.FUNCTION);
         put(inputName.class, SymbolType.QUERY_INPUT);
         put(constantName.class, SymbolType.RANK_CONSTANT);
+        put(onnxModel.class, SymbolType.ONNX_MODEL);
     }};
 
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<>() {{

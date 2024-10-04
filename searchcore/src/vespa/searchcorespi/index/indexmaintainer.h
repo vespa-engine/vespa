@@ -50,7 +50,7 @@ class IndexMaintainer : public IIndexManager,
                              uint32_t absoluteId)
             : _index(index),
               _serialNum(serialNum),
-              _saveInfo(saveInfo.release()),
+              _saveInfo(std::move(saveInfo)),
               _absoluteId(absoluteId)
         { }
         ~FrozenMemoryIndexRef();

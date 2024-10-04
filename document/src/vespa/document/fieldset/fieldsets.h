@@ -11,6 +11,7 @@ class AllFields final : public FieldSet
 {
 public:
     static constexpr const char * NAME = "[all]";
+    ~AllFields() override;
     bool contains(const FieldSet&) const override { return true; }
     Type getType() const override { return Type::ALL; }
 };
@@ -19,6 +20,7 @@ class NoFields final : public FieldSet
 {
 public:
     static constexpr const char * NAME = "[none]";
+    ~NoFields() override;
     bool contains(const FieldSet& f) const override { return f.getType() == Type::NONE; }
     Type getType() const override { return Type::NONE; }
 };
@@ -27,6 +29,7 @@ class DocIdOnly final : public FieldSet
 {
 public:
     static constexpr const char * NAME = "[id]";
+    ~DocIdOnly() override;
     bool contains(const FieldSet& fields) const override {
         return fields.getType() == Type::DOCID || fields.getType() == Type::NONE;
     }
@@ -37,6 +40,7 @@ class DocumentOnly final : public FieldSet
 {
 public:
     static constexpr const char * NAME = "[document]";
+    ~DocumentOnly() override;
     bool contains(const FieldSet& fields) const override {
         return fields.getType() == Type::DOCUMENT_ONLY
             || fields.getType() == Type::DOCID

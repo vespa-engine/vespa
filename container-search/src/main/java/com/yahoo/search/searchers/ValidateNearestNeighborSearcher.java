@@ -104,16 +104,8 @@ public class ValidateNearestNeighborSearcher extends Searcher {
         }
 
         private static boolean isTensorTypeThatSupportsHnswIndex(TensorType tt) {
-            List<TensorType.Dimension> dims = tt.dimensions();
-            if (dims.size() == 1) {
-                return dims.get(0).isIndexed();
-            }
-            if (dims.size() == 2) {
-                var dims0 = dims.get(0);
-                var dims1 = dims.get(1);
-                return ((dims0.isMapped() && dims1.isIndexed()) || (dims0.isIndexed() && dims1.isMapped()));
-            }
-            return false;
+            var indexedSubtype = tt.indexedSubtype();
+            return (indexedSubtype.rank() == 1 && indexedSubtype.hasOnlyIndexedBoundDimensions());
         }
 
         /** Returns an error message if this is invalid, or null if it is valid */
