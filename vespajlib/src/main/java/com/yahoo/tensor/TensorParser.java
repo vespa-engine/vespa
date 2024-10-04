@@ -501,34 +501,29 @@ class TensorParser {
 
         private final Tensor.Builder builder;
         private final TensorType type;
-        private final List<String> dimensionOrder;
         private final List<TensorType.Dimension> mappedDimensions;
         private final TensorType mappedSubtype;
+        private final List<String> denseDimensionOrder;
 
         public GenericMixedValueParser(String string, List<String> dimensionOrder, Tensor.Builder builder) {
             super(string);
             this.builder = builder;
             this.type = builder.type();
-            this.dimensionOrder = findOrder(dimensionOrder, type);
-            this.mappedDimensions = findMapped(this.dimensionOrder, type);
+            var allDims = findOrder(dimensionOrder, type);
+            this.mappedDimensions = findMapped(allDims, type);
             this.mappedSubtype = MixedTensor.createPartialType(type.valueType(), mappedDimensions);
+            this.denseDimensionOrder = new ArrayList<>(allDims);
             for (var mapped : this.mappedDimensions) {
-                this.dimensionOrder.remove(mapped.name());
+                denseDimensionOrder.remove(mapped.name());
             }
         }
 
         private static final List<String> findOrder(List<String> dimensionOrder, TensorType type) {
-            List<String> result = new ArrayList<>();
             if (dimensionOrder == null) {
-                type.dimensions().stream().filter(d -> d.isMapped()).map(d -> d.name()).forEach(n -> result.add(n));
-                type.dimensions().stream().filter(d -> ! d.isMapped()).map(d -> d.name()).forEach(n -> result.add(n));
+                return type.dimensions().stream().map(d -> d.name()).toList();
             } else {
-                for (var name : dimensionOrder) result.add(name);
+                return dimensionOrder;
             }
-            if (result.size() != type.dimensions().size()) {
-                throw new IllegalArgumentException("bad dimensionOrder");
-            }
-            return result;
         }
 
         private static final List<TensorType.Dimension> findMapped(List<String> dimensionOrder, TensorType type) {
@@ -560,18 +555,19 @@ class TensorParser {
                 throw new IllegalArgumentException("Too many nested {label:...} levels");
             }
             String label = consumeLabel();
-            consume(':');
             addrBuilder.add(mappedDimensions.get(level).name(), label);
+            consume(':');
+            ++level;
             if (consumeOptional('{')) {
-                parseSubspace(addrBuilder, level + 1);
+                parseSubspace(addrBuilder, level);
                 consume('}');
             } else {
-                if ((level + 1) < mappedDimensions.size()) {
+                if (level < mappedDimensions.size()) {
                     throw new IllegalArgumentException("Not enough nested {label:...} levels");
                 }
                 var mappedAddress = addrBuilder.build();
-                if (builder.type().rank() > (level + 1))
-                    parseDenseSubspace(mappedAddress, dimensionOrder);
+                if (builder.type().rank() > level)
+                    parseDenseSubspace(mappedAddress, denseDimensionOrder);
                 else
                     consumeNumber(mappedAddress);
             }
