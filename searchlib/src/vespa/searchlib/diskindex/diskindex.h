@@ -7,6 +7,7 @@
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/queryeval/searchable.h>
+#include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/vespalib/stllike/cache.h>
 #include <string>
@@ -78,11 +79,14 @@ private:
     std::vector<DiskPostingFile::SP>       _postingFiles;
     std::vector<BitVectorDictionary::SP>   _bitVectorDicts;
     std::vector<std::unique_ptr<index::DictionaryFileRandRead>> _dicts;
+    std::vector<uint64_t>                  _field_index_sizes_on_disk;
+    uint32_t                               _nonfield_size_on_disk;
     TuneFileSearch                         _tuneFileSearch;
     Cache                                  _cache;
-    uint64_t                               _size;
 
-    void calculateSize();
+    static uint64_t calculate_size_on_disk(const std::string& dir, const std::vector<std::string>& file_names);
+    static uint64_t calculate_field_index_size_on_disk(const std::string& field_dir);
+    void calculate_nonfield_size_on_disk();
     bool loadSchema();
     bool openDictionaries(const TuneFileSearch &tuneFileSearch);
     bool openField(const std::string &fieldDir, const TuneFileSearch &tuneFileSearch);
@@ -144,8 +148,7 @@ public:
     /**
      * Get the size on disk of this index.
      */
-    uint64_t getSize() const { return _size; }
-
+    SearchableStats get_stats() const;
     const index::Schema &getSchema() const { return _schema; }
     const std::string &getIndexDir() const { return _indexDir; }
 

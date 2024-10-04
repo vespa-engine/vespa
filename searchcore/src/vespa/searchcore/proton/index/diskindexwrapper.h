@@ -31,7 +31,7 @@ public:
         return _index.createBlueprint(requestContext, fields, term);
     }
     search::SearchableStats getSearchableStats() const override {
-        return search::SearchableStats().sizeOnDisk(_index.getSize());
+        return _index.get_stats();
     }
 
     search::SerialNum getSerialNum() const override;

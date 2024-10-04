@@ -2,16 +2,18 @@
 
 #include "diskindex.h"
 #include "disktermblueprint.h"
-#include "pagedict4randread.h"
 #include "fileheader.h"
+#include "pagedict4randread.h"
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/cache.hpp>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.diskindex");
@@ -53,11 +55,12 @@ DiskIndex::DiskIndex(const std::string &indexDir, size_t cacheSize)
       _postingFiles(),
       _bitVectorDicts(),
       _dicts(),
+      _field_index_sizes_on_disk(),
+      _nonfield_size_on_disk(0),
       _tuneFileSearch(),
-      _cache(*this, cacheSize),
-      _size(0)
+      _cache(*this, cacheSize)
 {
-    calculateSize();
+    calculate_nonfield_size_on_disk();
 }
 
 DiskIndex::~DiskIndex() = default;
@@ -139,6 +142,7 @@ DiskIndex::openField(const std::string &fieldDir,
     }
     _postingFiles.push_back(pFile);
     _bitVectorDicts.push_back(bDict);
+    _field_index_sizes_on_disk.push_back(calculate_field_index_size_on_disk(fieldDir));
     return true;
 }
 
@@ -186,6 +190,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
             uint32_t oldPacked = oItr.getIndex();
             _postingFiles.push_back(old._postingFiles[oldPacked]);
             _bitVectorDicts.push_back(old._bitVectorDicts[oldPacked]);
+            _field_index_sizes_on_disk.push_back(old._field_index_sizes_on_disk[oldPacked]);
         }
     }
     _tuneFileSearch = tuneFileSearch;
@@ -314,11 +319,54 @@ DiskIndex::readBitVector(const LookupResult &lookupRes) const
     return dict->lookup(lookupRes.wordNum);
 }
 
-void
-DiskIndex::calculateSize()
+namespace {
+
+const std::vector<std::string> field_file_names{
+    "boolocc.bdat",
+    "boolocc.idx",
+    "posocc.dat.compressed",
+    "dictionary.pdat",
+    "dictionary.spdat",
+    "dictionary.ssdat"
+};
+
+const std::vector<std::string> nonfield_file_names{
+    "docsum.qcnt",
+    "schema.txt",
+    "schema.txt.orig",
+    "selector.dat",
+    "serial.dat"
+};
+
+}
+
+uint64_t
+DiskIndex::calculate_size_on_disk(const std::string& dir, const std::vector<std::string>& file_names)
 {
-    search::DirectoryTraverse dirt(_indexDir.c_str());
-    _size = dirt.GetTreeSize();
+    uint64_t size_on_disk = 0;
+    std::error_code ec;
+    DiskSpaceCalculator calc;
+    for (auto& file_name : file_names) {
+        // Note: dir ends with slash
+        std::filesystem::path path(dir + file_name);
+        auto size = std::filesystem::file_size(path, ec);
+        if (!ec) {
+            size_on_disk += calc(size);
+        }
+    }
+    return size_on_disk;
+}
+
+uint64_t
+DiskIndex::calculate_field_index_size_on_disk(const std::string& field_dir)
+{
+    return calculate_size_on_disk(field_dir, field_file_names);
+}
+
+void
+DiskIndex::calculate_nonfield_size_on_disk()
+{
+    _nonfield_size_on_disk = calculate_size_on_disk(_indexDir + "/", nonfield_file_names);
 }
 
 namespace {
@@ -465,6 +513,18 @@ DiskIndex::get_field_length_info(const std::string& field_name) const
     } else {
         return {};
     }
+}
+
+SearchableStats
+DiskIndex::get_stats() const
+{
+    SearchableStats stats;
+    uint64_t size_on_disk = _nonfield_size_on_disk;
+    for (const auto& field_index_size_on_disk : _field_index_sizes_on_disk) {
+        size_on_disk += field_index_size_on_disk;
+    }
+    stats.sizeOnDisk(size_on_disk);
+    return stats;
 }
 
 }
