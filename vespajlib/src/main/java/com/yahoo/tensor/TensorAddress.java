@@ -231,11 +231,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             validate();
             return TensorAddressAny.ofUnsafe(labels);
         }
+
     }
 
-    /**
-     * Builder of an address to a subset of the dimensions of a tensor type
-     */
+    /** Builder of an address to a subset of the dimensions of a tensor type */
     public static class PartialBuilder extends Builder {
 
         public PartialBuilder(TensorType type) {
