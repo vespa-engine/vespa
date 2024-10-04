@@ -53,6 +53,14 @@ DocIdMapping::readDocIdLimit(const std::string &mergedDir)
     return true;
 }
 
-
+std::span<const uint8_t>
+DocIdMapping::get_selector_view() const
+{
+    if (_selector != nullptr) {
+        return { _selector->data(), _selector->size()};
+    } else {
+        return {};
+    }
+}
 
 }
