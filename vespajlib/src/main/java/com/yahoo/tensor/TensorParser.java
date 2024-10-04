@@ -112,10 +112,11 @@ class TensorParser {
                 throw new IllegalArgumentException("A mixed tensor must be enclosed in {}");
             Tensor.Builder builder = Tensor.Builder.of(type.get());
             if (numMappedDims == 0) {
-                if (! MixedValueParser.findMappedDimension(type.get()).isPresent())
+                if (! SingleUnboundParser.canHandle(type.get())) {
                     throw new IllegalArgumentException("No suitable dimension in " + type.get() + " for parsing a tensor on " +
                                                        "the mixed form: Should have one mapped dimension");
-                var parser = new MixedValueParser(valueString, dimensionOrder, builder);
+                }
+                var parser = new SingleUnboundParser(valueString, builder);
                 parser.parse();
             } else {
                 var parser = new GenericMixedValueParser(valueString, dimensionOrder, builder);
@@ -429,62 +430,38 @@ class TensorParser {
     }
 
     /**
-     * Parses mixed tensor short forms {a:[1,2], ...} AND 1d mapped tensor short form {a:b, ...}.
+     * Parses mixed tensor short form {0:17.0, 1:42.0, ...} used for single unbound dimension
      */
-    private static class MixedValueParser extends ValueParser {
+    private static class SingleUnboundParser extends ValueParser {
 
         private final Tensor.Builder builder;
-        private final List<String> dimensionOrder;
 
-        public MixedValueParser(String string, List<String> dimensionOrder, Tensor.Builder builder) {
+        public SingleUnboundParser(String string, Tensor.Builder builder) {
             super(string);
-            this.dimensionOrder = dimensionOrder;
             this.builder = builder;
         }
 
         private void parse() {
-            TensorType.Dimension mappedDimension = findMappedDimension().get();
-            TensorType mappedSubtype = MixedTensor.createPartialType(builder.type().valueType(), List.of(mappedDimension));
-            if (dimensionOrder != null)
-                dimensionOrder.remove(mappedDimension.name());
-
+            var type = builder.type();
+            String dimName = type.dimensions().get(0).name();
             skipSpace();
             consume('{');
             skipSpace();
             while (position + 1 < string.length()) {
                 String label = consumeLabel();
                 consume(':');
-                TensorAddress mappedAddress = new TensorAddress.Builder(mappedSubtype).add(mappedDimension.name(), label).build();
-                if (builder.type().rank() > 1)
-                    parseDenseSubspace(mappedAddress, dimensionOrder);
-                else
-                    consumeNumber(mappedAddress);
+                TensorAddress mappedAddress = new TensorAddress.Builder(type).add(dimName, label).build();
+                consumeNumber(mappedAddress);
                 if ( ! consumeOptional(','))
                     consume('}');
                 skipSpace();
             }
         }
 
-        private Optional<TensorType.Dimension> findMappedDimension() {
-            return findMappedDimension(builder.type());
-        }
-
-        static Optional<TensorType.Dimension> findMappedDimension(TensorType type) {
-            Optional<TensorType.Dimension> mappedDimension = type.dimensions().stream().filter(TensorType.Dimension::isMapped).findAny();
-            if (mappedDimension.isPresent()) return Optional.of(mappedDimension.get());
-            if (type.rank() == 1 && type.dimensions().get(0).size().isEmpty())
-                return Optional.of(type.dimensions().get(0));
-            return Optional.empty();
-        }
-
-        private void parseDenseSubspace(TensorAddress mappedAddress, List<String> denseDimensionOrder) {
-            var subBuilder = ((MixedTensor.BoundBuilder)builder).denseSubspaceBuilder(mappedAddress);
-            var rest = string.substring(position);
-            DenseValueParser denseParser = new DenseValueParser(rest,
-                                                                denseDimensionOrder,
-                                                                subBuilder);
-            denseParser.parse();
-            position += denseParser.position();
+        static boolean canHandle(TensorType type) {
+            if (type.rank() != 1) return false;
+            var dim = type.dimensions().get(0);
+            return (dim.isIndexed() && dim.size().isEmpty());
         }
 
         private void consumeNumber(TensorAddress address) {
