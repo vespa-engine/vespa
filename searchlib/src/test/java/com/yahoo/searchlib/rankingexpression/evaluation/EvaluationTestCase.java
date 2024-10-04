@@ -372,7 +372,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0,y:0,z:0}:7, {x:0,y:0,z:1}:13, {x:1,y:0,z:0}:21, {x:1,y:0,z:1}:39, {x:0,y:1,z:0}:55, {x:0,y:1,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:0 }",
                                "tensor0 * tensor1", "{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5, {x:1,y:1}:0 }", "{ {y:0,z:0}:7, {y:1,z:0}:11, {y:0,z:1}:13, {y:1,z:1}:0 }");
         tester.assertEvaluates("{ {x:0,y:1,z:0}:35, {x:0,y:1,z:1}:65 }",
-                               "tensor0 * tensor1", "tensor(x{},y{}):{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5 }", "tensor(y{},z{}):{ {y:1,z:0}:7, {y:2,z:0}:11, {y:1,z:1}:13 })");
+                               "tensor0 * tensor1", "tensor(x{},y{}):{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5 }", "tensor(y{},z{}):{ {y:1,z:0}:7, {y:2,z:0}:11, {y:1,z:1}:13 }");
         tester.assertEvaluates("{{x:0,y:0}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:0}:1 }", "{ {x:1,y:0}:1, {x:0,y:0}:1 }", "{ {x:0,y:0}:1 }");
         tester.assertEvaluates("{ {d1:0}:50, {d1:1}:500, {d1:2}:5000 }",
                                "5 * tensor0", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
@@ -455,8 +455,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0}:0, {x:1}:0, {x:2}:1, {x:3}:0 }", "argmin(tensor0, x)", "{ {x:0}:15, {x:1}:12, {x:2}:7, {x:3}:15 }");
 
         // expressions combining functions
-        tester.assertEvaluates("tensor(y{}):{{y:6}:0}}", "matmul(tensor0, diag(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1})");
-        tester.assertEvaluates("tensor(y{}):{{y:6}:10}}", "matmul(tensor0, range(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1})");
+        tester.assertEvaluates("tensor(y{}):{{y:6}:0}", "matmul(tensor0, diag(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1}");
+        tester.assertEvaluates("tensor(y{}):{{y:6}:10}", "matmul(tensor0, range(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1}");
         tester.assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
                                "sum( " +               // model computation:
                                "      tensor0 * tensor1 * tensor2 " + // - feature combinations

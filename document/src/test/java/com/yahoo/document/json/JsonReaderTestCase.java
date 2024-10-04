@@ -1934,7 +1934,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void testParsingOfSparseTensorWithCells() {
-        Tensor tensor = assertSparseTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
+        Tensor tensor = assertSparseTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}",
                                 createPutWithSparseTensor("""
                                                           {
                                                             "type": "tensor(x{},y{})",
@@ -1949,7 +1949,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void testParsingOfDenseTensorWithCells() {
-        Tensor tensor = assertTensorField("{{x:0,y:0}:2.0,{x:1,y:0}:3.0}}",
+        Tensor tensor = assertTensorField("{{x:0,y:0}:2.0,{x:1,y:0}:3.0}",
                                           createPutWithTensor("""
                                                               {
                                                                 "cells": [
@@ -2183,7 +2183,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void testAssignUpdateOfTensorWithCells() {
-        assertTensorAssignUpdateSparseField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
+        assertTensorAssignUpdateSparseField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}",
                                             createAssignUpdateWithSparseTensor("""
                                                                                {
                                                                                 "cells": [
