@@ -36,7 +36,7 @@ public class RankProfileInputTest {
 
     @Test
     void testTensorRankFeatureInRequest() {
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
 
         {
             Query query = createTensor1Query(tensorString, "commonProfile", "");
@@ -57,19 +57,19 @@ public class RankProfileInputTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Could not set 'ranking.features.query(myTensor1)' to '{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}': No profile named 'bOnly' exists in schemas [a]", Exceptions.toMessageString(e));
+            assertEquals("Could not set 'ranking.features.query(myTensor1)' to '{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}': No profile named 'bOnly' exists in schemas [a]", Exceptions.toMessageString(e));
         }
     }
 
     @Test
     void testTensorRankFeatureInRequestInconsistentInput() {
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
         try {
             createTensor1Query(tensorString, "inconsistent", "");
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Could not set 'ranking.features.query(myTensor1)' to '{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}': " +
+            assertEquals("Could not set 'ranking.features.query(myTensor1)' to '{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}': " +
                          "Conflicting input type declarations for 'query(myTensor1)': " +
                          "Declared as tensor(a{},b{}) in rank profile 'inconsistent' in schema 'a', " +
                          "and as tensor(x[10]) in rank profile 'inconsistent' in schema 'b'",
@@ -79,7 +79,7 @@ public class RankProfileInputTest {
 
     @Test
     void testTensorRankFeatureWithSourceResolution() {
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
 
         {
             createTensor1Query(tensorString, "inconsistent", "sources=a");
@@ -102,7 +102,7 @@ public class RankProfileInputTest {
 
     @Test
     void testTensorRankFeatureSetProgrammatically() {
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
         Query query = new Query.Builder()
                 .setSchemaInfo(createSchemaInfo())
                 .setQueryProfile(createQueryProfile()) // Use the instantiation path with query profiles

@@ -110,11 +110,11 @@ public class QueryProfileTypeTestCase {
         profile.set("myDouble", 2.18, registry);
         profile.set("myBoolean", true, registry);
 
-        String tensorString1 = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString1 = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
         profile.set("ranking.features.query(myTensor1)", tensorString1, registry);
-        String tensorString2 = "{{x:0, y:0}:1.0, {x:0, y:1}:2.0}}";
+        String tensorString2 = "{{x:0, y:0}:1.0, {x:0, y:1}:2.0}";
         profile.set("ranking.features.query(myTensor2)", tensorString2, registry);
-        String tensorString3 = "{{x:x1}:1.0, {x:x2}:2.0}}";
+        String tensorString3 = "{{x:x1}:1.0, {x:x2}:2.0}";
         profile.set("ranking.features.query(myTensor3)", tensorString3, registry);
 
         profile.set("myQuery", "...", registry); // TODO
@@ -409,7 +409,7 @@ public class QueryProfileTypeTestCase {
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
         Query query = new Query(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor1)") +
                         "=" + urlEncode(tensorString),
                         com.yahoo.jdisc.http.HttpRequest.Method.GET),
@@ -426,7 +426,7 @@ public class QueryProfileTypeTestCase {
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
         Query query = new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET),
                 cRegistry.getComponent("test"));
         query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
@@ -471,7 +471,7 @@ public class QueryProfileTypeTestCase {
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}";
         Query query = new Query(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor1)") +
                         "=" + urlEncode(tensorString),
                         com.yahoo.jdisc.http.HttpRequest.Method.GET),

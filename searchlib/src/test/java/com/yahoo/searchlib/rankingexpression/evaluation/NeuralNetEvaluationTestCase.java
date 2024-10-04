@@ -22,7 +22,7 @@ public class NeuralNetEvaluationTestCase {
         String firstLayerBias = "{ {h:1}:-0.5, {h:2}:-1.5 }"; // tensor2
         String firstLayerInput = "sum(tensor0 * tensor1, x) + tensor2";
         String firstLayerOutput = "min(1.0, max(0.0, 0.5 + " + firstLayerInput + "))"; // non-linearity, "poor man's sigmoid"
-        assertEvaluates("{ {h:1}:1.0, {h:2}:0.0} }", firstLayerOutput, input, firstLayerWeights, firstLayerBias);
+        assertEvaluates("{ {h:1}:1.0, {h:2}:0.0 }", firstLayerOutput, input, firstLayerWeights, firstLayerBias);
         String secondLayerWeights = "{ {h:1,y:1}:1, {h:2,y:1}:-1 }"; // tensor3
         String secondLayerBias = "{ {y:1}:-0.5 }"; // tensor4
         String secondLayerInput = "sum(" + firstLayerOutput + "* tensor3, h) + tensor4";
