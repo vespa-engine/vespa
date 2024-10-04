@@ -6,7 +6,8 @@ package ai.vespa.secret.model;
 public enum Role {
 
     READER("reader"),
-    WRITER("writer");
+    WRITER("writer"),
+    TENANT_SECRET_WRITER("tenant-secret-updater");
 
     private final String value;
 
@@ -19,7 +20,10 @@ public enum Role {
     }
 
     public String forVault(VaultName vault) {
-        return vault.value() + "-" + value;
+        return switch(this) {
+            case WRITER, READER -> vault.value() + "-" + value;
+            case TENANT_SECRET_WRITER -> value;
+        };
     }
 
     @Override
