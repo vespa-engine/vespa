@@ -168,36 +168,6 @@ public class TensorParserTestCase {
     }
 
     @Test
-    public void testMultiMappedParsing() {
-        Tensor expected = Tensor.Builder.of(TensorType.fromSpec("tensor(ma{}, mb{}, x[2], y[3])"))
-                .cell(TensorAddress.ofLabels("a", "b", "0", "0"), 1)
-                .cell(TensorAddress.ofLabels("a", "b", "0", "1"), 2)
-                .cell(TensorAddress.ofLabels("a", "b", "0", "2"), 3)
-                .cell(TensorAddress.ofLabels("a", "b", "1", "0"), 4)
-                .cell(TensorAddress.ofLabels("a", "b", "1", "1"), 5)
-                .cell(TensorAddress.ofLabels("a", "b", "1", "2"), 6)
-                .cell(TensorAddress.ofLabels("foo", "bar", "0", "0"), 7)
-                .cell(TensorAddress.ofLabels("foo", "bar", "0", "1"), 8)
-                .cell(TensorAddress.ofLabels("foo", "bar", "0", "2"), 9)
-                .cell(TensorAddress.ofLabels("foo", "bar", "1", "0"), 10)
-                .cell(TensorAddress.ofLabels("foo", "bar", "1", "1"), 11)
-                .cell(TensorAddress.ofLabels("foo", "bar", "1", "2"), 12)
-                .build();
-
-        assertEquals(expected,
-                     Tensor.from("tensor(ma{}, mb{}, x[2], y[3]):{{ma:a,mb:b}:[[1,2,3],[4,5,6]], {ma:foo,mb:bar}:[[7,8,9],[10,11,12]]}"));
-
-        assertEquals(expected,
-                     Tensor.from("tensor(ma{}, mb{}, x[2], y[3]):{a:{b:[[1,2,3],[4,5,6]]}, foo:{bar:[[7,8,9],[10,11,12]]}}"));
-
-        assertEquals(expected,
-                     Tensor.from("tensor(mb{}, ma{}, x[2], y[3]):{b:{a:[[1,2,3],[4,5,6]]}, bar:{foo:[[7,8,9],[10,11,12]]}}"));
-
-        assertEquals(expected,
-                     Tensor.from("tensor(mb{}, ma{}, y[3], x[2]):{b:{a:[[1,4], [2,5], [3,6]]}, bar:{foo:[[7,10], [8,11], [9,12]]}}"));
-    }
-
-    @Test
     public void testMixedHexParsing() {
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(key{}, x[2])"))
                                    .cell(TensorAddress.ofLabels("a", "0"), (byte)0xa1)

@@ -651,22 +651,14 @@ class TensorParser {
                 if (string.charAt(position) == '}') {
                     break;
                 }
-                TensorAddress.Builder addressBuilder = consumeLabels();
-                if (addressBuilder.allMappedMissingIndexed()) {
+                TensorAddress address = consumeLabels();
+                if ( ! address.isEmpty())
                     consume(':');
-                    skipSpace();
-                    var mappedAddress = addressBuilder.buildMappedPart();
-                    parseDenseSubspace(mappedAddress, null);
-                } else {
-                    var address = addressBuilder.build();
-                    if ( ! address.isEmpty())
-                        consume(':');
-                    else
-                        consumeOptional(':');
-                    consumeNumber(builder.type().valueType(),
-                                  f -> builder.cell(address, f),
-                                  d -> builder.cell(address, d));
-                }
+                else
+                    consumeOptional(':');
+                consumeNumber(builder.type().valueType(),
+                              f -> builder.cell(address, f),
+                              d -> builder.cell(address, d));
                 if (! consumeOptional(',')) {
                     break;
                 }
@@ -681,9 +673,9 @@ class TensorParser {
         }
 
         /** Creates a tensor address from a string on the form {dimension1:label1,dimension2:label2,...} */
-        private TensorAddress.Builder consumeLabels() {
+        private TensorAddress consumeLabels() {
             TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
-            if ( ! consumeOptional('{')) return addressBuilder;
+            if ( ! consumeOptional('{')) return addressBuilder.build();
             while ( ! consumeOptional('}')) {
                 String dimension = consumeIdentifier();
                 consume(':');
@@ -691,7 +683,7 @@ class TensorParser {
                 addressBuilder.add(dimension, label);
                 consumeOptional(',');
             }
-            return addressBuilder;
+            return addressBuilder.build();
         }
 
         private void parseDenseSubspace(TensorAddress mappedAddress, List<String> denseDimensionOrder) {
