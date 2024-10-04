@@ -23,15 +23,6 @@ class TensorParser {
         }
     }
 
-    static boolean canIgnore(List<String> dimensionOrder) {
-        String prev = "";
-        for (var dim : dimensionOrder) {
-            if (dim.compareTo(prev) < 0) return false;
-            prev = dim;
-        }
-        return true;
-    }
-
     static Tensor tensorFromBody(String tensorString, Optional<TensorType> explicitType) {
         Optional<TensorType> type;
         String valueString;
@@ -52,11 +43,6 @@ class TensorParser {
                                                    "passed type " + explicitType.get());
             type = Optional.of(typeFromString);
             valueString = tensorString.substring(colonIndex + 1);
-            /*
-            if (canIgnore(dimensionOrder)) {
-                dimensionOrder = null;
-            }
-            */
         }
         else {
             type = explicitType;
@@ -70,7 +56,7 @@ class TensorParser {
             return tensorFromMappedValueString(valueString, type);
         }
         else if (valueString.startsWith("{")) {
-            return tensorFromMixed2(valueString, type, dimensionOrder);
+            return tensorFromMixedValueString(valueString, type, dimensionOrder);
         }
         else if (valueString.startsWith("[")) {
             return tensorFromDenseValueString(valueString, type, dimensionOrder);
@@ -116,33 +102,6 @@ class TensorParser {
     private static Tensor tensorFromMixedValueString(String valueString,
                                                      Optional<TensorType> type,
                                                      List<String> dimensionOrder) {
-        if (type.isEmpty())
-            throw new IllegalArgumentException("The mixed tensor form requires an explicit tensor type " +
-                                               "on the form 'tensor(dimensions):...");
-        if (type.get().dimensions().stream().filter(d -> d.isMapped()).count() > 1)
-            throw new IllegalArgumentException("The mixed tensor form requires a type with a single mapped dimension, " +
-                                               "but got " + type.get());
-        if (! MixedValueParser.findMappedDimension(type.get()).isPresent())
-            throw new IllegalArgumentException("No suitable dimension in " + type.get() + " for parsing a tensor on " +
-                                               "the mixed form: Should have one mapped dimension");
-
-        try {
-            valueString = valueString.trim();
-            if ( ! valueString.startsWith("{") && valueString.endsWith("}"))
-                throw new IllegalArgumentException("A mixed tensor must be enclosed in {}");
-            Tensor.Builder builder = Tensor.Builder.of(type.get());
-            MixedValueParser parser = new MixedValueParser(valueString, dimensionOrder, builder);
-            parser.parse();
-            return builder.build();
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by '{' or 'tensor('");
-        }
-    }
-
-    private static Tensor tensorFromMixed2(String valueString,
-                                           Optional<TensorType> type,
-                                           List<String> dimensionOrder) {
         if (type.isEmpty())
             throw new IllegalArgumentException("The mixed tensor form requires an explicit tensor type " +
                                                "on the form 'tensor(dimensions):...");
