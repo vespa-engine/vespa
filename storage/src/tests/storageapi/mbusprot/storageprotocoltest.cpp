@@ -444,6 +444,7 @@ TEST_P(StorageProtocolTest, request_bucket_info) {
         EXPECT_TRUE(reply2->supported_node_features().two_phase_remove_location);
         EXPECT_TRUE(reply2->supported_node_features().no_implicit_indexing_of_active_buckets);
         EXPECT_TRUE(reply2->supported_node_features().document_condition_probe);
+        EXPECT_TRUE(reply2->supported_node_features().timestamps_in_tas_conditions);
     }
 }
 

@@ -11,6 +11,7 @@
 
 namespace documentapi { class TestAndSetCondition; }
 namespace storage::lib { class ClusterState; }
+namespace storage::api { class TestAndSetCommand; }
 
 namespace storage::distributor {
 
@@ -107,6 +108,7 @@ private:
                                        const document::Bucket& bucket,
                                        PersistenceOperationMetricSet& metrics,
                                        Func f);
+    void normalize_tas_condition(api::TestAndSetCommand& tas_cmd);
 
     void bounce_with_wrong_distribution(api::StorageCommand& cmd, const lib::ClusterState& cluster_state);
     // Bounce with the current _default_ space cluster state.

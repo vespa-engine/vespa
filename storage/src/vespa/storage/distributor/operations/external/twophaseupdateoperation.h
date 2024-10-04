@@ -73,6 +73,9 @@ public:
 
     void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
 
+    // Exposed for unit testing
+    [[nodiscard]] std::shared_ptr<api::UpdateCommand> command() const noexcept { return _updateCmd; }
+
 private:
     enum class SendState {
         NONE_SENT,

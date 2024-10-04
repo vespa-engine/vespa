@@ -16,6 +16,8 @@ namespace storage::distributor {
  */
 class NodeSupportedFeaturesRepo {
     const vespalib::hash_map<uint16_t, NodeSupportedFeatures> _node_features;
+    NodeSupportedFeatures _supported_by_all_nodes;
+
     struct PrivateCtorTag {};
 public:
     NodeSupportedFeaturesRepo();
@@ -26,6 +28,10 @@ public:
     // Returns supported node features for node with distribution key node_idx, or a default feature set
     // with all features unset if node has no known mapping.
     [[nodiscard]] const NodeSupportedFeatures& node_supported_features(uint16_t node_idx) const noexcept;
+
+    [[nodiscard]] const NodeSupportedFeatures& supported_by_all_nodes() const noexcept {
+        return _supported_by_all_nodes;
+    }
 
     // Returns a new repo instance containing the union key->features set of self and node_features.
     // If there is a duplicate mapping between the two, the features in node_features take precedence
