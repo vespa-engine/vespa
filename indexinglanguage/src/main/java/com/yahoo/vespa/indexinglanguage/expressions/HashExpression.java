@@ -36,7 +36,7 @@ public class HashExpression extends Expression  {
                                                field.getName() +
                                                ": The hash function can only be used when the target field " +
                                                "is int or long or an array of int or long, not " + field.getDataType());
-        targetType = primitiveTypeOf(field.getDataType());
+        targetType = field.getDataType().getPrimitiveType();
     }
 
     @Override
@@ -68,7 +68,7 @@ public class HashExpression extends Expression  {
         if ( ! canStoreHash(outputFieldType))
             throw new VerificationException(this, "The type of the output field " + outputField +
                                                   " is not int or long but " + outputFieldType);
-        targetType = primitiveTypeOf(outputFieldType);
+        targetType = outputFieldType.getPrimitiveType();
         context.setValueType(createdOutputType());
     }
 
@@ -77,11 +77,6 @@ public class HashExpression extends Expression  {
         if (type.equals(DataType.LONG)) return true;
         if (type instanceof ArrayDataType) return canStoreHash(((ArrayDataType)type).getNestedType());
         return false;
-    }
-
-    private static DataType primitiveTypeOf(DataType type) {
-        if (type instanceof ArrayDataType) return ((ArrayDataType)type).getNestedType();
-        return type;
     }
 
     @Override
