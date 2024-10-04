@@ -2,7 +2,7 @@
 
 # List of possible future enhancements and features
 
-This lists some possible improvements to Vespa which have been considered or requested, can be developed relatively
+This lists some possible improvements to Vespa that have been considered or requested, can be developed relatively
 independently of other work, and are not yet under development. For more information on the code structure in Vespa, see
 [Code-map.md](Code-map.md).
 
@@ -12,9 +12,9 @@ independently of other work, and are not yet under development. For more informa
 **Difficulty:** Low<br/>
 **Skills:** Java
 
-Query profiles make it simple to support multiple buckets, behavior profiles for different use cases etc. by providing
+Query profiles make it simple to support multiple buckets, behavior profiles for different use cases, etc. by providing
 bundles of parameters accessible to Searchers processing queries. Writes go through a similar chain of processors -
-Document Processors, but have no equivalent support for parametrization. This is to allow configuration of document
+Document Processors, but have no equivalent support for parametrization. This is to allow the configuration of document
 processor profiles by reusing the query profile support also for document processors.
 
 **Code pointers:**
@@ -28,17 +28,17 @@ processor profiles by reusing the query profile support also for document proces
 **Difficulty:** Low<br/>
 **Skills:** Java
 
-There is currently support for creating Application instances programmatically in Java to unit test application package
+There is currently support for creating Application instances programmatically in Java to unit-test application package
 functionality (see com.yahoo.application.Application). However, only Java component functionality can be tested in this
 way as the content layer is not available, being implemented in C++. A Java implementation, of some or all of the
-functionality would enable developers to do more testing locally within their IDE. This is medium effort because
+functionality would enable developers to do more testing locally within their IDE. This is a medium effort because
 performance is not a concern and some components, such as ranking expressions and features are already available as
 libraries (see the searchlib module).
 
 **Code pointers:**
 
-- Content cluster mock in Java (currently empy): [ContentCluster](https://github.com/vespa-engine/vespa/blob/master/application/src/main/java/com/yahoo/application/content/ContentCluster.java)
-- The model of a search definition this must consume config from: [Search](https://github.com/vespa-engine/vespa/blob/master/config-model/src/main/java/com/yahoo/schema/Schema.java)
+- Content cluster mock in Java (currently empty): [ContentCluster](https://github.com/vespa-engine/vespa/blob/master/application/src/main/java/com/yahoo/application/content/ContentCluster.java)
+- The model of a search definition must consume config from: [Search](https://github.com/vespa-engine/vespa/blob/master/config-model/src/main/java/com/yahoo/schema/Schema.java)
 
 ## Indexed search in maps
 
@@ -60,18 +60,18 @@ However, maps cannot be indexed as text-search disk indexes.
 **Skills:** C++, Java, distributed systems, performance, multithreading, network, distributed consistency
 
 Vespa instances distribute data automatically within clusters, but these clusters are meant to consist of co-located
-machines - the distribution algorithm is not suitable for global distribution across datacenters because it cannot
-seamlessly tolerate datacenter-wide outages and does not attempt to minimize bandwidth usage between datacenters.
-Application usually achieve global presence instead by setting up multiple independent instances in different
-datacenters and write to all in parallel. This is robust and works well on average, but puts additional burden on
+machines - the distribution algorithm is not suitable for global distribution across data centers because it cannot
+seamlessly tolerate data center-wide outages and does not attempt to minimize bandwidth usage between data centers.
+The application usually achieves global presence instead by setting up multiple independent instances in different
+data centers and write to all in parallel. This is robust and works well on average, but puts an additional burden on
 applications to achieve cross-datacenter data consistency on datacenter failures, and does not enable automatic
-data recovery across datacenters, such that data redundancy is effectively required within each datacenter.
+data recovery across datacenter, such that data redundancy is effectively required within each datacenter.
 This is fine in most cases, but not in the case where storage space drives cost and intermittent loss of data coverage
 (completeness as seen from queries) is tolerable.
 
 A solution should sustain current write rates (tens of thousands of writes per node per second), sustain write and read
-rates on loss of connectivity to one (any) data center, re-establish global data consistency when a lost datacenter is
-recovered and support some degree of tradeoff between consistency and operation latency (although the exact modes to be
+rates on loss of connectivity to one (any) data center, re-establish global data consistency when a lost data center is
+recovered and support some degree of the tradeoff between consistency and operation latency (although the exact modes to be
 supported is part of the design and analysis needed).
 
 **Code pointers:**
@@ -89,10 +89,10 @@ application package (global tensors). This is fine for many kinds of models but 
 large tensors (which barely fit in memory) and/or dynamically changing tensors (online learning of global models).
 These use cases require support for global tensors (tensors available locally on all content nodes during execution
 but not sent with the query or residing in documents) which are not configured as part of the application package but
-which are written independently and dynamically update-able at a high write rate. To support this at large scale, with a
-high write rate, we need a small cluster of nodes storing the source of truth of the global tensor and which have
+which are written independently and dynamically update-able at a high write rate. To support this at a large scale, with a
+high write rate, we need a small cluster of nodes storing the source of truth of the global tensor which has
 perfect consistency. This in turn must push updates to all content nodes in a best-effort fashion given a fixed bandwidth
-budget, such that query execution and document write traffic is prioritized over ensuring perfect consistency of global
+budget, such that query execution and document write traffic are prioritized over ensuring perfect consistency of global
 model updates.
 
 **Code pointers:**
@@ -105,21 +105,21 @@ model updates.
 **Difficulty:** Low<br/>
 **Skills:** Knowledge of a decent HTTP/2 library in some language
 
-/document/v1 is a RESTified HTTP API which exposes the Vespa Document API to the
+/document/v1 is a RESTified HTTP API that exposes the Vespa Document API to the
 outside of the application's Java containers. The design of this API is simple,
-with each operation modelled as a single HTTP request, and its result as
+with each operation modeled as a single HTTP request, and its result as
 a single HTTP response. While it was previously not possible to achieve comparable
-throughput using this API to what the undocumented, custom-protocol /feedapi offered,
+throughput using this API to what the undocumented, custom-protocol /feed API offered,
 this changed with HTTP/2 support in Vespa. The clean design of /document/v1 makes it
-easy to interface with from any language and runtime that support HTTP/2.
-An implementation currently only exists for Java, and requires a JDK8+ runtime,
+easy to interface with any language and runtime that supports HTTP/2.
+An implementation currently only exists for Java and requires a JDK8+ runtime,
 and implementations in other languages are very welcome. The below pseudocode could
 be a starting point for an asynchronous implementation with futures and promises.
 
 Let `http` be an asynchronous HTTP/2 client, which returns a `future` for each request.
 A `future` will complete some time in the future, at which point dependent computations
 will trigger, depending on the result of the operation. A `future` is obtained from a
-`promise`, and completes when the `promise` is completed. An efficient feed client is then:
+`promise`, and completed when the `promise` is completed. An efficient feed client is then:
 
 ```
 inflight = map<document_id, promise>()
@@ -146,7 +146,7 @@ func enqueue(operation): future
     return result
 ```
 
-Apply synchronization as necessary. The `inflight` map is used to serialise multiple operations
+Apply synchronization as necessary. The `inflight` map is used to serialize multiple operations
 to the same document id: the mapped entry for each id is the tail of a linked queue where new
 dependents may be added, while the queue is emptied from the head one entry at a time, whenever
 a dependency (`previous`) completes computation. `enqueue` blocks until there is room in the client.
