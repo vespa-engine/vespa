@@ -79,18 +79,18 @@ INJECT IndexingParser:
         return this;
     }
 
-    private static FieldValue parseDouble(String str) {
+    private static DoubleFieldValue parseDouble(String str) {
         return new DoubleFieldValue(new BigDecimal(str).doubleValue());
     }
 
-    private static FieldValue parseFloat(String str) {
+    private static FloatFieldValue parseFloat(String str) {
         if (str.endsWith("f") || str.endsWith("F")) {
             str = str.substring(0, str.length() - 1);
         }
         return new FloatFieldValue(new BigDecimal(str).floatValue());
     }
 
-    private static FieldValue parseInteger(String str) {
+    private static IntegerFieldValue parseInteger(String str) {
         if (str.startsWith("0x")) {
             return new IntegerFieldValue(new BigInteger(str.substring(2), 16).intValue());
         } else {
@@ -98,7 +98,7 @@ INJECT IndexingParser:
         }
     }
 
-    private static FieldValue parseLong(String str) {
+    private static LongFieldValue parseLong(String str) {
         if (str.endsWith("l") || str.endsWith("L")) {
             str = str.substring(0, str.length() - 1);
         }
@@ -174,6 +174,7 @@ TOKEN :
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
+    <BINARIZE: "binarize"> |
     <BUSY_WAIT: "busy_wait"> |
     <CASE: "case"> |
     <CASE_DEFAULT: "default"> |
@@ -330,6 +331,7 @@ Expression value() :
     ( val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
+      val = binarizeExp()           |
       val = busy_waitExp()          |
       val = clearStateExp()         |
       val = echoExp()               |
@@ -405,6 +407,14 @@ Expression base64EncodeExp() : { }
  
     ( <BASE64_ENCODE> )
     { return new Base64EncodeExpression(); }
+;
+
+Expression binarizeExp() :
+{
+    NumericFieldValue threshold = new DoubleFieldValue(0);
+}
+    ( <BINARIZE> [ threshold = numericValue() ] )
+    { return new BinarizeExpression(threshold.getNumber().doubleValue()); }
 ;
 
 Expression busy_waitExp() : { }
@@ -835,11 +845,12 @@ String identifierStr() :
     String val;
 }
  
-    ( val = stringLiteral()             |
+    ( val = stringLiteral()      |
       ( <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
-        <BUSY_WAIT>                   |
+        <BINARIZE>               |
+        <BUSY_WAIT>              |
         <CASE>                   |
         <CASE_DEFAULT>           |
         <CLEAR_STATE>            |
@@ -920,9 +931,9 @@ FieldValue fieldValue() :
     { return val; }
 ;
 
-FieldValue numericValue() :
+NumericFieldValue numericValue() :
 {
-    FieldValue val;
+    NumericFieldValue val;
     String pre = "";
 }
  

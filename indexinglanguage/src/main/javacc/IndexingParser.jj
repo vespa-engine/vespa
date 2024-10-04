@@ -816,7 +816,8 @@ String identifier() :
       ( <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
-        <BUSY_WAIT>                   |
+        <BINARIZE>               |
+        <BUSY_WAIT>              |
         <CASE>                   |
         <CASE_DEFAULT>           |
         <CLEAR_STATE>            |
@@ -831,15 +832,15 @@ String identifier() :
         <GET_VAR>                |
         <GUARD>                  |
         <HASH>                   |
-        <HEX_DECODE>             |
-        <HEX_ENCODE>             |
-        <HOST_NAME>              |
+        <HEX_DECODE>              |
+        <HEX_ENCODE>              |
+        <HOST_NAME>               |
         <IDENTIFIER>             |
         <IF>                     |
         <INDEX>                  |
         <INPUT>                  |
         <JOIN>                   |
-        <LOWER_CASE>             |
+        <LOWER_CASE>              |
         <MAX_LENGTH>             |
         <NGRAM>                  |
         <NORMALIZE>              |
