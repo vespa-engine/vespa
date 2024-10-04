@@ -124,6 +124,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean enforceStrictlyIncreasingClusterStateVersions() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean distributionConfigFromClusterController() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

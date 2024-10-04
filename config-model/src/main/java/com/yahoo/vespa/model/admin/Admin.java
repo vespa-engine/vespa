@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
+import com.yahoo.config.model.api.ModelContext.FeatureFlags;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -81,13 +82,15 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private final boolean multitenant;
+    private final FeatureFlags featureFlags;
 
     public Admin(TreeConfigProducer<AnyConfigProducer> parent,
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
                  boolean isHostedVespa,
-                 ApplicationType applicationType) {
+                 ApplicationType applicationType,
+                 FeatureFlags featureFlags) {
         super(parent, "admin");
         this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
@@ -95,6 +98,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.multitenant = multitenant;
         this.applicationType = applicationType;
         this.logctlSpecs.addAll(defaultLogctlSpecs());
+        this.featureFlags = featureFlags;
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
@@ -144,7 +148,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
 
     public void addConfigservers(List<Configserver> configservers) {
         this.configservers.addAll(configservers);
-        if (this.configservers.size() > 0) {
+        if ( ! this.configservers.isEmpty()) {
             this.defaultConfigserver = configservers.get(0);
         }
         this.zooKeepersConfigProvider = new ZooKeepersConfigProvider(configservers);
@@ -197,11 +201,13 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
             builder.logserver(new LogdConfig.Logserver.Builder().use(false));
         }
         else {
-            builder.
-                logserver(new LogdConfig.Logserver.Builder().
+            builder.logserver(new LogdConfig.Logserver.Builder().
                         use(logServerContainerCluster.isPresent() || !isHostedVespa).
                         host(logserver.getHostName()).
-                        rpcport(logserver.getRelativePort(0)));
+                        rpcport(logserver.getRelativePort(0)))
+                    .loglevel(new LogdConfig.Loglevel.Builder().
+                            debug(new LogdConfig.Loglevel.Debug.Builder().forward(featureFlags.forwardAllLogLevels())).
+                            spam(new LogdConfig.Loglevel.Spam.Builder().forward(featureFlags.forwardAllLogLevels())));
         }
      }
 
