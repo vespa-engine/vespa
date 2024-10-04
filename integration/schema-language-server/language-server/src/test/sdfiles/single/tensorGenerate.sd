@@ -1,0 +1,18 @@
+schema tensorGenerate {
+    document tensorGenerate {
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: tensor<float>(d0[100], d1{})(d0)
+        }
+
+        function func() {
+            expression: tensor<bfloat16>(d0[10], d1[20], d3[30])(d4) # error
+        }
+
+        function complicated() {
+            expression: tensor<float>(d0[1],d1[1],d2[2])(d2) + tensor<float>(d1[1])(d2) # also error, d2 exists in other tensor.
+        }
+    }
+}
