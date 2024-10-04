@@ -16,20 +16,20 @@ deadlock:storage::MergeThrottler::onFlush
 # compacting the enum store). Without that interlock, we could get a
 # deadlock with
 #
-# Thread A having shared lock on attribute E and trying to get a shared lock
+# Thread A has shared lock on attribute E and trying to get a shared lock
 #          on attribute F, blocked by thread D.
-# Thread B having shared lock on attribute F and trying to get a shared lock
+# Thread B has shared lock on attribute F and trying to get a shared lock
 #          on attribute E, blocked by thread C.
-# Thread C trying to get exclusive lock on attribute E, blocked by thread A
-# Thread D trying to get exclusive lock on attribute F, blocked by thread B
+# Thread C trying to get an exclusive lock on attribute E, blocked by thread A
+# Thread D trying to get an exclusive lock on attribute F, blocked by thread B
 
 deadlock:search::AttributeContext::getAttribute
 deadlock:search::AttributeContext::getAttributeStableEnum
 deadlock:proton::ImportedAttributesContext::getAttribute
 deadlock:proton::ImportedAttributesContext::getAttributeStableEnum
 
-# This is external code that we do not control. Complains that mutex
-# creation and locking is not strictly enough ordered.
+# This is an external code that we do not control. Complains that mutex
+# creation and locking are not strictly ordered.
 
 race:llvm::sys::MutexImpl
 race:llvm::sys::SmartMutex<false>::lock
@@ -37,15 +37,15 @@ race:llvm::sys::SmartMutex<true>::lock
 race:llvm::sys::DynamicLibrary::getPermanentLibrary
 race:(anonymous namespace)::GDBJITRegistrationListener::notifyObjectLoaded
 
-# This is external code that we do not control. Complains that mutex
-# creation and locking is not strictly enough ordered.
+# This is an external code that we do not control. Complains that mutex
+# creation and locking are not strictly ordered.
 
 race:re2::Prog::GetDFA
 race:re2::DFA::DFA
 
 # Non-TSAN instrumented OpenSSL may trigger warnings when many threads are attempting
 # to create TLS connections at once in a newly started process. This appears to be related
-# to implicit init-once semantics of internal OpenSSL datastructures, though the TSAN report
+# to implicit init-once semantics of internal OpenSSL data structures, though the TSAN report
 # stack frames are truncated and don't show the full picture.
 # When a TSAN-instrumented OpenSSL build is used, the error does not manifest itself.
 # This implies that it's likely caused by a lack of instrumentation of atomic operations
