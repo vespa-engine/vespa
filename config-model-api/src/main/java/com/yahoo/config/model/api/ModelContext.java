@@ -12,7 +12,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
@@ -136,6 +135,7 @@ public interface ModelContext {
         List<ConfigServerSpec> configServerSpecs();
         HostName loadBalancerName();
         URI ztsUrl();
+        AthenzDomain tenantSecretDomain();
         String athenzDnsSuffix();
         boolean hostedVespa();
         Zone zone();
