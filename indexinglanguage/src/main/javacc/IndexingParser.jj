@@ -69,18 +69,18 @@ public class IndexingParser {
         return this;
     }
 
-    private static FieldValue parseDouble(String str) {
+    private static DoubleFieldValue parseDouble(String str) {
         return new DoubleFieldValue(new BigDecimal(str).doubleValue());
     }
 
-    private static FieldValue parseFloat(String str) {
+    private static FloatFieldValue parseFloat(String str) {
         if (str.endsWith("f") || str.endsWith("F")) {
             str = str.substring(0, str.length() - 1);
         }
         return new FloatFieldValue(new BigDecimal(str).floatValue());
     }
 
-    private static FieldValue parseInteger(String str) {
+    private static IntegerFieldValue parseInteger(String str) {
         if (str.startsWith("0x")) {
             return new IntegerFieldValue(new BigInteger(str.substring(2), 16).intValue());
         } else {
@@ -88,7 +88,7 @@ public class IndexingParser {
         }
     }
 
-    private static FieldValue parseLong(String str) {
+    private static LongFieldValue parseLong(String str) {
         if (str.endsWith("l") || str.endsWith("L")) {
             str = str.substring(0, str.length() - 1);
         }
@@ -208,6 +208,7 @@ TOKEN :
     <ZCURVE: "zcurve"> |
     <TRUE: "true" > |
     <FALSE: "false" > |
+    <BINARIZE: "binarize" > |
     <UNDERSCORE: "_"> |
     <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])*>
 }
@@ -299,11 +300,13 @@ Expression value() :
     ( val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
+      val = binarizeExp()           |
       val = busy_waitExp()          |
       val = clearStateExp()         |
       val = echoExp()               |
       val = embedExp()              |
       val = exactExp()              |
+      val = executionValueExp()     |
       val = flattenExp()            |
       val = forEachExp()            |
       val = getFieldExp()           |
@@ -317,6 +320,7 @@ Expression value() :
       val = indexExp()              |
       val = inputExp()              |
       val = joinExp()               |
+      val = literalBoolExp()        |
       val = lowerCaseExp()          |
       val = ngramExp()              |
       val = normalizeExp()          |
@@ -348,9 +352,7 @@ Expression value() :
       val = toWsetExp()             |
       val = toBoolExp()             |
       val = trimExp()               |
-      val = literalBoolExp()        |
       val = zcurveExp()             |
-      val = executionValueExp()     |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
 }
@@ -790,6 +792,15 @@ Expression zcurveExp() : { }
     { return new ZCurveExpression(); }
 }
 
+Expression binarizeExp() :
+{
+    NumericFieldValue threshold = new DoubleFieldValue(0);
+}
+{
+    ( <BINARIZE> ( threshold = numericValue() )? )
+    { return new BinarizeExpression(threshold.getNumber().doubleValue()); }
+}
+
 Expression executionValueExp() : { }
 {
     ( <UNDERSCORE> )
@@ -805,7 +816,8 @@ String identifier() :
       ( <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
-        <BUSY_WAIT>                   |
+        <BINARIZE>               |
+        <BUSY_WAIT>              |
         <CASE>                   |
         <CASE_DEFAULT>           |
         <CLEAR_STATE>            |
@@ -820,15 +832,15 @@ String identifier() :
         <GET_VAR>                |
         <GUARD>                  |
         <HASH>                   |
-        <HEX_DECODE>             |
-        <HEX_ENCODE>             |
-        <HOST_NAME>              |
+        <HEX_DECODE>              |
+        <HEX_ENCODE>              |
+        <HOST_NAME>               |
         <IDENTIFIER>             |
         <IF>                     |
         <INDEX>                  |
         <INPUT>                  |
         <JOIN>                   |
-        <LOWER_CASE>             |
+        <LOWER_CASE>              |
         <MAX_LENGTH>             |
         <NGRAM>                  |
         <NORMALIZE>              |
@@ -886,9 +898,9 @@ FieldValue fieldValue() :
     { return val; }
 }
 
-FieldValue numericValue() :
+NumericFieldValue numericValue() :
 {
-    FieldValue val;
+    NumericFieldValue val;
     String pre = "";
 }
 {
