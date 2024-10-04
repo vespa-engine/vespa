@@ -68,7 +68,7 @@ public class RankExpressionSymbolResolver {
             diagnostics.addAll(traverseRankExpressionTree(child, context));
         }
 
-        // All feature nodes has a symbol before the parse
+        // All feature nodes has a symbol before the traversal
         if (node.hasSymbol()) {
 
             if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {

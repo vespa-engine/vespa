@@ -37,7 +37,10 @@ import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.tensorTypeElm;
+import ai.vespa.schemals.parser.rankingexpression.ast.LCURLY;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
+import ai.vespa.schemals.parser.rankingexpression.ast.tensorType;
+import ai.vespa.schemals.parser.rankingexpression.ast.tensorTypeDimension;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -52,6 +55,11 @@ public class IdentifySymbolDefinition extends Identifier {
 	}
 
 
+    /**
+     * Marks the node as a symbol with SymbolStatus DEFINITION
+     * It is mainly based on the node type being an identifier, and the parent being of a certain type.
+     * But in a lot of cases we need to check more.
+     */
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
@@ -72,94 +80,107 @@ public class IdentifySymbolDefinition extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
-        if (parent.isASTInstance(importField.class) && node.getPreviousSibling() != null && node.getPreviousSibling().isASTInstance(AS.class)) {
-            createSymbol(node, SymbolType.FIELD);
-            return ret;
-        }
-
-        // Prevent inheritance from beeing marked as a definition
-        if (parent.indexOf(node) >= 3) {
-            // Unnless it is a paramenter to a function
-            if (parent.isASTInstance(functionElm.class) && node.isASTInstance(identifierStr.class)) {
-                createSymbol(node, SymbolType.PARAMETER);
-            }
-
+        if (handleSpecialCases(node, parent, ret)) {
             return ret;
         }
 
         Map<Class<?>, SymbolType> searchMap = isIdentifier ? SchemaIndex.IDENTIFIER_TYPE_MAP : SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
-        if (symbolType != null) {
+        if (symbolType == null) return ret;
 
-            if (parent.isASTInstance(namedDocument.class) || parent.isASTInstance(rootSchema.class)) {
-                node.setSymbol(symbolType, context.fileURI());
-                node.setSymbolStatus(SymbolStatus.DEFINITION);
-                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-                return ret;
-            }
-
-            Optional<Symbol> scope = CSTUtils.findScope(node);
-            if (scope.isEmpty()) {
-                if (symbolType == SymbolType.RANK_PROFILE && parent.getParent() != null && parent.getParent().isASTInstance(RootRankProfile.class)) {
-                    // we are in a rank-profile file (.profile)
-                    String workspaceRootURI = context.scheduler().getWorkspaceURI();
-                    if (workspaceRootURI == null) return ret;
-                    String currentURI = context.fileURI();
-
-                    String schemaName = FileUtils.firstPathComponentAfterPrefix(currentURI, workspaceRootURI);
-
-                    if (schemaName == null) return ret;
-
-                    Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(schemaName);
-
-                    if (schemaSymbol.isEmpty()) return ret;
-
-                    // TODO: rank-profile belonging to namedDocument??
-                    node.setSymbol(symbolType, context.fileURI(), schemaSymbol.get());
-                    node.setSymbolStatus(SymbolStatus.DEFINITION);
-                    context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-                }
-                return ret;
-            }
-
-            node.setSymbol(symbolType, context.fileURI(), scope.get());
-
-            Optional<Symbol> existingSymbol = context.schemaIndex().findSymbolInScope(node.getSymbol());
-
-            if (existingSymbol.isEmpty()) {
-                node.setSymbolStatus(SymbolStatus.DEFINITION);
-                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-
-                if (node.getSymbol().getType() == SymbolType.FUNCTION) {
-                    verifySymbolFunctionName(node, ret);
-                }
-
-            } else {
-                node.setSymbolStatus(SymbolStatus.INVALID);
-
-
-                if (symbolType == SymbolType.FIELD) {
-                    Range range = null;
-
-                    if (parent.getParent().isASTInstance(fieldOutsideDoc.class)) {
-                        range = node.getRange();
-                    } else if (!context.fieldIndex().getIsInsideDoc(existingSymbol.get())) {
-                        range = existingSymbol.get().getNode().getRange();
-                    }
-
-                    if (range != null)
-                        ret.add(new SchemaDiagnostic.Builder()
-                            .setRange(range)
-                            .setMessage("Field '" + node.getText() + "' shadows a document field with the same name.")
-                            .setSeverity(DiagnosticSeverity.Warning)
-                            .build());
-                }
-            }
-
+        // Root item, should not have a scope
+        if (parent.isASTInstance(namedDocument.class) || parent.isASTInstance(rootSchema.class)) {
+            node.setSymbol(symbolType, context.fileURI());
+            node.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
             return ret;
         }
 
+        Optional<Symbol> scope = CSTUtils.findScope(node);
+        if (scope.isEmpty()) {
+            if (symbolType == SymbolType.RANK_PROFILE && parent.getParent() != null && parent.getParent().isASTInstance(RootRankProfile.class)) {
+                // we are in a rank-profile file (.profile)
+                String workspaceRootURI = context.scheduler().getWorkspaceURI();
+                if (workspaceRootURI == null) return ret;
+                String currentURI = context.fileURI();
+
+                String schemaName = FileUtils.firstPathComponentAfterPrefix(currentURI, workspaceRootURI);
+
+                if (schemaName == null) return ret;
+
+                Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(schemaName);
+
+                if (schemaSymbol.isEmpty()) return ret;
+
+                // TODO: rank-profile belonging to namedDocument??
+                node.setSymbol(symbolType, context.fileURI(), schemaSymbol.get());
+                node.setSymbolStatus(SymbolStatus.DEFINITION);
+                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+            }
+            return ret;
+        }
+
+        node.setSymbol(symbolType, context.fileURI(), scope.get());
+
+        // Check if this is an invalid 'redefinition' of existing identifier.
+        Optional<Symbol> existingSymbol = context.schemaIndex().findSymbolInScope(node.getSymbol());
+
+        if (existingSymbol.isEmpty()) {
+            node.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+
+            if (node.getSymbol().getType() == SymbolType.FUNCTION) {
+                verifySymbolFunctionName(node, ret);
+            }
+            return ret;
+        } 
+
+        node.setSymbolStatus(SymbolStatus.INVALID);
+
+        if (symbolType == SymbolType.FIELD) {
+            Range range = null;
+
+            if (parent.getParent().isASTInstance(fieldOutsideDoc.class)) {
+                range = node.getRange();
+            } else if (!context.fieldIndex().getIsInsideDoc(existingSymbol.get())) {
+                range = existingSymbol.get().getNode().getRange();
+            }
+
+            if (range != null)
+                ret.add(new SchemaDiagnostic.Builder()
+                    .setRange(range)
+                    .setMessage("Field '" + node.getText() + "' shadows a document field with the same name.")
+                    .setSeverity(DiagnosticSeverity.Warning)
+                    .build());
+        }
+
         return ret;
+    }
+
+    /**
+     * @return true if it was a special case that should require early return of {@link IdentifySymbolDefinition#identify}.
+     */
+    private boolean handleSpecialCases(SchemaNode node, SchemaNode parent, List<Diagnostic> diagnostics) {
+        // import ... as <DEFINITION>
+        if (parent.isASTInstance(importField.class) && node.getPreviousSibling() != null && node.getPreviousSibling().isASTInstance(AS.class)) {
+            createSymbol(node, SymbolType.FIELD);
+            return true;
+        }
+
+        // function <FUNCTION-DEFINITION>(<PARAMETER-DEFINITION>, <PARAMETER-DEFINITION>, ...) { ... }
+        //
+        if (parent.indexOf(node) >= 3 && parent.isASTInstance(functionElm.class) && node.isASTInstance(identifierStr.class)) {
+            createSymbol(node, SymbolType.PARAMETER);
+            return true;
+        }
+
+        // Prevent inheritance from being marked as a definition
+        // <keyword> <DEFINITION> inherits <NOT-DEFINITION>, <NOT-DEFINITION> ...
+        if (parent.indexOf(node) >= 3) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -256,14 +277,24 @@ public class IdentifySymbolDefinition extends Identifier {
             return ret;
         }
 
-        SchemaNode grandParent = node.getParent(2);
-        if (grandParent == null || !grandParent.isASTInstance(lambdaFunction.class) || grandParent.size() < 1) {
+        SchemaNode parent = node.getParent();
+        if (parent == null) return ret;
+
+        SchemaNode grandParent = parent.getParent();
+        if (grandParent == null) return ret;
+
+        if (parent.isASTInstance(tensorTypeDimension.class) && grandParent.isASTInstance(tensorType.class)) {
+            handleTensorTypeDefinitions(node, grandParent, ret);
             return ret;
         }
 
-        SchemaNode parent = grandParent.get(0);
+        if (!grandParent.isASTInstance(lambdaFunction.class) || grandParent.size() < 1) {
+            return ret;
+        }
 
-        if (!parent.hasSymbol()) {
+        // This is specific to lambda function definitions
+        SchemaNode lambdaDefinitionNode = grandParent.get(0);
+        if (!lambdaDefinitionNode.hasSymbol()) {
 
             Optional<Symbol> parentScope = CSTUtils.findScope(parent);
     
@@ -271,13 +302,13 @@ public class IdentifySymbolDefinition extends Identifier {
                 return ret;
             }
     
-            parent.setSymbol(SymbolType.LAMBDA_FUNCTION, context.fileURI(), parentScope.get(), "lambda_" + node.hashCode());
-            parent.setSymbolStatus(SymbolStatus.DEFINITION);
-            context.schemaIndex().insertSymbolDefinition(parent.getSymbol());
+            lambdaDefinitionNode.setSymbol(SymbolType.LAMBDA_FUNCTION, context.fileURI(), parentScope.get(), "lambda_" + node.hashCode());
+            lambdaDefinitionNode.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(lambdaDefinitionNode.getSymbol());
         }
 
         
-        node.setSymbol(SymbolType.PARAMETER, context.fileURI(), parent.getSymbol());
+        node.setSymbol(SymbolType.PARAMETER, context.fileURI(), lambdaDefinitionNode.getSymbol());
 
         if (context.schemaIndex().findSymbolsInScope(node.getSymbol()).size() == 0) {
             node.setSymbolStatus(SymbolStatus.DEFINITION);
@@ -287,6 +318,51 @@ public class IdentifySymbolDefinition extends Identifier {
         }
 
         return ret;
+    }
+
+    /**
+     * For rank expressions.
+     * Example:
+     * tensor<float>(d0[1], d1[10])
+     * d0, and d1 should be marked as definition because they can be referenced in the body.
+     * For this to work, the tensor type itself should also be marked as a definition, in order to give the dimensions a scope.
+     * We will use the hashCode trick to give the tensorType node an unique identifier.
+     */
+    private void handleTensorTypeDefinitions(SchemaNode identifierNode, SchemaNode tensorTypeNode, List<Diagnostic> diagnostics) {
+        Optional<Symbol> parentScope = CSTUtils.findScope(tensorTypeNode.getParent());
+        if (parentScope.isEmpty()) return;
+
+        if (!tensorTypeNode.hasSymbol()) {
+            tensorTypeNode.setSymbol(SymbolType.TENSOR, context.fileURI(), parentScope.get(), "tensor_" + tensorTypeNode.hashCode());
+            tensorTypeNode.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(tensorTypeNode.getSymbol());
+        }
+
+        Symbol scope = tensorTypeNode.getSymbol();
+        // TODO: better check of indexed versus mapped dimension type based on existing tensor parsing?
+        SymbolType dimensionType = SymbolType.TENSOR_DIMENSION_INDEXED;
+        if (identifierNode.getNextSibling() != null && identifierNode.getNextSibling().isASTInstance(LCURLY.class)) {
+            dimensionType = SymbolType.TENSOR_DIMENSION_MAPPED;
+        }
+
+        identifierNode.setSymbol(dimensionType, context.fileURI(), scope, identifierNode.getText());
+
+        Optional<Symbol> existingSymbolMapped = context.schemaIndex().findSymbolInScope(scope, SymbolType.TENSOR_DIMENSION_MAPPED, identifierNode.getText());
+        Optional<Symbol> existingSymbolIndexed = context.schemaIndex().findSymbolInScope(scope, SymbolType.TENSOR_DIMENSION_INDEXED, identifierNode.getText());
+
+        // I want to keep this check here to give a message,
+        // but we have to change some stuff in the CongoCC parser for it to take effect.
+        if (existingSymbolMapped.isPresent() || existingSymbolIndexed.isPresent()) {
+            identifierNode.setSymbolStatus(SymbolStatus.INVALID);
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(identifierNode.getRange())
+                    .setMessage("Duplicate tensor dimension " + identifierNode.getText())
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build());
+            return;
+        }
+
+        identifierNode.setSymbolStatus(SymbolStatus.DEFINITION);
     }
 
     private static final Set<String> reservedFunctionNames = ReservedFunctionNames.getReservedNames();
