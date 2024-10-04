@@ -43,6 +43,7 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
 
 
     protected SecretsManagerClient getClient(VaultName vaultName) {
+        // TODO: Use role name instead of vault name
         return clientMap.computeIfAbsent(vaultName, clientAndCredentialsSupplier);
     }
 
