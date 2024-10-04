@@ -2,8 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.Tensor;
@@ -12,7 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Converts a vector of any input type into a binarized vector.
+ * Converts a tensor of any input type into a binarized tensor: Each value is replaced by either 0 or 1.
  *
  * @author bratseth
  */
@@ -20,9 +18,7 @@ public class BinarizeExpression extends Expression  {
 
     private final double threshold;
 
-    //private DataType targetType;
-
-    /** The type this bth consumes and produces. */
+    /** The type this consumes and produces. */
     private DataType type;
 
     /**
@@ -33,14 +29,6 @@ public class BinarizeExpression extends Expression  {
     public BinarizeExpression(double threshold) {
         super(TensorDataType.any());
         this.threshold = threshold;
-    }
-
-    @Override
-    public void setStatementOutput(DocumentType documentType, Field field) {
-//        if (! (field.getDataType() instanceof TensorDataType))
-//            throw new IllegalArgumentException("The 'binarize' function requires that the output type is a tensor, " +
-//                                               "but it is " + field.getDataType());
-//        targetType = field.getDataType();
     }
 
     @Override
