@@ -541,6 +541,12 @@ public class Flags {
             "Takes effect on next host-admin run",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag FORWARD_ALL_LOG_LEVELS = defineFeatureFlag(
+            "forward-all-log-levels", false,
+            List.of("hmusum"), "2024-10-04", "2024-11-04",
+            "Forward all log levels from nodes to logserver (debug and spam levels will be forwarded only if this flag is enabled)",
+            "Takes effect at redeployment");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
