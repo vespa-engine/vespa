@@ -47,7 +47,7 @@ public class VespaPlugin implements IXMLExtension {
 
         hoverParticipant = new HoverParticipant(logger);
         uriResolverExtension = new ServicesURIResolverExtension(serverPath, logger);
-        definitionParticipant = new DefinitionParticipant(logger);
+        definitionParticipant = new DefinitionParticipant(logger, registry.getCommandService());
         registry.getResolverExtensionManager().registerResolver(uriResolverExtension);
         registry.registerHoverParticipant(hoverParticipant);
         registry.registerDefinitionParticipant(definitionParticipant);

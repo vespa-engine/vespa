@@ -3,9 +3,9 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import hasbin from 'hasbin';
 
-import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import { ExecuteCommandParams, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, ProtocolRequestType, RequestType, ServerOptions, ExecuteCommandRegistrationOptions } from 'vscode-languageclient/node';
 
-let client: LanguageClient | null = null;
+let schemaClient: LanguageClient | null = null;
 
 const JAVA_HOME_SETTING = 'vespaSchemaLS.javaHome';
 // update if something changes
@@ -117,26 +117,43 @@ function showJavaErrorMessage() {
     });
 }
 
+//const FindDocumentRequest: RequestType<ExecuteCommandParams, any, void> = new RequestType("vespaSchemaLS/findDocument");
+const FindDocumentRequest: ProtocolRequestType<ExecuteCommandParams, any, never, void, ExecuteCommandRegistrationOptions>
+    = new ProtocolRequestType("vespaSchemaLS/findDocument");
+
 export function activate(context: vscode.ExtensionContext) {
 	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
 
-    client = createAndStartClient(jarPath);
+    schemaClient = createAndStartClient(jarPath);
+
+    const logger = vscode.window.createOutputChannel("Vespa language client", {log: true});
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.restart", (() => {
-        if (client === null) {
-            client = createAndStartClient(jarPath);
-        } else if (client.isRunning()) {
-            client.restart();
+        if (schemaClient === null) {
+            schemaClient = createAndStartClient(jarPath);
+        } else if (schemaClient.isRunning()) {
+            schemaClient.restart();
         } else {
-            client.start();
+            schemaClient.start();
         }
     })));
+
+
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.servicesxml.findDocument", async (fileName) => {
+        if (schemaClient !== null) {
+            const result = await schemaClient.sendRequest(ExecuteCommandRequest.type, fileName);
+            logger.info("Find document returned: ");
+            logger.info(result);
+        }
+        return null;
+    }));
+    logger.info("Vespa language client activated");
 }
 
 
 export function deactivate() { 
-	if (!client) {
+	if (!schemaClient) {
 		return undefined;
 	}
-	return client.stop();
+	return schemaClient.stop();
 }

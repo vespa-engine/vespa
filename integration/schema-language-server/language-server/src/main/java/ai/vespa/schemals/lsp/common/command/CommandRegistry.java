@@ -11,6 +11,7 @@ import ai.vespa.schemals.lsp.common.command.commandtypes.CommandList;
 import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentOpen;
 import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
 import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
+import ai.vespa.schemals.lsp.common.command.commandtypes.FindDocument;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 
 /**
@@ -37,6 +38,10 @@ public class CommandRegistry {
         RUN_VESPA_QUERY {
             public String title() { return "Run Vespa query"; }
             public SchemaCommand construct() { return new RunVespaQuery(); }
+        },
+        FIND_SCHEMA_DEFINITION {
+            public String title() { return "vespaSchemaLS/findDocument"; }
+            public SchemaCommand construct() { return new FindDocument(); }
         }
     }
 
