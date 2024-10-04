@@ -7,8 +7,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
-import com.intellij.openapi.application.PathManager
-import java.nio.file.Path
+import ai.vespa.schemals.intellij.settings.SchemaSettings
+import java.nio.file.Paths
+import kotlin.io.path.isExecutable
 
 /**
  * Entry point for giving LSP support by starting the server.
@@ -39,6 +40,19 @@ class SchemaLspServerDescriptor(project: Project) : ProjectWideLspServerDescript
             .toAbsolutePath()
             .toString()
 
-        return GeneralCommandLine("java", "-jar", serverPath)
+        // Check if user has supplied a custom path to java
+        val settingsState = SchemaSettings.getInstance().state
+        val javaPath = settingsState?.javaPath ?: ""
+
+        val customJavaExecutable = listOf(
+            Paths.get(javaPath).resolve("java"),
+            Paths.get(javaPath).resolve("bin").resolve("java")
+        ).firstOrNull { it.isExecutable() }
+
+        return if (customJavaExecutable != null) {
+            GeneralCommandLine(customJavaExecutable.toString(), "-jar", serverPath)
+        } else {
+            GeneralCommandLine("java", "-jar", serverPath)
+        }
     }
 }
