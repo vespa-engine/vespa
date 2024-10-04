@@ -60,7 +60,7 @@ public class TensorTypeParser {
             if (dimension == null)
                 throw formatException(specString, "Dimension '" + element + "' is on the wrong format");
             dimensions.add(dimension);
-            if (dimensionOrder != null)
+            if (dimension != null && dimensionOrder != null)
                 dimensionOrder.add(dimension.name());
         }
         return new TensorType.Builder(valueType, dimensions).build();

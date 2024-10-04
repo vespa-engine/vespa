@@ -232,9 +232,36 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             return TensorAddressAny.ofUnsafe(labels);
         }
 
+        boolean allMappedMissingIndexed() {
+            int idx = 0;
+            boolean someMapped = false;
+            boolean someIndexed = false;
+            for (var dim : type.dimensions()) {
+                boolean idxInvalid = (labels[idx++] == Tensor.invalidIndex);
+                if (dim.isMapped() == idxInvalid) {
+                    return false;
+                }
+                someMapped |= dim.isMapped();
+                someIndexed |= dim.isIndexed();
+            }
+            return someMapped && someIndexed;
+        }
+
+        TensorAddress buildMappedPart() {
+            var b = new Builder(type.mappedSubtype());
+            int idx = 0;
+            for (var dim : type.dimensions()) {
+                if (dim.isMapped()) {
+                    b.add(dim.name(), labels[idx++]);
+                }
+            }
+            return b.build();
+        }
     }
 
-    /** Builder of an address to a subset of the dimensions of a tensor type */
+    /**
+     * Builder of an address to a subset of the dimensions of a tensor type
+     */
     public static class PartialBuilder extends Builder {
 
         public PartialBuilder(TensorType type) {

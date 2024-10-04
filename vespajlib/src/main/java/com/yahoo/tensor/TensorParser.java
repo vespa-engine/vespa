@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import java.util.function.Consumer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,15 @@ class TensorParser {
                                                (explicitType.isPresent() ? " of type " + explicitType.get() : ""),
                                                e);
         }
+    }
+
+    static boolean canIgnore(List<String> dimensionOrder) {
+        String prev = "";
+        for (var dim : dimensionOrder) {
+            if (dim.compareTo(prev) < 0) return false;
+            prev = dim;
+        }
+        return true;
     }
 
     static Tensor tensorFromBody(String tensorString, Optional<TensorType> explicitType) {
@@ -42,6 +52,11 @@ class TensorParser {
                                                    "passed type " + explicitType.get());
             type = Optional.of(typeFromString);
             valueString = tensorString.substring(colonIndex + 1);
+            /*
+            if (canIgnore(dimensionOrder)) {
+                dimensionOrder = null;
+            }
+            */
         }
         else {
             type = explicitType;
@@ -55,7 +70,7 @@ class TensorParser {
             return tensorFromMappedValueString(valueString, type);
         }
         else if (valueString.startsWith("{")) {
-            return tensorFromMixedValueString(valueString, type, dimensionOrder);
+            return tensorFromMixed2(valueString, type, dimensionOrder);
         }
         else if (valueString.startsWith("[")) {
             return tensorFromDenseValueString(valueString, type, dimensionOrder);
@@ -125,31 +140,39 @@ class TensorParser {
         }
     }
 
-    private static Optional<Tensor> maybeFromBinaryValueString(
-            String valueString,
-            Optional<TensorType> optType,
-            List<String> dimensionOrder)
-    {
-        if (optType.isEmpty() || dimensionOrder != null) {
-            return Optional.empty();
-        }
-        var type = optType.get();
-        var builder = IndexedTensor.Builder.of(type);
-        if (builder instanceof IndexedTensor.DirectIndexBuilder dib) {
-            if (fillFromBinaryValueString(dib, valueString)) {
-                return Optional.of(builder.build());
+    private static Tensor tensorFromMixed2(String valueString,
+                                           Optional<TensorType> type,
+                                           List<String> dimensionOrder) {
+        if (type.isEmpty())
+            throw new IllegalArgumentException("The mixed tensor form requires an explicit tensor type " +
+                                               "on the form 'tensor(dimensions):...");
+        long numMappedDims = type.get().dimensions().stream().filter(d -> d.isMapped()).count();
+        try {
+            valueString = valueString.trim();
+            if ( ! valueString.startsWith("{") && valueString.endsWith("}"))
+                throw new IllegalArgumentException("A mixed tensor must be enclosed in {}");
+            Tensor.Builder builder = Tensor.Builder.of(type.get());
+            if (numMappedDims == 0) {
+                if (! MixedValueParser.findMappedDimension(type.get()).isPresent())
+                    throw new IllegalArgumentException("No suitable dimension in " + type.get() + " for parsing a tensor on " +
+                                                       "the mixed form: Should have one mapped dimension");
+                var parser = new MixedValueParser(valueString, dimensionOrder, builder);
+                parser.parse();
+            } else {
+                var parser = new GenericMixedValueParser(valueString, dimensionOrder, builder);
+                parser.parse();
             }
+            return builder.build();
         }
-        return Optional.empty();
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Excepted a number or a string starting by '{' or 'tensor('");
+        }
     }
 
-    private static boolean fillFromBinaryValueString(IndexedTensor.DirectIndexBuilder builder,
-                                                 String valueString)
-    {
-        var type = builder.type();
+    private static boolean validHexString(TensorType type, String valueString) {
         long sz = 1;
         for (var d : type.dimensions()) {
-                sz *= d.size().orElse(0L);
+            sz *= d.size().orElse(0L);
         }
         int numHexDigits = (int)(sz * 2 * type.valueType().sizeOfCell());
         if (sz == 0
@@ -159,18 +182,23 @@ class TensorParser {
         {
             return false;
         }
-        try {
-            double[] values = decodeHexString(valueString, type.valueType());
-            if (values.length != sz) {
-                return false;
-            }
-            for (int i = 0; i < sz; ++i) {
-                builder.cellByDirectIndex(i, values[i]);
-            }
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
+        return true;
+    }
+
+    private static Optional<Tensor> maybeFromBinaryValueString(
+            String valueString,
+            Optional<TensorType> optType,
+            List<String> dimensionOrder)
+    {
+        if (optType.isEmpty()) {
+            return Optional.empty();
         }
+        var type = optType.get();
+        if (validHexString(type, valueString)) {
+            var tensor = tensorFromDenseValueString(valueString, optType, dimensionOrder);
+            return Optional.of(tensor);
+        }
+        return Optional.empty();
     }
 
     private static Tensor tensorFromDenseValueString(String valueString,
@@ -260,23 +288,21 @@ class TensorParser {
             }
         }
 
-        protected Number consumeNumber(TensorType.Value cellValueType) {
+        protected void consumeNumber(TensorType.Value cellValueType,
+                                     Consumer<Float> consumeFloat,
+                                     Consumer<Double> consumeDouble) {
             skipSpace();
             int nextNumberEnd = requiredNextStopCharIndex(position);
+            String cellValueString = string.substring(position, nextNumberEnd);
             try {
-                String cellValueString = string.substring(position, nextNumberEnd);
-                try {
-                    return switch (cellValueType) {
-                        case DOUBLE -> Double.parseDouble(cellValueString);
-                        case FLOAT -> Float.parseFloat(cellValueString);
-                        case BFLOAT16 -> Float.parseFloat(cellValueString);
-                        case INT8 -> Float.parseFloat(cellValueString);
-                        default -> throw new IllegalArgumentException(cellValueType + " is not supported");
-                    };
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("At value position " + position + ": '" +
-                                                       cellValueString + "' is not a valid " + cellValueType);
-                }
+                switch (cellValueType) {
+                    case DOUBLE -> consumeDouble.accept(Double.parseDouble(cellValueString));
+                    case FLOAT, BFLOAT16, INT8 -> consumeFloat.accept(Float.parseFloat(cellValueString));
+                    default -> throw new IllegalArgumentException(cellValueType + " is not supported");
+                };
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("At value position " + position + ": '" +
+                                                   cellValueString + "' is not a valid " + cellValueType);
             }
             finally {
                 position = nextNumberEnd;
@@ -339,7 +365,17 @@ class TensorParser {
             skipSpace();
             if (string.charAt(position) != '[') {
                 int stopPos = stopCharIndex(position);
-                if (fillFromBinaryValueString(builder, string.substring(position, stopPos))) {
+                String hexToken = string.substring(position, stopPos);
+                if (validHexString(builder.type(), hexToken)) {
+                    double[] values = decodeHexString(hexToken, builder.type().valueType());
+                    int i = 0;
+                    while (indexes.hasNext()) {
+                        indexes.next();
+                        builder.cellByDirectIndex(indexes.toSourceValueIndex(), values[i++]);
+                    }
+                    if (i != values.length) {
+                        throw new IllegalStateException("consume " + i + " values out of " + values.length);
+                    }
                     position = stopPos;
                     return;
                 }
@@ -373,13 +409,9 @@ class TensorParser {
         }
 
         protected void consumeNumber() {
-            Number number = consumeNumber(builder.type().valueType());
-            switch (builder.type().valueType()) {
-                case DOUBLE -> builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Double) number);
-                case FLOAT -> builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float) number);
-                case BFLOAT16 -> builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float) number);
-                case INT8 -> builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float) number);
-            }
+            consumeNumber(builder.type().valueType(),
+                          f -> builder.cellByDirectIndex(indexes.toSourceValueIndex(), f),
+                          d -> builder.cellByDirectIndex(indexes.toSourceValueIndex(), d));
         }
     }
 
@@ -417,13 +449,9 @@ class TensorParser {
         }
 
         private void consumeNumber() {
-            Number number = consumeNumber(builder.type().valueType());
-            switch (builder.type().valueType()) {
-                case DOUBLE -> builder.cell((Double) number, indexes);
-                case FLOAT -> builder.cell((Float) number, indexes);
-                case BFLOAT16 -> builder.cell((Float) number, indexes);
-                case INT8 -> builder.cell((Float) number, indexes);
-            }
+            consumeNumber(builder.type().valueType(),
+                          f -> builder.cell(f, indexes),
+                          d -> builder.cell(d, indexes));
         }
 
         private boolean isInnerMostDimension(int dimension) {
@@ -501,13 +529,109 @@ class TensorParser {
         }
 
         private void consumeNumber(TensorAddress address) {
-            Number number = consumeNumber(builder.type().valueType());
-            switch (builder.type().valueType()) {
-                case DOUBLE -> builder.cell(address, (Double) number);
-                case FLOAT -> builder.cell(address, (Float) number);
-                case BFLOAT16 -> builder.cell(address, (Float) number);
-                case INT8 -> builder.cell(address, (Float) number);
+            consumeNumber(builder.type().valueType(),
+                          f -> builder.cell(address, f),
+                          d -> builder.cell(address, d));
+        }
+    }
+
+    /**
+     * Parses mixed tensor short form {a:{b1:[1,2], b2:[2,3]}, ...}
+     */
+    private static class GenericMixedValueParser extends ValueParser {
+
+        private final Tensor.Builder builder;
+        private final TensorType type;
+        private final List<String> dimensionOrder;
+        private final List<TensorType.Dimension> mappedDimensions;
+        private final TensorType mappedSubtype;
+
+        public GenericMixedValueParser(String string, List<String> dimensionOrder, Tensor.Builder builder) {
+            super(string);
+            this.builder = builder;
+            this.type = builder.type();
+            this.dimensionOrder = findOrder(dimensionOrder, type);
+            this.mappedDimensions = findMapped(this.dimensionOrder, type);
+            this.mappedSubtype = MixedTensor.createPartialType(type.valueType(), mappedDimensions);
+            for (var mapped : this.mappedDimensions) {
+                this.dimensionOrder.remove(mapped.name());
             }
+        }
+
+        private static final List<String> findOrder(List<String> dimensionOrder, TensorType type) {
+            List<String> result = new ArrayList<>();
+            if (dimensionOrder == null) {
+                type.dimensions().stream().filter(d -> d.isMapped()).map(d -> d.name()).forEach(n -> result.add(n));
+                type.dimensions().stream().filter(d -> ! d.isMapped()).map(d -> d.name()).forEach(n -> result.add(n));
+            } else {
+                for (var name : dimensionOrder) result.add(name);
+            }
+            if (result.size() != type.dimensions().size()) {
+                throw new IllegalArgumentException("bad dimensionOrder");
+            }
+            return result;
+        }
+
+        private static final List<TensorType.Dimension> findMapped(List<String> dimensionOrder, TensorType type) {
+            List<TensorType.Dimension> result = new ArrayList<>();
+            for (var name : dimensionOrder) {
+                var dim = type.dimension(name).orElseThrow(() -> new IllegalArgumentException("bad dimension " + name));
+                if (dim.isMapped()) {
+                    result.add(dim);
+                }
+            }
+            return result;
+        }
+
+        private void parse() {
+            consume('{');
+            skipSpace();
+            while (position + 1 < string.length()) {
+                var addrBuilder = new TensorAddress.Builder(mappedSubtype);
+                parseSubspace(addrBuilder, 0);
+                if ( ! consumeOptional(',')) {
+                    break;
+                }
+            }
+            consume('}');
+        }
+
+        private void parseSubspace(TensorAddress.Builder addrBuilder, int level) {
+            if (level >= mappedDimensions.size()) {
+                throw new IllegalArgumentException("Too many nested {label:...} levels");
+            }
+            String label = consumeLabel();
+            consume(':');
+            addrBuilder.add(mappedDimensions.get(level).name(), label);
+            if (consumeOptional('{')) {
+                parseSubspace(addrBuilder, level + 1);
+                consume('}');
+            } else {
+                if ((level + 1) < mappedDimensions.size()) {
+                    throw new IllegalArgumentException("Not enough nested {label:...} levels");
+                }
+                var mappedAddress = addrBuilder.build();
+                if (builder.type().rank() > (level + 1))
+                    parseDenseSubspace(mappedAddress, dimensionOrder);
+                else
+                    consumeNumber(mappedAddress);
+            }
+        }
+
+        private void parseDenseSubspace(TensorAddress mappedAddress, List<String> denseDimensionOrder) {
+            var subBuilder = ((MixedTensor.BoundBuilder)builder).denseSubspaceBuilder(mappedAddress);
+            var rest = string.substring(position);
+            DenseValueParser denseParser = new DenseValueParser(rest,
+                                                                denseDimensionOrder,
+                                                                subBuilder);
+            denseParser.parse();
+            position += denseParser.position();
+        }
+
+        private void consumeNumber(TensorAddress address) {
+            consumeNumber(builder.type().valueType(),
+                          f -> builder.cell(address, f),
+                          d -> builder.cell(address, d));
         }
     }
 
@@ -522,46 +646,44 @@ class TensorParser {
 
         private void parse() {
             consume('{');
-            skipSpace();
-            while (position + 1 < string.length()) {
-                TensorAddress address = consumeLabels();
-                if ( ! address.isEmpty())
-                    consume(':');
-                else
-                    consumeOptional(':');
-
-                int valueEnd = string.indexOf(',', position);
-                if (valueEnd < 0) { // last value
-                    valueEnd = string.indexOf('}', position);
-                    if (valueEnd < 0)
-                        throw new IllegalArgumentException("A mapped tensor string must end by '}'");
-                }
-
-                TensorType.Value cellValueType = builder.type().valueType();
-                String cellValueString = string.substring(position, valueEnd).trim();
-                try {
-                    switch (cellValueType) {
-                        case DOUBLE -> builder.cell(address, Double.parseDouble(cellValueString));
-                        case FLOAT -> builder.cell(address, Float.parseFloat(cellValueString));
-                        case BFLOAT16 -> builder.cell(address, Float.parseFloat(cellValueString));
-                        case INT8 -> builder.cell(address, Float.parseFloat(cellValueString));
-                        default -> throw new IllegalArgumentException(cellValueType + " is not supported");
-                    }
-                }
-                catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("At " + address.toString(builder.type()) + ": '" +
-                                                       cellValueString + "' is not a valid " + cellValueType);
-                }
-
-                position = valueEnd+1;
+            while (position < string.length()) {
                 skipSpace();
+                if (string.charAt(position) == '}') {
+                    break;
+                }
+                TensorAddress.Builder addressBuilder = consumeLabels();
+                if (addressBuilder.allMappedMissingIndexed()) {
+                    consume(':');
+                    skipSpace();
+                    var mappedAddress = addressBuilder.buildMappedPart();
+                    parseDenseSubspace(mappedAddress, null);
+                } else {
+                    var address = addressBuilder.build();
+                    if ( ! address.isEmpty())
+                        consume(':');
+                    else
+                        consumeOptional(':');
+                    consumeNumber(builder.type().valueType(),
+                                  f -> builder.cell(address, f),
+                                  d -> builder.cell(address, d));
+                }
+                if (! consumeOptional(',')) {
+                    break;
+                }
+            }
+            if (! consumeOptional('}')) {
+                throw new IllegalArgumentException("A mapped tensor string must end by '}'");
+            }
+            skipSpace();
+            if (position < string.length()) {
+                throw new IllegalArgumentException("Garbage after mapped tensor string: " + string.substring(position));
             }
         }
 
         /** Creates a tensor address from a string on the form {dimension1:label1,dimension2:label2,...} */
-        private TensorAddress consumeLabels() {
+        private TensorAddress.Builder consumeLabels() {
             TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
-            if ( ! consumeOptional('{')) return addressBuilder.build();
+            if ( ! consumeOptional('{')) return addressBuilder;
             while ( ! consumeOptional('}')) {
                 String dimension = consumeIdentifier();
                 consume(':');
@@ -569,9 +691,18 @@ class TensorParser {
                 addressBuilder.add(dimension, label);
                 consumeOptional(',');
             }
-            return addressBuilder.build();
+            return addressBuilder;
         }
 
+        private void parseDenseSubspace(TensorAddress mappedAddress, List<String> denseDimensionOrder) {
+            var subBuilder = ((MixedTensor.BoundBuilder)builder).denseSubspaceBuilder(mappedAddress);
+            var rest = string.substring(position);
+            DenseValueParser denseParser = new DenseValueParser(rest,
+                                                                denseDimensionOrder,
+                                                                subBuilder);
+            denseParser.parse();
+            position += denseParser.position();
+        }
     }
 
     /** Parses a tensor *value* into a type */
