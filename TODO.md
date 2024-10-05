@@ -109,7 +109,7 @@ model updates.
 outside of the application's Java containers. The design of this API is simple,
 with each operation modeled as a single HTTP request, and its result as
 a single HTTP response. While it was previously not possible to achieve comparable
-throughput using this API to what the undocumented, custom-protocol /feed API offered,
+throughput using this API to what the undocumented, custom-protocol /feedapi offered,
 this changed with HTTP/2 support in Vespa. The clean design of /document/v1 makes it
 easy to interface with any language and runtime that supports HTTP/2.
 An implementation currently only exists for Java and requires a JDK8+ runtime,
