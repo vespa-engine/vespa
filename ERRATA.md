@@ -2,7 +2,7 @@
 
 ## Errata
 
-### 2023-02-09: Rare edge cases may cause memory corruption on content nodes when searching an HNSW index together with an index field and using multiple threads per query
+### 2023-02-09: Rare edge case may cause memory corruption on content nodes when searching an HNSW index together with an index field and using multiple threads per query
 
 Affected version range: **8.78.54** (first release with documented support for the
 feature triggering the bug) up to **8.116.25** (first release with a complete fix).
