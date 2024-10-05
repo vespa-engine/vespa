@@ -111,7 +111,7 @@ Solution:
 
 
 ### 2020-11-30: Regression introduced in Vespa 7.141 may cause data loss or inconsistencies when using 'create: true' updates
-There exists a regression introduced in Vespa 7.141 where updates are marked as `create: true` (i.e. create if missing)
+There exists a regression introduced in Vespa 7.141 where updates marked as `create: true` (i.e. create if missing)
 may cause data loss or undetected inconsistencies in certain edge cases.
 This regression was introduced as part of an optimization effort to greatly reduce the common-case overhead of updates
 when replicas are out of sync.
