@@ -95,7 +95,7 @@ The following needs to happen to trigger the bug:
   must have been set.
 * A new config change is deployed that contains changes to proton.
   This config snapshot is stored in the transaction log on the content node.
-* Vespa-proton-bin is restarted, and as part of the prepare for restart step,
+* vespa-proton-bin is restarted, and as part of the prepare for restart step,
   at least one attribute vector is not flushed to the current serial number.
 * Due to the bug, replay of the transaction log will fail to replay feed operations to attributes after replaying the config change.
   The effect is that all attributes that were not flushed as part of preparing for restart
