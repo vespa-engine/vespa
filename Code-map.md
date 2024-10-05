@@ -88,7 +88,7 @@ It is implemented in Java.
 
 ## General utility libraries
 
-Libraries are used throughout the code.
+Libraries used throughout the code.
 
 - [vespalib](https://github.com/vespa-engine/vespa/tree/master/vespalib) - general utility library for C++
 - [vespajlib](https://github.com/vespa-engine/vespa/tree/master/vespajlib) - general utility library for Java. Includes the Java implementation of the tensor library.
