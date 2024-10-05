@@ -214,6 +214,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean launchApplicationAthenzService;
         private final boolean distributionConfigFromClusterController;
         private final boolean useLegacyWandQueryParsing;
+        private final boolean forwardAllLogLevels;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -265,6 +266,7 @@ public class ModelContextImpl implements ModelContext {
             this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(source).with(appId).with(version).value();
             this.distributionConfigFromClusterController = Flags.DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
+            this.forwardAllLogLevels = Flags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -321,6 +323,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
         @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
+        @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
     }
 
     public static class Properties implements ModelContext.Properties {
