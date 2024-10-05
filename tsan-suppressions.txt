@@ -18,7 +18,7 @@ deadlock:storage::MergeThrottler::onFlush
 #
 # Thread A having shared lock on attribute E and trying to get a shared lock
 #          on attribute F, blocked by thread D.
-# Thread B has shared lock on attribute F and trying to get a shared lock
+# Thread B having shared lock on attribute F and trying to get a shared lock
 #          on attribute E, blocked by thread C.
 # Thread C trying to get an exclusive lock on attribute E, blocked by thread A
 # Thread D trying to get an exclusive lock on attribute F, blocked by thread B
