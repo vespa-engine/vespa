@@ -37,7 +37,7 @@ race:llvm::sys::SmartMutex<true>::lock
 race:llvm::sys::DynamicLibrary::getPermanentLibrary
 race:(anonymous namespace)::GDBJITRegistrationListener::notifyObjectLoaded
 
-# This is an external code that we do not control. Complains that mutex
+# This is external code that we do not control. Complains that mutex
 # creation and locking are not strictly ordered.
 
 race:re2::Prog::GetDFA
