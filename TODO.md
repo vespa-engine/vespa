@@ -92,7 +92,7 @@ but not sent with the query or residing in documents) which are not configured a
 which are written independently and dynamically update-able at a high write rate. To support this at a large scale, with a
 high write rate, we need a small cluster of nodes storing the source of truth of the global tensor which has
 perfect consistency. This in turn must push updates to all content nodes in a best-effort fashion given a fixed bandwidth
-budget, such that query execution and document write traffic are prioritized over ensuring perfect consistency of global
+budget, such that query execution and document write traffic is prioritized over ensuring perfect consistency of global
 model updates.
 
 **Code pointers:**
