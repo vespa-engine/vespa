@@ -16,7 +16,7 @@ deadlock:storage::MergeThrottler::onFlush
 # compacting the enum store). Without that interlock, we could get a
 # deadlock with
 #
-# Thread A has shared lock on attribute E and trying to get a shared lock
+# Thread A having shared lock on attribute E and trying to get a shared lock
 #          on attribute F, blocked by thread D.
 # Thread B has shared lock on attribute F and trying to get a shared lock
 #          on attribute E, blocked by thread C.
