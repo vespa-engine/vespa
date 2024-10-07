@@ -1390,6 +1390,7 @@
       "public abstract java.util.Optional size()",
       "public abstract com.yahoo.tensor.TensorType$Dimension$Type type()",
       "public abstract com.yahoo.tensor.TensorType$Dimension withName(java.lang.String)",
+      "public com.yahoo.tensor.TensorType$Dimension withSize(int)",
       "public boolean isIndexed()",
       "public boolean isMapped()",
       "public abstract java.lang.String toString()",
