@@ -192,6 +192,48 @@ public class TensorParserTestCase {
 
         assertEquals(expected,
                      Tensor.from("tensor(mb{}, ma{}, y[3], x[2]):{b:{a:[[1,4], [2,5], [3,6]]}, bar:{foo:[[7,10], [8,11], [9,12]]}}"));
+
+
+        assertEquals(
+                Tensor.from("""
+                            tensor(category{},key{},x[2],y[3]):{
+                               {category:cat1, key:key1, x:0, y:0}: 1.0,
+                               {category:cat1, key:key1, x:0, y:1}: 2.0,
+                               {category:cat1, key:key1, x:0, y:2}: 3.0,
+                               {category:cat1, key:key1, x:1, y:0}: 4.0,
+                               {category:cat1, key:key1, x:1, y:1}: 5.0,
+                               {category:cat1, key:key1, x:1, y:2}: 6.0,
+
+                               {category:cat1, key:key2, x:0, y:0}: 1.1,
+                               {category:cat1, key:key2, x:0, y:1}: 2.1,
+                               {category:cat1, key:key2, x:0, y:2}: 3.1,
+                               {category:cat1, key:key2, x:1, y:0}: 4.1,
+                               {category:cat1, key:key2, x:1, y:1}: 5.1,
+                               {category:cat1, key:key2, x:1, y:2}: 6.1,
+
+                               {category:cat2, key:key1, x:0, y:0}: 7.3,
+                               {category:cat2, key:key1, x:0, y:1}: 8.3,
+                               {category:cat2, key:key1, x:0, y:2}: 9.3,
+                               {category:cat2, key:key1, x:1, y:0}: 7.0,
+                               {category:cat2, key:key1, x:1, y:1}: 8.0,
+                               {category:cat2, key:key1, x:1, y:2}: 9.0,
+
+                               {category:cat2, key:key3, x:0, y:0}: 7.5,
+                               {category:cat2, key:key3, x:0, y:1}: 8.5,
+                               {category:cat2, key:key3, x:0, y:2}: 9.5,
+                               {category:cat2, key:key3, x:1, y:0}: 7.9,
+                               {category:cat2, key:key3, x:1, y:1}: 8.9,
+                               {category:cat2, key:key3, x:1, y:2}: 9.9
+                            }
+                            """),
+                Tensor.from("""
+                            tensor(category{},key{},x[2],y[3]):{
+                               cat1:{key1:[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+                                     key2:[[1.1, 2.1, 3.1], [4.1, 5.1, 6.1]]},
+                               cat2:{key1:[[7.3, 8.3, 9.3], [7.0, 8.0, 9.0]],
+                                     key3:[[7.5, 8.5, 9.5], [7.9, 8.9, 9.9]]}
+                            }
+                            """));
     }
 
     @Test

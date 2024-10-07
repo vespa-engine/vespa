@@ -536,7 +536,9 @@ class TensorParser {
             consume(':');
             ++level;
             if (consumeOptional('{')) {
-                parseSubspace(addrBuilder, level);
+                do {
+                    parseSubspace(addrBuilder, level);
+                } while (consumeOptional(','));
                 consume('}');
             } else {
                 if (level < mappedDimensions.size()) {
