@@ -664,9 +664,9 @@ ExternalOperationHandlerTest::do_test_tas_condition_rewrite(std::shared_ptr<api:
     setup_stripe(1, 2, "version:1 distributor:1 storage:2");
     set_two_nodes_tas_cond_timestamp_supported(true, false); // _not_ supported on all nodes
 
-    documentapi::TestAndSetCondition cond_before("testdoctype1.stuff", 123456789);
+    documentapi::TestAndSetCondition cond_before(123456789, "testdoctype1.stuff");
     documentapi::TestAndSetCondition cond_after;
-    ASSERT_NO_FATAL_FAILURE(process_tas_and_get_forwarded_condition<OperationType>(cmd, cond_before, cond_after));
+    ASSERT_NO_FATAL_FAILURE(process_tas_and_get_forwarded_condition<OperationType>(std::move(cmd), cond_before, cond_after));
     // Timestamp predicate has been removed entirely
     EXPECT_EQ(cond_after, documentapi::TestAndSetCondition("testdoctype1.stuff"));
 }
@@ -691,9 +691,9 @@ ExternalOperationHandlerTest::do_test_tas_condition_no_rewrite(std::shared_ptr<a
     setup_stripe(1, 2, "version:1 distributor:1 storage:2");
     set_two_nodes_tas_cond_timestamp_supported(true, true); // supported on all nodes
 
-    documentapi::TestAndSetCondition cond_before("testdoctype1.stuff", 123456789);
+    documentapi::TestAndSetCondition cond_before(123456789, "testdoctype1.stuff");
     documentapi::TestAndSetCondition cond_after;
-    ASSERT_NO_FATAL_FAILURE(process_tas_and_get_forwarded_condition<OperationType>(cmd, cond_before, cond_after));
+    ASSERT_NO_FATAL_FAILURE(process_tas_and_get_forwarded_condition<OperationType>(std::move(cmd), cond_before, cond_after));
     EXPECT_EQ(cond_after, cond_before); // No timestamp removal
 }
 

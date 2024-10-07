@@ -245,7 +245,7 @@ TEST_F(TestAndSetTest, conditional_update_executed_when_no_document_but_auto_cre
 // to be a "kind of" test-and-set operation, thus we test it here.
 TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_should_not_apply_if_no_existing_document) {
     auto update_cmd = make_conditional_update(true, api::Timestamp(200));
-    update_cmd->setCondition(documentapi::TestAndSetCondition()); // No condition; it has precedence
+    update_cmd->setCondition(TestAndSetCondition()); // No condition; it has precedence
     update_cmd->setOldTimestamp(api::Timestamp(150));
     EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
               api::ReturnCode(api::ReturnCode::OK, "No document with requested timestamp found"));
@@ -255,7 +255,7 @@ TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_should_not_apply_if_no
 TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_should_not_apply_if_existing_document_has_unexpected_timestamp) {
     putTestDocument(true, api::Timestamp(180));
     auto update_cmd = make_conditional_update(false, api::Timestamp(200));
-    update_cmd->setCondition(documentapi::TestAndSetCondition());
+    update_cmd->setCondition(TestAndSetCondition());
     update_cmd->setOldTimestamp(api::Timestamp(150)); // != 180, should fail
     EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
               api::ReturnCode(api::ReturnCode::OK, "No document with requested timestamp found"));
@@ -265,7 +265,7 @@ TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_should_not_apply_if_ex
 TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_is_applied_if_existing_timestamp_matches) {
     putTestDocument(true, api::Timestamp(180));
     auto update_cmd = make_conditional_update(false, api::Timestamp(200));
-    update_cmd->setCondition(documentapi::TestAndSetCondition());
+    update_cmd->setCondition(TestAndSetCondition());
     update_cmd->setOldTimestamp(api::Timestamp(180));
     EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
               api::ReturnCode(api::ReturnCode::OK, ""));
@@ -276,7 +276,7 @@ TEST_F(TestAndSetTest, legacy_timestamp_predicated_update_is_applied_if_existing
 
 TEST_F(TestAndSetTest, tas_timestamp_predicated_update_should_not_apply_if_no_existing_document) {
     auto update_cmd = make_conditional_update(false, api::Timestamp(200)); // no create-if-missing
-    update_cmd->setCondition(documentapi::TestAndSetCondition(150));
+    update_cmd->setCondition(TestAndSetCondition(150));
     EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
               api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
                               "Document does not exist nodeIndex=0 bucket=4000000000000004"));
@@ -286,7 +286,7 @@ TEST_F(TestAndSetTest, tas_timestamp_predicated_update_should_not_apply_if_no_ex
 TEST_F(TestAndSetTest, tas_timestamp_predicated_update_should_not_apply_if_existing_document_has_unexpected_timestamp) {
     putTestDocument(true, api::Timestamp(180));
     auto update_cmd = make_conditional_update(false, api::Timestamp(200));
-    update_cmd->setCondition(documentapi::TestAndSetCondition(150)); // != 180, should fail
+    update_cmd->setCondition(TestAndSetCondition(150)); // != 180, should fail
     EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
               api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
                               "Condition did not match document nodeIndex=0 bucket=4000000000000004"));
@@ -296,7 +296,7 @@ TEST_F(TestAndSetTest, tas_timestamp_predicated_update_should_not_apply_if_exist
 TEST_F(TestAndSetTest, tas_timestamp_predicated_update_is_applied_if_existing_timestamp_matches) {
     putTestDocument(true, api::Timestamp(180));
     auto update_cmd = make_conditional_update(false, api::Timestamp(200));
-    update_cmd->setCondition(documentapi::TestAndSetCondition(180));
+    update_cmd->setCondition(TestAndSetCondition(180));
     EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
               api::ReturnCode(api::ReturnCode::OK, ""));
     EXPECT_EQ(expectedDocEntryString(api::Timestamp(180), testDocId) +
@@ -304,10 +304,31 @@ TEST_F(TestAndSetTest, tas_timestamp_predicated_update_is_applied_if_existing_ti
               dumpBucket(BUCKET_ID));
 }
 
+TEST_F(TestAndSetTest, tas_timestamp_predicated_update_ignores_selection_timestamp_match_case) {
+    putTestDocument(true, api::Timestamp(180));
+    auto update_cmd = make_conditional_update(false, api::Timestamp(200));
+    update_cmd->setCondition(TestAndSetCondition(180, "false"));
+    EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
+              api::ReturnCode(api::ReturnCode::OK, ""));
+    EXPECT_EQ(expectedDocEntryString(api::Timestamp(180), testDocId) +
+              expectedDocEntryString(api::Timestamp(200), testDocId),
+              dumpBucket(BUCKET_ID));
+}
+
+TEST_F(TestAndSetTest, tas_timestamp_predicated_update_ignores_selection_timestamp_mismatch_case) {
+    putTestDocument(true, api::Timestamp(180));
+    auto update_cmd = make_conditional_update(false, api::Timestamp(200));
+    update_cmd->setCondition(TestAndSetCondition(150, "true")); // != 180, should fail
+    EXPECT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))),
+              api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                              "Condition did not match document nodeIndex=0 bucket=4000000000000004"));
+    EXPECT_EQ(expectedDocEntryString(api::Timestamp(180), testDocId), dumpBucket(BUCKET_ID));
+}
+
 TEST_F(TestAndSetTest, tas_timestamp_predicated_update_executed_when_no_document_but_auto_create_is_enabled) {
     api::Timestamp updateTimestamp = 200;
     auto update_cmd = make_conditional_update(true, updateTimestamp);
-    update_cmd->setCondition(documentapi::TestAndSetCondition(1234)); // mismatch, but `create` is true
+    update_cmd->setCondition(TestAndSetCondition(1234)); // mismatch, but `create` is true
 
     ASSERT_EQ(fetchResult(asyncHandler->handleUpdate(*update_cmd, createTracker(update_cmd, BUCKET))).getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(updateTimestamp, testDocId), dumpBucket(BUCKET_ID));
@@ -319,7 +340,7 @@ TEST_F(TestAndSetTest, invalid_document_selection_should_fail) {
     // Fail early since document selection is invalid 
     api::Timestamp timestamp = 0;
     auto put = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestamp);
-    put->setCondition(documentapi::TestAndSetCondition("bjarne"));
+    put->setCondition(TestAndSetCondition("bjarne"));
 
     ASSERT_EQ(fetchResult(asyncHandler->handlePut(*put, createTracker(put, BUCKET))).getResult(), api::ReturnCode::Result::ILLEGAL_PARAMETERS);
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
@@ -328,7 +349,7 @@ TEST_F(TestAndSetTest, invalid_document_selection_should_fail) {
 TEST_F(TestAndSetTest, document_selection_with_imported_field_should_fail_with_illegal_parameters) {
     api::Timestamp timestamp = 0;
     auto put = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestamp);
-    put->setCondition(documentapi::TestAndSetCondition("testdoctype1.my_imported_field == null"));
+    put->setCondition(TestAndSetCondition("testdoctype1.my_imported_field == null"));
 
     ASSERT_EQ(fetchResult(asyncHandler->handlePut(*put, createTracker(put, BUCKET))),
               api::ReturnCode(api::ReturnCode::Result::ILLEGAL_PARAMETERS,

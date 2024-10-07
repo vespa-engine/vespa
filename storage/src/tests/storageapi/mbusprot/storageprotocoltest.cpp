@@ -101,7 +101,7 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
     static std::vector<TestAndSetCondition> tas_conditions() {
         return {TestAndSetCondition(CONDITION_STRING),
                 TestAndSetCondition(1234567890ULL),
-                TestAndSetCondition(CONDITION_STRING, 1234567890ULL)};
+                TestAndSetCondition(1234567890ULL, CONDITION_STRING)};
     }
 };
 

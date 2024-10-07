@@ -236,7 +236,7 @@ abstract class RoutableFactories80 {
         // Note: empty (default) string and (default) required persistence timestamp of 0 implies "no condition present"
         if (!protoTasCond.getSelection().isEmpty()) {
             if (protoTasCond.getRequiredTimestamp() != 0) {
-                return TestAndSetCondition.ofRequiredTimestampWithConditionFallback(
+                return TestAndSetCondition.ofRequiredTimestampWithSelectionFallback(
                         protoTasCond.getRequiredTimestamp(),
                         protoTasCond.getSelection());
             }

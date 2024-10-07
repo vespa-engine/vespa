@@ -67,7 +67,7 @@ createDoc(const DocumentTypeRepo& repo, const string& type_name, const string& i
 std::vector<std::pair<std::string, TestAndSetCondition>> tas_conditions() {
     return {{"cond-only",   TestAndSetCondition("There's just one condition")},
             {"ts-only",     TestAndSetCondition(0x1badcafef000000dULL)},
-            {"cond-and-ts", TestAndSetCondition("There's just one condition", 0x1badcafef000000dULL)}};
+            {"cond-and-ts", TestAndSetCondition(0x1badcafef000000dULL, "There's just one condition")}};
 }
 
 }
@@ -157,16 +157,16 @@ TEST_F(Messages80Test, put_document_message) {
 TEST_F(Messages80Test, tas_conditions_can_have_selection_and_or_timestamp) {
     auto doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
     // We assume TaS codec is the same across message types, so use Put as a proxy for all TaS-support types.
-    for (const auto& [tas_type, tas_cond]: tas_conditions()) {
+    for (const auto& [tas_type, tas_cond] : tas_conditions()) {
         PutDocumentMessage msg(doc);
         msg.setCondition(tas_cond);
         std::string msg_and_cond_name = "PutDocumentMessage-" + tas_type;
         serialize(msg_and_cond_name, msg);
-        for (auto lang: languages()) {
-            auto routableUp = deserialize(msg_and_cond_name, DocumentProtocol::MESSAGE_PUTDOCUMENT, lang);
-            ASSERT_TRUE(routableUp);
-            auto& deserializedMsg = dynamic_cast<PutDocumentMessage&>(*routableUp);
-            EXPECT_EQ(deserializedMsg.getCondition(), msg.getCondition());
+        for (auto lang : languages()) {
+            auto obj = deserialize(msg_and_cond_name, DocumentProtocol::MESSAGE_PUTDOCUMENT, lang);
+            ASSERT_TRUE(obj);
+            auto& decoded = dynamic_cast<PutDocumentMessage&>(*obj);
+            EXPECT_EQ(decoded.getCondition(), msg.getCondition());
         }
     }
 }

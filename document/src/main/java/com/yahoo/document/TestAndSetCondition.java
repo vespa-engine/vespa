@@ -50,7 +50,7 @@ public class TestAndSetCondition {
     /**
      * <p>Returns the timestamp that the document stored in the backend must match exactly
      * for the associated document operation to go through, or 0 if no timestamp requirement
-     * is present (i.e. only the condition, if present, is checked).</p>
+     * is present (i.e. only the selection condition, if present, is checked).</p>
      *
      * <p>Note: the timestamp should be compared with Long.compareUnsigned(), as it
      * reflects an unsigned 64-bit integer in the backend.</p>
@@ -93,12 +93,12 @@ public class TestAndSetCondition {
      * <p><strong>Note:</strong> this API is currently in Beta.</p>
      *
      * @param requiredTimestamp required timestamp, or 0 for no timestamp requirement.
-     * @param conditionFallback condition selection string that will be evaluated by nodes
+     * @param selectionFallback condition selection string that will be evaluated by nodes
      *                          that are on a version too old to support timestamp requirements.
      */
     @Beta
-    public static TestAndSetCondition ofRequiredTimestampWithConditionFallback(long requiredTimestamp, String conditionFallback) {
-        return new TestAndSetCondition(requiredTimestamp, conditionFallback);
+    public static TestAndSetCondition ofRequiredTimestampWithSelectionFallback(long requiredTimestamp, String selectionFallback) {
+        return new TestAndSetCondition(requiredTimestamp, selectionFallback);
     }
 
     /**

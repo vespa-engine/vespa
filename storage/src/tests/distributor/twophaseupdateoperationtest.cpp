@@ -991,6 +991,12 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_mismatch_fails
             "Required test-and-set timestamp did not match persisted timestamp");
 }
 
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_and_selection_condition_mismatch_fails_with_tas_error) {
+    do_test_safe_path_condition_mismatch_fails_with_tas_error(
+            TestAndSetCondition(120, "testdoctype1.headerval==120"), // Timestamp has precedence
+            "Required test-and-set timestamp did not match persisted timestamp");
+}
+
 void TwoPhaseUpdateOperationTest::do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition cond) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(std::move(cond)));
@@ -1007,6 +1013,10 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_selection_condition_match_sends_pu
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_match_sends_puts_with_updated_doc) {
     do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition(110)); // matches newest doc
+}
+
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_and_selection_condition_match_sends_puts_with_updated_doc) {
+    do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition(110, "testdoctype1.headerval==110"));
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with_illegal_params_error) {
@@ -1073,7 +1083,7 @@ void TwoPhaseUpdateOperationTest::do_test_safe_path_condition_with_missing_doc_a
     setup_stripe(2, 2, "storage:2 distributor:1");
     configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions()
-            .condition(TestAndSetCondition(std::move(cond)))
+            .condition(std::move(cond))
             .createIfNonExistent(true));
 
     cb->start(_sender);
@@ -1101,6 +1111,10 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_selection_condition_with_missing_d
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_with_missing_doc_and_auto_create_sends_puts) {
     do_test_safe_path_condition_with_missing_doc_and_auto_create_sends_puts(TestAndSetCondition(12345));
+}
+
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_and_selection_condition_with_missing_doc_and_auto_create_sends_puts) {
+    do_test_safe_path_condition_with_missing_doc_and_auto_create_sends_puts(TestAndSetCondition(12345, "testdoctype1.headerval==120"));
 }
 
 void
@@ -1651,6 +1665,12 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_with_mismatching_timestamp_conditio
             "Required test-and-set timestamp did not match persisted timestamp");
 }
 
+TEST_F(ThreePhaseUpdateTest, single_full_get_with_mismatching_timestamp_and_selection_condition_is_rejected) {
+    do_test_single_full_get_with_mismatching_condition_is_rejected(
+            TestAndSetCondition(1000, "testdoctype1.headerval==1000"),
+            "Required test-and-set timestamp did not match persisted timestamp");
+}
+
 void ThreePhaseUpdateTest::do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition cond) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
@@ -1673,6 +1693,11 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_with_matching_selection_condition_i
 
 TEST_F(ThreePhaseUpdateTest, single_full_get_with_matching_timestamp_condition_is_accepted) {
     do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition(2000));
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_with_matching_timestamp_and_selection_condition_is_accepted) {
+    // In this case the timestamp matches, but the selection does not. Timestamp match should have precedence.
+    do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition(2000, "testdoctype1.headerval==2001"));
 }
 
 // XXX currently differs in behavior from content nodes in that updates for

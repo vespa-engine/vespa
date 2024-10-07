@@ -76,7 +76,7 @@ api::BucketInfo get_bucket_info(const protobuf::BucketInfo& src) {
 documentapi::TestAndSetCondition get_tas_condition(const protobuf::TestAndSetCondition& src) {
     if (!src.selection().empty()) {
         if (src.required_timestamp() != 0) {
-            return {src.selection(), src.required_timestamp()};
+            return {src.required_timestamp(), src.selection()};
         }
         return documentapi::TestAndSetCondition(src.selection());
     } else if (src.required_timestamp() != 0) {

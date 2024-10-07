@@ -87,7 +87,7 @@ document::GlobalId get_global_id(const protobuf::GlobalId& src) {
 TestAndSetCondition get_tas_condition(const protobuf::TestAndSetCondition& src) {
     if (!src.selection().empty()) {
         if (src.required_timestamp() != 0) {
-            return {src.selection(), src.required_timestamp()};
+            return {src.required_timestamp(), src.selection()};
         }
         return TestAndSetCondition(src.selection());
     } else if (src.required_timestamp() != 0) {

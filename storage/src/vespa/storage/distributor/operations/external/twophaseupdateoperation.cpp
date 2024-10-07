@@ -612,11 +612,13 @@ TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorStripeMessageSen
         return true; // No condition; nothing to do here.
     }
     const auto& tas_cond = _updateCmd->getCondition();
-    if (tas_cond.has_required_timestamp()
-        && (persisted_timestamp != tas_cond.required_timestamp()))
-    {
-        replyWithTasFailure(sender, "Required test-and-set timestamp did not match persisted timestamp");
-        return false;
+    if (tas_cond.has_required_timestamp()) {
+        if (persisted_timestamp != tas_cond.required_timestamp()) {
+            replyWithTasFailure(sender, "Required test-and-set timestamp did not match persisted timestamp");
+            return false;
+        }
+        // An exact timestamp match causes any selection expression to be _ignored_ entirely.
+        return true;
     }
 
     std::unique_ptr<document::select::Node> selection;

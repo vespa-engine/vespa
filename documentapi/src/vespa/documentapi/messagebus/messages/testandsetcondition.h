@@ -35,7 +35,7 @@ public:
           _required_timestamp(required_timestamp)
     {}
 
-    TestAndSetCondition(std::string_view selection, uint64_t required_timestamp)
+    TestAndSetCondition(uint64_t required_timestamp, std::string_view selection)
         : _selection(selection),
           _required_timestamp(required_timestamp)
     {}
@@ -64,8 +64,8 @@ public:
     [[nodiscard]] std::string to_string() const;
 
     bool operator==(const TestAndSetCondition& rhs) const noexcept {
-        return ((_selection == rhs._selection) &&
-                (_required_timestamp == rhs._required_timestamp));
+        return ((_required_timestamp == rhs._required_timestamp) &&
+                (_selection == rhs._selection));
     }
 };
 
