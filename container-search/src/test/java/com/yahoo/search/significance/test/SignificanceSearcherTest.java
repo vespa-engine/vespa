@@ -35,6 +35,7 @@ import java.util.Optional;
 
 import static com.yahoo.test.JunitCompat.assertEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * Tests significance term in the search chain.
@@ -53,15 +54,17 @@ public class SignificanceSearcherTest {
         var schema = new Schema.Builder("music")
                 .add(new DocumentSummary.Builder("default").build())
                 .add(new RankProfile.Builder("significance-ranking")
-                             .setUseSignificanceModel(true)
-                             .build());
+                        .setUseSignificanceModel(true)
+                        .build());
         significanceModelRegistry = new DefaultSignificanceModelRegistry(models);
-        searcher = new SignificanceSearcher(significanceModelRegistry, new SchemaInfo(List.of(schema.build()), List.of()));
+        searcher = new SignificanceSearcher(
+                significanceModelRegistry, new SchemaInfo(List.of(schema.build()), List.of()));
     }
 
     private static class MockLinguistics implements Linguistics {
 
         private final MockDetector mockDetector;
+
         MockLinguistics(Language language) {
             this.mockDetector = new MockDetector(language);
         }
@@ -115,6 +118,7 @@ public class SignificanceSearcherTest {
     private static class MockDetector implements Detector {
 
         private Language detectionLanguage;
+
         MockDetector(Language detectionLanguage) {
             this.detectionLanguage = detectionLanguage;
         }
@@ -146,7 +150,7 @@ public class SignificanceSearcherTest {
     }
 
     @Test
-    void testSignificanceValueOnSimpleQuery() {
+    void testOnSimpleQuery() {
         Query q = new Query();
         q.getRanking().setProfile("significance-ranking");
         AndItem root = new AndItem();
@@ -166,7 +170,7 @@ public class SignificanceSearcherTest {
     }
 
     @Test
-    void testSignificanceValueOnSimpleQueryWithRankingOverride() {
+    void testOnSimpleQueryWithRankingOverride() {
         Query q1 = new Query("?query=hello&ranking.significance.useModel=true");
         q1.getRanking().setProfile("significance-ranking");
         AndItem root = new AndItem();
@@ -254,8 +258,8 @@ public class SignificanceSearcherTest {
 
         q.getModel().getQueryTree().setRoot(root);
 
-        var helloDocumentFrequency = getDocumentFrequencyWithEnglish("hello");
-        var testDocumentFrequency = getDocumentFrequencyWithEnglish("test");
+        var helloDocumentFrequency = getModelDocumentFrequencyWithEnglish("hello");
+        var testDocumentFrequency = getModelDocumentFrequencyWithEnglish("test");
 
         Result r = createExecution(searcher).search(q);
 
@@ -276,14 +280,14 @@ public class SignificanceSearcherTest {
         var musicSchema = new Schema.Builder("music")
                 .add(new DocumentSummary.Builder("default").build())
                 .add(new RankProfile.Builder("significance-ranking")
-                             .setUseSignificanceModel(true)
-                             .build())
+                        .setUseSignificanceModel(true)
+                        .build())
                 .build();
         var albumSchema = new Schema.Builder("album")
                 .add(new DocumentSummary.Builder("default").build())
                 .add(new RankProfile.Builder("significance-ranking")
-                             .setUseSignificanceModel(false)
-                             .build())
+                        .setUseSignificanceModel(false)
+                        .build())
                 .build();
         var searcher = new SignificanceSearcher(
                 significanceModelRegistry, new SchemaInfo(List.of(musicSchema, albumSchema), List.of()));
@@ -295,12 +299,14 @@ public class SignificanceSearcherTest {
         assertEquals(1, result.hits().getErrorHit().errors().size());
 
         var errorMessage = getErrorMessage(result);
-        assertEquals("Inconsistent 'significance' configuration for the rank profile 'significance-ranking' in the schemas [music, album]. " +
-                             "Use 'restrict' to limit the query to a subset of schemas " +
-                             "(https://docs.vespa.ai/en/schemas.html#multiple-schemas). " +
-                             "Specify same 'significance' configuration for all selected schemas " +
-                             "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).",
-                     errorMessage);
+        assertEquals(
+                "Inconsistent 'significance' configuration for the rank profile 'significance-ranking' in the schemas [music, album]. " +
+                        "Use 'restrict' to limit the query to a subset of schemas " +
+                        "(https://docs.vespa.ai/en/schemas.html#multiple-schemas). " +
+                        "Specify same 'significance' configuration for all selected schemas " +
+                        "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).",
+                errorMessage
+        );
     }
 
     // Tests that follow verify model resolving logic in different scenarios.
@@ -312,12 +318,23 @@ public class SignificanceSearcherTest {
     // Missing word - word not in a model for the specified language or fallback models
     // Existing word - word in a model for the specified language or fallback models
 
-    private Result searchWord(String word, Optional<Language> explicitLanguage, Optional<Language> implicitLanguage) {
+    private Result searchWord(
+            String word,
+            Optional<Language> explicitLanguage,
+            Optional<Language> implicitLanguage,
+            Optional<DocumentFrequency> documentFrequency,
+            Optional<Double> significance
+    ) {
         var query = new Query();
-        explicitLanguage.ifPresent(language -> query.getModel().setLanguage(language));
+        explicitLanguage.ifPresent(query.getModel()::setLanguage);
         query.getRanking().setProfile("significance-ranking");
+
         var queryRoot = new AndItem();
         var queryWord = new WordItem(word, true);
+
+        documentFrequency.ifPresent(queryWord::setDocumentFrequency);
+        significance.ifPresent(queryWord::setSignificance);
+
         queryRoot.addItem(queryWord);
         query.getModel().getQueryTree().setRoot(queryRoot);
 
@@ -327,7 +344,7 @@ public class SignificanceSearcherTest {
         return execution.search(query);
     }
 
-    private Optional<DocumentFrequency> getDocumentFrequencyWithEnglish(String word) {
+    private Optional<DocumentFrequency> getModelDocumentFrequencyWithEnglish(String word) {
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
         return makeDocumentFrequency(model.documentFrequency(word));
     }
@@ -342,10 +359,16 @@ public class SignificanceSearcherTest {
     }
 
     @Test
-    public void testSignificanceSearcherWithMissingExplicitLanguageOnExistingWord() {
+    public void testWithMissingExplicitLanguageOnExistingWord() {
         var existingWord = "hello";
         var explicitLanguage = Language.ITALIAN;
-        var result = searchWord(existingWord, Optional.of(explicitLanguage), Optional.empty());
+        var result = searchWord(
+                existingWord,
+                Optional.of(explicitLanguage),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
 
         var resultWord = getFirstWord(result);
         assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
@@ -355,21 +378,34 @@ public class SignificanceSearcherTest {
     }
 
     @Test
-    public void testSignificanceSearcherWithUnknownExplicitLanguageOnExistingWord() {
+    public void testWithUnknownExplicitLanguageOnExistingWord() {
         var existingWord = "hello";
-        var explicitLanguage = Language.UNKNOWN;
-        var result = searchWord(existingWord, Optional.of(explicitLanguage), Optional.empty());
+        var explicitLanguage = Optional.of(Language.UNKNOWN);
+
+        var result = searchWord(
+                existingWord,
+                explicitLanguage,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
+
         var resultWord = getFirstWord(result);
-        var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
+        var existingDocumentFrequency = getModelDocumentFrequencyWithEnglish(existingWord);
         assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
     }
 
     @Test
-    public void testSignificanceSearcherWithMissingExplicitLanguageOnMissingWord() {
+    public void testWithMissingExplicitLanguageOnMissingWord() {
         var missingWord = "ciao";
         var explicitLanguage = Language.ITALIAN;
-        var result = searchWord(missingWord, Optional.of(explicitLanguage), Optional.empty());
-
+        var result = searchWord(
+                missingWord,
+                Optional.of(explicitLanguage),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
         var resultWord = getFirstWord(result);
         assertEquals(Optional.empty(), resultWord.getDocumentFrequency());
 
@@ -378,24 +414,36 @@ public class SignificanceSearcherTest {
     }
 
     @Test
-    public void testSignificanceSearcherWithMissingImplicitLanguageOnExistingWord() {
+    public void testWithMissingImplicitLanguageOnExistingWord() {
         var existingWord = "hello";
         var implicitLanguage = Language.ITALIAN;
-        var result = searchWord(existingWord, Optional.empty(), Optional.of(implicitLanguage));
+        var result = searchWord(
+                existingWord,
+                Optional.empty(),
+                Optional.of(implicitLanguage),
+                Optional.empty(),
+                Optional.empty()
+        );
         var resultWord = getFirstWord(result);
-        var existingDocumentFrequency = getDocumentFrequencyWithEnglish(existingWord);
+        var existingDocumentFrequency = getModelDocumentFrequencyWithEnglish(existingWord);
         assertEquals(existingDocumentFrequency, resultWord.getDocumentFrequency());
     }
 
     @Test
-    public void testSignificanceSearcherWithMissingImplicitLanguageOnMissingWord() {
+    public void testWithMissingImplicitLanguageOnMissingWord() {
         var implicitLanguage = Language.ITALIAN;
         var missingWord = "ciao";
-        var result = searchWord(missingWord, Optional.empty(), Optional.of(implicitLanguage));
+        var result = searchWord(
+                missingWord,
+                Optional.empty(),
+                Optional.of(implicitLanguage),
+                Optional.empty(),
+                Optional.empty()
+        );
         var resultWord = getFirstWord(result);
 
         var existingWord = "hello";
-        var documentFrequency = getDocumentFrequencyWithEnglish(existingWord);
+        var documentFrequency = getModelDocumentFrequencyWithEnglish(existingWord);
         var count = documentFrequency.get().count();
         var defaultDocumentFrequency = Optional.of(new DocumentFrequency(1, count));
 
@@ -405,13 +453,87 @@ public class SignificanceSearcherTest {
     // Tests for upper case words in a query
     @ParameterizedTest
     @ValueSource(strings = {"Hello", "HeLlo", "HELLO"})
-    public void testSignificanceSearcherWithUpperCaseWord(String wordWithUpperCase) {
-        var result = searchWord(wordWithUpperCase, Optional.of(Language.ENGLISH), Optional.empty());
+    public void testWithUpperCaseWord(String wordWithUpperCase) {
+        var result = searchWord(
+                wordWithUpperCase,
+                Optional.of(Language.ENGLISH),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
         var resultWord = getFirstWord(result);
 
         var lowerCaseWord = "hello";
-        var documentFrequency = getDocumentFrequencyWithEnglish(lowerCaseWord);
+        var documentFrequency = getModelDocumentFrequencyWithEnglish(lowerCaseWord);
 
         assertEquals(documentFrequency, resultWord.getDocumentFrequency());
+    }
+
+    @Test
+    public void testQueryWithDocumentFrequency() {
+        var word = "hello";
+        var explicitLanguage = Optional.of(Language.ENGLISH);
+        var queryDocumentFrequency = Optional.of(new DocumentFrequency(1, 1));
+
+        var result = searchWord(
+                word,
+                explicitLanguage,
+                Optional.empty(),
+                queryDocumentFrequency,
+                Optional.empty()
+        );
+
+        var resultDocumentFrequency = getFirstWord(result).getDocumentFrequency();
+        var modelDocumentFrequency = getModelDocumentFrequencyWithEnglish(word);
+
+        assertNotEquals(queryDocumentFrequency, modelDocumentFrequency);
+        assertEquals(resultDocumentFrequency, queryDocumentFrequency);
+    }
+
+    @Test
+    public void testQueryWithSignificance() {
+        var word = "hello";
+        var explicitLanguage = Optional.of(Language.ENGLISH);
+        var querySignificance = Optional.of(0.6);
+
+        var result = searchWord(
+                word,
+                explicitLanguage,
+                Optional.empty(),
+                Optional.empty(),
+                querySignificance
+        );
+
+        var resultSignificance = getFirstWord(result).getSignificance();
+        assertEquals(querySignificance.get(), resultSignificance);
+
+        var resultDocumentFrequency = getFirstWord(result).getDocumentFrequency();
+        assertEquals(resultDocumentFrequency, Optional.empty());
+    }
+
+    @Test
+    public void testQueryWithDocumentFrequencyAndSignificance() {
+        var word = "hello";
+        var explicitLanguage = Optional.of(Language.ENGLISH);
+        var queryDocumentFrequency = Optional.of(new DocumentFrequency(1, 1));
+        var querySignificance = Optional.of(0.6);
+
+        var result = searchWord(
+                word,
+                explicitLanguage,
+                Optional.empty(),
+                queryDocumentFrequency,
+                querySignificance
+        );
+        var firstWord = getFirstWord(result);
+
+        var resultDocumentFrequency = firstWord.getDocumentFrequency();
+        var modelDocumentFrequency = getModelDocumentFrequencyWithEnglish(word);
+
+        assertNotEquals(queryDocumentFrequency, modelDocumentFrequency);
+        assertEquals(resultDocumentFrequency, queryDocumentFrequency);
+
+        var resultSignificance = firstWord.getSignificance();
+        assertEquals(querySignificance.get(), resultSignificance);
     }
 }
