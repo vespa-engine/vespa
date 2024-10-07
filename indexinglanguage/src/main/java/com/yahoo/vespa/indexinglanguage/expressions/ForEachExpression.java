@@ -48,7 +48,7 @@ public final class ForEachExpression extends CompositeExpression {
             if (next == null) {
                 VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
                 context.fillVariableTypes(verificationContext);
-                verificationContext.setCurrentType(input.getDataType()).execute(this);
+                verificationContext.setCurrentType(input.getDataType()).verify(this);
                 next = verificationContext.getCurrentType().createFieldValue();
             }
             context.setCurrentValue(next);
@@ -68,7 +68,7 @@ public final class ForEachExpression extends CompositeExpression {
             context.setCurrentType(((CollectionDataType)valueType).getNestedType());
 
             // Evaluate block, which sets value>Type to the output of the block
-            context.execute(exp);
+            context.verify(exp);
 
             // Value type outside block becomes the collection type having the block output type as argument
             if (valueType instanceof ArrayDataType) {
@@ -81,7 +81,7 @@ public final class ForEachExpression extends CompositeExpression {
         else if (valueType instanceof StructDataType) {
             for (Field field : ((StructDataType)valueType).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType structValueType = context.setCurrentType(fieldType).execute(exp).getCurrentType();
+                DataType structValueType = context.setCurrentType(fieldType).verify(exp).getCurrentType();
                 if (!fieldType.isAssignableFrom(structValueType))
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
                                                           structValueType.getName());

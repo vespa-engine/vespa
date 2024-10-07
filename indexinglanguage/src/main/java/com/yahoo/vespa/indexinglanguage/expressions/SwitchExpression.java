@@ -102,9 +102,9 @@ public final class SwitchExpression extends CompositeExpression {
                                                   input.getName());
         }
         for (Expression exp : cases.values()) {
-            context.setCurrentType(input).execute(exp);
+            context.setCurrentType(input).verify(exp);
         }
-        context.setCurrentType(input).execute(defaultExp);
+        context.setCurrentType(input).verify(defaultExp);
         context.setCurrentType(input);
     }
 

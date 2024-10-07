@@ -108,10 +108,10 @@ public final class IfThenExpression extends CompositeExpression {
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
-        context.setCurrentType(input).execute(left);
-        context.setCurrentType(input).execute(right);
-        var trueValue = context.setCurrentType(input).execute(ifTrue);
-        var falseValue = context.setCurrentType(input).execute(ifFalse);
+        context.setCurrentType(input).verify(left);
+        context.setCurrentType(input).verify(right);
+        var trueValue = context.setCurrentType(input).verify(ifTrue);
+        var falseValue = context.setCurrentType(input).verify(ifFalse);
         var valueType = trueValue.getCurrentType().isAssignableFrom(falseValue.getCurrentType()) ?
                         trueValue.getCurrentType() : falseValue.getCurrentType();
         context.setCurrentType(valueType);

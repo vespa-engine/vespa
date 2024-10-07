@@ -51,7 +51,7 @@ public class ChoiceExpression extends ExpressionList<Expression> {
         DataType input = context.getCurrentType();
         context.setCurrentType(input);
         for (Expression exp : this)
-            context.setCurrentType(input).execute(exp);
+            context.setCurrentType(input).verify(exp);
     }
 
     private static DataType resolveInputType(Collection<? extends Expression> list) {

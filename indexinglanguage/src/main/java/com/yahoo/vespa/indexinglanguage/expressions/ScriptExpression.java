@@ -67,7 +67,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
         for (Expression exp : this)
-            context.setCurrentType(input).execute(exp);
+            context.setCurrentType(input).verify(exp);
     }
 
     private static DataType resolveInputType(Collection<? extends StatementExpression> list) {

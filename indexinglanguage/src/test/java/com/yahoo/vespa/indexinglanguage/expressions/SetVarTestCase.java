@@ -39,7 +39,7 @@ public class SetVarTestCase {
         assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
 
         try {
-            new VerificationContext().setVariable("foo", DataType.INT).setCurrentType(DataType.STRING).execute(exp);
+            new VerificationContext().setVariable("foo", DataType.INT).setCurrentType(DataType.STRING).verify(exp);
             fail();
         } catch (VerificationException e) {
             assertEquals("Attempting to assign conflicting types to variable 'foo', int vs string", e.getMessage());

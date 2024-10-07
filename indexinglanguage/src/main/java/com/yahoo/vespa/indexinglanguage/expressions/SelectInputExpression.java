@@ -65,7 +65,7 @@ public final class SelectInputExpression extends CompositeExpression {
             if (val == null) {
                 throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
             }
-            context.setCurrentType(val).execute(entry.getSecond());
+            context.setCurrentType(val).verify(entry.getSecond());
         }
         context.setCurrentType(input);
     }

@@ -47,7 +47,7 @@ public final class CatExpression extends ExpressionList<Expression> {
             if (val != null) {
                 type = val.getDataType();
             } else {
-                type = verificationContext.setCurrentType(inputType).execute(this).getCurrentType();
+                type = verificationContext.setCurrentType(inputType).verify(this).getCurrentType();
             }
             types.add(type);
         }
@@ -60,7 +60,7 @@ public final class CatExpression extends ExpressionList<Expression> {
         DataType input = context.getCurrentType();
         List<DataType> types = new LinkedList<>();
         for (Expression exp : this) {
-            DataType val = context.setCurrentType(input).execute(exp).getCurrentType();
+            DataType val = context.setCurrentType(input).verify(exp).getCurrentType();
             types.add(val);
             if (val == null) {
                 throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ")");

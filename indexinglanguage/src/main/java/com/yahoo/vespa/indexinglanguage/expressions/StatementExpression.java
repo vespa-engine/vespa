@@ -11,8 +11,8 @@ import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,14 +64,20 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        for (Expression expression : this) {
-            if (expression instanceof OutputExpression)
-                outputField = ((OutputExpression)expression).getFieldName();
-        }
+        outputField = outputFieldName();
         if (outputField != null)
             context.setOutputField(outputField);
+
         for (Expression expression : this)
-            context.execute(expression);
+            context.verify(expression);
+    }
+
+    private String outputFieldName() {
+        for (Expression expression : this) {
+            if (expression instanceof OutputExpression output)
+                return output.getFieldName();
+        }
+        return null;
     }
 
     private static DataType resolveInputType(Iterable<Expression> expressions) {
@@ -117,16 +123,16 @@ public final class StatementExpression extends ExpressionList<Expression> {
         return ScriptParser.parseStatement(config);
     }
 
-    private static List<Expression> filterList(Iterable<Expression> lst) {
-        List<Expression> ret = new LinkedList<>();
-        for (Expression exp : lst) {
-            if (exp instanceof StatementExpression) {
-                ret.addAll(filterList((StatementExpression)exp));
-            } else if (exp != null) {
-                ret.add(exp);
+    private static List<Expression> filterList(Iterable<Expression> list) {
+        List<Expression> filtered = new ArrayList<>();
+        for (Expression expression : list) {
+            if (expression instanceof StatementExpression statement) {
+                filtered.addAll(filterList(statement));
+            } else if (expression != null) {
+                filtered.add(expression);
             }
         }
-        return ret;
+        return filtered;
     }
 
 }

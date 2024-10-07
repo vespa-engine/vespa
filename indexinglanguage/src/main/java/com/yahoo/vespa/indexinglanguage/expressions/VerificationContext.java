@@ -24,7 +24,7 @@ public class VerificationContext {
         this.fieldType = field;
     }
 
-    public VerificationContext execute(Expression expression) {
+    public VerificationContext verify(Expression expression) {
         if (expression != null)
             expression.verify(this);
         return this;
