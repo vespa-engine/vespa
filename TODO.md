@@ -65,7 +65,7 @@ seamlessly tolerate data center-wide outages and does not attempt to minimize ba
 The application usually achieves global presence instead by setting up multiple independent instances in different
 data centers and write to all in parallel. This is robust and works well on average, but puts an additional burden on
 applications to achieve cross-datacenter data consistency on datacenter failures, and does not enable automatic
-data recovery across datacenter, such that data redundancy is effectively required within each datacenter.
+data recovery across data centers, such that data redundancy is effectively required within each data center.
 This is fine in most cases, but not in the case where storage space drives cost and intermittent loss of data coverage
 (completeness as seen from queries) is tolerable.
 
