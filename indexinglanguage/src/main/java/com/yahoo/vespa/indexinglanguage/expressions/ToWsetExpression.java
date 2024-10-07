@@ -43,7 +43,7 @@ public final class ToWsetExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValueType(DataType.getWeightedSet(context.getValueType(), createIfNonExistent, removeIfZero));
+        context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), createIfNonExistent, removeIfZero));
     }
 
     @Override

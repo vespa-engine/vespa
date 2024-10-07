@@ -42,8 +42,8 @@ public class PackBitsExpression extends Expression  {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        if (! (context.getValueType() instanceof TensorDataType tensorInputType))
-            throw new IllegalArgumentException("The 'pack_bits' function requires a tensor, but got " + context.getValueType());
+        if (! (context.getCurrentType() instanceof TensorDataType tensorInputType))
+            throw new IllegalArgumentException("The 'pack_bits' function requires a tensor, but got " + context.getCurrentType());
         inputType = tensorInputType.getTensorType();
 
         var builder = new TensorType.Builder(TensorType.Value.INT8);

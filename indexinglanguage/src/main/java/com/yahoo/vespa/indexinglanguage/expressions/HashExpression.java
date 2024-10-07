@@ -69,7 +69,7 @@ public class HashExpression extends Expression  {
             throw new VerificationException(this, "The type of the output field " + outputField +
                                                   " is not int or long but " + outputFieldType);
         targetType = outputFieldType.getPrimitiveType();
-        context.setValueType(createdOutputType());
+        context.setCurrentType(createdOutputType());
     }
 
     private boolean canStoreHash(DataType type) {

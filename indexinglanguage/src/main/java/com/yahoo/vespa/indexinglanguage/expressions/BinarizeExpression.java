@@ -40,7 +40,7 @@ public class BinarizeExpression extends Expression  {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        type = context.getValueType();
+        type = context.getCurrentType();
         if (! (type instanceof TensorDataType))
             throw new IllegalArgumentException("The 'binarize' function requires a tensor, but got " + type);
     }

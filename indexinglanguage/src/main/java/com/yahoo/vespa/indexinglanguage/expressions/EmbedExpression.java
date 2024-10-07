@@ -207,7 +207,7 @@ public class EmbedExpression extends Expression  {
                 throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
                                                       "is not a sparse dimension of the target type " + targetType);
         }
-        context.setValueType(createdOutputType());
+        context.setCurrentType(createdOutputType());
     }
 
     @Override

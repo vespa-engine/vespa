@@ -26,7 +26,7 @@ public final class SetVarExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType next = context.getValueType();
+        DataType next = context.getCurrentType();
         DataType prev = context.getVariable(varName);
         if (prev != null && !prev.equals(next)) {
             throw new VerificationException(this, "Attempting to assign conflicting types to variable '" + varName +

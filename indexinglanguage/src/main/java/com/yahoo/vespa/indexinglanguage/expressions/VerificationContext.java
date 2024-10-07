@@ -13,7 +13,7 @@ public class VerificationContext {
 
     private final Map<String, DataType> variables = new HashMap<>();
     private final FieldTypeAdapter fieldType;
-    private DataType valueType;
+    private DataType currentType;
     private String outputField;
 
     public VerificationContext() {
@@ -45,11 +45,11 @@ public class VerificationContext {
     }
 
     /** Returns the current value type */
-    public DataType getValueType() { return valueType; }
+    public DataType getCurrentType() { return currentType; }
 
     /** Returns the current value type */
-    public VerificationContext setValueType(DataType value) {
-        this.valueType = value;
+    public VerificationContext setCurrentType(DataType value) {
+        this.currentType = value;
         return this;
     }
 
@@ -71,7 +71,7 @@ public class VerificationContext {
 
     public VerificationContext clear() {
         variables.clear();
-        valueType = null;
+        currentType = null;
         return this;
     }
 

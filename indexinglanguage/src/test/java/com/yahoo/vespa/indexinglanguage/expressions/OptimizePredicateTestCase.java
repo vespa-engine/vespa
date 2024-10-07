@@ -80,7 +80,7 @@ public class OptimizePredicateTestCase {
         assertVerifyThrows(DataType.INT, exp, "Expected predicate input, got int");
         assertVerifyThrows(DataType.PREDICATE, exp, "Variable 'arity' must be set");
 
-        VerificationContext context = new VerificationContext().setValueType(DataType.PREDICATE);
+        VerificationContext context = new VerificationContext().setCurrentType(DataType.PREDICATE);
         context.setVariable("arity", DataType.STRING);
         assertVerifyCtxThrows(context, exp, "Variable 'arity' must have type int");
         context.setVariable("arity", DataType.INT);

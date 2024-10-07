@@ -47,7 +47,7 @@ public final class OptimizePredicateExpression extends Expression {
         checkVariable(context, "arity", DataType.INT, true);
         checkVariable(context, "lower_bound", DataType.LONG, false);
         checkVariable(context, "upper_bound", DataType.LONG, false);
-        context.setValueType(DataType.PREDICATE);
+        context.setCurrentType(DataType.PREDICATE);
     }
 
     private void checkVariable(VerificationContext ctx, String var, DataType type, boolean required) {

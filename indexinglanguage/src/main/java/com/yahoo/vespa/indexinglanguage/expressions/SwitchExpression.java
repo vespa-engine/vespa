@@ -93,7 +93,7 @@ public final class SwitchExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
+        DataType input = context.getCurrentType();
         if (input == null) {
             throw new VerificationException(this, "Expected " + DataType.STRING.getName() + " input, but no input is specified");
         }
@@ -102,10 +102,10 @@ public final class SwitchExpression extends CompositeExpression {
                                                   input.getName());
         }
         for (Expression exp : cases.values()) {
-            context.setValueType(input).execute(exp);
+            context.setCurrentType(input).execute(exp);
         }
-        context.setValueType(input).execute(defaultExp);
-        context.setValueType(input);
+        context.setCurrentType(input).execute(defaultExp);
+        context.setCurrentType(input);
     }
 
     @Override

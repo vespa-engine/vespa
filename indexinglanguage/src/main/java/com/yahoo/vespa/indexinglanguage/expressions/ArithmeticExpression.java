@@ -83,9 +83,9 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
-        context.setValueType(evaluate(context.setValueType(input).execute(left).getValueType(),
-                                      context.setValueType(input).execute(right).getValueType()));
+        DataType input = context.getCurrentType();
+        context.setCurrentType(evaluate(context.setCurrentType(input).execute(left).getCurrentType(),
+                                        context.setCurrentType(input).execute(right).getCurrentType()));
     }
 
     private static DataType requiredInputType(Expression lhs, Expression rhs) {

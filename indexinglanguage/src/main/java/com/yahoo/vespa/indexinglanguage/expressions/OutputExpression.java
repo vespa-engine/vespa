@@ -33,7 +33,7 @@ public abstract class OutputExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.tryOutputType(fieldName, context.getValueType(), this);
+        context.tryOutputType(fieldName, context.getCurrentType(), this);
     }
 
     @Override

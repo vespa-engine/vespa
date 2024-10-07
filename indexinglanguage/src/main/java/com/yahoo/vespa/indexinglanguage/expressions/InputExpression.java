@@ -42,7 +42,7 @@ public final class InputExpression extends Expression {
         DataType val = context.getFieldType(fieldName, this);
         if (val == null)
             throw new VerificationException(this, "Field '" + fieldName + "' not found");
-        context.setValueType(val);
+        context.setCurrentType(val);
     }
 
     @Override

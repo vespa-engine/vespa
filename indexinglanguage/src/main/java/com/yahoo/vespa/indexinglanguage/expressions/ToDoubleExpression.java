@@ -20,7 +20,7 @@ public final class ToDoubleExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValueType(createdOutputType());
+        context.setCurrentType(createdOutputType());
     }
 
     @Override

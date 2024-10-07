@@ -115,7 +115,7 @@ public abstract class Expression extends Selectable {
     }
 
     public final DataType verify(DataType val) {
-        return verify(new VerificationContext().setValueType(val));
+        return verify(new VerificationContext().setCurrentType(val));
     }
 
     public final Document verify(Document doc) {
@@ -161,7 +161,7 @@ public abstract class Expression extends Selectable {
 
     public final DataType verify(VerificationContext context) {
         if (inputType != null) {
-            DataType input = context.getValueType();
+            DataType input = context.getCurrentType();
             if (input == null) {
                 throw new VerificationException(this, "Expected " + inputType.getName() + " input, but no input is specified");
             }
@@ -176,7 +176,7 @@ public abstract class Expression extends Selectable {
         doVerify(context);
         DataType outputType = createdOutputType();
         if (outputType != null) {
-            DataType output = context.getValueType();
+            DataType output = context.getCurrentType();
             if (output == null) {
                 throw new VerificationException(this, "Expected " + outputType.getName() + " output, but no output is specified");
             }
@@ -187,7 +187,7 @@ public abstract class Expression extends Selectable {
                 throw new VerificationException(this, "Expected " + outputType.getName() + " output, got " + output.getName());
             }
         }
-        return context.getValueType();
+        return context.getCurrentType();
     }
 
     protected abstract void doVerify(VerificationContext context);

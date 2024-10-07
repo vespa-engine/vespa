@@ -32,7 +32,7 @@ public final class ConstantExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValueType(value.getDataType());
+        context.setCurrentType(value.getDataType());
     }
 
     @Override

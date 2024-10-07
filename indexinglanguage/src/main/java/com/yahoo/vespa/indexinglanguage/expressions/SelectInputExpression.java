@@ -59,15 +59,15 @@ public final class SelectInputExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
+        DataType input = context.getCurrentType();
         for (Pair<String, Expression> entry : cases) {
             DataType val = context.getFieldType(entry.getFirst(), this);
             if (val == null) {
                 throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
             }
-            context.setValueType(val).execute(entry.getSecond());
+            context.setCurrentType(val).execute(entry.getSecond());
         }
-        context.setValueType(input);
+        context.setCurrentType(input);
     }
 
     @Override

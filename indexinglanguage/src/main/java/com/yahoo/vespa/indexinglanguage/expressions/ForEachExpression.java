@@ -48,8 +48,8 @@ public final class ForEachExpression extends CompositeExpression {
             if (next == null) {
                 VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
                 context.fillVariableTypes(verificationContext);
-                verificationContext.setValueType(input.getDataType()).execute(this);
-                next = verificationContext.getValueType().createFieldValue();
+                verificationContext.setCurrentType(input.getDataType()).execute(this);
+                next = verificationContext.getCurrentType().createFieldValue();
             }
             context.setCurrentValue(next);
         } else if (input instanceof Struct) {
@@ -62,31 +62,31 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType valueType = context.getValueType();
+        DataType valueType = context.getCurrentType();
         if (valueType instanceof ArrayDataType || valueType instanceof WeightedSetDataType) {
             // Set type for block evaluation
-            context.setValueType(((CollectionDataType)valueType).getNestedType());
+            context.setCurrentType(((CollectionDataType)valueType).getNestedType());
 
             // Evaluate block, which sets value>Type to the output of the block
             context.execute(exp);
 
             // Value type outside block becomes the collection type having the block output type as argument
             if (valueType instanceof ArrayDataType) {
-                context.setValueType(DataType.getArray(context.getValueType()));
+                context.setCurrentType(DataType.getArray(context.getCurrentType()));
             } else {
                 WeightedSetDataType wset = (WeightedSetDataType)valueType;
-                context.setValueType(DataType.getWeightedSet(context.getValueType(), wset.createIfNonExistent(), wset.removeIfZero()));
+                context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), wset.createIfNonExistent(), wset.removeIfZero()));
             }
         }
         else if (valueType instanceof StructDataType) {
             for (Field field : ((StructDataType)valueType).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType structValueType = context.setValueType(fieldType).execute(exp).getValueType();
+                DataType structValueType = context.setCurrentType(fieldType).execute(exp).getCurrentType();
                 if (!fieldType.isAssignableFrom(structValueType))
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
                                                           structValueType.getName());
             }
-            context.setValueType(valueType);
+            context.setCurrentType(valueType);
         }
         else {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +

@@ -32,14 +32,14 @@ class OutputAssert {
     }
 
     public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        assertEquals(value, new VerificationContext(adapter).setValueType(value).execute(exp).getValueType());
+        assertEquals(value, new VerificationContext(adapter).setCurrentType(value).execute(exp).getCurrentType());
     }
 
     public static void assertVerifyThrows(FieldTypeAdapter adapter, DataType value, Expression exp,
                                           String expectedException)
     {
         try {
-            new VerificationContext(adapter).setValueType(value).execute(exp);
+            new VerificationContext(adapter).setCurrentType(value).execute(exp);
             fail();
         } catch (VerificationException e) {
             assertEquals(expectedException, e.getMessage());

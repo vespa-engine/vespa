@@ -48,10 +48,10 @@ public class ChoiceExpression extends ExpressionList<Expression> {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
-        context.setValueType(input);
+        DataType input = context.getCurrentType();
+        context.setCurrentType(input);
         for (Expression exp : this)
-            context.setValueType(input).execute(exp);
+            context.setCurrentType(input).execute(exp);
     }
 
     private static DataType resolveInputType(Collection<? extends Expression> list) {
