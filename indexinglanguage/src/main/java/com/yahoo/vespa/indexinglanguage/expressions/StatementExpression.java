@@ -64,11 +64,19 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     @Override
     protected void doVerify(VerificationContext context) {
+        if (expressions().isEmpty()) return;
+
         outputField = outputFieldName();
         if (outputField != null)
             context.setOutputField(outputField);
 
-        for (Expression expression : this)
+        var requiredOutputType = expressions().get(expressions().size() - 1).requiredInputType();
+        for (int i = expressions().size() - 2; i >= 0; i--) {
+            expressions().get(i).setRequiredOutputType(requiredOutputType);
+            requiredOutputType = expressions().get(i).requiredInputType();
+        }
+
+        for (Expression expression : expressions())
             context.verify(expression);
     }
 

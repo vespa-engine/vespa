@@ -22,17 +22,18 @@ import java.util.Map;
  */
 public abstract class Expression extends Selectable {
 
-    private final DataType inputType;
+    private final DataType requiredInputType;
+    private DataType requiredOutputType;
 
     /**
      * Creates an expression
      *
-     * @param inputType the type of the input this expression can work with.
-     *                  UnresolvedDataType.INSTANCE if it works with any type,
-     *                  and null if it does not consume any input.
+     * @param requiredInputType the type of the input this expression can work with.
+     *                          UnresolvedDataType.INSTANCE if it works with any type,
+     *                          and null if it does not consume any input.
      */
-    protected Expression(DataType inputType) {
-        this.inputType = inputType;
+    protected Expression(DataType requiredInputType) {
+        this.requiredInputType = requiredInputType;
     }
 
     /**
@@ -160,16 +161,16 @@ public abstract class Expression extends Selectable {
     }
 
     public final DataType verify(VerificationContext context) {
-        if (inputType != null) {
+        if (requiredInputType != null) {
             DataType input = context.getCurrentType();
             if (input == null) {
-                throw new VerificationException(this, "Expected " + inputType.getName() + " input, but no input is specified");
+                throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, but no input is specified");
             }
             if (input.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
                 throw new VerificationException(this, "Failed to resolve input type");
             }
-            if (!inputType.isAssignableFrom(input)) {
-                throw new VerificationException(this, "Expected " + inputType.getName() + " input, got " +
+            if (!requiredInputType.isAssignableFrom(input)) {
+                throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, got " +
                                                       input.getName());
             }
         }
@@ -192,7 +193,17 @@ public abstract class Expression extends Selectable {
 
     protected abstract void doVerify(VerificationContext context);
 
-    public final DataType requiredInputType() { return inputType; }
+    public final DataType requiredInputType() { return requiredInputType; }
+
+    /**
+     * Returns the output type this is required to produce (since it is part of a statement expression),
+     * or null if this is not set or there is no putput produced at the end of the statement.
+     */
+    public final DataType getRequiredOutputType() { return requiredOutputType; }
+
+    public final void setRequiredOutputType(DataType requiredOutputType) {
+        this.requiredOutputType = requiredOutputType;
+    }
 
     public abstract DataType createdOutputType();
 
