@@ -28,7 +28,7 @@ import java.util.Set;
 
 import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
-import static com.yahoo.vespa.flags.PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME;
+import static com.yahoo.vespa.flags.PermanentFlags.CONFIG_SERVER_SESSION_LIFETIME;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -192,8 +192,6 @@ public class SessionsMaintainerTest {
     }
 
     private MaintainerTester setup(MaintainerTester tester) {
-        flagSource.withLongFlag(CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime);
-
         applicationRepository = tester.applicationRepository();
         applicationRepository.tenantRepository().addTenant(applicationId.tenant());
         maintainer = new SessionsMaintainer(applicationRepository, tester.curator(), Duration.ofMinutes(1));
@@ -229,16 +227,6 @@ public class SessionsMaintainerTest {
 
     private void assertNumberOfRemoteSessions(int expectedNumberOfSessions) {
         assertEquals(expectedNumberOfSessions, sessionRepository.getRemoteSessionsFromZooKeeper().size());
-    }
-
-    private void assertRemoteSessions(Set<Long> sessions) {
-        var set = new HashSet<>(sessionRepository.getRemoteSessionsFromZooKeeper());
-        assertEquals(sessions, set);
-    }
-
-    private void assertLocalSessions(Set<Long> sessions) {
-        var set = new HashSet<>(sessionRepository.getLocalSessionsIdsFromFileSystem());
-        assertEquals(sessions, set);
     }
 
     private PrepareParams.Builder prepareParams() {

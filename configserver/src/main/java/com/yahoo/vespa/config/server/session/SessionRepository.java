@@ -47,7 +47,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.LongFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundStringFlag;
 import com.yahoo.yolean.Exceptions;
@@ -141,7 +140,6 @@ public class SessionRepository {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final int maxNodeSize;
-    private final LongFlag expiryTimeFlag;
     private final BooleanFlag writeSessionData;
     private final BooleanFlag readSessionData;
 
@@ -188,7 +186,6 @@ public class SessionRepository {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
         this.maxNodeSize = maxNodeSize;
-        this.expiryTimeFlag = PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME.bindTo(flagSource);
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
         this.readSessionData = Flags.READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
 
@@ -696,9 +693,7 @@ public class SessionRepository {
 
     private boolean isOldAndCanBeDeleted(long sessionId, Instant createTime) {
         Duration oneDay = Duration.ofDays(1);
-        Duration expiry = Duration.ofSeconds(expiryTimeFlag.value()).compareTo(oneDay) >= 0
-                ? Duration.ofSeconds(expiryTimeFlag.value())
-                : oneDay;
+        Duration expiry = Duration.ofSeconds(Math.max(sessionLifeTimeInSeconds(), oneDay.getSeconds()));
         if (createTime.plus(expiry).isBefore(clock.instant())) {
             log.log(Level.FINE, () -> "more than 1 day old: " + sessionId);
             return true;
@@ -708,9 +703,12 @@ public class SessionRepository {
     }
 
     private boolean hasExpired(Instant created) {
-        Duration expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
-        return created.plus(expiryTime).isBefore(clock.instant());
+        return created.plus(sessionLifeTime()).isBefore(clock.instant());
     }
+
+    private Duration sessionLifeTime() { return Duration.ofSeconds(sessionLifeTimeInSeconds()); }
+
+    private long sessionLifeTimeInSeconds() { return configserverConfig.sessionLifetime(); }
 
     // Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
     private boolean canBeDeleted(long sessionId, Session.Status status) {
@@ -732,7 +730,7 @@ public class SessionRepository {
         if (sessions != null) {
             for (File session : sessions) {
                 try {
-                    Duration consideredNew = Duration.ofSeconds(Math.min(configserverConfig.sessionLifetime(), 300));
+                    Duration consideredNew = Duration.ofSeconds(Math.min(sessionLifeTimeInSeconds(), 300));
                     if (Files.getLastModifiedTime(session.toPath()).toInstant()
                              .isAfter(clock.instant().minus(consideredNew)))
                         newSessions.add(Long.parseLong(session.getName()));
