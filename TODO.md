@@ -14,7 +14,7 @@ independently of other work, and are not yet under development. For more informa
 
 Query profiles make it simple to support multiple buckets, behavior profiles for different use cases, etc. by providing
 bundles of parameters accessible to Searchers processing queries. Writes go through a similar chain of processors -
-Document Processors, but have no equivalent support for parametrization. This is to allow the configuration of document
+Document Processors, but have no equivalent support for parametrization. This is to allow configuration of document
 processor profiles by reusing the query profile support also for document processors.
 
 **Code pointers:**
