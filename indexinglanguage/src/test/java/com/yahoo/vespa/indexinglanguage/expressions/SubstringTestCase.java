@@ -67,10 +67,10 @@ public class SubstringTestCase {
     @Test
     public void requireThatStringIsSliced() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("666999"));
+        ctx.setCurrentValue(new StringFieldValue("666999"));
         new SubstringExpression(2, 4).execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("69", ((StringFieldValue)val).getString());
     }

@@ -42,7 +42,7 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         if (input instanceof Array || input instanceof WeightedSet) {
             FieldValue next = new MyConverter(context, exp).convert(input);
             if (next == null) {
@@ -51,9 +51,9 @@ public final class ForEachExpression extends CompositeExpression {
                 verificationContext.setValueType(input.getDataType()).execute(this);
                 next = verificationContext.getValueType().createFieldValue();
             }
-            context.setValue(next);
+            context.setCurrentValue(next);
         } else if (input instanceof Struct) {
-            context.setValue(new MyConverter(context, exp).convert(input));
+            context.setCurrentValue(new MyConverter(context, exp).convert(input));
         } else {
             throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
                                                input.getDataType().getName());
@@ -137,8 +137,8 @@ public final class ForEachExpression extends CompositeExpression {
 
         @Override
         protected FieldValue doConvert(FieldValue value) {
-            context.setValue(value).execute(expression);
-            return context.getValue();
+            context.setCurrentValue(value).execute(expression);
+            return context.getCurrentValue();
         }
     }
 

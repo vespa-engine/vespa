@@ -234,10 +234,10 @@ public class CatTestCase {
     private static FieldValue evaluate(DataType typeA, FieldValue valA, DataType typeB, FieldValue valB) {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter(new Field("a", typeA),
                                                                           new Field("b", typeB)));
-        ctx.setOutputValue(null, "a", valA);
-        ctx.setOutputValue(null, "b", valB);
+        ctx.setFieldValue("a", valA, null);
+        ctx.setFieldValue("b", valB, null);
         new CatExpression(new InputExpression("a"), new InputExpression("b")).execute(ctx);
-        return ctx.getValue();
+        return ctx.getCurrentValue();
     }
 
     private static DataType evaluate(DataType typeA, DataType typeB) {

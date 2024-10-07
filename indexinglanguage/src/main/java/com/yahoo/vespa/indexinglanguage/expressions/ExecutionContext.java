@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.collections.LazyMap;
-import com.yahoo.document.DataType;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Language;
@@ -47,30 +46,20 @@ public class ExecutionContext {
         return fieldValue != null && fieldValue.isComplete();
     }
 
-    public DataType getInputType(Expression exp, String fieldName) {
-        return fieldValue.getInputType(exp, fieldName);
-    }
-
-    public FieldValue getInputValue(String fieldName) {
+    public FieldValue getFieldValue(String fieldName) {
         return fieldValue.getInputValue(fieldName);
     }
 
-    public FieldValue getInputValue(FieldPath fieldPath) {
+    public FieldValue getFieldValue(FieldPath fieldPath) {
         return fieldValue.getInputValue(fieldPath);
     }
 
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        fieldValue.tryOutputType(exp, fieldName, valueType);
-    }
-
-    public ExecutionContext setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        this.fieldValue.setOutputValue(exp, fieldName, fieldValue);
+    public ExecutionContext setFieldValue(String fieldName, FieldValue fieldValue, Expression expression) {
+        this.fieldValue.setOutputValue(expression, fieldName, fieldValue);
         return this;
     }
 
-    public FieldValueAdapter getFieldValue() {
-        return fieldValue;
-    }
+    public FieldValueAdapter getFieldValue() { return fieldValue; }
 
     public FieldValue getVariable(String name) {
         return variables.get(name);
@@ -79,6 +68,33 @@ public class ExecutionContext {
     public ExecutionContext setVariable(String name, FieldValue value) {
         variables.put(name, value);
         return this;
+    }
+
+    public FieldValue getCurrentValue() { return currentValue; }
+
+    public ExecutionContext setCurrentValue(FieldValue value) {
+        this.currentValue = value;
+        return this;
+    }
+
+    /** Returns a cached value, or null if not present. */
+    public Object getCachedValue(Object key) {
+        return cache.get(key);
+    }
+
+    public void putCachedValue(String key, Object value) {
+        cache.put(key, value);
+    }
+
+    /** Returns a mutable reference to the cache of this. */
+    public Map<Object, Object> getCache() {
+        return cache;
+    }
+
+    void fillVariableTypes(VerificationContext vctx) {
+        for (var entry : variables.entrySet()) {
+            vctx.setVariable(entry.getKey(), entry.getValue().getDataType());
+        }
     }
 
     public Language getLanguage() { return language; }
@@ -100,38 +116,11 @@ public class ExecutionContext {
         return detected;
     }
 
-    public FieldValue getValue() { return currentValue; }
-
-    public ExecutionContext setValue(FieldValue value) {
-        this.currentValue = value;
-        return this;
-    }
-
-    public void putCachedValue(String key, Object value) {
-        cache.put(key, value);
-    }
-
-    /** Returns a cached value, or null if not present. */
-    public Object getCachedValue(Object key) {
-        return cache.get(key);
-    }
-
-    /** Returns a mutable reference to the cache of this. */
-    public Map<Object, Object> getCache() {
-        return cache;
-    }
-
     /** Clears all state in this except the cache. */
     public ExecutionContext clear() {
         variables.clear();
         currentValue = null;
         return this;
-    }
-
-    void fillVariableTypes(VerificationContext vctx) {
-        for (var entry : variables.entrySet()) {
-            vctx.setVariable(entry.getKey(), entry.getValue().getDataType());
-        }
     }
 
 }

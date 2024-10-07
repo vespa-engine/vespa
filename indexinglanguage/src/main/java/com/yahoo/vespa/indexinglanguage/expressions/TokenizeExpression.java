@@ -33,9 +33,9 @@ public final class TokenizeExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue)context.getValue();
+        StringFieldValue input = (StringFieldValue)context.getCurrentValue();
         StringFieldValue output = input.clone();
-        context.setValue(output);
+        context.setCurrentValue(output);
 
         AnnotatorConfig cfg = new AnnotatorConfig(config);
         Language lang = context.resolveLanguage(linguistics);

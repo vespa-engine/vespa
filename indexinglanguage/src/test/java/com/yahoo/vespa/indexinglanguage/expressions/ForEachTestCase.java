@@ -75,7 +75,7 @@ public class ForEachTestCase {
         Array<StringFieldValue> arr = new Array<>(DataType.getArray(DataType.STRING));
         arr.add(new StringFieldValue("6"));
         arr.add(new StringFieldValue("9"));
-        ctx.setValue(arr);
+        ctx.setCurrentValue(arr);
 
         MyCollector exp = new MyCollector();
         new ForEachExpression(exp).execute(ctx);
@@ -103,10 +103,10 @@ public class ForEachTestCase {
         Array<StringFieldValue> before = new Array<>(DataType.getArray(DataType.STRING));
         before.add(new StringFieldValue("6"));
         before.add(new StringFieldValue("9"));
-        ctx.setValue(before);
+        ctx.setCurrentValue(before);
 
         new ForEachExpression(new ToIntegerExpression()).execute(ctx);
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof Array);
 
         Array after = (Array)val;
@@ -118,11 +118,11 @@ public class ForEachTestCase {
     @Test
     public void requireThatEmptyArrayCanBeConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new Array<StringFieldValue>(DataType.getArray(DataType.STRING)));
+        ctx.setCurrentValue(new Array<StringFieldValue>(DataType.getArray(DataType.STRING)));
 
         new ForEachExpression(new ToIntegerExpression()).execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof Array);
         assertEquals(DataType.INT, ((Array)val).getDataType().getNestedType());
         assertTrue(((Array)val).isEmpty());
@@ -143,12 +143,12 @@ public class ForEachTestCase {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         Array<StringFieldValue> arr = new Array<>(DataType.getArray(DataType.STRING));
         arr.add(new StringFieldValue("foo"));
-        ctx.setValue(arr);
+        ctx.setCurrentValue(arr);
 
         new ForEachExpression(SimpleExpression.newConversion(DataType.STRING, DataType.INT)
                                               .setExecuteValue(null)).execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof Array);
         assertEquals(DataType.INT, ((Array)val).getDataType().getNestedType());
         assertTrue(((Array)val).isEmpty());
@@ -160,10 +160,10 @@ public class ForEachTestCase {
         WeightedSet<StringFieldValue> before = new WeightedSet<>(DataType.getWeightedSet(DataType.STRING));
         before.put(new StringFieldValue("6"), 9);
         before.put(new StringFieldValue("9"), 6);
-        ctx.setValue(before);
+        ctx.setCurrentValue(before);
 
         new ForEachExpression(new ToIntegerExpression()).execute(ctx);
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof WeightedSet);
 
         WeightedSet after = (WeightedSet)val;
@@ -175,11 +175,11 @@ public class ForEachTestCase {
     @Test
     public void requireThatEmptyWsetCanBeConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new WeightedSet<StringFieldValue>(DataType.getWeightedSet(DataType.STRING)));
+        ctx.setCurrentValue(new WeightedSet<StringFieldValue>(DataType.getWeightedSet(DataType.STRING)));
 
         new ForEachExpression(new ToIntegerExpression()).execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof WeightedSet);
         assertEquals(DataType.INT, ((WeightedSet)val).getDataType().getNestedType());
         assertTrue(((WeightedSet)val).isEmpty());
@@ -193,11 +193,11 @@ public class ForEachTestCase {
         struct.setFieldValue("my_str", new StringFieldValue("  foo  "));
 
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(struct);
+        ctx.setCurrentValue(struct);
 
         new ForEachExpression(new TrimExpression()).execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof Struct);
         assertEquals(type, val.getDataType());
         assertEquals(new StringFieldValue("foo"), ((Struct)val).getFieldValue("my_str"));
@@ -227,7 +227,7 @@ public class ForEachTestCase {
         struct.setFieldValue("my_int", new IntegerFieldValue(69));
 
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(struct);
+        ctx.setCurrentValue(struct);
 
         try {
             new ForEachExpression(new ToArrayExpression()).execute(ctx);
@@ -247,7 +247,7 @@ public class ForEachTestCase {
         }
         @Override
         protected void doExecute(ExecutionContext context) {
-            lst.add(context.getValue());
+            lst.add(context.getCurrentValue());
         }
 
         @Override

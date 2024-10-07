@@ -29,7 +29,7 @@ public final class JoinExpression extends Expression {
     @SuppressWarnings({ "unchecked" })
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         if (!(input instanceof Array)) {
             throw new IllegalArgumentException("Expected Array input, got " + input.getDataType().getName());
         }
@@ -40,7 +40,7 @@ public final class JoinExpression extends Expression {
                 output.append(delimiter);
             }
         }
-        context.setValue(new StringFieldValue(output.toString()));
+        context.setCurrentValue(new StringFieldValue(output.toString()));
     }
 
     @Override

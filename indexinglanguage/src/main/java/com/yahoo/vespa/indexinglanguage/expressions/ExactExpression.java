@@ -40,11 +40,11 @@ public final class ExactExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue) context.getValue();
+        StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (input.getString().isEmpty()) return;
 
         StringFieldValue output = input.clone();
-        context.setValue(output);
+        context.setCurrentValue(output);
 
         String prev = output.getString();
         String next = toLowerCase(prev);

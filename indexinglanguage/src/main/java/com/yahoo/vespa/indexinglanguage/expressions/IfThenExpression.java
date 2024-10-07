@@ -86,18 +86,18 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
-        FieldValue leftValue = context.setValue(input).execute(left).getValue();
+        FieldValue input = context.getCurrentValue();
+        FieldValue leftValue = context.setCurrentValue(input).execute(left).getCurrentValue();
         if (leftValue == null) {
-            context.setValue(null);
+            context.setCurrentValue(null);
             return;
         }
-        FieldValue rightValue = context.setValue(input).execute(right).getValue();
+        FieldValue rightValue = context.setCurrentValue(input).execute(right).getCurrentValue();
         if (rightValue == null) {
-            context.setValue(null);
+            context.setCurrentValue(null);
             return;
         }
-        context.setValue(input);
+        context.setCurrentValue(input);
         if (isTrue(leftValue, comparator, rightValue)) {
             ifTrue.execute(context);
         } else if (ifFalse != null) {

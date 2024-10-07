@@ -45,7 +45,7 @@ public abstract class Expression extends Selectable {
     public void setStatementOutput(DocumentType documentType, Field field) {}
 
     public final FieldValue execute(FieldValue val) {
-        return execute(new ExecutionContext().setValue(val));
+        return execute(new ExecutionContext().setCurrentValue(val));
     }
 
     public final Document execute(AdapterFactory factory, Document doc) {
@@ -87,7 +87,7 @@ public abstract class Expression extends Selectable {
     public final FieldValue execute(ExecutionContext context) {
         DataType inputType = requiredInputType();
         if (inputType != null) {
-            FieldValue input = context.getValue();
+            FieldValue input = context.getCurrentValue();
             if (input == null) {
                 return null;
             }
@@ -99,13 +99,13 @@ public abstract class Expression extends Selectable {
         doExecute(context);
         DataType outputType = createdOutputType();
         if (outputType != null) {
-            FieldValue output = context.getValue();
+            FieldValue output = context.getCurrentValue();
             if (output != null && !outputType.isValueCompatible(output)) {
                 throw new IllegalStateException("Expression '" + this + "' expected " + outputType.getName() +
                                                 " output, got " + output.getDataType().getName());
             }
         }
-        return context.getValue();
+        return context.getCurrentValue();
     }
 
     protected abstract void doExecute(ExecutionContext context);

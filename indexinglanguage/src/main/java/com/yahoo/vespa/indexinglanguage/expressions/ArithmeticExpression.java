@@ -76,9 +76,9 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
-        context.setValue(evaluate(context.setValue(input).execute(left).getValue(),
-                                  context.setValue(input).execute(right).getValue()));
+        FieldValue input = context.getCurrentValue();
+        context.setCurrentValue(evaluate(context.setCurrentValue(input).execute(left).getCurrentValue(),
+                                         context.setCurrentValue(input).execute(right).getCurrentValue()));
     }
 
     @Override

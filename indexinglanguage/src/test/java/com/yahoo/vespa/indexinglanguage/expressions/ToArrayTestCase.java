@@ -39,9 +39,9 @@ public class ToArrayTestCase {
     @Test
     public void requireThatValueIsConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("69")).execute(new ToArrayExpression());
+        ctx.setCurrentValue(new StringFieldValue("69")).execute(new ToArrayExpression());
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertEquals(Array.class, val.getClass());
 
         Array arr = (Array)val;

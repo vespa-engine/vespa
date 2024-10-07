@@ -31,14 +31,14 @@ public final class ToWsetExpression extends Expression {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         DataType inputType = input.getDataType();
 
         WeightedSetDataType outputType = DataType.getWeightedSet(inputType, createIfNonExistent, removeIfZero);
         WeightedSet output = outputType.createFieldValue();
         output.add(input);
 
-        context.setValue(output);
+        context.setCurrentValue(output);
     }
 
     @Override

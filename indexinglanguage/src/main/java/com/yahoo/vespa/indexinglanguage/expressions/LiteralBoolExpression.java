@@ -20,7 +20,7 @@ public class LiteralBoolExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(new BoolFieldValue(value));
+        context.setCurrentValue(new BoolFieldValue(value));
     }
 
     @Override

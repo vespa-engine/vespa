@@ -98,7 +98,7 @@ public class SelectInputTestCase {
         ExecutionContext ctx = new ExecutionContext(adapter);
         for (String fieldName : availableFields) {
             adapter.createField(new Field(fieldName, DataType.STRING));
-            ctx.setOutputValue(null, fieldName, new StringFieldValue(fieldName));
+            ctx.setFieldValue(fieldName, new StringFieldValue(fieldName), null);
         }
         List<Pair<String, Expression>> cases = new LinkedList<>();
         for (String fieldName : inputField) {

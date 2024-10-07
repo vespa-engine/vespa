@@ -28,10 +28,10 @@ public class Base64EncodeTestCase {
     @Test
     public void requireThatInputIsEncoded() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new LongFieldValue(489210573L));
+        ctx.setCurrentValue(new LongFieldValue(489210573L));
         new Base64EncodeExpression().execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("zcIoHQAAAAA=", ((StringFieldValue)val).getString());
     }

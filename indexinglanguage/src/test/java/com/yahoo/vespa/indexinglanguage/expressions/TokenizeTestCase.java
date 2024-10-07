@@ -55,10 +55,10 @@ public class TokenizeTestCase {
     @Test
     public void requireThatValueIsAnnotated() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("foo"));
+        ctx.setCurrentValue(new StringFieldValue("foo"));
         new TokenizeExpression(new SimpleLinguistics(), new AnnotatorConfig()).execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof StringFieldValue);
         assertNotNull(((StringFieldValue)val).getSpanTree(SpanTrees.LINGUISTICS));
     }
@@ -66,10 +66,10 @@ public class TokenizeTestCase {
     @Test
     public void requireThatLongWordIsDropped() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("foo"));
+        ctx.setCurrentValue(new StringFieldValue("foo"));
         new TokenizeExpression(new SimpleLinguistics(), new AnnotatorConfig().setMaxTokenLength(2)).execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof StringFieldValue);
         assertNull(((StringFieldValue)val).getSpanTree(SpanTrees.LINGUISTICS));
     }

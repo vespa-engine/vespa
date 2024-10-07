@@ -32,9 +32,9 @@ public final class SubstringExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getValue());
+        String input = String.valueOf(context.getCurrentValue());
         String substring = Text.substringByCodepoints(input, from, to);
-        context.setValue(new StringFieldValue(substring));
+        context.setCurrentValue(new StringFieldValue(substring));
     }
 
     @Override

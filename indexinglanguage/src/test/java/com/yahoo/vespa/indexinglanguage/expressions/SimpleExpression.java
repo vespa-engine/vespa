@@ -42,7 +42,7 @@ final class SimpleExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         if (hasExecuteValue) {
-            context.setValue(executeValue);
+            context.setCurrentValue(executeValue);
         }
     }
 

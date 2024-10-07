@@ -17,9 +17,9 @@ public final class Base64DecodeExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getValue());
+        String input = String.valueOf(context.getCurrentValue());
         if (input.isEmpty()) {
-            context.setValue(new LongFieldValue(Long.MIN_VALUE));
+            context.setCurrentValue(new LongFieldValue(Long.MIN_VALUE));
             return;
         }
         if (input.length() > 12) {
@@ -33,7 +33,7 @@ public final class Base64DecodeExpression extends Expression {
         for (int i = decoded.length; --i >= 0;) {
             output = (output << 8) + (((int)decoded[i]) & 0xff);
         }
-        context.setValue(new LongFieldValue(output));
+        context.setCurrentValue(new LongFieldValue(output));
     }
 
     @Override

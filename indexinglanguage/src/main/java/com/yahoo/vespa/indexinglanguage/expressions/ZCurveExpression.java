@@ -19,13 +19,13 @@ public final class ZCurveExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        Struct input = ((Struct) context.getValue());
+        Struct input = ((Struct) context.getCurrentValue());
         Integer x = getFieldValue(input, PositionDataType.FIELD_X);
         Integer y = getFieldValue(input, PositionDataType.FIELD_Y);
         if (x != null && y != null) {
-            context.setValue(new LongFieldValue(ZCurve.encode(x, y)));
+            context.setCurrentValue(new LongFieldValue(ZCurve.encode(x, y)));
         } else {
-            context.setValue(DataType.LONG.createFieldValue());
+            context.setCurrentValue(DataType.LONG.createFieldValue());
         }
     }
 

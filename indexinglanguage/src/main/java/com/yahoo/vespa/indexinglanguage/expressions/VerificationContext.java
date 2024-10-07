@@ -17,17 +17,16 @@ public class VerificationContext {
     private String outputField;
 
     public VerificationContext() {
-        this.fieldType = null;
+        this(null);
     }
 
     public VerificationContext(FieldTypeAdapter field) {
         this.fieldType = field;
     }
 
-    public VerificationContext execute(Expression exp) {
-        if (exp != null) {
-            exp.verify(this);
-        }
+    public VerificationContext execute(Expression expression) {
+        if (expression != null)
+            expression.verify(this);
         return this;
     }
 
@@ -45,19 +44,8 @@ public class VerificationContext {
         fieldType.tryOutputType(expression, fieldName, valueType);
     }
 
-    public DataType getVariable(String name) {
-        return variables.get(name);
-    }
-
-    public VerificationContext setVariable(String name, DataType value) {
-        variables.put(name, value);
-        return this;
-    }
-
     /** Returns the current value type */
-    public DataType getValueType() {
-        return valueType;
-    }
+    public DataType getValueType() { return valueType; }
 
     /** Returns the current value type */
     public VerificationContext setValueType(DataType value) {
@@ -65,14 +53,21 @@ public class VerificationContext {
         return this;
     }
 
-    /** Sets the name of the (last) output field of the statement this is executed as a part of */
-    public void setOutputField(String outputField) { this.outputField = outputField; }
+    public DataType getVariable(String name) { return variables.get(name); }
+
+    public VerificationContext setVariable(String name, DataType value) {
+        variables.put(name, value);
+        return this;
+    }
 
     /**
      * Returns the name of the (last) output field of the statement this is executed as a part of,
      * or null if none or not yet verified
      */
     public String getOutputField() { return outputField; }
+
+    /** Sets the name of the (last) output field of the statement this is executed as a part of */
+    public void setOutputField(String outputField) { this.outputField = outputField; }
 
     public VerificationContext clear() {
         variables.clear();

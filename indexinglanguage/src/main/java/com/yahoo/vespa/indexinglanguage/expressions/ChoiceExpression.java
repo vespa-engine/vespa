@@ -38,10 +38,10 @@ public class ChoiceExpression extends ExpressionList<Expression> {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         for (Expression expression : this) {
-            context.setValue(input).execute(expression);
-            if (context.getValue() != null)
+            context.setCurrentValue(input).execute(expression);
+            if (context.getCurrentValue() != null)
                 break; // value found
         }
     }

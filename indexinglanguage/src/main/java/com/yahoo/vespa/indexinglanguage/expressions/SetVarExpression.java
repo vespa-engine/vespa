@@ -21,7 +21,7 @@ public final class SetVarExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setVariable(varName, context.getValue());
+        context.setVariable(varName, context.getCurrentValue());
     }
 
     @Override

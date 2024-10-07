@@ -18,14 +18,14 @@ public final class ToArrayExpression extends Expression {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         DataType inputType = input.getDataType();
 
         ArrayDataType outputType = DataType.getArray(inputType);
         Array output = outputType.createFieldValue();
         output.add(input);
 
-        context.setValue(output);
+        context.setCurrentValue(output);
     }
 
     @Override

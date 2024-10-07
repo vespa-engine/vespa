@@ -18,9 +18,9 @@ public class ToEpochSecondExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        String inputString = String.valueOf(context.getValue());
+        String inputString = String.valueOf(context.getCurrentValue());
         long epochTime =  Instant.parse(inputString).getEpochSecond();
-        context.setValue(new LongFieldValue(epochTime));
+        context.setCurrentValue(new LongFieldValue(epochTime));
     }
 
     @Override

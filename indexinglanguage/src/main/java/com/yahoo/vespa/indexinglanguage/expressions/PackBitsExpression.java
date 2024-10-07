@@ -34,10 +34,10 @@ public class PackBitsExpression extends Expression  {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        Optional<Tensor> tensor = ((TensorFieldValue)context.getValue()).getTensor();
+        Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
         if (tensor.isEmpty()) return;
         Tensor.Builder builder = Tensor.Builder.of(outputType);
-        context.setValue(new TensorFieldValue(builder.build()));
+        context.setCurrentValue(new TensorFieldValue(builder.build()));
     }
 
     @Override

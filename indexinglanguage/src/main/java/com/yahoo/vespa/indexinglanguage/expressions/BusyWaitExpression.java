@@ -21,7 +21,7 @@ public final class BusyWaitExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue value = context.getValue();
+        FieldValue value = context.getCurrentValue();
         if (value instanceof NumericFieldValue num) {
             double napSecs = num.getNumber().doubleValue();
             long doom = System.nanoTime() + (long)(1_000_000_000.0 * napSecs);

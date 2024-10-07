@@ -49,7 +49,7 @@ public class SetVarTestCase {
     @Test
     public void requireThatSymbolIsWritten() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new IntegerFieldValue(69));
+        ctx.setCurrentValue(new IntegerFieldValue(69));
         new SetVarExpression("out").execute(ctx);
 
         FieldValue val = ctx.getVariable("out");

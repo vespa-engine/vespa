@@ -19,9 +19,9 @@ public final class HexDecodeExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getValue());
+        String input = String.valueOf(context.getCurrentValue());
         if (input.isEmpty()) {
-            context.setValue(new LongFieldValue(Long.MIN_VALUE));
+            context.setCurrentValue(new LongFieldValue(Long.MIN_VALUE));
             return;
         }
         BigInteger output;
@@ -36,7 +36,7 @@ public final class HexDecodeExpression extends Expression {
         if (output.compareTo(BigInteger.ZERO) > 0 && output.bitLength() == 64) {
             output = output.subtract(ULONG_MAX); // flip to negative
         }
-        context.setValue(new LongFieldValue(output.longValue()));
+        context.setCurrentValue(new LongFieldValue(output.longValue()));
     }
 
     @Override

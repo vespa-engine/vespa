@@ -30,8 +30,8 @@ public final class RandomExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         int max;
-        max = Objects.requireNonNullElseGet(this.max, () -> Integer.parseInt(String.valueOf(context.getValue())));
-        context.setValue(new IntegerFieldValue(ThreadLocalRandom.current().nextInt(max)));
+        max = Objects.requireNonNullElseGet(this.max, () -> Integer.parseInt(String.valueOf(context.getCurrentValue())));
+        context.setCurrentValue(new IntegerFieldValue(ThreadLocalRandom.current().nextInt(max)));
     }
 
     @Override

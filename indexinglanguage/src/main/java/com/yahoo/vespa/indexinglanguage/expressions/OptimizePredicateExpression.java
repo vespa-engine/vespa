@@ -31,7 +31,7 @@ public final class OptimizePredicateExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        PredicateFieldValue predicate = ((PredicateFieldValue) context.getValue()).clone();
+        PredicateFieldValue predicate = ((PredicateFieldValue) context.getCurrentValue()).clone();
         IntegerFieldValue arity = (IntegerFieldValue) context.getVariable("arity");
         LongFieldValue lower_bound = (LongFieldValue) context.getVariable("lower_bound");
         LongFieldValue upper_bound = (LongFieldValue) context.getVariable("upper_bound");
@@ -39,7 +39,7 @@ public final class OptimizePredicateExpression extends Expression {
         Long upper = upper_bound != null? upper_bound.getLong() : null;
         PredicateOptions options = new PredicateOptions(arity.getInteger(), lower, upper);
         predicate.setPredicate(optimizer.process(predicate.getPredicate(), options));
-        context.setValue(predicate);
+        context.setCurrentValue(predicate);
     }
 
     @Override

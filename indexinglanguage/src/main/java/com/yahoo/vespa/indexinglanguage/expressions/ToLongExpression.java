@@ -15,7 +15,7 @@ public final class ToLongExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(new LongFieldValue(Long.valueOf(String.valueOf(context.getValue()))));
+        context.setCurrentValue(new LongFieldValue(Long.valueOf(String.valueOf(context.getCurrentValue()))));
     }
 
     @Override

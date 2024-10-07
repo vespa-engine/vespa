@@ -15,7 +15,7 @@ public final class ToByteExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(new ByteFieldValue(Byte.valueOf(String.valueOf(context.getValue()))));
+        context.setCurrentValue(new ByteFieldValue(Byte.valueOf(String.valueOf(context.getCurrentValue()))));
     }
 
     @Override

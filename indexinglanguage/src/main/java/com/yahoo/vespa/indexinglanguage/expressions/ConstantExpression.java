@@ -27,7 +27,7 @@ public final class ConstantExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(value);
+        context.setCurrentValue(value);
     }
 
     @Override

@@ -27,7 +27,7 @@ public final class FlattenExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue) context.getValue();
+        StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         SpanTree tree = input.getSpanTree(SpanTrees.LINGUISTICS);
         Map<Integer, List<String>> map = new HashMap<>();
         for (Annotation anno : tree) {
@@ -61,7 +61,7 @@ public final class FlattenExpression extends Expression {
                 output.append(inputVal.charAt(i));
             }
         }
-        context.setValue(new StringFieldValue(output.toString()));
+        context.setCurrentValue(new StringFieldValue(output.toString()));
     }
 
     @Override

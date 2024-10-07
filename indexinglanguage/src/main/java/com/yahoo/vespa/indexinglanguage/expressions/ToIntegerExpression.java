@@ -15,7 +15,7 @@ public final class ToIntegerExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(new IntegerFieldValue(Integer.valueOf(String.valueOf(context.getValue()))));
+        context.setCurrentValue(new IntegerFieldValue(Integer.valueOf(String.valueOf(context.getCurrentValue()))));
     }
 
     @Override

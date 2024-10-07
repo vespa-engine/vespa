@@ -33,26 +33,26 @@ public final class CatExpression extends ExpressionList<Expression> {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         DataType inputType = input != null ? input.getDataType() : null;
-        VerificationContext ver = new VerificationContext(context.getFieldValue());
-        context.fillVariableTypes(ver);
+        VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
+        context.fillVariableTypes(verificationContext);
         List<FieldValue> values = new LinkedList<>();
         List<DataType> types = new LinkedList<>();
         for (Expression exp : this) {
-            FieldValue val = context.setValue(input).execute(exp).getValue();
+            FieldValue val = context.setCurrentValue(input).execute(exp).getCurrentValue();
             values.add(val);
 
             DataType type;
             if (val != null) {
                 type = val.getDataType();
             } else {
-                type = ver.setValueType(inputType).execute(this).getValueType();
+                type = verificationContext.setValueType(inputType).execute(this).getValueType();
             }
             types.add(type);
         }
         DataType type = resolveOutputType(types);
-        context.setValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
+        context.setCurrentValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
     }
 
     @Override

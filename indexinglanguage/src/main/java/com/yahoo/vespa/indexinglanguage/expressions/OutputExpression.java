@@ -28,7 +28,7 @@ public abstract class OutputExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setOutputValue(this, fieldName, context.getValue());
+        context.setFieldValue(fieldName, context.getCurrentValue(), this);
     }
 
     @Override

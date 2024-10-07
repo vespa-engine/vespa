@@ -16,10 +16,10 @@ class OutputAssert {
 
     public static void assertExecute(OutputExpression exp) {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter(new Field(exp.getFieldName(), DataType.STRING)));
-        ctx.setValue(new StringFieldValue("69"));
+        ctx.setCurrentValue(new StringFieldValue("69"));
         ctx.execute(exp);
 
-        FieldValue out = ctx.getInputValue(exp.getFieldName());
+        FieldValue out = ctx.getFieldValue(exp.getFieldName());
         assertTrue(out instanceof StringFieldValue);
         assertEquals("69", ((StringFieldValue)out).getString());
     }

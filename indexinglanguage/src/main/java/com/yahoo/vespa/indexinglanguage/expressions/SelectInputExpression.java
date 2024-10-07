@@ -46,15 +46,15 @@ public final class SelectInputExpression extends CompositeExpression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         for (Pair<String, Expression> entry : cases) {
-            FieldValue val = context.getInputValue(entry.getFirst());
+            FieldValue val = context.getFieldValue(entry.getFirst());
             if (val != null) {
-                context.setValue(val).execute(entry.getSecond());
+                context.setCurrentValue(val).execute(entry.getSecond());
                 break;
             }
         }
-        context.setValue(input);
+        context.setCurrentValue(input);
     }
 
     @Override

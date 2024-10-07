@@ -92,7 +92,7 @@ public class EmbeddingScriptTestCase {
         assertEquals(new ArrayDataType(new TensorDataType(tensorType)), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(array);
+        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myTensorArray"));
         var tensorArray = (Array<TensorFieldValue>)adapter.values.get("myTensorArray");
@@ -129,7 +129,7 @@ public class EmbeddingScriptTestCase {
         assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(array);
+        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("mySparseTensor"));
         var sparseTensor = (TensorFieldValue)adapter.values.get("mySparseTensor");
@@ -162,7 +162,7 @@ public class EmbeddingScriptTestCase {
         assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(array);
+        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("mySparseTensor"));
         var sparseTensor = (TensorFieldValue)adapter.values.get("mySparseTensor");
@@ -193,7 +193,7 @@ public class EmbeddingScriptTestCase {
         assertEquals(new TensorDataType(tensorType), expression.verify(new VerificationContext(adapter)));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(array);
+        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("mySparseTensor"));
         var sparseTensor = (TensorFieldValue)adapter.values.get("mySparseTensor");
@@ -297,7 +297,7 @@ public class EmbeddingScriptTestCase {
         assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(text);
+        context.setCurrentValue(text);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("mySparseTensor"));
         var sparseTensor = (TensorFieldValue)adapter.values.get("mySparseTensor");
@@ -353,7 +353,7 @@ public class EmbeddingScriptTestCase {
         assertEquals(new TensorDataType(tensorType), expression.verify(new VerificationContext(adapter)));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(array);
+        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("my2DSparseTensor"));
         var sparse2DTensor = (TensorFieldValue)adapter.values.get("my2DSparseTensor");

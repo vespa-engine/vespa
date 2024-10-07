@@ -33,9 +33,9 @@ public class BinarizeExpression extends Expression  {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        Optional<Tensor> tensor = ((TensorFieldValue)context.getValue()).getTensor();
+        Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
         if (tensor.isEmpty()) return;
-        context.setValue(new TensorFieldValue(tensor.get().map(v -> v > threshold ? 1 : 0)));
+        context.setCurrentValue(new TensorFieldValue(tensor.get().map(v -> v > threshold ? 1 : 0)));
     }
 
     @Override

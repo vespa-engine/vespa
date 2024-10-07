@@ -49,13 +49,13 @@ public final class NGramExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue) context.getValue();
+        StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (input.getSpanTree(SpanTrees.LINGUISTICS) != null) {
             // This expression is already executed for this input instance
             return;
         }
         StringFieldValue output = input.clone();
-        context.setValue(output);
+        context.setCurrentValue(output);
 
         SpanList spanList = output.setSpanTree(new SpanTree(SpanTrees.LINGUISTICS)).spanList();
         int lastPosition = 0;

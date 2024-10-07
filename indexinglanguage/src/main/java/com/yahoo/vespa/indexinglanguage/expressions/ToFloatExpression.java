@@ -15,7 +15,7 @@ public final class ToFloatExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(new FloatFieldValue(Float.valueOf(String.valueOf(context.getValue()))));
+        context.setCurrentValue(new FloatFieldValue(Float.valueOf(String.valueOf(context.getCurrentValue()))));
     }
 
     @Override

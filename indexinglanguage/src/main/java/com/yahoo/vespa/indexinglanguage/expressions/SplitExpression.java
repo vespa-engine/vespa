@@ -26,7 +26,7 @@ public final class SplitExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getValue());
+        String input = String.valueOf(context.getCurrentValue());
         Array<StringFieldValue> output = new Array<>(DataType.getArray(DataType.STRING));
         if (!input.isEmpty()) {
             String[] splits = splitPattern.split(input);
@@ -34,7 +34,7 @@ public final class SplitExpression extends Expression {
                 output.add(new StringFieldValue(split));
             }
         }
-        context.setValue(output);
+        context.setCurrentValue(output);
     }
 
     @Override

@@ -45,20 +45,20 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         for (StatementExpression statement : this) {
             if (context.isComplete() ||
                 (statement.getInputFields().isEmpty() || containsAtLeastOneInputFrom(statement.getInputFields(), context))) {
-                context.setValue(input);
+                context.setCurrentValue(input);
                 context.execute(statement);
             }
         }
-        context.setValue(input);
+        context.setCurrentValue(input);
     }
 
     private boolean containsAtLeastOneInputFrom(List<String> inputFields, ExecutionContext context) {
         for (String inputField : inputFields)
-            if (context.getInputValue(inputField) != null)
+            if (context.getFieldValue(inputField) != null)
                 return true;
         return false;
     }

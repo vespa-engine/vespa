@@ -51,7 +51,7 @@ public class GetVarTestCase {
         ctx.setVariable("in", new IntegerFieldValue(69));
         new GetVarExpression("in").execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof IntegerFieldValue);
         assertEquals(69, ((IntegerFieldValue)val).getInteger());
     }
@@ -59,12 +59,12 @@ public class GetVarTestCase {
     @Test
     public void requireThatGetVarCanBeUsedToImplementSum() throws ParseException {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setOutputValue(null, "in", new StringFieldValue("0;1;2;3;4;5;6;7;8;9"));
+        ctx.setFieldValue("in", new StringFieldValue("0;1;2;3;4;5;6;7;8;9"), null);
         ScriptExpression.fromString("{ 0 | set_var tmp; " +
                                     "  input in | split ';' | for_each { to_int + get_var tmp | set_var tmp };" +
                                     "  get_var tmp | attribute out; }").execute(ctx);
 
-        FieldValue val = ctx.getInputValue("out");
+        FieldValue val = ctx.getFieldValue("out");
         assertTrue(val instanceof IntegerFieldValue);
         assertEquals(45, ((IntegerFieldValue)val).getInteger());
     }

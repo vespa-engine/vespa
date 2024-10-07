@@ -41,14 +41,14 @@ public final class NormalizeExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         Transformer transformer = linguistics.getTransformer();
-        var orig = String.valueOf(context.getValue());
+        var orig = String.valueOf(context.getCurrentValue());
         if (orig.isEmpty()) {
             return; // must be a no-op for all linguistics/language combinations
         }
         var lang = context.resolveLanguage(linguistics);
         var transformed = transformer.accentDrop(orig, lang);
         try {
-            context.setValue(new StringFieldValue(transformed));
+            context.setCurrentValue(new StringFieldValue(transformed));
             return;
         } catch (IllegalArgumentException ex) {
             String msg = ("bad normalize, \n" +
@@ -57,8 +57,8 @@ public final class NormalizeExpression extends Expression {
                           "transformed: >>> " + escape(transformed) + " <<<");
             logger.log(Level.SEVERE, msg);
         }
-        context.setValue(new StringFieldValue(transformer.accentDrop(String.valueOf(context.getValue()),
-                                                                     context.resolveLanguage(linguistics))));
+        context.setCurrentValue(new StringFieldValue(transformer.accentDrop(String.valueOf(context.getCurrentValue()),
+                                                                            context.resolveLanguage(linguistics))));
     }
 
     @Override

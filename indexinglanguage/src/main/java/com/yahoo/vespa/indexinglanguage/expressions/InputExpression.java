@@ -32,9 +32,9 @@ public final class InputExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         if (fieldPath != null)
-            context.setValue(context.getInputValue(fieldPath));
+            context.setCurrentValue(context.getFieldValue(fieldPath));
         else
-            context.setValue(context.getInputValue(fieldName));
+            context.setCurrentValue(context.getFieldValue(fieldName));
     }
 
     @Override

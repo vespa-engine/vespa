@@ -72,30 +72,30 @@ public class EmbedExpression extends Expression  {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        if (context.getValue() == null) return;
+        if (context.getCurrentValue() == null) return;
         Tensor output;
-        if (context.getValue().getDataType() == DataType.STRING) {
+        if (context.getCurrentValue().getDataType() == DataType.STRING) {
             output = embedSingleValue(context);
         }
-        else if (context.getValue().getDataType() instanceof ArrayDataType &&
-                 ((ArrayDataType)context.getValue().getDataType()).getNestedType() == DataType.STRING) {
+        else if (context.getCurrentValue().getDataType() instanceof ArrayDataType &&
+                 ((ArrayDataType)context.getCurrentValue().getDataType()).getNestedType() == DataType.STRING) {
             output = embedArrayValue(context);
         }
         else {
             throw new IllegalArgumentException("Embedding can only be done on string or string array fields, not " +
-                                               context.getValue().getDataType());
+                                               context.getCurrentValue().getDataType());
         }
-        context.setValue(new TensorFieldValue(output));
+        context.setCurrentValue(new TensorFieldValue(output));
     }
 
     private Tensor embedSingleValue(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue)context.getValue();
+        StringFieldValue input = (StringFieldValue)context.getCurrentValue();
         return embed(input.getString(), targetType, context);
     }
 
     @SuppressWarnings("unchecked")
     private Tensor embedArrayValue(ExecutionContext context) {
-        var input = (Array<StringFieldValue>)context.getValue();
+        var input = (Array<StringFieldValue>)context.getCurrentValue();
         var builder = Tensor.Builder.of(targetType);
         if (targetType.rank() == 2)
             if (targetType.indexedSubtype().rank() == 1)

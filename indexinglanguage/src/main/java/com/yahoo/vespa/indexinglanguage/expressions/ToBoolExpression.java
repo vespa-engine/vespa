@@ -18,7 +18,7 @@ public final class ToBoolExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(new BoolFieldValue(toBooleanValue(context.getValue())));
+        context.setCurrentValue(new BoolFieldValue(toBooleanValue(context.getCurrentValue())));
     }
 
     private boolean toBooleanValue(FieldValue value) {
