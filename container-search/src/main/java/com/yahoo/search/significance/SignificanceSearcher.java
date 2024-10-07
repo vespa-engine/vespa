@@ -160,6 +160,9 @@ public class SignificanceSearcher extends Searcher {
         if (root == null || root instanceof NullItem) return;
 
         if (root instanceof WordItem wi) {
+            if (wi.getDocumentFrequency().isPresent() || wi.hasExplicitSignificance())
+                return;
+
             var word = wi.getWord();
             var documentFrequency = significanceModel.documentFrequency(word.toLowerCase());
             long N                = documentFrequency.corpusSize();
