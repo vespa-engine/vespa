@@ -31,12 +31,12 @@ public final class StatementExpression extends ExpressionList<Expression> {
     /** The name of the (last) output field this statement will write to, or null if none */
     private String outputField;
 
-    public StatementExpression(Expression... lst) {
-        this(Arrays.asList(lst)); //TODO Can contain null - necessary ?
+    public StatementExpression(Expression... list) {
+        this(Arrays.asList(list)); // TODO: Can contain null - necessary ?
     }
 
-    public StatementExpression(Iterable<Expression> lst) {
-        this(filterList(lst), null);
+    public StatementExpression(Iterable<Expression> list) {
+        this(filterList(list), null);
     }
 
     private StatementExpression(Iterable<Expression> list, Object unused) {
