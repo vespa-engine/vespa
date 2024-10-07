@@ -5,7 +5,7 @@
 Anyone is welcome to contribute to Vespa, by [creating pull requests](CONTRIBUTING.md)
 or taking part in discussions about features, e.g. in [GitHub issues](https://github.com/vespa-engine/vespa/issues).
 
-This document defines who has the authority to do what on the Vespa open-source project.
+This document defines who has authority to do what on the Vespa open-source project.
 
 While a formal assignment of authority is necessary as a fallback mechanism, it is
 not the way decisions regarding Vespa are usually made, or expected to be made.
