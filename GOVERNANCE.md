@@ -11,7 +11,7 @@ While a formal assignment of authority is necessary as a fallback mechanism, it 
 not the way decisions regarding Vespa are usually made, or expected to be made.
 The community sees disagreement as good as a diversity of perspectives having influence
 leads to better decisions. We seek to resolve disagreement by reaching 
-a consensus based on the merit of technical arguments, with no regard to status or
+consensus based on the merit of technical arguments, with no regard to status or
 formal role. This almost always works.
 
 # Vespa roles
