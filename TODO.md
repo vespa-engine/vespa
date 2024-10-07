@@ -31,7 +31,7 @@ processor profiles by reusing the query profile support also for document proces
 There is currently support for creating Application instances programmatically in Java to unit-test application package
 functionality (see com.yahoo.application.Application). However, only Java component functionality can be tested in this
 way as the content layer is not available, being implemented in C++. A Java implementation, of some or all of the
-functionality would enable developers to do more testing locally within their IDE. This is a medium effort because
+functionality would enable developers to do more testing locally within their IDE. This is medium effort because
 performance is not a concern and some components, such as ranking expressions and features are already available as
 libraries (see the searchlib module).
 
