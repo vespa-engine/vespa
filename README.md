@@ -13,10 +13,10 @@
 
 
 
-Search, make inferences in, and organize vectors, tensors, text and structured data, at serving time and any scale.
+Search, make inferences in and organize vectors, tensors, text and structured data, at serving time and any scale.
 
 This repository contains all the code required to build and run all of Vespa yourself,
-and where you can see all development as it is happening.
+and where you can see all development as it happens.
 All the content in this repository is licensed under the Apache 2.0 license.
 
 A new release of Vespa is made from this repository's master branch every morning CET Monday through Thursday.
@@ -41,9 +41,9 @@ Use cases such as search, recommendation and personalization need to select a su
 evaluate machine-learned models over the selected data, organize and aggregate it and return it, typically in less
 than 100 milliseconds, all while the data corpus is continuously changing.
 
-This is hard to do, especially with large data sets that needs to be distributed over multiple nodes and evaluated in
-parallel. Vespa is a platform which performs these operations for you with high availability and performance.
-It has been in development for many years and is used on a number of large internet services and apps which serve
+This is hard to do, especially with large data sets that need to be distributed over multiple nodes and evaluated in
+parallel. Vespa is a platform that performs these operations for you with high availability and performance.
+It has been in development for many years and is used on several large internet services and apps which serve
 hundreds of thousands of queries from Vespa per second.
 
 ## Install
@@ -53,7 +53,7 @@ or run your own Vespa instance: [https://docs.vespa.ai/en/getting-started.html](
 
 ## Usage
 
-- The application created in the getting started guides linked above are fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/en/multinode-systems.html) for redundancy.
+- The application created in the getting started guides linked above is fully functional and production-ready, but you may want to [add more nodes](https://docs.vespa.ai/en/multinode-systems.html) for redundancy.
 - See [developing applications](https://docs.vespa.ai/en/developer-guide.html) on adding your own Java components to your Vespa application.
 - [Vespa APIs](https://docs.vespa.ai/en/api.html) is useful to understand how to interface with Vespa
 - Explore the [sample applications](https://github.com/vespa-engine/sample-apps/tree/master)
