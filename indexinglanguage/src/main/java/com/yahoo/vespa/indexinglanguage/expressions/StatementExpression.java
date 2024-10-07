@@ -19,6 +19,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
+ * An indexing statement consisting of a list of indexing expressions, e.g "input foo | index | attribute".
+ *
  * @author Simon Thoresen Hult
  */
 public final class StatementExpression extends ExpressionList<Expression> {

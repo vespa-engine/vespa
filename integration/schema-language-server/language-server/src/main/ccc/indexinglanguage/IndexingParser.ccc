@@ -205,6 +205,7 @@ TOKEN :
     <NORMALIZE: "normalize"> |
     <NOW: "now"> |
     <OPTIMIZE_PREDICATE: "optimize_predicate"> |
+    <PACK_BITS: "pack_bits"> |
     <PASSTHROUGH: "passthrough"> |
     <RANDOM: "random"> |
     <REMOVE_IF_ZERO: "remove_if_zero"> |
@@ -355,6 +356,7 @@ Expression value() :
       val = normalizeExp()          |
       val = nowExp()                |
       val = optimizePredicateExp()  |
+      val = packBitsExp()           |
       val = passthroughExp()        |
       val = randomExp()             |
       val = script()                |
@@ -610,6 +612,12 @@ Expression optimizePredicateExp() : { }
  
     ( <OPTIMIZE_PREDICATE> )
     { return new OptimizePredicateExpression(); }
+;
+
+Expression packBitsExp() : { }
+
+    ( <PACK_BITS> )
+    { return new PackBitsExpression(); }
 ;
 
 Expression passthroughExp() :

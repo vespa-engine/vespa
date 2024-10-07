@@ -64,7 +64,7 @@ public class HashExpression extends Expression  {
         if (outputField == null)
             throw new VerificationException(this, "No output field in this statement: " +
                                                   "Don't know what value to hash to");
-        DataType outputFieldType = context.getInputType(this, outputField);
+        DataType outputFieldType = context.getFieldType(this);
         if ( ! canStoreHash(outputFieldType))
             throw new VerificationException(this, "The type of the output field " + outputField +
                                                   " is not int or long but " + outputFieldType);

@@ -15,6 +15,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -57,6 +58,13 @@ public class EmbeddingScriptTestCase {
         var tester = new EmbeddingScriptTester(Map.of("emb1", new EmbeddingScriptTester.MockIndexedEmbedder("myDocument.myTensor", -111)));
         tester.testStatement("input myText | embed | binarize | attribute 'myTensor'", "input text", "[0, 0, 1, 1]");
         tester.testStatement("input myText | embed | binarize 3.0 | attribute 'myTensor'", "input text", "[0, 0, 0, 1]");
+    }
+
+    @Ignore
+    @Test
+    public void testEmbedBinarizeAndPack_bits() {
+        var tester = new EmbeddingScriptTester(Map.of("emb1", new EmbeddingScriptTester.MockIndexedEmbedder("myDocument.myTensor", -111)));
+        tester.testStatement("input myText | embed | binarize | pack_bits | attribute 'myTensor'", "input text", "tensor<int8>(x[2])", "[58, 192]");
     }
 
     @SuppressWarnings("unchecked")

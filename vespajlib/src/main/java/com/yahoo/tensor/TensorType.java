@@ -373,6 +373,11 @@ public class TensorType {
         /** Returns a copy of this with the name set to the given name */
         public abstract Dimension withName(String name);
 
+        /** Returns a copy of this with the size set to the given value */
+        public Dimension withSize(int size) {
+            return IndexedBoundDimension.indexed(name, size);
+        }
+
         /** Returns true if this is an indexed bound or unbound type */
         public boolean isIndexed() { return type() == Type.indexedBound || type() == Type.indexedUnbound; }
 

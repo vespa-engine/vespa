@@ -57,6 +57,9 @@ public class BinarizeExpression extends Expression  {
     public int hashCode() { return Objects.hash(threshold, toString().hashCode()); }
 
     @Override
-    public boolean equals(Object o) { return o instanceof BinarizeExpression; }
+    public boolean equals(Object o) {
+        if ( ! (o instanceof BinarizeExpression other)) return false;
+        return this.threshold == other.threshold;
+    }
 
 }

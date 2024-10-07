@@ -40,7 +40,7 @@ public final class GuardExpression extends CompositeExpression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        if (!shouldExecute && context.getAdapter() instanceof UpdateAdapter) {
+        if (!shouldExecute && context.getFieldValue() instanceof UpdateAdapter) {
             context.setValue(null);
         } else {
             exp.execute(context);

@@ -183,7 +183,7 @@ public class EmbedExpression extends Expression  {
         if (outputField == null)
             throw new VerificationException(this, "No output field in this statement: " +
                                                   "Don't know what tensor type to embed into");
-        targetType = toTargetTensor(context.getInputType(this, outputField));
+        targetType = toTargetTensor(context.getFieldType(this));
         if ( ! validTarget(targetType))
             throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, a mapped 1d tensor, a mapped 2d tensor, " +
                                                   "an array of dense 1d tensors, or a mixed 2d or 3d tensor");
@@ -207,7 +207,6 @@ public class EmbedExpression extends Expression  {
                 throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
                                                       "is not a sparse dimension of the target type " + targetType);
         }
-
         context.setValueType(createdOutputType());
     }
 

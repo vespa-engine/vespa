@@ -9,19 +9,19 @@ import java.util.Map;
 /**
  * @author Simon Thoresen Hult
  */
-public class VerificationContext implements FieldTypeAdapter, Cloneable {
+public class VerificationContext implements FieldTypeAdapter {
 
     private final Map<String, DataType> variables = new HashMap<>();
-    private final FieldTypeAdapter adapter;
-    private DataType value;
+    private final FieldTypeAdapter fieldType;
+    private DataType valueType;
     private String outputField;
 
     public VerificationContext() {
-        this.adapter = null;
+        this.fieldType = null;
     }
 
-    public VerificationContext(FieldTypeAdapter adapter) {
-        this.adapter = adapter;
+    public VerificationContext(FieldTypeAdapter field) {
+        this.fieldType = field;
     }
 
     public VerificationContext execute(Expression exp) {
@@ -31,14 +31,18 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
         return this;
     }
 
+    public DataType getFieldType(Expression exp) {
+        return fieldType.getInputType(exp, getOutputField());
+    }
+
     @Override
     public DataType getInputType(Expression exp, String fieldName) {
-        return adapter.getInputType(exp, fieldName);
+        return fieldType.getInputType(exp, fieldName);
     }
 
     @Override
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        adapter.tryOutputType(exp, fieldName, valueType);
+        fieldType.tryOutputType(exp, fieldName, valueType);
     }
 
     public DataType getVariable(String name) {
@@ -51,12 +55,12 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
     }
 
     public DataType getValueType() {
-        return value;
+        return valueType;
     }
 
     /** Sets the output value type */
     public VerificationContext setValueType(DataType value) {
-        this.value = value;
+        this.valueType = value;
         return this;
     }
 
@@ -71,7 +75,7 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
 
     public VerificationContext clear() {
         variables.clear();
-        value = null;
+        valueType = null;
         return this;
     }
 

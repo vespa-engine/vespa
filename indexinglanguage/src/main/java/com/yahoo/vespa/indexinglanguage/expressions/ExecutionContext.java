@@ -19,8 +19,8 @@ import java.util.Objects;
 public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
 
     private final Map<String, FieldValue> variables = new HashMap<>();
-    private final FieldValueAdapter adapter;
-    private FieldValue value;
+    private final FieldValueAdapter fieldValue;
+    private FieldValue currentValue;
     private Language language;
     private final Map<Object, Object> cache = LazyMap.newHashMap();
 
@@ -28,8 +28,8 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
         this(null);
     }
 
-    public ExecutionContext(FieldValueAdapter adapter) {
-        this.adapter = adapter;
+    public ExecutionContext(FieldValueAdapter fieldValue) {
+        this.fieldValue = fieldValue;
         this.language = Language.UNKNOWN;
     }
 
@@ -44,45 +44,45 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
      * or a partial execution of only the statements accessing the available data.
      */
     public boolean isComplete() {
-        return adapter != null && adapter.isComplete();
+        return fieldValue != null && fieldValue.isComplete();
     }
 
     @Override
     public DataType getInputType(Expression exp, String fieldName) {
-        return adapter.getInputType(exp, fieldName);
+        return fieldValue.getInputType(exp, fieldName);
     }
 
     @Override
     public FieldValue getInputValue(String fieldName) {
-        if (adapter == null) {
+        if (fieldValue == null) {
             throw new IllegalStateException("Can not get field '" + fieldName + "' because adapter is null");
         }
-        return adapter.getInputValue(fieldName);
+        return fieldValue.getInputValue(fieldName);
     }
 
     @Override
     public FieldValue getInputValue(FieldPath fieldPath) {
-        if (adapter == null) {
+        if (fieldValue == null) {
             throw new IllegalStateException("Can not get field '" + fieldPath + "' because adapter is null");
         }
-        return adapter.getInputValue(fieldPath);
+        return fieldValue.getInputValue(fieldPath);
     }
 
     @Override
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        adapter.tryOutputType(exp, fieldName, valueType);
+        fieldValue.tryOutputType(exp, fieldName, valueType);
     }
 
     @Override
     public ExecutionContext setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        if (adapter == null)
+        if (this.fieldValue == null)
             throw new IllegalStateException("Can not set field '" + fieldName + "' because adapter is null");
-        adapter.setOutputValue(exp, fieldName, fieldValue);
+        this.fieldValue.setOutputValue(exp, fieldName, fieldValue);
         return this;
     }
 
-    public FieldValueAdapter getAdapter() {
-        return adapter;
+    public FieldValueAdapter getFieldValue() {
+        return fieldValue;
     }
 
     public FieldValue getVariable(String name) {
@@ -105,7 +105,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
         if (language != Language.UNKNOWN) return language;
         if (linguistics == null) return Language.ENGLISH;
 
-        Detection detection = linguistics.getDetector().detect(String.valueOf(value), null);
+        Detection detection = linguistics.getDetector().detect(String.valueOf(currentValue), null);
         if (detection == null) return Language.ENGLISH;
 
         Language detected = detection.getLanguage();
@@ -113,10 +113,10 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
         return detected;
     }
 
-    public FieldValue getValue() { return value; }
+    public FieldValue getValue() { return currentValue; }
 
     public ExecutionContext setValue(FieldValue value) {
-        this.value = value;
+        this.currentValue = value;
         return this;
     }
 
@@ -137,7 +137,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
     /** Clears all state in this except the cache. */
     public ExecutionContext clear() {
         variables.clear();
-        value = null;
+        currentValue = null;
         return this;
     }
 
