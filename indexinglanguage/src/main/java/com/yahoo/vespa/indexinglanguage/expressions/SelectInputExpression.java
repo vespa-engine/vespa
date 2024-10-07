@@ -10,7 +10,6 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -62,7 +61,7 @@ public final class SelectInputExpression extends CompositeExpression {
     protected void doVerify(VerificationContext context) {
         DataType input = context.getValueType();
         for (Pair<String, Expression> entry : cases) {
-            DataType val = context.getInputType(this, entry.getFirst());
+            DataType val = context.getFieldType(entry.getFirst(), this);
             if (val == null) {
                 throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
             }

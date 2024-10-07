@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * @author Simon Thoresen Hult
  */
-public class VerificationContext implements FieldTypeAdapter {
+public class VerificationContext {
 
     private final Map<String, DataType> variables = new HashMap<>();
     private final FieldTypeAdapter fieldType;
@@ -31,18 +31,18 @@ public class VerificationContext implements FieldTypeAdapter {
         return this;
     }
 
-    public DataType getFieldType(Expression exp) {
-        return fieldType.getInputType(exp, getOutputField());
+    /** Returns the type of the field processed by this. */
+    public DataType getFieldType(Expression expression) {
+        return fieldType.getInputType(expression, getOutputField());
     }
 
-    @Override
-    public DataType getInputType(Expression exp, String fieldName) {
-        return fieldType.getInputType(exp, fieldName);
+    /** Returns the type of the given field. */
+    public DataType getFieldType(String fieldName, Expression expression) {
+        return fieldType.getInputType(expression, fieldName);
     }
 
-    @Override
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        fieldType.tryOutputType(exp, fieldName, valueType);
+    public void tryOutputType(String fieldName, DataType valueType, Expression expression) {
+        fieldType.tryOutputType(expression, fieldName, valueType);
     }
 
     public DataType getVariable(String name) {
@@ -54,11 +54,12 @@ public class VerificationContext implements FieldTypeAdapter {
         return this;
     }
 
+    /** Returns the current value type */
     public DataType getValueType() {
         return valueType;
     }
 
-    /** Sets the output value type */
+    /** Returns the current value type */
     public VerificationContext setValueType(DataType value) {
         this.valueType = value;
         return this;
