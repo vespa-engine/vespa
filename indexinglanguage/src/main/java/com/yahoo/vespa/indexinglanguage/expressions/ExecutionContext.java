@@ -16,7 +16,7 @@ import java.util.Objects;
 /**
  * @author Simon Thoresen Hult
  */
-public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
+public class ExecutionContext {
 
     private final Map<String, FieldValue> variables = new HashMap<>();
     private final FieldValueAdapter fieldValue;
@@ -47,36 +47,23 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
         return fieldValue != null && fieldValue.isComplete();
     }
 
-    @Override
     public DataType getInputType(Expression exp, String fieldName) {
         return fieldValue.getInputType(exp, fieldName);
     }
 
-    @Override
     public FieldValue getInputValue(String fieldName) {
-        if (fieldValue == null) {
-            throw new IllegalStateException("Can not get field '" + fieldName + "' because adapter is null");
-        }
         return fieldValue.getInputValue(fieldName);
     }
 
-    @Override
     public FieldValue getInputValue(FieldPath fieldPath) {
-        if (fieldValue == null) {
-            throw new IllegalStateException("Can not get field '" + fieldPath + "' because adapter is null");
-        }
         return fieldValue.getInputValue(fieldPath);
     }
 
-    @Override
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
         fieldValue.tryOutputType(exp, fieldName, valueType);
     }
 
-    @Override
     public ExecutionContext setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        if (this.fieldValue == null)
-            throw new IllegalStateException("Can not set field '" + fieldName + "' because adapter is null");
         this.fieldValue.setOutputValue(exp, fieldName, fieldValue);
         return this;
     }

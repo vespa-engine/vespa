@@ -35,7 +35,7 @@ public final class CatExpression extends ExpressionList<Expression> {
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
         DataType inputType = input != null ? input.getDataType() : null;
-        VerificationContext ver = new VerificationContext(context);
+        VerificationContext ver = new VerificationContext(context.getFieldValue());
         context.fillVariableTypes(ver);
         List<FieldValue> values = new LinkedList<>();
         List<DataType> types = new LinkedList<>();

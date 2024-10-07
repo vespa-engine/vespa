@@ -41,15 +41,15 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(final ExecutionContext context) {
+    protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
         if (input instanceof Array || input instanceof WeightedSet) {
             FieldValue next = new MyConverter(context, exp).convert(input);
             if (next == null) {
-                VerificationContext vctx = new VerificationContext(context);
-                context.fillVariableTypes(vctx);
-                vctx.setValueType(input.getDataType()).execute(this);
-                next = vctx.getValueType().createFieldValue();
+                VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
+                context.fillVariableTypes(verificationContext);
+                verificationContext.setValueType(input.getDataType()).execute(this);
+                next = verificationContext.getValueType().createFieldValue();
             }
             context.setValue(next);
         } else if (input instanceof Struct) {
