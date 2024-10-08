@@ -14,24 +14,20 @@ public final class ToIntegerExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        context.setCurrentValue(new IntegerFieldValue(Integer.valueOf(String.valueOf(context.getCurrentValue()))));
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());
     }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.INT;
+    protected void doExecute(ExecutionContext context) {
+        context.setCurrentValue(new IntegerFieldValue(Integer.valueOf(String.valueOf(context.getCurrentValue()))));
     }
 
     @Override
-    public String toString() {
-        return "to_int";
-    }
+    public DataType createdOutputType() { return DataType.INT; }
+
+    @Override
+    public String toString() { return "to_int"; }
 
     @Override
     public boolean equals(Object obj) {

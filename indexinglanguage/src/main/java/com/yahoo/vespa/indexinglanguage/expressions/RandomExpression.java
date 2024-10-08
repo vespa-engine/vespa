@@ -23,8 +23,11 @@ public final class RandomExpression extends Expression {
         this.max = max;
     }
 
-    public Integer getMaxValue() {
-        return max;
+    public Integer getMaxValue() { return max; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -35,14 +38,7 @@ public final class RandomExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return DataType.INT;
-    }
+    public DataType createdOutputType() { return DataType.INT; }
 
     @Override
     public String toString() {
@@ -60,4 +56,5 @@ public final class RandomExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

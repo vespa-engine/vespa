@@ -22,17 +22,23 @@ public final class JoinExpression extends Expression {
         this.delimiter = delimiter;
     }
 
-    public String getDelimiter() {
-        return delimiter;
+    public String getDelimiter() { return delimiter; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getCurrentType();
+        if (!(input instanceof ArrayDataType)) {
+            throw new VerificationException(this, "Expected Array input, got " + input.getName());
+        }
+        context.setCurrentType(createdOutputType());
     }
 
     @SuppressWarnings({ "unchecked" })
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
-        if (!(input instanceof Array)) {
+        if (!(input instanceof Array))
             throw new IllegalArgumentException("Expected Array input, got " + input.getDataType().getName());
-        }
         StringBuilder output = new StringBuilder();
         for (Iterator<FieldValue> it = ((Array)input).fieldValueIterator(); it.hasNext(); ) {
             output.append(it.next());
@@ -44,18 +50,7 @@ public final class JoinExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        if (!(input instanceof ArrayDataType)) {
-            throw new VerificationException(this, "Expected Array input, got " + input.getName());
-        }
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return DataType.STRING;
-    }
+    public DataType createdOutputType() { return DataType.STRING; }
 
     @Override
     public String toString() {

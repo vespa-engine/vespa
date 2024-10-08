@@ -56,13 +56,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        for (Expression expression : this) {
-            context.execute(expression);
-        }
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         if (expressions().isEmpty()) return;
 
@@ -91,6 +84,13 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
         for (Expression expression : expressions())
             context.verify(expression);
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        for (Expression expression : this) {
+            context.execute(expression);
+        }
     }
 
     private String outputFieldName() {

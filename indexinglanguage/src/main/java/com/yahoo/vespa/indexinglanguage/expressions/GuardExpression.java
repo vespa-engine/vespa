@@ -24,9 +24,7 @@ public final class GuardExpression extends CompositeExpression {
         shouldExecute = shouldExecute(exp);
     }
 
-    public Expression getInnerExpression() {
-        return exp;
-    }
+    public Expression getInnerExpression() { return exp; }
 
     @Override
     public GuardExpression convertChildren(ExpressionConverter converter) {
@@ -39,17 +37,17 @@ public final class GuardExpression extends CompositeExpression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        exp.verify(context);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         if (!shouldExecute && context.getFieldValue() instanceof UpdateAdapter) {
             context.setCurrentValue(null);
         } else {
             exp.execute(context);
         }
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        exp.verify(context);
     }
 
     @Override

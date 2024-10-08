@@ -18,6 +18,11 @@ public final class HexDecodeExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getCurrentValue());
         if (input.isEmpty()) {
@@ -40,19 +45,10 @@ public final class HexDecodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.LONG;
-    }
-
-    @Override
-    public String toString() {
-        return "hexdecode";
-    }
+    public String toString() { return "hexdecode"; }
 
     @Override
     public boolean equals(Object obj) {

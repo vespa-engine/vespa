@@ -19,23 +19,7 @@ public final class GetFieldExpression extends Expression {
         this.fieldName = fieldName;
     }
 
-    public String getFieldName() {
-        return fieldName;
-    }
-
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getCurrentValue();
-        if (!(input instanceof StructuredFieldValue struct)) {
-            throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName());
-        }
-        Field field = struct.getField(fieldName);
-        if (field == null) {
-            throw new IllegalArgumentException("Field '" + fieldName + "' not found in struct type '" +
-                                               struct.getDataType().getName() + "'");
-        }
-        context.setCurrentValue(struct.getFieldValue(field));
-    }
+    public String getFieldName() { return fieldName; }
 
     @Override
     protected void doVerify(VerificationContext context) {
@@ -49,6 +33,19 @@ public final class GetFieldExpression extends Expression {
                                                   input.getName() + "'");
         }
         context.setCurrentType(field.getDataType());
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getCurrentValue();
+        if (!(input instanceof StructuredFieldValue struct))
+            throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName());
+
+        Field field = struct.getField(fieldName);
+        if (field == null)
+            throw new IllegalArgumentException("Field '" + fieldName + "' not found in struct type '" +
+                                               struct.getDataType().getName() + "'");
+        context.setCurrentValue(struct.getFieldValue(field));
     }
 
     @Override

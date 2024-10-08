@@ -15,6 +15,12 @@ public final class Base64EncodeExpression extends Expression {
     public Base64EncodeExpression() {
         super(DataType.LONG);
     }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         long input = ((LongFieldValue) context.getCurrentValue()).getLong();
@@ -28,25 +34,14 @@ public final class Base64EncodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.STRING; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.STRING;
-    }
-
-    @Override
-    public String toString() {
-        return "base64encode";
-    }
+    public String toString() { return "base64encode"; }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Base64EncodeExpression)) {
-            return false;
-        }
+        if (!(obj instanceof Base64EncodeExpression)) return false;
         return true;
     }
 
@@ -54,4 +49,5 @@ public final class Base64EncodeExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

@@ -15,14 +15,7 @@ public final class SetVarExpression extends Expression {
         this.varName = varName;
     }
 
-    public String getVariableName() {
-        return varName;
-    }
-
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        context.setVariable(varName, context.getCurrentValue());
-    }
+    public String getVariableName() { return varName; }
 
     @Override
     protected void doVerify(VerificationContext context) {
@@ -36,9 +29,12 @@ public final class SetVarExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return null;
+    protected void doExecute(ExecutionContext context) {
+        context.setVariable(varName, context.getCurrentValue());
     }
+
+    @Override
+    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() {

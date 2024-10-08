@@ -30,6 +30,14 @@ public final class OptimizePredicateExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        checkVariable(context, "arity", DataType.INT, true);
+        checkVariable(context, "lower_bound", DataType.LONG, false);
+        checkVariable(context, "upper_bound", DataType.LONG, false);
+        context.setCurrentType(DataType.PREDICATE);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         PredicateFieldValue predicate = ((PredicateFieldValue) context.getCurrentValue()).clone();
         IntegerFieldValue arity = (IntegerFieldValue) context.getVariable("arity");
@@ -42,34 +50,21 @@ public final class OptimizePredicateExpression extends Expression {
         context.setCurrentValue(predicate);
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        checkVariable(context, "arity", DataType.INT, true);
-        checkVariable(context, "lower_bound", DataType.LONG, false);
-        checkVariable(context, "upper_bound", DataType.LONG, false);
-        context.setCurrentType(DataType.PREDICATE);
-    }
-
     private void checkVariable(VerificationContext ctx, String var, DataType type, boolean required) {
         DataType input = ctx.getVariable(var);
         if (input == null) {
-            if (required) {
+            if (required)
                 throw new VerificationException(this, "Variable '" + var + "' must be set");
-            }
         } else if (input != type) {
             throw new VerificationException(this, "Variable '" + var + "' must have type " + type.getName());
         }
     }
 
     @Override
-    public DataType createdOutputType() {
-        return null;
-    }
+    public DataType createdOutputType() { return null; }
 
     @Override
-    public String toString() {
-        return "optimize_predicate";
-    }
+    public String toString() { return "optimize_predicate"; }
 
     @Override
     public int hashCode() {

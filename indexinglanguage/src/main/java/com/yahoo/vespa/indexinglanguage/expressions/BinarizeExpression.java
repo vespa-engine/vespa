@@ -32,17 +32,17 @@ public class BinarizeExpression extends Expression  {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
-        if (tensor.isEmpty()) return;
-        context.setCurrentValue(new TensorFieldValue(tensor.get().map(v -> v > threshold ? 1 : 0)));
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         type = context.getCurrentType();
         if (! (type instanceof TensorDataType))
             throw new IllegalArgumentException("The 'binarize' function requires a tensor, but got " + type);
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
+        if (tensor.isEmpty()) return;
+        context.setCurrentValue(new TensorFieldValue(tensor.get().map(v -> v > threshold ? 1 : 0)));
     }
 
     @Override

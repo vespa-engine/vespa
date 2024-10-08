@@ -26,6 +26,11 @@ public final class FlattenExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         SpanTree tree = input.getSpanTree(SpanTrees.LINGUISTICS);
@@ -65,19 +70,10 @@ public final class FlattenExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.STRING; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.STRING;
-    }
-
-    @Override
-    public String toString() {
-        return "flatten";
-    }
+    public String toString() { return "flatten"; }
 
     @Override
     public boolean equals(Object obj) {

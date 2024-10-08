@@ -40,6 +40,20 @@ public class HashExpression extends Expression  {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        String outputField = context.getOutputField();
+        if (outputField == null)
+            throw new VerificationException(this, "No output field in this statement: " +
+                                                  "Don't know what value to hash to");
+        DataType outputFieldType = context.getFieldType(this);
+        if ( ! canStoreHash(outputFieldType))
+            throw new VerificationException(this, "The type of the output field " + outputField +
+                                                  " is not int or long but " + outputFieldType);
+        targetType = outputFieldType.getPrimitiveType();
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (targetType.equals(DataType.INT))
@@ -56,20 +70,6 @@ public class HashExpression extends Expression  {
 
     private long hashToLong(String value) {
         return hasher.hashString(value, StandardCharsets.UTF_8).asLong();
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        String outputField = context.getOutputField();
-        if (outputField == null)
-            throw new VerificationException(this, "No output field in this statement: " +
-                                                  "Don't know what value to hash to");
-        DataType outputFieldType = context.getFieldType(this);
-        if ( ! canStoreHash(outputFieldType))
-            throw new VerificationException(this, "The type of the output field " + outputField +
-                                                  " is not int or long but " + outputFieldType);
-        targetType = outputFieldType.getPrimitiveType();
-        context.setCurrentType(createdOutputType());
     }
 
     private boolean canStoreHash(DataType type) {

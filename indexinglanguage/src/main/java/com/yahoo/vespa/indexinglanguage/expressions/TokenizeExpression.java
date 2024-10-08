@@ -23,12 +23,13 @@ public final class TokenizeExpression extends Expression {
         this.config = config;
     }
 
-    public Linguistics getLinguistics() {
-        return linguistics;
-    }
+    public Linguistics getLinguistics() { return linguistics; }
 
-    public AnnotatorConfig getConfig() {
-        return config;
+    public AnnotatorConfig getConfig() { return config; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        // empty
     }
 
     @Override
@@ -47,14 +48,7 @@ public final class TokenizeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return null;
-    }
+    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() {

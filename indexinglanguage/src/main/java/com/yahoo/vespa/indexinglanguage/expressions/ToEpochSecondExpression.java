@@ -10,10 +10,15 @@ import java.time.Instant;
  *
  * @author bergum
  */
-
 public class ToEpochSecondExpression extends Expression {
+
     public ToEpochSecondExpression() {
         super(DataType.STRING); //only accept string input
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -24,19 +29,10 @@ public class ToEpochSecondExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.LONG;
-    }
-
-    @Override
-    public String toString() {
-        return "to_epoch_second";
-    }
+    public String toString() { return "to_epoch_second"; }
 
     @Override
     public boolean equals(Object obj) {

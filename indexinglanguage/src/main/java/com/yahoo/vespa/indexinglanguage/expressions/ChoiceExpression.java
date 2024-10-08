@@ -37,6 +37,14 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getCurrentType();
+        context.setCurrentType(input);
+        for (Expression exp : this)
+            context.setCurrentType(input).verify(exp);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         for (Expression expression : this) {
@@ -44,14 +52,6 @@ public class ChoiceExpression extends ExpressionList<Expression> {
             if (context.getCurrentValue() != null)
                 break; // value found
         }
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(input);
-        for (Expression exp : this)
-            context.setCurrentType(input).verify(exp);
     }
 
     private static DataType resolveInputType(Collection<? extends Expression> list) {

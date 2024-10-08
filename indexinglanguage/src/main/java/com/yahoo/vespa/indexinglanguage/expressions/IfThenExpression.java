@@ -85,6 +85,18 @@ public final class IfThenExpression extends CompositeExpression {
     public Expression getIfFalseExpression() { return ifFalse; }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getCurrentType();
+        context.setCurrentType(input).verify(left);
+        context.setCurrentType(input).verify(right);
+        var trueValue = context.setCurrentType(input).verify(ifTrue);
+        var falseValue = context.setCurrentType(input).verify(ifFalse);
+        var valueType = trueValue.getCurrentType().isAssignableFrom(falseValue.getCurrentType()) ?
+                                trueValue.getCurrentType() : falseValue.getCurrentType();
+        context.setCurrentType(valueType);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         FieldValue leftValue = context.setCurrentValue(input).execute(left).getCurrentValue();
@@ -103,18 +115,6 @@ public final class IfThenExpression extends CompositeExpression {
         } else if (ifFalse != null) {
             ifFalse.execute(context);
         }
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(input).verify(left);
-        context.setCurrentType(input).verify(right);
-        var trueValue = context.setCurrentType(input).verify(ifTrue);
-        var falseValue = context.setCurrentType(input).verify(ifFalse);
-        var valueType = trueValue.getCurrentType().isAssignableFrom(falseValue.getCurrentType()) ?
-                        trueValue.getCurrentType() : falseValue.getCurrentType();
-        context.setCurrentType(valueType);
     }
 
     @Override

@@ -20,12 +20,13 @@ public final class ToWsetExpression extends Expression {
         this.removeIfZero = removeIfZero;
     }
 
-    public boolean getCreateIfNonExistent() {
-        return createIfNonExistent;
-    }
+    public boolean getCreateIfNonExistent() { return createIfNonExistent; }
 
-    public boolean getRemoveIfZero() {
-        return removeIfZero;
+    public boolean getRemoveIfZero() { return removeIfZero; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), createIfNonExistent, removeIfZero));
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -42,14 +43,7 @@ public final class ToWsetExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), createIfNonExistent, removeIfZero));
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
+    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
 
     @Override
     public String toString() {
@@ -60,24 +54,16 @@ public final class ToWsetExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ToWsetExpression)) {
-            return false;
-        }
-        ToWsetExpression rhs = (ToWsetExpression)obj;
-        if (createIfNonExistent != rhs.createIfNonExistent) {
-            return false;
-        }
-        if (removeIfZero != rhs.removeIfZero) {
-            return false;
-        }
+        if (!(obj instanceof ToWsetExpression rhs)) return false;
+
+        if (createIfNonExistent != rhs.createIfNonExistent) return false;
+        if (removeIfZero != rhs.removeIfZero) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() +
-               createIfNonExistent.hashCode() +
-               removeIfZero.hashCode();
+        return getClass().hashCode() + createIfNonExistent.hashCode() + removeIfZero.hashCode();
     }
 
 }

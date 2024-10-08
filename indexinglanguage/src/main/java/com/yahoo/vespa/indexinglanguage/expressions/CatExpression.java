@@ -18,17 +18,31 @@ import java.util.*;
  */
 public final class CatExpression extends ExpressionList<Expression> {
 
-    public CatExpression(Expression... lst) {
-        this(List.of(lst));
+    public CatExpression(Expression... expressions) {
+        this(List.of(expressions));
     }
 
-    public CatExpression(Collection<? extends Expression> lst) {
-        super(lst, resolveInputType(lst));
+    public CatExpression(Collection<? extends Expression> expressions) {
+        super(expressions, resolveInputType(expressions));
     }
 
     @Override
     public CatExpression convertChildren(ExpressionConverter converter) {
         return new CatExpression(convertChildList(converter));
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getCurrentType();
+        List<DataType> types = new LinkedList<>();
+        for (Expression exp : this) {
+            DataType val = context.setCurrentType(input).verify(exp).getCurrentType();
+            types.add(val);
+            if (val == null) {
+                throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ")");
+            }
+        }
+        context.setCurrentType(resolveOutputType(types));
     }
 
     @Override
@@ -53,20 +67,6 @@ public final class CatExpression extends ExpressionList<Expression> {
         }
         DataType type = resolveOutputType(types);
         context.setCurrentValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        List<DataType> types = new LinkedList<>();
-        for (Expression exp : this) {
-            DataType val = context.setCurrentType(input).verify(exp).getCurrentType();
-            types.add(val);
-            if (val == null) {
-                throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ")");
-            }
-        }
-        context.setCurrentType(resolveOutputType(types));
     }
 
     private static DataType resolveInputType(Collection<? extends Expression> list) {

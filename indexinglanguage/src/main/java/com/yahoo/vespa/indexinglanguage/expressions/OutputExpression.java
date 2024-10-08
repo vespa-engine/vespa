@@ -22,8 +22,11 @@ public abstract class OutputExpression extends Expression {
         this.fieldName = fieldName;
     }
 
-    public String getFieldName() {
-        return fieldName;
+    public String getFieldName() { return fieldName; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.tryOutputType(fieldName, context.getCurrentType(), this);
     }
 
     @Override
@@ -32,14 +35,7 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.tryOutputType(fieldName, context.getCurrentType(), this);
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return null;
-    }
+    public DataType createdOutputType() { return null; }
 
     @Override
     public DataType getInputType(VerificationContext context) {

@@ -16,6 +16,11 @@ public final class Base64DecodeExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getCurrentValue());
         if (input.isEmpty()) {
@@ -37,19 +42,10 @@ public final class Base64DecodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.LONG;
-    }
-
-    @Override
-    public String toString() {
-        return "base64decode";
-    }
+    public String toString() { return "base64decode"; }
 
     @Override
     public boolean equals(Object obj) {
@@ -57,7 +53,6 @@ public final class Base64DecodeExpression extends Expression {
     }
 
     @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
+    public int hashCode() { return getClass().hashCode(); }
+
 }

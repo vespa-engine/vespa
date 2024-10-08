@@ -6,18 +6,17 @@ import com.yahoo.document.datatypes.NumericFieldValue;
 
 /**
  * Utility expression that will busy-wait the amount of time given in the numeric field.
- * Non-numeric fields will be ignored
+ * Non-numeric fields will be ignored.
+ *
  * @author baldersheim
  */
 public final class BusyWaitExpression extends Expression {
+
     public BusyWaitExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
 
-    private static double nihlakanta(int i) {
-        long a = 2 + i * 4L;
-        return (24 * (a+2))/(double)(a*(a+1)*(a+2)*(a+3));
-    }
+    @Override protected void doVerify(VerificationContext context) { }
 
     @Override
     protected void doExecute(ExecutionContext context) {
@@ -35,7 +34,11 @@ public final class BusyWaitExpression extends Expression {
         }
     }
 
-    @Override protected void doVerify(VerificationContext context) { }
+    private static double nihlakanta(int i) {
+        long a = 2 + i * 4L;
+        return (24 * (a+2))/(double)(a*(a+1)*(a+2)*(a+3));
+    }
+
     @Override public DataType createdOutputType() { return null; }
     @Override public String toString() { return "busy_wait"; }
     @Override public boolean equals(Object obj) { return obj instanceof BusyWaitExpression; }

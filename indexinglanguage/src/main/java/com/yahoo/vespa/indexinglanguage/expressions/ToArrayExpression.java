@@ -15,6 +15,11 @@ public final class ToArrayExpression extends Expression {
         super(UnresolvedDataType.INSTANCE);
     }
 
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(DataType.getArray(context.getCurrentType()));
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext context) {
@@ -29,19 +34,12 @@ public final class ToArrayExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(DataType.getArray(context.getCurrentType()));
-    }
-
-    @Override
     public DataType createdOutputType() {
         return UnresolvedDataType.INSTANCE;
     }
 
     @Override
-    public String toString() {
-        return "to_array";
-    }
+    public String toString() { return "to_array"; }
 
     @Override
     public boolean equals(Object obj) {

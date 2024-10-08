@@ -48,70 +48,41 @@ public abstract class Expression extends Selectable {
     /** Sets the document type and field the statement this expression is part of will write to */
     public void setStatementOutput(DocumentType documentType, Field field) {}
 
-    public final FieldValue execute(FieldValue val) {
-        return execute(new ExecutionContext().setCurrentValue(val));
+    public final DataType requiredInputType() { return requiredInputType; }
+
+    public DataType getInputType(VerificationContext context) { return inputType; }
+
+    /**
+     * Sets the input type of this and returns the resulting output type, or null if it cannot be
+     * uniquely determined.
+     * This default implementation returns the same type, which is appropriate for all statements
+     * that do not change the type.
+     *
+     * @param inputType the input type, or null if this does not take any input
+     */
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        this.inputType = inputType;
+        return inputType;
     }
 
-    public final Document execute(AdapterFactory factory, Document doc) {
-        return execute(factory.newDocumentAdapter(doc));
+    /**
+     * Returns the output type this is must produce (since it is part of a statement expression),
+     * or null if this is not set or there is no output produced at the end of the statement.
+     */
+    public DataType getOutputType(VerificationContext context) { return outputType; }
+
+    /**
+     * Sets the output type of this and returns the resulting input type, or null if it cannot be
+     * uniquely determined.
+     * This default implementation returns the same type, which is appropriate for all statements
+     * that do not change the type.
+     */
+    public DataType setNeededOutputType(DataType outputType, VerificationContext context) {
+        this.outputType = outputType;
+        return outputType;
     }
 
-    public final Document execute(DocumentAdapter adapter) {
-        execute((FieldValueAdapter)adapter);
-        return adapter.getFullOutput();
-    }
-
-    public static DocumentUpdate execute(Expression expression, AdapterFactory factory, DocumentUpdate update) {
-        DocumentUpdate result = null;
-        for (UpdateAdapter adapter : factory.newUpdateAdapterList(update)) {
-            DocumentUpdate output = adapter.getExpression(expression).execute(adapter);
-            if (output == null) {
-                // ignore
-            } else if (result != null) {
-                result.addAll(output);
-            } else {
-                result = output;
-            }
-        }
-        if (result != null) {
-            result.setCreateIfNonExistent(update.getCreateIfNonExistent());
-        }
-        return result;
-    }
-
-    public final DocumentUpdate execute(UpdateAdapter adapter) {
-        execute((FieldValueAdapter)adapter);
-        return adapter.getOutput();
-    }
-
-    public final FieldValue execute(FieldValueAdapter adapter) {
-        return execute(new ExecutionContext(adapter));
-    }
-
-    public final FieldValue execute(ExecutionContext context) {
-        DataType inputType = requiredInputType();
-        if (inputType != null) {
-            FieldValue input = context.getCurrentValue();
-            if (input == null) return null;
-
-            if (!inputType.isValueCompatible(input)) {
-                throw new IllegalArgumentException("Expression '" + this + "' expected " + inputType.getName() +
-                                                   " input, got " + input.getDataType().getName());
-            }
-        }
-        doExecute(context);
-        DataType outputType = createdOutputType();
-        if (outputType != null) {
-            FieldValue output = context.getCurrentValue();
-            if (output != null && !outputType.isValueCompatible(output)) {
-                throw new IllegalStateException("Expression '" + this + "' expected " + outputType.getName() +
-                                                " output, got " + output.getDataType().getName());
-            }
-        }
-        return context.getCurrentValue();
-    }
-
-    protected abstract void doExecute(ExecutionContext context);
+    public abstract DataType createdOutputType();
 
     public final DataType verify() {
         return verify(new VerificationContext());
@@ -195,41 +166,70 @@ public abstract class Expression extends Selectable {
 
     protected abstract void doVerify(VerificationContext context);
 
-    public final DataType requiredInputType() { return requiredInputType; }
-
-    public DataType getInputType(VerificationContext context) { return inputType; }
-
-    /**
-     * Sets the input type of this and returns the resulting output type, or null if it cannot be
-     * uniquely determined.
-     * This default implementation returns the same type, which is appropriate for all statements
-     * that do not change the type.
-     *
-     * @param inputType the input type, or null if this does not take any input
-     */
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        this.inputType = inputType;
-        return inputType;
+    public final FieldValue execute(FieldValue val) {
+        return execute(new ExecutionContext().setCurrentValue(val));
     }
 
-    /**
-     * Returns the output type this is must produce (since it is part of a statement expression),
-     * or null if this is not set or there is no output produced at the end of the statement.
-     */
-    public DataType getOutputType(VerificationContext context) { return outputType; }
-
-    /**
-     * Sets the output type of this and returns the resulting input type, or null if it cannot be
-     * uniquely determined.
-     * This default implementation returns the same type, which is appropriate for all statements
-     * that do not change the type.
-     */
-    public DataType setNeededOutputType(DataType outputType, VerificationContext context) {
-        this.outputType = outputType;
-        return outputType;
+    public final Document execute(AdapterFactory factory, Document doc) {
+        return execute(factory.newDocumentAdapter(doc));
     }
 
-    public abstract DataType createdOutputType();
+    public final Document execute(DocumentAdapter adapter) {
+        execute((FieldValueAdapter)adapter);
+        return adapter.getFullOutput();
+    }
+
+    public static DocumentUpdate execute(Expression expression, AdapterFactory factory, DocumentUpdate update) {
+        DocumentUpdate result = null;
+        for (UpdateAdapter adapter : factory.newUpdateAdapterList(update)) {
+            DocumentUpdate output = adapter.getExpression(expression).execute(adapter);
+            if (output == null) {
+                // ignore
+            } else if (result != null) {
+                result.addAll(output);
+            } else {
+                result = output;
+            }
+        }
+        if (result != null) {
+            result.setCreateIfNonExistent(update.getCreateIfNonExistent());
+        }
+        return result;
+    }
+
+    public final DocumentUpdate execute(UpdateAdapter adapter) {
+        execute((FieldValueAdapter)adapter);
+        return adapter.getOutput();
+    }
+
+    public final FieldValue execute(FieldValueAdapter adapter) {
+        return execute(new ExecutionContext(adapter));
+    }
+
+    public final FieldValue execute(ExecutionContext context) {
+        DataType inputType = requiredInputType();
+        if (inputType != null) {
+            FieldValue input = context.getCurrentValue();
+            if (input == null) return null;
+
+            if (!inputType.isValueCompatible(input)) {
+                throw new IllegalArgumentException("Expression '" + this + "' expected " + inputType.getName() +
+                                                   " input, got " + input.getDataType().getName());
+            }
+        }
+        doExecute(context);
+        DataType outputType = createdOutputType();
+        if (outputType != null) {
+            FieldValue output = context.getCurrentValue();
+            if (output != null && !outputType.isValueCompatible(output)) {
+                throw new IllegalStateException("Expression '" + this + "' expected " + outputType.getName() +
+                                                " output, got " + output.getDataType().getName());
+            }
+        }
+        return context.getCurrentValue();
+    }
+
+    protected abstract void doExecute(ExecutionContext context);
 
     /** Creates an expression with simple lingustics for testing */
     public static Expression fromString(String expression) throws ParseException {

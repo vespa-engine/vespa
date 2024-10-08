@@ -25,22 +25,18 @@ public final class ExecutionValueExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {}
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         // Noop: Set the output execution value to the current execution value
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {}
+    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
 
     @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
-    public String toString() {
-        return "_";
-    }
+    public String toString() { return "_"; }
 
     @Override
     public boolean equals(Object obj) {

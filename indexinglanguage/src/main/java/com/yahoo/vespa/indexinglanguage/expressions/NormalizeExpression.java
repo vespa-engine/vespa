@@ -22,20 +22,11 @@ public final class NormalizeExpression extends Expression {
         this.linguistics = linguistics;
     }
 
-    public Linguistics getLinguistics() {
-        return linguistics;
-    }
+    public Linguistics getLinguistics() { return linguistics; }
     
-    private static String escape(String str) {
-        StringBuilder buf = new StringBuilder();
-        for (char c : str.toCharArray()) {
-            if (c >= ' ') {
-                buf.append(c);
-            } else {
-                buf.append(String.format("U+%04X", (int)c));
-            }
-        }
-        return buf.toString();
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -61,9 +52,16 @@ public final class NormalizeExpression extends Expression {
                                                                             context.resolveLanguage(linguistics))));
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
+    private static String escape(String str) {
+        StringBuilder buf = new StringBuilder();
+        for (char c : str.toCharArray()) {
+            if (c >= ' ') {
+                buf.append(c);
+            } else {
+                buf.append(String.format("U+%04X", (int)c));
+            }
+        }
+        return buf.toString();
     }
 
     @Override

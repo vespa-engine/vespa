@@ -21,18 +21,16 @@ public final class ConstantExpression extends Expression {
         this.value = Objects.requireNonNull(value);
     }
 
-    public FieldValue getValue() {
-        return value;
+    public FieldValue getValue() { return value; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(value.getDataType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(value);
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(value.getDataType());
     }
 
     @Override

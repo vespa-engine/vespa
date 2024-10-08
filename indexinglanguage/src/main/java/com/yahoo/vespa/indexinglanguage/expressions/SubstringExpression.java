@@ -22,12 +22,13 @@ public final class SubstringExpression extends Expression {
         this.to = to;
     }
 
-    public int getFrom() {
-        return from;
-    }
+    public int getFrom() { return from; }
 
-    public int getTo() {
-        return to;
+    public int getTo() { return to; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -35,11 +36,6 @@ public final class SubstringExpression extends Expression {
         String input = String.valueOf(context.getCurrentValue());
         String substring = Text.substringByCodepoints(input, from, to);
         context.setCurrentValue(new StringFieldValue(substring));
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override

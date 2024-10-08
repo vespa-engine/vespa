@@ -15,14 +15,7 @@ public final class GetVarExpression extends Expression {
         this.varName = varName;
     }
 
-    public String getVariableName() {
-        return varName;
-    }
-
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        context.setCurrentValue(context.getVariable(varName));
-    }
+    public String getVariableName() { return varName; }
 
     @Override
     protected void doVerify(VerificationContext context) {
@@ -31,6 +24,11 @@ public final class GetVarExpression extends Expression {
             throw new VerificationException(this, "Variable '" + varName + "' not found");
         }
         context.setCurrentType(input);
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        context.setCurrentValue(context.getVariable(varName));
     }
 
     @Override

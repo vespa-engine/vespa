@@ -25,8 +25,14 @@ public final class InputExpression extends Expression {
         this.fieldName = fieldName;
     }
 
-    public String getFieldName() {
-        return fieldName;
+    public String getFieldName() { return fieldName; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        DataType val = context.getFieldType(fieldName, this);
+        if (val == null)
+            throw new VerificationException(this, "Field '" + fieldName + "' not found");
+        context.setCurrentType(val);
     }
 
     @Override
@@ -38,17 +44,7 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType val = context.getFieldType(fieldName, this);
-        if (val == null)
-            throw new VerificationException(this, "Field '" + fieldName + "' not found");
-        context.setCurrentType(val);
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
+    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
 
     @Override
     public DataType getOutputType(VerificationContext context) {

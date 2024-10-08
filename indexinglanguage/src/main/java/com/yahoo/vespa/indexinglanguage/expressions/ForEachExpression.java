@@ -25,9 +25,7 @@ public final class ForEachExpression extends CompositeExpression {
         this.expression = Objects.requireNonNull(expression);
     }
 
-    public Expression getInnerExpression() {
-        return expression;
-    }
+    public Expression getInnerExpression() { return expression; }
 
     @Override
     public ForEachExpression convertChildren(ExpressionConverter converter) {
@@ -54,26 +52,6 @@ public final class ForEachExpression extends CompositeExpression {
             throw new IllegalArgumentException("for_each produces a multivalue type, but needs " + neededOutput);
         expression.setNeededOutputType(neededOutput.getNestedType(), context);
         return super.setNeededOutputType(neededOutput, context);
-    }
-
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getCurrentValue();
-        if (input instanceof Array || input instanceof WeightedSet) {
-            FieldValue next = new MyConverter(context, expression).convert(input);
-            if (next == null) {
-                VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
-                context.fillVariableTypes(verificationContext);
-                verificationContext.setCurrentType(input.getDataType()).verify(this);
-                next = verificationContext.getCurrentType().createFieldValue();
-            }
-            context.setCurrentValue(next);
-        } else if (input instanceof Struct) {
-            context.setCurrentValue(new MyConverter(context, expression).convert(input));
-        } else {
-            throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
-                                               input.getDataType().getName());
-        }
     }
 
     @Override
@@ -107,6 +85,26 @@ public final class ForEachExpression extends CompositeExpression {
         else {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
                                                   valueType.getName());
+        }
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getCurrentValue();
+        if (input instanceof Array || input instanceof WeightedSet) {
+            FieldValue next = new MyConverter(context, expression).convert(input);
+            if (next == null) {
+                VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
+                context.fillVariableTypes(verificationContext);
+                verificationContext.setCurrentType(input.getDataType()).verify(this);
+                next = verificationContext.getCurrentType().createFieldValue();
+            }
+            context.setCurrentValue(next);
+        } else if (input instanceof Struct) {
+            context.setCurrentValue(new MyConverter(context, expression).convert(input));
+        } else {
+            throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
+                                               input.getDataType().getName());
         }
     }
 

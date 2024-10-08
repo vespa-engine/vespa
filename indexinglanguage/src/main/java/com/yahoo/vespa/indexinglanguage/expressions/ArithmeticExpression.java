@@ -10,6 +10,7 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -48,37 +49,21 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     public ArithmeticExpression(Expression left, Operator op, Expression right) {
         super(requiredInputType(left, right));
-        left.getClass(); // throws NullPointerException
-        op.getClass();
-        right.getClass();
-        this.left = left;
-        this.op = op;
-        this.right = right;
+        this.left = Objects.requireNonNull(left);
+        this.op = Objects.requireNonNull(op);
+        this.right = Objects.requireNonNull(right);
     }
+
+    public Expression getLeftHandSide() { return left; }
+
+    public Operator getOperator() { return op; }
+
+    public Expression getRightHandSide() { return right; }
 
     @Override
     public ArithmeticExpression convertChildren(ExpressionConverter converter) {
         // TODO: branch()?
         return new ArithmeticExpression(converter.convert(left), op, converter.convert(right));
-    }
-
-    public Expression getLeftHandSide() {
-        return left;
-    }
-
-    public Operator getOperator() {
-        return op;
-    }
-
-    public Expression getRightHandSide() {
-        return right;
-    }
-
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getCurrentValue();
-        context.setCurrentValue(evaluate(context.setCurrentValue(input).execute(left).getCurrentValue(),
-                                         context.setCurrentValue(input).execute(right).getCurrentValue()));
     }
 
     @Override
@@ -88,19 +73,21 @@ public final class ArithmeticExpression extends CompositeExpression {
                                         context.setCurrentType(input).verify(right).getCurrentType()));
     }
 
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getCurrentValue();
+        context.setCurrentValue(evaluate(context.setCurrentValue(input).execute(left).getCurrentValue(),
+                                         context.setCurrentValue(input).execute(right).getCurrentValue()));
+    }
+
     private static DataType requiredInputType(Expression lhs, Expression rhs) {
         DataType lhsType = lhs.requiredInputType();
         DataType rhsType = rhs.requiredInputType();
-        if (lhsType == null) {
-            return rhsType;
-        }
-        if (rhsType == null) {
-            return lhsType;
-        }
-        if (!lhsType.equals(rhsType)) {
+        if (lhsType == null) return rhsType;
+        if (rhsType == null) return lhsType;
+        if (!lhsType.equals(rhsType))
             throw new VerificationException(ArithmeticExpression.class, "Operands require conflicting input types, " +
                                                                         lhsType.getName() + " vs " + rhsType.getName());
-        }
         return lhsType;
     }
 
@@ -115,20 +102,12 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof ArithmeticExpression)) {
-            return false;
-        }
-        ArithmeticExpression exp = (ArithmeticExpression)obj;
-        if (!left.equals(exp.left)) {
-            return false;
-        }
-        if (!op.equals(exp.op)) {
-            return false;
-        }
-        if (!right.equals(exp.right)) {
-            return false;
-        }
+    public boolean equals(Object object) {
+        if (!(object instanceof ArithmeticExpression expression)) return false;
+
+        if (!left.equals(expression.left)) return false;
+        if (!op.equals(expression.op)) return false;
+        if (!right.equals(expression.right)) return false;
         return true;
     }
 
@@ -138,39 +117,28 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     private DataType evaluate(DataType lhs, DataType rhs) {
-        if (lhs == null || rhs == null) {
+        if (lhs == null || rhs == null)
             throw new VerificationException(this, "Attempting to perform arithmetic on a null value");
-        }
-        if (!(lhs instanceof NumericDataType) ||
-            !(rhs instanceof NumericDataType))
-        {
+        if (!(lhs instanceof NumericDataType) || !(rhs instanceof NumericDataType))
             throw new VerificationException(this, "Attempting to perform unsupported arithmetic: [" +
                                                   lhs.getName() + "] " + op + " [" + rhs.getName() + "]");
-        }
-        if (lhs == DataType.FLOAT || lhs == DataType.DOUBLE ||
-            rhs == DataType.FLOAT || rhs == DataType.DOUBLE)
-        {
-            if (lhs == DataType.DOUBLE || rhs == DataType.DOUBLE) {
+
+        if (lhs == DataType.FLOAT || lhs == DataType.DOUBLE || rhs == DataType.FLOAT || rhs == DataType.DOUBLE) {
+            if (lhs == DataType.DOUBLE || rhs == DataType.DOUBLE)
                 return DataType.DOUBLE;
-            }
             return DataType.FLOAT;
         }
-        if (lhs == DataType.LONG || rhs == DataType.LONG) {
+        if (lhs == DataType.LONG || rhs == DataType.LONG)
             return DataType.LONG;
-        }
         return DataType.INT;
     }
 
     private FieldValue evaluate(FieldValue lhs, FieldValue rhs) {
-        if (lhs == null || rhs == null) {
-            return null;
-        }
-        if (!(lhs instanceof NumericFieldValue) ||
-            !(rhs instanceof NumericFieldValue))
-        {
+        if (lhs == null || rhs == null) return null;
+        if (!(lhs instanceof NumericFieldValue) || !(rhs instanceof NumericFieldValue))
             throw new IllegalArgumentException("Unsupported operation: [" + lhs.getDataType().getName() + "] " +
                                                op + " [" + rhs.getDataType().getName() + "]");
-        }
+
         BigDecimal lhsVal = asBigDecimal((NumericFieldValue)lhs);
         BigDecimal rhsVal = asBigDecimal((NumericFieldValue)rhs);
         return switch (op) {
@@ -184,31 +152,27 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     private FieldValue createFieldValue(FieldValue lhs, FieldValue rhs, BigDecimal val) {
         if (lhs instanceof FloatFieldValue || lhs instanceof DoubleFieldValue ||
-            rhs instanceof FloatFieldValue || rhs instanceof DoubleFieldValue)
-        {
-            if (lhs instanceof DoubleFieldValue || rhs instanceof DoubleFieldValue) {
+            rhs instanceof FloatFieldValue || rhs instanceof DoubleFieldValue) {
+            if (lhs instanceof DoubleFieldValue || rhs instanceof DoubleFieldValue)
                 return new DoubleFieldValue(val.doubleValue());
-            }
             return new FloatFieldValue(val.floatValue());
         }
-        if (lhs instanceof LongFieldValue || rhs instanceof LongFieldValue) {
+        if (lhs instanceof LongFieldValue || rhs instanceof LongFieldValue)
             return new LongFieldValue(val.longValue());
-        }
         return new IntegerFieldValue(val.intValue());
     }
 
     public static BigDecimal asBigDecimal(NumericFieldValue value) {
-        if (value instanceof ByteFieldValue) {
+        if (value instanceof ByteFieldValue)
             return BigDecimal.valueOf(((ByteFieldValue)value).getByte());
-        } else if (value instanceof DoubleFieldValue) {
+        else if (value instanceof DoubleFieldValue)
             return BigDecimal.valueOf(((DoubleFieldValue)value).getDouble());
-        } else if (value instanceof FloatFieldValue) {
+        else if (value instanceof FloatFieldValue)
             return BigDecimal.valueOf(((FloatFieldValue)value).getFloat());
-        } else if (value instanceof IntegerFieldValue) {
+        else if (value instanceof IntegerFieldValue)
             return BigDecimal.valueOf(((IntegerFieldValue)value).getInteger());
-        } else if (value instanceof LongFieldValue) {
+        else if (value instanceof LongFieldValue)
             return BigDecimal.valueOf(((LongFieldValue)value).getLong());
-        }
         throw new IllegalArgumentException("Unsupported numeric field value type '" +
                                            value.getClass().getName() + "'");
     }
@@ -218,4 +182,5 @@ public final class ArithmeticExpression extends CompositeExpression {
         left.select(predicate, operation);
         right.select(predicate, operation);
     }
+
 }

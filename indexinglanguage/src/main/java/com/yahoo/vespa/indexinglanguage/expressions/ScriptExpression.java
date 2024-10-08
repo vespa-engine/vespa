@@ -44,6 +44,13 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getCurrentType();
+        for (Expression exp : this)
+            context.setCurrentType(input).verify(exp);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         for (StatementExpression statement : this) {
@@ -61,13 +68,6 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
             if (context.getFieldValue(inputField) != null)
                 return true;
         return false;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        for (Expression exp : this)
-            context.setCurrentType(input).verify(exp);
     }
 
     private static DataType resolveInputType(Collection<? extends StatementExpression> list) {

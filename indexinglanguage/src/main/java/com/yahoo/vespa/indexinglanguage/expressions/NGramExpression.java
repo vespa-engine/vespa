@@ -39,12 +39,13 @@ public final class NGramExpression extends Expression {
         this.gramSize = gramSize;
     }
 
-    public Linguistics getLinguistics() {
-        return linguistics;
-    }
+    public Linguistics getLinguistics() { return linguistics; }
 
-    public int getGramSize() {
-        return gramSize;
+    public int getGramSize() { return gramSize; }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        // empty
     }
 
     @Override
@@ -84,11 +85,6 @@ public final class NGramExpression extends Expression {
 
     private Span typedSpan(int from, int length, TokenType tokenType, SpanList spanList) {
         return (Span)spanList.span(from, length).annotate(AnnotationTypes.TOKEN_TYPE, tokenType.getValue());
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
     }
 
     @Override
