@@ -33,14 +33,6 @@ public class PackBitsExpression extends Expression  {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
-        if (tensor.isEmpty()) return;
-        Tensor.Builder builder = Tensor.Builder.of(outputType);
-        context.setCurrentValue(new TensorFieldValue(builder.build()));
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         if (! (context.getCurrentType() instanceof TensorDataType tensorInputType))
             throw new IllegalArgumentException("The 'pack_bits' function requires a tensor, but got " + context.getCurrentType());
@@ -50,6 +42,14 @@ public class PackBitsExpression extends Expression  {
         for (var d : inputType.dimensions())
             builder.dimension(d.size().isPresent() ? d.withSize((int)Math.ceil(d.size().get() / 8.0)) : d);
         outputType = builder.build();
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
+        if (tensor.isEmpty()) return;
+        Tensor.Builder builder = Tensor.Builder.of(outputType);
+        context.setCurrentValue(new TensorFieldValue(builder.build()));
     }
 
     @Override

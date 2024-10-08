@@ -76,7 +76,7 @@ public class IndexingValidation extends Processor {
                 String fieldName = ((OutputExpression)exp).getFieldName();
                 if (outputs.contains(fieldName) && !prevNames.contains(fieldName)) {
                     throw new VerificationException(exp, "Attempting to assign conflicting values to field '" +
-                                                         fieldName + "'.");
+                                                         fieldName + "'");
                 }
                 outputs.add(fieldName);
                 prevNames.add(fieldName);

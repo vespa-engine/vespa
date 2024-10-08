@@ -24,7 +24,7 @@ public abstract class Expression extends Selectable {
 
     private final DataType requiredInputType;
 
-    // Input and putput types resolved during verification
+    // Input and output types resolved during verification
     private DataType inputType;
     private DataType outputType;
 
