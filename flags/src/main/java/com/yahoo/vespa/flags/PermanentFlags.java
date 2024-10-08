@@ -488,6 +488,17 @@ public class PermanentFlags {
             "Role definitions for the system",
             "Takes effect on next iteration of UserManagementMaintainer");
 
+    public static final UnboundBooleanFlag FORWARD_ALL_LOG_LEVELS = defineFeatureFlag(
+            "forward-all-log-levels", false,
+            "Forward all log levels from nodes to logserver (debug and spam levels will be forwarded only if this flag is enabled)",
+            "Takes effect at redeployment");
+
+    public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
+            "unknown-config-definition", "warn",
+            "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
