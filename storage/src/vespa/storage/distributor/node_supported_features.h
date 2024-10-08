@@ -19,7 +19,7 @@ struct NodeSupportedFeatures {
 
     bool operator==(const NodeSupportedFeatures& rhs) const noexcept = default;
 
-    [[nodiscard]] NodeSupportedFeatures intersection_of(const NodeSupportedFeatures& rhs) const noexcept {
+    [[nodiscard]] NodeSupportedFeatures intersect(const NodeSupportedFeatures& rhs) const noexcept {
         NodeSupportedFeatures ret;
         ret.unordered_merge_chaining               = (unordered_merge_chaining && rhs.unordered_merge_chaining);
         ret.two_phase_remove_location              = (two_phase_remove_location && rhs.two_phase_remove_location);

@@ -16,7 +16,7 @@ namespace storage::distributor {
  */
 class NodeSupportedFeaturesRepo {
     const vespalib::hash_map<uint16_t, NodeSupportedFeatures> _node_features;
-    NodeSupportedFeatures _supported_by_all_nodes;
+    const NodeSupportedFeatures                               _supported_by_all_nodes;
 
     struct PrivateCtorTag {};
 public:

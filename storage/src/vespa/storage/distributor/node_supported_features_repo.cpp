@@ -18,7 +18,7 @@ NodeSupportedFeatures feature_intersection(const vespalib::hash_map<uint16_t, No
     auto first = iter->second;
     ++iter;
     return std::accumulate(iter, features.end(), first, [](const auto& accu, const auto& v) {
-        return accu.intersection_of(v.second);
+        return accu.intersect(v.second);
     });
 }
 
