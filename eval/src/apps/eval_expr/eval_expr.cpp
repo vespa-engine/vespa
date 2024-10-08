@@ -17,6 +17,7 @@
 #include <vespa/eval/eval/test/test_io.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 #include <cctype>
 
 #include <histedit.h>
@@ -91,13 +92,13 @@ class Context
 {
 private:
     std::vector<std::string> _param_names;
-    std::vector<ValueType>        _param_types;
-    std::vector<Value::UP>        _param_values;
-    std::vector<Value::CREF>      _param_refs;
-    bool                          _verbose;
+    std::vector<ValueType>   _param_types;
+    std::vector<Value::UP>   _param_values;
+    std::vector<Value::CREF> _param_refs;
+    bool                     _verbose;
     std::string              _error;
-    CTFMetaData                   _meta;
-    CostProfile                   _cost;
+    CTFMetaData              _meta;
+    CostProfile              _cost;
 
     void clear_state() {
         _error.clear();
@@ -246,24 +247,38 @@ void handle_message(Context &ctx, const Inspector &req, Cursor &reply) {
     }
 }
 
-bool is_only_whitespace(const std::string &str) {
+bool should_ignore(const std::string &str) {
     for (auto c : str) {
         if (!std::isspace(static_cast<unsigned char>(c))) {
-            return false;
+            return (c == '#');
         }
     }
     return true;
 }
 
+struct Script {
+    vespalib::MappedFileInput input;
+    LineReader reader;
+    Script(const std::string &file_name)
+      : input(file_name), reader(input)
+    {
+        if (!input.valid()) {
+            fprintf(stderr, "warning: could not read script: %s\n", file_name.c_str());
+        }
+    }
+};
+
 struct EditLineWrapper {
     EditLine *my_el;
     History *my_hist;
     HistEvent ignore;
+    std::unique_ptr<Script> script;
     static std::string prompt;
     static char *prompt_fun(EditLine *) { return &prompt[0]; }
-    EditLineWrapper()
+    EditLineWrapper(std::unique_ptr<Script> script_in)
       : my_el(el_init("vespa-eval-expr", stdin, stdout, stderr)),
-        my_hist(history_init())
+        my_hist(history_init()),
+        script(std::move(script_in))
     {
         memset(&ignore, 0, sizeof(ignore));
         el_set(my_el, EL_EDITOR, "emacs");
@@ -272,18 +287,39 @@ struct EditLineWrapper {
         el_set(my_el, EL_HIST, history, my_hist);
     }
     ~EditLineWrapper();
+    bool read_from_script(std::string &line_out) {
+        if (!script) {
+            return false;
+        }
+        if (!script->reader.read_line(line_out)) {
+            script.reset();
+            return false;
+        }
+        return true;
+    }
+    bool read_from_user(std::string &line_out) {
+        int line_len = 0;
+        const char *line = el_gets(my_el, &line_len);
+        if (line == nullptr) {
+            return false;
+        }
+        line_out.assign(line, line_len);
+        return true;
+    }
     bool read_line(std::string &line_out) {
         do {
-            int line_len = 0;
-            const char *line = el_gets(my_el, &line_len);
-            if (line == nullptr) {
-                return false;
+            if (!read_from_script(line_out)) {
+                if (!read_from_user(line_out)) {
+                    return false;
+                }
             }
-            line_out.assign(line, line_len);
             if ((line_out.size() > 0) && (line_out[line_out.size() - 1] == '\n')) {
                 line_out.pop_back();
             }
-        } while (is_only_whitespace(line_out));
+        } while (should_ignore(line_out));
+        if (script) {
+            fprintf(stdout, "%s%s\n", prompt.c_str(), line_out.c_str());
+        }
         history(my_hist, &ignore, H_ENTER, line_out.c_str());
         return true;
     }
@@ -303,8 +339,8 @@ const std::string verbose_cmd("verbose ");
 const std::string def_cmd("def ");
 const std::string undef_cmd("undef ");
 
-int interactive_mode(Context &ctx) {
-    EditLineWrapper input;
+int interactive_mode(Context &ctx, std::unique_ptr<Script> script) {
+    EditLineWrapper input(std::move(script));
     std::string line;
     while (input.read_line(line)) {
         if (line == exit_cmd) {
@@ -408,7 +444,11 @@ int main(int argc, char **argv) {
     Context ctx;
     if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "interactive")) {
         setlocale(LC_ALL, "");
-        return interactive_mode(ctx);
+        return interactive_mode(ctx, nullptr);
+    }
+    if ((expr_cnt == 2) && (std::string(argv[expr_idx]) == "interactive")) {
+        setlocale(LC_ALL, "");
+        return interactive_mode(ctx, std::make_unique<Script>(argv[expr_idx + 1]));
     }
     if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "json-repl")) {
         return json_repl_mode(ctx);
