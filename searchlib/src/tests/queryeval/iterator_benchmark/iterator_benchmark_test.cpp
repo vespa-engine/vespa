@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
+#include <iomanip>
 #include <numeric>
 #include <vector>
 
