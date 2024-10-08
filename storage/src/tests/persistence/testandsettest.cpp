@@ -409,7 +409,7 @@ TEST_F(TestAndSetTest, conditional_get_with_selection_returns_doc_metadata_on_mi
 TEST_F(TestAndSetTest, conditional_get_with_selection_and_timestamp_only_checks_timestamp) {
     const api::Timestamp timestamp = 12345;
     putTestDocument(false, timestamp); // _selection_ does not match, but timestamp does
-    auto reply = invoke_conditional_get(TestAndSetCondition(timestamp));
+    auto reply = invoke_conditional_get(TestAndSetCondition(timestamp, "false"));
 
     ASSERT_EQ(reply->getResult(), api::ReturnCode());
     EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);

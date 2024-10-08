@@ -993,7 +993,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_mismatch_fails
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_and_selection_condition_mismatch_fails_with_tas_error) {
     do_test_safe_path_condition_mismatch_fails_with_tas_error(
-            TestAndSetCondition(120, "testdoctype1.headerval==120"), // Timestamp has precedence
+            TestAndSetCondition(120, "testdoctype1.headerval==110"), // Selection matches, but mismatching timestamp has precedence
             "Required test-and-set timestamp did not match persisted timestamp");
 }
 
@@ -1016,7 +1016,8 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_condition_match_sends_pu
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_timestamp_and_selection_condition_match_sends_puts_with_updated_doc) {
-    do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition(110, "testdoctype1.headerval==110"));
+    // Condition mismatches, but matching timestamp has precedence
+    do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition(110, "testdoctype1.headerval==120"));
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with_illegal_params_error) {
@@ -1666,8 +1667,9 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_with_mismatching_timestamp_conditio
 }
 
 TEST_F(ThreePhaseUpdateTest, single_full_get_with_mismatching_timestamp_and_selection_condition_is_rejected) {
+    // Selection matches, but mismatching timestamp has precedence.
     do_test_single_full_get_with_mismatching_condition_is_rejected(
-            TestAndSetCondition(1000, "testdoctype1.headerval==1000"),
+            TestAndSetCondition(1000, "testdoctype1.headerval==2000"),
             "Required test-and-set timestamp did not match persisted timestamp");
 }
 
