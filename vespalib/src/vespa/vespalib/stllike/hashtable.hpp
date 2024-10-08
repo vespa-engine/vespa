@@ -161,7 +161,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal_cold(
         const next_t p(_nodes[h].getNext());
         const next_t newIdx(_nodes.size());
         _nodes[h].setNext(newIdx);
-        _nodes.template emplace_back(std::forward<V>(node), p);
+        _nodes.emplace_back(std::forward<V>(node), p);
         _count++;
         return insert_result(iterator(this, newIdx), true);
     } else {
@@ -182,7 +182,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value &&
         const next_t p(_nodes[h].getNext());
         const next_t newIdx(_nodes.size());
         _nodes[h].setNext(newIdx);
-        _nodes.template emplace_back(std::move(value), p);
+        _nodes.emplace_back(std::move(value), p);
         _count++;
     } else {
         resize(_nodes.capacity()*2);

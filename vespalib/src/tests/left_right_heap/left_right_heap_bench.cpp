@@ -156,11 +156,11 @@ template <typename T, typename C>
 void Loops<H>::push(T *begin, T *end, C cmp) {
     if (IsRight<H>::VALUE) {
         for (T *pos = end; pos != begin; --pos) {
-            H::template push((pos - 1), end, cmp);
+            H::push((pos - 1), end, cmp);
         }
     } else {
         for (T *pos = begin; pos != end; ++pos) {
-            H::template push(begin, (pos + 1), cmp);
+            H::push(begin, (pos + 1), cmp);
         }
     }
 }
@@ -170,11 +170,11 @@ template <typename T, typename C>
 void Loops<H>::pop(T *begin, T *end, C cmp) {
     if (IsRight<H>::VALUE) {
         for (T *pos = begin; pos != end; ++pos) {
-            H::template pop(pos, end, cmp);
+            H::pop(pos, end, cmp);
         }
     } else {
         for (T *pos = end; pos != begin; --pos) {
-            H::template pop(begin, pos, cmp);
+            H::pop(begin, pos, cmp);
         }
     }
 }
@@ -184,16 +184,16 @@ template <typename T, typename C, bool ADJUST>
 void Loops<H>::fiddle(T *begin, T *end, C cmp, T *first, T *last) {
     while (first != last) {
         if (ADJUST) {
-            H::template front(begin, end) = *first++;
-            H::template adjust(begin, end, cmp);
+            H::front(begin, end) = *first++;
+            H::adjust(begin, end, cmp);
         } else {
-            H::template pop(begin, end, cmp);
+            H::pop(begin, end, cmp);
             if (IsRight<H>::VALUE) {
                 *begin = *first++;
             } else {
                 *(end - 1) = *first++;
             }
-            H::template push(begin, end, cmp);
+            H::push(begin, end, cmp);
         }
     }
 }
