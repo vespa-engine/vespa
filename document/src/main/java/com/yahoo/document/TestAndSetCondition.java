@@ -141,7 +141,7 @@ public class TestAndSetCondition {
         string.append(conditionStr);
         string.append("'");
         if (requiredTimestamp != 0) {
-            string.append(", expected_timestamp ");
+            string.append(", required_timestamp ");
             string.append(Long.toUnsignedString(requiredTimestamp));
         }
         return string.toString();
