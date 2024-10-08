@@ -42,7 +42,7 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
-    public DataType getNeededInputType(VerificationContext context) {
+    public DataType getInputType(VerificationContext context) {
         return context.getFieldType(fieldName, this);
     }
 

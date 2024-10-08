@@ -51,7 +51,7 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    public DataType getNeededOutputType(VerificationContext context) {
+    public DataType getOutputType(VerificationContext context) {
         return context.getFieldType(fieldName, this);
     }
 

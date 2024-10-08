@@ -76,16 +76,16 @@ public final class StatementExpression extends ExpressionList<Expression> {
         // uniquely determined inputs and outputs of all expressions.
         // forward:
         int i = 0;
-        var neededInputType = getNeededInputType(context); // A nested statement; input imposed from above
+        var neededInputType = getInputType(context); // A nested statement; input imposed from above
         if (neededInputType == null) // otherwise the first expression will be an input deciding the type
-            neededInputType = expressions().get(i++).getNeededOutputType(context);
+            neededInputType = expressions().get(i++).getOutputType(context);
         while (i < expressions().size() && neededInputType != null)
-            neededInputType = expressions().get(i++).setNeededInputType(neededInputType, context);
+            neededInputType = expressions().get(i++).setInputType(neededInputType, context);
         // reverse:
         int j = expressions().size();
-        var neededOutputType = getNeededOutputType(context); // A nested statement; output imposed from above
+        var neededOutputType = getOutputType(context); // A nested statement; output imposed from above
         if (neededOutputType == null) // otherwise the last expression will be an output deciding the type
-            neededOutputType = expressions().get(--j).getNeededInputType(context);
+            neededOutputType = expressions().get(--j).getInputType(context);
         while (--j >= 0 && neededOutputType != null)
             neededOutputType = expressions().get(j).setNeededOutputType(neededOutputType, context);
 

@@ -65,8 +65,8 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public DataType setNeededInputType(DataType type, VerificationContext context) {
-        super.setNeededInputType(type, context);
+    public DataType setInputType(DataType type, VerificationContext context) {
+        super.setInputType(type, context);
         if ( ! (type == DataType.STRING)
              && ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
             throw new IllegalArgumentException("embed request either a string or array<string> input type, but got " + type);
@@ -78,7 +78,7 @@ public class EmbedExpression extends Expression  {
         super.setNeededOutputType(type, context);
         if ( ! (type instanceof TensorDataType))
             throw new IllegalArgumentException("The target type of an 'embed' expression must be a tensor, but is "  + type);
-        return getNeededInputType(context); // the input (string vs. array of string) cannot be determined from the output
+        return getInputType(context); // the input (string vs. array of string) cannot be determined from the output
     }
 
     @Override
@@ -196,7 +196,7 @@ public class EmbedExpression extends Expression  {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        targetType = toTargetTensor(getNeededOutputType(context));
+        targetType = toTargetTensor(getOutputType(context));
         if ( ! validTarget(targetType))
             throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, a mapped 1d tensor, a mapped 2d tensor, " +
                                                   "an array of dense 1d tensors, or a mixed 2d or 3d tensor");
@@ -229,7 +229,7 @@ public class EmbedExpression extends Expression  {
     }
 
     private static TensorType toTargetTensor(DataType dataType) {
-        if (dataType instanceof ArrayDataType) return toTargetTensor(((ArrayDataType) dataType).getNestedType());
+        if (dataType instanceof ArrayDataType) return toTargetTensor(dataType.getNestedType());
         if  ( ! ( dataType instanceof TensorDataType))
             throw new IllegalArgumentException("Expected a tensor data type but got " + dataType);
         return ((TensorDataType)dataType).getTensorType();

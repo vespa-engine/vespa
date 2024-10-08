@@ -24,8 +24,8 @@ public final class SplitExpression extends Expression {
     public Pattern getSplitPattern() { return splitPattern; }
 
     @Override
-    public DataType setNeededInputType(DataType input, VerificationContext context) {
-        super.setNeededInputType(input, context);
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
         if (input != DataType.STRING)
             throw new IllegalArgumentException("split requires a string input, but got " + input);
         return new ArrayDataType(DataType.STRING);
