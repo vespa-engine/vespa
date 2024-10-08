@@ -431,9 +431,11 @@ AsyncHandler::tasConditionExists(const api::TestAndSetCommand & cmd) {
 }
 
 bool
-AsyncHandler::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
-                                  spi::Context & context, bool missingDocumentImpliesMatch) const {
+AsyncHandler::tasConditionMatches(const api::TestAndSetCommand& cmd, MessageTracker& tracker,
+                                  spi::Context& context, bool missingDocumentImpliesMatch) const {
     try {
+        LOG(debug, "Evaluating TaS condition %s for document '%s'",
+            cmd.getCondition().to_string().c_str(), cmd.getDocumentId().toString().c_str());
         TestAndSetHelper helper(_env, _spi, _bucketIdFactory,
                                 cmd.getCondition(),
                                 cmd.getBucket(), cmd.getDocumentId(),
@@ -442,15 +444,17 @@ AsyncHandler::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTra
 
         auto code = helper.retrieveAndMatch(context);
         if (code.failed()) {
+            LOG(debug, "TaS condition check failed: %s", code.toString().c_str());
             tracker.fail(code.getResult(), code.getMessage());
             return false;
         }
-    } catch (const TestAndSetException & e) {
-        auto code = e.getCode();
+    } catch (const TestAndSetException& e) {
+        const auto& code = e.getCode();
+        LOG(debug, "Get exception during TaS processing: %s", code.toString().c_str());
         tracker.fail(code.getResult(), code.getMessage());
         return false;
     }
-
+    LOG(debug, "TaS condition matched");
     return true;
 }
 

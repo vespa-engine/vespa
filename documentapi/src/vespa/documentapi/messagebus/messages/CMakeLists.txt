@@ -22,6 +22,7 @@ vespa_add_library(documentapi_documentapimessages OBJECT
     removelocationmessage.cpp
     statbucketmessage.cpp
     statbucketreply.cpp
+    testandsetcondition.cpp
     testandsetmessage.cpp
     updatedocumentmessage.cpp
     updatedocumentreply.cpp

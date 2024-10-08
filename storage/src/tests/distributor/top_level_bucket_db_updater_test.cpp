@@ -2524,10 +2524,12 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
     auto stripes = distributor_stripes();
     for (auto* s : stripes) {
         for (uint16_t i : {0, 1, 2}) {
-            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).unordered_merge_chaining);
-            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).two_phase_remove_location);
-            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).no_implicit_indexing_of_active_buckets);
-            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).document_condition_probe);
+            const auto& node_features = s->node_supported_features_repo().node_supported_features(i);
+            EXPECT_FALSE(node_features.unordered_merge_chaining);
+            EXPECT_FALSE(node_features.two_phase_remove_location);
+            EXPECT_FALSE(node_features.no_implicit_indexing_of_active_buckets);
+            EXPECT_FALSE(node_features.document_condition_probe);
+            EXPECT_FALSE(node_features.timestamps_in_tas_conditions);
         }
     }
 
@@ -2542,6 +2544,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
                 reply.supported_node_features().two_phase_remove_location = true;
                 reply.supported_node_features().no_implicit_indexing_of_active_buckets = true;
                 reply.supported_node_features().document_condition_probe = true;
+                reply.supported_node_features().timestamps_in_tas_conditions = true;
             }
         }));
     }
@@ -2552,16 +2555,16 @@ TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_
         EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).two_phase_remove_location);
         EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).no_implicit_indexing_of_active_buckets);
         EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).document_condition_probe);
+        EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).timestamps_in_tas_conditions);
 
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).unordered_merge_chaining);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).two_phase_remove_location);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).no_implicit_indexing_of_active_buckets);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).document_condition_probe);
-
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).unordered_merge_chaining);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).two_phase_remove_location);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).no_implicit_indexing_of_active_buckets);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).document_condition_probe);
+        for (uint16_t i : {1, 2}) {
+            const auto& node_features = s->node_supported_features_repo().node_supported_features(i);
+            EXPECT_TRUE(node_features.unordered_merge_chaining);
+            EXPECT_TRUE(node_features.two_phase_remove_location);
+            EXPECT_TRUE(node_features.no_implicit_indexing_of_active_buckets);
+            EXPECT_TRUE(node_features.document_condition_probe);
+            EXPECT_TRUE(node_features.timestamps_in_tas_conditions);
+        }
     }
 }
 

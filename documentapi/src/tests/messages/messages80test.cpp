@@ -21,7 +21,7 @@ namespace documentapi {
 TEST(MessagesTest, concrete_types_have_expected_sizes) {
     EXPECT_EQ(sizeof(GetDocumentMessage),    152u + 2 *sizeof(std::string));
     EXPECT_EQ(sizeof(GetDocumentReply),      128u);
-    EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(std::string));
+    EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(std::string) + sizeof(uint64_t));
     EXPECT_EQ(sizeof(DocumentMessage),       112u);
     EXPECT_EQ(sizeof(TestAndSetMessage),     sizeof(TestAndSetCondition) + sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 40);
@@ -62,6 +62,12 @@ namespace {
 document::Document::SP
 createDoc(const DocumentTypeRepo& repo, const string& type_name, const string& id) {
     return std::make_shared<document::Document>(repo, *repo.getDocumentType(type_name), document::DocumentId(id));
+}
+
+std::vector<std::pair<std::string, TestAndSetCondition>> tas_conditions() {
+    return {{"cond-only",   TestAndSetCondition("There's just one condition")},
+            {"ts-only",     TestAndSetCondition(0x1badcafef000000dULL)},
+            {"cond-and-ts", TestAndSetCondition(0x1badcafef000000dULL, "There's just one condition")}};
 }
 
 }
@@ -148,6 +154,23 @@ TEST_F(Messages80Test, put_document_message) {
     }
 }
 
+TEST_F(Messages80Test, tas_conditions_can_have_selection_and_or_timestamp) {
+    auto doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
+    // We assume TaS codec is the same across message types, so use Put as a proxy for all TaS-support types.
+    for (const auto& [tas_type, tas_cond] : tas_conditions()) {
+        PutDocumentMessage msg(doc);
+        msg.setCondition(tas_cond);
+        std::string msg_and_cond_name = "PutDocumentMessage-" + tas_type;
+        serialize(msg_and_cond_name, msg);
+        for (auto lang : languages()) {
+            auto obj = deserialize(msg_and_cond_name, DocumentProtocol::MESSAGE_PUTDOCUMENT, lang);
+            ASSERT_TRUE(obj);
+            auto& decoded = dynamic_cast<PutDocumentMessage&>(*obj);
+            EXPECT_EQ(decoded.getCondition(), msg.getCondition());
+        }
+    }
+}
+
 TEST_F(Messages80Test, put_document_reply) {
     WriteDocumentReply reply(DocumentProtocol::REPLY_PUTDOCUMENT);
     reply.setHighestModificationTimestamp(30);
@@ -184,7 +207,7 @@ TEST_F(Messages80Test, update_document_message) {
         EXPECT_EQ(decoded.getOldTimestamp(), msg.getOldTimestamp());
         EXPECT_EQ(decoded.getNewTimestamp(), msg.getNewTimestamp());
         EXPECT_GT(decoded.getApproxSize(), 0u); // Actual value depends on protobuf size
-        EXPECT_EQ(decoded.getCondition().getSelection(), msg.getCondition().getSelection());
+        EXPECT_EQ(decoded.getCondition(), msg.getCondition());
     }
 }
 
@@ -258,7 +281,7 @@ TEST_F(Messages80Test, remove_document_message) {
         ASSERT_TRUE(obj);
         auto& ref = dynamic_cast<RemoveDocumentMessage &>(*obj);
         EXPECT_EQ(ref.getDocumentId().toString(), "id:ns:testdoc::");
-        EXPECT_EQ(ref.getCondition().getSelection(), msg.getCondition().getSelection());
+        EXPECT_EQ(ref.getCondition(), msg.getCondition());
         EXPECT_EQ(ref.persisted_timestamp(), 0x1badcafef000000dULL);
     }
 }

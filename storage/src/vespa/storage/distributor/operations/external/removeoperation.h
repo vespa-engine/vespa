@@ -31,6 +31,9 @@ public:
     void onClose(DistributorStripeMessageSender& sender) override;
     void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
 
+    // Exposed for unit testing
+    [[nodiscard]] std::shared_ptr<api::RemoveCommand> command() const noexcept { return _msg; }
+
 private:
     PersistenceMessageTracker           _tracker;
     std::shared_ptr<api::RemoveCommand> _msg;

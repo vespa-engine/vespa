@@ -74,11 +74,24 @@ api::BucketInfo get_bucket_info(const protobuf::BucketInfo& src) {
 }
 
 documentapi::TestAndSetCondition get_tas_condition(const protobuf::TestAndSetCondition& src) {
-    return documentapi::TestAndSetCondition(src.selection());
+    if (!src.selection().empty()) {
+        if (src.required_timestamp() != 0) {
+            return {src.required_timestamp(), src.selection()};
+        }
+        return documentapi::TestAndSetCondition(src.selection());
+    } else if (src.required_timestamp() != 0) {
+        return documentapi::TestAndSetCondition(src.required_timestamp());
+    }
+    return {};
 }
 
 void set_tas_condition(protobuf::TestAndSetCondition& dest, const documentapi::TestAndSetCondition& src) {
-    dest.set_selection(src.getSelection().data(), src.getSelection().size());
+    if (src.has_selection()) {
+        dest.set_selection(src.getSelection().data(), src.getSelection().size());
+    }
+    if (src.has_required_timestamp()) {
+        dest.set_required_timestamp(src.required_timestamp());
+    }
 }
 
 std::shared_ptr<document::Document> get_document(const protobuf::Document& src_doc,
@@ -1049,11 +1062,13 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoRe
             set_bucket_info(*bucket_and_info->mutable_bucket_info(), entry._info);
         }
         // We mark features as available at protocol level. Only included for full bucket fetch responses.
+        auto* mut_features = res.mutable_supported_node_features();
         if (msg.full_bucket_fetch()) {
-            res.mutable_supported_node_features()->set_unordered_merge_chaining(true);
-            res.mutable_supported_node_features()->set_two_phase_remove_location(true);
-            res.mutable_supported_node_features()->set_no_implicit_indexing_of_active_buckets(true);
-            res.mutable_supported_node_features()->set_document_condition_probe(true);
+            mut_features->set_unordered_merge_chaining(true);
+            mut_features->set_two_phase_remove_location(true);
+            mut_features->set_no_implicit_indexing_of_active_buckets(true);
+            mut_features->set_document_condition_probe(true);
+            mut_features->set_timestamps_in_tas_conditions(true);
         }
     });
 }
@@ -1098,6 +1113,7 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeRequestBucketInfoReply(con
             dest_features.two_phase_remove_location              = src_features.two_phase_remove_location();
             dest_features.no_implicit_indexing_of_active_buckets = src_features.no_implicit_indexing_of_active_buckets();
             dest_features.document_condition_probe               = src_features.document_condition_probe();
+            dest_features.timestamps_in_tas_conditions           = src_features.timestamps_in_tas_conditions();
         }
         return reply;
     });
