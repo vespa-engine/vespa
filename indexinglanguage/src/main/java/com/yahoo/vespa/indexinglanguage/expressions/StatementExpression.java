@@ -77,26 +77,17 @@ public final class StatementExpression extends ExpressionList<Expression> {
         // forward:
         int i = 0;
         var neededInputType = getNeededInputType(context); // A nested statement; input imposed from above
-        if (neededInputType == null) { // otherwise the first expression will be an input deciding the type
-            neededInputType = expressions().get(0).getNeededOutputType(context);
-            i++;
-        }
-        while (i < expressions().size()) {
-            if (neededInputType == null) break;
-            neededInputType = expressions().get(i).setNeededInputType(neededInputType, context);
-            i++;
-        }
+        if (neededInputType == null) // otherwise the first expression will be an input deciding the type
+            neededInputType = expressions().get(i++).getNeededOutputType(context);
+        while (i < expressions().size() && neededInputType != null)
+            neededInputType = expressions().get(i++).setNeededInputType(neededInputType, context);
         // reverse:
         int j = expressions().size();
         var neededOutputType = getNeededOutputType(context); // A nested statement; output imposed from above
-        if (neededOutputType == null) { // otherwise the last expression will be an output deciding the type
-            neededOutputType = expressions().get(expressions().size() - 1).getNeededInputType(context);
-            j--;
-        }
-        while (--j >= 0) {
-            if (neededOutputType == null) break;
+        if (neededOutputType == null) // otherwise the last expression will be an output deciding the type
+            neededOutputType = expressions().get(--j).getNeededInputType(context);
+        while (--j >= 0 && neededOutputType != null)
             neededOutputType = expressions().get(j).setNeededOutputType(neededOutputType, context);
-        }
 
         for (Expression expression : expressions())
             context.verify(expression);
