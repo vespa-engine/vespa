@@ -27,7 +27,7 @@ public class LogRetriever {
     /**
      * Fetches logs from the log server for a given application.
      * An empty response will be returned if we are unable to fetch logs and
-     * the deployment is less than 3 minutes old
+     * the deployment is less than 5 minutes old
      */
     @SuppressWarnings("deprecation")
     public HttpResponse getLogs(HttpURL logServerUri, Optional<Instant> deployTime) {
@@ -35,7 +35,7 @@ public class LogRetriever {
         try {
             return new ProxyResponse(httpClient.execute(get));
         } catch (IOException e) {
-            if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(3))))
+            if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(5))))
                 return new EmptyResponse();
 
             throw new RuntimeException("Failed to get logs from " + logServerUri, e);
