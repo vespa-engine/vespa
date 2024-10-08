@@ -94,6 +94,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<ConfigServerSpec> configServerSpecs() { return configServerSpecs; }
     @Override public HostName loadBalancerName() { return null; }
     @Override public URI ztsUrl() { return null; }
+    @Override public AthenzDomain tenantSecretDomain() { return null; }
     @Override public String athenzDnsSuffix() { return null; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Zone zone() { return zone; }

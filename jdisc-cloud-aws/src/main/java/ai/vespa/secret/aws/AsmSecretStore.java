@@ -50,15 +50,15 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
 
     @Inject
     public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        this(URI.create(config.ztsUri()), identities.getIdentitySslContext(), identities.identity().getDomain());
+        this(URI.create(config.ztsUri()), identities.getIdentitySslContext(), athenzDomain(config, identities));
     }
 
-    public AsmSecretStore(URI ztsUri, SSLContext sslContext, AthenzDomain systemDomain) {
-        this(new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build(), systemDomain);
+    public AsmSecretStore(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
+        this(new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build(), domain);
     }
 
-    private AsmSecretStore(ZtsClient ztsClient, AthenzDomain systemDomain) {
-        super(ztsClient, Role.READER, systemDomain);
+    private AsmSecretStore(ZtsClient ztsClient, AthenzDomain domain) {
+        super(ztsClient, Role.READER, domain);
         cache = initCache();
         closeable = ztsClient::close;
     }
@@ -70,6 +70,10 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
         closeable = () -> {};
     }
 
+    private static AthenzDomain athenzDomain(AsmSecretConfig config, ServiceIdentityProvider identities) {
+        return config.athenzDomain().isEmpty() ?
+                identities.identity().getDomain() : new AthenzDomain(config.athenzDomain());
+    }
 
     private LoadingCache<VersionKey, Secret> initCache() {
         return CacheBuilder.newBuilder()

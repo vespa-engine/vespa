@@ -1379,6 +1379,7 @@
       "public abstract java.util.List configServerSpecs()",
       "public abstract com.yahoo.config.provision.HostName loadBalancerName()",
       "public abstract java.net.URI ztsUrl()",
+      "public abstract com.yahoo.config.provision.AthenzDomain tenantSecretDomain()",
       "public abstract java.lang.String athenzDnsSuffix()",
       "public abstract boolean hostedVespa()",
       "public abstract com.yahoo.config.provision.Zone zone()",
