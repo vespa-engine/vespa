@@ -17,7 +17,7 @@ import java.util.Optional;
  * matches any document.
  * </p>
  * @author Vegard Sjonfjell
- * @author @vekterli
+ * @author vekterli
  */
 public class TestAndSetCondition {
 
