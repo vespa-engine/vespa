@@ -50,7 +50,7 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
 
     @Inject
     public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        this(URI.create(config.ztsUri()), identities.getIdentitySslContext(), identities.identity().getDomain());
+        this(URI.create(config.ztsUri()), identities.getIdentitySslContext(), athenzDomain(config, identities));
     }
 
     public AsmSecretStore(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
@@ -70,6 +70,10 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
         closeable = () -> {};
     }
 
+    private static AthenzDomain athenzDomain(AsmSecretConfig config, ServiceIdentityProvider identities) {
+        return config.athenzDomain().isEmpty() ?
+                identities.identity().getDomain() : new AthenzDomain(config.athenzDomain());
+    }
 
     private LoadingCache<VersionKey, Secret> initCache() {
         return CacheBuilder.newBuilder()
