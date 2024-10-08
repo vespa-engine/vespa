@@ -23,23 +23,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
-import static com.yahoo.vespa.flags.PermanentFlags.CONFIG_SERVER_SESSION_LIFETIME;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Note: Some test depend on sessionLifetime being 60 (set in config server config in MaintainerTester)
 public class SessionsMaintainerTest {
 
     private static final File testApp = new File("src/test/apps/hosted");
     private static final ApplicationId applicationId = ApplicationId.from("deploytester", "myApp", "default");
-    private static final long sessionLifeTime = 60;
 
     private final ManualClock clock = new ManualClock();
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
