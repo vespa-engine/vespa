@@ -18,33 +18,49 @@ import java.util.Objects;
  */
 public final class ForEachExpression extends CompositeExpression {
 
-    private final Expression exp;
+    private final Expression expression;
 
-    public ForEachExpression(Expression exp) {
+    public ForEachExpression(Expression expression) {
         super(UnresolvedDataType.INSTANCE);
-        this.exp = Objects.requireNonNull(exp);
+        this.expression = Objects.requireNonNull(expression);
     }
 
     public Expression getInnerExpression() {
-        return exp;
+        return expression;
     }
 
     @Override
     public ForEachExpression convertChildren(ExpressionConverter converter) {
-        Expression converted = converter.convert(exp);
+        Expression converted = converter.convert(expression);
         return converted != null ?  new ForEachExpression(converted) : null;
     }
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        exp.setStatementOutput(documentType, field);
+        expression.setStatementOutput(documentType, field);
+    }
+
+    @Override
+    public DataType setNeededInputType(DataType neededInput, VerificationContext context) {
+        if ( ! neededInput.isMultivalue())
+            throw new IllegalArgumentException("for_each consumes a multivalue type, but is given " + neededInput);
+        expression.setNeededInputType(neededInput.getNestedType(), context);
+        return super.setNeededInputType(neededInput, context);
+    }
+
+    @Override
+    public DataType setNeededOutputType(DataType neededOutput, VerificationContext context) {
+        if ( ! neededOutput.isMultivalue())
+            throw new IllegalArgumentException("for_each produces a multivalue type, but needs " + neededOutput);
+        expression.setNeededOutputType(neededOutput.getNestedType(), context);
+        return super.setNeededOutputType(neededOutput, context);
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         if (input instanceof Array || input instanceof WeightedSet) {
-            FieldValue next = new MyConverter(context, exp).convert(input);
+            FieldValue next = new MyConverter(context, expression).convert(input);
             if (next == null) {
                 VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
                 context.fillVariableTypes(verificationContext);
@@ -53,7 +69,7 @@ public final class ForEachExpression extends CompositeExpression {
             }
             context.setCurrentValue(next);
         } else if (input instanceof Struct) {
-            context.setCurrentValue(new MyConverter(context, exp).convert(input));
+            context.setCurrentValue(new MyConverter(context, expression).convert(input));
         } else {
             throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
                                                input.getDataType().getName());
@@ -67,8 +83,8 @@ public final class ForEachExpression extends CompositeExpression {
             // Set type for block evaluation
             context.setCurrentType(((CollectionDataType)valueType).getNestedType());
 
-            // Evaluate block, which sets value>Type to the output of the block
-            context.verify(exp);
+            // Evaluate block, which sets valueType to the output of the block
+            context.verify(expression);
 
             // Value type outside block becomes the collection type having the block output type as argument
             if (valueType instanceof ArrayDataType) {
@@ -81,7 +97,7 @@ public final class ForEachExpression extends CompositeExpression {
         else if (valueType instanceof StructDataType) {
             for (Field field : ((StructDataType)valueType).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType structValueType = context.setCurrentType(fieldType).verify(exp).getCurrentType();
+                DataType structValueType = context.setCurrentType(fieldType).verify(expression).getCurrentType();
                 if (!fieldType.isAssignableFrom(structValueType))
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
                                                           structValueType.getName());
@@ -96,7 +112,7 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public DataType createdOutputType() {
-        if (exp.createdOutputType() == null) {
+        if (expression.createdOutputType() == null) {
             return null;
         }
         return UnresolvedDataType.INSTANCE;
@@ -104,19 +120,19 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public String toString() {
-        return "for_each { " + exp + " }";
+        return "for_each { " + expression + " }";
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ForEachExpression rhs)) return false;
-        if (!exp.equals(rhs.exp)) return false;
+        if (!expression.equals(rhs.expression)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + exp.hashCode();
+        return getClass().hashCode() + expression.hashCode();
     }
 
     private static final class MyConverter extends FieldValueConverter {
@@ -144,7 +160,7 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
-        select(exp, predicate, operation);
+        select(expression, predicate, operation);
     }
 
 }

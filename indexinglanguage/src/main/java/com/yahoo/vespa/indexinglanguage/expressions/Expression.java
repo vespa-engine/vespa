@@ -23,7 +23,8 @@ import java.util.Map;
 public abstract class Expression extends Selectable {
 
     private final DataType requiredInputType;
-    private DataType requiredOutputType;
+    private DataType neededInputType;
+    private DataType neededOutputType;
 
     /**
      * Creates an expression
@@ -89,9 +90,8 @@ public abstract class Expression extends Selectable {
         DataType inputType = requiredInputType();
         if (inputType != null) {
             FieldValue input = context.getCurrentValue();
-            if (input == null) {
-                return null;
-            }
+            if (input == null) return null;
+
             if (!inputType.isValueCompatible(input)) {
                 throw new IllegalArgumentException("Expression '" + this + "' expected " + inputType.getName() +
                                                    " input, got " + input.getDataType().getName());
@@ -195,14 +195,39 @@ public abstract class Expression extends Selectable {
 
     public final DataType requiredInputType() { return requiredInputType; }
 
-    /**
-     * Returns the output type this is required to produce (since it is part of a statement expression),
-     * or null if this is not set or there is no putput produced at the end of the statement.
-     */
-    public final DataType getRequiredOutputType() { return requiredOutputType; }
+    public DataType getNeededInputType(VerificationContext context) { return neededInputType; }
 
-    public final void setRequiredOutputType(DataType requiredOutputType) {
-        this.requiredOutputType = requiredOutputType;
+    /**
+     * Sets the needed input type of this and returns the resulting needed output type, or null if it cannot be
+     * uniquely determined.
+     * This default implementation returns the same type, which is appropriate for all statements
+     * that do not change the type.
+     *
+     * @param neededInputType the needed input type, or null if this does not take any input
+     */
+    public DataType setNeededInputType(DataType neededInputType, VerificationContext context) {
+        this.neededInputType = neededInputType;
+        return neededInputType;
+    }
+
+    /**
+     * Returns the output type this is must produce (since it is part of a statement expression),
+     * or null if this is not set or there is no output produced at the end of the statement.
+     */
+    public DataType getNeededOutputType(VerificationContext context) { return neededOutputType; }
+
+    /**
+     * Sets the needed output type of this and returns the resulting needed input type, or null if it cannot be
+     * uniquely determined.
+     * This default implementation returns the same type, which is appropriate for all statements
+     * that do not change the type.
+     */
+    public DataType setNeededOutputType(DataType neededOutputType, VerificationContext context) {
+        this.neededOutputType = neededOutputType;
+        // TODO: Set the needed input type?
+        // TODO: Validate against the type set in the constructor (required type)
+        // TODO: Get better names than needed (in context) and required (without context)
+        return neededOutputType;
     }
 
     public abstract DataType createdOutputType();

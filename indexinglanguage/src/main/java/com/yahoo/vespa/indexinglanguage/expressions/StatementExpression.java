@@ -70,10 +70,32 @@ public final class StatementExpression extends ExpressionList<Expression> {
         if (outputField != null)
             context.setOutputField(outputField);
 
-        var requiredOutputType = expressions().get(expressions().size() - 1).requiredInputType();
-        for (int i = expressions().size() - 2; i >= 0; i--) {
-            expressions().get(i).setRequiredOutputType(requiredOutputType);
-            requiredOutputType = expressions().get(i).requiredInputType();
+        // Result input and output types:
+        // Some expressions can only determine their input from their output, and others only their output from
+        // their input. Therefore, we try resolving in both directions, which should always meet up to produce
+        // uniquely determined inputs and outputs of all expressions.
+        // forward:
+        int i = 0;
+        var neededInputType = getNeededInputType(context); // A nested statement; input imposed from above
+        if (neededInputType == null) { // otherwise the first expression will be an input deciding the type
+            neededInputType = expressions().get(0).getNeededOutputType(context);
+            i++;
+        }
+        while (i < expressions().size()) {
+            if (neededInputType == null) break;
+            neededInputType = expressions().get(i).setNeededInputType(neededInputType, context);
+            i++;
+        }
+        // reverse:
+        int j = expressions().size();
+        var neededOutputType = getNeededOutputType(context); // A nested statement; output imposed from above
+        if (neededOutputType == null) { // otherwise the last expression will be an output deciding the type
+            neededOutputType = expressions().get(expressions().size() - 1).getNeededInputType(context);
+            j--;
+        }
+        while (--j >= 0) {
+            if (neededOutputType == null) break;
+            neededOutputType = expressions().get(j).setNeededOutputType(neededOutputType, context);
         }
 
         for (Expression expression : expressions())

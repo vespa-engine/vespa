@@ -65,6 +65,23 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
+    public DataType setNeededInputType(DataType type, VerificationContext context) {
+        super.setNeededInputType(type, context);
+        if ( ! (type == DataType.STRING)
+             && ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
+            throw new IllegalArgumentException("embed request either a string or array<string> input type, but got " + type);
+        return null; // embed cannot determine the output type from the input
+    }
+
+    @Override
+    public DataType setNeededOutputType(DataType type, VerificationContext context) {
+        super.setNeededOutputType(type, context);
+        if ( ! (type instanceof TensorDataType))
+            throw new IllegalArgumentException("The target type of an 'embed' expression must be a tensor, but is "  + type);
+        return getNeededInputType(context); // the input (string vs. array of string) cannot be determined from the output
+    }
+
+    @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         targetType = toTargetTensor(field.getDataType());
         destination = documentType.getName() + "." + field.getName();
@@ -77,8 +94,8 @@ public class EmbedExpression extends Expression  {
         if (context.getCurrentValue().getDataType() == DataType.STRING) {
             output = embedSingleValue(context);
         }
-        else if (context.getCurrentValue().getDataType() instanceof ArrayDataType &&
-                 ((ArrayDataType)context.getCurrentValue().getDataType()).getNestedType() == DataType.STRING) {
+        else if (context.getCurrentValue().getDataType() instanceof ArrayDataType arrayType
+                 && arrayType.getNestedType() == DataType.STRING) {
             output = embedArrayValue(context);
         }
         else {
@@ -179,11 +196,7 @@ public class EmbedExpression extends Expression  {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        String outputField = context.getOutputField();
-        if (outputField == null)
-            throw new VerificationException(this, "No output field in this statement: " +
-                                                  "Don't know what tensor type to embed into");
-        targetType = toTargetTensor(context.getFieldType(this));
+        targetType = toTargetTensor(getNeededOutputType(context));
         if ( ! validTarget(targetType))
             throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, a mapped 1d tensor, a mapped 2d tensor, " +
                                                   "an array of dense 1d tensors, or a mixed 2d or 3d tensor");

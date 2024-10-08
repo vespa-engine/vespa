@@ -51,6 +51,11 @@ public final class InputExpression extends Expression {
     }
 
     @Override
+    public DataType getNeededOutputType(VerificationContext context) {
+        return context.getFieldType(fieldName, this);
+    }
+
+    @Override
     public String toString() {
         return "input" + (fieldName != null ? " " + fieldName : "");
     }

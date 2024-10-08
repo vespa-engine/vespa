@@ -42,6 +42,11 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
+    public DataType getNeededInputType(VerificationContext context) {
+        return context.getFieldType(fieldName, this);
+    }
+
+    @Override
     public String toString() {
         return image + (fieldName != null ? " " + fieldName : "");
     }
