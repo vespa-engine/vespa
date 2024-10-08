@@ -77,7 +77,7 @@ public abstract class Expression extends Selectable {
      * This default implementation returns the same type, which is appropriate for all statements
      * that do not change the type.
      */
-    public DataType setNeededOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
         this.outputType = outputType;
         return outputType;
     }

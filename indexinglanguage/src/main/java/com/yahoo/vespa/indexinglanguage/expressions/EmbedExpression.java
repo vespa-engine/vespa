@@ -74,8 +74,8 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public DataType setNeededOutputType(DataType type, VerificationContext context) {
-        super.setNeededOutputType(type, context);
+    public DataType setOutputType(DataType type, VerificationContext context) {
+        super.setOutputType(type, context);
         if ( ! (type instanceof TensorDataType))
             throw new IllegalArgumentException("The target type of an 'embed' expression must be a tensor, but is "  + type);
         return getInputType(context); // the input (string vs. array of string) cannot be determined from the output

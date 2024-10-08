@@ -69,18 +69,18 @@ public final class StatementExpression extends ExpressionList<Expression> {
         // uniquely determined inputs and outputs of all expressions.
         // forward:
         int i = 0;
-        var neededInputType = getInputType(context); // A nested statement; input imposed from above
-        if (neededInputType == null) // otherwise the first expression will be an input deciding the type
-            neededInputType = expressions().get(i++).getOutputType(context);
-        while (i < expressions().size() && neededInputType != null)
-            neededInputType = expressions().get(i++).setInputType(neededInputType, context);
+        var inputType = getInputType(context); // A nested statement; input imposed from above
+        if (inputType == null) // otherwise the first expression will be an input deciding the type
+            inputType = expressions().get(i++).getOutputType(context);
+        while (i < expressions().size() && inputType != null)
+            inputType = expressions().get(i++).setInputType(inputType, context);
         // reverse:
         int j = expressions().size();
-        var neededOutputType = getOutputType(context); // A nested statement; output imposed from above
-        if (neededOutputType == null) // otherwise the last expression will be an output deciding the type
-            neededOutputType = expressions().get(--j).getInputType(context);
-        while (--j >= 0 && neededOutputType != null)
-            neededOutputType = expressions().get(j).setNeededOutputType(neededOutputType, context);
+        var outputType = getOutputType(context); // A nested statement; output imposed from above
+        if (outputType == null) // otherwise the last expression will be an output deciding the type
+            outputType = expressions().get(--j).getInputType(context);
+        while (--j >= 0 && outputType != null)
+            outputType = expressions().get(j).setOutputType(outputType, context);
 
         for (Expression expression : expressions())
             context.verify(expression);
