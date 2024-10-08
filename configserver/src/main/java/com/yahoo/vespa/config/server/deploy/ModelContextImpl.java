@@ -334,7 +334,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<ConfigServerSpec> configServerSpecs;
         private final HostName loadBalancerName;
         private final URI ztsUrl;
-        private final AthenzDomain tenantSecretDomain;
+        private final String tenantSecretDomain;
         private final String athenzDnsSuffix;
         private final boolean hostedVespa;
         private final Zone zone;
@@ -381,7 +381,7 @@ public class ModelContextImpl implements ModelContext {
             this.configServerSpecs = fromConfig(configserverConfig);
             this.loadBalancerName = configserverConfig.loadBalancerAddress().isEmpty() ? null : HostName.of(configserverConfig.loadBalancerAddress());
             this.ztsUrl = configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null;
-            this.tenantSecretDomain = AthenzDomain.from(configserverConfig.tenantSecretDomain());
+            this.tenantSecretDomain = configserverConfig.tenantSecretDomain();
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
             this.hostedVespa = configserverConfig.hostedVespa();
             this.zone = zone;
@@ -430,7 +430,9 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public AthenzDomain tenantSecretDomain() {
-            return tenantSecretDomain;
+            if (tenantSecretDomain.isEmpty())
+                throw new IllegalArgumentException("Tenant secret domain is not set for zone " + zone);
+            return AthenzDomain.from(tenantSecretDomain);
         }
 
         @Override
