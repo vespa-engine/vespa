@@ -32,16 +32,10 @@ public:
     struct Config
     {
         const StoreOnlyDocSubDB::Config _storeOnlyCfg;
-        const bool                      _hasAttributes;
-        const bool                      _addMetrics;
         const bool                      _fastAccessAttributesOnly;
         Config(const StoreOnlyDocSubDB::Config &storeOnlyCfg,
-               bool hasAttributes,
-               bool addMetrics,
                bool fastAccessAttributesOnly)
         : _storeOnlyCfg(storeOnlyCfg),
-          _hasAttributes(hasAttributes),
-          _addMetrics(addMetrics),
           _fastAccessAttributesOnly(fastAccessAttributesOnly)
         { }
     };
@@ -68,7 +62,6 @@ private:
     using AttributesConfig = vespa::config::search::AttributesConfig;
     using Configurer = FastAccessDocSubDBConfigurer;
 
-    const bool                    _hasAttributes;
     const bool                    _fastAccessAttributesOnly;
     std::shared_ptr<AttributeManager> _initAttrMgr;
     Configurer::FeedViewVarHolder _fastAccessFeedView;
@@ -88,7 +81,6 @@ private:
 protected:
     using Parent = StoreOnlyDocSubDB;
 
-    const bool           _addMetrics;
     MetricsWireService  &_metricsWireService;
     std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     DocIdLimit           _docIdLimit;

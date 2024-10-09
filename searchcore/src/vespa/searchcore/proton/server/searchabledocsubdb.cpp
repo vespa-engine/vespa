@@ -152,7 +152,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;
     applyFlushConfig(newConfigSnapshot.getMaintenanceConfigSP()->getFlushConfig());
-    if (prepared_reconfig.has_matchers_changed() && _addMetrics) {
+    if (prepared_reconfig.has_matchers_changed()) {
         reconfigureMatchingMetrics(newConfigSnapshot.getRankProfilesConfig());
     }
     if (prepared_reconfig.has_attribute_manager_changed()) {
@@ -162,7 +162,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         if (initializer && initializer->hasReprocessors()) {
             tasks.emplace_back(createReprocessingTask(*initializer, newConfigSnapshot.getDocumentTypeRepoSP()));
         }
-        if (_addMetrics) {
+        {
             proton::IAttributeManager::SP newMgr = getAttributeManager();
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
@@ -218,9 +218,7 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
         std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(std::move(attrWriter), configSnapshot);
     }
-    if (_addMetrics) {
-        reconfigureMatchingMetrics(configSnapshot.getRankProfilesConfig());
-    }
+    reconfigureMatchingMetrics(configSnapshot.getRankProfilesConfig());
 }
 
 void

@@ -81,7 +81,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          documentMetaStoreInitTask,
                                                          documentMetaStore,
                                                          *baseAttrMgr,
-                                                         (_hasAttributes ? configSnapshot.getAttributesConfig() : AttributesConfig()),
+                                                         configSnapshot.getAttributesConfig(),
                                                          alloc_strategy,
                                                          _fastAccessAttributesOnly,
                                                          _writeService.master(),
@@ -115,12 +115,10 @@ get_attribute_names(const proton::IAttributeManager& mgr)
 void
 FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 {
-    if (_addMetrics) {
-        // register attribute metrics
-        auto list = get_attribute_names(*attrMgrResult);
-        for (const auto &attr : list) {
-            _metricsWireService.addAttribute(_subAttributeMetrics, attr);
-        }
+    // register attribute metrics
+    auto list = get_attribute_names(*attrMgrResult);
+    for (const auto &attr : list) {
+        _metricsWireService.addAttribute(_subAttributeMetrics, attr);
     }
     _initAttrMgr = attrMgrResult;
 }
@@ -197,13 +195,11 @@ FastAccessDocSubDB::createReprocessingTask(IReprocessingInitializer &initializer
 
 FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
     : Parent(cfg._storeOnlyCfg, ctx._storeOnlyCtx),
-      _hasAttributes(cfg._hasAttributes),
       _fastAccessAttributesOnly(cfg._fastAccessAttributesOnly),
       _initAttrMgr(),
       _fastAccessFeedView(),
       _configurer(_fastAccessFeedView, getSubDbName()),
       _subAttributeMetrics(ctx._subAttributeMetrics),
-      _addMetrics(cfg._addMetrics),
       _metricsWireService(ctx._metricsWireService),
       _attribute_interlock(std::move(ctx._attribute_interlock)),
       _docIdLimit(0)
@@ -278,7 +274,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
         }
-        if (_addMetrics) {
+        {
             proton::IAttributeManager::SP newMgr = extractAttributeManager(_fastAccessFeedView.get());
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
