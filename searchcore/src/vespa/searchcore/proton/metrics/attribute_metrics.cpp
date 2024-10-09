@@ -4,60 +4,11 @@
 
 namespace proton {
 
-using Entry = AttributeMetrics::Entry;
-
-AttributeMetrics::Entry::Entry(const std::string &attrName)
-    : metrics::MetricSet("attribute", {{"field", attrName}}, "Metrics for a given attribute vector", nullptr),
-      memoryUsage(this)
+AttributeMetrics::AttributeMetrics(metrics::MetricSet* parent)
+    : FieldMetrics(parent)
 {
 }
 
-AttributeMetrics::AttributeMetrics(metrics::MetricSet *parent)
-    : _parent(parent),
-      _attributes()
-{
-}
-
-Entry::SP
-AttributeMetrics::add(const std::string &attrName)
-{
-    if (get(attrName).get() != nullptr) {
-        return Entry::SP();
-    }
-    Entry::SP result = std::make_shared<Entry>(attrName);
-    _attributes.insert(std::make_pair(attrName, result));
-    return result;
-}
-
-Entry::SP
-AttributeMetrics::get(const std::string &attrName) const
-{
-    auto itr = _attributes.find(attrName);
-    if (itr != _attributes.end()) {
-        return itr->second;
-    }
-    return Entry::SP();
-}
-
-Entry::SP
-AttributeMetrics::remove(const std::string &attrName)
-{
-    Entry::SP result = get(attrName);
-    if (result.get() != nullptr) {
-        _attributes.erase(attrName);
-    }
-    return result;
-}
-
-std::vector<Entry::SP>
-AttributeMetrics::release()
-{
-    std::vector<Entry::SP> result;
-    for (const auto &attr : _attributes) {
-        result.push_back(attr.second);
-    }
-    _attributes.clear();
-    return result;
-}
+AttributeMetrics::~AttributeMetrics() = default;
 
 } // namespace proton
