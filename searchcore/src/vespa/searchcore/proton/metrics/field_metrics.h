@@ -19,11 +19,11 @@ class FieldMetrics
     Map _fields;
 
 public:
-    FieldMetrics(metrics::MetricSet *parent);
+    FieldMetrics(metrics::MetricSet* parent);
     ~FieldMetrics();
-    std::shared_ptr<Entry> add(const std::string &attrName);
-    std::shared_ptr<Entry> get(const std::string &attrName) const;
-    std::shared_ptr<Entry> remove(const std::string &attrName);
+    std::shared_ptr<Entry> add(const std::string& field_name);
+    std::shared_ptr<Entry> get(const std::string& field_name) const;
+    std::shared_ptr<Entry> remove(const std::string& field_name);
     std::vector<std::shared_ptr<Entry>> release();
     metrics::MetricSet* parent() noexcept { return _parent; }
 };
