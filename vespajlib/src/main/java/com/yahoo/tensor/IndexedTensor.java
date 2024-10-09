@@ -97,6 +97,7 @@ public abstract class IndexedTensor implements Tensor {
         return get(address.getDirectIndex());
     }
     public DirectIndexedAddress directAddress() { return DirectIndexedAddress.of(dimensionSizes); }
+
     /**
      * Returns the value at the given indexes as a float
      *

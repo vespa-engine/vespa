@@ -374,7 +374,7 @@ public class TensorType {
         public abstract Dimension withName(String name);
 
         /** Returns a copy of this with the size set to the given value */
-        public Dimension withSize(int size) {
+        public Dimension withSize(long size) {
             return IndexedBoundDimension.indexed(name, size);
         }
 

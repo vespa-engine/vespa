@@ -1390,7 +1390,7 @@
       "public abstract java.util.Optional size()",
       "public abstract com.yahoo.tensor.TensorType$Dimension$Type type()",
       "public abstract com.yahoo.tensor.TensorType$Dimension withName(java.lang.String)",
-      "public com.yahoo.tensor.TensorType$Dimension withSize(int)",
+      "public com.yahoo.tensor.TensorType$Dimension withSize(long)",
       "public boolean isIndexed()",
       "public boolean isMapped()",
       "public abstract java.lang.String toString()",
@@ -1532,7 +1532,8 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public static varargs com.yahoo.tensor.Tensor toSparse(com.yahoo.tensor.Tensor, java.lang.String[])"
+      "public static varargs com.yahoo.tensor.Tensor toSparse(com.yahoo.tensor.Tensor, java.lang.String[])",
+      "public static com.yahoo.tensor.Tensor packBits(com.yahoo.tensor.Tensor)"
     ],
     "fields" : [ ]
   },

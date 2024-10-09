@@ -60,7 +60,6 @@ public class EmbeddingScriptTestCase {
         tester.testStatement("input myText | embed | binarize 3.0 | attribute 'myTensor'", "input text", "[0, 0, 0, 1]");
     }
 
-    @Ignore
     @Test
     public void testEmbedBinarizeAndPack_bits() {
         var tester = new EmbeddingScriptTester(Map.of("emb1", new EmbeddingScriptTester.MockIndexedEmbedder("myDocument.myTensor", -111)));
