@@ -74,60 +74,61 @@ MetricsEngine::removeDocumentDBMetrics(DocumentDBTaggedMetrics &child)
 
 namespace {
 
+template <typename Entry>
 void
-doAddAttribute(AttributeMetrics &attributes, const std::string &attrName)
+do_add_field(FieldMetrics<Entry>& fields, const std::string& field_name)
 {
-    auto entry = attributes.add(attrName);
+    auto entry = fields.add(field_name);
     if (entry) {
-        attributes.parent()->registerMetric(*entry);
+        fields.parent()->registerMetric(*entry);
     } else {
-        LOG(warning, "Could not add metrics for attribute '%s', already existing", attrName.c_str());
+        LOG(warning, "Could not add metrics for attribute '%s', already existing", field_name.c_str());
     }
 }
 
+template <typename Entry>
 void
-doRemoveAttribute(AttributeMetrics &attributes, const std::string &attrName)
+do_remove_field(FieldMetrics<Entry>& fields, const std::string& field_name)
 {
-    auto entry = attributes.remove(attrName);
+    auto entry = fields.remove(field_name);
     if (entry) {
-        attributes.parent()->unregisterMetric(*entry);
+        fields.parent()->unregisterMetric(*entry);
     } else {
-        LOG(warning, "Could not remove metrics for attribute '%s', not found", attrName.c_str());
+        LOG(warning, "Could not remove metrics for attribute '%s', not found", field_name.c_str());
     }
 }
 
+template <typename Entry>
 void
-doCleanAttributes(AttributeMetrics &attributes)
+do_clean_fields(FieldMetrics<Entry>& fields)
 {
-    auto entries = attributes.release();
+    auto entries = fields.release();
     for (const auto &entry : entries) {
-        attributes.parent()->unregisterMetric(*entry);
+        fields.parent()->unregisterMetric(*entry);
     }
 }
 
 }
 
 void
-MetricsEngine::addAttribute(AttributeMetrics &subAttributes,
-                            const std::string &name)
+MetricsEngine::addAttribute(AttributeMetrics& subAttributes, const std::string& name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doAddAttribute(subAttributes, name);
+    do_add_field(subAttributes, name);
 }
 
 void
-MetricsEngine::removeAttribute(AttributeMetrics &subAttributes,
-                               const std::string &name)
+MetricsEngine::removeAttribute(AttributeMetrics& subAttributes, const std::string& name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doRemoveAttribute(subAttributes, name);
+    do_remove_field(subAttributes, name);
 }
 
 void
-MetricsEngine::cleanAttributes(AttributeMetrics &subAttributes)
+MetricsEngine::cleanAttributes(AttributeMetrics& subAttributes)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doCleanAttributes(subAttributes);
+    do_clean_fields(subAttributes);
 }
 
 namespace {
