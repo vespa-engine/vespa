@@ -129,6 +129,8 @@ public class Json implements Iterable<Json> {
     public boolean isNumber() { return isLong() || isDouble(); }
     public boolean isObject() { return inspector.type() == Type.OBJECT; }
 
+    public boolean isEqualTo(Json other) { return SlimeUtils.equalTo(inspector, other.inspector); }
+
     @Override
     public Iterator<Json> iterator() {
         requireType(ARRAY);
