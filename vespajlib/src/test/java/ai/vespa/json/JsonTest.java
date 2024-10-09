@@ -211,5 +211,6 @@ class JsonTest {
         assertTrue(Json.of("{\"foo\": [\"bar\"]}").isEqualTo(Json.of("{\"foo\": [\"bar\"]}")));
         assertFalse(Json.of("{\"foo\": \"bar\"}").isEqualTo(Json.of("{\"foo\": \"foo\"}")));
         assertFalse(Json.of("{\"foo\": \"bar\"}").isEqualTo(Json.of("{\"foo\": [\"bar\"]}")));
+        assertTrue(Json.of("{\"foo\": 1, \"bar\": 2}").isEqualTo(Json.of("{\"bar\": 2, \"foo\": 1}")));
     }
 }
