@@ -8,7 +8,7 @@
 namespace proton {
 
 /*
- * Class containing metrics for the attribute aspect of a multiple field, i.e.
+ * Class containing metrics for the attribute aspect of multiple fields, i.e.
  * attribute vectors.
  */
 class AttributeMetrics : public FieldMetrics<AttributeMetricsEntry>
