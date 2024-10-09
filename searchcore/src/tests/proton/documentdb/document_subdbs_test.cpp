@@ -191,7 +191,7 @@ struct MyFastAccessConfig
 {
     FastAccessConfig _cfg;
     explicit MyFastAccessConfig(SubDbType subDbType)
-        : _cfg(MyStoreOnlyConfig(subDbType)._cfg, true, true, FastAccessAttributesOnly)
+        : _cfg(MyStoreOnlyConfig(subDbType)._cfg, FastAccessAttributesOnly)
     {
     }
 };
