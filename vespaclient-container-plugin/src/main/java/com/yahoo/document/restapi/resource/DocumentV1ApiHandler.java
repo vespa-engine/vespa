@@ -1285,55 +1285,35 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         default void onStart(JsonResponse response, boolean fullyApplied) throws IOException { }
 
         /** Called for every document or removal received from backend visitors—must call the ack for these to proceed. */
-        default void onDocument(JsonResponse response, Document document, DocumentId removeId, long persistedTimestamp, Runnable ack, Consumer<String> onError) { }
+        default void onDocument(JsonResponse response, Document document, DocumentId removeId, Runnable ack, Consumer<String> onError) { }
 
         /** Called at the end of response rendering, before generic status data is written. Called from a dedicated thread pool. */
         default void onEnd(JsonResponse response) throws IOException { }
     }
 
-    @FunctionalInterface
-    private interface VisitProcessingCallback {
-        Result apply(DocumentId id, long persistedTimestamp, DocumentOperationParameters params);
-    }
-
     private void visitAndDelete(HttpRequest request, VisitorParameters parameters, ResponseHandler handler,
                                 TestAndSetCondition condition, String route) {
-        visitAndProcess(request, parameters, true, handler, route, (id, timestamp, operationParameters) -> {
+        visitAndProcess(request, parameters, true, handler, route, (id, operationParameters) -> {
             DocumentRemove remove = new DocumentRemove(id);
-            // If the backend provided a persisted timestamp, we set a condition that specifies _both_ the
-            // original selection and the timestamp. If the backend supports timestamp-predicated TaS operations,
-            // it will ignore the selection entirely and only look at the timestamp. If it does not, it will fall
-            // back to evaluating the selection, which preserves legacy behavior.
-            if (timestamp != 0) {
-                remove.setCondition(TestAndSetCondition.ofRequiredTimestampWithSelectionFallback(
-                        timestamp, condition.getSelection()));
-            } else {
-                remove.setCondition(condition);
-            }
+            remove.setCondition(condition);
             return asyncSession.remove(remove, operationParameters);
         });
     }
 
     private void visitAndUpdate(HttpRequest request, VisitorParameters parameters, boolean fullyApplied,
                                 ResponseHandler handler, DocumentUpdate protoUpdate, String route) {
-        visitAndProcess(request, parameters, fullyApplied, handler, route, (id, timestamp, operationParameters) -> {
-            DocumentUpdate update = new DocumentUpdate(protoUpdate);
-            // See `visitAndDelete()` for rationale for sending down a timestamp _and_ the original condition.
-            if (timestamp != 0) {
-                update.setCondition(TestAndSetCondition.ofRequiredTimestampWithSelectionFallback(
-                        timestamp, protoUpdate.getCondition().getSelection()));
-            } // else: use condition already set from protoUpdate
-            update.setId(id);
-            return asyncSession.update(update, operationParameters);
+        visitAndProcess(request, parameters, fullyApplied, handler, route, (id, operationParameters) -> {
+                DocumentUpdate update = new DocumentUpdate(protoUpdate);
+                update.setId(id);
+                return asyncSession.update(update, operationParameters);
         });
     }
 
     private void visitAndProcess(HttpRequest request, VisitorParameters parameters, boolean fullyApplied,
                                  ResponseHandler handler,
-                                 String route, VisitProcessingCallback operation) {
+                                 String route, BiFunction<DocumentId, DocumentOperationParameters, Result> operation) {
         visit(request, parameters, false, fullyApplied, handler, new VisitCallback() {
-            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId,
-                                             long persistedTimestamp, Runnable ack, Consumer<String> onError) {
+            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId, Runnable ack, Consumer<String> onError) {
                 DocumentOperationParameters operationParameters = parameters().withRoute(route)
                         .withResponseHandler(operationResponse -> {
                             outstanding.decrementAndGet();
@@ -1352,7 +1332,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                             }
                         });
                 visitOperations.offer(() -> {
-                    Result result = operation.apply(document.getId(), persistedTimestamp, operationParameters);
+                    Result result = operation.apply(document.getId(), operationParameters);
                     if (result.type() == Result.ResultType.TRANSIENT_ERROR)
                         return false;
 
@@ -1377,8 +1357,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
                 response.writeDocumentsArrayStart();
             }
-            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId,
-                                             long persistedTimestamp, Runnable ack, Consumer<String> onError) {
+            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId, Runnable ack, Consumer<String> onError) {
                 try {
                     if (streamed) {
                         CompletionHandler completion = new CompletionHandler() {
@@ -1478,21 +1457,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     @Override public void onMessage(Message m, AckToken token) {
                         Document document = null;
                         DocumentId removeId = null;
-                        long persistedTimestamp = 0;
-                        if (m instanceof PutDocumentMessage put) {
-                            document = put.getDocumentPut().getDocument();
-                            persistedTimestamp = put.getPersistedTimestamp();
-                        } else if (parameters.visitRemoves() && m instanceof RemoveDocumentMessage remove) {
-                            removeId = remove.getDocumentId();
-                            persistedTimestamp = remove.getPersistedTimestamp();
-                        } else {
-                            throw new UnsupportedOperationException("Got unsupported message type: " + m.getClass().getName());
-                        }
+                        if (m instanceof PutDocumentMessage put) document = put.getDocumentPut().getDocument();
+                        else if (parameters.visitRemoves() && m instanceof RemoveDocumentMessage remove) removeId = remove.getDocumentId();
+                        else throw new UnsupportedOperationException("Got unsupported message type: " + m.getClass().getName());
                         locallyReceivedDocCount.getAndAdd(1);
                         callback.onDocument(response,
                                             document,
                                             removeId,
-                                            persistedTimestamp,
                                             () -> ack(token),
                                             errorMessage -> {
                                                 error.set(errorMessage);
