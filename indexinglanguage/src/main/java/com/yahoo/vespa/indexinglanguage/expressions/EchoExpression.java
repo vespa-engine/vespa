@@ -24,11 +24,6 @@ public final class EchoExpression extends Expression {
     public PrintStream getOutputStream() { return out; }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         out.println(context.getCurrentValue());
     }

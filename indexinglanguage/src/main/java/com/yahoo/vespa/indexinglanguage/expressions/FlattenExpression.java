@@ -17,8 +17,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Deprecated.
+ *
  * @author Simon Thoresen Hult
  */
+// TODO: Remove on Vespa 9
 public final class FlattenExpression extends Expression {
 
     public FlattenExpression() {
@@ -37,22 +40,19 @@ public final class FlattenExpression extends Expression {
         Map<Integer, List<String>> map = new HashMap<>();
         for (Annotation anno : tree) {
             SpanNode span = anno.getSpanNode();
-            if (span == null) {
-                continue;
-            }
-            if (anno.getType() != AnnotationTypes.TERM) {
-                continue;
-            }
+            if (span == null) continue;
+            if (anno.getType() != AnnotationTypes.TERM) continue;
+
             FieldValue val = anno.getFieldValue();
-            String str;
+            String s;
             if (val instanceof StringFieldValue) {
-                str = ((StringFieldValue)val).getString();
+                s = ((StringFieldValue)val).getString();
             } else {
-                str = input.getString().substring(span.getFrom(), span.getTo());
+                s = input.getString().substring(span.getFrom(), span.getTo());
             }
             Integer pos = span.getTo();
             List<String> entry = map.computeIfAbsent(pos, k -> new LinkedList<>());
-            entry.add(str);
+            entry.add(s);
         }
         String inputVal = String.valueOf(input);
         StringBuilder output = new StringBuilder();

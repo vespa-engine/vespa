@@ -24,6 +24,21 @@ public final class ConstantExpression extends Expression {
     public FieldValue getValue() { return value; }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        return value.getDataType();
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        // TODO:
+        //if (outputType != value.getDataType())
+        //    throw new IllegalArgumentException(this + " produces a " + value.getDataType() + ", but a " +
+        //                                       outputType + " is required");
+        return super.setOutputType(outputType, context);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(value.getDataType());
     }

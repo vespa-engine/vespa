@@ -39,11 +39,6 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (input.getString().isEmpty()) return;
@@ -83,12 +78,12 @@ public final class ExactExpression extends Expression {
 
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder();
-        ret.append("exact");
+        StringBuilder s = new StringBuilder();
+        s.append("exact");
         if (maxTokenLength != AnnotatorConfig.getDefaultMaxTokenLength()) {
-            ret.append(" max-token-length:").append(maxTokenLength);
+            s.append(" max-token-length:").append(maxTokenLength);
         }
-        return ret.toString();
+        return s.toString();
     }
 
     @Override

@@ -21,6 +21,8 @@ public final class GetFieldExpression extends Expression {
 
     public String getFieldName() { return fieldName; }
 
+    // TODO: input/output
+
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();

@@ -16,8 +16,6 @@ public final class BusyWaitExpression extends Expression {
         super(UnresolvedDataType.INSTANCE);
     }
 
-    @Override protected void doVerify(VerificationContext context) { }
-
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue value = context.getCurrentValue();

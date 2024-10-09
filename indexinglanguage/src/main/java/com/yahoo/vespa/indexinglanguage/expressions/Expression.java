@@ -84,6 +84,9 @@ public abstract class Expression extends Selectable {
 
     public abstract DataType createdOutputType();
 
+    /** Implementations that don't change the type should implement this to do verification. */
+    protected void doVerify(VerificationContext context) {}
+
     public final DataType verify() {
         return verify(new VerificationContext());
     }
@@ -163,8 +166,6 @@ public abstract class Expression extends Selectable {
         }
         return context.getCurrentType();
     }
-
-    protected abstract void doVerify(VerificationContext context);
 
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setCurrentValue(val));

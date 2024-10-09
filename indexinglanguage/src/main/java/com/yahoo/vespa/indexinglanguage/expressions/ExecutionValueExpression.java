@@ -25,9 +25,6 @@ public final class ExecutionValueExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {}
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         // Noop: Set the output execution value to the current execution value
     }
