@@ -31,6 +31,8 @@ using vespalib::Slime;
 using vespalib::slime::JsonFormat;
 using vespalib::slime::Inspector;
 using vespalib::slime::Cursor;
+using vespalib::Input;
+using vespalib::Memory;
 
 using CostProfile = std::vector<std::pair<size_t,vespalib::duration>>;
 
@@ -157,20 +159,21 @@ public:
     const CTFMetaData &meta() const { return _meta; }
     const CostProfile &cost() const { return _cost; }
 
-    void save(const std::string &name, Value::UP value) {
+    bool save(const std::string &name, Value::UP value) {
         REQUIRE(value);
         for (size_t i = 0; i < _param_names.size(); ++i) {
             if (_param_names[i] == name) {
                 _param_types[i] = value->type();
                 _param_values[i] = std::move(value);
                 _param_refs[i] = *_param_values[i];
-                return;
+                return true;
             }
         }
         _param_names.push_back(name);
         _param_types.push_back(value->type());
         _param_values.push_back(std::move(value));
         _param_refs.emplace_back(*_param_values.back());
+        return false;
     }
 
     bool remove(const std::string &name) {
@@ -247,24 +250,92 @@ void handle_message(Context &ctx, const Inspector &req, Cursor &reply) {
     }
 }
 
-bool should_ignore(const std::string &str) {
+bool is_hash_bang(const std::string &str) {
+    if (str.size() > 2) {
+        return str[0] == '#' && str[1] == '!';
+    }
+    return false;
+}
+
+bool is_only_whitespace(const std::string &str) {
     for (auto c : str) {
         if (!std::isspace(static_cast<unsigned char>(c))) {
-            return (c == '#');
+            return false;
         }
     }
     return true;
 }
 
-struct Script {
-    vespalib::MappedFileInput input;
-    LineReader reader;
-    Script(const std::string &file_name)
-      : input(file_name), reader(input)
-    {
-        if (!input.valid()) {
+class Script {
+private:
+    std::unique_ptr<Input> _input;
+    LineReader _reader;
+    bool _script_only = false;
+public:
+    Script(std::unique_ptr<Input> input)
+      : _input(std::move(input)), _reader(*_input) {}
+    static auto empty() {
+        struct EmptyInput : Input {
+            Memory obtain() override { return Memory(); }
+            Input &evict(size_t) override { return *this; }
+        };
+        return std::make_unique<Script>(std::make_unique<EmptyInput>());
+    }
+    static auto from_file(const std::string &file_name) {
+        auto input = std::make_unique<vespalib::MappedFileInput>(file_name);
+        if (!input->valid()) {
             fprintf(stderr, "warning: could not read script: %s\n", file_name.c_str());
         }
+        return std::make_unique<Script>(std::move(input));
+    }
+    Script &script_only(bool value) {
+        _script_only = value;
+        return *this;
+    }
+    bool script_only() const { return _script_only; }
+    bool read_line(std::string &line) { return _reader.read_line(line); }
+};
+
+class Collector {
+private:
+    Slime _slime;
+    Cursor &_obj;
+    Cursor &_arr;
+    bool _enabled;
+    std::string _error;
+public:
+    Collector()
+      : _slime(), _obj(_slime.setObject()), _arr(_obj.setArray("f")), _enabled(false) {}
+    void enable() {
+        _enabled = true;
+    }
+    void fail(const std::string &msg) {
+        if (_error.empty()) {
+            _error = msg;
+        }
+    }
+    const std::string &error() const {
+        return _error;
+    }
+    void comment(const std::string &text) {
+        if (_enabled) {
+            Cursor &f = _arr.addObject();
+            f.setString("op", "c");
+            Cursor &p = f.setObject("p");
+            p.setString("t", text);
+        }
+    }
+    void expr(const std::string &name, const std::string &expr) {
+        if (_enabled) {
+            Cursor &f = _arr.addObject();
+            f.setString("op", "e");
+            Cursor &p = f.setObject("p");
+            p.setString("n", name);
+            p.setString("e", expr);
+        }
+    }
+    std::string toString() const {
+        return _slime.toString();
     }
 };
 
@@ -272,13 +343,13 @@ struct EditLineWrapper {
     EditLine *my_el;
     History *my_hist;
     HistEvent ignore;
-    std::unique_ptr<Script> script;
+    Script &script;
     static std::string prompt;
     static char *prompt_fun(EditLine *) { return &prompt[0]; }
-    EditLineWrapper(std::unique_ptr<Script> script_in)
+    EditLineWrapper(Script &script_in)
       : my_el(el_init("vespa-eval-expr", stdin, stdout, stderr)),
         my_hist(history_init()),
-        script(std::move(script_in))
+        script(script_in)
     {
         memset(&ignore, 0, sizeof(ignore));
         el_set(my_el, EL_EDITOR, "emacs");
@@ -287,37 +358,26 @@ struct EditLineWrapper {
         el_set(my_el, EL_HIST, history, my_hist);
     }
     ~EditLineWrapper();
-    bool read_from_script(std::string &line_out) {
-        if (!script) {
-            return false;
-        }
-        if (!script->reader.read_line(line_out)) {
-            script.reset();
-            return false;
-        }
-        return true;
-    }
-    bool read_from_user(std::string &line_out) {
-        int line_len = 0;
-        const char *line = el_gets(my_el, &line_len);
-        if (line == nullptr) {
-            return false;
-        }
-        line_out.assign(line, line_len);
-        return true;
-    }
     bool read_line(std::string &line_out) {
+        bool from_script = false;
         do {
-            if (!read_from_script(line_out)) {
-                if (!read_from_user(line_out)) {
+            from_script = script.read_line(line_out);
+            if (!from_script) {
+                if (script.script_only()) {
                     return false;
                 }
+                int line_len = 0;
+                const char *line = el_gets(my_el, &line_len);
+                if (line == nullptr) {
+                    return false;
+                }
+                line_out.assign(line, line_len);
             }
             if ((line_out.size() > 0) && (line_out[line_out.size() - 1] == '\n')) {
                 line_out.pop_back();
             }
-        } while (should_ignore(line_out));
-        if (script) {
+        } while (is_hash_bang(line_out) || is_only_whitespace(line_out));
+        if (from_script) {
             fprintf(stdout, "%s%s\n", prompt.c_str(), line_out.c_str());
         }
         history(my_hist, &ignore, H_ENTER, line_out.c_str());
@@ -338,9 +398,10 @@ const std::string list_cmd("list");
 const std::string verbose_cmd("verbose ");
 const std::string def_cmd("def ");
 const std::string undef_cmd("undef ");
+const std::string ignore_cmd("#");
 
-int interactive_mode(Context &ctx, std::unique_ptr<Script> script) {
-    EditLineWrapper input(std::move(script));
+int interactive_mode(Context &ctx, Script &script, Collector &collector) {
+    EditLineWrapper input(script);
     std::string line;
     while (input.read_line(line)) {
         if (line == exit_cmd) {
@@ -354,6 +415,10 @@ int interactive_mode(Context &ctx, std::unique_ptr<Script> script) {
             for (size_t i = 0; i < ctx.size(); ++i) {
                 fprintf(stdout, "  %s: %s\n", ctx.name(i).c_str(), ctx.type(i).to_spec().c_str());
             }
+            continue;
+        }
+        if (line.find(ignore_cmd) == 0) {
+            collector.comment(line.substr(ignore_cmd.size()));
             continue;
         }
         if (line.find(verbose_cmd) == 0) {
@@ -376,6 +441,7 @@ int interactive_mode(Context &ctx, std::unique_ptr<Script> script) {
             } else {
                 fprintf(stdout, "value not found: '%s'\n", name.c_str());
             }
+            collector.fail("undef operation not supported");
             continue;
         }
         std::string expr;
@@ -394,12 +460,16 @@ int interactive_mode(Context &ctx, std::unique_ptr<Script> script) {
                 fprintf(stderr, " -> '%s'\n", name.c_str());
             }
         }
+        collector.expr(name, expr);
         if (auto value = ctx.eval(expr)) {
             print_value(*value, name, ctx.meta(), ctx.cost());
             if (!name.empty()) {
-                ctx.save(name, std::move(value));
+                if (ctx.save(name, std::move(value))) {
+                    collector.fail("value redefinition not supported");
+                }
             }
         } else {
+            collector.fail("sub-expression evaluation failed");
             print_error(ctx.error());
         }
     }
@@ -444,11 +514,29 @@ int main(int argc, char **argv) {
     Context ctx;
     if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "interactive")) {
         setlocale(LC_ALL, "");
-        return interactive_mode(ctx, nullptr);
+        Collector ignored;
+        return interactive_mode(ctx, *Script::empty(), ignored);
     }
     if ((expr_cnt == 2) && (std::string(argv[expr_idx]) == "interactive")) {
         setlocale(LC_ALL, "");
-        return interactive_mode(ctx, std::make_unique<Script>(argv[expr_idx + 1]));
+        Collector ignored;
+        return interactive_mode(ctx, *Script::from_file(argv[expr_idx + 1]), ignored);
+    }
+    if ((expr_cnt == 3) &&
+        (std::string(argv[expr_idx]) == "interactive") &&
+        (std::string(argv[expr_idx + 2]) == "convert"))
+    {
+        setlocale(LC_ALL, "");
+        Collector collector;
+        collector.enable();
+        interactive_mode(ctx, Script::from_file(argv[expr_idx + 1])->script_only(true), collector);
+        if (collector.error().empty()) {
+            fprintf(stdout, "%s\n", collector.toString().c_str());
+            return 0;
+        } else {
+            fprintf(stderr, "conversion failed: %s\n", collector.error().c_str());
+            return 3;
+        }
     }
     if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "json-repl")) {
         return json_repl_mode(ctx);
