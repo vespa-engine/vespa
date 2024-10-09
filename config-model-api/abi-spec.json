@@ -1317,7 +1317,6 @@
       "public int heapSizePercentage()",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
-      "public java.lang.String jvmOmitStackTraceInFastThrowOption(com.yahoo.config.provision.ClusterSpec$Type)",
       "public double resourceLimitDisk()",
       "public double resourceLimitMemory()",
       "public double minNodeRatioPerGroup()",
