@@ -3,7 +3,7 @@
 #include <vespa/metrics/metricset.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton;
 
@@ -13,65 +13,76 @@ struct DummyMetricSet : public metrics::MetricSet {
     DummyMetricSet(const std::string &name) : metrics::MetricSet(name, {}, "", nullptr) {}
 };
 
-struct AttributeMetricsFixture {
+class MetricsEngineTest : public ::testing::Test {
+protected:
     MetricsEngine engine;
     DummyMetricSet parent;
-    AttributeMetrics metrics;
-    AttributeMetricsFixture()
-        : engine(),
-          parent("parent"),
-          metrics(&parent)
-    {}
+    AttributeMetrics attributes;
+
+    MetricsEngineTest();
+    ~MetricsEngineTest() override;
+
     void addAttribute(const std::string &attrName) {
-        engine.addAttribute(metrics, attrName);
+        engine.addAttribute(attributes, attrName);
     }
+
     void removeAttribute(const std::string &attrName) {
-        engine.removeAttribute(metrics, attrName);
+        engine.removeAttribute(attributes, attrName);
     }
+
     void cleanAttributes() {
-        engine.cleanAttributes(metrics);
+        engine.cleanAttributes(attributes);
     }
-    void assertRegisteredMetrics(size_t expNumMetrics) const {
-        EXPECT_EQUAL(expNumMetrics, parent.getRegisteredMetrics().size());
+
+    size_t count_registered_metrics() const {
+        return parent.getRegisteredMetrics().size();
     }
-    void assertMetricsExists(const std::string &attrName) {
-        EXPECT_TRUE(metrics.get(attrName) != nullptr);
-    }
-    void assertMetricsNotExists(const std::string &attrName) {
-        EXPECT_TRUE(metrics.get(attrName) == nullptr);
+
+    bool has_attribute_metrics(const std::string &field_name) {
+        return attributes.get(field_name).get() != nullptr;
     }
 };
 
+MetricsEngineTest::MetricsEngineTest()
+    : ::testing::Test(),
+      engine(),
+      parent("parent"),
+      attributes(&parent)
+{
 }
 
-TEST_F("require that attribute metrics can be added", AttributeMetricsFixture)
+MetricsEngineTest::~MetricsEngineTest() = default;
+
+TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_added)
 {
-    TEST_DO(f.assertRegisteredMetrics(0));
-    f.addAttribute("foo");
-    TEST_DO(f.assertRegisteredMetrics(1));
-    TEST_DO(f.assertMetricsExists("foo"));
+    EXPECT_EQ(0, count_registered_metrics());
+    addAttribute("foo");
+    EXPECT_EQ(1, count_registered_metrics());
+    EXPECT_TRUE(has_attribute_metrics("foo"));
 }
 
-TEST_F("require that attribute metrics can be removed", AttributeMetricsFixture)
+TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_removed)
 {
-    TEST_DO(f.assertRegisteredMetrics(0));
-    f.addAttribute("foo");
-    f.addAttribute("bar");
-    TEST_DO(f.assertRegisteredMetrics(2));
-    f.removeAttribute("foo");
-    TEST_DO(f.assertRegisteredMetrics(1));
-    TEST_DO(f.assertMetricsNotExists("foo"));
-    TEST_DO(f.assertMetricsExists("bar"));
+    EXPECT_EQ(0, count_registered_metrics());
+    addAttribute("foo");
+    addAttribute("bar");
+    EXPECT_EQ(2, count_registered_metrics());
+    removeAttribute("foo");
+    EXPECT_EQ(1, count_registered_metrics());
+    EXPECT_FALSE(has_attribute_metrics("foo"));
+    EXPECT_TRUE(has_attribute_metrics("bar"));
 }
 
-TEST_F("require that all attribute metrics can be cleaned", AttributeMetricsFixture)
+TEST_F(MetricsEngineTest, require_that_all_attribute_metrics_can_be_cleaned)
 {
-    TEST_DO(f.assertRegisteredMetrics(0));
-    f.addAttribute("foo");
-    f.addAttribute("bar");
-    TEST_DO(f.assertRegisteredMetrics(2));
-    f.cleanAttributes();
-    TEST_DO(f.assertRegisteredMetrics(0));
-    TEST_DO(f.assertMetricsNotExists("foo"));
-    TEST_DO(f.assertMetricsNotExists("bar"));
+    EXPECT_EQ(0, count_registered_metrics());
+    addAttribute("foo");
+    addAttribute("bar");
+    EXPECT_EQ(2, count_registered_metrics());
+    cleanAttributes();
+    EXPECT_EQ(0, count_registered_metrics());
+    EXPECT_FALSE(has_attribute_metrics("foo"));
+    EXPECT_FALSE(has_attribute_metrics("bar"));
+}
+
 }
