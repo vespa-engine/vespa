@@ -401,6 +401,11 @@ public class SearchHandler extends LoggingRequestHandler {
                                                                + Exceptions.toMessageString(e));
             log.log(Level.FINE, error::getDetailedMessage);
             return new Result(query, error);
+        } catch (UnsupportedOperationException e) {
+            ErrorMessage error = ErrorMessage.createBadRequest("Unsupported operation in [" + request + "]: "
+                                                               + Exceptions.toMessageString(e));
+            log.log(Level.FINE, error::getDetailedMessage);
+            return new Result(query, error);
         } catch (Exception e) {
             log(request, query, e);
             return new Result(query, ErrorMessage.createUnspecifiedError("Failed: " +
