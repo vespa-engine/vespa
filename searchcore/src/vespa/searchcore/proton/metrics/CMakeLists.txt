@@ -14,6 +14,8 @@ vespa_add_library(searchcore_proton_metrics STATIC
     executor_threading_service_stats.cpp
     field_metrics.cpp
     field_metrics_entry.cpp
+    index_metrics.cpp
+    index_metrics_entry.cpp
     job_load_sampler.cpp
     job_tracker.cpp
     job_tracked_flush_target.cpp

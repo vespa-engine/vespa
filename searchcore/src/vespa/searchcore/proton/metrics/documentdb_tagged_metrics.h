@@ -5,6 +5,7 @@
 #include "memory_usage_metrics.h"
 #include "executor_threading_service_metrics.h"
 #include "document_db_feeding_metrics.h"
+#include "index_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
@@ -77,6 +78,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         LidSpaceMetrics lidSpace;
         DocumentStoreMetrics documentStore;
         proton::AttributeMetrics attributes;
+        proton::IndexMetrics index;
 
         SubDBMetrics(const std::string &name, metrics::MetricSet *parent);
         ~SubDBMetrics() override;

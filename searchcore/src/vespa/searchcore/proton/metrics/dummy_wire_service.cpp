@@ -23,12 +23,26 @@ DummyWireService::cleanAttributes(AttributeMetrics&)
 }
 
 void
-DummyWireService::addRankProfile(DocumentDBTaggedMetrics&, const std::string&, size_t)
+DummyWireService::add_index_field(IndexMetrics&, const std::string&)
 {
 }
 
 void
-DummyWireService::cleanRankProfiles(DocumentDBTaggedMetrics&)
+DummyWireService::remove_index_field(IndexMetrics&, const std::string&)
+{
+}
+
+void
+DummyWireService::clean_index_fields(IndexMetrics&)
+{
+}
+
+void
+DummyWireService::addRankProfile(DocumentDBTaggedMetrics&, const std::string&, size_t)
+{
+}
+
+void DummyWireService::cleanRankProfiles(DocumentDBTaggedMetrics&)
 {
 }
 
