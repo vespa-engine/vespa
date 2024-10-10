@@ -84,6 +84,9 @@ func latestRelease(cli *CLI) (release, error) {
 
 	var releases []release
 	for _, r := range ghReleases {
+		if strings.HasPrefix(r.TagName, "lsp-") {
+			continue
+		}
 		v, err := version.Parse(r.TagName)
 		if err != nil {
 			return release{}, err
