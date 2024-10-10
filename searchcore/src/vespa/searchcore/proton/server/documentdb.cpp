@@ -566,8 +566,8 @@ DocumentDB::close()
 
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetrics();
-    _metricsWireService.cleanAttributes(metrics.ready.attributes);
-    _metricsWireService.cleanAttributes(metrics.notReady.attributes);
+    _metricsWireService.set_attributes(metrics.ready.attributes, {});
+    _metricsWireService.set_attributes(metrics.notReady.attributes, {});
 
     masterExecute([this] () {
         closeSubDBs();

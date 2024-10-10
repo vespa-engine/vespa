@@ -24,28 +24,12 @@ protected:
     MetricsEngineTest();
     ~MetricsEngineTest() override;
 
-    void addAttribute(const std::string &attrName) {
-        engine.addAttribute(attributes, attrName);
+    void set_attributes(std::vector<std::string> field_names) {
+        engine.set_attributes(attributes, field_names);;
     }
 
-    void removeAttribute(const std::string &attrName) {
-        engine.removeAttribute(attributes, attrName);
-    }
-
-    void cleanAttributes() {
-        engine.cleanAttributes(attributes);
-    }
-
-    void add_index_field(const std::string& field_name) {
-        engine.add_index_field(indexes, field_name);
-    }
-
-    void remove_index_field(const std::string& field_name) {
-        engine.remove_index_field(indexes, field_name);
-    }
-
-    void clean_index_fields() {
-        engine.clean_index_fields(indexes);
+    void set_index_fields(std::vector<std::string> field_names) {
+        engine.set_index_fields(indexes, field_names);
     }
 
     size_t count_registered_metrics() const {
@@ -53,11 +37,11 @@ protected:
     }
 
     bool has_attribute_metrics(const std::string &field_name) {
-        return attributes.get(field_name).get() != nullptr;
+        return attributes.get_field_metrics_entry(field_name).get() != nullptr;
     }
 
     bool has_index_metrics(const std::string& field_name) {
-        return indexes.get(field_name).get() != nullptr;
+        return indexes.get_field_metrics_entry(field_name).get() != nullptr;
     }
 };
 
@@ -75,7 +59,7 @@ MetricsEngineTest::~MetricsEngineTest() = default;
 TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_added)
 {
     EXPECT_EQ(0, count_registered_metrics());
-    addAttribute("foo");
+    set_attributes({"foo"});
     EXPECT_EQ(1, count_registered_metrics());
     EXPECT_TRUE(has_attribute_metrics("foo"));
 }
@@ -83,10 +67,11 @@ TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_added)
 TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_removed)
 {
     EXPECT_EQ(0, count_registered_metrics());
-    addAttribute("foo");
-    addAttribute("bar");
+    set_attributes({"foo"});
+    EXPECT_EQ(1, count_registered_metrics());
+    set_attributes({"foo", "bar"});
     EXPECT_EQ(2, count_registered_metrics());
-    removeAttribute("foo");
+    set_attributes({"bar"});
     EXPECT_EQ(1, count_registered_metrics());
     EXPECT_FALSE(has_attribute_metrics("foo"));
     EXPECT_TRUE(has_attribute_metrics("bar"));
@@ -95,10 +80,9 @@ TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_removed)
 TEST_F(MetricsEngineTest, require_that_all_attribute_metrics_can_be_cleaned)
 {
     EXPECT_EQ(0, count_registered_metrics());
-    addAttribute("foo");
-    addAttribute("bar");
+    set_attributes({"foo", "bar"});
     EXPECT_EQ(2, count_registered_metrics());
-    cleanAttributes();
+    set_attributes({});
     EXPECT_EQ(0, count_registered_metrics());
     EXPECT_FALSE(has_attribute_metrics("foo"));
     EXPECT_FALSE(has_attribute_metrics("bar"));
@@ -107,7 +91,7 @@ TEST_F(MetricsEngineTest, require_that_all_attribute_metrics_can_be_cleaned)
 TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_added)
 {
     EXPECT_EQ(0, count_registered_metrics());
-    add_index_field("foo");
+    set_index_fields({"foo"});
     EXPECT_EQ(1, count_registered_metrics());
     EXPECT_TRUE(has_index_metrics("foo"));
 }
@@ -115,10 +99,10 @@ TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_added)
 TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_removed)
 {
     EXPECT_EQ(0, count_registered_metrics());
-    add_index_field("foo");
-    add_index_field("bar");
+    set_index_fields({"foo"});
+    set_index_fields({"foo", "bar"});
     EXPECT_EQ(2, count_registered_metrics());
-    remove_index_field("foo");
+    set_index_fields({"bar"});
     EXPECT_EQ(1, count_registered_metrics());
     EXPECT_FALSE(has_index_metrics("foo"));
     EXPECT_TRUE(has_index_metrics("bar"));
@@ -127,10 +111,9 @@ TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_removed)
 TEST_F(MetricsEngineTest, require_that_all_index_metrics_can_be_cleaned)
 {
     EXPECT_EQ(0, count_registered_metrics());
-    add_index_field("foo");
-    add_index_field("bar");
+    set_index_fields({"foo", "bar"});
     EXPECT_EQ(2, count_registered_metrics());
-    clean_index_fields();
+    set_index_fields({});
     EXPECT_EQ(0, count_registered_metrics());
     EXPECT_FALSE(has_index_metrics("foo"));
     EXPECT_FALSE(has_index_metrics("bar"));

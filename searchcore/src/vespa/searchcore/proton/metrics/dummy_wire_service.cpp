@@ -8,32 +8,12 @@ DummyWireService::DummyWireService() = default;
 DummyWireService::~DummyWireService() = default;
 
 void
-DummyWireService::addAttribute(AttributeMetrics&, const std::string&)
+DummyWireService::set_attributes(AttributeMetrics&, std::vector<std::string>)
 {
 }
 
 void
-DummyWireService::removeAttribute(AttributeMetrics&, const std::string&)
-{
-}
-
-void
-DummyWireService::cleanAttributes(AttributeMetrics&)
-{
-}
-
-void
-DummyWireService::add_index_field(IndexMetrics&, const std::string&)
-{
-}
-
-void
-DummyWireService::remove_index_field(IndexMetrics&, const std::string&)
-{
-}
-
-void
-DummyWireService::clean_index_fields(IndexMetrics&)
+DummyWireService::set_index_fields(IndexMetrics&, std::vector<std::string>)
 {
 }
 

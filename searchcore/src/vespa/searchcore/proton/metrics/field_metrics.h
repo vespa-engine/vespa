@@ -21,10 +21,8 @@ class FieldMetrics
 public:
     FieldMetrics(metrics::MetricSet* parent);
     ~FieldMetrics();
-    std::shared_ptr<Entry> add(const std::string& field_name);
-    std::shared_ptr<Entry> get(const std::string& field_name) const;
-    std::shared_ptr<Entry> remove(const std::string& field_name);
-    std::vector<std::shared_ptr<Entry>> release();
+    void set_fields(std::vector<std::string> field_names);
+    std::shared_ptr<Entry> get_field_metrics_entry(const std::string& field_name) const;
     metrics::MetricSet* parent() noexcept { return _parent; }
 };
 
