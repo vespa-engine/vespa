@@ -125,8 +125,10 @@ public class ExportPackagesIT {
         assertNotNull(expectedValue, "Missing exportPackages property in file.");
 
         var expectedPackages = parsePackages(expectedValue).removeJavaVersion();
-               // .removePackages(removedPackagesInJava21)
-               // .addPackages(newPackagesInJava21);
+        if (Runtime.version().feature() >= 21) {
+            expectedPackages = expectedPackages.removePackages(removedPackagesInJava21)
+                    .addPackages(newPackagesInJava21);
+        }
         var actualPackages = parsePackages(actualValue).removeJavaVersion();
 
         if (!actualPackages.isEquivalentTo(expectedPackages)) {
