@@ -129,8 +129,10 @@ struct MyMetricsWireService : public DummyWireService
 {
     std::set<std::string> _attributes;
     MyMetricsWireService() : _attributes() {}
-    void addAttribute(AttributeMetrics &, const std::string &name) override {
-        _attributes.insert(name);
+    void set_attributes(AttributeMetrics &, std::vector<std::string> field_names) override {
+        for (auto &field_name: field_names) {
+            _attributes.insert(field_name);
+        }
     }
 };
 

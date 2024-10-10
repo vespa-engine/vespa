@@ -164,7 +164,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         }
         {
             proton::IAttributeManager::SP newMgr = getAttributeManager();
-            reconfigureAttributeMetrics(*newMgr, *oldMgr);
+            reconfigure_attribute_metrics(*newMgr);
         }
     } else {
         _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params, resolver, prepared_reconfig, serialNum);

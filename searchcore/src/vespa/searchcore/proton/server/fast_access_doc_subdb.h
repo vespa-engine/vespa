@@ -87,7 +87,7 @@ protected:
 
     std::shared_ptr<AttributeManager> getAndResetInitAttributeManager();
     virtual IFlushTargetList getFlushTargetsInternal() override;
-    void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
+    void reconfigure_attribute_metrics(const IAttributeManager& mgr);
 
     IReprocessingTask::UP createReprocessingTask(IReprocessingInitializer &initializer,
                                                  const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo) const;

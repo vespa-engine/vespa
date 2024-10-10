@@ -73,84 +73,18 @@ MetricsEngine::removeDocumentDBMetrics(DocumentDBTaggedMetrics &child)
     _root->unregisterMetric(child);
 }
 
-namespace {
-
-template <typename Entry>
 void
-do_add_field(FieldMetrics<Entry>& fields, const std::string& field_name)
-{
-    auto entry = fields.add(field_name);
-    if (entry) {
-        fields.parent()->registerMetric(*entry);
-    } else {
-        LOG(warning, "Could not add metrics for attribute '%s', already existing", field_name.c_str());
-    }
-}
-
-template <typename Entry>
-void
-do_remove_field(FieldMetrics<Entry>& fields, const std::string& field_name)
-{
-    auto entry = fields.remove(field_name);
-    if (entry) {
-        fields.parent()->unregisterMetric(*entry);
-    } else {
-        LOG(warning, "Could not remove metrics for attribute '%s', not found", field_name.c_str());
-    }
-}
-
-template <typename Entry>
-void
-do_clean_fields(FieldMetrics<Entry>& fields)
-{
-    auto entries = fields.release();
-    for (const auto &entry : entries) {
-        fields.parent()->unregisterMetric(*entry);
-    }
-}
-
-}
-
-void
-MetricsEngine::addAttribute(AttributeMetrics& subAttributes, const std::string& name)
+MetricsEngine::set_attributes(AttributeMetrics& subAttributes, std::vector<std::string> field_names)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    do_add_field(subAttributes, name);
+    subAttributes.set_fields(std::move(field_names));
 }
 
 void
-MetricsEngine::removeAttribute(AttributeMetrics& subAttributes, const std::string& name)
+MetricsEngine::set_index_fields(IndexMetrics& index_fields, std::vector<std::string> field_names)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    do_remove_field(subAttributes, name);
-}
-
-void
-MetricsEngine::cleanAttributes(AttributeMetrics& subAttributes)
-{
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    do_clean_fields(subAttributes);
-}
-
-void
-MetricsEngine::add_index_field(IndexMetrics& index_fields, const std::string& field_name)
-{
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    do_add_field(index_fields, field_name);
-}
-
-void
-MetricsEngine::remove_index_field(IndexMetrics& index_fields, const std::string& field_name)
-{
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    do_remove_field(index_fields, field_name);
-}
-
-void
-MetricsEngine::clean_index_fields(IndexMetrics& index_fields)
-{
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    do_clean_fields(index_fields);
+    index_fields.set_fields(std::move(field_names));
 }
 
 namespace {

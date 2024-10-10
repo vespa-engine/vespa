@@ -12,12 +12,8 @@ namespace proton {
 struct DummyWireService : public MetricsWireService {
     DummyWireService();
     ~DummyWireService() override;
-    void addAttribute(AttributeMetrics&, const std::string&) override;
-    void removeAttribute(AttributeMetrics&, const std::string&) override;
-    void cleanAttributes(AttributeMetrics&) override;
-    void add_index_field(IndexMetrics&, const std::string&) override;
-    void remove_index_field(IndexMetrics&, const std::string&) override;
-    void clean_index_fields(IndexMetrics&) override;
+    void set_attributes(AttributeMetrics& subAttributes, std::vector<std::string> field_names) override;
+    void set_index_fields(IndexMetrics& index_fields, std::vector<std::string> field_names) override;
     void addRankProfile(DocumentDBTaggedMetrics&, const std::string&, size_t) override;
     void cleanRankProfiles(DocumentDBTaggedMetrics&) override;
 };
