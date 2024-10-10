@@ -1,6 +1,6 @@
 # There is an explicit (and documented) mutex order inversion in the MergeThrottler component
 # that cannot cause a deadlock in practice due to separately maintained invariants for when the
-# mutexes can be locked. Of course, TSan is not able to infer this by itself, so silence this
+# mutexes can be locked. Of course, TSan cannot infer this by itself, so silence this
 # particular warning.
 
 deadlock:storage::MergeThrottler::onFlush
@@ -16,12 +16,12 @@ deadlock:storage::MergeThrottler::onFlush
 # compacting the enum store). Without that interlock, we could get a
 # deadlock with
 #
-# Thread A having shared lock on attribute E and trying to get a shared lock
+# Thread A has a shared lock on attribute E and trying to get a shared lock
 #          on attribute F, blocked by thread D.
-# Thread B having shared lock on attribute F and trying to get a shared lock
+# Thread B has a shared lock on attribute F and trying to get a shared lock
 #          on attribute E, blocked by thread C.
-# Thread C trying to get an exclusive lock on attribute E, blocked by thread A
-# Thread D trying to get an exclusive lock on attribute F, blocked by thread B
+# Thread C is trying to get an exclusive lock on attribute E, blocked by thread A
+# Thread D is trying to get an exclusive lock on attribute F, blocked by thread B
 
 deadlock:search::AttributeContext::getAttribute
 deadlock:search::AttributeContext::getAttributeStableEnum
@@ -37,7 +37,7 @@ race:llvm::sys::SmartMutex<true>::lock
 race:llvm::sys::DynamicLibrary::getPermanentLibrary
 race:(anonymous namespace)::GDBJITRegistrationListener::notifyObjectLoaded
 
-# This is external code that we do not control. Complains that mutex
+# This is an external code that we do not control. Complains that mutex
 # creation and locking are not strictly ordered.
 
 race:re2::Prog::GetDFA
