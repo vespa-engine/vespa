@@ -3,16 +3,15 @@ package ai.vespa.secret.aws;
 import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.internal.TypedSecretStore;
 import ai.vespa.secret.model.Key;
-import ai.vespa.secret.model.Role;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretVersionId;
 import ai.vespa.secret.model.SecretVersionState;
-import ai.vespa.secret.model.VaultName;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -50,6 +49,9 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
 
     @Inject
     public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
+
+        AwsRoleMapper roleMapper = vault -> new AwsRole(Athenz.resourceEntityName(config.system(), config.tenant(), vault));
+
         this(URI.create(config.ztsUri()), identities.getIdentitySslContext(), athenzDomain(config, identities));
     }
 
@@ -57,15 +59,15 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
         this(new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build(), domain);
     }
 
-    private AsmSecretStore(ZtsClient ztsClient, AthenzDomain domain) {
-        super(ztsClient, Role.READER, domain);
+    private AsmSecretStore(AwsRoleMapper roleMapper, ZtsClient ztsClient, AthenzDomain domain) {
+        super(roleMapper, ztsClient, domain);
         cache = initCache();
         closeable = ztsClient::close;
     }
 
     // For testing
-    AsmSecretStore(Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
-        super(clientAndCredentialsSupplier);
+    AsmSecretStore(AwsRoleMapper roleMapper, Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
+        super(roleMapper, clientAndCredentialsSupplier);
         cache = initCache();
         closeable = () -> {};
     }
