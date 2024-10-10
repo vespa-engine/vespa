@@ -4,6 +4,7 @@
 #include "attribute_metrics.h"
 #include "documentdb_tagged_metrics.h"
 #include "content_proton_metrics.h"
+#include "index_metrics.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 
@@ -129,6 +130,27 @@ MetricsEngine::cleanAttributes(AttributeMetrics& subAttributes)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
     do_clean_fields(subAttributes);
+}
+
+void
+MetricsEngine::add_index_field(IndexMetrics& index_fields, const std::string& field_name)
+{
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
+    do_add_field(index_fields, field_name);
+}
+
+void
+MetricsEngine::remove_index_field(IndexMetrics& index_fields, const std::string& field_name)
+{
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
+    do_remove_field(index_fields, field_name);
+}
+
+void
+MetricsEngine::clean_index_fields(IndexMetrics& index_fields)
+{
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
+    do_clean_fields(index_fields);
 }
 
 namespace {

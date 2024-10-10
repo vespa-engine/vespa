@@ -15,6 +15,9 @@ struct DummyWireService : public MetricsWireService {
     void addAttribute(AttributeMetrics&, const std::string&) override;
     void removeAttribute(AttributeMetrics&, const std::string&) override;
     void cleanAttributes(AttributeMetrics&) override;
+    void add_index_field(IndexMetrics&, const std::string&) override;
+    void remove_index_field(IndexMetrics&, const std::string&) override;
+    void clean_index_fields(IndexMetrics&) override;
     void addRankProfile(DocumentDBTaggedMetrics&, const std::string&, size_t) override;
     void cleanRankProfiles(DocumentDBTaggedMetrics&) override;
 };

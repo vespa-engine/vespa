@@ -17,8 +17,6 @@ namespace config {
 }
 namespace proton {
 
-class AttributeMetrics;
-struct DocumentDBTaggedMetrics;
 struct ContentProtonMetrics;
 
 class MetricsEngine : public MetricsWireService
@@ -44,6 +42,9 @@ public:
     void addAttribute(AttributeMetrics& subAttributes, const std::string& name) override;
     void removeAttribute(AttributeMetrics& subAttributes, const std::string& name) override;
     void cleanAttributes(AttributeMetrics& subAttributes) override;
+    void add_index_field(IndexMetrics& index_fields, const std::string& field_name) override;
+    void remove_index_field(IndexMetrics& index_fields, const std::string& field_name) override;
+    void clean_index_fields(IndexMetrics& index_fields) override;
     void addRankProfile(DocumentDBTaggedMetrics &owner, const std::string &name, size_t numDocIdPartitions) override;
     void cleanRankProfiles(DocumentDBTaggedMetrics &owner) override;
     void stop();
