@@ -43,7 +43,7 @@ public class FileDownloader implements AutoCloseable {
     static {
         // Undocumented on purpose, might change or be removed at any time
         var backOff = System.getenv("VESPA_FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS");
-        backoffInitialTime = Duration.ofMillis(backOff == null ? 2000 : Long.parseLong(backOff));
+        backoffInitialTime = Duration.ofMillis(backOff == null ? 1000 : Long.parseLong(backOff));
     }
 
     public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, Duration timeout) {

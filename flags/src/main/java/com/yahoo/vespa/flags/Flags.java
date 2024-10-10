@@ -506,7 +506,7 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
-            "file-download-backoff-initial-time-ms", 2000,
+            "file-download-backoff-initial-time-ms", 1000,
             List.of("hmusum"), "2024-08-16", "2024-11-01",
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
