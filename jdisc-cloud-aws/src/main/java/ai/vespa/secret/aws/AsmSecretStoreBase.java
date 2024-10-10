@@ -1,8 +1,6 @@
 package ai.vespa.secret.aws;
 
 import ai.vespa.secret.model.Key;
-import ai.vespa.secret.model.Role;
-import ai.vespa.secret.model.VaultName;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AwsRole;
@@ -27,28 +25,30 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
 
     public static final String AWSCURRENT = "AWSCURRENT";
 
-    private final ConcurrentMap<VaultName, SecretsManagerClient> clientMap = new ConcurrentHashMap<>();
-    private final Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier;
+    private final ConcurrentMap<AwsRole, SecretsManagerClient> clientMap = new ConcurrentHashMap<>();
+    private final Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier;
 
 
-    public AsmSecretStoreBase(ZtsClient ztsClient, Role role, AthenzDomain athenzDomain) {
-        this(vault -> SecretsManagerClient.builder().region(Region.US_EAST_1)
-                .credentialsProvider(getAwsSessionCredsProvider(ztsClient, athenzDomain, role, vault))
+    public AsmSecretStoreBase(ZtsClient ztsClient, AthenzDomain athenzDomain, AwsRole awsRole) {
+        this(role -> SecretsManagerClient.builder().region(Region.US_EAST_1)
+                .credentialsProvider(getAwsSessionCredsProvider(ztsClient, athenzDomain, awsRole))
                 .build());
     }
 
-    AsmSecretStoreBase(Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
+    AsmSecretStoreBase(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
         this.clientAndCredentialsSupplier = clientAndCredentialsSupplier;
     }
 
 
-    protected SecretsManagerClient getClient(VaultName vaultName) {
-        // TODO: Use role name instead of vault name
-        return clientMap.computeIfAbsent(vaultName, clientAndCredentialsSupplier);
+    protected SecretsManagerClient getClient(AwsRole awsRole) {
+        return clientMap.computeIfAbsent(awsRole, clientAndCredentialsSupplier);
     }
 
-    private static AwsCredentialsProvider getAwsSessionCredsProvider(ZtsClient ztsClient, AthenzDomain athenzDomain, Role role, VaultName vaultName) {
-        var awsRole = new AwsRole(role.forControlPlaneVault(vaultName));
+    private static AwsCredentialsProvider getAwsSessionCredsProvider(ZtsClient ztsClient,
+                                                                     AthenzDomain athenzDomain,
+                                                                     AwsRole awsRole) {
+        //var awsRole = new AwsRole(role.forControlPlaneVault(vaultName));
+
         AwsCredentials credentials = new AwsCredentials(ztsClient, athenzDomain, awsRole);
 
         return () -> {
