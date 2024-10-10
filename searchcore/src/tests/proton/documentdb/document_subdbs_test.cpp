@@ -11,7 +11,7 @@
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/metrics/dummy_wire_service.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>

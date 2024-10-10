@@ -41,11 +41,9 @@ public:
     void removeExternalMetrics(metrics::Metric &child);
     void addDocumentDBMetrics(DocumentDBTaggedMetrics &child);
     void removeDocumentDBMetrics(DocumentDBTaggedMetrics &child);
-    void addAttribute(AttributeMetrics &subAttributes,
-                      const std::string &name) override;
-    void removeAttribute(AttributeMetrics &subAttributes,
-                         const std::string &name) override;
-    void cleanAttributes(AttributeMetrics &subAttributes) override;
+    void addAttribute(AttributeMetrics& subAttributes, const std::string& name) override;
+    void removeAttribute(AttributeMetrics& subAttributes, const std::string& name) override;
+    void cleanAttributes(AttributeMetrics& subAttributes) override;
     void addRankProfile(DocumentDBTaggedMetrics &owner, const std::string &name, size_t numDocIdPartitions) override;
     void cleanRankProfiles(DocumentDBTaggedMetrics &owner) override;
     void stop();
