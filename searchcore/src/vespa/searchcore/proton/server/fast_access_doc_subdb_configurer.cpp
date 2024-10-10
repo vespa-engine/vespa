@@ -22,7 +22,7 @@ using ARIConfig = AttributeReprocessingInitializer::Config;
 
 void
 FastAccessDocSubDBConfigurer::reconfigureFeedView(FastAccessFeedView & curr,
-                                                  std::shared_ptr<Schema> schema,
+                                                  std::shared_ptr<const Schema> schema,
                                                   std::shared_ptr<const DocumentTypeRepo> repo,
                                                   std::shared_ptr<IAttributeWriter> writer)
 {

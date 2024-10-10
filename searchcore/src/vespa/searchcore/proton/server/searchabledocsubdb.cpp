@@ -283,7 +283,7 @@ SearchableDocSubDB::getFlushTargetsInternal()
 }
 
 void
-SearchableDocSubDB::setIndexSchema(const Schema::SP &schema, SerialNum serialNum)
+SearchableDocSubDB::setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum)
 {
     assert(_writeService.master().isCurrentThread());
 

@@ -57,7 +57,7 @@ private:
     std::atomic<uint32_t> _numDocs;
     mutable std::mutex  _lock;
     std::vector<bool>   _hiddenFields;
-    index::Schema::SP   _prunedSchema;
+    std::shared_ptr<const index::Schema> _prunedSchema;
     vespalib::hash_set<uint32_t> _indexedDocs; // documents in memory index
     const uint64_t      _staticMemoryFootprint;
 
@@ -165,7 +165,7 @@ public:
 
     void pruneRemovedFields(const index::Schema &schema);
 
-    index::Schema::SP getPrunedSchema() const;
+    std::shared_ptr<const index::Schema> getPrunedSchema() const;
 
     /**
      * Gets an approximation of how much memory the index uses.

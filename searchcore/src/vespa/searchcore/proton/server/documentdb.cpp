@@ -431,7 +431,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
 
     auto start_time = vespalib::steady_clock::now();
     DocumentDBConfig::ComparisonResult cmpres;
-    Schema::SP oldSchema;
     {
         lock_guard guard(_configMutex);
         assert(_activeConfigSnapshot.get());

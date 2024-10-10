@@ -32,7 +32,7 @@ private:
     bool                 _ignoreForwardedConfig;
     mutable std::mutex   _pendingConfigMutex;
 
-    search::index::Schema::SP
+    std::shared_ptr<const search::index::Schema>
     buildSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
                 const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
 
