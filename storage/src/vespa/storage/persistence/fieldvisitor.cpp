@@ -28,4 +28,8 @@ void FieldVisitor::visitNotBranch(const document::select::Not & node) {
     node.getChild().visit(*this);
 }
 
+void FieldVisitor::visitArithmeticValueNode(const document::select::ArithmeticValueNode& node) {
+    visitBothBranches(node);
+}
+
 } // storage

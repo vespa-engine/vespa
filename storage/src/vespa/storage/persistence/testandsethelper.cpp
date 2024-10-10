@@ -80,7 +80,7 @@ TestAndSetHelper::fetch_and_match_selection(spi::Context& context) {
                                       "Imported fields are not supported in conditional mutations.",
                                       e.getFieldName().c_str())));
     }
-    auto result = fetch_document(fieldVisitor.getFieldSet(), context);
+    auto result = fetch_document(fieldVisitor.steal_field_set(), context);
     // If document exists, match it with selection
     if (result.hasDocument()) {
         auto docPtr = result.getDocumentPtr();
