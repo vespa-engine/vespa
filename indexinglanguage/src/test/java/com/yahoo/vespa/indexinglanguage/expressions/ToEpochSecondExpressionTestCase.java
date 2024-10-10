@@ -34,8 +34,8 @@ public class ToEpochSecondExpressionTestCase {
     @Test
     public void requireThatValueIsConvertedWithMs() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("2023-12-24T17:00:43.000Z")).execute(new ToEpochSecondExpression());
-        FieldValue val = ctx.getValue();
+        ctx.setCurrentValue(new StringFieldValue("2023-12-24T17:00:43.000Z")).execute(new ToEpochSecondExpression());
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof LongFieldValue);
         assertEquals(1703437243L, ((LongFieldValue)val).getLong());
     }
@@ -43,8 +43,8 @@ public class ToEpochSecondExpressionTestCase {
     @Test
     public void requireThatValueIsConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("2023-12-24T17:00:43Z")).execute(new ToEpochSecondExpression());
-        FieldValue val = ctx.getValue();
+        ctx.setCurrentValue(new StringFieldValue("2023-12-24T17:00:43Z")).execute(new ToEpochSecondExpression());
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof LongFieldValue);
         assertEquals(1703437243L, ((LongFieldValue)val).getLong());
     }

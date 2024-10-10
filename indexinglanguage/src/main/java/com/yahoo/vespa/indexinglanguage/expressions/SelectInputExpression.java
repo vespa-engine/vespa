@@ -10,7 +10,6 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,29 +45,29 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
-        for (Pair<String, Expression> entry : cases) {
-            FieldValue val = context.getInputValue(entry.getFirst());
-            if (val != null) {
-                context.setValue(val).execute(entry.getSecond());
-                break;
-            }
-        }
-        context.setValue(input);
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
+        DataType input = context.getCurrentType();
         for (Pair<String, Expression> entry : cases) {
-            DataType val = context.getInputType(this, entry.getFirst());
+            DataType val = context.getFieldType(entry.getFirst(), this);
             if (val == null) {
                 throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
             }
-            context.setValueType(val).execute(entry.getSecond());
+            context.setCurrentType(val).verify(entry.getSecond());
         }
-        context.setValueType(input);
+        context.setCurrentType(input);
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getCurrentValue();
+        for (Pair<String, Expression> entry : cases) {
+            FieldValue val = context.getFieldValue(entry.getFirst());
+            if (val != null) {
+                context.setCurrentValue(val).execute(entry.getSecond());
+                break;
+            }
+        }
+        context.setCurrentValue(input);
     }
 
     @Override
@@ -79,9 +78,7 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return null;
-    }
+    public DataType createdOutputType() { return null; }
 
     public List<Pair<String, Expression>> getCases() {
         return Collections.unmodifiableList(cases);

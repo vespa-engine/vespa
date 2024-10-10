@@ -36,7 +36,7 @@ public class SetLanguageTestCase {
     @Test
     public void testsettingEnglish() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("en"));
+        ctx.setCurrentValue(new StringFieldValue("en"));
         new SetLanguageExpression().execute(ctx);
         assertEquals(Language.ENGLISH, ctx.getLanguage());
     }
@@ -44,7 +44,7 @@ public class SetLanguageTestCase {
     @Test
     public void testSettingUnknown() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("unknown"));
+        ctx.setCurrentValue(new StringFieldValue("unknown"));
         new SetLanguageExpression().execute(ctx);
         assertEquals(Language.UNKNOWN, ctx.getLanguage());
     }

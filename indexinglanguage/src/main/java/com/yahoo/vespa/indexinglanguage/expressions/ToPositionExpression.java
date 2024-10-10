@@ -14,24 +14,20 @@ public final class ToPositionExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        context.setValue(PositionDataType.fromString(String.valueOf(context.getValue())));
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
-        context.setValueType(createdOutputType());
+        context.setCurrentType(createdOutputType());
     }
 
     @Override
-    public DataType createdOutputType() {
-        return PositionDataType.INSTANCE;
+    protected void doExecute(ExecutionContext context) {
+        context.setCurrentValue(PositionDataType.fromString(String.valueOf(context.getCurrentValue())));
     }
 
     @Override
-    public String toString() {
-        return "to_pos";
-    }
+    public DataType createdOutputType() { return PositionDataType.INSTANCE; }
+
+    @Override
+    public String toString() { return "to_pos"; }
 
     @Override
     public boolean equals(Object obj) {
@@ -42,5 +38,6 @@ public final class ToPositionExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }
 

@@ -14,30 +14,25 @@ public final class TrimExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        context.setValue(new StringFieldValue(String.valueOf(context.getValue()).trim()));
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
-        context.setValueType(createdOutputType());
+        context.setCurrentType(createdOutputType());
     }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.STRING;
+    protected void doExecute(ExecutionContext context) {
+        context.setCurrentValue(new StringFieldValue(String.valueOf(context.getCurrentValue()).trim()));
     }
 
     @Override
-    public String toString() {
-        return "trim";
-    }
+    public DataType createdOutputType() { return DataType.STRING; }
+
+    @Override
+    public String toString() { return "trim"; }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof TrimExpression)) {
-            return false;
-        }
+        if (!(obj instanceof TrimExpression)) return false;
+
         return true;
     }
 

@@ -16,10 +16,10 @@ class OutputAssert {
 
     public static void assertExecute(OutputExpression exp) {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter(new Field(exp.getFieldName(), DataType.STRING)));
-        ctx.setValue(new StringFieldValue("69"));
+        ctx.setCurrentValue(new StringFieldValue("69"));
         ctx.execute(exp);
 
-        FieldValue out = ctx.getInputValue(exp.getFieldName());
+        FieldValue out = ctx.getFieldValue(exp.getFieldName());
         assertTrue(out instanceof StringFieldValue);
         assertEquals("69", ((StringFieldValue)out).getString());
     }
@@ -32,14 +32,14 @@ class OutputAssert {
     }
 
     public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        assertEquals(value, new VerificationContext(adapter).setValueType(value).execute(exp).getValueType());
+        assertEquals(value, new VerificationContext(adapter).setCurrentType(value).verify(exp).getCurrentType());
     }
 
     public static void assertVerifyThrows(FieldTypeAdapter adapter, DataType value, Expression exp,
                                           String expectedException)
     {
         try {
-            new VerificationContext(adapter).setValueType(value).execute(exp);
+            new VerificationContext(adapter).setCurrentType(value).verify(exp);
             fail();
         } catch (VerificationException e) {
             assertEquals(expectedException, e.getMessage());

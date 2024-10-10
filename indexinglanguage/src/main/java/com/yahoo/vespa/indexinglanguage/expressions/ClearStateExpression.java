@@ -13,24 +13,20 @@ public final class ClearStateExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        context.clear();
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         context.clear();
     }
 
     @Override
-    public DataType createdOutputType() {
-        return null;
+    protected void doExecute(ExecutionContext context) {
+        context.clear();
     }
 
     @Override
-    public String toString() {
-        return "clear_state";
-    }
+    public DataType createdOutputType() { return null; }
+
+    @Override
+    public String toString() { return "clear_state"; }
 
     @Override
     public boolean equals(Object obj) {

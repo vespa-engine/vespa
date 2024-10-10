@@ -19,27 +19,13 @@ public final class GetFieldExpression extends Expression {
         this.fieldName = fieldName;
     }
 
-    public String getFieldName() {
-        return fieldName;
-    }
+    public String getFieldName() { return fieldName; }
 
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
-        if (!(input instanceof StructuredFieldValue struct)) {
-            throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName());
-        }
-        Field field = struct.getField(fieldName);
-        if (field == null) {
-            throw new IllegalArgumentException("Field '" + fieldName + "' not found in struct type '" +
-                                               struct.getDataType().getName() + "'");
-        }
-        context.setValue(struct.getFieldValue(field));
-    }
+    // TODO: input/output
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
+        DataType input = context.getCurrentType();
         if (!(input instanceof StructuredDataType)) {
             throw new VerificationException(this, "Expected structured input, got " + input.getName());
         }
@@ -48,7 +34,20 @@ public final class GetFieldExpression extends Expression {
             throw new VerificationException(this, "Field '" + fieldName + "' not found in struct type '" +
                                                   input.getName() + "'");
         }
-        context.setValueType(field.getDataType());
+        context.setCurrentType(field.getDataType());
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getCurrentValue();
+        if (!(input instanceof StructuredFieldValue struct))
+            throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName());
+
+        Field field = struct.getField(fieldName);
+        if (field == null)
+            throw new IllegalArgumentException("Field '" + fieldName + "' not found in struct type '" +
+                                               struct.getDataType().getName() + "'");
+        context.setCurrentValue(struct.getFieldValue(field));
     }
 
     @Override

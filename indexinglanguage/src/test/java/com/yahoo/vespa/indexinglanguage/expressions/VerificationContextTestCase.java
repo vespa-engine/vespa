@@ -16,8 +16,8 @@ public class VerificationContextTestCase {
     public void requireThatValueCanBeSet() {
         VerificationContext ctx = new VerificationContext();
         DataType val = DataType.STRING;
-        ctx.setValueType(val);
-        assertSame(val, ctx.getValueType());
+        ctx.setCurrentType(val);
+        assertSame(val, ctx.getCurrentType());
     }
 
     @Test
@@ -31,9 +31,9 @@ public class VerificationContextTestCase {
     @Test
     public void requireThatClearRemovesValue() {
         VerificationContext ctx = new VerificationContext();
-        ctx.setValueType(DataType.STRING);
+        ctx.setCurrentType(DataType.STRING);
         ctx.clear();
-        assertNull(ctx.getValueType());
+        assertNull(ctx.getCurrentType());
     }
 
     @Test
