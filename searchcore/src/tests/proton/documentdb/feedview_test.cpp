@@ -433,7 +433,7 @@ MyTransport::~MyTransport() = default;
 struct SchemaContext
 {
     DocBuilder  _builder;
-    Schema::SP  _schema;
+    std::shared_ptr<const Schema>  _schema;
     SchemaContext();
     ~SchemaContext();
     std::shared_ptr<const document::DocumentTypeRepo> getRepo() const { return _builder.get_repo_sp(); }

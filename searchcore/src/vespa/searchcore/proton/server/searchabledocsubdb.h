@@ -126,7 +126,7 @@ public:
 
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
-    void setIndexSchema(const Schema::SP &schema, SerialNum serialNum) override;
+    void setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) override;
     size_t getNumActiveDocs() const override;
     search::SearchableStats getSearchableStats() const override ;
     std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override;

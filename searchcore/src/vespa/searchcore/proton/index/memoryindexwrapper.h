@@ -71,7 +71,7 @@ public:
     bool hasReceivedDocumentInsert() const override {
         return _index.getDocIdLimit() > 1u;
     }
-    search::index::Schema::SP getPrunedSchema() const override {
+    std::shared_ptr<const search::index::Schema> getPrunedSchema() const override {
         return _index.getPrunedSchema();
     }
     vespalib::MemoryUsage getMemoryUsage() const override {

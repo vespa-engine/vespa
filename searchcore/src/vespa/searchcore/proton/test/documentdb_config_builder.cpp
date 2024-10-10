@@ -26,7 +26,7 @@ using proton::ThreadingServiceConfig;
 namespace proton::test {
 
 DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
-                                                 const search::index::Schema::SP &schema,
+                                                 std::shared_ptr<const search::index::Schema> schema,
                                                  const std::string &configId,
                                                  const std::string &docTypeName)
     : _generation(generation),
@@ -42,7 +42,7 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _repo(std::make_shared<document::DocumentTypeRepo>()),
       _importedFields(std::make_shared<ImportedFieldsConfig>()),
       _tuneFileDocumentDB(std::make_shared<TuneFileDocumentDB>()),
-      _schema(schema),
+      _schema(std::move(schema)),
       _maintenance(std::make_shared<DocumentDBMaintenanceConfig>()),
       _store(),
       _threading_service_config(ThreadingServiceConfig::make()),

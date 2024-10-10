@@ -73,7 +73,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     SerialNum getOldestFlushedSerial() override { return 0; }
     SerialNum getNewestFlushedSerial() override { return 0; }
     void pruneRemovedFields(SerialNum) override { }
-    void setIndexSchema(const Schema::SP &, SerialNum) override { }
+    void setIndexSchema(std::shared_ptr<const Schema>, SerialNum) override { }
     search::SearchableStats getSearchableStats() const override {
         return {};
     }

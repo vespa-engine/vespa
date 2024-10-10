@@ -71,7 +71,7 @@ public:
     struct Context
     {
         ISummaryAdapter::SP                                _summaryAdapter;
-        search::index::Schema::SP                          _schema;
+        std::shared_ptr<const search::index::Schema>       _schema;
         IDocumentMetaStoreContext::SP                      _documentMetaStoreContext;
         std::shared_ptr<const document::DocumentTypeRepo>  _repo;
         std::shared_ptr<PendingLidTrackerBase>             _pendingLidsForCommit;
@@ -79,7 +79,7 @@ public:
         searchcorespi::index::IThreadingService           &_writeService;
 
         Context(ISummaryAdapter::SP summaryAdapter,
-                search::index::Schema::SP schema,
+                std::shared_ptr<const search::index::Schema> schema,
                 IDocumentMetaStoreContext::SP documentMetaStoreContext,
                 std::shared_ptr<const document::DocumentTypeRepo> repo,
                 std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
@@ -126,7 +126,7 @@ private:
     LidReuseDelayer                                          _lidReuseDelayer;
     PendingLidTracker                                        _pendingLidsForDocStore;
     std::shared_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
-    const search::index::Schema::SP                          _schema;
+    const std::shared_ptr<const search::index::Schema>       _schema;
     vespalib::hash_set<int32_t>                              _indexedFields;
 protected:
     searchcorespi::index::IThreadingService &_writeService;
@@ -197,7 +197,7 @@ public:
     ~StoreOnlyFeedView() override;
 
     const ISummaryAdapter::SP &getSummaryAdapter() const { return _summaryAdapter; }
-    const search::index::Schema::SP &getSchema() const { return _schema; }
+    const std::shared_ptr<const search::index::Schema> &getSchema() const noexcept { return _schema; }
     const PersistentParams &getPersistentParams() const { return _params; }
     const search::IDocumentStore &getDocumentStore() const { return _summaryAdapter->getDocumentStore(); }
     const IDocumentMetaStoreContext::SP &getDocumentMetaStore() const { return _documentMetaStoreContext; }

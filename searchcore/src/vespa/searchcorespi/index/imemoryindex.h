@@ -78,7 +78,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
                              search::SerialNum serialNum) = 0;
 
     virtual void pruneRemovedFields(const search::index::Schema &schema) = 0;
-    virtual search::index::Schema::SP getPrunedSchema() const = 0;
+    virtual std::shared_ptr<const search::index::Schema> getPrunedSchema() const = 0;
 
     virtual void insert_write_context_state(vespalib::slime::Cursor& object) const = 0;
 };

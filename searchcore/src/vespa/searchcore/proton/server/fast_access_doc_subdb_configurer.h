@@ -35,7 +35,7 @@ private:
     std::string             _subDbName;
 
     void reconfigureFeedView(FastAccessFeedView & curr,
-                             std::shared_ptr<search::index::Schema> schema,
+                             std::shared_ptr<const search::index::Schema> schema,
                              std::shared_ptr<const document::DocumentTypeRepo> repo,
                              std::shared_ptr<IAttributeWriter> attrWriter);
 

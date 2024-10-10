@@ -69,12 +69,12 @@ DocumentDBConfigManager::createConfigKeySet() const
     return set;
 }
 
-Schema::SP
+std::shared_ptr<const Schema>
 DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig,
                                      const IndexschemaConfig &newIndexschemaConfig)
 {
     // Called with lock held
-    Schema::SP oldSchema;
+    std::shared_ptr<const Schema> oldSchema;
     if (_pendingConfigSnapshot) {
         oldSchema = _pendingConfigSnapshot->getSchemaSP();
     }
@@ -335,7 +335,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     JuniperrcConfigSP newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
     ImportedFieldsConfigSP newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
 
-    Schema::SP schema(buildSchema(*newAttributesConfig, *newIndexschemaConfig));
+    auto schema(buildSchema(*newAttributesConfig, *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
     search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig(),
                                                                     _bootstrapConfig->getHwInfo());

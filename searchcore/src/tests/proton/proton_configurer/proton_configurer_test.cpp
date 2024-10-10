@@ -53,7 +53,7 @@ struct DBConfigFixture {
     JuniperrcConfigBuilder _juniperrcBuilder;
     ImportedFieldsConfigBuilder _importedFieldsBuilder;
 
-    Schema::SP buildSchema()
+    std::shared_ptr<const Schema> buildSchema()
     {
         return DocumentDBConfig::build_schema(_attributesBuilder, _indexschemaBuilder);
     }

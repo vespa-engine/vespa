@@ -228,7 +228,7 @@ Fixture::initViewSet(ViewSet &views)
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     auto summaryAdapter = std::make_shared<SummaryAdapter>(summaryMgr);
     views._gidToLidChangeHandler = make_shared<MockGidToLidChangeHandler>();
-    Schema::SP schema(new Schema());
+    std::shared_ptr<const Schema> schema(std::make_shared<Schema>());
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
     IndexSearchable::SP indexSearchable;
@@ -318,7 +318,7 @@ MyFastAccessFeedView::~MyFastAccessFeedView() = default;
 void
 MyFastAccessFeedView::init() {
     MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
-    Schema::SP schema = std::make_shared<Schema>();
+    std::shared_ptr<const Schema> schema = std::make_shared<Schema>();
     _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
     std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
     StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
@@ -382,9 +382,9 @@ createConfig()
 }
 
 DocumentDBConfig::SP
-createConfig(const Schema::SP &schema)
+createConfig(std::shared_ptr<const Schema> schema)
 {
-    return proton::test::DocumentDBConfigBuilder(0, schema, "client", DOC_TYPE).
+    return proton::test::DocumentDBConfigBuilder(0, std::move(schema), "client", DOC_TYPE).
             repo(createRepo()).build();
 }
 
