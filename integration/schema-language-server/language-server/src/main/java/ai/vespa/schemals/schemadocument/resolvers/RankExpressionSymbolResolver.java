@@ -68,7 +68,7 @@ public class RankExpressionSymbolResolver {
             diagnostics.addAll(traverseRankExpressionTree(child, context));
         }
 
-        // All feature nodes has a symbol before the parse
+        // All feature nodes has a symbol before the traversal
         if (node.hasSymbol()) {
 
             if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {
@@ -144,6 +144,8 @@ public class RankExpressionSymbolResolver {
         // add(SymbolType.PARAMETER); // This is a special case
         add(SymbolType.FUNCTION);
         add(SymbolType.RANK_CONSTANT);
+        add(SymbolType.TENSOR_DIMENSION_MAPPED);
+        add(SymbolType.TENSOR_DIMENSION_INDEXED);
     }};
 
     private static void resolveReference(RankNode referenceNode, ParseContext context, List<Diagnostic> diagnostics) {

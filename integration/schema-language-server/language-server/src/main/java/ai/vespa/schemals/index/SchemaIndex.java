@@ -210,6 +210,7 @@ public class SchemaIndex {
     public List<Symbol> findSymbols(Symbol scope, SymbolType type, String shortIdentifier) {
         // First candidates are all symbols with correct type and correct short identifier
 
+        // Special case for schema and document because a schema can sometimes refer to a document and vice versa
         if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
             SymbolType firstCheck = (type == SymbolType.SCHEMA ? SymbolType.SCHEMA : SymbolType.DOCUMENT);
             List<Symbol> schemaDefinitions = 
