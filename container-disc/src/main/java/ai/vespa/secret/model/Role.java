@@ -19,7 +19,7 @@ public enum Role {
         return value;
     }
 
-    public String forVault(VaultName vault) {
+    public String forControlPlaneVault(VaultName vault) {
         return switch(this) {
             case WRITER, READER -> vault.value() + "-" + value;
             case TENANT_SECRET_WRITER -> value;

@@ -48,7 +48,7 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
     }
 
     private static AwsCredentialsProvider getAwsSessionCredsProvider(ZtsClient ztsClient, AthenzDomain athenzDomain, Role role, VaultName vaultName) {
-        var awsRole = new AwsRole(role.forVault(vaultName));
+        var awsRole = new AwsRole(role.forControlPlaneVault(vaultName));
         AwsCredentials credentials = new AwsCredentials(ztsClient, athenzDomain, awsRole);
 
         return () -> {
