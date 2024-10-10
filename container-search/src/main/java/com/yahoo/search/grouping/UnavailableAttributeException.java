@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping;
 
+import com.yahoo.processing.IllegalInputException;
+
 /**
  * This exception is thrown by the {@link GroupingValidator} if it a {@link GroupingRequest} contains a reference to an
  * unavailable attribute.
@@ -8,7 +10,7 @@ package com.yahoo.search.grouping;
  * @author Simon Thoresen Hult
  */
 @SuppressWarnings("serial")
-public class UnavailableAttributeException extends RuntimeException {
+public class UnavailableAttributeException extends IllegalInputException {
 
     private final String clusterName;
     private final String attributeName;
