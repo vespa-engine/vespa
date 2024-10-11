@@ -51,7 +51,7 @@ struct MyIndexManager : public proton::test::MockIndexManager
         return toString(removes[lid]);
     }
     // Implements IIndexManager
-    void putDocument(uint32_t lid, const Document &, SerialNum serialNum, OnWriteDoneType) override {
+    void putDocument(uint32_t lid, const Document &, SerialNum serialNum, const OnWriteDoneType&) override {
         puts[lid].push_back(serialNum);
     }
     void removeDocuments(LidVector lids, SerialNum serialNum) override {
@@ -59,7 +59,7 @@ struct MyIndexManager : public proton::test::MockIndexManager
             removes[lid].push_back(serialNum);
         }
     }
-    void commit(SerialNum serialNum, OnWriteDoneType) override {
+    void commit(SerialNum serialNum, const OnWriteDoneType&) override {
         commitSerial = serialNum;
     }
     SerialNum getCurrentSerialNum() const override {

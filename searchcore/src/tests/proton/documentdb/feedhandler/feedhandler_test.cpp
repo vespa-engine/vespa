@@ -253,9 +253,9 @@ struct MyFeedView : public test::DummyFeedView {
         (void) token;
         ++remove_count;
     }
-    void handleMove(const MoveOperation &, DoneCallback) override { ++move_count; }
-    void heartBeat(SerialNum, DoneCallback) override { ++heartbeat_count; }
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &, DoneCallback) override { ++prune_removed_count; }
+    void handleMove(const MoveOperation &, const DoneCallback&) override { ++move_count; }
+    void heartBeat(SerialNum, const DoneCallback&) override { ++heartbeat_count; }
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &, const DoneCallback&) override { ++prune_removed_count; }
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return nullptr;
     }
