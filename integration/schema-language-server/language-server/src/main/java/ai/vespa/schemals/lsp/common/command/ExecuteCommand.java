@@ -12,6 +12,8 @@ public class ExecuteCommand {
     public static Object executeCommand(EventExecuteCommandContext context) {
         Optional<SchemaCommand> command = CommandRegistry.getCommand(context.params);
 
+        context.logger.info("Received command: " + context.params.getCommand());
+
         if (command.isEmpty()) {
             context.logger.error("Unknown command " + context.params.getCommand());
             context.logger.error("Arguments:");

@@ -128,6 +128,7 @@ public class SchemaDocumentScheduler {
     }
 
     public String getWorkspaceURI() {
+        if (this.workspaceURI == null) return null;
         return this.workspaceURI.toString();
     }
 
@@ -229,6 +230,9 @@ public class SchemaDocumentScheduler {
 
 
     public void setupWorkspace(URI workspaceURI) {
+        // already set up
+        if (this.workspaceURI != null) return;
+
         this.workspaceURI = workspaceURI;
 
         //messageHandler.messageTrace("Scanning workspace: " + workspaceURI.toString());

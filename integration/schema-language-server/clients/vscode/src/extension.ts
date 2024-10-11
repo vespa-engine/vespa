@@ -120,9 +120,6 @@ function showJavaErrorMessage() {
     });
 }
 
-//const FindDocumentRequest: RequestType<ExecuteCommandParams, any, void> = new RequestType("vespaSchemaLS/findDocument");
-const FindDocumentRequest = new RequestType<string, string, void>("FIND_SCHEMA_DEFINITION");
-
 export function activate(context: vscode.ExtensionContext) {
 	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
 
@@ -155,6 +152,21 @@ export function activate(context: vscode.ExtensionContext) {
         }
         return null;
     }));
+
+    // This command exists to setup schema language server workspace in case the first opened document is an xml file (which not handled by schema language server)
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.servicesxml.setupWorkspace", async (fileURI) => {
+        if (schemaClient !== null) {
+            try {
+                schemaClient.sendRequest("workspace/executeCommand", {
+                    command: "SETUP_WORKSPACE",
+                    arguments: [fileURI]
+                });
+            } catch (err) {
+                logger.error("Error when trying to send setup workspace command: ", err);
+            }
+        }
+    }));
+
     logger.info("Vespa language client activated");
 }
 

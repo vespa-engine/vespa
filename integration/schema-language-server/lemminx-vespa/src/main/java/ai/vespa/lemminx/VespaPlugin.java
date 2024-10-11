@@ -5,13 +5,16 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.eclipse.lemminx.services.IXMLValidationService;
 import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
+import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
 import org.eclipse.lemminx.services.extensions.IXMLExtension;
 import org.eclipse.lemminx.services.extensions.XMLExtensionsRegistry;
 import org.eclipse.lemminx.services.extensions.save.ISaveContext;
 import org.eclipse.lemminx.uriresolver.URIResolverExtension;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.InitializeParams;
 
@@ -22,6 +25,7 @@ public class VespaPlugin implements IXMLExtension {
     IXMLValidationService validationService;
     URIResolverExtension uriResolverExtension;
     IDefinitionParticipant definitionParticipant;
+    IDocumentLifecycleParticipant documentLifecycleParticipant;
     Path serverPath;
 
     @Override
@@ -48,9 +52,12 @@ public class VespaPlugin implements IXMLExtension {
         hoverParticipant = new HoverParticipant(logger);
         uriResolverExtension = new ServicesURIResolverExtension(serverPath, logger);
         definitionParticipant = new DefinitionParticipant(logger, registry.getCommandService());
+        documentLifecycleParticipant = new DocumentLifecycleParticipant(logger, registry.getCommandService());
         registry.getResolverExtensionManager().registerResolver(uriResolverExtension);
         registry.registerHoverParticipant(hoverParticipant);
         registry.registerDefinitionParticipant(definitionParticipant);
+        registry.registerDocumentLifecycleParticipant(documentLifecycleParticipant);
+
 	}
 
 	@Override
@@ -65,6 +72,10 @@ public class VespaPlugin implements IXMLExtension {
 
         if (definitionParticipant != null) {
             registry.unregisterDefinitionParticipant(definitionParticipant);
+        }
+
+        if (documentLifecycleParticipant != null) {
+            registry.unregisterDocumentLifecycleParticipant(documentLifecycleParticipant);
         }
 	}
 }

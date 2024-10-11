@@ -71,6 +71,9 @@ public class FileUtils {
         return components[0];
     }
 
+    /**
+     * Searches among the parents for a directory named "schemas"
+     */
     public static Optional<URI> findSchemaDirectory(URI initialURI) {
         Path path = Paths.get(initialURI);
         while (path != null && path.getFileName() != null) {

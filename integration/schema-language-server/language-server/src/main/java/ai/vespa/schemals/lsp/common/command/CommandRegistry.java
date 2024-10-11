@@ -13,6 +13,7 @@ import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
 import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
 import ai.vespa.schemals.lsp.common.command.commandtypes.FindDocument;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
+import ai.vespa.schemals.lsp.common.command.commandtypes.SetupWorkspace;
 
 /**
  * SchemaCommand
@@ -42,6 +43,10 @@ public class CommandRegistry {
         FIND_SCHEMA_DEFINITION {
             public String title() { return "Find schema document"; }
             public SchemaCommand construct() { return new FindDocument(); }
+        },
+        SETUP_WORKSPACE {
+            public String title() { return "Setup workspace"; }
+            public SchemaCommand construct() { return new SetupWorkspace(); }
         }
     }
 

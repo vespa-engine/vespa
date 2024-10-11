@@ -17,25 +17,25 @@ public class HoverParticipant implements IHoverParticipant {
 
     @Override
     public Hover onTag(IHoverRequest request, CancelChecker cancelChecker) throws Exception {
-        logger.println("Tag: " + (request.getCurrentTag() == null ? "NULL" : request.getCurrentTag()));
+        //logger.println("Tag: " + (request.getCurrentTag() == null ? "NULL" : request.getCurrentTag()));
         return null;
     }
 
     @Override
     public Hover onAttributeName(IHoverRequest request, CancelChecker cancelChecker) throws Exception {
-        logger.println("Attribute name: " + request.getCurrentAttributeName());
+        //logger.println("Attribute name: " + request.getCurrentAttributeName());
         return null;
     }
 
     @Override
     public Hover onAttributeValue(IHoverRequest request, CancelChecker cancelChecker) throws Exception {
-        logger.println("Attribute value: " + request.getCurrentAttribute().getValue());
+        //logger.println("Attribute value: " + request.getCurrentAttribute().getValue());
         return null;
     }
 
     @Override
     public Hover onText(IHoverRequest request, CancelChecker cancelChecker) throws Exception {
-        logger.println("Text: " + request.getNode().toString());
+        //logger.println("Text: " + request.getNode().toString());
         return null;
     }
 }

@@ -11,7 +11,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 /**
  * FindDocument
  * Param: schema identifier
- * Return: List<Location>
+ * Returns List of Location, possibly empty. 
  */
 public class FindDocument implements SchemaCommand {
     private String schemaName;
