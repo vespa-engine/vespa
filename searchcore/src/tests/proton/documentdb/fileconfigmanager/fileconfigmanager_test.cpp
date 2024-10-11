@@ -73,7 +73,7 @@ saveBaseConfigSnapshot(FNET_Transport & transport, const DocumentDBConfig &snap,
 DocumentDBConfig::SP
 makeEmptyConfigSnapshot()
 {
-    return test::DocumentDBConfigBuilder(0, std::make_shared<Schema>(), "client", "test").build();
+    return test::DocumentDBConfigBuilder(0, std::make_shared<const Schema>(), "client", "test").build();
 }
 
 void

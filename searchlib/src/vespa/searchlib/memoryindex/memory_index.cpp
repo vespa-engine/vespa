@@ -236,7 +236,7 @@ MemoryIndex::pruneRemovedFields(const Schema &schema)
     }
 }
 
-Schema::SP
+std::shared_ptr<const Schema>
 MemoryIndex::getPrunedSchema() const
 {
     std::lock_guard lock(_lock);

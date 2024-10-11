@@ -51,7 +51,7 @@ private:
     uint32_t                     _distributionKey;
 
     void reconfigureFeedView(std::shared_ptr<IAttributeWriter> attrWriter,
-                             std::shared_ptr<search::index::Schema> schema,
+                             std::shared_ptr<const search::index::Schema> schema,
                              std::shared_ptr<const document::DocumentTypeRepo> repo);
 
     void reconfigureMatchView(const std::shared_ptr<searchcorespi::IndexSearchable>& indexSearchable);

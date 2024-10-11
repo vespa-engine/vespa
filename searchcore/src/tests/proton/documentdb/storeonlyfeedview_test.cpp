@@ -90,7 +90,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                       std::atomic<int> &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
-                                                     search::index::Schema::SP(),
+                                                     {},
                                                      std::make_shared<DocumentMetaStoreContext>(metaStore),
                                                      myGetDocumentTypeRepo(),
                                                      std::move(pendingLidsForCommit),

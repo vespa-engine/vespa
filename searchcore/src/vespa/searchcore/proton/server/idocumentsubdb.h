@@ -62,7 +62,6 @@ public:
     using UP = std::unique_ptr<IDocumentSubDB>;
     using SerialNum = search::SerialNum;
     using Schema = search::index::Schema;
-    using SchemaSP = std::shared_ptr<Schema>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using IndexConfig = index::IndexConfig;
     using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
@@ -122,7 +121,7 @@ public:
      */
     virtual SerialNum getNewestFlushedSerial()  = 0;
     virtual void pruneRemovedFields(SerialNum serialNum) = 0;
-    virtual void setIndexSchema(const SchemaSP &schema, SerialNum serialNum) = 0;
+    virtual void setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) = 0;
     virtual search::SearchableStats getSearchableStats() const = 0;
     virtual std::shared_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
 

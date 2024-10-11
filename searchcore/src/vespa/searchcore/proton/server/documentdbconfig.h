@@ -126,7 +126,7 @@ private:
     std::shared_ptr<const document::DocumentTypeRepo>   _repo;
     ImportedFieldsConfigSP                    _importedFields;
     search::TuneFileDocumentDB::SP            _tuneFileDocumentDB;
-    search::index::Schema::SP                 _schema;
+    std::shared_ptr<const search::index::Schema> _schema;
     MaintenanceConfigSP                       _maintenance;
     search::LogDocumentStore::Config          _storeConfig;
     const ThreadingServiceConfig              _threading_service_config;
@@ -165,7 +165,7 @@ public:
                      const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                      const ImportedFieldsConfigSP &importedFields,
                      const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
-                     const search::index::Schema::SP &schema,
+                     std::shared_ptr<const search::index::Schema> schema,
                      const DocumentDBMaintenanceConfig::SP &maintenance,
                      const search::LogDocumentStore::Config & storeConfig,
                      const ThreadingServiceConfig & threading_service_config,
@@ -206,7 +206,7 @@ public:
     const document::DocumentType *getDocumentType() const;
     const ImportedFieldsConfig &getImportedFieldsConfig() const { return *_importedFields; }
     const ImportedFieldsConfigSP &getImportedFieldsConfigSP() const { return _importedFields; }
-    const search::index::Schema::SP &getSchemaSP() const { return _schema; }
+    const std::shared_ptr<const search::index::Schema>& getSchemaSP() const noexcept { return _schema; }
     const MaintenanceConfigSP &getMaintenanceConfigSP() const { return _maintenance; }
     const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
     bool getDelayedAttributeAspects() const { return _delayedAttributeAspects; }
@@ -253,7 +253,7 @@ public:
     static SP makeDelayedAttributeAspectConfig(const SP &newCfg, const DocumentDBConfig &oldCfg);
     SP make_copy() const;
 
-    static std::shared_ptr<search::index::Schema>
+    static std::shared_ptr<const search::index::Schema>
     build_schema(const AttributesConfig& attributes_config,
                  const IndexschemaConfig &indexschema_config);
 };
