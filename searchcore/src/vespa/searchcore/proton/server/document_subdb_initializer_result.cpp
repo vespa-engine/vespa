@@ -12,7 +12,8 @@ DocumentSubDbInitializerResult::DocumentSubDbInitializerResult()
       _summaryManager(std::make_shared<SummaryManager::SP>()),
       _attributeManager(std::make_shared<AttributeManager::SP>()),
       _indexManager(std::make_shared<IIndexManager::SP>()),
-      _flushConfig()
+      _flushConfig(),
+      _schema()
 {
 }
 
