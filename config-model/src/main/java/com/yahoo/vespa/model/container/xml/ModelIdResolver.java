@@ -64,6 +64,8 @@ public class ModelIdResolver {
 
         register(m, "mistral-7b",    "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q6_K.gguf", Set.of(GGUF_MODEL));
         register(m, "mistral-7b-q8", "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q8_0.gguf", Set.of(GGUF_MODEL));
+
+        register(m, "significance-en-wikipedia-v1", "https://data.vespa-cloud.com/significance_models/significance-en-wikipedia-v1.json.zst", Set.of(SIGNIFICANCE_MODEL));
         return Map.copyOf(m);
     }
 
