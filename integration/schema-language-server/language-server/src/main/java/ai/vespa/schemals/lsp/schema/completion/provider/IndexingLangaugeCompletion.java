@@ -39,6 +39,7 @@ public class IndexingLangaugeCompletion implements CompletionProvider {
                 CompletionUtils.withSortingPrefix("b", CompletionUtils.constructBasic("input")),
                 CompletionUtils.withSortingPrefix("b", CompletionUtils.constructBasic("set_language")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("embed")),
+                CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("binarize")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("hash")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("to_array")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("to_byte")),

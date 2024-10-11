@@ -115,6 +115,7 @@ message SupportedNodeFeatures {
     bool two_phase_remove_location              = 2;
     bool no_implicit_indexing_of_active_buckets = 3;
     bool document_condition_probe               = 4;
+    bool timestamps_in_tas_conditions           = 5;
 }
 
 message RequestBucketInfoResponse {

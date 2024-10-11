@@ -165,7 +165,7 @@ void
 updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tmpMetrics)
 {
     for (const auto &attr : tmpMetrics.attrs) {
-        auto entry = metrics.get(attr.first);
+        auto entry = metrics.get_field_metrics_entry(attr.first);
         if (entry) {
             entry->memoryUsage.update(attr.second.memoryUsage);
         }

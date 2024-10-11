@@ -141,8 +141,10 @@ public class CompressedApplicationInputStreamTest {
     }
 
     private File createTarGz(String appDir) throws IOException, InterruptedException {
+        var noMacMetadataOption = System.getProperty("os.name").startsWith("Mac OS X") ? "--no-mac-metadata" : "";
+
         File tmpTar = Files.createTempFile(temporaryFolder.getRoot().toPath(), "myapp", ".tar").toFile();
-        Process p = new ProcessBuilder("tar", "-C", appDir, "-cvf", tmpTar.getAbsolutePath(), ".").start();
+        Process p = new ProcessBuilder("tar", noMacMetadataOption, "-C", appDir, "-cvf", tmpTar.getAbsolutePath(), ".").start();
         p.waitFor();
         p = new ProcessBuilder("gzip", tmpTar.getAbsolutePath()).start();
         p.waitFor();

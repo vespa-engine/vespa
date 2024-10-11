@@ -56,14 +56,6 @@ public class Flags {
             "Takes immediate effect wherever possible.",
             NODE_TYPE);
 
-    public static final UnboundBooleanFlag ASSUME_ROLE_IN_VESPA_ATHENZ = defineFeatureFlag(
-            "assume-role-in-vespa-athenz", false,
-            List.of("hakonhall"), "2024-08-09", "2024-10-09",
-            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public AWS systems, when trying assuming AWS roles. " +
-            "node-type is config in config server, controller in controller.",
-            "Takes effect on start of config server/controller.",
-            NODE_TYPE);
-
     public static final UnboundBooleanFlag USE_VESPA_ATHENZ_ZMS = defineFeatureFlag(
             "use-vespa-athenz-zms", false,
             List.of("hakonhall"), "2024-08-16", "2024-10-16",
@@ -254,14 +246,6 @@ public class Flags {
             "Takes effect on next tick.",
             NODE_TYPE);
 
-    public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
-            "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2025-01-01",
-            "Enable Horizon dashboard",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL
-    );
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2024-12-31",
@@ -390,13 +374,6 @@ public class Flags {
             List.of("vekterli"), "2022-09-12", "2024-12-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
-            "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-11-01",
-            "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
@@ -529,7 +506,7 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
-            "file-download-backoff-initial-time-ms", 2000,
+            "file-download-backoff-initial-time-ms", 1000,
             List.of("hmusum"), "2024-08-16", "2024-11-01",
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
@@ -665,7 +642,8 @@ public class Flags {
         U unboundFlag = factory.create(id, defaultValue, vector);
         FlagDefinition definition = new FlagDefinition(
                 unboundFlag, owners, parseDate(createdAt), parseDate(expiresAt), description, modificationEffect, dimensions);
-        flags.put(id, definition);
+        if (flags.put(id, definition) != null)
+            throw new IllegalStateException("There are multiple definitions of the " + id + " flag");
         return unboundFlag;
     }
 

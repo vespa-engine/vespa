@@ -6,7 +6,7 @@ Contributions to [Vespa](https://github.com/vespa-engine/vespa),
 [Vespa system tests](https://github.com/vespa-engine/system-test),
 [Vespa samples](https://github.com/vespa-engine/sample-apps)
 and the [Vespa documentation](https://github.com/vespa-engine/documentation) are welcome.
-This documents tells you what you need to know to contribute.
+This document tells you what you need to know to contribute.
 
 ## Open development
 
@@ -36,7 +36,7 @@ When your code is ready to be submitted,
 to request a code review.
 
 We only seek to accept code that you are authorized to contribute to the project.
-We have added a pull request template on our projects so that your contributions are made
+We have added a pull request template to our projects so that your contributions are made
 with the following confirmation:
 
 > I confirm that this contribution is made under the terms of the license found in the root directory of this repository's source tree and that I have the authority necessary to make this contribution on behalf of its copyright owner.
@@ -53,7 +53,7 @@ Existing types and method signatures must be preserved
 
 We verify ABI compatibility during the regular Java build you'll run with Maven (mvn install).
 This build step will also fail if you _add_ to public APIs, which is fine if there's a good reason
-to do it. In that case update the ABI spec as instructed in the error message.
+to do it. In that case, update the ABI spec as instructed in the error message.
 
 ## Issues
 
@@ -78,5 +78,5 @@ More details are in the READMEs of each module.
 ## License and copyright
 
 If you add new files you are welcome to use your own copyright.
-In any case the code (or documentation) you submit will be licensed
+In any case, the code (or documentation) you submit will be licensed
 under the Apache 2.0 license.

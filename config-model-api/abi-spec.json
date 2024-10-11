@@ -1317,7 +1317,6 @@
       "public int heapSizePercentage()",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
-      "public java.lang.String jvmOmitStackTraceInFastThrowOption(com.yahoo.config.provision.ClusterSpec$Type)",
       "public double resourceLimitDisk()",
       "public double resourceLimitMemory()",
       "public double minNodeRatioPerGroup()",
@@ -1341,7 +1340,8 @@
       "public boolean symmetricPutAndActivateReplicaSelection()",
       "public boolean enforceStrictlyIncreasingClusterStateVersions()",
       "public boolean distributionConfigFromClusterController()",
-      "public boolean useLegacyWandQueryParsing()"
+      "public boolean useLegacyWandQueryParsing()",
+      "public boolean forwardAllLogLevels()"
     ],
     "fields" : [ ]
   },
@@ -1378,6 +1378,7 @@
       "public abstract java.util.List configServerSpecs()",
       "public abstract com.yahoo.config.provision.HostName loadBalancerName()",
       "public abstract java.net.URI ztsUrl()",
+      "public abstract com.yahoo.config.provision.AthenzDomain tenantSecretDomain()",
       "public abstract java.lang.String athenzDnsSuffix()",
       "public abstract boolean hostedVespa()",
       "public abstract com.yahoo.config.provision.Zone zone()",

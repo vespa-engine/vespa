@@ -20,6 +20,11 @@
 
 namespace vespalib::atomic {
 
+#if _LIBCPP_VERSION >= 190000 && _LIBCPP_VERSION < 200000
+// std::atomic_ref with constant template argument is broken with libc++ 19.
+#define LIBCXX_19_ATOMIC_REF_WORKAROUND 1
+#endif
+
 //
 // std::atomic_ref<T> helpers
 //
@@ -74,8 +79,14 @@ template <typename T>
 [[nodiscard]] constexpr T load_ref_relaxed(const T& a) noexcept {
     static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
+#if LIBCXX_19_ATOMIC_REF_WORKAROUND
+    using value_type = std::remove_const_t<T>;
+    static_assert(std::atomic_ref<value_type>::is_always_lock_free);
+    return std::atomic_ref<value_type>(const_cast<value_type&>(a)).load(std::memory_order_relaxed);
+#else
     static_assert(std::atomic_ref<const T>::is_always_lock_free);
     return std::atomic_ref<const T>(a).load(std::memory_order_relaxed);
+#endif
 #else
     // TODO replace with compiler intrinsic
     return a;
@@ -86,8 +97,14 @@ template <typename T>
 [[nodiscard]] constexpr T load_ref_acquire(const T& a) noexcept {
     static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
+#if LIBCXX_19_ATOMIC_REF_WORKAROUND
+    using value_type = std::remove_const_t<T>;
+    static_assert(std::atomic_ref<value_type>::is_always_lock_free);
+    return std::atomic_ref<value_type>(const_cast<value_type&>(a)).load(std::memory_order_acquire);
+#else
     static_assert(std::atomic_ref<const T>::is_always_lock_free);
     return std::atomic_ref<const T>(a).load(std::memory_order_acquire);
+#endif
 #else
     // TODO replace with compiler intrinsic
     std::atomic_thread_fence(std::memory_order_acquire);
@@ -99,8 +116,14 @@ template <typename T>
 [[nodiscard]] constexpr T load_ref_seq_cst(const T& a) noexcept {
     static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
+#if LIBCXX_19_ATOMIC_REF_WORKAROUND
+    using value_type = std::remove_const_t<T>;
+    static_assert(std::atomic_ref<value_type>::is_always_lock_free);
+    return std::atomic_ref<value_type>(const_cast<value_type&>(a)).load(std::memory_order_seq_cst);
+#else
     static_assert(std::atomic_ref<const T>::is_always_lock_free);
     return std::atomic_ref<const T>(a).load(std::memory_order_seq_cst);
+#endif
 #else
     // TODO replace with compiler intrinsic
     std::atomic_thread_fence(std::memory_order_seq_cst);

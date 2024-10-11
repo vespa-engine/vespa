@@ -19,7 +19,7 @@ template <class Self, class NodeTypes>
 class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
     template <class TermNode>
     void myVisit(TermNode &n) {
-        static_cast<Self &>(*this).template visitTerm(n);
+        static_cast<Self &>(*this).visitTerm(n);
     }
 
     void visit(typename NodeTypes::NumberTerm &n) override { myVisit(n); }

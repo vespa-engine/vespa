@@ -16,6 +16,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vdslib.SearchResult;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -141,6 +142,29 @@ public class Messages80TestCase extends MessagesTestBase {
             });
         }
 
+        private record NamedCondition(String name, TestAndSetCondition condition) {}
+
+        static List<NamedCondition> tasConditions() {
+            return List.of(new NamedCondition("cond-only",   new TestAndSetCondition("There's just one condition")),
+                           new NamedCondition("ts-only",     TestAndSetCondition.ofRequiredTimestamp(0x1badcafef000000dL)),
+                           new NamedCondition("cond-and-ts", TestAndSetCondition.ofRequiredTimestampWithSelectionFallback(
+                                   0x1badcafef000000dL, "There's just one condition")));
+        }
+
+        // We assume TaS codec is the same across message types, so use Put as a proxy for all TaS-support types.
+        void verifyTasConditionsCanHaveSelectionAndOrTimestamp() {
+            for (var tas : tasConditions()) {
+                var msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
+                msg.setCondition(tas.condition);
+                var msgAndCondName = "PutDocumentMessage-%s".formatted(tas.name);
+                serialize(msgAndCondName, msg);
+                forEachLanguage((lang) -> {
+                    var decoded = (PutDocumentMessage)deserialize(msgAndCondName, DocumentProtocol.MESSAGE_PUTDOCUMENT, lang);
+                    assertEquals(msg.getCondition(), decoded.getCondition());
+                });
+            }
+        }
+
         @Override
         public void run() {
             var msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
@@ -156,11 +180,12 @@ public class Messages80TestCase extends MessagesTestBase {
                 assertEquals(msg.getDocumentPut().getDocument().getDataType().getName(), deserializedDoc.getDataType().getName());
                 assertEquals(msg.getDocumentPut().getDocument().getId().toString(), deserializedDoc.getId().toString());
                 assertEquals(msg.getTimestamp(), deserializedMsg.getTimestamp());
-                assertEquals(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
+                assertEquals(msg.getCondition(), deserializedMsg.getCondition());
                 assertFalse(deserializedMsg.getCreateIfNonExistent());
                 assertEquals(0x1badcafef000000dL, deserializedMsg.getPersistedTimestamp());
             });
             verifyCreateIfNonExistentFlag();
+            verifyTasConditionsCanHaveSelectionAndOrTimestamp();
         }
     }
 
@@ -240,7 +265,7 @@ public class Messages80TestCase extends MessagesTestBase {
                 assertEquals(msg.getDocumentUpdate(), deserializedMsg.getDocumentUpdate());
                 assertEquals(msg.getNewTimestamp(), deserializedMsg.getNewTimestamp());
                 assertEquals(msg.getOldTimestamp(), deserializedMsg.getOldTimestamp());
-                assertEquals(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
+                assertEquals(msg.getCondition(), deserializedMsg.getCondition());
             });
         }
 

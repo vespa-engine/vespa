@@ -38,6 +38,9 @@ public:
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     void onClose(DistributorStripeMessageSender& sender) override;
 
+    // Exposed for unit testing
+    [[nodiscard]] std::shared_ptr<api::PutCommand> command() const noexcept { return _msg; }
+
 private:
     PersistenceMessageTracker          _tracker;
     std::shared_ptr<api::PutCommand>   _msg;

@@ -2,12 +2,12 @@
 CMake Guide
 ===========
 
-This is a guide describing how to use the Vespa specific CMake functions and macros.
-The Vespa CMake setup wraps or combines together a number of CMake functions in order to simplify defining library and executable targets, and to automatically create targets that depend on a subset of targets.
+This is a guide describing how to use the Vespa-specific CMake functions and macros.
+The Vespa CMake setup wraps or combines a number of CMake functions to simplify defining library and executable targets, and to automatically create targets that depend on a subset of targets.
 
 # `vespa_add_library`
 The `vespa_add_library` function is used to define a library.
-At the least, it takes a target name, and the library's source files.
+At the least, it takes a target name and the library's source files.
 
     vespa_add_library(<target-name> [STATIC|OBJECT|INTERFACE|TEST]
         [SOURCES <source-file> [source-file ...]]
@@ -27,7 +27,7 @@ Parameter denoting that this is an object library.
 This parameter is optional.
 
 ### INTERFACE
-Parameter denoting that this is an interface library, that is, a library producing no object files, for example a collection of headers.
+Parameter denoting that this is an interface library, that is, a library producing no object files, for example, a collection of headers.
 This parameter is optional.
 
 ### TEST
@@ -55,7 +55,7 @@ This parameter is optional.
 
 # `vespa_add_executable`
 The `vespa_add_executable` function is used to define an executable/application.
-At the least, the function takes a target name, and the executable's source files.
+At the least, the function takes a target name and the executable's source files.
 
     vespa_add_executable(<target-name> [TEST]
         SOURCES <source-file> [source-file ...]

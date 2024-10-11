@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dirtraverse.h"
+#include "disk_space_calculator.h"
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
 #include <system_error>
@@ -22,14 +23,12 @@ try_get_tree_size(const std::string& base_dir)
     }
 
     uint64_t total_size = 0;
-    constexpr uint64_t block_size = 4_Ki;
+    DiskSpaceCalculator calc;
     for (const auto &elem : dir_itr) {
         if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
             const auto size = elem.file_size(ec);
             if (!ec) {
-                // round up size to file system block size (assumed to be 4 KiB)
-                auto adj_size = ((size + block_size - 1) / block_size) * block_size;
-                total_size += adj_size;
+                total_size += calc(size);
             }
         }
     }

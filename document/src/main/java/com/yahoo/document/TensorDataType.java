@@ -15,10 +15,12 @@ import java.util.Objects;
  */
 public class TensorDataType extends DataType {
 
-    private final TensorType tensorType;
-
     // The global class identifier shared with C++.
     public static int classId = registerClass(Ids.document + 59, TensorDataType.class);
+
+    private static final TensorDataType anyTensorDataType = new TensorDataType(null);
+
+    private final TensorType tensorType;
 
     public TensorDataType(TensorType tensorType) {
         super(tensorType == null ? "tensor" : tensorType.toString(), DataType.tensorDataTypeCode);
@@ -43,6 +45,7 @@ public class TensorDataType extends DataType {
     @Override
     public boolean isValueCompatible(FieldValue value) {
         if (value == null) return false;
+        if (tensorType == null) return true; // any
         if ( ! TensorFieldValue.class.isAssignableFrom(value.getClass())) return false;
         TensorFieldValue tensorValue = (TensorFieldValue)value;
         return tensorType.isConvertibleTo(tensorValue.getDataType().getTensorType());
@@ -64,5 +67,8 @@ public class TensorDataType extends DataType {
     public int hashCode() {
         return Objects.hash(super.hashCode(), tensorType);
     }
+
+    /** Returns the tensor data type representing any tensor. */
+    public static TensorDataType any() { return anyTensorDataType; }
 
 }

@@ -236,28 +236,28 @@ TEST(ImportedDotProductTest, prepareSharedState_emits_i32_vector_for_i32_importe
 {
     ArrayFixture f;
     f.setup_integer_mappings(BasicType::INT32);
-    f.template check_prepare_state_output("[101 202 303]", dotproduct::ArrayParam<int32_t>({101, 202, 303}));
+    f.check_prepare_state_output("[101 202 303]", dotproduct::ArrayParam<int32_t>({101, 202, 303}));
 }
 
 TEST(ImportedDotProductTest, prepareSharedState_emits_i64_vector_for_i64_imported_attribute)
 {
     ArrayFixture f;
     f.setup_integer_mappings(BasicType::INT64);
-    f.template check_prepare_state_output("[101 202 303]", dotproduct::ArrayParam<int64_t>({101, 202, 303}));
+    f.check_prepare_state_output("[101 202 303]", dotproduct::ArrayParam<int64_t>({101, 202, 303}));
 }
 
 TEST(ImportedDotProductTest, prepareSharedState_emits_float_vector_for_float_imported_attribute)
 {
     ArrayFixture f;
     f.setup_float_mappings(BasicType::FLOAT);
-    f.template check_prepare_state_output("[10.1 20.2 30.3]", dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
+    f.check_prepare_state_output("[10.1 20.2 30.3]", dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 
 TEST(ImportedDotProductTest, prepareSharedState_emits_double_vector_for_double_imported_attribute)
 {
     ArrayFixture f;
     f.setup_float_mappings(BasicType::DOUBLE);
-    f.template check_prepare_state_output("[10.1 20.2 30.3]", dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
+    f.check_prepare_state_output("[10.1 20.2 30.3]", dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_float_from_tensor_for_double_imported_attribute)
@@ -265,7 +265,7 @@ TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_float_from_ten
     ArrayFixture f;
     f.setup_float_mappings(BasicType::DOUBLE);
     auto tensor = TensorSpec::from_expr("tensor<float>(x[3]):[10.1,20.2,30.3]");
-    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
+    f.check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_double_from_tensor_for_double_imported_attribute)
@@ -273,7 +273,7 @@ TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_double_from_te
     ArrayFixture f;
     f.setup_float_mappings(BasicType::DOUBLE);
     auto tensor = TensorSpec::from_expr("tensor(x[3]):[10.1,20.2,30.3]");
-    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
+    f.check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_float_from_tensor_for_float_imported_attribute)
@@ -281,7 +281,7 @@ TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_float_from_ten
     ArrayFixture f;
     f.setup_float_mappings(BasicType::FLOAT);
     auto tensor = TensorSpec::from_expr("tensor<float>(x[3]):[10.1,20.2,30.3]");
-    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
+    f.check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 
 TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_double_from_tensor_for_float_imported_attribute)
@@ -289,7 +289,7 @@ TEST(ImportedDotProductTest, prepareSharedState_handles_tensor_as_double_from_te
     ArrayFixture f;
     f.setup_float_mappings(BasicType::FLOAT);
     auto tensor = TensorSpec::from_expr("tensor(x[3]):[10.1,20.2,30.3]");
-    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
+    f.check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 
 TEST(ImportedDotProductTest, dense_i32_and_i64_array_dot_product_can_be_evaluated_with_pre_parsed_object_parameter)

@@ -11,7 +11,7 @@
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/metrics/dummy_wire_service.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
@@ -129,8 +129,10 @@ struct MyMetricsWireService : public DummyWireService
 {
     std::set<std::string> _attributes;
     MyMetricsWireService() : _attributes() {}
-    void addAttribute(AttributeMetrics &, const std::string &name) override {
-        _attributes.insert(name);
+    void set_attributes(AttributeMetrics &, std::vector<std::string> field_names) override {
+        for (auto &field_name: field_names) {
+            _attributes.insert(field_name);
+        }
     }
 };
 
@@ -191,7 +193,7 @@ struct MyFastAccessConfig
 {
     FastAccessConfig _cfg;
     explicit MyFastAccessConfig(SubDbType subDbType)
-        : _cfg(MyStoreOnlyConfig(subDbType)._cfg, true, true, FastAccessAttributesOnly)
+        : _cfg(MyStoreOnlyConfig(subDbType)._cfg, FastAccessAttributesOnly)
     {
     }
 };

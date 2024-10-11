@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * Enumeration of the possible types of fields. Since arrays and weighted sets may be defined for any types, including
- * themselves, this enumeration is open ended.
+ * themselves, this enumeration is open-ended.
  *
  * @author bratseth
  */

@@ -10,11 +10,14 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".storage.persistence.testandsethelper");
+
 using namespace std::string_literals;
 
 namespace storage {
 
-void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo & documentTypeRepo) {
+void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo& documentTypeRepo) {
     if (_docTypePtr != nullptr) return;
     if (!_docId.hasDocType()) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Document id has no doctype"));
@@ -26,18 +29,18 @@ void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo & do
     }
 }
 
-void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo,
-                                              const document::BucketIdFactory & bucketIdFactory) {
+void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo& documentTypeRepo,
+                                              const document::BucketIdFactory& bucketIdFactory) {
     document::select::Parser parser(documentTypeRepo, bucketIdFactory);
 
     try {
         _docSelectionUp = parser.parse(_condition.getSelection());
-    } catch (const document::select::ParsingFailedException & e) {
+    } catch (const document::select::ParsingFailedException& e) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Failed to parse test and set condition: "s + e.getMessage()));
     }
 }
 
-spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context) {
+spi::GetResult TestAndSetHelper::fetch_document(const document::FieldSet& fieldSet, spi::Context& context) {
     return _spi.get(_env.getBucket(_docId, _bucket), fieldSet, _docId, context);
 }
 
@@ -57,7 +60,7 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil& env,
       _docTypePtr(doc_type_ptr),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
-    const auto & repo = _env.getDocumentTypeRepo();
+    const auto& repo = _env.getDocumentTypeRepo();
     resolveDocumentType(repo);
     parseDocumentSelection(repo, bucket_id_factory);
 }
@@ -65,7 +68,7 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil& env,
 TestAndSetHelper::~TestAndSetHelper() = default;
 
 TestAndSetHelper::Result
-TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
+TestAndSetHelper::fetch_and_match_selection(spi::Context& context) {
     // Walk document selection tree to build a minimal field set
     FieldVisitor fieldVisitor(*_docTypePtr);
     try {
@@ -77,7 +80,7 @@ TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
                                       "Imported fields are not supported in conditional mutations.",
                                       e.getFieldName().c_str())));
     }
-    auto result = retrieveDocument(fieldVisitor.getFieldSet(), context);
+    auto result = fetch_document(fieldVisitor.steal_field_set(), context);
     // If document exists, match it with selection
     if (result.hasDocument()) {
         auto docPtr = result.getDocumentPtr();
@@ -112,10 +115,34 @@ TestAndSetHelper::to_api_return_code(const Result& result) const {
     abort();
 }
 
+TestAndSetHelper::Result
+TestAndSetHelper::timestamp_predicate_match_to_result(const spi::GetResult& spi_result) const {
+    const auto my_ts = spi_result.getTimestamp();
+    if (my_ts == _condition.required_timestamp()) {
+        return {my_ts, Result::ConditionOutcome::IsMatch};
+    } else if (spi_result.is_tombstone()) {
+        return {my_ts, Result::ConditionOutcome::IsTombstone};
+    } else if (my_ts == 0) {
+        return {0, Result::ConditionOutcome::DocNotFound};
+    }
+    return {my_ts, Result::ConditionOutcome::IsNotMatch};
+}
+
+TestAndSetHelper::Result
+TestAndSetHelper::fetch_and_match_raw(spi::Context& context) {
+    if (_condition.has_required_timestamp()) { // timestamp predicate takes precedence
+        const auto doc_meta = fetch_document(document::NoFields(), context);
+        LOG(debug, "TaS condition has required timestamp %" PRIu64 ", local document has timestamp %" PRIu64,
+            _condition.required_timestamp(), doc_meta.getTimestamp().getValue());
+        return timestamp_predicate_match_to_result(doc_meta);
+    } else {
+        return fetch_and_match_selection(context);
+    }
+}
+
 api::ReturnCode
-TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
-    auto result = fetch_and_match_raw(context);
-    return to_api_return_code(result);
+TestAndSetHelper::retrieveAndMatch(spi::Context& context) {
+    return to_api_return_code(fetch_and_match_raw(context));
 }
 
 } // storage
