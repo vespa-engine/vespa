@@ -12,7 +12,6 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
@@ -37,7 +36,7 @@ public class CSTUtils {
         return new Range(begin, end);
     }
 
-    public static Range getNodeRange(Node node) {
+    public static Range getNodeRange(ai.vespa.schemals.parser.Node node) {
         TokenSource tokenSource = node.getTokenSource();
         try {
             return getRangeFromOffsets(tokenSource, node.getBeginOffset(), node.getEndOffset());
@@ -89,19 +88,12 @@ public class CSTUtils {
         );
     }
 
-    public static SchemaNode findFirstLeafChild(SchemaNode node) {
-        while (!node.isLeaf()) {
-            node = node.get(0);
-        }
-        return node;
-    }
-
     /* Returns the last non-dirty node before the supplied position */
-    public static SchemaNode getLastCleanNode(SchemaNode node, Position pos) {
+    public static Node getLastCleanNode(Node node, Position pos) {
         if (node == null) return null;
         for (int i = node.size() - 1; i >= 0; i--) {
-            SchemaNode result = getLastCleanNode(node.get(i), pos);
-            if (result != null)return result;
+            Node result = getLastCleanNode(node.get(i), pos);
+            if (result != null) return result;
         }
 
         Range range = node.getRange();
@@ -112,20 +104,20 @@ public class CSTUtils {
         return null;
     }
 
-    public static SchemaNode getNodeAtOrBeforePosition(SchemaNode CST, Position pos) {
+    public static Node getNodeAtOrBeforePosition(Node CST, Position pos) {
         return getNodeAtPosition(CST, pos, false, true);
     }
 
-    public static SchemaNode getLeafNodeAtPosition(SchemaNode CST, Position pos) {
+    public static Node getLeafNodeAtPosition(Node CST, Position pos) {
         return getNodeAtPosition(CST, pos, true, false);
     }
 
-    public static SchemaNode getNodeAtPosition(SchemaNode CST, Position pos) {
+    public static Node getNodeAtPosition(Node CST, Position pos) {
         return getNodeAtPosition(CST, pos, false, false);
     }
 
-    public static SchemaNode getSymbolAtPosition(SchemaNode CST, Position pos) {
-        SchemaNode node = getNodeAtPosition(CST, pos);
+    public static Node getSymbolAtPosition(Node CST, Position pos) {
+        Node node = getNodeAtPosition(CST, pos);
 
         while (node != null && !node.hasSymbol()) {
             node = node.getParent();
@@ -137,15 +129,15 @@ public class CSTUtils {
     /*
      * Helper method for walking up the tree to find some AST class
      */
-    public static SchemaNode findASTClassAncestor(SchemaNode node, Class<?> astClass) {
+    public static Node findASTClassAncestor(Node node, Class<?> astClass) {
         while (node != null) {
-            if (node.isASTInstance(astClass)) return node;
+            if (node.getASTClass() == astClass) return node;
             node = node.getParent();
         }
         return null;
     }
 
-    private static SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
+    private static Node getNodeAtPosition(Node node, Position pos, boolean onlyLeaf, boolean findNearest) {
         if (node == null) return null;
 
         if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
@@ -157,7 +149,7 @@ public class CSTUtils {
             return null;
         }
 
-        for (SchemaNode child : node) {
+        for (Node child : node) {
             if (CSTUtils.positionInRange(child.getRange(), pos)) {
                 return getNodeAtPosition(child, pos, onlyLeaf, findNearest);
             }
@@ -168,8 +160,8 @@ public class CSTUtils {
         return node;
     }
 
-    public static Optional<Symbol> findScope(SchemaNode node) {
-        SchemaNode currentNode = node;
+    public static Optional<Symbol> findScope(Node node) {
+        Node currentNode = node;
 
         while (
             currentNode != null
@@ -187,16 +179,16 @@ public class CSTUtils {
                 // TODO: Refactor in a more general way
                 int indexGuess = 1;
 
-                if (currentNode.isASTInstance(functionElm.class)) {
+                if (currentNode.getASTClass() == functionElm.class) {
                     indexGuess = 2;
                 }
 
-                if (currentNode.isASTInstance(lambdaFunction.class)) {
+                if (currentNode.getASTClass() == lambdaFunction.class) {
                     indexGuess = 0;
                 }
 
                 if (indexGuess < currentNode.size()) {
-                    SchemaNode potentialDefinition = currentNode.get(indexGuess);
+                    Node potentialDefinition = currentNode.get(indexGuess);
                     if (potentialDefinition.hasSymbol() && potentialDefinition.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
                         return Optional.of(potentialDefinition.getSymbol());
                     }
@@ -215,18 +207,18 @@ public class CSTUtils {
 
     private static final String SPACER = " ";
 
-    public static void printTree(ClientLogger logger, Node node) {
+    public static void printTree(ClientLogger logger, ai.vespa.schemals.parser.Node node) {
         printTree(logger, node, 0);
     }
 
-    public static void printTree(ClientLogger logger, Node node, Integer indent) {
+    public static void printTree(ClientLogger logger, ai.vespa.schemals.parser.Node node, Integer indent) {
         if (node == null) return;
         Range range = getNodeRange(node);
         logger.info(new String(new char[indent]).replace("\0", SPACER) + node.getClass().getName()
             + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
         );
 
-        for (Node child : node) {
+        for (ai.vespa.schemals.parser.Node child : node) {
             printTree(logger, child, indent + 1);
         }
     }
@@ -240,8 +232,11 @@ public class CSTUtils {
 
         logger.info(new String(new char[indent]).replace("\0", SPACER) + schemaNodeString(node));
 
-        for (SchemaNode child : node) {
-            printTree(logger, child, indent + 1);
+        for (Node child : node) {
+            if (!child.isSchemaNode()) {
+                throw new UnsupportedOperationException("Was only expecting to receive SchemaNodes");
+            }
+            printTree(logger, child.getSchemaNode(), indent + 1);
         }
 
         if (node.hasIndexingNode()) {
@@ -253,7 +248,7 @@ public class CSTUtils {
         }
     }
 
-    public static void printTreeUpToPosition(ClientLogger logger, Node node, Position pos) {
+    public static void printTreeUpToPosition(ClientLogger logger, ai.vespa.schemals.parser.Node node, Position pos) {
         printTreeUpToPosition(logger, node, pos, 0);
     }
 
@@ -261,7 +256,7 @@ public class CSTUtils {
         printTreeUpToPosition(logger, node, pos, 0);
     }
 
-    public static void printTreeUpToPosition(ClientLogger logger, Node node, Position pos, Integer indent) {
+    public static void printTreeUpToPosition(ClientLogger logger, ai.vespa.schemals.parser.Node node, Position pos, Integer indent) {
         Range range = getNodeRange(node);
 
         if (!positionLT(pos, range.getStart())) {
@@ -271,7 +266,7 @@ public class CSTUtils {
                     );
         }
 
-        for (Node child : node) {
+        for (ai.vespa.schemals.parser.Node child : node) {
             printTreeUpToPosition(logger, child, pos, indent + 1);
         }
     }
@@ -285,8 +280,11 @@ public class CSTUtils {
         }
 
 
-        for (SchemaNode child : node) {
-            printTreeUpToPosition(logger, child, pos, indent + 1);
+        for (Node child : node) {
+            if (!child.isSchemaNode()) {
+                throw new UnsupportedOperationException("Only expected SchemaNodes");
+            }
+            printTreeUpToPosition(logger, child.getSchemaNode(), pos, indent + 1);
         }
     }
 

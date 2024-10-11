@@ -14,11 +14,11 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.parser.yqlplus.ParseException;
 import ai.vespa.schemals.parser.yqlplus.YQLPlusParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
@@ -82,7 +82,7 @@ public class YQLDocument implements DocumentManager {
             // Ignored, marked by dirty node
         }
 
-        Node node = parser.rootNode();
+        ai.vespa.schemals.parser.yqlplus.Node node = parser.rootNode();
         YQLNode retNode = new YQLNode(node);
         // YQLUtils.printTree(logger, node);
 
@@ -125,8 +125,8 @@ public class YQLDocument implements DocumentManager {
             diagnostics.addAll(identifier.identify(node));
         }
 
-        for (YQLNode child : node) {
-            traverseCST(child, context, diagnostics);
+        for (Node child : node) {
+            traverseCST(child.getYQLNode(), context, diagnostics);
         }
     }
 

@@ -35,6 +35,7 @@ import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryInFieldLong;
 import ai.vespa.schemals.parser.ast.weightedsetElm;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class BodyKeywordCompletion implements CompletionProvider {
@@ -194,7 +195,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
 
-        SchemaNode last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
+        Node last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
 
         if (last == null) {
             return List.of();
@@ -202,7 +203,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         if (!last.isASTInstance(NL.class)) return List.of();
 
-        SchemaNode searchNode = last.getParent();
+        Node searchNode = last.getParent();
 
         if (searchNode == null) return List.of();
 

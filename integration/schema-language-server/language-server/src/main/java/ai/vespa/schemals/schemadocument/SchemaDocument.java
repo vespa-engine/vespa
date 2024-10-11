@@ -274,8 +274,8 @@ public class SchemaDocument implements DocumentManager {
             diagnostics.addAll(identifier.identify(node));
         }
 
-        for (int i = 0; i < node.size(); ++i) {
-            traverseCST(node.get(i), context, diagnostics);
+        for (ai.vespa.schemals.tree.Node child : node) {
+            traverseCST(child.getSchemaNode(), context, diagnostics);
         }
     }
 

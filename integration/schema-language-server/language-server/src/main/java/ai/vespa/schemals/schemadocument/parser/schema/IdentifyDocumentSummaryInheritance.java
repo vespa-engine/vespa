@@ -26,7 +26,7 @@ public class IdentifyDocumentSummaryInheritance extends Identifier<SchemaNode> {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         if (!node.isSchemaASTInstance(identifierWithDashStr.class)) return ret;
-        if (node.getParent() == null || !node.getParent().isSchemaASTInstance(inheritsDocumentSummary.class)) return ret;
+        if (node.getParent() == null || !node.getParent().getSchemaNode().isSchemaASTInstance(inheritsDocumentSummary.class)) return ret;
 
         if (!node.hasSymbol()) {
             ret.add(new SchemaDiagnostic.Builder()

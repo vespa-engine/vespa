@@ -16,6 +16,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.identifierStr;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
@@ -130,14 +131,14 @@ public class GenericFunction {
                 .build());
         }
 
-        SchemaNode symbolNode = property.get();
+        Node symbolNode = property.get();
         while (!symbolNode.isASTInstance(identifierStr.class) && symbolNode.size() > 0) {
             symbolNode = symbolNode.get(0);
         }
 
         if (symbolNode.isASTInstance(identifierStr.class)) {
-            symbolNode.setSymbol(SymbolType.PROPERTY, context.fileURI());
-            symbolNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+            symbolNode.setSymbol(SymbolType.PROPERTY, context.fileURI())
+                .setStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
 
         node.setFunctionSignature(new SpecificFunction(this, signature.get(), propertyString));

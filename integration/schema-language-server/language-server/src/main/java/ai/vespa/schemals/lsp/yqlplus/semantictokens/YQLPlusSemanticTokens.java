@@ -11,6 +11,7 @@ import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
 import ai.vespa.schemals.parser.yqlplus.ast.pipeline_step;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 
@@ -34,8 +35,8 @@ public class YQLPlusSemanticTokens {
             int keywordType = CommonSemanticTokens.getType(SemanticTokenTypes.Keyword);
             ret.add(new SemanticTokenMarker(keywordType, node));
         } else if (node.getASTClass() != pipeline_step.class) {
-            for (YQLNode child : node) {
-                ret.addAll(traverseCST(child, logger));
+            for (Node child : node) {
+                ret.addAll(traverseCST(child.getYQLNode(), logger));
             }
         }
 
@@ -51,8 +52,8 @@ public class YQLPlusSemanticTokens {
             int tokenType = CommonSemanticTokens.getType(tokenString);
             ret.add(new SemanticTokenMarker(tokenType, node));
         } else {
-            for (YQLNode child : node) {
-                ret.addAll(traverseCST(child, logger));
+            for (Node child : node) {
+                ret.addAll(traverseCST(child.getYQLNode(), logger));
             }
         }
 
@@ -69,8 +70,8 @@ public class YQLPlusSemanticTokens {
 
         List<SemanticTokenMarker> ret = new ArrayList<>();
 
-        for (YQLNode child : node) {
-            ret.addAll(traverseCST(child, logger));
+        for (Node child : node) {
+            ret.addAll(traverseCST(child.getYQLNode(), logger));
         }
 
         return ret;

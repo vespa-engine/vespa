@@ -13,7 +13,7 @@ import ai.vespa.schemals.tree.Node;
 /**
  * Mark all dirty nodes as Syntax error
  */
-public class IdentifyDirtyNodes<T extends Node<T>> extends Identifier<T> {
+public class IdentifyDirtyNodes<T extends Node> extends Identifier<T> {
 
     public IdentifyDirtyNodes(ParseContext context) {
 		super(context);

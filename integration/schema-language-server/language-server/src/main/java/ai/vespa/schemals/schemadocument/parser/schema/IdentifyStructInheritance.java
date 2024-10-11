@@ -26,7 +26,7 @@ public class IdentifyStructInheritance extends Identifier<SchemaNode> {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         if (!node.isSchemaASTInstance(identifierStr.class)) return ret;
-        if (node.getParent() == null || !node.getParent().isSchemaASTInstance(inheritsStruct.class)) return ret;
+        if (node.getParent() == null || !node.getParent().getSchemaNode().isSchemaASTInstance(inheritsStruct.class)) return ret;
 
         if (!node.hasSymbol()) {
             ret.add(new SchemaDiagnostic.Builder()

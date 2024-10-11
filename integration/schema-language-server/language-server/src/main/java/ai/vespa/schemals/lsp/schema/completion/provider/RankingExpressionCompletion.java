@@ -27,6 +27,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argume
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
@@ -76,7 +77,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
-        SchemaNode clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
+        Node clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
         List<CompletionItem> result = new ArrayList<>();
         if (matchFunctionCompletion(context,clean)) {
@@ -91,7 +92,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
 	}
 
 
-    private boolean matchFunctionCompletion(EventCompletionContext context, SchemaNode clean) {
+    private boolean matchFunctionCompletion(EventCompletionContext context, Node clean) {
         if (context.triggerCharacter.equals('.')) return false;
         return (clean.getLanguageType() == LanguageType.RANK_EXPRESSION || (
             clean.getParent() != null && (
@@ -103,9 +104,9 @@ public class RankingExpressionCompletion implements CompletionProvider {
 
     String getFunctionSignature(Symbol functionDefinition) {
         StringBuilder signature = new StringBuilder();
-        SchemaNode definitionNode = functionDefinition.getNode();
+        Node definitionNode = functionDefinition.getNode();
         //signature.append(definitionNode.getText());
-        SchemaNode it = definitionNode.getNextSibling();
+        Node it = definitionNode.getNextSibling();
         do {
             signature.append(it.getText());
             it = it.getNextSibling();
@@ -114,7 +115,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return signature.toString();
     }
 
-    List<CompletionItem> getUserDefinedFunctions(EventCompletionContext context, SchemaNode node) {
+    List<CompletionItem> getUserDefinedFunctions(EventCompletionContext context, Node node) {
         Optional<Symbol> scope = CSTUtils.findScope(node);
         if (scope.isEmpty())return List.of();
 
@@ -144,12 +145,13 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return ret;
     }
 
-    List<CompletionItem> getFunctionPropertyCompletion(EventCompletionContext context, SchemaNode startOfWordNode) {
+    List<CompletionItem> getFunctionPropertyCompletion(EventCompletionContext context, Node startOfWordNode) {
         if (context.triggerCharacter != '.') return List.of();
-        SchemaNode featureNode = CSTUtils.findASTClassAncestor(startOfWordNode, feature.class);
-        if (featureNode == null || featureNode.size() == 0) {
+        Node rawNode = CSTUtils.findASTClassAncestor(startOfWordNode, feature.class);
+        if (rawNode == null || rawNode.size() == 0 || !rawNode.isSchemaNode()) {
             return List.of();
         }
+        SchemaNode featureNode = rawNode.getSchemaNode();
         if (featureNode.getRankNode().isEmpty()) {
             return List.of();
         }

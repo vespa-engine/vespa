@@ -7,7 +7,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class StringArgument implements Argument {
@@ -31,7 +31,7 @@ public class StringArgument implements Argument {
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
-        SchemaNode leaf = node.getSchemaNode();
+        Node leaf = node.getSchemaNode();
 
         while (leaf.size() > 0) {
             if (leaf.hasSymbol()) {

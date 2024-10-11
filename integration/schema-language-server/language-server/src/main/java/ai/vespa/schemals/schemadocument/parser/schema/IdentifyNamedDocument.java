@@ -32,7 +32,7 @@ public class IdentifyNamedDocument extends Identifier<SchemaNode> {
         ArrayList<Diagnostic> ret = new ArrayList<>();
         if (!node.isSchemaASTInstance(documentElm.class))return ret;
 
-        if (node.size() < 2 || !node.get(1).isSchemaASTInstance(identifierStr.class))return ret;
+        if (node.size() < 2 || !node.get(1).getSchemaNode().isSchemaASTInstance(identifierStr.class))return ret;
 
         Range identifierRange = node.get(1).getRange();
         String documentName = node.get(1).getText();

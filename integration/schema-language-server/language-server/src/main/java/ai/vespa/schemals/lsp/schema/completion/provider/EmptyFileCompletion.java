@@ -10,6 +10,7 @@ import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.schema.completion.utils.CompletionUtils;
 import ai.vespa.schemals.schemadocument.DocumentManager;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -26,7 +27,7 @@ public class EmptyFileCompletion implements CompletionProvider {
 
         if (rootNode == null) return true;
 
-        for (SchemaNode child : rootNode) {
+        for (Node child : rootNode) {
             if (!child.isASTInstance(NL.class)) return false;
         }
 

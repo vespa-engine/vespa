@@ -3,10 +3,14 @@ package ai.vespa.schemals.tree;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Range;
 
-public abstract class Node<NodeType extends Node> implements Iterable<NodeType> {
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
+
+public abstract class Node implements Iterable<Node> {
 
     public enum LanguageType {
         SCHEMA,
@@ -18,12 +22,13 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
     }
 
     // This array has to be in order, without overlapping elements
-    private List<NodeType> children = new ArrayList<>();
-    private NodeType parent;
+    private List<Node> children = new ArrayList<>();
+    private Node parent;
 
     protected LanguageType language; // Language specifies which parser the node comes from
     protected Range range;
     protected boolean isDirty;
+    protected Symbol symbol;
 
     protected Node(LanguageType language, Range range, boolean isDirty) {
         this.language = language;
@@ -45,50 +50,50 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
         return children.size();
     }
 
-    public NodeType get(int i) {
+    public Node get(int i) {
         return children.get(i);
     }
 
-    public void setParent(NodeType parent) {
+    public void setParent(Node parent) {
         this.parent = parent;
     }
 
-    public void addChild(NodeType child) {
+    public void addChild(Node child) {
         child.setParent(this);
         this.children.add(child);
     }
 
-    public void addChildren(List<NodeType> children) {
-        for (NodeType child : children) {
+    public void addChildren(List<? extends Node> children) {
+        for (Node child : children) {
             addChild(child);
         }
     }
 
     public void clearChildren() {
-        for (NodeType child : children) {
+        for (Node child : children) {
             child.setParent(null);
         }
 
         children.clear();
     }
 
-    public NodeType getParent(int levels) {
+    public Node getParent(int levels) {
         if (levels == 0) {
-            return (NodeType) this;
+            return this;
         }
 
         if (parent == null) {
             return null;
         }
 
-        return (NodeType) parent.getParent(levels - 1);
+        return parent.getParent(levels - 1);
     }
 
-    public NodeType getParent() {
+    public Node getParent() {
         return getParent(1);
     }
 
-    public void insertChildAfter(int index, NodeType child) {
+    public void insertChildAfter(int index, Node child) {
         this.children.add(index+1, child);
         child.setParent(this);
     }
@@ -99,7 +104,7 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
      *
      * @return the previous SchemaNode, or null if there is no previous node
      */
-    public NodeType getPrevious() {
+    public Node getPrevious() {
         if (parent == null)return null;
 
         int parentIndex = parent.indexOf(this);
@@ -107,7 +112,7 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
         if (parentIndex == -1)return null; // invalid setup
 
         if (parentIndex == 0)return parent;
-        return (NodeType) parent.get(parentIndex - 1);
+        return parent.get(parentIndex - 1);
     }
 
     /**
@@ -116,16 +121,16 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
      *
      * @return the next SchemaNode or null if there is no next node
      */
-    public NodeType getNext() {
+    public Node getNext() {
         if (parent == null) return null;
 
         int parentIndex = parent.indexOf(this);
 
         if (parentIndex == -1) return null;
         
-        if (parentIndex == parent.size() - 1) return (NodeType) parent.getNext();
+        if (parentIndex == parent.size() - 1) return parent.getNext();
 
-        return (NodeType) parent.get(parentIndex + 1);
+        return parent.get(parentIndex + 1);
     }
 
     /**
@@ -135,7 +140,7 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
      * @param relativeIndex the relative index of the sibling node
      * @return the sibling node at the specified relative index, or null if the sibling node does not exist
      */
-    public NodeType getSibling(int relativeIndex) {
+    public Node getSibling(int relativeIndex) {
         if (parent == null)return null;
 
         int parentIndex = parent.indexOf(this);
@@ -145,7 +150,7 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
         int siblingIndex = parentIndex + relativeIndex;
         if (siblingIndex < 0 || siblingIndex >= parent.size()) return null;
         
-        return (NodeType) parent.get(siblingIndex);
+        return parent.get(siblingIndex);
     }
 
     /**
@@ -154,7 +159,7 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
      *
      * @return the previous sibling of this schema node, or null if there is no previous sibling
      */
-    public NodeType getPreviousSibling() {
+    public Node getPreviousSibling() {
         return getSibling(-1);
     }
 
@@ -164,11 +169,11 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
      *
      * @return the next sibling of this schema node, or null if there is no previous sibling
      */
-    public NodeType getNextSibling() {
+    public Node getNextSibling() {
         return getSibling(1);
     }
 
-    public int indexOf(NodeType child) {
+    public int indexOf(Node child) {
         return this.children.indexOf(child);
     }
 
@@ -176,9 +181,78 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
         return children.size() == 0;
     }
 
+    public boolean hasSymbol() {
+        return this.symbol != null;
+    }
+
+    public Symbol getSymbol() {
+        if (!hasSymbol()) throw new IllegalArgumentException("get Symbol called on node without a symbol!");
+        return this.symbol;
+    }
+
+    public void removeSymbol() {
+        this.symbol = null;
+    }
+
+    public Symbol setSymbol(SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
+        this.symbol = new Symbol(this, type, fileURI, scope, shortIdentifier);
+
+        return symbol;
+    }
+
+    public Symbol setSymbol(SymbolType type, String fileURI) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
+        this.symbol = new Symbol(this, type, fileURI);
+
+        return symbol;
+    }
+
+    public Symbol setSymbol(SymbolType type, String fileURI, Symbol scope) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
+        this.symbol = new Symbol(this, type, fileURI, scope);
+
+        return symbol;
+    }
+
+    public Symbol setSymbol(SymbolType type, String fileURI, Optional<Symbol> scope) {
+        if (scope.isPresent()) {
+            setSymbol(type, fileURI, scope.get());
+        } else {
+            setSymbol(type, fileURI);
+        }
+
+        return symbol;
+    }
+
+    public abstract int getBeginOffset();
+
+    public abstract String getText();
+    public abstract Class<?> getASTClass();
+
+    public boolean isASTInstance(Class<?> cls) {
+        return getASTClass() == cls;
+    }
+
+    public boolean isSchemaNode() { return false; }
+    public SchemaNode getSchemaNode() {
+        throw new UnsupportedOperationException("Cannot get a SchemaNode from a non SchemaNode.");
+    }
+
+    public boolean isYQLNode() { return false; }
+    public YQLNode getYQLNode() {
+        throw new UnsupportedOperationException("Cannot get a YQLNode from a non YQLNode.");
+    }
+
     @Override
-	public Iterator<NodeType> iterator() {
-        return new Iterator<NodeType>() {
+	public Iterator<Node> iterator() {
+        return new Iterator<Node>() {
             int currentIndex = 0;
 
 			@Override
@@ -187,7 +261,7 @@ public abstract class Node<NodeType extends Node> implements Iterable<NodeType> 
 			}
 
 			@Override
-			public NodeType next() {
+			public Node next() {
                 return children.get(currentIndex++);
 			}
         };

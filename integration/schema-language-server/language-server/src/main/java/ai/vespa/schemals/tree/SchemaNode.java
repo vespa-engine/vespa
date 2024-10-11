@@ -13,7 +13,6 @@ import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
@@ -26,19 +25,17 @@ import ai.vespa.schemals.parser.ast.featureListElm;
  * SchemaNode represents a node in the AST of a file the language server parses.
  * The node exposes a general interface to handle different AST from different parsers.
  */
-public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
+public class SchemaNode extends Node {
     
     private String identifierString;
-
-    private Symbol symbolAtNode;
     
-    private Node originalSchemaNode;
+    private ai.vespa.schemals.parser.Node originalSchemaNode;
     private ai.vespa.schemals.parser.indexinglanguage.Node originalIndexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node originalRankExpressionNode;
 
     // Special properties for node in the CUSTOM language
     private String contentString;
-    private Class<? extends Node> simulatedSchemaClass;
+    private Class<? extends ai.vespa.schemals.parser.Node> simulatedSchemaClass;
 
     // The tokenType for leaf nodes for different languages
     private TokenType schemaType;
@@ -58,7 +55,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         this.contentString = contentString;
     }
     
-    public SchemaNode(Node node) {
+    public SchemaNode(ai.vespa.schemals.parser.Node node) {
         this(
             LanguageType.SCHEMA,
             CSTUtils.getNodeRange(node),
@@ -145,7 +142,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
     // Return token type (if the node is a token), even if the node is dirty
     public TokenType getDirtyType() {
         if (language != LanguageType.SCHEMA) return null;
-        Node.NodeType originalType = originalSchemaNode.getType();
+        ai.vespa.schemals.parser.Node.NodeType originalType = originalSchemaNode.getType();
         if (originalType instanceof TokenType)return (TokenType)originalType;
         return null;
     }
@@ -158,61 +155,19 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         return type;
     }
 
-    public void setSymbol(SymbolType type, String fileURI) {
-        if (this.hasSymbol()) {
-            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
-        }
-        this.symbolAtNode = new Symbol(this, type, fileURI);
-    }
-
-    public void setSymbol(SymbolType type, String fileURI, Symbol scope) {
-        if (this.hasSymbol()) {
-            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
-        }
-        this.symbolAtNode = new Symbol(this, type, fileURI, scope);
-    }
-
-    public void setSymbol(SymbolType type, String fileURI, Optional<Symbol> scope) {
-        if (scope.isPresent()) {
-            setSymbol(type, fileURI, scope.get());
-        } else {
-            setSymbol(type, fileURI);
-        }
-    }
-
-    public void setSymbol(SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
-        if (this.hasSymbol()) {
-            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
-        }
-        this.symbolAtNode = new Symbol(this, type, fileURI, scope, shortIdentifier);
-    }
-
-    public void removeSymbol() {
-        this.symbolAtNode = null;
-    }
-
     public void setSymbolType(SymbolType newType) {
         if (!this.hasSymbol()) return;
-        this.symbolAtNode.setType(newType);
+        this.symbol.setType(newType);
     }
 
     public void setSymbolStatus(SymbolStatus newStatus) {
         if (!this.hasSymbol()) return;
-        this.symbolAtNode.setStatus(newStatus);
+        this.symbol.setStatus(newStatus);
     }
 
     public void setSymbolScope(Symbol newScope) {
         if (!this.hasSymbol()) return;
-        this.symbolAtNode.setScope(newScope);
-    }
-
-    public boolean hasSymbol() {
-        return this.symbolAtNode != null;
-    }
-
-    public Symbol getSymbol() {
-        if (!hasSymbol()) throw new IllegalArgumentException("get Symbol called on node without a symbol!");
-        return this.symbolAtNode;
+        this.symbol.setScope(newScope);
     }
 
     public boolean containsOtherLanguageData(LanguageType language) {
@@ -259,7 +214,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         return false; // this.rankExpressionNode != null;
     }
 
-    public Node getOriginalSchemaNode() {
+    public ai.vespa.schemals.parser.Node getOriginalSchemaNode() {
         return originalSchemaNode;
     }
 
@@ -271,7 +226,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         return this.originalRankExpressionNode;
     }
 
-    public void setSimulatedASTClass(Class<? extends Node> astClass) {
+    public void setSimulatedASTClass(Class<? extends ai.vespa.schemals.parser.Node> astClass) {
         if (language != LanguageType.CUSTOM) throw new IllegalArgumentException("Cannot set Simulated AST Class on a Schema node of type other than Custom");
 
         simulatedSchemaClass = astClass;
@@ -285,7 +240,7 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         return false;
     }
 
-    public boolean isSchemaASTInstance(Class<? extends Node> astClass) {
+    public boolean isSchemaASTInstance(Class<? extends ai.vespa.schemals.parser.Node> astClass) {
         if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchemaClass);
         
         return astClass.isInstance(originalSchemaNode);
@@ -335,7 +290,8 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
         this.range = CSTUtils.getNodeRange(originalSchemaNode);
     }
 
-    public int getOriginalBeginOffset() {
+    @Override
+    public int getBeginOffset() {
         switch (language) {
             case SCHEMA:
                 if (originalSchemaNode == null) return -1;
@@ -381,11 +337,11 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
     }
 
     public SchemaNode findFirstLeaf() {
-        SchemaNode ret = this;
+        Node ret = this;
         while (ret.size() > 0) {
             ret = ret.get(0);
         }
-        return ret;
+        return ret.getSchemaNode();
     }
 
     public IllegalArgumentException getIllegalArgumentException() {
@@ -427,6 +383,12 @@ public class SchemaNode extends ai.vespa.schemals.tree.Node<SchemaNode> {
     }
 
     public Optional<RankNode> getRankNode() { return rankNode; }
+
+    @Override
+    public boolean isSchemaNode() { return true; }
+
+    @Override
+    public SchemaNode getSchemaNode() { return this; }
 
     public String toString() {
         Position pos = getRange().getStart();

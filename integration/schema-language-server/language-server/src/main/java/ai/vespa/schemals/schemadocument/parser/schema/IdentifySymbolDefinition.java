@@ -40,6 +40,7 @@ import ai.vespa.schemals.parser.ast.tensorTypeElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 
@@ -70,7 +71,7 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
 
         if (!isIdentifier && !isIdentifierWithDash) return ret;
 
-        SchemaNode parent = node.getParent();
+        Node parent = node.getParent();
         if (parent == null) return ret;
 
         if (parent.isASTInstance(importField.class) && node.getPreviousSibling() != null && node.getPreviousSibling().isASTInstance(AS.class)) {
@@ -217,7 +218,7 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
         }
     }
 
-    private Optional<Symbol> findMapScope(SchemaNode mapDataTypeNode) {
+    private Optional<Symbol> findMapScope(Node mapDataTypeNode) {
         while (mapDataTypeNode != null) {
             mapDataTypeNode = mapDataTypeNode.getParent();
             if (mapDataTypeNode == null) return Optional.empty();
@@ -227,7 +228,7 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             }
 
             if (mapDataTypeNode.isASTInstance(fieldElm.class) || mapDataTypeNode.isASTInstance(structFieldDefinition.class)) {
-                SchemaNode fieldIdentifierNode = mapDataTypeNode.get(1);
+                Node fieldIdentifierNode = mapDataTypeNode.get(1);
                 if (fieldIdentifierNode == null) return Optional.empty();
                 if (!fieldIdentifierNode.hasSymbol() || fieldIdentifierNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
                 return Optional.of(fieldIdentifierNode.getSymbol());
@@ -257,12 +258,12 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             return ret;
         }
 
-        SchemaNode grandParent = node.getParent(2);
+        Node grandParent = node.getParent(2);
         if (grandParent == null || !grandParent.isASTInstance(lambdaFunction.class) || grandParent.size() < 1) {
             return ret;
         }
 
-        SchemaNode parent = grandParent.get(0);
+        Node parent = grandParent.get(0);
 
         if (!parent.hasSymbol()) {
 
@@ -272,8 +273,8 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
                 return ret;
             }
     
-            parent.setSymbol(SymbolType.LAMBDA_FUNCTION, context.fileURI(), parentScope.get(), "lambda_" + node.hashCode());
-            parent.setSymbolStatus(SymbolStatus.DEFINITION);
+            parent.setSymbol(SymbolType.LAMBDA_FUNCTION, context.fileURI(), parentScope.get(), "lambda_" + node.hashCode())
+                .setStatus(SymbolStatus.DEFINITION);
             context.schemaIndex().insertSymbolDefinition(parent.getSymbol());
         }
 

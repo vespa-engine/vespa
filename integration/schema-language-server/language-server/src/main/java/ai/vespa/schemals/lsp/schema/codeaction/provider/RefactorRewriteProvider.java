@@ -25,16 +25,16 @@ import ai.vespa.schemals.lsp.common.command.CommandRegistry.CommandType;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 
 /**
  * RefactorRewriteProvider
  */
 public class RefactorRewriteProvider implements CodeActionProvider {
 
-    private Optional<CodeAction> getMoveRankProfile(SchemaNode node, EventCodeActionContext context) {
+    private Optional<CodeAction> getMoveRankProfile(Node node, EventCodeActionContext context) {
         if (!(context.document instanceof SchemaDocument)) return Optional.empty();
-        SchemaNode rankProfileNode = CSTUtils.findASTClassAncestor(node, rankProfile.class);
+        Node rankProfileNode = CSTUtils.findASTClassAncestor(node, rankProfile.class);
         if (rankProfileNode == null) return Optional.empty();
 
         String schemaName = ((SchemaDocument)context.document).getSchemaIdentifier();
@@ -68,7 +68,7 @@ public class RefactorRewriteProvider implements CodeActionProvider {
 
 	@Override
 	public List<Either<Command, CodeAction>> getActions(EventCodeActionContext context) {
-        SchemaNode atPosition = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
+        Node atPosition = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
         List<Either<Command, CodeAction>> result = new ArrayList<>();
 
         getMoveRankProfile(atPosition, context).ifPresent(action -> result.add(Either.forRight(action)));

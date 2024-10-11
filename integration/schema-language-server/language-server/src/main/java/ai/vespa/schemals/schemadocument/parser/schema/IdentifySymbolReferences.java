@@ -20,7 +20,6 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.COLON;
 import ai.vespa.schemals.parser.ast.FIELD;
 import ai.vespa.schemals.parser.ast.annotationRefDataType;
@@ -48,6 +47,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 
@@ -80,7 +80,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
      *
      * This involves splitting the identifierStr node into several nodes based on the dot-syntax for fields.
      */
-    private static final Set<Class<? extends Node>> fieldReferenceIdentifierParents = new HashSet<>() {{
+    private static final Set<Class<? extends ai.vespa.schemals.parser.Node>> fieldReferenceIdentifierParents = new HashSet<>() {{
         add(fieldsElm.class);
         add(structFieldElm.class);
         add(summaryInDocument.class);
@@ -114,8 +114,9 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
             return ret;
         }
 
-        SchemaNode parent = node.getParent();
-        if (parent == null) return ret;
+        Node rawParent = node.getParent();
+        if (rawParent == null) return ret;
+        SchemaNode parent = rawParent.getSchemaNode();
 
         if (fieldReferenceIdentifierParents.contains(parent.getASTClass())) {
             return handleFieldReference(node);
@@ -154,7 +155,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         ArrayList<Diagnostic> ret = new ArrayList<>();
         if (!identifierNodes.contains(node.getOriginalRankExpressionNode().getClass())) return ret;
 
-        SchemaNode parent = node.getParent();
+        SchemaNode parent = node.getParent().getSchemaNode();
 
 
         if (!(parent.getOriginalRankExpressionNode() instanceof BaseNode)) return ret;
@@ -211,7 +212,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
     private ArrayList<Diagnostic> handleFieldReference(SchemaNode identifierNode) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        SchemaNode parent = identifierNode.getParent();
+        Node parent = identifierNode.getParent();
 
         // Edge case: if we are in a summary element and there is specified a source list, we will not mark it as a reference
         if (parent.isASTInstance(summaryInDocument.class) && summaryHasSourceList(parent)) {
@@ -275,7 +276,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         identifierNode.setNewEndCharacter(newEnd);
 
         if (identifierNode.size() != 0) {
-            identifierNode.get(0).setNewEndCharacter(newEnd);
+            identifierNode.get(0).getSchemaNode().setNewEndCharacter(newEnd);
         }
 
         Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
@@ -330,7 +331,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
 
         if (!identifierNode.getPreviousSibling().isASTInstance(FIELD.class)) return ret;
 
-        SchemaNode parent = identifierNode.getParent();
+        Node parent = identifierNode.getParent();
 
         String fieldIdentifier = identifierNode.getText();
 
@@ -356,7 +357,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
 
         // Set new end for the token inside this node
         if (identifierNode.size() != 0) {
-            identifierNode.get(0).setNewEndCharacter(newEnd);
+            identifierNode.get(0).getSchemaNode().setNewEndCharacter(newEnd);
         }
 
         Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
@@ -400,8 +401,8 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
     /*
      * Given a summary node e.g. summaryInDocument, return true if the summary has a source list.
      */
-    private boolean summaryHasSourceList(SchemaNode summaryNode) {
-        for (SchemaNode child : summaryNode) {
+    private boolean summaryHasSourceList(Node summaryNode) {
+        for (Node child : summaryNode) {
             if (child.isASTInstance(summaryItem.class) && child.get(0).isASTInstance(summarySourceList.class)) return true;
         }
         return false;

@@ -12,6 +12,7 @@ import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -34,10 +35,10 @@ public class IdentifyDocumentlessSchema extends Identifier<SchemaNode> {
         }
 
         // Look for document definition inside
-        for (SchemaNode child : node) {
-            if (!child.isSchemaASTInstance(rootSchemaItem.class)) continue;
+        for (Node child : node) {
+            if (!child.getSchemaNode().isSchemaASTInstance(rootSchemaItem.class)) continue;
             if (child.size() == 0) continue;
-            if (child.get(0).isSchemaASTInstance(documentElm.class)) return ret; // Found document
+            if (child.get(0).getSchemaNode().isSchemaASTInstance(documentElm.class)) return ret; // Found document
         }
 
         ret.add(new SchemaDiagnostic.Builder()

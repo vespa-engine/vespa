@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 
@@ -36,8 +37,8 @@ public class ResolverTraversal {
             IndexingLanguageResolver.resolveIndexingLanguage(context, currentNode, diagnostics);
         }
 
-        for (SchemaNode child : currentNode) {
-            traverse(context, child, diagnostics, insideRankExpression || currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION);
+        for (Node child : currentNode) {
+            traverse(context, child.getSchemaNode(), diagnostics, insideRankExpression || currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION);
         }
 
         // Some things need run after the children has run.

@@ -10,7 +10,7 @@ import ai.vespa.schemals.tree.Node;
 /**
  * Identifier is a abstract class to represent functions to identifiy patterns in the AST and do actions based on those actions.
  */
-public abstract class Identifier<T extends Node<T>> {
+public abstract class Identifier<T extends Node> {
 
     protected ParseContext context;
 

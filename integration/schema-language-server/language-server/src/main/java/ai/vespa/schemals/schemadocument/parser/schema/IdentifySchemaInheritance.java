@@ -26,9 +26,9 @@ public class IdentifySchemaInheritance extends Identifier<SchemaNode> {
 
         if (!node.isSchemaASTInstance(identifierStr.class)) return ret;
         if (node.getParent() == null) return ret;
-        if (!node.getParent().isSchemaASTInstance(rootSchema.class)) return ret;
+        if (!node.getParent().getSchemaNode().isSchemaASTInstance(rootSchema.class)) return ret;
         if (node.getPreviousSibling() == null) return ret;
-        if (node.getPreviousSibling().getSchemaType() != TokenType.INHERITS) return ret;
+        if (node.getPreviousSibling().getSchemaNode().getSchemaType() != TokenType.INHERITS) return ret;
 
         if (!node.hasSymbol()) {
             return ret;

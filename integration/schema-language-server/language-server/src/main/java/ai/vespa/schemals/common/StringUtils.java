@@ -5,6 +5,7 @@ import java.util.List;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -57,8 +58,8 @@ public class StringUtils {
         return offsetToPosition(content, totalOffset);
     }
 
-    public static String getIndentString(String content, SchemaNode node) {
-        int offset = node.getOriginalBeginOffset();
+    public static String getIndentString(String content, Node node) {
+        int offset = node.getBeginOffset();
         int nl = content.lastIndexOf('\n', offset) + 1;
         return content.substring(nl, offset);
     }

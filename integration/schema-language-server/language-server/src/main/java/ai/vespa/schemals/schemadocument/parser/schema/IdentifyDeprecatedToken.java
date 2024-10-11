@@ -15,6 +15,7 @@ import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -64,7 +65,7 @@ public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
             }
 
             String attributeName = node.getNextSibling().getText();
-            SchemaNode fieldNode = node;
+            Node fieldNode = node;
 
             while (fieldNode != null && !fieldNode.isASTInstance(structFieldElm.class) && !fieldNode.isASTInstance(fieldElm.class)) {
                 fieldNode = fieldNode.getParent();

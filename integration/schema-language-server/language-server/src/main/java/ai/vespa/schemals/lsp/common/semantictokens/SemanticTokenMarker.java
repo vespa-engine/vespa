@@ -15,7 +15,7 @@ public class SemanticTokenMarker {
     private int modifierValue = 0;
     private Range range;
 
-    public SemanticTokenMarker(int tokenType, Node<?> node) {
+    public SemanticTokenMarker(int tokenType, Node node) {
         this(tokenType, node.getRange());
     }
     

@@ -23,6 +23,7 @@ import ai.vespa.schemals.parser.ast.inputElm;
 import ai.vespa.schemals.parser.ast.valueType;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -75,10 +76,10 @@ public class IdentifyType extends Identifier<SchemaNode> {
         }
 
         if (parsedType.getVariant() == Variant.MAP) {
-            SchemaNode keyTypeNode = node.get(0).get(2);
+            Node keyTypeNode = node.get(0).get(2);
 
             if (keyTypeNode != null && keyTypeNode.isASTInstance(dataType.class)) {
-                ParsedType keyParsedType = ((dataType)keyTypeNode.getOriginalSchemaNode()).getParsedType();
+                ParsedType keyParsedType = ((dataType)keyTypeNode.getSchemaNode().getOriginalSchemaNode()).getParsedType();
                 if (keyParsedType.getVariant() != Variant.BUILTIN) {
                     // TODO: quickfix
                     ret.add(new SchemaDiagnostic.Builder()
@@ -106,9 +107,10 @@ public class IdentifyType extends Identifier<SchemaNode> {
     }
 
     private static boolean isInsideAnnotationBody(SchemaNode node) {
-        while (node != null) {
-            if (node.isSchemaASTInstance(annotationBody.class)) return true;
-            node = node.getParent();
+        Node currentNode = node;
+        while (currentNode != null) {
+            if (currentNode.getSchemaNode().isSchemaASTInstance(annotationBody.class)) return true;
+            currentNode = currentNode.getParent();
         }
         return false;
     }
@@ -121,9 +123,9 @@ public class IdentifyType extends Identifier<SchemaNode> {
         }
 
         SchemaNode valueTypeNode = null;
-        for (SchemaNode child : node) {
+        for (Node child : node) {
             if (child.isASTInstance(valueType.class)) {
-                valueTypeNode = child;
+                valueTypeNode = child.getSchemaNode();
                 break;
             }
         }
@@ -132,7 +134,7 @@ public class IdentifyType extends Identifier<SchemaNode> {
             return ret;
         }
 
-        SchemaNode typeToken = valueTypeNode.findFirstLeaf();
+        Node typeToken = valueTypeNode.findFirstLeaf();
         String identifierName = node.get(0).getText();
         String warningMessage = null;
         if (typeToken.isASTInstance(LONG_KEYWORD.class)) {
