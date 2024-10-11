@@ -1,12 +1,14 @@
 package ai.vespa.schemals.lsp.common.command.commandtypes;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.ShowDocumentResult;
 
 import com.google.gson.JsonPrimitive;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
+import ai.vespa.schemals.lsp.common.command.CommandUtils;
 
 /**
  * OpenDocument
@@ -29,11 +31,10 @@ public class DocumentOpen implements SchemaCommand {
     public boolean setArguments(List<Object> arguments) {
         assert arguments.size() == getArity();
 
-        if (!(arguments.get(0) instanceof JsonPrimitive))
-            return false;
+        Optional<String> argument = CommandUtils.getStringArgument(arguments.get(0));
+        if (argument.isEmpty()) return false;
 
-        JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
-        fileURI = arg.getAsString();
+        fileURI = argument.get();
         return true;
     }
 

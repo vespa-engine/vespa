@@ -1,12 +1,14 @@
 package ai.vespa.schemals.lsp.common.command.commandtypes;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.google.gson.JsonPrimitive;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.lsp.common.command.CommandUtils;
 
 /**
  * FindDocument
@@ -32,11 +34,11 @@ public class FindDocument implements SchemaCommand {
     public boolean setArguments(List<Object> arguments) {
         assert arguments.size() == getArity();
 
-        if (!(arguments.get(0) instanceof JsonPrimitive))
-            return false;
+        Optional<String> argument = CommandUtils.getStringArgument(arguments.get(0));
+        if (argument.isEmpty()) return false;
 
-        JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
-        schemaName = arg.getAsString();
+        schemaName = argument.get();
+
         return true;
     }
 

@@ -5,10 +5,12 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 
 import com.google.gson.JsonPrimitive;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
+import ai.vespa.schemals.lsp.common.command.CommandUtils;
 
 public class SetupWorkspace implements SchemaCommand {
 
@@ -23,11 +25,11 @@ public class SetupWorkspace implements SchemaCommand {
     public boolean setArguments(List<Object> arguments) {
         assert arguments.size() == getArity();
 
-        if (!(arguments.get(0) instanceof JsonPrimitive))
-            return false;
+        Optional<String> argument = CommandUtils.getStringArgument(arguments.get(0));
+        if (argument.isEmpty()) return false;
 
-        JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
-        String suppliedURI = arg.getAsString();
+        String suppliedURI = argument.get();
+
         try {
             Path schemasPath = Paths.get(new URI(suppliedURI)).getParent().resolve("schemas");
             if (schemasPath.toFile().exists()) {
