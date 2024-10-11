@@ -60,7 +60,7 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
     }
 
     protected String awsSecretId(Key key) {
-        return key.vaultName().value() + "/" + key.secretName();
+        return key.vaultName().value() + "/" + key.secretName().value();
     }
 
     @Override
