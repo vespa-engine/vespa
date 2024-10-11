@@ -21,7 +21,21 @@ public final class GetFieldExpression extends Expression {
 
     public String getFieldName() { return fieldName; }
 
-    // TODO: input/output
+    @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        return context.getFieldType(fieldName, this);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        var type = context.getFieldType(fieldName, this);
+        // TODO:
+        // if ( ! outputType.isAssignableFrom(type))
+        //     throw new IllegalArgumentException(this + " produces , but " + outputType + " is required");
+        super.setOutputType(outputType, context);
+        return null; // Really ANY
+    }
 
     @Override
     protected void doVerify(VerificationContext context) {

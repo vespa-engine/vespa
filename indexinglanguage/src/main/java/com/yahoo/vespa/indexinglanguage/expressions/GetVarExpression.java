@@ -8,27 +8,43 @@ import com.yahoo.document.DataType;
  */
 public final class GetVarExpression extends Expression {
 
-    private final String varName;
+    private final String variableName;
 
-    public GetVarExpression(String varName) {
+    public GetVarExpression(String variableName) {
         super(null);
-        this.varName = varName;
+        this.variableName = variableName;
     }
 
-    public String getVariableName() { return varName; }
+    public String getVariableName() { return variableName; }
+
+    @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        return context.getVariable(variableName);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        var type = context.getVariable(variableName);
+        // TODO:
+        // if ( ! outputType.isAssignableFrom(type))
+        //     throw new IllegalArgumentException(this + " produces , but " + outputType + " is required");
+        super.setOutputType(outputType, context);
+        return null; // Really ANY
+    }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getVariable(varName);
+        DataType input = context.getVariable(variableName);
         if (input == null) {
-            throw new VerificationException(this, "Variable '" + varName + "' not found");
+            throw new VerificationException(this, "Variable '" + variableName + "' not found");
         }
         context.setCurrentType(input);
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setCurrentValue(context.getVariable(varName));
+        context.setCurrentValue(context.getVariable(variableName));
     }
 
     @Override
@@ -38,19 +54,19 @@ public final class GetVarExpression extends Expression {
 
     @Override
     public String toString() {
-        return "get_var " + varName;
+        return "get_var " + variableName;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof GetVarExpression rhs)) return false;
-        if (!varName.equals(rhs.varName)) return false;
+        if (!variableName.equals(rhs.variableName)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + varName.hashCode();
+        return getClass().hashCode() + variableName.hashCode();
     }
 
 }
