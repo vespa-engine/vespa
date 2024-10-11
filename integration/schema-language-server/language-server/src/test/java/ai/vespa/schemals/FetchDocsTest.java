@@ -17,7 +17,8 @@ public class FetchDocsTest {
     @Test
     public void testFetchDocs() {
         try {
-            FetchDocumentation.fetchDocs(Paths.get("").resolve("tmp").resolve("generated-resources").resolve("hover"));
+            FetchDocumentation.fetchSchemaDocs(Paths.get("").resolve("tmp").resolve("generated-resources").resolve("hover"));
+            FetchDocumentation.fetchServicesDocs(Paths.get("").resolve("tmp").resolve("generated-resources").resolve("hover"));
         } catch(IOException ioe) {
             assertEquals(0, 1, ioe.getMessage());
         }

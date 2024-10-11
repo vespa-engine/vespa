@@ -1,7 +1,7 @@
 package ai.vespa.lemminx;
 
-import java.io.PrintStream;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.eclipse.lemminx.dom.DOMDocument;
 import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
@@ -9,12 +9,10 @@ import org.eclipse.lemminx.services.extensions.commands.IXMLCommandService;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
 public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipant {
-
-    private PrintStream logger;
+    private static final Logger logger = Logger.getLogger(DocumentLifecycleParticipant.class.getName());
     private IXMLCommandService commandService;
 
-    public DocumentLifecycleParticipant(PrintStream logger, IXMLCommandService commandService) {
-        this.logger = logger;
+    public DocumentLifecycleParticipant(IXMLCommandService commandService) {
         this.commandService = commandService;
     }
 
@@ -24,7 +22,8 @@ public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipa
             String fileURI = document.getTextDocument().getUri();
             commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.servicesxml.setupWorkspace", List.of(fileURI)));
         } catch (Exception ex) {
-            logger.println("Error when issuing setup workspce command: " + ex.getMessage());
+            // not very severe from our point of view
+            logger.warning("Error when issuing setup workspce command: " + ex.getMessage());
         }
     }
 

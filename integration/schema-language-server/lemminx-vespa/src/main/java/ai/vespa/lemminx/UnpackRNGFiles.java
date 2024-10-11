@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Files;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
  * This is similar to the documentation fetching in schema language-server.
  */
 public class UnpackRNGFiles {
-    public static void unpackRNGFiles(Path serverPath, PrintStream logger) throws IOException {
+    public static void unpackRNGFiles(Path serverPath) throws IOException {
         Files.createDirectories(serverPath.resolve("resources").resolve("schema")); // mkdir -p
         final String basePath = "resources/schema/";
 

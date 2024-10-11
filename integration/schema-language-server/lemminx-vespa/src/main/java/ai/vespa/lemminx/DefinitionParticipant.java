@@ -1,11 +1,8 @@
 package ai.vespa.lemminx;
 
-import java.io.PrintStream;
-import java.lang.reflect.Array;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.eclipse.lemminx.dom.DOMAttr;
 import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
@@ -18,14 +15,12 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
-import com.google.gson.internal.LinkedTreeMap;
 
 public class DefinitionParticipant implements IDefinitionParticipant {
-    private PrintStream logger;
+    private static final Logger logger = Logger.getLogger(DefinitionParticipant.class.getName());
     private IXMLCommandService commandService;
 
-    public DefinitionParticipant(PrintStream logger, IXMLCommandService commandService) { 
-        this.logger = logger; 
+    public DefinitionParticipant(IXMLCommandService commandService) { 
         this.commandService = commandService;
     }
 
@@ -64,7 +59,7 @@ public class DefinitionParticipant implements IDefinitionParticipant {
             Type listOfLocationType = new TypeToken<List<Location>>() {}.getType();
             return gson.fromJson(json, listOfLocationType);
         } catch (Exception ex) {
-            logger.println("Error when parsing json: " + ex.getMessage());
+            logger.severe("Error when parsing json: " + ex.getMessage());
             return List.of();
         }
     }

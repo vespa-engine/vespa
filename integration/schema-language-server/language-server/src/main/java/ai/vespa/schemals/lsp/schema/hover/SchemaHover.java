@@ -39,8 +39,6 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
  * As a TODO it would have been nice with some highlighting on the generated Markdown.
  */
 public class SchemaHover {
-    private static final String markdownPathRoot = "hover/";
-
     private static Map<String, Optional<MarkupContent>> markdownContentCache = new HashMap<>();
 
     /**
@@ -220,9 +218,9 @@ public class SchemaHover {
     private static Hover getIndexingHover(SchemaNode hoverNode, EventPositionContext context) {
         // Taken from:
         // https://docs.vespa.ai/en/reference/schema-reference.html#indexing
-        // Too specific to include in buildDocs.py
+        // Too specific to include in documentation fetcher IMO.
         
-        // Note: these classes belong to the indexinglanguage parser
+        // Note: these AST classes belong to the indexinglanguage parser
         if (hoverNode.isASTInstance(ATTRIBUTE.class)) {
             return new Hover(new MarkupContent(MarkupKind.MARKDOWN, 
                 "## Attribute\n"
