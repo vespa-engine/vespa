@@ -14,8 +14,9 @@ public class RunVespaQuery implements SchemaCommand {
         return true;
     }
 
-    public void execute(EventExecuteCommandContext context) {
+    public Object execute(EventExecuteCommandContext context) {
         context.logger.info("Running Vespa query...");
+        return null;
     }
     
 }

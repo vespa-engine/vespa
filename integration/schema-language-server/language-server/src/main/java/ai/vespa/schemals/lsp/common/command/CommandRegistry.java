@@ -40,7 +40,7 @@ public class CommandRegistry {
             public SchemaCommand construct() { return new RunVespaQuery(); }
         },
         FIND_SCHEMA_DEFINITION {
-            public String title() { return "vespaSchemaLS/findDocument"; }
+            public String title() { return "Find schema document"; }
             public SchemaCommand construct() { return new FindDocument(); }
         }
     }

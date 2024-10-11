@@ -13,12 +13,15 @@ public class ExecuteCommand {
         Optional<SchemaCommand> command = CommandRegistry.getCommand(context.params);
 
         if (command.isEmpty()) {
+            context.logger.error("Unknown command " + context.params.getCommand());
+            context.logger.error("Arguments:");
             for (Object obj : context.params.getArguments()) {
-                context.logger.info(obj.getClass().toString() + " ||| " + obj.toString());
+                context.logger.info(obj.getClass().toString() + ": " + obj.toString());
             }
+            return null;
         }
 
-        command.ifPresent(cmd -> cmd.execute(context));
-        return null;
+        Object resultOrNull = command.get().execute(context);
+        return resultOrNull;
     }
 }

@@ -17,10 +17,12 @@ public class DocumentOpen implements SchemaCommand {
     private String fileURI;
 
     @Override
-    public void execute(EventExecuteCommandContext context) {
+    public Object execute(EventExecuteCommandContext context) {
         if (fileURI == null)
-            return;
-        ShowDocumentResult result = context.messageHandler.showDocument(fileURI).join();
+            return null;
+        // No return value, as the execution **is** issuing an action on the client side.
+        context.messageHandler.showDocument(fileURI).join();
+        return null;
     }
 
     @Override

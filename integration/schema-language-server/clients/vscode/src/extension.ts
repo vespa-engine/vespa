@@ -92,7 +92,10 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
         }
 	};
     const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
-    client.start();
+
+    client.start().then(result => {
+        console.log(result);
+    });
     return client; 
 } 
 
@@ -118,8 +121,7 @@ function showJavaErrorMessage() {
 }
 
 //const FindDocumentRequest: RequestType<ExecuteCommandParams, any, void> = new RequestType("vespaSchemaLS/findDocument");
-const FindDocumentRequest: ProtocolRequestType<ExecuteCommandParams, any, never, void, ExecuteCommandRegistrationOptions>
-    = new ProtocolRequestType("vespaSchemaLS/findDocument");
+const FindDocumentRequest = new RequestType<string, string, void>("FIND_SCHEMA_DEFINITION");
 
 export function activate(context: vscode.ExtensionContext) {
 	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
@@ -141,9 +143,15 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.servicesxml.findDocument", async (fileName) => {
         if (schemaClient !== null) {
-            const result = await schemaClient.sendRequest(ExecuteCommandRequest.type, fileName);
-            logger.info("Find document returned: ");
-            logger.info(result);
+            try {
+                const result = await schemaClient.sendRequest("workspace/executeCommand", {
+                    command: "FIND_SCHEMA_DEFINITION",
+                    arguments: [fileName]
+                });
+                return result;
+            } catch (err) {
+                logger.error("Error when sending command: ", err);
+            }
         }
         return null;
     }));

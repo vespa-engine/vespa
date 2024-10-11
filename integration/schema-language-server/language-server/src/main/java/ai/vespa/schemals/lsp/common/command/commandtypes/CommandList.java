@@ -15,6 +15,7 @@ import ai.vespa.schemals.lsp.common.command.CommandRegistry;
 /**
  * CommandList
  * Represents a chain of commands to be executed one after another.
+ * Currently their return values are ignored.
  */
 public class CommandList implements SchemaCommand {
 
@@ -46,9 +47,10 @@ public class CommandList implements SchemaCommand {
 	}
 
 	@Override
-	public void execute(EventExecuteCommandContext context) {
+	public Object execute(EventExecuteCommandContext context) {
         for (SchemaCommand cmd : commandsToExecute) {
             cmd.execute(context);
         }
+        return null;
 	}
 }

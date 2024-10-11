@@ -31,9 +31,10 @@ public class DocumentParse implements SchemaCommand {
 	}
 
 	@Override
-	public void execute(EventExecuteCommandContext context) {
+	public Object execute(EventExecuteCommandContext context) {
         DocumentManager document = context.scheduler.getDocument(fileURI);
-        if (document == null) return;
+        if (document == null) return null;
         document.reparseContent();
+        return null;
 	}
 }

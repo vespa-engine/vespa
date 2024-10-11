@@ -13,5 +13,5 @@ public interface SchemaCommand {
 
     public boolean setArguments(List<Object> arguments);
 
-    public void execute(EventExecuteCommandContext context);
+    public Object execute(EventExecuteCommandContext context);
 }

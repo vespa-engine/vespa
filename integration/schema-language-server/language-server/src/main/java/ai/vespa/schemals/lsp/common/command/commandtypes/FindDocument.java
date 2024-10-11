@@ -2,37 +2,41 @@ package ai.vespa.schemals.lsp.common.command.commandtypes;
 
 import java.util.List;
 
-import org.eclipse.lsp4j.ShowDocumentResult;
-
 import com.google.gson.JsonPrimitive;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 
 /**
- * OpenDocument
- * Kind of a reflection: client sends "Open document with fileURI", and server responds by telling the client to open it.
- * Reason for this: Used in Code Actions to make file automatically open with new edit. 
+ * FindDocument
+ * Param: schema identifier
+ * Return: List<Location>
  */
 public class FindDocument implements SchemaCommand {
-    private String fileURI;
+    private String schemaName;
 
     @Override
-    public void execute(EventExecuteCommandContext context) {
-        //if (fileURI == null)
-        //    return;
-        //ShowDocumentResult result = context.messageHandler.showDocument(fileURI).join();
-        context.logger.info("Got find document request on server");
+    public Object execute(EventExecuteCommandContext context) {
+        if (schemaName == null)
+            return null;
+        List<Symbol> schemaDefinitions = context.schemaIndex.findSymbols(null, SymbolType.SCHEMA, schemaName);
+        // LSP expects the result of "definition" to be a list of Location (rather than one Location)
+        // so we adhere to this here, because that is the most natural use of this command
+        return schemaDefinitions.stream()
+                                .map(symbol -> symbol.getLocation())
+                                .toList();
     }
 
     @Override
     public boolean setArguments(List<Object> arguments) {
-        //assert arguments.size() == getArity();
+        assert arguments.size() == getArity();
 
-        //if (!(arguments.get(0) instanceof JsonPrimitive))
-        //    return false;
+        if (!(arguments.get(0) instanceof JsonPrimitive))
+            return false;
 
-        //JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
-        //fileURI = arg.getAsString();
+        JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
+        schemaName = arg.getAsString();
         return true;
     }
 
