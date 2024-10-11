@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
+#include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
@@ -94,10 +95,11 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot, SerialNum 
 }
 
 void
-SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP indexManager)
+SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP indexManager, const Schema& schema)
 {
     _indexMgr = std::move(indexManager);
     _indexWriter = std::make_shared<IndexWriter>(_indexMgr);
+    reconfigure_index_metrics(schema);
 }
 
 DocumentSubDbInitializer::UP
@@ -115,7 +117,7 @@ void
 SearchableDocSubDB::setup(const DocumentSubDbInitializerResult &initResult)
 {
     Parent::setup(initResult);
-    setupIndexManager(initResult.indexManager());
+    setupIndexManager(initResult.indexManager(), *initResult.get_schema());
     _docIdLimit.set(_dms->getCommittedDocIdLimit());
     applyFlushConfig(initResult.getFlushConfig());
 }
@@ -283,6 +285,17 @@ SearchableDocSubDB::getFlushTargetsInternal()
 }
 
 void
+SearchableDocSubDB::reconfigure_index_metrics(const Schema& schema)
+{
+    std::vector<std::string> field_names;
+    field_names.reserve(schema.getNumIndexFields());
+    for (auto& field : schema.getIndexFields()) {
+        field_names.emplace_back(field.getName());
+    }
+    _metricsWireService.set_index_fields(_metrics.ready.index, std::move(field_names));
+}
+
+void
 SearchableDocSubDB::setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum)
 {
     assert(_writeService.master().isCurrentThread());
@@ -292,6 +305,7 @@ SearchableDocSubDB::setIndexSchema(std::shared_ptr<const Schema> schema, SerialN
 
     _indexMgr->setSchema(*schema, serialNum);
     reconfigureIndexSearchable();
+    reconfigure_index_metrics(*schema);
 }
 
 size_t

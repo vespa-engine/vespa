@@ -568,6 +568,9 @@ DocumentDB::close()
     _metricsWireService.set_attributes(metrics.ready.attributes, {});
     _metricsWireService.set_attributes(metrics.notReady.attributes, {});
 
+    // Tear down index metrics
+    _metricsWireService.set_index_fields(metrics.ready.index, {});
+
     masterExecute([this] () {
         closeSubDBs();
     });

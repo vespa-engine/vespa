@@ -79,9 +79,10 @@ private:
                                   const IndexConfig &indexCfg,
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 
-    void setupIndexManager(searchcorespi::IIndexManager::SP indexManager);
+    void setupIndexManager(searchcorespi::IIndexManager::SP indexManager, const Schema& schema);
     void initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig &configSnapshot);
     void reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
+    void reconfigure_index_metrics(const Schema& schema);
 
     bool reconfigure(std::unique_ptr<Configure> configure) override;
     void reconfigureIndexSearchable();
