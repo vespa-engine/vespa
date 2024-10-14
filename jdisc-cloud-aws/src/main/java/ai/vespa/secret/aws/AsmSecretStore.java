@@ -14,7 +14,6 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -50,21 +49,17 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
 
     protected record VersionKey(Key key, SecretVersionId version) {}
 
+    // Only used for the tenant use case, not infrastructure
     @Inject
     public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        this(roleMapper(config.tenant(), config.system()),
-             URI.create(config.ztsUri()), identities.getIdentitySslContext(),
+        this(AwsRoleMapper.tenantReader(SystemName.from(config.system()),
+                                        TenantName.from(config.tenant())),
+             ztsClient(URI.create(config.ztsUri()), identities.getIdentitySslContext()),
              athenzDomain(config, identities));
     }
 
-    private static AwsRoleMapper roleMapper(String system, String tenant) {
-        return vault -> new AwsRole(AthenzUtil.resourceEntityName(SystemName.from(system),
-                                                                  TenantName.from(tenant),
-                                                                  vault));
-    }
-
-    public AsmSecretStore(AwsRoleMapper roleMapper, URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
-        this(roleMapper, new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build(), domain);
+    public static AsmSecretStore forInfrastructure(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
+        return new AsmSecretStore(AwsRoleMapper.infrastructureReader(), ztsClient(ztsUri, sslContext), domain);
     }
 
     private AsmSecretStore(AwsRoleMapper roleMapper, ZtsClient ztsClient, AthenzDomain domain) {
@@ -80,8 +75,8 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
         closeable = () -> {};
     }
 
-    public static AsmSecretStore forInfrastructure(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
-        return new AsmSecretStore(AwsRoleMapper.controlPlaneReader(), ztsUri, sslContext, domain);
+    private static ZtsClient ztsClient(URI ztsUri, SSLContext sslContext) {
+        return new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build();
     }
 
     private static AthenzDomain athenzDomain(AsmSecretConfig config, ServiceIdentityProvider identities) {
