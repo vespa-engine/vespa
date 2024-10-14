@@ -23,7 +23,10 @@ public class AthenzUtil {
         // Note that the domain name is added by AthenzDomainName, such that actual resource name will be
         // e.g. vespa.external.tenant-secret:<aws-role-name>
         // The aws role name is: tenant-secret.<system>.<tenant>.<vault>.reader
-        return "%s.%s.%s".formatted(roleAndPolicyPrefix(system, tenant), vault.value(), Role.READER).toLowerCase();
+        return "%s.%s.%s".formatted(roleAndPolicyPrefix(system, tenant),
+                                    vault.value(),
+                                    Role.READER.value())
+                .toLowerCase();
     }
 
 }

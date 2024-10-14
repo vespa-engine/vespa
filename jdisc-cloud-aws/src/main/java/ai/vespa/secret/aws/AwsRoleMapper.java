@@ -17,11 +17,11 @@ public interface AwsRoleMapper {
     AwsRole awsRole(VaultName vault);
 
     static AwsRoleMapper infrastructureReader() {
-        return (vault -> new AwsRole(vault.value() + "-" + Role.READER));
+        return (vault -> new AwsRole(vault.value() + "-" + Role.READER.value()));
     }
 
     static AwsRoleMapper infrastructureWriter() {
-        return (vault -> new AwsRole(vault.value() + "-" + Role.WRITER));
+        return (vault -> new AwsRole(vault.value() + "-" + Role.WRITER.value()));
     }
 
     static AwsRoleMapper tenantReader(SystemName system, TenantName tenant) {
