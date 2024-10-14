@@ -2,6 +2,7 @@
 
 #include "memoryusage.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace vespalib {
 
@@ -14,10 +15,15 @@ MemoryUsage::toString() const {
 
 asciistream &
 operator << (asciistream & os, const MemoryUsage & usage) {
-    os << "allocated: " << usage.allocatedBytes();
+    os << "{allocated: " << usage.allocatedBytes();
     os << ", used: " << usage.usedBytes();
     os << ", dead: " << usage.deadBytes();
-    os << ", onhold: " << usage.allocatedBytesOnHold();
+    os << ", onhold: " << usage.allocatedBytesOnHold() << "}";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const MemoryUsage& usage) {
+    os << usage.toString();
     return os;
 }
 
