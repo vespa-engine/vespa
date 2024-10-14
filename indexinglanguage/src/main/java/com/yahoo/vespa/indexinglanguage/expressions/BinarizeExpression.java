@@ -32,6 +32,16 @@ public class BinarizeExpression extends Expression  {
     }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        return super.setInputType(inputType, TensorDataType.any(), context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        return super.setOutputType(outputType, TensorDataType.any(), context);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         type = context.getCurrentType();
         if (! (type instanceof TensorDataType))

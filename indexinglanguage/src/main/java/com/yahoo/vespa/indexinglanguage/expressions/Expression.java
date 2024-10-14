@@ -6,6 +6,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
@@ -58,7 +59,23 @@ public abstract class Expression extends Selectable {
      * This default implementation returns the same type, which is appropriate for all statements
      * that do not change the type.
      *
-     * @param inputType the input type, or null if this does not take any input
+     * @param inputType the type to set as the input type of this, or null if it cannot be determined
+     * @param requiredType the type the input type must be assignable to
+     * @param context the context of this
+     * @throws IllegalArgumentException if inputType isn't assignable to requiredType
+     */
+    protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
+        // TODO: Activate type chedcking
+        // if ( ! (inputType instanceof TensorDataType))
+        //    throw new IllegalArgumentException(this + " requires a " + requiredType + ", but gets " + inputType);
+        this.inputType = inputType;
+        return inputType;
+    }
+
+    /**
+     * Sets the input type of this and returns the resulting output type, or null if it cannot be
+     * uniquely determined.
+     * Subtypes may implement this by calling setInputType(inputType, requiredType, VerificationContext context).
      */
     public DataType setInputType(DataType inputType, VerificationContext context) {
         this.inputType = inputType;
@@ -74,8 +91,26 @@ public abstract class Expression extends Selectable {
     /**
      * Sets the output type of this and returns the resulting input type, or null if it cannot be
      * uniquely determined.
-     * This default implementation returns the same type, which is appropriate for all statements
+     * This implementation returns the same type, which is appropriate for all statements
      * that do not change the type.
+     *
+     * @param outputType the type to set as the output type of this, or null if it cannot be determined
+     * @param requiredType the type the output type must be assignable to
+     * @param context the context of this
+     * @throws IllegalArgumentException if outputType isn't assignable to requiredType
+     */
+    protected final DataType setOutputType(DataType outputType, DataType requiredType, VerificationContext context) {
+        // TODO: Activate type checking
+        // if (outputType != null && ! requiredType.isAssignableFrom(outputType))
+        //     throw new IllegalArgumentException(this + " produces a " + outputType + " but " + requiredType + " is required");
+        this.outputType = outputType;
+        return outputType;
+    }
+
+    /**
+     * Sets the output type of this and returns the resulting input type, or null if it cannot be
+     * uniquely determined.
+     * Subtypes implement this by calling setOutputType(outputType, requiredType, VerificationContext context).
      */
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         this.outputType = outputType;

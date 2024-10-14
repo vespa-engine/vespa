@@ -18,16 +18,13 @@ public final class Base64EncodeExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
+        super.setInputType(inputType, DataType.LONG, context);
         return DataType.STRING;
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
-        // TODO:
-        //if (outputType != DataType.STRING)
-        //    throw new IllegalArgumentException(this + " produces a string, but " + outputType + " is required");
+        super.setOutputType(outputType, DataType.STRING, context);
         return DataType.LONG;
     }
 

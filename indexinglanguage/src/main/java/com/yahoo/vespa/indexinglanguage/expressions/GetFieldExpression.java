@@ -29,12 +29,8 @@ public final class GetFieldExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        var type = context.getFieldType(fieldName, this);
-        // TODO:
-        // if ( ! outputType.isAssignableFrom(type))
-        //     throw new IllegalArgumentException(this + " produces , but " + outputType + " is required");
-        super.setOutputType(outputType, context);
-        return null; // Really ANY
+        super.setOutputType(context.getFieldType(fieldName, this), outputType, context);
+        return AnyDataType.instance;
     }
 
     @Override

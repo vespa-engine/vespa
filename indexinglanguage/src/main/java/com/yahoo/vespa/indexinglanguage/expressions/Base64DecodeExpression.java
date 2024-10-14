@@ -18,13 +18,13 @@ public final class Base64DecodeExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
+        super.setInputType(inputType, DataType.STRING, context);
         return DataType.LONG;
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
+        super.setOutputType(outputType, DataType.LONG, context);
         return DataType.STRING;
     }
 
@@ -36,7 +36,7 @@ public final class Base64DecodeExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getCurrentValue());
-        if (input.isEmpty()) {
+        if (input.isEmpty()) { // TODO: Or if context.getCurrentValue() is null or if context.getCurrentValue().getDataType() != DataType.STRING
             context.setCurrentValue(new LongFieldValue(Long.MIN_VALUE));
             return;
         }

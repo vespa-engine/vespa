@@ -32,8 +32,15 @@ public final class GuardExpression extends CompositeExpression {
     }
 
     @Override
-    public void setStatementOutput(DocumentType documentType, Field field) {
-        expression.setStatementOutput(documentType, field);
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        return expression.setInputType(inputType, context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+        return expression.setOutputType(outputType, context);
     }
 
     @Override
@@ -48,6 +55,11 @@ public final class GuardExpression extends CompositeExpression {
         } else {
             expression.execute(context);
         }
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        expression.setStatementOutput(documentType, field);
     }
 
     @Override

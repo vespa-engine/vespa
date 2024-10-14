@@ -41,7 +41,7 @@ public final class ForEachExpression extends CompositeExpression {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         if ( ! inputType.isMultivalue())
-            throw new IllegalArgumentException("for_each consumes a multivalue type, but is given " + inputType);
+            throw new IllegalArgumentException("for_each requires a multivalue type, but gets " + inputType);
         expression.setInputType(inputType.getNestedType(), context);
         return super.setInputType(inputType, context);
     }
@@ -49,7 +49,7 @@ public final class ForEachExpression extends CompositeExpression {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         if ( ! outputType.isMultivalue())
-            throw new IllegalArgumentException("for_each produces a multivalue type, but needs " + outputType);
+            throw new IllegalArgumentException("for_each produces a multivalue type, but " + outputType + " is required");
         expression.setOutputType(outputType.getNestedType(), context);
         return super.setOutputType(outputType, context);
     }

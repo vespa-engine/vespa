@@ -66,8 +66,6 @@ public final class ArithmeticExpression extends CompositeExpression {
         return new ArithmeticExpression(converter.convert(left), op, converter.convert(right));
     }
 
-    // TODO: input/output
-
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();

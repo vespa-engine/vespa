@@ -25,12 +25,8 @@ public final class GetVarExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        var type = context.getVariable(variableName);
-        // TODO:
-        // if ( ! outputType.isAssignableFrom(type))
-        //     throw new IllegalArgumentException(this + " produces , but " + outputType + " is required");
-        super.setOutputType(outputType, context);
-        return null; // Really ANY
+        super.setOutputType(context.getVariable(variableName), outputType, context);
+        return AnyDataType.instance;
     }
 
     @Override
