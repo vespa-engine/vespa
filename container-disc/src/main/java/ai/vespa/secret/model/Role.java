@@ -19,13 +19,6 @@ public enum Role {
         return value;
     }
 
-    public String forControlPlaneVault(VaultName vault) {
-        return switch(this) {
-            case WRITER, READER -> vault.value() + "-" + value;
-            case TENANT_SECRET_WRITER -> value;
-        };
-    }
-
     @Override
     public String toString() {
         return Role.class.getSimpleName() + "." + value;
