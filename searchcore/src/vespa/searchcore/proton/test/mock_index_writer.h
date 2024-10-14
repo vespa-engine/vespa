@@ -14,9 +14,9 @@ struct MockIndexWriter : public IIndexWriter
     MockIndexWriter() : _idxMgr() {}
     MockIndexWriter(const IIndexManager::SP &idxMgr) : _idxMgr(idxMgr) {}
     const IIndexManager::SP &getIndexManager() const override { return _idxMgr; }
-    void put(search::SerialNum, const document::Document &, const search::DocumentIdT, OnWriteDoneType) override {}
+    void put(search::SerialNum, const document::Document &, const search::DocumentIdT, const OnWriteDoneType&) override {}
     void removeDocs(search::SerialNum, LidVector) override {}
-    void commit(search::SerialNum, OnWriteDoneType) override {}
+    void commit(search::SerialNum, const OnWriteDoneType&) override {}
     void heartBeat(search::SerialNum) override {}
     void compactLidSpace(search::SerialNum, const search::DocumentIdT) override {}
 };

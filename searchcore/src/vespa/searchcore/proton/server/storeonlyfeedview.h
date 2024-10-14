@@ -54,10 +54,10 @@ public:
     using Document = document::Document;
     using DocumentUpdate = document::DocumentUpdate;
     using OnWriteDoneType = DoneCallback;
-    using OnForceCommitDoneType =const std::shared_ptr<ForceCommitContext> &;
-    using OnOperationDoneType = const std::shared_ptr<OperationDoneContext> &;
-    using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
-    using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
+    using OnForceCommitDoneType = std::shared_ptr<ForceCommitContext>;
+    using OnOperationDoneType = std::shared_ptr<OperationDoneContext>;
+    using OnPutDoneType = std::shared_ptr<PutDoneContext>;
+    using OnRemoveDoneType = std::shared_ptr<RemoveDoneContext>;
     using FutureDoc = std::shared_future<std::unique_ptr<const Document>>;
     using PromisedDoc = std::promise<std::unique_ptr<const Document>>;
     using FutureStream = std::future<vespalib::nbostream>;
@@ -138,12 +138,12 @@ private:
     vespalib::Executor & summaryExecutor() {
         return _writeService.summary();
     }
-    void putSummary(SerialNum serialNum, Lid lid, FutureStream doc, OnOperationDoneType onDone);
-    void putSummaryNoop(FutureStream doc, OnOperationDoneType onDone);
-    void putSummary(SerialNum serialNum, Lid lid, DocumentSP doc, OnOperationDoneType onDone);
-    void removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone);
-    void removeSummaries(SerialNum serialNum, const LidVector & lids, OnWriteDoneType onDone);
-    void heartBeatSummary(SerialNum serialNum, DoneCallback onDone);
+    void putSummary(SerialNum serialNum, Lid lid, FutureStream doc, const OnOperationDoneType& onDone);
+    void putSummaryNoop(FutureStream doc, const OnOperationDoneType& onDone);
+    void putSummary(SerialNum serialNum, Lid lid, DocumentSP doc, const OnOperationDoneType& onDone);
+    void removeSummary(SerialNum serialNum, Lid lid, const OnWriteDoneType& onDone);
+    void removeSummaries(SerialNum serialNum, const LidVector & lids, const OnWriteDoneType& onDone);
+    void heartBeatSummary(SerialNum serialNum, const DoneCallback& onDone);
 
     bool useDocumentStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentStoreSerialNum;
@@ -162,7 +162,7 @@ private:
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
-    size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields, DoneCallback onDone);
+    size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields, const DoneCallback& onDone);
 
     void internalRemove(FeedToken token, std::shared_ptr<vespalib::IDestructorCallback> done_callback,IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid);
 
@@ -172,26 +172,26 @@ private:
                              PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
-    virtual void internalDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone);
-    virtual void heartBeatIndexedFields(SerialNum serialNum, DoneCallback onDone);
-    virtual void heartBeatAttributes(SerialNum serialNum, DoneCallback onDone);
+    virtual void internalDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone);
+    virtual void heartBeatIndexedFields(SerialNum serialNum, const DoneCallback& onDone);
+    virtual void heartBeatAttributes(SerialNum serialNum, const DoneCallback& onDone);
 
 private:
-    virtual void putAttributes(SerialNum serialNum, Lid lid, const Document &doc, OnPutDoneType onWriteDone);
-    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP &newDoc, OnOperationDoneType onWriteDone);
+    virtual void putAttributes(SerialNum serialNum, Lid lid, const Document &doc, const OnPutDoneType& onWriteDone);
+    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP &newDoc, const OnOperationDoneType& onWriteDone);
 
     virtual void updateAttributes(SerialNum serialNum, Lid lid, const DocumentUpdate &upd,
-                                  OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate);
+                                  const OnOperationDoneType& onWriteDone, IFieldUpdateCallback & onUpdate);
 
-    virtual void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc, OnOperationDoneType onWriteDone);
-    virtual void updateIndexedFields(SerialNum serialNum, Lid lid, FutureDoc doc, OnOperationDoneType onWriteDone);
-    virtual void removeAttributes(SerialNum serialNum, Lid lid, OnRemoveDoneType onWriteDone);
-    virtual void removeIndexedFields(SerialNum serialNum, Lid lid, OnRemoveDoneType onWriteDone);
+    virtual void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc, const OnOperationDoneType& onWriteDone);
+    virtual void updateIndexedFields(SerialNum serialNum, Lid lid, FutureDoc doc, const OnOperationDoneType& onWriteDone);
+    virtual void removeAttributes(SerialNum serialNum, Lid lid, const OnRemoveDoneType& onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, Lid lid, const OnRemoveDoneType& onWriteDone);
 
 protected:
-    virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
-    virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
-    virtual void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone);
+    virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone);
+    virtual void internalForceCommit(const CommitParam & param, const OnForceCommitDoneType& onCommitDone);
 public:
     StoreOnlyFeedView(Context ctx, const PersistentParams &params);
     ~StoreOnlyFeedView() override;
@@ -214,12 +214,12 @@ public:
     void prepareRemove(RemoveOperation &rmOp) override;
     void handleRemove(FeedToken token, const RemoveOperation &rmOp) override;
     void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
-    void handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone) override;
+    void handleDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone) override;
     bool isMoveStillValid(const MoveOperation & moveOp) const override;
     void prepareMove(MoveOperation &putOp) override;
-    void handleMove(const MoveOperation &putOp, DoneCallback doneCtx) override;
-    void heartBeat(search::SerialNum serialNum, DoneCallback onDone) override;
-    void forceCommit(const CommitParam & param, DoneCallback onDone) override;
+    void handleMove(const MoveOperation &putOp, const DoneCallback& doneCtx) override;
+    void heartBeat(search::SerialNum serialNum, const DoneCallback& onDone) override;
+    void forceCommit(const CommitParam & param, const DoneCallback& onDone) override;
 
     /**
      * Prune lids present in operation.  Caller must call doneSegment()
@@ -227,8 +227,8 @@ public:
      *
      * Called by writer thread.
      */
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, DoneCallback onDone) override;
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, const DoneCallback& onDone) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone) override;
     std::shared_ptr<PendingLidTrackerBase> getUncommittedLidTracker() { return _pendingLidsForCommit; }
 };
 

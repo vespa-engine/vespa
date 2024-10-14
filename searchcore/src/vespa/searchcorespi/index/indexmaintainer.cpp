@@ -1203,7 +1203,7 @@ IndexMaintainer::getNumFrozenMemoryIndexes(void) const
 }
 
 void
-IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done)
+IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
@@ -1254,7 +1254,7 @@ IndexMaintainer::commit(vespalib::Gate& gate)
 }
 
 void
-IndexMaintainer::commit(SerialNum serialNum, OnWriteDoneType onWriteDone)
+IndexMaintainer::commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);

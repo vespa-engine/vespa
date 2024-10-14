@@ -58,7 +58,7 @@ DocumentInverter::~DocumentInverter()
 }
 
 void
-DocumentInverter::invertDocument(uint32_t docId, const Document &doc, OnWriteDoneType on_write_done)
+DocumentInverter::invertDocument(uint32_t docId, const Document &doc, const OnWriteDoneType& on_write_done)
 {
     auto& invert_threads = _context.get_invert_threads();
     auto& invert_contexts = _context.get_invert_contexts();
@@ -88,7 +88,7 @@ DocumentInverter::removeDocuments(LidVector lids)
 }
 
 void
-DocumentInverter::pushDocuments(OnWriteDoneType on_write_done)
+DocumentInverter::pushDocuments(const OnWriteDoneType& on_write_done)
 {
     auto retain = std::make_shared<RetainGuard>(_ref_count);
     using PushTasks = std::vector<std::shared_ptr<ScheduleSequencedTaskCallback>>;

@@ -159,7 +159,7 @@ struct MyIndexWriter : public test::MockIndexWriter
           _wantedLidLimit(0),
           _tracer(tracer)
     {}
-    void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid, OnWriteDoneType) override {
+    void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid, const OnWriteDoneType&) override {
         (void) doc;
         _tracer.tracePut(indexAdapterTypeName, serialNum, lid);
     }
@@ -170,7 +170,7 @@ struct MyIndexWriter : public test::MockIndexWriter
             _tracer.traceRemove(indexAdapterTypeName, serialNum, lid);
         }
     }
-    void commit(SerialNum serialNum, OnWriteDoneType) override {
+    void commit(SerialNum serialNum, const OnWriteDoneType&) override {
         ++_commitCount;
         _tracer.traceCommit(indexAdapterTypeName, serialNum);
     }
@@ -343,18 +343,18 @@ struct MyAttributeWriter : public IAttributeWriter
         auto itr = _attrMap.find(attrName);
         return ((itr == _attrMap.end()) ? nullptr : itr->second.get());
     }
-    void put(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, OnWriteDoneType) override {
+    void put(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, const OnWriteDoneType&) override {
         _putSerial = serialNum;
         _putDocId = doc.getId();
         _putLid = lid;
         _tracer.tracePut(attributeAdapterTypeName, serialNum, lid);
     }
-    void remove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType) override {
+    void remove(SerialNum serialNum, DocumentIdT lid, const OnWriteDoneType&) override {
         _removeSerial = serialNum;
         _removeLid = lid;
         _tracer.traceRemove(attributeAdapterTypeName, serialNum, lid);
     }
-    void remove(const LidVector & lidsToRemove, SerialNum serialNum, OnWriteDoneType) override {
+    void remove(const LidVector & lidsToRemove, SerialNum serialNum, const OnWriteDoneType&) override {
         for (uint32_t lid : lidsToRemove) {
             LOG(info, "MyAttributeAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
            _removes.push_back(lid);
@@ -362,7 +362,7 @@ struct MyAttributeWriter : public IAttributeWriter
         }
     }
     void update(SerialNum serialNum, const document::DocumentUpdate &upd,
-                DocumentIdT lid, OnWriteDoneType, IFieldUpdateCallback & onUpdate) override {
+                DocumentIdT lid, const OnWriteDoneType&, IFieldUpdateCallback & onUpdate) override {
         _updateSerial = serialNum;
         _updateDocId = upd.getId();
         _updateLid = lid;
@@ -371,23 +371,23 @@ struct MyAttributeWriter : public IAttributeWriter
             onUpdate.onUpdateField(fieldUpdate.getField(), attr);
         }
     }
-    void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, OnWriteDoneType) override {
+    void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, const OnWriteDoneType&) override {
         (void) serialNum;
         (void) doc;
         (void) lid;
     }
-    void heartBeat(SerialNum, OnWriteDoneType) override { ++_heartBeatCount; }
+    void heartBeat(SerialNum, const OnWriteDoneType&) override { ++_heartBeatCount; }
     void compactLidSpace(uint32_t wantedLidLimit, SerialNum ) override {
         _wantedLidLimit = wantedLidLimit;
     }
     const proton::IAttributeManager::SP &getAttributeManager() const override {
         return _mgr;
     }
-    void forceCommit(const CommitParam & param, OnWriteDoneType) override {
+    void forceCommit(const CommitParam & param, const OnWriteDoneType&) override {
         ++_commitCount;
         _tracer.traceCommit(attributeAdapterTypeName, param.lastSerialNum());
     }
-    void drain(OnWriteDoneType onDone) override {
+    void drain(const OnWriteDoneType& onDone) override {
         (void) onDone;
     }
 

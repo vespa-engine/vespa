@@ -41,7 +41,7 @@ SearchableFeedView::~SearchableFeedView() = default;
 
 void
 SearchableFeedView::putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc,
-                                     OnOperationDoneType onWriteDone)
+                                     const OnOperationDoneType& onWriteDone)
 {
     if (!hasIndexedFields()) {
         return;
@@ -53,7 +53,7 @@ SearchableFeedView::putIndexedFields(SerialNum serialNum, search::DocumentIdT li
 }
 
 void
-SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, OnOperationDoneType onWriteDone)
+SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, const OnOperationDoneType& onWriteDone)
 {
     (void) onWriteDone;
     assert(_writeService.index().isCurrentThread());
@@ -65,13 +65,13 @@ SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid
 }
 
 void
-SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &doc, OnOperationDoneType onWriteDone)
+SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &doc, const OnOperationDoneType& onWriteDone)
 {
     performIndexPut(serialNum, lid, *doc, onWriteDone);
 }
 
 void
-SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc, OnOperationDoneType onWriteDone)
+SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc, const OnOperationDoneType& onWriteDone)
 {
     const auto &doc = futureDoc.get();
     if (doc) {
@@ -80,7 +80,7 @@ SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid
 }
 
 void
-SearchableFeedView::heartBeatIndexedFields(SerialNum serialNum, DoneCallback onDone)
+SearchableFeedView::heartBeatIndexedFields(SerialNum serialNum, const DoneCallback& onDone)
 {
     _writeService.index().execute(makeLambdaTask([this, serialNum, onDone] {
         (void) onDone;
@@ -95,7 +95,7 @@ SearchableFeedView::performIndexHeartBeat(SerialNum serialNum)
 }
 
 void
-SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc, OnOperationDoneType onWriteDone)
+SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc, const OnOperationDoneType& onWriteDone)
 {
     _writeService.index().execute(
             makeLambdaTask([serialNum, lid, futureDoc = std::move(futureDoc),
@@ -105,7 +105,7 @@ SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT
 }
 
 void
-SearchableFeedView::removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone)
+SearchableFeedView::removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const OnRemoveDoneType& onWriteDone)
 {
     if (!hasIndexedFields()) {
         return;
@@ -118,7 +118,7 @@ SearchableFeedView::removeIndexedFields(SerialNum serialNum, search::DocumentIdT
 
 
 void
-SearchableFeedView::performIndexRemove(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone)
+SearchableFeedView::performIndexRemove(SerialNum serialNum, search::DocumentIdT lid, const OnRemoveDoneType& onWriteDone)
 {
     (void) onWriteDone;
     assert(_writeService.index().isCurrentThread());
@@ -130,7 +130,7 @@ SearchableFeedView::performIndexRemove(SerialNum serialNum, search::DocumentIdT 
 }
 
 void
-SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone)
+SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone)
 {
     (void) onWriteDone;
     assert(_writeService.index().isCurrentThread());
@@ -145,7 +145,7 @@ SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector &lid
 
 void
 SearchableFeedView::removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
-                                        OnWriteDoneType onWriteDone)
+                                        const OnWriteDoneType& onWriteDone)
 {
     if (!hasIndexedFields())
         return;
@@ -157,20 +157,20 @@ SearchableFeedView::removeIndexedFields(SerialNum serialNum, const LidVector &li
 }
 
 void
-SearchableFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone)
+SearchableFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone)
 {
     Parent::internalDeleteBucket(delOp, onDone);
 }
 
 void
-SearchableFeedView::performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
+SearchableFeedView::performIndexForceCommit(SerialNum serialNum, const OnForceCommitDoneType& onCommitDone)
 {
     assert(_writeService.index().isCurrentThread());
     _indexWriter->commit(serialNum, onCommitDone);
 }
 
 void
-SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
+SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone)
 {
     Parent::handleCompactLidSpace(op, onDone);
     vespalib::Gate gate;
@@ -183,7 +183,7 @@ SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, Do
 }
 
 void
-SearchableFeedView::internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone)
+SearchableFeedView::internalForceCommit(const CommitParam & param, const OnForceCommitDoneType& onCommitDone)
 {
     Parent::internalForceCommit(param, onCommitDone);
     _writeService.index().execute(

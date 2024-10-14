@@ -158,7 +158,7 @@ ensureLidSpace(SerialNum serialNum, DocumentIdT lid, AttributeVector &attr)
 
 void
 applyPutToAttribute(SerialNum serialNum, const FieldValue::UP &fieldValue, DocumentIdT lid,
-                    AttributeVector &attr, AttributeWriter::OnWriteDoneType)
+                    AttributeVector &attr, const AttributeWriter::OnWriteDoneType&)
 {
     ensureLidSpace(serialNum, lid, attr);
     if (fieldValue.get()) {
@@ -199,7 +199,7 @@ complete_put_to_attribute(SerialNum serial_num,
                           uint32_t docid,
                           AttributeVector& attr,
                           std::future<FieldValueAndPrepareResult> result_future,
-                          AttributeWriter::OnWriteDoneType)
+                          const AttributeWriter::OnWriteDoneType&)
 {
     ensureLidSpace(serial_num, docid, attr);
     auto result = result_future.get();
@@ -213,7 +213,7 @@ complete_put_to_attribute(SerialNum serial_num,
 
 void
 applyRemoveToAttribute(SerialNum serialNum, DocumentIdT lid,
-                       AttributeVector &attr, AttributeWriter::OnWriteDoneType)
+                       AttributeVector &attr, const AttributeWriter::OnWriteDoneType&)
 {
     ensureLidSpace(serialNum, lid, attr);
     attr.clearDoc(lid);
@@ -246,7 +246,7 @@ applyHeartBeat(SerialNum serialNum, AttributeVector &attr)
 }
 
 void
-applyCommit(CommitParam param, AttributeWriter::OnWriteDoneType , AttributeVector &attr)
+applyCommit(CommitParam param, const AttributeWriter::OnWriteDoneType& , AttributeVector &attr)
 {
     SerialNum serialNum = param.lastSerialNum();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
@@ -342,15 +342,15 @@ class PutTask : public vespalib::Executor::Task
     const SerialNum      _serialNum;
     const uint32_t       _lid;
     const bool           _allAttributes;
-    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+    const AttributeWriter::OnWriteDoneType _onWriteDone;
     const Document&      _doc;
 public:
-    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone);
+    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, const AttributeWriter::OnWriteDoneType& onWriteDone);
     ~PutTask() override;
     void run() override;
 };
 
-PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone)
+PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, const AttributeWriter::OnWriteDoneType& onWriteDone)
     : _wc(wc),
       _serialNum(serialNum),
       _lid(lid),
@@ -461,17 +461,17 @@ private:
     const uint32_t _docid;
     AttributeVector& _attr;
     std::future<FieldValueAndPrepareResult> _result_future;
-    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _on_write_done;
+    const AttributeWriter::OnWriteDoneType _on_write_done;
 
 public:
     CompletePutTask(PreparePutTask& prepare_task,
-                    AttributeWriter::OnWriteDoneType on_write_done);
+                    const AttributeWriter::OnWriteDoneType& on_write_done);
     ~CompletePutTask() override;
     void run() override;
 };
 
 CompletePutTask::CompletePutTask(PreparePutTask& prepare_task,
-                                 AttributeWriter::OnWriteDoneType on_write_done)
+                                 const AttributeWriter::OnWriteDoneType& on_write_done)
     : _serial_num(prepare_task.serial_num()),
       _docid(prepare_task.docid()),
       _attr(prepare_task.attr()),
@@ -495,14 +495,14 @@ class RemoveTask : public vespalib::Executor::Task
     const AttributeWriter::WriteContext  &_wc;
     const SerialNum      _serialNum;
     const uint32_t       _lid;
-    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+    const AttributeWriter::OnWriteDoneType _onWriteDone;
 public:
-    RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, uint32_t lid, AttributeWriter::OnWriteDoneType onWriteDone);
+    RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, uint32_t lid, const AttributeWriter::OnWriteDoneType& onWriteDone);
     ~RemoveTask() override;
     void run() override;
 };
 
-RemoveTask::RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, uint32_t lid, AttributeWriter::OnWriteDoneType onWriteDone)
+RemoveTask::RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, uint32_t lid, const AttributeWriter::OnWriteDoneType& onWriteDone)
     : _wc(wc),
       _serialNum(serialNum),
       _lid(lid),
@@ -530,12 +530,12 @@ private:
     const AttributeWriter::WriteContext &_writeCtx;
     const SerialNum _serialNum;
     const LidVector _lidsToRemove;
-    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+    const AttributeWriter::OnWriteDoneType _onWriteDone;
 public:
     BatchRemoveTask(const AttributeWriter::WriteContext &writeCtx,
                     SerialNum serialNum,
                     const LidVector &lidsToRemove,
-                    AttributeWriter::OnWriteDoneType onWriteDone)
+                    const AttributeWriter::OnWriteDoneType& onWriteDone)
         : _writeCtx(writeCtx),
           _serialNum(serialNum),
           _lidsToRemove(lidsToRemove),
@@ -561,15 +561,15 @@ class CommitTask : public vespalib::Executor::Task
 {
     const AttributeWriter::WriteContext  &_wc;
     const CommitParam                     _param;
-    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+    const AttributeWriter::OnWriteDoneType _onWriteDone;
 public:
-    CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, AttributeWriter::OnWriteDoneType onWriteDone);
+    CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, const AttributeWriter::OnWriteDoneType& onWriteDone);
     ~CommitTask() override;
     void run() override;
 };
 
 
-CommitTask::CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, AttributeWriter::OnWriteDoneType onWriteDone)
+CommitTask::CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, const AttributeWriter::OnWriteDoneType& onWriteDone)
     : _wc(wc),
       _param(param),
       _onWriteDone(onWriteDone)
@@ -624,7 +624,7 @@ AttributeWriter::setupWriteContexts()
 
 void
 AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                             bool allAttributes, OnWriteDoneType onWriteDone)
+                             bool allAttributes, const OnWriteDoneType& onWriteDone)
 {
     for (const auto &wc : _writeContexts) {
         if (allAttributes && wc.use_two_phase_put()) {
@@ -644,7 +644,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
 }
 
 void
-AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone)
+AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
 {
     for (const auto &wc : _writeContexts) {
         auto removeTask = std::make_unique<RemoveTask>(wc, serialNum, lid, onWriteDone);
@@ -678,7 +678,7 @@ AttributeWriter::~AttributeWriter() {
 }
 
 void
-AttributeWriter::drain(OnWriteDoneType onDone) {
+AttributeWriter::drain(const OnWriteDoneType& onDone) {
 
     for (const auto &wc : _writeContexts) {
         _attributeFieldWriter.executeLambda(wc.getExecutorId(), [onDone] () { (void) onDone; });
@@ -699,7 +699,7 @@ AttributeWriter::getWritableAttribute(const std::string &name) const
 }
 
 void
-AttributeWriter::put(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone)
+AttributeWriter::put(SerialNum serialNum, const Document &doc, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
 {
     LOG(spam, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
         serialNum, doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
@@ -707,7 +707,7 @@ AttributeWriter::put(SerialNum serialNum, const Document &doc, DocumentIdT lid, 
 }
 
 void
-AttributeWriter::update(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone)
+AttributeWriter::update(SerialNum serialNum, const Document &doc, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
 {
     LOG(spam, "Handle update: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
         serialNum, doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
@@ -715,13 +715,13 @@ AttributeWriter::update(SerialNum serialNum, const Document &doc, DocumentIdT li
 }
 
 void
-AttributeWriter::remove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone)
+AttributeWriter::remove(SerialNum serialNum, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
 {
     internalRemove(serialNum, lid, onWriteDone);
 }
 
 void
-AttributeWriter::remove(const LidVector &lidsToRemove, SerialNum serialNum, OnWriteDoneType onWriteDone)
+AttributeWriter::remove(const LidVector &lidsToRemove, SerialNum serialNum, const OnWriteDoneType& onWriteDone)
 {
     for (const auto &writeCtx : _writeContexts) {
         auto removeTask = std::make_unique<BatchRemoveTask>(writeCtx, serialNum, lidsToRemove, onWriteDone);
@@ -750,7 +750,7 @@ get_single_assign_update_field_value(const FieldUpdate& update)
 
 void
 AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
-                        OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate)
+                        const OnWriteDoneType& onWriteDone, IFieldUpdateCallback & onUpdate)
 {
     LOG(debug, "Inspecting update for document %d.", lid);
     std::vector<std::unique_ptr<BatchUpdateTask>> args;
@@ -799,7 +799,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
 }
 
 void
-AttributeWriter::heartBeat(SerialNum serialNum, OnWriteDoneType onDone)
+AttributeWriter::heartBeat(SerialNum serialNum, const OnWriteDoneType& onDone)
 {
     for (auto entry : _attrMap) {
         _attributeFieldWriter.execute(entry.second.executor_id,[serialNum, attr=entry.second.attribute, onDone]() {
@@ -811,7 +811,7 @@ AttributeWriter::heartBeat(SerialNum serialNum, OnWriteDoneType onDone)
 
 
 void
-AttributeWriter::forceCommit(const CommitParam & param, OnWriteDoneType onWriteDone)
+AttributeWriter::forceCommit(const CommitParam & param, const OnWriteDoneType& onWriteDone)
 {
     if (_mgr->getImportedAttributes() != nullptr) {
         std::vector<std::shared_ptr<ImportedAttributeVector>> importedAttrs;

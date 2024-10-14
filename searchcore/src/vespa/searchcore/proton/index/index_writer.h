@@ -18,9 +18,9 @@ public:
     ~IndexWriter() override;
     const IIndexManager::SP & getIndexManager() const override { return _mgr; }
 
-    void put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid, OnWriteDoneType on_write_done) override;
+    void put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid, const OnWriteDoneType& on_write_done) override;
     void removeDocs(search::SerialNum serialNum, LidVector lids) override;
-    void commit(search::SerialNum serialNum, OnWriteDoneType onWriteDone) override;
+    void commit(search::SerialNum serialNum, const OnWriteDoneType& onWriteDone) override;
 
     void heartBeat(search::SerialNum serialNum) override;
     void compactLidSpace(search::SerialNum serialNum, const search::DocumentIdT lid) override;

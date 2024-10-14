@@ -45,7 +45,7 @@ class MemoryIndex : public queryeval::Searchable {
 private:
     using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     using LidVector = std::vector<uint32_t>;
-    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
+    using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
     index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
@@ -111,7 +111,7 @@ public:
      * If the document is already in the index, the old version will be removed first.
      * This function is async. commit() must be called for changes to take effect.
      */
-    void insertDocument(uint32_t docId, const document::Document &doc, OnWriteDoneType on_write_done);
+    void insertDocument(uint32_t docId, const document::Document &doc, const OnWriteDoneType& on_write_done);
 
     /**
      * Remove a document from the underlying field indexes.
@@ -125,7 +125,7 @@ public:
      *
      * When commit is completed, 'on_write_done' goes out of scope, scheduling completion callback.
      */
-    void commit(OnWriteDoneType on_write_done);
+    void commit(const OnWriteDoneType& on_write_done);
 
     /**
      * Freeze this index.
