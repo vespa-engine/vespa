@@ -62,6 +62,7 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-ssm</artifactId>
         </dependency>
+
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>secretsmanager</artifactId>
@@ -81,6 +82,22 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>apache-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Used by secretsmanager -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ssm</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
