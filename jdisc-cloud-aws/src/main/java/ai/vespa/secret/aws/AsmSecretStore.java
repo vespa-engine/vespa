@@ -11,8 +11,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
@@ -61,7 +59,7 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
     private static AwsRoleMapper roleMapper(String system, String tenant) {
         return (system.isEmpty()) ?
                 AwsRoleMapper.infrastructureReader() :
-                AwsRoleMapper.tenantReader(SystemName.from(system), TenantName.from(tenant));
+                AwsRoleMapper.tenantReader(system, tenant);
     }
 
     public static AsmSecretStore forInfrastructure(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {

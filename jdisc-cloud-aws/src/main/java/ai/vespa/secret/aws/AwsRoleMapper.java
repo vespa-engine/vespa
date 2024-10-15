@@ -2,8 +2,6 @@ package ai.vespa.secret.aws;
 
 import ai.vespa.secret.model.Role;
 import ai.vespa.secret.model.VaultName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AwsRole;
 
 /**
@@ -24,7 +22,7 @@ public interface AwsRoleMapper {
         return (vault -> new AwsRole(vault.value() + "-" + Role.WRITER.value()));
     }
 
-    static AwsRoleMapper tenantReader(SystemName system, TenantName tenant) {
+    static AwsRoleMapper tenantReader(String system, String tenant) {
         return (vault -> new AwsRole(AthenzUtil.resourceEntityName(system, tenant, vault)));
     }
 
