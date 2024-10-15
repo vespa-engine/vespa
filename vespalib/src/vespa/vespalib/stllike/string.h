@@ -9,10 +9,6 @@
 
 namespace vespalib {
 
-inline bool contains(std::string_view text, std::string_view key) noexcept {
-    return text.find(key) != std::string_view::npos;
-}
-
 // returns a reference to a shared empty string
 const std::string &empty_string() noexcept;
 
