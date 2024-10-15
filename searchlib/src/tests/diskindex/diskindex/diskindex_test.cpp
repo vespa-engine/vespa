@@ -422,6 +422,7 @@ DiskIndexTest::require_that_get_stats_works()
         auto& field_name = field.getName();
         ASSERT_TRUE(field_stats.contains(field_name));
         EXPECT_LT(0, field_stats[field_name].size_on_disk());
+        EXPECT_GT(stats.sizeOnDisk(), field_stats[field_name].size_on_disk());
     }
 }
 
