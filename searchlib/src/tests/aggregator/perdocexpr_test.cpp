@@ -585,7 +585,7 @@ std::string
 getVespaChecksumV2(const std::string& ymumid, int fid, const std::string& flags_str)
 {
     if (fid == 6 || fid == 0 || fid == 5) {
-        return 0;
+        return {};
     }
 
     std::list<char> flags_list;
