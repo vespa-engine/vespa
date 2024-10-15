@@ -50,6 +50,8 @@ using LookupResult = DiskIndex::LookupResult;
 
 namespace {
 
+std::string test_dir("index");
+
 SimpleStringTerm
 makeTerm(const std::string & term)
 {
@@ -118,6 +120,10 @@ private:
     FakeRequestContext _requestContext;
 
 protected:
+    DiskIndexTest();
+    ~DiskIndexTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
     void requireThatLookupIsWorking(const EmptySettings& empty_settings);
     void requireThatWeCanReadPostingList();
     void require_that_we_can_get_field_length_info();
@@ -125,17 +131,31 @@ protected:
     void requireThatBlueprintIsCreated();
     void requireThatBlueprintCanCreateSearchIterators();
     void requireThatSearchIteratorsConforms();
+    void require_that_get_stats_works();
     void build_index(const IOSettings& io_settings, const EmptySettings& empty_settings);
     void test_empty_settings(const EmptySettings& empty_settings);
     void test_io_settings(const IOSettings& io_settings);
-public:
-    DiskIndexTest();
-    ~DiskIndexTest();
 };
 
 DiskIndexTest::DiskIndexTest() = default;
 
 DiskIndexTest::~DiskIndexTest() = default;
+
+void
+DiskIndexTest::SetUpTestSuite()
+{
+    DummyFileHeaderContext::setCreator("diskindex_test");
+    std::filesystem::path index_path(test_dir);
+    std::filesystem::remove_all(index_path);
+    std::filesystem::create_directory(index_path);
+}
+
+void
+DiskIndexTest::TearDownTestSuite()
+{
+    std::filesystem::path index_path(test_dir);
+    std::filesystem::remove_all(index_path);
+}
 
 void
 DiskIndexTest::requireThatSearchIteratorsConforms()
@@ -374,7 +394,7 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
     if (io_settings._use_mmap) {
         io_settings_num += 2;
     }
-    name << "index/" << io_settings_num;
+    name << test_dir << "/" << io_settings_num;
     if (empty_settings._empty_field) {
         name << "fe";
     } else {
@@ -391,10 +411,26 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
 }
 
 void
+DiskIndexTest::require_that_get_stats_works()
+{
+    auto stats = getIndex().get_stats();
+    auto& schema = getIndex().getSchema();
+    EXPECT_LT(0, stats.sizeOnDisk());
+    auto field_stats = stats.get_field_stats();
+    EXPECT_EQ(schema.getNumIndexFields(), field_stats.size());
+    for (auto& field : schema.getIndexFields()) {
+        auto& field_name = field.getName();
+        ASSERT_TRUE(field_stats.contains(field_name));
+        EXPECT_LT(0, field_stats[field_name].size_on_disk());
+    }
+}
+
+void
 DiskIndexTest::test_empty_settings(const EmptySettings& empty_settings)
 {
     build_index(IOSettings(), empty_settings);
     requireThatLookupIsWorking(empty_settings);
+    require_that_get_stats_works();
 }
 
 void
@@ -408,6 +444,7 @@ DiskIndexTest::test_io_settings(const IOSettings& io_settings)
     requireThatWeCanReadBitVector();
     requireThatBlueprintIsCreated();
     requireThatBlueprintCanCreateSearchIterators();
+    require_that_get_stats_works();
 }
 
 TEST_F(DiskIndexTest, empty_settings_empty_field_empty_doc_empty_word)
@@ -472,17 +509,4 @@ TEST_F(DiskIndexTest, search_iterators_conformance)
 
 }
 
-int
-main(int argc, char* argv[])
-{
-    if (argc > 0) {
-        DummyFileHeaderContext::setCreator(argv[0]);
-    }
-    ::testing::InitGoogleTest(&argc, argv);
-    std::filesystem::path index_path("index");
-    std::filesystem::remove_all(index_path);
-    std::filesystem::create_directory(index_path);
-    auto rval = RUN_ALL_TESTS();
-    std::filesystem::remove_all(index_path);
-    return rval;
-}
+GTEST_MAIN_RUN_ALL_TESTS()
