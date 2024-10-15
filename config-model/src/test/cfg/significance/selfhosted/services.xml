@@ -8,7 +8,7 @@
   <container version="1.0">
     <search>
         <significance>
-            <model model-id="significance-en-wikipedia-v1" path="models/significance-en-wikipedia-v1.json.zst"/>-->
+            <model model-id="significance-en-wikipedia-v1" path="models/significance-en-wikipedia-v1.json.zst"/>
             <model path="models/idf-norwegian-wiki.json.zst" />
             <model url="https://some/uri/blob.json" />
         </significance>
