@@ -167,8 +167,8 @@ SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -rdynamic" )
 
 message("-- CMAKE_SHARED_LINKER_FLAGS is ${CMAKE_SHARED_LINKER_FLAGS}")
 
-# Use C++ 20
-set(CMAKE_CXX_STANDARD 20)
+# Use C++ 23
+set(CMAKE_CXX_STANDARD 23)
 
 # Always build shared libs if not explicitly specified
 set(BUILD_SHARED_LIBS ON)
