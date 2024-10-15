@@ -24,7 +24,9 @@ class DiskIndexesTest : public ::testing::Test,
     IndexDiskLayout _layout;
 protected:
     DiskIndexesTest();
-    ~DiskIndexesTest();
+    ~DiskIndexesTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
 
     static IndexDiskDir get_index_disk_dir(const std::string& dir) {
         return IndexDiskLayout::get_index_disk_dir(dir);
@@ -43,6 +45,18 @@ DiskIndexesTest::DiskIndexesTest()
 }
 
 DiskIndexesTest::~DiskIndexesTest() = default;
+
+void
+DiskIndexesTest::SetUpTestSuite()
+{
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
+}
+
+void
+DiskIndexesTest::TearDownTestSuite()
+{
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
+}
 
 TEST_F(DiskIndexesTest, simple_set_active_works)
 {
@@ -185,12 +199,4 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
 
 }
 
-int
-main(int argc, char* argv[])
-{
-    std::filesystem::remove_all(std::filesystem::path(base_dir));
-    ::testing::InitGoogleTest(&argc, argv);
-    auto result = RUN_ALL_TESTS();
-    std::filesystem::remove_all(std::filesystem::path(base_dir));
-    return result;
-}
+GTEST_MAIN_RUN_ALL_TESTS()
