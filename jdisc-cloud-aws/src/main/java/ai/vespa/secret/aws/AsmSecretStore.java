@@ -3,6 +3,7 @@ package ai.vespa.secret.aws;
 import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.internal.TypedSecretStore;
 import ai.vespa.secret.model.Key;
+import ai.vespa.secret.model.Role;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretVersionId;
 import ai.vespa.secret.model.SecretVersionState;
@@ -11,8 +12,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
@@ -49,40 +48,26 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
 
     protected record VersionKey(Key key, SecretVersionId version) {}
 
-    // TODO: create a subclass for infrastructure secrets
-    //       This is currently used both for tenant and infrastructure secrets (in controller/cfgserver)
     @Inject
     public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        this(roleMapper(config.system(), config.tenant()),
-             ztsClient(URI.create(config.ztsUri()), identities.getIdentitySslContext()),
-             athenzDomain(config, identities));
+        this(URI.create(config.ztsUri()), identities.getIdentitySslContext(), athenzDomain(config, identities));
     }
 
-    private static AwsRoleMapper roleMapper(String system, String tenant) {
-        return (system.isEmpty()) ?
-                AwsRoleMapper.infrastructureReader() :
-                AwsRoleMapper.tenantReader(SystemName.from(system), TenantName.from(tenant));
+    public AsmSecretStore(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
+        this(new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build(), domain);
     }
 
-    public static AsmSecretStore forInfrastructure(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
-        return new AsmSecretStore(AwsRoleMapper.infrastructureReader(), ztsClient(ztsUri, sslContext), domain);
-    }
-
-    private AsmSecretStore(AwsRoleMapper roleMapper, ZtsClient ztsClient, AthenzDomain domain) {
-        super(roleMapper, ztsClient, domain);
+    private AsmSecretStore(ZtsClient ztsClient, AthenzDomain domain) {
+        super(ztsClient, Role.READER, domain);
         cache = initCache();
         closeable = ztsClient::close;
     }
 
     // For testing
-    AsmSecretStore(AwsRoleMapper roleMapper, Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
-        super(roleMapper, clientAndCredentialsSupplier);
+    AsmSecretStore(Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
+        super(clientAndCredentialsSupplier);
         cache = initCache();
         closeable = () -> {};
-    }
-
-    private static ZtsClient ztsClient(URI ztsUri, SSLContext sslContext) {
-        return new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build();
     }
 
     private static AthenzDomain athenzDomain(AsmSecretConfig config, ServiceIdentityProvider identities) {

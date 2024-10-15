@@ -48,8 +48,7 @@ public class AsmSecretStoreTest {
     }
 
     AsmSecretStore createStore() {
-        return new AsmSecretStore(AwsRoleMapper.infrastructureReader(),
-                                  MockSecretsManagerClient::new);
+        return new AsmSecretStore(MockSecretsManagerClient::new);
     }
 
     @Test
