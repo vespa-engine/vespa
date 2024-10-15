@@ -891,6 +891,9 @@ public class NodesV2ApiTest {
                                           Request.Method.PATCH),
                               "{\"message\":\"Updated snapshot '" + id + "' for node host4.yahoo.com\"}");
 
+        // List snapshots
+        assertFile(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com"), "snapshot/list-host-updated.json");
+
         // Get node
         tester.assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "snapshot/node4.json");
     }
