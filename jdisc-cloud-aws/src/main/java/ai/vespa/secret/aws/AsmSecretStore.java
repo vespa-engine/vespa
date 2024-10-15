@@ -49,13 +49,19 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
 
     protected record VersionKey(Key key, SecretVersionId version) {}
 
-    // Only used for the tenant use case, not infrastructure
+    // TODO: create a subclass for infrastructure secrets
+    //       This is currently used both for tenant and infrastructure secrets (in controller/cfgserver)
     @Inject
     public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        this(AwsRoleMapper.tenantReader(SystemName.from(config.system()),
-                                        TenantName.from(config.tenant())),
+        this(roleMapper(config.system(), config.tenant()),
              ztsClient(URI.create(config.ztsUri()), identities.getIdentitySslContext()),
              athenzDomain(config, identities));
+    }
+
+    private static AwsRoleMapper roleMapper(String system, String tenant) {
+        return (system.isEmpty()) ?
+                AwsRoleMapper.infrastructureReader() :
+                AwsRoleMapper.tenantReader(SystemName.from(system), TenantName.from(tenant));
     }
 
     public static AsmSecretStore forInfrastructure(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
