@@ -1,16 +1,15 @@
 #!/bin/env -S vespa-eval-expr interactive
 
-# This example shows how we can use a separate filter for each mapped
-# dimension in order to select a subset of dense subspaces from a
-# mixed tensor. Note that doing this will be somewhat expensive.
-
-# The 't1' tensor is typically stored in the document. The filter
-# parameters are sent with the query. Not sending a filter will leave
-# it empty, which means it will apply no filtering.
-
+# the data we are searching
 def t1 tensor<float>(a{},b{},x[2]):{a1:{b1:[1,2],b2:[3,4]},a2:{b1:[5,6],b2:[7,8]}}
 
+# work-around to make tensor playground show the value
+t1
+
+# which lables to keep from the 'a' dimension (empty means all)
 def filter_a tensor<float>(a{}):{}
+
+# which labels to keep from the 'b' dimension (empty means all)
 def filter_b tensor<float>(b{}):{b2:1.0}
 
 # apply filter for dimension 'a'
@@ -19,8 +18,10 @@ def t2 if(reduce(filter_a,count)==0,t1,t1*filter_a)
 # apply filter for dimension 'b'
 def t3 if(reduce(filter_b,count)==0,t2,t2*filter_b)
 
-# apply similarity metric using vec
+# the thing we are looking for
 def vec tensor<float>(x[2]):[3,4]
+
+# apply similarity metric using 'vec'
 def t4 reduce(join(t3,vec,f(x,y)(10-fabs(x-y))),sum,x)
 
 # calculate best filtered similarity
