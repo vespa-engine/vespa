@@ -427,13 +427,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_HOST_IDENTITY = defineFeatureFlag(
-            "use-vespa-athenz-host-identity", false,
-            List.of("freva"), "2024-06-12", "2024-11-01",
-            "Whether the host should get identity from Vespa Athenz. Only valid in public systems, noclave, AWS. Vespa version dimension refers to OS version.",
-            "Takes effect on next provisioning",
-            INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
-
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
             List.of("jonmv"), "2024-06-11", "2024-11-01",
