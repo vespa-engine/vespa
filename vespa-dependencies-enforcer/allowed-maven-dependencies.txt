@@ -258,6 +258,7 @@ software.amazon.awssdk:retries-spi:${aws-sdk2.vespa.version}
 software.amazon.awssdk:retries:${aws-sdk2.vespa.version}
 software.amazon.awssdk:sdk-core:${aws-sdk2.vespa.version}
 software.amazon.awssdk:secretsmanager:${aws-sdk2.vespa.version}
+software.amazon.awssdk:ssm:${aws-sdk2.vespa.version}
 software.amazon.awssdk:third-party-jackson-core:${aws-sdk2.vespa.version}
 software.amazon.awssdk:utils:${aws-sdk2.vespa.version}
 software.amazon.eventstream:eventstream:1.0.1
