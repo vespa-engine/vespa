@@ -269,9 +269,9 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     for (;;) {
-        std::shared_ptr<Schema> activeFusionSchema;
-        std::shared_ptr<Schema> activeFusionPrunedSchema;
-        std::shared_ptr<Schema> newActiveFusionPrunedSchema;
+        std::shared_ptr<const Schema> activeFusionSchema;
+        std::shared_ptr<const Schema> activeFusionPrunedSchema;
+        std::shared_ptr<const Schema> newActiveFusionPrunedSchema;
         {
             LockGuard lock(_state_lock);
             activeFusionSchema = _activeFusionSchema;
@@ -822,7 +822,7 @@ IndexMaintainer::getSchema(void) const
     return _schema;
 }
 
-std::shared_ptr<Schema>
+std::shared_ptr<const Schema>
 IndexMaintainer::getActiveFusionPrunedSchema(void) const
 {
     LockGuard lock(_index_update_lock);
@@ -1203,7 +1203,7 @@ IndexMaintainer::getNumFrozenMemoryIndexes(void) const
 }
 
 void
-IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done)
+IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
@@ -1254,7 +1254,7 @@ IndexMaintainer::commit(vespalib::Gate& gate)
 }
 
 void
-IndexMaintainer::commit(SerialNum serialNum, OnWriteDoneType onWriteDone)
+IndexMaintainer::commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);

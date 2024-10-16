@@ -35,7 +35,7 @@ protected:
     using Schema = search::index::Schema;
     using LidVector = std::vector<uint32_t>;
 public:
-    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
+    using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
 
     struct Configure {
         virtual ~Configure() = default;
@@ -97,7 +97,7 @@ public:
      * @param on_write_done   shared object that notifies write done when
      *                        destructed.
      **/
-    virtual void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done) = 0;
+    virtual void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done) = 0;
 
     /**
      * Removes the given document from the index. This method is
@@ -130,7 +130,7 @@ public:
      * @param onWriteDone     shared object that notifies write done when
      *                        destructed.
      **/
-    virtual void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
+    virtual void commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone) = 0;
 
     /**
      * This method is called on a regular basis to update each component with what is the highest

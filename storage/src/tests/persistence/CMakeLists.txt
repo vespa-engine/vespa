@@ -5,6 +5,7 @@ vespa_add_executable(storage_persistence_gtest_runner_app TEST
     active_operations_stats_test.cpp
     apply_bucket_diff_state_test.cpp
     bucketownershipnotifiertest.cpp
+    field_visitor_test.cpp
     has_mask_remapper_test.cpp
     mergehandlertest.cpp
     persistencequeuetest.cpp

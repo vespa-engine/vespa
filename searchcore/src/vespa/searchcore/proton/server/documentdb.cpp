@@ -431,7 +431,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
 
     auto start_time = vespalib::steady_clock::now();
     DocumentDBConfig::ComparisonResult cmpres;
-    Schema::SP oldSchema;
     {
         lock_guard guard(_configMutex);
         assert(_activeConfigSnapshot.get());
@@ -566,8 +565,11 @@ DocumentDB::close()
 
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetrics();
-    _metricsWireService.cleanAttributes(metrics.ready.attributes);
-    _metricsWireService.cleanAttributes(metrics.notReady.attributes);
+    _metricsWireService.set_attributes(metrics.ready.attributes, {});
+    _metricsWireService.set_attributes(metrics.notReady.attributes, {});
+
+    // Tear down index metrics
+    _metricsWireService.set_index_fields(metrics.ready.index, {});
 
     masterExecute([this] () {
         closeSubDBs();

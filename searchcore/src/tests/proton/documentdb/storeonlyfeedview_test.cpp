@@ -90,7 +90,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                       std::atomic<int> &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
-                                                     search::index::Schema::SP(),
+                                                     {},
                                                      std::make_shared<DocumentMetaStoreContext>(metaStore),
                                                      myGetDocumentTypeRepo(),
                                                      std::move(pendingLidsForCommit),
@@ -104,19 +104,19 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
         outstandingMoveOps(outstandingMoveOps_)
     {
     }
-    void removeAttributes(SerialNum s, const LidVector &l, OnWriteDoneType onWriteDone) override {
+    void removeAttributes(SerialNum s, const LidVector &l, const OnWriteDoneType& onWriteDone) override {
         StoreOnlyFeedView::removeAttributes(s, l, onWriteDone);
         ++removeMultiAttributesCount;
     }
-    void removeIndexedFields(SerialNum s, const LidVector &l, OnWriteDoneType onWriteDone) override {
+    void removeIndexedFields(SerialNum s, const LidVector &l, const OnWriteDoneType& onWriteDone) override {
         StoreOnlyFeedView::removeIndexedFields(s, l, onWriteDone);
         ++removeMultiIndexFieldsCount;
     }
-    void heartBeatIndexedFields(SerialNum s, DoneCallback onDone) override {
+    void heartBeatIndexedFields(SerialNum s, const DoneCallback& onDone) override {
         StoreOnlyFeedView::heartBeatIndexedFields(s, onDone);
         ++heartBeatIndexedFieldsCount;
     }
-    void heartBeatAttributes(SerialNum s, DoneCallback onDone) override {
+    void heartBeatAttributes(SerialNum s, const DoneCallback& onDone) override {
         StoreOnlyFeedView::heartBeatAttributes(s, onDone);
         ++heartBeatAttributesCount;
     }
@@ -146,26 +146,26 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
             onWriteDoneContexts()
     {}
     ~MoveOperationFeedView() override;
-    void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, OnPutDoneType onWriteDone) override {
+    void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, const OnPutDoneType& onWriteDone) override {
         ++putAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
      void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
-                           OnOperationDoneType onWriteDone) override {
+                           const OnOperationDoneType& onWriteDone) override {
         ++putIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
          std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    void removeAttributes(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
+    void removeAttributes(SerialNum, search::DocumentIdT, const OnRemoveDoneType& onWriteDone) override {
         ++removeAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    void removeIndexedFields(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
+    void removeIndexedFields(SerialNum, search::DocumentIdT, const OnRemoveDoneType& onWriteDone) override {
         ++removeIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         std::lock_guard guard(_mutex);

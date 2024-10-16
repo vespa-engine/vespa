@@ -72,8 +72,8 @@ public class Snapshots {
     /** Move snapshot to given state */
     public Snapshot move(String snapshotId, String hostname, Snapshot.State newState) {
         try (var lock = db.lockSnapshots(hostname)) {
-            Snapshot updated = require(snapshotId, hostname);
-            return writeSnapshot(hostname, node -> updated.with(newState), lock);
+            Snapshot current = require(snapshotId, hostname);
+            return writeSnapshot(hostname, node -> current.with(newState), lock);
         }
     }
 
@@ -96,6 +96,7 @@ public class Snapshots {
                            Optional.empty(),
                            transaction);
                 List<Snapshot> updated = new ArrayList<>(snapshots);
+                updated.removeIf(s -> s.id().equals(snapshot.id()));
                 updated.add(snapshot);
                 db.writeSnapshots(snapshot.hostname().value(), updated, transaction);
                 transaction.commit();

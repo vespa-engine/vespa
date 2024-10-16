@@ -217,7 +217,7 @@ StoreOnlyFeedView::Context::Context(Context &&) noexcept = default;
 StoreOnlyFeedView::Context::~Context() = default;
 
 void
-StoreOnlyFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
+StoreOnlyFeedView::forceCommit(const CommitParam & param, const DoneCallback& onDone)
 {
     if (useDocumentMetaStore(param.lastSerialNum())) {
         _metaStore.commit(param);
@@ -229,7 +229,7 @@ StoreOnlyFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 }
 
 void
-StoreOnlyFeedView::internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone)
+StoreOnlyFeedView::internalForceCommit(const CommitParam & param, const OnForceCommitDoneType& onCommitDone)
 {
     LOG(debug, "internalForceCommit: serial=%" PRIu64 ".", param.lastSerialNum());
     _writeService.summary().execute(makeLambdaTask([onDone=onCommitDone]() {(void) onDone;}));
@@ -248,10 +248,10 @@ StoreOnlyFeedView::get_pending_lid_token(const DocumentOperation &op)
 }
 
 void
-StoreOnlyFeedView::putAttributes(SerialNum, Lid, const Document &, OnPutDoneType) {}
+StoreOnlyFeedView::putAttributes(SerialNum, Lid, const Document &, const OnPutDoneType&) {}
 
 void
-StoreOnlyFeedView::putIndexedFields(SerialNum, Lid, const std::shared_ptr<Document> &, OnOperationDoneType) {}
+StoreOnlyFeedView::putIndexedFields(SerialNum, Lid, const std::shared_ptr<Document> &, const OnOperationDoneType&) {}
 
 void
 StoreOnlyFeedView::preparePut(PutOperation &putOp)
@@ -318,15 +318,15 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 }
 
 void
-StoreOnlyFeedView::heartBeatIndexedFields(SerialNum, DoneCallback ) {}
+StoreOnlyFeedView::heartBeatIndexedFields(SerialNum, const DoneCallback&) {}
 
 
 void
-StoreOnlyFeedView::heartBeatAttributes(SerialNum, DoneCallback ) {}
+StoreOnlyFeedView::heartBeatAttributes(SerialNum, const DoneCallback&) {}
 
 void
 StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate & upd,
-                                    OnOperationDoneType, IFieldUpdateCallback & onUpdate)
+                                    const OnOperationDoneType&, IFieldUpdateCallback & onUpdate)
 {
     for (const auto & fieldUpdate : upd.getUpdates()) {
         onUpdate.onUpdateField(fieldUpdate.getField(), nullptr);
@@ -334,12 +334,12 @@ StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate & upd,
 }
 
 void
-StoreOnlyFeedView::updateAttributes(SerialNum, Lid, FutureDoc, OnOperationDoneType)
+StoreOnlyFeedView::updateAttributes(SerialNum, Lid, FutureDoc, const OnOperationDoneType&)
 {
 }
 
 void
-StoreOnlyFeedView::updateIndexedFields(SerialNum, Lid, FutureDoc, OnOperationDoneType)
+StoreOnlyFeedView::updateIndexedFields(SerialNum, Lid, FutureDoc, const OnOperationDoneType&)
 {
 }
 
@@ -362,7 +362,7 @@ StoreOnlyFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
 
 void
 StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
-                              FutureStream futureStream, OnOperationDoneType onDone)
+                              FutureStream futureStream, const OnOperationDoneType& onDone)
 {
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, this] () mutable {
@@ -376,7 +376,7 @@ StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
 }
 
 void
-StoreOnlyFeedView::putSummaryNoop(FutureStream futureStream, OnOperationDoneType onDone)
+StoreOnlyFeedView::putSummaryNoop(FutureStream futureStream, const OnOperationDoneType& onDone)
 {
     summaryExecutor().execute(
             makeLambdaTask([futureStream = std::move(futureStream), onDone] () mutable {
@@ -387,7 +387,7 @@ StoreOnlyFeedView::putSummaryNoop(FutureStream futureStream, OnOperationDoneType
 }
 
 void
-StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, OnOperationDoneType onDone)
+StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, const OnOperationDoneType& onDone)
 {
     summaryExecutor().execute(
             makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, lid, this] {
@@ -397,7 +397,7 @@ StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, On
             }));
 }
 void
-StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
+StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, const OnWriteDoneType& onDone) {
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, onDone, trackerToken = _pendingLidsForDocStore.produce(lid), this] {
                 (void) onDone;
@@ -406,7 +406,7 @@ StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType o
             }));
 }
 void
-StoreOnlyFeedView::removeSummaries(SerialNum serialNum, const LidVector & lids, OnWriteDoneType onDone) {
+StoreOnlyFeedView::removeSummaries(SerialNum serialNum, const LidVector & lids, const OnWriteDoneType& onDone) {
     std::vector<IPendingLidTracker::Token> trackerTokens;
     trackerTokens.reserve(lids.size());
     std::for_each(lids.begin(), lids.end(), [this, &trackerTokens](Lid lid) {
@@ -423,7 +423,7 @@ StoreOnlyFeedView::removeSummaries(SerialNum serialNum, const LidVector & lids, 
 }
 
 void
-StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum, DoneCallback onDone) {
+StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum, const DoneCallback& onDone) {
     summaryExecutor().execute(
             makeLambdaTask([serialNum, this, onDone] {
                 (void) onDone;
@@ -541,10 +541,10 @@ StoreOnlyFeedView::lookupDocId(const DocumentId &docId, Lid &lid) const
 }
 
 void
-StoreOnlyFeedView::removeAttributes(SerialNum, Lid, OnRemoveDoneType) {}
+StoreOnlyFeedView::removeAttributes(SerialNum, Lid, const OnRemoveDoneType&) {}
 
 void
-StoreOnlyFeedView::removeIndexedFields(SerialNum, Lid, OnRemoveDoneType) {}
+StoreOnlyFeedView::removeIndexedFields(SerialNum, Lid, const OnRemoveDoneType&) {}
 
 void
 StoreOnlyFeedView::prepareRemove(RemoveOperation &rmOp)
@@ -648,13 +648,13 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId &
 }
 
 void
-StoreOnlyFeedView::removeAttributes(SerialNum, const LidVector &, OnWriteDoneType ) {}
+StoreOnlyFeedView::removeAttributes(SerialNum, const LidVector &, const OnWriteDoneType&) {}
 
 void
-StoreOnlyFeedView::removeIndexedFields(SerialNum , const LidVector &, OnWriteDoneType ) {}
+StoreOnlyFeedView::removeIndexedFields(SerialNum , const LidVector &, const OnWriteDoneType&) {}
 
 size_t
-StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attributes, DoneCallback onWriteDone)
+StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attributes, const DoneCallback& onWriteDone)
 {
     const SerialNum serialNum = op.getSerialNum();
     const LidVectorContext::SP &ctx = op.getLidsToRemove(_params._subDbId);
@@ -697,13 +697,13 @@ StoreOnlyFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
 }
 
 void
-StoreOnlyFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone)
+StoreOnlyFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone)
 {
     internalDeleteBucket(delOp, onDone);
 }
 
 void
-StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone)
+StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone)
 {
     size_t rm_count = removeDocuments(delOp, true, onDone);
     LOG(debug, "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
@@ -732,7 +732,7 @@ StoreOnlyFeedView::prepareMove(MoveOperation &moveOp)
 
 // CombiningFeedView calls this for both source and target subdb.
 void
-StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, DoneCallback doneCtx)
+StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, const DoneCallback& doneCtx)
 {
     assert(moveOp.getValidDbdId());
     assert(moveOp.getValidPrevDbdId());
@@ -766,7 +766,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, DoneCallback doneCtx)
 }
 
 void
-StoreOnlyFeedView::heartBeat(SerialNum serialNum, DoneCallback onDone)
+StoreOnlyFeedView::heartBeat(SerialNum serialNum, const DoneCallback& onDone)
 {
     assert(_writeService.master().isCurrentThread());
     _metaStore.reclaim_unused_memory();
@@ -779,7 +779,7 @@ StoreOnlyFeedView::heartBeat(SerialNum serialNum, DoneCallback onDone)
 // CombiningFeedView calls this only for the removed subdb.
 void
 StoreOnlyFeedView::
-handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, DoneCallback onDone)
+handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, const DoneCallback& onDone)
 {
     assert(_params._subDbType == SubDbType::REMOVED);
     assert(pruneOp.getSubDbId() == _params._subDbId);
@@ -791,7 +791,7 @@ handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, DoneC
 }
 
 void
-StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
+StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone)
 {
     assert(_params._subDbId == op.getSubDbId());
     const SerialNum serialNum = op.getSerialNum();

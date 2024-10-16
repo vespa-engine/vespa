@@ -92,7 +92,7 @@ struct Setup {
     }
 
     static int peek_at(Value *begin, Value *end, size_t idx) {
-        if (&Heap::template front(begin, end) == begin) {
+        if (&Heap::front(begin, end) == begin) {
             return unwrap(*(begin + idx)); // normal order
         } else {
             return unwrap(*(end - 1 - idx)); // inverted order

@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/memoryusage.h>
+#include "field_index_stats.h"
+#include <map>
 
 namespace search {
 
@@ -17,9 +18,11 @@ private:
     size_t _docsInMemory;
     size_t _sizeOnDisk; // in bytes
     size_t _fusion_size_on_disk; // in bytes
+    std::map<std::string, FieldIndexStats> _field_stats;
 
 public:
-    SearchableStats() : _memoryUsage(), _docsInMemory(0), _sizeOnDisk(0), _fusion_size_on_disk(0) {}
+    SearchableStats();
+    ~SearchableStats();
     SearchableStats &memoryUsage(const vespalib::MemoryUsage &usage) {
         _memoryUsage = usage;
         return *this;
@@ -41,14 +44,12 @@ public:
     }
     size_t fusion_size_on_disk() const { return _fusion_size_on_disk; }
 
-    SearchableStats &merge(const SearchableStats &rhs) {
-        _memoryUsage.merge(rhs._memoryUsage);
-        _docsInMemory += rhs._docsInMemory;
-        _sizeOnDisk += rhs._sizeOnDisk;
-        _fusion_size_on_disk += rhs._fusion_size_on_disk;
-        return *this;
-    }
+    SearchableStats& merge(const SearchableStats& rhs);
+    bool operator==(const SearchableStats& rhs) const noexcept;
+    SearchableStats& add_field_stats(const std::string& name, const FieldIndexStats& stats);
+    const std::map<std::string, FieldIndexStats>& get_field_stats() const noexcept { return _field_stats; }
 };
 
-} // namespace search
+std::ostream& operator<<(std::ostream& os, const SearchableStats& stats);
 
+}

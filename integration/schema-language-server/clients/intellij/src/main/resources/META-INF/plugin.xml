@@ -19,6 +19,10 @@
     <li>Syntax highlighting</li>
 </ul>
 
+<h2>Settings:</h2>
+<p>If you encounter issues running the language server, you can supply a custom path to java by changing the setting under "Languages & Frameworks": "Vespa Schema Language Server"</p>
+<p>The language server requires Java 17 or higher. The supplied path should contain a java binary or a subdirectory "bin" containing the java binary.</p>
+
   ]]></description>
   <change-notes><![CDATA[
 <h2>Rewritten from scratch to include LSP support</h2>
@@ -36,5 +40,17 @@
 
     <platform.lsp.serverSupportProvider implementation="ai.vespa.schemals.intellij.SchemaLspServerSupportProvider"/>
     <lang.syntaxHighlighter language="Schema" implementationClass="ai.vespa.schemals.intellij.SchemaSyntaxHighlighter" />
+  </extensions>
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService
+            serviceImplementation="ai.vespa.schemals.intellij.settings.SchemaSettings"/>
+  </extensions>
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationConfigurable
+      parentId="language"
+      instance="ai.vespa.schemals.intellij.settings.SchemaSettingsConfigurable"
+      id="ai.vespa.schemals.intellij.settings.SchemaSettingsConfigurable"
+      displayName="Vespa Schema Language Server"
+      />
   </extensions>
 </idea-plugin>

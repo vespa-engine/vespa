@@ -49,7 +49,7 @@ private:
     }
 
     vespalib::Trinary shouldBeReady(const document::BucketId &bucket) const;
-    void forceCommit(const CommitParam & param, DoneCallback onDone) override;
+    void forceCommit(const CommitParam & param, const DoneCallback& onDone) override;
 public:
     using SP = std::shared_ptr<CombiningFeedView>;
 
@@ -74,11 +74,11 @@ public:
     void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
     bool isMoveStillValid(const MoveOperation & moveOp) const override;
     void prepareMove(MoveOperation &putOp) override;
-    void handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone) override;
-    void handleMove(const MoveOperation &moveOp, DoneCallback onDone) override;
-    void heartBeat(search::SerialNum serialNum, DoneCallback onDone) override;
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, DoneCallback onDone) override;
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
+    void handleDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone) override;
+    void handleMove(const MoveOperation &moveOp, const DoneCallback& onDone) override;
+    void heartBeat(search::SerialNum serialNum, const DoneCallback& onDone) override;
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, const DoneCallback& onDone) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone) override;
 
     // Called by document db executor
     void setCalculator(const std::shared_ptr<IBucketStateCalculator> &newCalc);

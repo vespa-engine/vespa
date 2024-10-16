@@ -81,7 +81,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          documentMetaStoreInitTask,
                                                          documentMetaStore,
                                                          *baseAttrMgr,
-                                                         (_hasAttributes ? configSnapshot.getAttributesConfig() : AttributesConfig()),
+                                                         configSnapshot.getAttributesConfig(),
                                                          alloc_strategy,
                                                          _fastAccessAttributesOnly,
                                                          _writeService.master(),
@@ -90,7 +90,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
 
 namespace {
 
-vespalib::hash_set<std::string>
+std::vector<std::string>
 get_attribute_names(const proton::IAttributeManager& mgr)
 {
     vespalib::hash_set<std::string> both;
@@ -107,7 +107,12 @@ get_attribute_names(const proton::IAttributeManager& mgr)
             both.insert(attr->getName());
         }
     }
-    return both;
+    std::vector<std::string> names;
+    names.reserve(both.size());
+    for (auto& name : both) {
+        names.emplace_back(name);
+    }
+    return names;
 }
 
 }
@@ -115,13 +120,8 @@ get_attribute_names(const proton::IAttributeManager& mgr)
 void
 FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 {
-    if (_addMetrics) {
-        // register attribute metrics
-        auto list = get_attribute_names(*attrMgrResult);
-        for (const auto &attr : list) {
-            _metricsWireService.addAttribute(_subAttributeMetrics, attr);
-        }
-    }
+    // register attribute metrics
+    _metricsWireService.set_attributes(_subAttributeMetrics, get_attribute_names(*attrMgrResult));
     _initAttrMgr = attrMgrResult;
 }
 
@@ -163,26 +163,9 @@ FastAccessDocSubDB::pruneRemovedFields(SerialNum serialNum)
 }
 
 void
-FastAccessDocSubDB::reconfigureAttributeMetrics(const proton::IAttributeManager &newMgr,
-                                                const proton::IAttributeManager &oldMgr)
+FastAccessDocSubDB::reconfigure_attribute_metrics(const proton::IAttributeManager& mgr)
 {
-    auto old_list = get_attribute_names(oldMgr);
-    auto new_list = get_attribute_names(newMgr);
-
-    for (const auto &attrName : new_list) {
-        if (old_list.contains(attrName)) {
-            continue;
-        }
-        LOG(debug, "reconfigureAttributeMetrics(): addAttribute='%s'", attrName.c_str());
-        _metricsWireService.addAttribute(_subAttributeMetrics, attrName);
-    }
-    for (const auto &attrName : old_list) {
-        if (new_list.contains(attrName)) {
-            continue;
-        }
-        LOG(debug, "reconfigureAttributeMetrics(): removeAttribute='%s'", attrName.c_str());
-        _metricsWireService.removeAttribute(_subAttributeMetrics, attrName);
-    }
+    _metricsWireService.set_attributes(_subAttributeMetrics, get_attribute_names(mgr));
 }
 
 IReprocessingTask::UP
@@ -197,13 +180,11 @@ FastAccessDocSubDB::createReprocessingTask(IReprocessingInitializer &initializer
 
 FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
     : Parent(cfg._storeOnlyCfg, ctx._storeOnlyCtx),
-      _hasAttributes(cfg._hasAttributes),
       _fastAccessAttributesOnly(cfg._fastAccessAttributesOnly),
       _initAttrMgr(),
       _fastAccessFeedView(),
       _configurer(_fastAccessFeedView, getSubDbName()),
       _subAttributeMetrics(ctx._subAttributeMetrics),
-      _addMetrics(cfg._addMetrics),
       _metricsWireService(ctx._metricsWireService),
       _attribute_interlock(std::move(ctx._attribute_interlock)),
       _docIdLimit(0)
@@ -278,9 +259,9 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
         }
-        if (_addMetrics) {
+        {
             proton::IAttributeManager::SP newMgr = extractAttributeManager(_fastAccessFeedView.get());
-            reconfigureAttributeMetrics(*newMgr, *oldMgr);
+            reconfigure_attribute_metrics(*newMgr);
         }
         _iFeedView.set(_fastAccessFeedView.get());
         if (is_node_retired_or_maintenance()) {

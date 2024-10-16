@@ -38,4 +38,21 @@ TEST(SearchableStatsTest, stats_can_be_merged)
     EXPECT_EQ(1300u, stats.fusion_size_on_disk());
 }
 
+TEST(SearchableStatsTest, field_stats_can_be_merged)
+{
+    SearchableStats base_stats;
+    base_stats.add_field_stats("f1", FieldIndexStats().memory_usage({100, 40, 10, 5}).size_on_disk(1000)).
+        add_field_stats("f2", FieldIndexStats().memory_usage({400, 200, 60, 10}).size_on_disk(1500));
+    SearchableStats added_stats;
+    added_stats.add_field_stats("f2", FieldIndexStats().memory_usage({300, 100, 40, 5}).size_on_disk(500)).
+        add_field_stats("f3", FieldIndexStats().memory_usage({110, 50, 20, 12}).size_on_disk(500));
+    SearchableStats act_stats = base_stats;
+    act_stats.merge(added_stats);
+    SearchableStats exp_stats;
+    exp_stats.add_field_stats("f1", FieldIndexStats().memory_usage({100, 40, 10, 5}).size_on_disk(1000)).
+        add_field_stats("f2", FieldIndexStats().memory_usage({700, 300, 100, 15}).size_on_disk(2000)).
+        add_field_stats("f3", FieldIndexStats().memory_usage({110, 50, 20, 12}).size_on_disk(500));
+    EXPECT_EQ(exp_stats, act_stats);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

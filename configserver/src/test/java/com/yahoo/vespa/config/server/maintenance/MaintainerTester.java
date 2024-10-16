@@ -44,6 +44,7 @@ class MaintainerTester {
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .sessionLifetime(60)
                 .build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)

@@ -2,8 +2,9 @@
 
 #include <vespa/metrics/metricset.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
+#include <vespa/searchcore/proton/metrics/index_metrics.h>
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton;
 
@@ -13,65 +14,109 @@ struct DummyMetricSet : public metrics::MetricSet {
     DummyMetricSet(const std::string &name) : metrics::MetricSet(name, {}, "", nullptr) {}
 };
 
-struct AttributeMetricsFixture {
+class MetricsEngineTest : public ::testing::Test {
+protected:
     MetricsEngine engine;
     DummyMetricSet parent;
-    AttributeMetrics metrics;
-    AttributeMetricsFixture()
-        : engine(),
-          parent("parent"),
-          metrics(&parent)
-    {}
-    void addAttribute(const std::string &attrName) {
-        engine.addAttribute(metrics, attrName);
+    AttributeMetrics attributes;
+    IndexMetrics indexes;
+
+    MetricsEngineTest();
+    ~MetricsEngineTest() override;
+
+    void set_attributes(std::vector<std::string> field_names) {
+        engine.set_attributes(attributes, field_names);;
     }
-    void removeAttribute(const std::string &attrName) {
-        engine.removeAttribute(metrics, attrName);
+
+    void set_index_fields(std::vector<std::string> field_names) {
+        engine.set_index_fields(indexes, field_names);
     }
-    void cleanAttributes() {
-        engine.cleanAttributes(metrics);
+
+    size_t count_registered_metrics() const {
+        return parent.getRegisteredMetrics().size();
     }
-    void assertRegisteredMetrics(size_t expNumMetrics) const {
-        EXPECT_EQUAL(expNumMetrics, parent.getRegisteredMetrics().size());
+
+    bool has_attribute_metrics(const std::string &field_name) {
+        return attributes.get_field_metrics_entry(field_name).get() != nullptr;
     }
-    void assertMetricsExists(const std::string &attrName) {
-        EXPECT_TRUE(metrics.get(attrName) != nullptr);
-    }
-    void assertMetricsNotExists(const std::string &attrName) {
-        EXPECT_TRUE(metrics.get(attrName) == nullptr);
+
+    bool has_index_metrics(const std::string& field_name) {
+        return indexes.get_field_metrics_entry(field_name).get() != nullptr;
     }
 };
 
+MetricsEngineTest::MetricsEngineTest()
+    : ::testing::Test(),
+      engine(),
+      parent("parent"),
+      attributes(&parent),
+      indexes(&parent)
+{
 }
 
-TEST_F("require that attribute metrics can be added", AttributeMetricsFixture)
+MetricsEngineTest::~MetricsEngineTest() = default;
+
+TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_added)
 {
-    TEST_DO(f.assertRegisteredMetrics(0));
-    f.addAttribute("foo");
-    TEST_DO(f.assertRegisteredMetrics(1));
-    TEST_DO(f.assertMetricsExists("foo"));
+    EXPECT_EQ(0, count_registered_metrics());
+    set_attributes({"foo"});
+    EXPECT_EQ(1, count_registered_metrics());
+    EXPECT_TRUE(has_attribute_metrics("foo"));
 }
 
-TEST_F("require that attribute metrics can be removed", AttributeMetricsFixture)
+TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_removed)
 {
-    TEST_DO(f.assertRegisteredMetrics(0));
-    f.addAttribute("foo");
-    f.addAttribute("bar");
-    TEST_DO(f.assertRegisteredMetrics(2));
-    f.removeAttribute("foo");
-    TEST_DO(f.assertRegisteredMetrics(1));
-    TEST_DO(f.assertMetricsNotExists("foo"));
-    TEST_DO(f.assertMetricsExists("bar"));
+    EXPECT_EQ(0, count_registered_metrics());
+    set_attributes({"foo"});
+    EXPECT_EQ(1, count_registered_metrics());
+    set_attributes({"foo", "bar"});
+    EXPECT_EQ(2, count_registered_metrics());
+    set_attributes({"bar"});
+    EXPECT_EQ(1, count_registered_metrics());
+    EXPECT_FALSE(has_attribute_metrics("foo"));
+    EXPECT_TRUE(has_attribute_metrics("bar"));
 }
 
-TEST_F("require that all attribute metrics can be cleaned", AttributeMetricsFixture)
+TEST_F(MetricsEngineTest, require_that_all_attribute_metrics_can_be_cleaned)
 {
-    TEST_DO(f.assertRegisteredMetrics(0));
-    f.addAttribute("foo");
-    f.addAttribute("bar");
-    TEST_DO(f.assertRegisteredMetrics(2));
-    f.cleanAttributes();
-    TEST_DO(f.assertRegisteredMetrics(0));
-    TEST_DO(f.assertMetricsNotExists("foo"));
-    TEST_DO(f.assertMetricsNotExists("bar"));
+    EXPECT_EQ(0, count_registered_metrics());
+    set_attributes({"foo", "bar"});
+    EXPECT_EQ(2, count_registered_metrics());
+    set_attributes({});
+    EXPECT_EQ(0, count_registered_metrics());
+    EXPECT_FALSE(has_attribute_metrics("foo"));
+    EXPECT_FALSE(has_attribute_metrics("bar"));
+}
+
+TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_added)
+{
+    EXPECT_EQ(0, count_registered_metrics());
+    set_index_fields({"foo"});
+    EXPECT_EQ(1, count_registered_metrics());
+    EXPECT_TRUE(has_index_metrics("foo"));
+}
+
+TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_removed)
+{
+    EXPECT_EQ(0, count_registered_metrics());
+    set_index_fields({"foo"});
+    set_index_fields({"foo", "bar"});
+    EXPECT_EQ(2, count_registered_metrics());
+    set_index_fields({"bar"});
+    EXPECT_EQ(1, count_registered_metrics());
+    EXPECT_FALSE(has_index_metrics("foo"));
+    EXPECT_TRUE(has_index_metrics("bar"));
+}
+
+TEST_F(MetricsEngineTest, require_that_all_index_metrics_can_be_cleaned)
+{
+    EXPECT_EQ(0, count_registered_metrics());
+    set_index_fields({"foo", "bar"});
+    EXPECT_EQ(2, count_registered_metrics());
+    set_index_fields({});
+    EXPECT_EQ(0, count_registered_metrics());
+    EXPECT_FALSE(has_index_metrics("foo"));
+    EXPECT_FALSE(has_index_metrics("bar"));
+}
+
 }

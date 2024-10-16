@@ -38,7 +38,7 @@ private:
     DocumentInverterContext& _context;
 
     using LidVector = std::vector<uint32_t>;
-    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
+    using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
 
     std::vector<std::unique_ptr<FieldInverter>> _inverters;
     std::vector<std::unique_ptr<UrlFieldInverter>> _urlInverters;
@@ -66,7 +66,7 @@ public:
      * NOTE: The caller of this function should sync the 'invert threads' executor first,
      * to ensure that inverting is completed before pushing starts.
      */
-    void pushDocuments(OnWriteDoneType on_write_done);
+    void pushDocuments(const OnWriteDoneType& on_write_done);
 
     /**
      * Invert (add) the given document.
@@ -75,7 +75,7 @@ public:
      * For each text and uri field in the document a task for inverting and adding that
      * field (using a field inverter) is added to the 'invert threads' executor, then this function returns.
      **/
-    void invertDocument(uint32_t docId, const document::Document &doc, OnWriteDoneType on_write_done);
+    void invertDocument(uint32_t docId, const document::Document &doc, const OnWriteDoneType& on_write_done);
 
     /**
      * Remove the given document.

@@ -47,29 +47,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag USE_VESPA_ATHENZ = defineFeatureFlag(
-            "use-vespa-athenz", false,
-            List.of("hakonhall"), "2024-06-25", "2024-10-25",
-            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public systems. " +
-            "node-type is config in config server, controller in controller, and the appropriate " +
-            "host node type in host-admin.",
-            "Takes immediate effect wherever possible.",
-            NODE_TYPE);
-
-    public static final UnboundBooleanFlag ASSUME_ROLE_IN_VESPA_ATHENZ = defineFeatureFlag(
-            "assume-role-in-vespa-athenz", false,
-            List.of("hakonhall"), "2024-08-09", "2024-10-09",
-            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public AWS systems, when trying assuming AWS roles. " +
-            "node-type is config in config server, controller in controller.",
-            "Takes effect on start of config server/controller.",
-            NODE_TYPE);
-
-    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_ZMS = defineFeatureFlag(
-            "use-vespa-athenz-zms", false,
-            List.of("hakonhall"), "2024-08-16", "2024-10-16",
-            "Whether to communicate with Vespa Athenz ZMS instead of Yahoo Athenz ZMS in public systems.",
-            "Typically takes effect on start of config server/controller, or immediately for hosts (host-admin).");
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -254,14 +231,6 @@ public class Flags {
             "Takes effect on next tick.",
             NODE_TYPE);
 
-    public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
-            "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2025-01-01",
-            "Enable Horizon dashboard",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL
-    );
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2024-12-31",
@@ -393,13 +362,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
-            "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-11-01",
-            "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
             "search-handler-threadpool", 2,
             List.of("bjorncs", "baldersheim"), "2023-10-01", "2025-01-01",
@@ -465,13 +427,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_HOST_IDENTITY = defineFeatureFlag(
-            "use-vespa-athenz-host-identity", false,
-            List.of("freva"), "2024-06-12", "2024-11-01",
-            "Whether the host should get identity from Vespa Athenz. Only valid in public systems, noclave, AWS. Vespa version dimension refers to OS version.",
-            "Takes effect on next provisioning",
-            INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
-
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
             List.of("jonmv"), "2024-06-11", "2024-11-01",
@@ -529,7 +484,7 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
-            "file-download-backoff-initial-time-ms", 2000,
+            "file-download-backoff-initial-time-ms", 1000,
             List.of("hmusum"), "2024-08-16", "2024-11-01",
             "Initial backoff time in milliseconds when failing to download a file reference",
             "Takes effect on restart of Docker container");
@@ -540,12 +495,6 @@ public class Flags {
             "Override the S1 token",
             "Takes effect on next host-admin run",
             HOSTNAME);
-
-    public static final UnboundBooleanFlag FORWARD_ALL_LOG_LEVELS = defineFeatureFlag(
-            "forward-all-log-levels", false,
-            List.of("hmusum"), "2024-10-04", "2024-11-04",
-            "Forward all log levels from nodes to logserver (debug and spam levels will be forwarded only if this flag is enabled)",
-            "Takes effect at redeployment");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
@@ -671,7 +620,8 @@ public class Flags {
         U unboundFlag = factory.create(id, defaultValue, vector);
         FlagDefinition definition = new FlagDefinition(
                 unboundFlag, owners, parseDate(createdAt), parseDate(expiresAt), description, modificationEffect, dimensions);
-        flags.put(id, definition);
+        if (flags.put(id, definition) != null)
+            throw new IllegalStateException("There are multiple definitions of the " + id + " flag");
         return unboundFlag;
     }
 

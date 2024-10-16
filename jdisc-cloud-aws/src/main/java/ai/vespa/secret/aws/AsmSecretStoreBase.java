@@ -1,7 +1,6 @@
 package ai.vespa.secret.aws;
 
 import ai.vespa.secret.model.Key;
-import ai.vespa.secret.model.Role;
 import ai.vespa.secret.model.VaultName;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -27,30 +26,38 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
 
     public static final String AWSCURRENT = "AWSCURRENT";
 
-    private final ConcurrentMap<VaultName, SecretsManagerClient> clientMap = new ConcurrentHashMap<>();
     private final Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier;
 
+    private final AwsRoleMapper roleMapper;
+    private final ConcurrentMap<AwsRole, SecretsManagerClient> clientMap = new ConcurrentHashMap<>();
 
-    public AsmSecretStoreBase(ZtsClient ztsClient, Role role, AthenzDomain athenzDomain) {
-        this(vault -> SecretsManagerClient.builder().region(Region.US_EAST_1)
-                .credentialsProvider(getAwsSessionCredsProvider(ztsClient, athenzDomain, role, vault))
-                .build());
+
+    public AsmSecretStoreBase(AwsRoleMapper roleMapper, ZtsClient ztsClient, AthenzDomain athenzDomain) {
+        this(roleMapper,
+             vault -> SecretsManagerClient.builder().region(Region.US_EAST_1)
+                     .credentialsProvider(getAwsSessionCredsProvider(roleMapper, ztsClient, athenzDomain, vault))
+                     .build()
+        );
     }
 
-    AsmSecretStoreBase(Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
+    AsmSecretStoreBase(AwsRoleMapper roleMapper, Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
+        this.roleMapper = roleMapper;
         this.clientAndCredentialsSupplier = clientAndCredentialsSupplier;
     }
 
 
-    protected SecretsManagerClient getClient(VaultName vaultName) {
-        // TODO: Use role name instead of vault name
-        return clientMap.computeIfAbsent(vaultName, clientAndCredentialsSupplier);
+    protected SecretsManagerClient getClient(VaultName vault) {
+        var awsRole = roleMapper.awsRole(vault);
+        clientMap.putIfAbsent(awsRole, clientAndCredentialsSupplier.apply(vault));
+        return clientMap.get(awsRole);
     }
 
-    private static AwsCredentialsProvider getAwsSessionCredsProvider(ZtsClient ztsClient, AthenzDomain athenzDomain, Role role, VaultName vaultName) {
-        var awsRole = new AwsRole(role.forVault(vaultName));
-        AwsCredentials credentials = new AwsCredentials(ztsClient, athenzDomain, awsRole);
+    private static AwsCredentialsProvider getAwsSessionCredsProvider(AwsRoleMapper roleMapper,
+                                                                     ZtsClient ztsClient,
+                                                                     AthenzDomain athenzDomain,
+                                                                     VaultName vaultName) {
 
+        AwsCredentials credentials = new AwsCredentials(ztsClient, athenzDomain, roleMapper.awsRole(vaultName));
         return () -> {
             AwsTemporaryCredentials temporary = credentials.get();
             return AwsSessionCredentials.create(temporary.accessKeyId(),
@@ -60,7 +67,7 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
     }
 
     protected String awsSecretId(Key key) {
-        return key.vaultName().value() + "/" + key.secretName();
+        return key.vaultName().value() + "/" + key.secretName().value();
     }
 
     @Override

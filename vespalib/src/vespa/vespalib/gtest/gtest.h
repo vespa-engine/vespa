@@ -20,7 +20,7 @@ main(int argc, char* argv[])                \
         TRY_BLOCK;                                                        \
         FAIL() << "exception '" << MESSAGE << "' not thrown at all!";     \
     } catch(EXCEPTION_TYPE& e) {                                          \
-        EXPECT_TRUE(std::string_view(e.what()).find(std::string_view(MESSAGE)) != std::string_view::npos) << \
+        EXPECT_TRUE(std::string_view(e.what()).contains(std::string_view(MESSAGE))) << \
             " e.what(): " << e.what() << "\n";                            \
     } catch(...) {                                                        \
         FAIL() << "wrong exception type thrown";                          \

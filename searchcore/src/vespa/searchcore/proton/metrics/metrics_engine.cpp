@@ -4,6 +4,7 @@
 #include "attribute_metrics.h"
 #include "documentdb_tagged_metrics.h"
 #include "content_proton_metrics.h"
+#include "index_metrics.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 
@@ -72,62 +73,18 @@ MetricsEngine::removeDocumentDBMetrics(DocumentDBTaggedMetrics &child)
     _root->unregisterMetric(child);
 }
 
-namespace {
-
 void
-doAddAttribute(AttributeMetrics &attributes, const std::string &attrName)
-{
-    auto entry = attributes.add(attrName);
-    if (entry) {
-        attributes.parent()->registerMetric(*entry);
-    } else {
-        LOG(warning, "Could not add metrics for attribute '%s', already existing", attrName.c_str());
-    }
-}
-
-void
-doRemoveAttribute(AttributeMetrics &attributes, const std::string &attrName)
-{
-    auto entry = attributes.remove(attrName);
-    if (entry) {
-        attributes.parent()->unregisterMetric(*entry);
-    } else {
-        LOG(warning, "Could not remove metrics for attribute '%s', not found", attrName.c_str());
-    }
-}
-
-void
-doCleanAttributes(AttributeMetrics &attributes)
-{
-    auto entries = attributes.release();
-    for (const auto &entry : entries) {
-        attributes.parent()->unregisterMetric(*entry);
-    }
-}
-
-}
-
-void
-MetricsEngine::addAttribute(AttributeMetrics &subAttributes,
-                            const std::string &name)
+MetricsEngine::set_attributes(AttributeMetrics& subAttributes, std::vector<std::string> field_names)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doAddAttribute(subAttributes, name);
+    subAttributes.set_fields(std::move(field_names));
 }
 
 void
-MetricsEngine::removeAttribute(AttributeMetrics &subAttributes,
-                               const std::string &name)
+MetricsEngine::set_index_fields(IndexMetrics& index_fields, std::vector<std::string> field_names)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doRemoveAttribute(subAttributes, name);
-}
-
-void
-MetricsEngine::cleanAttributes(AttributeMetrics &subAttributes)
-{
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doCleanAttributes(subAttributes);
+    index_fields.set_fields(std::move(field_names));
 }
 
 namespace {

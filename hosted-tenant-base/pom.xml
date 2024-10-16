@@ -535,7 +535,7 @@
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
                     <compilerArgs>
-                        <arg>-Xlint:all</arg>
+                        <arg>${vespaCompilerArgs.xlint}</arg>
                         <arg>-Werror</arg>
                     </compilerArgs>
                 </configuration>

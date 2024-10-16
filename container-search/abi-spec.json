@@ -2550,7 +2550,7 @@
     ]
   },
   "com.yahoo.search.grouping.UnavailableAttributeException" : {
-    "superClass" : "java.lang.RuntimeException",
+    "superClass" : "com.yahoo.processing.IllegalInputException",
     "interfaces" : [ ],
     "attributes" : [
       "public"

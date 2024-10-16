@@ -71,13 +71,13 @@ public:
     bool hasReceivedDocumentInsert() const override {
         return _index.getDocIdLimit() > 1u;
     }
-    search::index::Schema::SP getPrunedSchema() const override {
+    std::shared_ptr<const search::index::Schema> getPrunedSchema() const override {
         return _index.getPrunedSchema();
     }
     vespalib::MemoryUsage getMemoryUsage() const override {
         return _index.getMemoryUsage();
     }
-    void insertDocument(uint32_t lid, const document::Document &doc, OnWriteDoneType on_write_done) override {
+    void insertDocument(uint32_t lid, const document::Document &doc, const OnWriteDoneType& on_write_done) override {
         _index.insertDocument(lid, doc, on_write_done);
     }
     void removeDocuments(LidVector lids) override {
@@ -86,7 +86,7 @@ public:
     uint64_t getStaticMemoryFootprint() const override {
         return _index.getStaticMemoryFootprint();
     }
-    void commit(OnWriteDoneType onWriteDone, SerialNum serialNum) override {
+    void commit(const OnWriteDoneType& onWriteDone, SerialNum serialNum) override {
         _index.commit(onWriteDone);
         _serialNum.store(serialNum, std::memory_order_relaxed);
     }

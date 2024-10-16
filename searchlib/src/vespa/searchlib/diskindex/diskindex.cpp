@@ -520,8 +520,12 @@ DiskIndex::get_stats() const
 {
     SearchableStats stats;
     uint64_t size_on_disk = _nonfield_size_on_disk;
+    uint32_t field_id = 0;
     for (const auto& field_index_size_on_disk : _field_index_sizes_on_disk) {
         size_on_disk += field_index_size_on_disk;
+        stats.add_field_stats(_schema.getIndexField(field_id).getName(),
+                              FieldIndexStats().size_on_disk(field_index_size_on_disk));
+        ++field_id;
     }
     stats.sizeOnDisk(size_on_disk);
     return stats;

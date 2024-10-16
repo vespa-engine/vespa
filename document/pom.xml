@@ -102,7 +102,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Xlint:all</arg>
+                        <arg>${vespaCompilerArgs.xlint}</arg>
                         <arg>-Xlint:-serial</arg>
                         <arg>-Xlint:-rawtypes</arg>
                         <arg>-Xlint:-unchecked</arg>

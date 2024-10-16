@@ -109,8 +109,8 @@ TEST(SequencedTaskExecutorTest, require_that_task_with_same_component_id_are_ser
     EXPECT_EQ(0, tv->_val);
     ISequencedTaskExecutor::ExecutorId executorId = f._threads->getExecutorId(0);
     ISequencedTaskExecutor::TaskList list;
-    list.template emplace_back(executorId, makeLambdaTask([=]() { usleep(2000); tv->modify(0, 14); }));
-    list.template emplace_back(executorId, makeLambdaTask([=]() { tv->modify(14, 42); }));
+    list.emplace_back(executorId, makeLambdaTask([=]() { usleep(2000); tv->modify(0, 14); }));
+    list.emplace_back(executorId, makeLambdaTask([=]() { tv->modify(14, 42); }));
     f._threads->executeTasks(std::move(list));
     tv->wait(2);
     EXPECT_EQ(0,  tv->_fail);

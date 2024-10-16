@@ -25,14 +25,14 @@ struct DummyFeedView : public IFeedView
     void prepareRemove(RemoveOperation &) override {}
     void handleRemove(FeedToken, const RemoveOperation &) override {}
     void prepareDeleteBucket(DeleteBucketOperation &) override {}
-    void handleDeleteBucket(const DeleteBucketOperation &, DoneCallback) override {}
+    void handleDeleteBucket(const DeleteBucketOperation &, const DoneCallback&) override {}
     bool isMoveStillValid(const MoveOperation &) const override { return true; }
     void prepareMove(MoveOperation &) override {}
-    void handleMove(const MoveOperation &, DoneCallback) override {}
-    void heartBeat(search::SerialNum, DoneCallback) override {}
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &, DoneCallback) override {}
-    void handleCompactLidSpace(const CompactLidSpaceOperation &, DoneCallback) override {}
-    void forceCommit(const CommitParam &, DoneCallback) override { }
+    void handleMove(const MoveOperation &, const DoneCallback&) override {}
+    void heartBeat(search::SerialNum, const DoneCallback&) override {}
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &, const DoneCallback&) override {}
+    void handleCompactLidSpace(const CompactLidSpaceOperation &, const DoneCallback&) override {}
+    void forceCommit(const CommitParam &, const DoneCallback&) override { }
 };
 
 }

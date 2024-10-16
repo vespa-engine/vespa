@@ -186,7 +186,7 @@ CombiningFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
 }
 
 void
-CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone)
+CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone)
 {
     for (const auto &view : _views) {
         view->handleDeleteBucket(delOp, onDone);
@@ -209,7 +209,7 @@ CombiningFeedView::prepareMove(MoveOperation &moveOp)
 }
 
 void
-CombiningFeedView::handleMove(const MoveOperation &moveOp, DoneCallback moveDoneCtx)
+CombiningFeedView::handleMove(const MoveOperation &moveOp, const DoneCallback& moveDoneCtx)
 {
     assert(moveOp.getValidDbdId());
     uint32_t subDbId = moveOp.getSubDbId();
@@ -224,7 +224,7 @@ CombiningFeedView::handleMove(const MoveOperation &moveOp, DoneCallback moveDone
 }
 
 void
-CombiningFeedView::heartBeat(search::SerialNum serialNum, DoneCallback onDone)
+CombiningFeedView::heartBeat(search::SerialNum serialNum, const DoneCallback& onDone)
 {
     for (const auto &view : _views) {
         view->heartBeat(serialNum, onDone);
@@ -232,7 +232,7 @@ CombiningFeedView::heartBeat(search::SerialNum serialNum, DoneCallback onDone)
 }
 
 void
-CombiningFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
+CombiningFeedView::forceCommit(const CommitParam & param, const DoneCallback& onDone)
 {
     for (const auto &view : _views) {
         view->forceCommit(param, onDone);
@@ -241,13 +241,13 @@ CombiningFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 
 void
 CombiningFeedView::
-handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, DoneCallback onDone)
+handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, const DoneCallback& onDone)
 {
     getRemFeedView()->handlePruneRemovedDocuments(pruneOp, onDone);
 }
 
 void
-CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
+CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone)
 {
     uint32_t subDbId = op.getSubDbId();
     assert(subDbId < _views.size());

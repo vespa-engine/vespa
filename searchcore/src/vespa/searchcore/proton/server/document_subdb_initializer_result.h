@@ -23,6 +23,7 @@ private:
     std::shared_ptr<AttributeManager::SP> _attributeManager;
     std::shared_ptr<searchcorespi::IIndexManager::SP> _indexManager;
     DocumentDBFlushConfig _flushConfig;
+    std::shared_ptr<const search::index::Schema> _schema;
 
 public:
     DocumentSubDbInitializerResult();
@@ -53,6 +54,8 @@ public:
 
     void setFlushConfig(const DocumentDBFlushConfig &flushConfig);
     const DocumentDBFlushConfig &getFlushConfig() const { return _flushConfig; }
+    void set_schema(std::shared_ptr<const search::index::Schema> schema) { _schema = std::move(schema); }
+    std::shared_ptr<const search::index::Schema> get_schema() const { return _schema; }
 };
 
 } // namespace proton

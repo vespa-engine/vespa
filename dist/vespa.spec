@@ -41,6 +41,14 @@
 %global _use_vespa_abseil_cpp 1
 %global _use_vespa_protobuf 1
 %global _use_vespa_openblas 1
+%if 0%{?fedora}
+%if %{fedora} > 41
+%global _vespa_java_version 21
+%endif
+%endif
+%if ! 0%{?_vespa_java_version:1}
+%global _vespa_java_version 17
+%endif
 
 Name:           vespa
 Version:        _VESPA_VERSION_
@@ -138,7 +146,7 @@ Summary: Vespa - The open big data serving engine - base
 Requires: java-17-amazon-corretto-devel
 Requires: java-17-amazon-corretto
 %else
-Requires: java-17-openjdk-devel
+Requires: java-%{_vespa_java_version}-openjdk-devel
 %endif
 Requires(pre): shadow-utils
 
@@ -313,7 +321,7 @@ source %{_rhgit227_enable} || true
 %if 0%{?_java_home:1}
 export JAVA_HOME=%{?_java_home}
 %else
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+export JAVA_HOME=/usr/lib/jvm/java-%{_vespa_java_version}-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
@@ -339,7 +347,7 @@ VERSION=%{version} CI=true make -C client/go install-all
 %if 0%{?_java_home:1}
 export JAVA_HOME=%{?_java_home}
 %else
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+export JAVA_HOME=/usr/lib/jvm/java-%{_vespa_java_version}-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
 #%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C -Dmaven.javadoc.skip=true test
@@ -367,7 +375,7 @@ cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system
 %endif
 
-ln -s /usr/lib/jvm/jre-17-openjdk %{buildroot}/%{_prefix}/jdk
+ln -s /usr/lib/jvm/jre-%{_vespa_java_version}-openjdk %{buildroot}/%{_prefix}/jdk
 
 %clean
 rm -rf $RPM_BUILD_ROOT

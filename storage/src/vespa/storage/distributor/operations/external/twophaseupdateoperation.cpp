@@ -94,7 +94,7 @@ TwoPhaseUpdateOperation::ensureUpdateReplyCreated()
 
 void
 TwoPhaseUpdateOperation::sendReply(DistributorStripeMessageSender& sender,
-                                   const std::shared_ptr<api::UpdateReply> & reply)
+                                   const std::shared_ptr<api::UpdateReply>& reply)
 {
     assert(!_replySent);
     reply->getTrace().addChild(std::move(_trace));
@@ -494,6 +494,8 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
     // Note that this timestamp may be for a tombstone (remove) entry, in which case
     // conditional create-if-missing behavior kicks in as usual.
     // TODO avoid sending the Get at all if the newest replica is marked as a tombstone.
+    // TODO could optimize early NACK iff we have a timestamp-predicated TaS and the newest
+    //  replica timestamp doesn't match, although this is not expected to be a common case.
     _single_get_latency_timer.emplace(_node_ctx.clock());
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), newest_replica->bucket_id);
     LOG(debug, "Update(%s): sending single payload Get to %s on node %u (had timestamp %" PRIu64 ")",
@@ -539,7 +541,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
                                                         "No document with requested timestamp found"));
             return;
         }
-        if (!processAndMatchTasCondition(sender, *reply.getDocument())) {
+        if (!processAndMatchTasCondition(sender, *reply.getDocument(), receivedTimestamp)) {
             return; // Reply already generated at this point.
         }
         docToUpdate = reply.getDocument();
@@ -603,15 +605,25 @@ void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_times
 
 bool
 TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorStripeMessageSender& sender,
-                                                     const document::Document& candidateDoc)
+                                                     const document::Document& candidateDoc,
+                                                     uint64_t persisted_timestamp)
 {
     if (!hasTasCondition()) {
         return true; // No condition; nothing to do here.
     }
+    const auto& tas_cond = _updateCmd->getCondition();
+    if (tas_cond.has_required_timestamp()) {
+        if (persisted_timestamp != tas_cond.required_timestamp()) {
+            replyWithTasFailure(sender, "Required test-and-set timestamp did not match persisted timestamp");
+            return false;
+        }
+        // An exact timestamp match causes any selection expression to be _ignored_ entirely.
+        return true;
+    }
 
     std::unique_ptr<document::select::Node> selection;
     try {
-        selection = _parser.parse_selection(_updateCmd->getCondition().getSelection());
+        selection = _parser.parse_selection(tas_cond.getSelection());
     } catch (const document::select::ParsingFailedException & e) {
         sendReplyWithResult(sender, api::ReturnCode(
                 api::ReturnCode::ILLEGAL_PARAMETERS,
@@ -678,7 +690,7 @@ TwoPhaseUpdateOperation::satisfiesUpdateTimestampConstraint(api::Timestamp ts) c
 }
 
 void
-TwoPhaseUpdateOperation::addTraceFromReply(api::StorageReply & reply)
+TwoPhaseUpdateOperation::addTraceFromReply(api::StorageReply& reply)
 {
     _trace.addChild(reply.steal_trace());
 }
