@@ -316,7 +316,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             cluster.addComponent(secretsConfig);
             cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
-                                                     deployState.getProperties().tenantSecretDomain()));
+                                                     deployState.getProperties().tenantSecretDomain(),
+                                                     deployState.zone().system(),
+                                                     deployState.getProperties().applicationId().tenant()));
         }
     }
 
