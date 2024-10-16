@@ -6,22 +6,13 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.language.process.Embedder;
-import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -118,7 +109,7 @@ public class ScriptTestCase {
         assertEquals(DataType.INT, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(new StringFieldValue("input text"));
+        context.setCurrentValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myInt"));
         assertEquals(-1425622096, adapter.values.get("myInt").getWrappedValue());
@@ -144,7 +135,7 @@ public class ScriptTestCase {
         assertEquals(new ArrayDataType(DataType.INT), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(array);
+        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myIntArray"));
         var intArray = (Array<IntegerFieldValue>)adapter.values.get("myIntArray");
@@ -168,7 +159,7 @@ public class ScriptTestCase {
         assertEquals(DataType.LONG, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setValue(new StringFieldValue("input text"));
+        context.setCurrentValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myLong"));
         assertEquals(7678158186624760752L, adapter.values.get("myLong").getWrappedValue());

@@ -39,7 +39,7 @@ public class SetVarTestCase {
         assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
 
         try {
-            new VerificationContext().setVariable("foo", DataType.INT).setValueType(DataType.STRING).execute(exp);
+            new VerificationContext().setVariable("foo", DataType.INT).setCurrentType(DataType.STRING).verify(exp);
             fail();
         } catch (VerificationException e) {
             assertEquals("Attempting to assign conflicting types to variable 'foo', int vs string", e.getMessage());
@@ -49,7 +49,7 @@ public class SetVarTestCase {
     @Test
     public void requireThatSymbolIsWritten() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new IntegerFieldValue(69));
+        ctx.setCurrentValue(new IntegerFieldValue(69));
         new SetVarExpression("out").execute(ctx);
 
         FieldValue val = ctx.getVariable("out");
@@ -60,11 +60,11 @@ public class SetVarTestCase {
     @Test
     public void requireThatVariableTypeCanNotChange() {
         VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
-        ctx.setValueType(DataType.INT);
+        ctx.setCurrentType(DataType.INT);
         new SetVarExpression("out").verify(ctx);
 
         try {
-            ctx.setValueType(DataType.STRING);
+            ctx.setCurrentType(DataType.STRING);
             new SetVarExpression("out").verify(ctx);
             fail();
         } catch (VerificationException e) {

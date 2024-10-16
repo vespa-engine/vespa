@@ -20,19 +20,15 @@ public class VerificationException extends RuntimeException {
         }
     }
 
-
     public VerificationException(Class<?> exp, String msg) {
         super(msg);
         this.type = exp;
         this.exp = exp.getName();
     }
 
-    public String getExpression() {
-        return exp;
-    }
-    public Class<?> getExpressionType() {
-        return type;
-    }
+    public String getExpression() { return exp; }
+
+    public Class<?> getExpressionType() { return type; }
 
     @Override
     public String toString() {

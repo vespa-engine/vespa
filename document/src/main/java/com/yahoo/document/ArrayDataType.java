@@ -24,10 +24,12 @@ public class ArrayDataType extends CollectionDataType {
         super("Array<"+nestedType.getName()+">", code, nestedType);
     }
 
+    @Override
     public ArrayDataType clone() {
         return (ArrayDataType) super.clone();
     }
 
+    @Override
     public Array createFieldValue() {
         return new Array(this);
     }

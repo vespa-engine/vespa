@@ -111,15 +111,15 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return TensorAddressAny.ofUnsafe(labels);
     }
 
-    /** Creates a complete address by taking the mapped dimmensions from this and the indexed from the indexedPart */
-    public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int[] densePart) {
+    /** Creates a complete address by taking the mapped dimensions of this and adding the indexed from the indexedPart */
+    public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int[] indexedPart) {
         long[] labels = new long[dimensions.size()];
         int mappedIndex = 0;
         int indexedIndex = 0;
         for (int i = 0; i < labels.length; i++) {
             TensorType.Dimension d = dimensions.get(i);
             if (d.isIndexed()) {
-                labels[i] = densePart[indexedIndex];
+                labels[i] = indexedPart[indexedIndex];
                 indexedIndex++;
             } else {
                 labels[i] = numericLabel(mappedIndex);

@@ -35,9 +35,9 @@ public class TrimTestCase {
     @Test
     public void requireThatStringIsTrimmed() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("  69  ")).execute(new TrimExpression());
+        ctx.setCurrentValue(new StringFieldValue("  69  ")).execute(new TrimExpression());
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("69", ((StringFieldValue)val).getString());
     }

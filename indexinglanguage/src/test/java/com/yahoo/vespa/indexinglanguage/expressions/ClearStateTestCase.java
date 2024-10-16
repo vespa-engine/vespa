@@ -38,7 +38,7 @@ public class ClearStateTestCase {
     @Test
     public void requireThatVerificationContextIsCleared() {
         MyVerification ctx = new MyVerification();
-        ctx.execute(new ClearStateExpression());
+        ctx.verify(new ClearStateExpression());
         assertTrue(ctx.cleared);
     }
 

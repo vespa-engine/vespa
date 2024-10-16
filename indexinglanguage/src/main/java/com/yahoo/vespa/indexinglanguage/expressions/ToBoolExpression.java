@@ -17,8 +17,13 @@ public final class ToBoolExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
-        context.setValue(new BoolFieldValue(toBooleanValue(context.getValue())));
+        context.setCurrentValue(new BoolFieldValue(toBooleanValue(context.getCurrentValue())));
     }
 
     private boolean toBooleanValue(FieldValue value) {
@@ -30,19 +35,10 @@ public final class ToBoolExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setValueType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.BOOL; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.BOOL;
-    }
-
-    @Override
-    public String toString() {
-        return "to_bool";
-    }
+    public String toString() { return "to_bool"; }
 
     @Override
     public boolean equals(Object obj) {

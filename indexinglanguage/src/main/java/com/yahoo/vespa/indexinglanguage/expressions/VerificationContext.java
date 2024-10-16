@@ -9,59 +9,56 @@ import java.util.Map;
 /**
  * @author Simon Thoresen Hult
  */
-public class VerificationContext implements FieldTypeAdapter, Cloneable {
+public class VerificationContext {
 
     private final Map<String, DataType> variables = new HashMap<>();
-    private final FieldTypeAdapter adapter;
-    private DataType value;
+    private final FieldTypeAdapter fieldType;
+    private DataType currentType;
     private String outputField;
 
     public VerificationContext() {
-        this.adapter = null;
+        this(null);
     }
 
-    public VerificationContext(FieldTypeAdapter adapter) {
-        this.adapter = adapter;
+    public VerificationContext(FieldTypeAdapter field) {
+        this.fieldType = field;
     }
 
-    public VerificationContext execute(Expression exp) {
-        if (exp != null) {
-            exp.verify(this);
-        }
+    public VerificationContext verify(Expression expression) {
+        if (expression != null)
+            expression.verify(this);
         return this;
     }
 
-    @Override
-    public DataType getInputType(Expression exp, String fieldName) {
-        return adapter.getInputType(exp, fieldName);
+    /** Returns the type of the field processed by this. */
+    public DataType getFieldType(Expression expression) {
+        return fieldType.getInputType(expression, getOutputField());
     }
 
-    @Override
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        adapter.tryOutputType(exp, fieldName, valueType);
+    /** Returns the type of the given field. */
+    public DataType getFieldType(String fieldName, Expression expression) {
+        return fieldType.getInputType(expression, fieldName);
     }
 
-    public DataType getVariable(String name) {
-        return variables.get(name);
+    public void tryOutputType(String fieldName, DataType valueType, Expression expression) {
+        fieldType.tryOutputType(expression, fieldName, valueType);
     }
+
+    /** Returns the current value type */
+    public DataType getCurrentType() { return currentType; }
+
+    /** Returns the current value type */
+    public VerificationContext setCurrentType(DataType value) {
+        this.currentType = value;
+        return this;
+    }
+
+    public DataType getVariable(String name) { return variables.get(name); }
 
     public VerificationContext setVariable(String name, DataType value) {
         variables.put(name, value);
         return this;
     }
-
-    public DataType getValueType() {
-        return value;
-    }
-
-    /** Sets the output value type */
-    public VerificationContext setValueType(DataType value) {
-        this.value = value;
-        return this;
-    }
-
-    /** Sets the name of the (last) output field of the statement this is executed as a part of */
-    public void setOutputField(String outputField) { this.outputField = outputField; }
 
     /**
      * Returns the name of the (last) output field of the statement this is executed as a part of,
@@ -69,9 +66,12 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
      */
     public String getOutputField() { return outputField; }
 
+    /** Sets the name of the (last) output field of the statement this is executed as a part of */
+    public void setOutputField(String outputField) { this.outputField = outputField; }
+
     public VerificationContext clear() {
         variables.clear();
-        value = null;
+        currentType = null;
         return this;
     }
 

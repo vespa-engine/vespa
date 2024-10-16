@@ -149,6 +149,7 @@ TOKEN :
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
+    <BINARIZE: "binarize" > |
     <BUSY_WAIT: "busy_wait"> |
     <CASE: "case"> |
     <CASE_DEFAULT: "default"> |
@@ -179,6 +180,7 @@ TOKEN :
     <NORMALIZE: "normalize"> |
     <NOW: "now"> |
     <OPTIMIZE_PREDICATE: "optimize_predicate"> |
+    <PACK_BITS: "pack_bits" > |
     <PASSTHROUGH: "passthrough"> |
     <RANDOM: "random"> |
     <REMOVE_IF_ZERO: "remove_if_zero"> |
@@ -208,7 +210,6 @@ TOKEN :
     <ZCURVE: "zcurve"> |
     <TRUE: "true" > |
     <FALSE: "false" > |
-    <BINARIZE: "binarize" > |
     <UNDERSCORE: "_"> |
     <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])*>
 }
@@ -326,6 +327,7 @@ Expression value() :
       val = normalizeExp()          |
       val = nowExp()                |
       val = optimizePredicateExp()  |
+      val = packBitsExp()           |
       val = passthroughExp()        |
       val = randomExp()             |
       val = script()                |
@@ -568,6 +570,12 @@ Expression optimizePredicateExp() : { }
 {
     ( <OPTIMIZE_PREDICATE> )
     { return new OptimizePredicateExpression(); }
+}
+
+Expression packBitsExp() : { }
+{
+    ( <PACK_BITS> )
+    { return new PackBitsExpression(); }
 }
 
 Expression passthroughExp() :
@@ -846,6 +854,7 @@ String identifier() :
         <NORMALIZE>              |
         <NOW>                    |
         <OPTIMIZE_PREDICATE>     |
+        <PACK_BITS>              |
         <PASSTHROUGH>            |
         <RANDOM>                 |
         <REMOVE_IF_ZERO>         |
