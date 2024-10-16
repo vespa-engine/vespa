@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "disk_usage_metrics.h"
 #include "field_metrics_entry.h"
 
 namespace proton {
@@ -11,6 +12,8 @@ namespace proton {
  * disk indexes and memory indexes.
  */
 struct IndexMetricsEntry : public FieldMetricsEntry {
+    DiskUsageMetrics _disk_usage;
+
     IndexMetricsEntry(const std::string& field_name);
     ~IndexMetricsEntry() override;
 };
