@@ -146,6 +146,8 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         uint32_t docId = src.getDocId();
         if (_metaStore.getGidEvenIfMoved(docId, gid)) {
             dst.gid = gid;
+        } else {
+            LOG(warning, "Missing globalid for hit %u", docId);
         }
         dst.metric = src.getRank();
         LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)", i, docId, dst.gid.toString().c_str());
