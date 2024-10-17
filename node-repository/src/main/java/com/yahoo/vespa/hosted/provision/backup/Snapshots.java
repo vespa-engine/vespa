@@ -70,10 +70,10 @@ public class Snapshots {
     }
 
     /** Remove given snapshot. Note that this only removes metadata about the snapshot, and not the underlying data */
-    public void remove(SnapshotId id, String hostname) {
+    public void remove(SnapshotId id, String hostname, boolean force) {
         try (var lock = db.lockSnapshots(hostname)) {
             write(id, hostname, node -> {
-                if (busyWith(id, node)) {
+                if (busyWith(id, node) && !force) {
                     throw new IllegalArgumentException("Cannot remove snapshot " + id +
                                                        ": Node " + hostname + " is working on this snapshot");
                 }

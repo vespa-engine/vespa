@@ -251,8 +251,9 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         return new MessageResponse("Triggered a new snapshot of " + hostname + ": " + snapshot.id());
     }
 
-    private HttpResponse forgetSnapshot(SnapshotId id, String hostname) {
-        nodeRepository.snapshots().remove(id, hostname);
+    private HttpResponse forgetSnapshot(SnapshotId id, String hostname, HttpRequest request) {
+        boolean force = request.getBooleanProperty("force");
+        nodeRepository.snapshots().remove(id, hostname, force);
         return new MessageResponse("Removed snapshot '" + id + "' belonging to " + hostname);
     }
 
@@ -279,7 +280,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         if (path.matches("/nodes/v2/archive/account/{key}") || path.matches("/nodes/v2/archive/tenant/{key}"))
             return setArchiveUri(path.get("key"), Optional.empty(), !path.getPath().segments().get(3).equals("account"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
-        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}")) return forgetSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"));
+        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}")) return forgetSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"), request);
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
