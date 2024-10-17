@@ -258,10 +258,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         String value = stateField.asString();
         Snapshot.State newState = switch (value) {
             case "creating" -> Snapshot.State.creating;
-            case "failed" -> Snapshot.State.failed;
             case "created" -> Snapshot.State.created;
             case "restoring" -> Snapshot.State.restoring;
-            case "restoreFailed" -> Snapshot.State.restoreFailed;
             case "restored" -> Snapshot.State.restored;
             default -> throw new IllegalArgumentException("Invalid snapshot state '" + value + "'");
         };

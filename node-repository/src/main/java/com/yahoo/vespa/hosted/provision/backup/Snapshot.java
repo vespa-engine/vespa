@@ -36,14 +36,10 @@ public record Snapshot(String id, HostName hostname, State state, Instant create
     public enum State {
         /** Snapshot is being created by the node */
         creating,
-        /** The node failed to create a snapshot */
-        failed,
         /** The node successfully created a snapshot */
         created,
         /** Snapshot is being restored by the node */
         restoring,
-        /** The node failed to restore the snapshot */
-        restoreFailed,
         /** The node successfully created a snapshot */
         restored;
 
@@ -51,7 +47,7 @@ public record Snapshot(String id, HostName hostname, State state, Instant create
         public boolean busy() {
             return switch (this) {
                 case creating, restoring -> true;
-                case failed, created, restoreFailed, restored -> false;
+                case created, restored -> false;
             };
         }
 

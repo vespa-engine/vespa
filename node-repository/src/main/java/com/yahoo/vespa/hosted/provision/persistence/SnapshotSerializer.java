@@ -80,10 +80,8 @@ public class SnapshotSerializer {
     public static String asString(Snapshot.State state) {
         return switch (state) {
             case creating -> "creating";
-            case failed -> "failed";
             case created -> "created";
             case restoring -> "restoring";
-            case restoreFailed -> "restoreFailed";
             case restored -> "restored";
         };
     }
@@ -91,10 +89,8 @@ public class SnapshotSerializer {
     private static Snapshot.State stateFromSlime(String value) {
         return switch (value) {
             case "creating" -> Snapshot.State.creating;
-            case "failed" -> Snapshot.State.failed;
             case "created" -> Snapshot.State.created;
             case "restoring" -> Snapshot.State.restoring;
-            case "restoreFailed" -> Snapshot.State.restoreFailed;
             case "restored" -> Snapshot.State.restored;
             default -> throw new IllegalArgumentException("Unknown snapshot state '" + value + "'");
         };
