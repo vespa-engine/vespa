@@ -116,7 +116,7 @@ class RequestBuilder {
      * This method might fail due to unsupported constructs in the request, in which case an exception is thrown.
      *
      * @throws IllegalStateException         If this method is called more than once.
-     * @throws UnsupportedOperationException If the grouping request contains unsupported constructs.
+     * @throws IllegalInputException If the grouping request contains unsupported constructs.
      */
     public void build() {
         if (tag != 0) {
@@ -173,7 +173,7 @@ class RequestBuilder {
     private void processRequestNode(BuildFrame frame) {
         int level = frame.astNode.getLevel();
         if (level > 2) {
-            throw new UnsupportedOperationException("Can not operate on " +
+            throw new IllegalInputException("Can not operate on " +
                                                     GroupingOperation.getLevelDesc(level) + ".");
         }
         if (frame.astNode instanceof EachOperation) {
@@ -243,7 +243,7 @@ class RequestBuilder {
         GroupingExpression exp = frame.astNode.getGroupBy();
         if (exp != null) {
             if (frame.state.groupBy != null) {
-                throw new UnsupportedOperationException("Can not group list of groups.");
+                throw new IllegalInputException("Can not group list of groups.");
             }
             frame.state.groupBy = converter.toExpressionNode(exp);
             frame.state.label = exp.toString(); // label for next each()
@@ -255,7 +255,7 @@ class RequestBuilder {
             } else if (level == 1) {
                 frame.state.label = "hits"; // next each() is hitlist
             } else {
-                throw new UnsupportedOperationException("Can not create anonymous " +
+                throw new IllegalInputException("Can not create anonymous " +
                                                         GroupingOperation.getLevelDesc(level) + ".");
             }
         }
@@ -289,7 +289,7 @@ class RequestBuilder {
         }
         int reqLevel = frame.astNode.getLevel();
         if (reqLevel != 2) {
-            throw new UnsupportedOperationException(
+            throw new IllegalInputException(
                     "Can not order " + GroupingOperation.getLevelDesc(reqLevel) + " content.");
         }
         for (GroupingExpression exp : lst) {
@@ -321,7 +321,7 @@ class RequestBuilder {
         String label = exp.getLabel();
         if (result instanceof HitsAggregationResult hits) {
             if (label != null) {
-                throw new UnsupportedOperationException("Can not label expression '" + exp + "'.");
+                throw new IllegalInputException("Can not label expression '" + exp + "'.");
             }
             if (frame.state.max != null) {
                 transform.putMax(tag, frame.state.max, "hit list");
@@ -349,7 +349,7 @@ class RequestBuilder {
         String where = frame.astNode.getWhere();
         if (where != null) {
             if (!isRootOperation(frame)) {
-                throw new UnsupportedOperationException("Can not apply 'where' to non-root group.");
+                throw new IllegalInputException("Can not apply 'where' to non-root group.");
             }
             switch (where) {
             case "true":
@@ -359,7 +359,7 @@ class RequestBuilder {
                 // ignore
                 break;
             default:
-                throw new UnsupportedOperationException("Operation 'where' does not support '" + where + "'.");
+                throw new IllegalInputException("Operation 'where' does not support '" + where + "'.");
             }
         }
     }

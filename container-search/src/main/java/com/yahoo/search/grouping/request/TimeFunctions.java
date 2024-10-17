@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
+import com.yahoo.processing.IllegalInputException;
+
 /**
  * This abstract class is a factory for timestamp functions in a {@link GroupingExpression}. Apart from offering
  * per-function factory methods, this class also contains a {@link #newInstance(com.yahoo.search.grouping.request.TimeFunctions.Type,
