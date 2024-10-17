@@ -868,6 +868,9 @@ public class NodesV2ApiTest {
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
                                                   new byte[0], Request.Method.POST),
                                       "{\"message\":\"Triggered a new snapshot of host4.yahoo.com:");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
+                                                  new byte[0], Request.Method.POST),
+                                      "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot trigger new snapshot: Node host4.yahoo.com is busy with snapshot");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host2.yahoo.com",
                                                   new byte[0], Request.Method.POST),
                                       "{\"message\":\"Triggered a new snapshot of host2.yahoo.com:");
@@ -896,6 +899,20 @@ public class NodesV2ApiTest {
 
         // Get node
         tester.assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "snapshot/node4.json");
+
+        // Trigger another snapshot
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
+                                                  new byte[0], Request.Method.POST),
+                                      "{\"message\":\"Triggered a new snapshot of host4.yahoo.com:");
+
+        // Cannot change state of previous snapshot
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id,
+                                          """
+                                                  {"state": "restored"}
+                                                  """,
+                                          Request.Method.PATCH),
+                              400,
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot move snapshot " + id + " to restored: Node host4.yahoo.com is not working on this snapshot\"}");
 
         // Forget about snapshot
         assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id, new byte[0], Request.Method.DELETE),
