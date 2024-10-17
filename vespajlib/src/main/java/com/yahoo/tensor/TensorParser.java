@@ -5,7 +5,9 @@ import java.util.function.Consumer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.yahoo.tensor.serialization.JsonFormat;
 import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
 
 /**
@@ -17,6 +19,14 @@ class TensorParser {
         try {
             return tensorFromBody(tensorString, explicitType);
         } catch (IllegalArgumentException e) {
+            if (explicitType.isPresent()) {
+                // handle legal JSON-based tensor formats as well:
+                try {
+                    return JsonFormat.decode(explicitType.get(), tensorString.getBytes(UTF_8));
+                } catch (RuntimeException ignored) {
+                    // return error from exception above
+                }
+            }
             throw new IllegalArgumentException("Could not parse '" + tensorString + "' as a tensor" +
                                                (explicitType.isPresent() ? " of type " + explicitType.get() : ""),
                                                e);
