@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.request.AddFunction;
 import com.yahoo.search.grouping.request.AggregatorNode;
 import com.yahoo.search.grouping.request.AndFunction;
@@ -206,7 +207,7 @@ class ExpressionConverter {
             if (exp instanceof CountAggregator) {
                 return new ExpressionCountAggregationResult();
             }
-            throw new UnsupportedOperationException(
+            throw new IllegalInputException(
                     "Can not aggregate on " + GroupingOperation.getLevelDesc(level) + ".");
         }
         if (exp instanceof AvgAggregator) {
@@ -243,7 +244,7 @@ class ExpressionConverter {
             return new XorAggregationResult()
                     .setExpression(toExpressionNode(((XorAggregator)exp).getExpression()));
         }
-        throw new UnsupportedOperationException("Can not convert '" + exp + "' to an aggregator.");
+        throw new IllegalInputException("Can not convert '" + exp + "' to an aggregator.");
     }
 
     /**
@@ -251,7 +252,7 @@ class ExpressionConverter {
      *
      * @param exp The expression to convert.
      * @return The corresponding back-end expression.
-     * @throws UnsupportedOperationException Thrown if the given expression could not be converted.
+     * @throws IllegalInputException Thrown if the given expression could not be converted.
      */
     public ExpressionNode toExpressionNode(GroupingExpression exp) {
         if (exp instanceof AddFunction) {
@@ -520,8 +521,8 @@ class ExpressionConverter {
             return new XorBitFunctionNode().setNumBits(((XorBitFunction)exp).getNumBits())
                                            .addArg(toExpressionNode(((XorBitFunction)exp).getArg(0)));
         }
-        throw new UnsupportedOperationException("Can not convert '" + exp + "' of class " + exp.getClass().getName() +
-                                                " to an expression.");
+        throw new IllegalInputException("Can not convert '" + exp + "' of class " + exp.getClass().getName() +
+                                        " to an expression.");
     }
 
     private TimeStampFunctionNode toTime(GroupingExpression arg, TimeStampFunctionNode.TimePart timePart) {
@@ -576,7 +577,7 @@ class ExpressionConverter {
 
     private BucketResultNode toBucket(GroupingExpression exp) {
         if (!(exp instanceof BucketValue)) {
-            throw new UnsupportedOperationException("Can not convert '" + exp + "' to a bucket.");
+            throw new IllegalInputException("Can not convert '" + exp + "' to a bucket.");
         }
         ConstantValue<?> begin = ((BucketValue)exp).getFrom();
         ConstantValue<?> end = ((BucketValue)exp).getTo();

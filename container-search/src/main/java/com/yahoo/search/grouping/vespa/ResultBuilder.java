@@ -2,6 +2,7 @@
 package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.prelude.hitfield.RawBase64;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.result.BoolId;
@@ -134,12 +135,12 @@ class ResultBuilder {
      * Constructs the grouping result tree that corresponds to the parameters given to this builder. This method might
      * fail due to unsupported constructs in the results, in which case an exception is thrown.
      *
-     * @throws UnsupportedOperationException Thrown if the grouping result contains unsupported constructs.
+     * @throws IllegalInputException Thrown if the grouping result contains unsupported constructs.
      */
     public void build() {
         int numChildren = rootBuilder.childGroups.size();
         if (numChildren != 1) {
-            throw new UnsupportedOperationException("Expected 1 group, got " + numChildren + ".");
+            throw new IllegalInputException("Expected 1 group, got " + numChildren + ".");
         }
         rootBuilder.childGroups.get(0).fill(root);
     }
