@@ -896,6 +896,10 @@ public class NodesV2ApiTest {
 
         // Get node
         tester.assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "snapshot/node4.json");
+
+        // Forget about snapshot
+        assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id, new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Removed snapshot '" + id + "' belonging to host4.yahoo.com\"}");
     }
 
     @Test

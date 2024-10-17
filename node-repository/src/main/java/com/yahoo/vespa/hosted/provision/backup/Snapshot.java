@@ -53,8 +53,13 @@ public record Snapshot(String id, HostName hostname, State state, Instant create
 
     }
 
-    public static Snapshot create(HostName hostname, ClusterId cluster, int clusterIndex, Instant at) {
-        return new Snapshot(UUID.randomUUID().toString(), hostname, State.creating, at, cluster, clusterIndex);
+
+    public static String generateId() {
+        return UUID.randomUUID().toString();
+    }
+
+    public static Snapshot create(String id, HostName hostname, ClusterId cluster, int clusterIndex, Instant at) {
+        return new Snapshot(id, hostname, State.creating, at, cluster, clusterIndex);
     }
 
 }

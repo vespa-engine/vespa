@@ -163,8 +163,8 @@ public class Status {
     }
 
     /** Returns a copy of this with backup snapshot set to given value */
-    public Status withSnapshot(Snapshot snapshot) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, Optional.ofNullable(snapshot));
+    public Status withSnapshot(Optional<Snapshot> snapshot) {
+        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
     }
 
     /** Returns the initial status of a newly provisioned node */

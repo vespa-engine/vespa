@@ -56,16 +56,20 @@ public class Snapshots {
     /** Trigger a new snapshot for node of given hostname */
     public Snapshot create(String hostname, Instant instant) {
         try (var lock = db.lockSnapshots(hostname)) {
-            Optional<Snapshot> busySnapshot = read(hostname).stream().filter(s -> s.state().busy()).findFirst();
-            if (busySnapshot.isPresent()) {
-                throw new IllegalArgumentException("Cannot write snapshot " +
-                                                   ": Node " + hostname + " is busy with snapshot " +
-                                                   busySnapshot.get().id() + " in state " + busySnapshot.get().state());
-            }
-            return writeSnapshot(hostname, (node) -> {
+            requireIdle(hostname);
+            String id = Snapshot.generateId();
+            return write(id, hostname, (node) -> {
                 ClusterId cluster = new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id());
-                return Snapshot.create(com.yahoo.config.provision.HostName.of(hostname), cluster, node.allocation().get().membership().index(), instant);
-            }, lock);
+                return Optional.of(Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), cluster, node.allocation().get().membership().index(), instant));
+            }, lock).get();
+        }
+    }
+
+    /** Remove given snapshot. Note that this only removes metadata about the snapshot, and not the underlying data */
+    public void remove(String snapshotId, String hostname) {
+        try (var lock = db.lockSnapshots(hostname)) {
+            requireIdle(hostname);
+            write(snapshotId, hostname, node -> Optional.empty(), lock);
         }
     }
 
@@ -73,11 +77,20 @@ public class Snapshots {
     public Snapshot move(String snapshotId, String hostname, Snapshot.State newState) {
         try (var lock = db.lockSnapshots(hostname)) {
             Snapshot current = require(snapshotId, hostname);
-            return writeSnapshot(hostname, node -> current.with(newState), lock);
+            return write(snapshotId, hostname, node -> Optional.of(current.with(newState)), lock).get();
         }
     }
 
-    private Snapshot writeSnapshot(String hostname, Function<Node, Snapshot> snapshotFunction, @SuppressWarnings("unused") Mutex snapshotLock) {
+    private void requireIdle(String hostname) {
+        Optional<Snapshot> busySnapshot = read(hostname).stream().filter(s -> s.state().busy()).findFirst();
+        if (busySnapshot.isPresent()) {
+            throw new IllegalArgumentException("Cannot change snapshot state " +
+                                               ": Node " + hostname + " is busy with snapshot " +
+                                               busySnapshot.get().id() + " in state " + busySnapshot.get().state());
+        }
+    }
+
+    private Optional<Snapshot> write(String snapshotId, String hostname, Function<Node, Optional<Snapshot>> snapshotFunction, @SuppressWarnings("unused") Mutex snapshotLock) {
         List<Snapshot> snapshots = read(hostname);
         try (var nodeMutex = nodeRepository.nodes().lockAndGetRequired(hostname)) {
             Node node = nodeMutex.node();
@@ -87,7 +100,7 @@ public class Snapshots {
             if (clusterSpec.isEmpty() || clusterSpec.get().type() != ClusterSpec.Type.content) {
                 throw new IllegalArgumentException("Node " + node + " is not a member of a content cluster: Refusing to write snapshot");
             }
-            Snapshot snapshot = snapshotFunction.apply(node);
+            Optional<Snapshot> snapshot = snapshotFunction.apply(node);
             try (var transaction = new NestedTransaction()) {
                 Node updatedNode = node.with(node.status().withSnapshot(snapshot));
                 db.writeTo(updatedNode.state(),
@@ -96,9 +109,9 @@ public class Snapshots {
                            Optional.empty(),
                            transaction);
                 List<Snapshot> updated = new ArrayList<>(snapshots);
-                updated.removeIf(s -> s.id().equals(snapshot.id()));
-                updated.add(snapshot);
-                db.writeSnapshots(snapshot.hostname().value(), updated, transaction);
+                updated.removeIf(s -> s.id().equals(snapshotId));
+                snapshot.ifPresent(updated::add);
+                db.writeSnapshots(hostname, updated, transaction);
                 transaction.commit();
             }
             return snapshot;
