@@ -5,6 +5,7 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
+import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
 import com.yahoo.vespa.hosted.provision.persistence.SnapshotSerializer;
 
 import java.util.Comparator;
@@ -24,17 +25,17 @@ public class SnapshotResponse extends SlimeJsonResponse {
         this(nodeRepository, Optional.of(hostname), Optional.empty());
     }
 
-    public SnapshotResponse(NodeRepository nodeRepository, String hostname, String snapshotId) {
+    public SnapshotResponse(NodeRepository nodeRepository, SnapshotId snapshotId, String hostname) {
         this(nodeRepository, Optional.of(hostname), Optional.of(snapshotId));
     }
 
-    private SnapshotResponse(NodeRepository nodeRepository, Optional<String> hostname, Optional<String> snapshotId) {
-        if (snapshotId.isPresent() && hostname.isEmpty()) {
+    private SnapshotResponse(NodeRepository nodeRepository, Optional<String> hostname, Optional<SnapshotId> id) {
+        if (id.isPresent() && hostname.isEmpty()) {
             throw new IllegalArgumentException("Must specify hostname when snapshotId is given");
         }
         Cursor root = slime.setObject();
-        if (snapshotId.isPresent()) {
-            SnapshotSerializer.toSlime(nodeRepository.snapshots().require(snapshotId.get(), hostname.get()), root);
+        if (id.isPresent()) {
+            SnapshotSerializer.toSlime(nodeRepository.snapshots().require(id.get(), hostname.get()), root);
         } else {
             final List<Snapshot> snapshots;
             if (hostname.isPresent()) {

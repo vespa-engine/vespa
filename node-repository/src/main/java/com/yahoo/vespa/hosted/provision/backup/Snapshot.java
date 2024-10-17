@@ -13,7 +13,7 @@ import java.util.UUID;
  *
  * @author mpolden
  */
-public record Snapshot(String id, HostName hostname, State state, Instant createdAt, ClusterId cluster, int clusterIndex) {
+public record Snapshot(SnapshotId id, HostName hostname, State state, Instant createdAt, ClusterId cluster, int clusterIndex) {
 
     public Snapshot {
         Objects.requireNonNull(id);
@@ -54,11 +54,11 @@ public record Snapshot(String id, HostName hostname, State state, Instant create
     }
 
 
-    public static String generateId() {
-        return UUID.randomUUID().toString();
+    public static SnapshotId generateId() {
+        return new SnapshotId(UUID.randomUUID());
     }
 
-    public static Snapshot create(String id, HostName hostname, ClusterId cluster, int clusterIndex, Instant at) {
+    public static Snapshot create(SnapshotId id, HostName hostname, ClusterId cluster, int clusterIndex, Instant at) {
         return new Snapshot(id, hostname, State.creating, at, cluster, clusterIndex);
     }
 

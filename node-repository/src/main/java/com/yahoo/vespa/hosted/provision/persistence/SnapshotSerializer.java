@@ -9,6 +9,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
+import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
 import java.time.Instant;
@@ -31,7 +32,7 @@ public class SnapshotSerializer {
     private SnapshotSerializer() {}
 
     public static Snapshot fromInspector(Inspector object) {
-        return new Snapshot(object.field(ID_FIELD).asString(),
+        return new Snapshot(SnapshotId.of(object.field(ID_FIELD).asString()),
                             HostName.of(object.field(HOSTNAME_FIELD).asString()),
                             stateFromSlime(object.field(STATE_FIELD).asString()),
                             Instant.ofEpochMilli(object.field(CREATED_AT_FIELD).asLong()),
@@ -68,7 +69,7 @@ public class SnapshotSerializer {
     }
 
     public static void toSlime(Snapshot snapshot, Cursor object) {
-        object.setString(ID_FIELD, snapshot.id());
+        object.setString(ID_FIELD, snapshot.id().toString());
         object.setString(HOSTNAME_FIELD, snapshot.hostname().value());
         object.setString(STATE_FIELD, asString(snapshot.state()));
         object.setLong(CREATED_AT_FIELD, snapshot.createdAt().toEpochMilli());

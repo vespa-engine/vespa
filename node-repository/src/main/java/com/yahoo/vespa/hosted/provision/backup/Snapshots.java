@@ -46,7 +46,7 @@ public class Snapshots {
     }
 
     /** Read given snapshot or throw */
-    public Snapshot require(String id, String hostname) {
+    public Snapshot require(SnapshotId id, String hostname) {
         return read(hostname).stream()
                              .filter(s -> s.id().equals(id))
                              .findFirst()
@@ -57,7 +57,7 @@ public class Snapshots {
     public Snapshot create(String hostname, Instant instant) {
         try (var lock = db.lockSnapshots(hostname)) {
             requireIdle(hostname);
-            String id = Snapshot.generateId();
+            SnapshotId id = Snapshot.generateId();
             return write(id, hostname, (node) -> {
                 ClusterId cluster = new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id());
                 return Optional.of(Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), cluster, node.allocation().get().membership().index(), instant));
@@ -66,18 +66,18 @@ public class Snapshots {
     }
 
     /** Remove given snapshot. Note that this only removes metadata about the snapshot, and not the underlying data */
-    public void remove(String snapshotId, String hostname) {
+    public void remove(SnapshotId id, String hostname) {
         try (var lock = db.lockSnapshots(hostname)) {
             requireIdle(hostname);
-            write(snapshotId, hostname, node -> Optional.empty(), lock);
+            write(id, hostname, node -> Optional.empty(), lock);
         }
     }
 
     /** Move snapshot to given state */
-    public Snapshot move(String snapshotId, String hostname, Snapshot.State newState) {
+    public Snapshot move(SnapshotId id, String hostname, Snapshot.State newState) {
         try (var lock = db.lockSnapshots(hostname)) {
-            Snapshot current = require(snapshotId, hostname);
-            return write(snapshotId, hostname, node -> Optional.of(current.with(newState)), lock).get();
+            Snapshot current = require(id, hostname);
+            return write(id, hostname, node -> Optional.of(current.with(newState)), lock).get();
         }
     }
 
@@ -90,7 +90,7 @@ public class Snapshots {
         }
     }
 
-    private Optional<Snapshot> write(String snapshotId, String hostname, Function<Node, Optional<Snapshot>> snapshotFunction, @SuppressWarnings("unused") Mutex snapshotLock) {
+    private Optional<Snapshot> write(SnapshotId id, String hostname, Function<Node, Optional<Snapshot>> snapshotFunction, @SuppressWarnings("unused") Mutex snapshotLock) {
         List<Snapshot> snapshots = read(hostname);
         try (var nodeMutex = nodeRepository.nodes().lockAndGetRequired(hostname)) {
             Node node = nodeMutex.node();
@@ -109,7 +109,7 @@ public class Snapshots {
                            Optional.empty(),
                            transaction);
                 List<Snapshot> updated = new ArrayList<>(snapshots);
-                updated.removeIf(s -> s.id().equals(snapshotId));
+                updated.removeIf(s -> s.id().equals(id));
                 snapshot.ifPresent(updated::add);
                 db.writeSnapshots(hostname, updated, transaction);
                 transaction.commit();

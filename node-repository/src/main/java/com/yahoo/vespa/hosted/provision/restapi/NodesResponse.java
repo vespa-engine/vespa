@@ -246,7 +246,7 @@ class NodesResponse extends SlimeJsonResponse {
     }
 
     private void toSlime(Snapshot snapshot, Cursor object) {
-        object.setString("id", snapshot.id());
+        object.setString("id", snapshot.id().toString());
         object.setString("state", SnapshotSerializer.asString(snapshot.state()));
     }
 
