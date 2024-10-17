@@ -318,7 +318,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     protected boolean shouldRenderStacktraceOf(Throwable cause) {
-        return  ! (cause instanceof IllegalArgumentException);
+        return  ! (cause instanceof IllegalArgumentException ||
+                   cause instanceof UnsupportedOperationException);
     }
 
     protected void renderCoverage() throws IOException {
