@@ -202,6 +202,12 @@ public class PermanentFlags {
             "Takes effect immediately"
     );
 
+    public static final UnboundIntFlag MAX_TENANTS_PER_USER = defineIntFlag(
+            "max-tenants-per-user", 3,
+            "The maximum nr. of tenants a user can create",
+            "Takes effect immediately"
+    );
+
     public static final UnboundBooleanFlag ALLOW_DISABLE_MTLS = defineFeatureFlag(
             "allow-disable-mtls", true,
             "Allow application to disable client authentication",
