@@ -96,7 +96,7 @@ EncodeContext64EBase<false>::writeBits(uint64_t data, uint32_t length)
 {
     // While there are enough bits remaining in "data",
     // fill the cacheInt and flush it to vector
-    if (length >= _cacheFree) {
+    if (length >= _cacheFree) [[unlikely]] {
         // Shift new bits into cacheInt
         _cacheInt |= (data << (64 - _cacheFree));
         *_valI++ = bswap(_cacheInt);
@@ -107,7 +107,7 @@ EncodeContext64EBase<false>::writeBits(uint64_t data, uint32_t length)
         _cacheFree = 64;
     }
 
-    if (length > 0) {
+    if (length > 0) [[likely]] {
         uint64_t dataFragment = (data & CodingTables::_intMask64[length]);
         _cacheInt |= (dataFragment << (64 - _cacheFree));
         _cacheFree -= length;
@@ -265,6 +265,16 @@ FeatureEncodeContext<bigEndian>::writeBytes(std::span<const char> buf)
         if (__builtin_expect(_valI >= _valE, false)) {
             _writeContext->writeComprBuffer(false);
         }
+    }
+}
+
+template <bool bigEndian>
+void
+FeatureEncodeContext<bigEndian>::writeBytes(std::span<const unsigned char> buf)
+{
+    for (unsigned char c : buf) {
+        writeBits(c, 8);
+        writeComprBufferIfNeeded();
     }
 }
 
@@ -447,7 +457,7 @@ EncodeContext64EBase<true>::writeBits(uint64_t data, uint32_t length)
 {
     // While there are enough bits remaining in "data",
     // fill the cacheInt and flush it to vector
-    if (length >= _cacheFree) {
+    if (length >= _cacheFree) [[unlikely]] {
         // Shift new bits into cacheInt
         _cacheInt |= ((data >> (length - _cacheFree)) &
                       CodingTables::_intMask64[_cacheFree]);
@@ -459,7 +469,7 @@ EncodeContext64EBase<true>::writeBits(uint64_t data, uint32_t length)
         _cacheFree = 64;
     }
 
-    if (length > 0) {
+    if (length > 0) [[likely]] {
         uint64_t dataFragment = (data & CodingTables::_intMask64[length]);
         _cacheInt |= (dataFragment << (_cacheFree - length));
         _cacheFree -= length;

@@ -1493,11 +1493,12 @@ public:
 
     void writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
     void writeBytes(std::span<const char> buf);
+    void writeBytes(std::span<const unsigned char> buf);
     void writeString(std::string_view buf);
     virtual void writeHeader(const vespalib::GenericHeader &header);
 
     void writeComprBufferIfNeeded() {
-        if (_valI >= _valE) {
+        if (_valI >= _valE) [[unlikely]] {
             _writeContext->writeComprBuffer(false);
         }
     }
