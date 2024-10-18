@@ -19,21 +19,18 @@ import java.time.Duration;
 public class FileDistributionMaintainer extends ConfigServerMaintainer {
 
     private final FileDirectory fileDirectory;
-    private final Duration maxUnusedFileReferenceAge;
 
     FileDistributionMaintainer(ApplicationRepository applicationRepository,
                                Curator curator,
                                Duration interval,
                                FileDirectory fileDirectory) {
         super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, false);
-        ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
-        this.maxUnusedFileReferenceAge = Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes());
         this.fileDirectory = fileDirectory;
     }
 
     @Override
     protected double maintain() {
-        applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory, maxUnusedFileReferenceAge);
+        applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory);
         return 1.0;
     }
 
