@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzAssertion;
@@ -51,8 +50,6 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 
 /**
@@ -231,10 +228,9 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
     @Override
     public void updateDomain(AthenzDomain domain, String mainKey, Map<String, Object> attributes) {
-        String domainMeta = uncheck(() -> new ObjectMapper().writeValueAsString(attributes));
         HttpUriRequest request = RequestBuilder.put()
                                                .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), mainKey)))
-                                               .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
+                                               .setEntity(toJsonStringEntity(attributes))
                                                .build();
         execute(request, response -> readEntity(response, Void.class));
     }

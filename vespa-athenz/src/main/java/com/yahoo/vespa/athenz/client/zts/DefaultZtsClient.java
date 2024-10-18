@@ -9,6 +9,7 @@ import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
+import com.yahoo.vespa.athenz.api.AzureTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.ErrorHandler;
@@ -16,6 +17,7 @@ import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.AccessTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.AwsTemporaryCredentialsResponseEntity;
+import com.yahoo.vespa.athenz.client.zts.bindings.AzureTemporaryCredentialsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceIdentityCredentials;
@@ -24,6 +26,7 @@ import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRegisterInformation;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
+import com.yahoo.vespa.athenz.client.zts.bindings.TemporaryCredentialsResponse;
 import com.yahoo.vespa.athenz.client.zts.bindings.TenantDomainsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -39,6 +42,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -226,6 +230,29 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
             AwsTemporaryCredentialsResponseEntity entity = readEntity(response, AwsTemporaryCredentialsResponseEntity.class);
             return entity.credentials();
         });
+    }
+
+    @Override
+    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId) {
+        return getExternalTemporaryCredentials("azure", athenzRole.domain(),
+                Map.of("athenzRoleName", athenzRole.roleName(), "azureClientId", azureIdentityId),
+                AzureTemporaryCredentialsResponseEntity.class);
+    }
+
+    @Override
+    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName) {
+        return getExternalTemporaryCredentials("azure", athenzRole.domain(),
+                Map.of("athenzRoleName", athenzRole.roleName(), "azureResourceGroup", azureResourceGroup, "azureClientName", azureIdentityName),
+                AzureTemporaryCredentialsResponseEntity.class);
+    }
+
+    private <T, U extends TemporaryCredentialsResponse<T>> T getExternalTemporaryCredentials(String provider, AthenzDomain domain, Map<String, String> attributes, Class<U> responseClass) {
+        URI uri = ztsUrl.resolve("external/%s/domain/%s/creds".formatted(provider, domain.getName()));
+        RequestBuilder requestBuilder = RequestBuilder.post(uri)
+                .setEntity(toJsonStringEntity(Map.of("clientId", "%s.%s".formatted(domain.getName(), provider), "attributes", attributes)));
+
+        HttpUriRequest request = requestBuilder.build();
+        return execute(request, response -> readEntity(response, responseClass)).credentials();
     }
 
     @Override
