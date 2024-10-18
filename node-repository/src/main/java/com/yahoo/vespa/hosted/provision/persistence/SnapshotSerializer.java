@@ -9,6 +9,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
+import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
 import java.time.Instant;
@@ -31,7 +32,7 @@ public class SnapshotSerializer {
     private SnapshotSerializer() {}
 
     public static Snapshot fromInspector(Inspector object) {
-        return new Snapshot(object.field(ID_FIELD).asString(),
+        return new Snapshot(SnapshotId.of(object.field(ID_FIELD).asString()),
                             HostName.of(object.field(HOSTNAME_FIELD).asString()),
                             stateFromSlime(object.field(STATE_FIELD).asString()),
                             Instant.ofEpochMilli(object.field(CREATED_AT_FIELD).asLong()),
@@ -68,7 +69,7 @@ public class SnapshotSerializer {
     }
 
     public static void toSlime(Snapshot snapshot, Cursor object) {
-        object.setString(ID_FIELD, snapshot.id());
+        object.setString(ID_FIELD, snapshot.id().toString());
         object.setString(HOSTNAME_FIELD, snapshot.hostname().value());
         object.setString(STATE_FIELD, asString(snapshot.state()));
         object.setLong(CREATED_AT_FIELD, snapshot.createdAt().toEpochMilli());
@@ -80,10 +81,8 @@ public class SnapshotSerializer {
     public static String asString(Snapshot.State state) {
         return switch (state) {
             case creating -> "creating";
-            case failed -> "failed";
             case created -> "created";
             case restoring -> "restoring";
-            case restoreFailed -> "restoreFailed";
             case restored -> "restored";
         };
     }
@@ -91,10 +90,8 @@ public class SnapshotSerializer {
     private static Snapshot.State stateFromSlime(String value) {
         return switch (value) {
             case "creating" -> Snapshot.State.creating;
-            case "failed" -> Snapshot.State.failed;
             case "created" -> Snapshot.State.created;
             case "restoring" -> Snapshot.State.restoring;
-            case "restoreFailed" -> Snapshot.State.restoreFailed;
             case "restored" -> Snapshot.State.restored;
             default -> throw new IllegalArgumentException("Unknown snapshot state '" + value + "'");
         };

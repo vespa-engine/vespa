@@ -13,7 +13,7 @@ import java.util.UUID;
  *
  * @author mpolden
  */
-public record Snapshot(String id, HostName hostname, State state, Instant createdAt, ClusterId cluster, int clusterIndex) {
+public record Snapshot(SnapshotId id, HostName hostname, State state, Instant createdAt, ClusterId cluster, int clusterIndex) {
 
     public Snapshot {
         Objects.requireNonNull(id);
@@ -36,14 +36,10 @@ public record Snapshot(String id, HostName hostname, State state, Instant create
     public enum State {
         /** Snapshot is being created by the node */
         creating,
-        /** The node failed to create a snapshot */
-        failed,
         /** The node successfully created a snapshot */
         created,
         /** Snapshot is being restored by the node */
         restoring,
-        /** The node failed to restore the snapshot */
-        restoreFailed,
         /** The node successfully created a snapshot */
         restored;
 
@@ -51,14 +47,19 @@ public record Snapshot(String id, HostName hostname, State state, Instant create
         public boolean busy() {
             return switch (this) {
                 case creating, restoring -> true;
-                case failed, created, restoreFailed, restored -> false;
+                case created, restored -> false;
             };
         }
 
     }
 
-    public static Snapshot create(HostName hostname, ClusterId cluster, int clusterIndex, Instant at) {
-        return new Snapshot(UUID.randomUUID().toString(), hostname, State.creating, at, cluster, clusterIndex);
+
+    public static SnapshotId generateId() {
+        return new SnapshotId(UUID.randomUUID());
+    }
+
+    public static Snapshot create(SnapshotId id, HostName hostname, ClusterId cluster, int clusterIndex, Instant at) {
+        return new Snapshot(id, hostname, State.creating, at, cluster, clusterIndex);
     }
 
 }
