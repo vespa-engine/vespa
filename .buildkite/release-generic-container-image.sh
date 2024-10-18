@@ -22,7 +22,7 @@ trap "rm -rf $TMPDIR" EXIT
 pushd $TMPDIR
 git clone -q --filter tree:0 https://github.com/vespa-engine/vespa
 (cd vespa && git checkout v$VESPA_VERSION)
-(cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+(cd vespa && .buildkite/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
 
 make -C vespa -f .copr/Makefile srpm outdir=$(pwd)
 
@@ -52,7 +52,7 @@ docker build --progress plain \
   --tag vespaengine/vespa:latest \
   --file Dockerfile .
 
-vespa/screwdriver/test-quick-start-guide.sh
+vespa/.buildkite/test-quick-start-guide.sh
 
 OPT_STATE="$(set +o)"
 set +x

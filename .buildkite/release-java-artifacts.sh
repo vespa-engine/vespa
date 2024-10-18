@@ -23,14 +23,14 @@ fi
 
 export SOURCE_DIR=$(pwd)
 
-mkdir -p $SOURCE_DIR/screwdriver/deploy
+mkdir -p $SOURCE_DIR/.buildkite/deploy
 # gpg-agent in RHEL 8 runs out of memory if we use Maven and sign in parallel. Add option to overcome this.
-echo "auto-expand-secmem" >> $SOURCE_DIR/screwdriver/deploy/gpg-agent.conf
-openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/screwdriver/pubring.gpg.enc -out $SOURCE_DIR/screwdriver/deploy/pubring.gpg -d
-openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/screwdriver/secring.gpg.enc -out $SOURCE_DIR/screwdriver/deploy/secring.gpg -d
-chmod 700 $SOURCE_DIR/screwdriver/deploy
-chmod 600 $SOURCE_DIR/screwdriver/deploy/*
-trap "rm -rf $SOURCE_DIR/screwdriver/deploy" EXIT
+echo "auto-expand-secmem" >> $SOURCE_DIR/.buildkite/deploy/gpg-agent.conf
+openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/.buildkite/deploy/pubring.gpg.enc -out $SOURCE_DIR/.buildkite/deploy/pubring.gpg -d
+openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/.buildkite/deploy/secring.gpg.enc -out $SOURCE_DIR/.buildkite/deploy/secring.gpg -d
+chmod 700 $SOURCE_DIR/.buildkite/deploy
+chmod 600 $SOURCE_DIR/.buildkite/deploy/*
+trap "rm -rf $SOURCE_DIR/.buildkite/deploy" EXIT
 
 # Number of parallel uploads
 NUM_PROC=10
@@ -75,7 +75,7 @@ sign_module() {
         EXTRA_FILES_OPTS="-Dfiles=$(echo ${AFILES[@]} | sed 's/\ /,/g') -Dtypes=$(echo ${ATYPES[@]} | sed 's/\ /,/g') -Dclassifiers=$(echo ${ACLASSIFIERS[@]} | sed 's/\ /,/g')"
     fi
 
-    $ECHO $MVN --settings=$SOURCE_DIR/screwdriver/settings-publish.xml \
+    $ECHO $MVN --settings=$SOURCE_DIR/.buildkite/settings-publish.xml \
           $MVN_OPTS gpg:sign-and-deploy-file \
           -Durl=file://$TMP_STAGING \
           -DrepositoryId=maven-central \
@@ -105,7 +105,7 @@ find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC 
 export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED"
 
 LOGFILE=$(mktemp)
-$MVN $MVN_OPTS --settings=$SOURCE_DIR/screwdriver/settings-publish.xml \
+$MVN $MVN_OPTS --settings=$SOURCE_DIR/.buildkite/settings-publish.xml \
     org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:deploy-staged-repository \
     -DrepositoryDirectory=$TMP_STAGING \
     -DnexusUrl=https://oss.sonatype.org \
@@ -115,7 +115,7 @@ $MVN $MVN_OPTS --settings=$SOURCE_DIR/screwdriver/settings-publish.xml \
     -DstagingProfileId=407c0c3e1a197 | tee $LOGFILE
 
 STG_REPO=$(cat $LOGFILE | grep 'Staging repository at http' | head -1 | awk -F/ '{print $NF}')
-$MVN $MVN_OPTS --settings=$SOURCE_DIR/screwdriver/settings-publish.xml -N \
+$MVN $MVN_OPTS --settings=$SOURCE_DIR/.buildkite/settings-publish.xml -N \
     org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:rc-release \
     -DnexusUrl=https://oss.sonatype.org/ \
     -DserverId=ossrh \

@@ -52,7 +52,7 @@ upload_rpms() {
     rpm-repo.tar
   tar xvf rpm-repo.tar
   for rpm in rpms/*.rpm; do
-    screwdriver/upload-rpm-to-cloudsmith.sh $rpm
+    .github/scripts/upload-rpm-to-cloudsmith.sh $rpm
   done
   rm -rf rpms rpm-repo.*
 }
