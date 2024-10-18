@@ -6,9 +6,10 @@
 set -xeuo pipefail
 
 TESTDIR=$(mktemp -d)
+# shellcheck disable=SC2064
 trap "rm -rf $TESTDIR" EXIT
 
-cd $TESTDIR
+cd "$TESTDIR"
 
 # Clone and setup doc tests
 git clone -q --depth 1 https://github.com/vespa-engine/documentation
@@ -23,8 +24,8 @@ if [[ $(arch) == x86_64 ]]; then
 else
   GO_ARCH=arm64
 fi
-curl -fsSL https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}.tar.gz | tar -zxf - -C /opt
-ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}/bin/vespa /usr/local/bin/
+curl -fsSL "https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}.tar.gz" | tar -zxf - -C /opt
+ln -sf "/opt/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}/bin/vespa" /usr/local/bin/
 
 # Run test
 python3 test/test.py -v -c test/_quick-start.yaml

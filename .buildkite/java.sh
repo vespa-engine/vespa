@@ -3,6 +3,7 @@
 
 set -euo pipefail
 
+# shellcheck disable=1091
 source /etc/profile.d/enable-gcc-toolset.sh
 
 cd "$SOURCE_DIR"
