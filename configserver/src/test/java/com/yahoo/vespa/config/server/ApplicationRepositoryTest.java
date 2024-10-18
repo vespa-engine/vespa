@@ -115,6 +115,7 @@ public class ApplicationRepositoryTest {
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .keepUnusedFileReferencesMinutes(1)
                 .build();
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         fileDirectory = new FileDirectory(configserverConfig);
@@ -276,7 +277,6 @@ public class ApplicationRepositoryTest {
     @Test
     public void deleteUnusedFileReferences() {
         File fileReferencesDir = new File(configserverConfig.fileReferencesDir());
-        Duration keepFileReferencesDuration = Duration.ofSeconds(4);
 
         // Add file reference that is not in use and should be deleted (older than 'keepFileReferencesDuration')
         File filereferenceDirOldest = createFileReferenceOnDisk(new File(fileReferencesDir, "bar"));
@@ -287,7 +287,7 @@ public class ApplicationRepositoryTest {
             createFileReferenceOnDisk(new File(fileReferencesDir, "baz" + i));
             clock.advance(Duration.ofSeconds(1));
         });
-        clock.advance(keepFileReferencesDuration);
+        clock.advance(Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes()));
 
         // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferencesDuration')
         File filereferenceDirNewest = createFileReferenceOnDisk(new File(fileReferencesDir, "foo"));
@@ -296,13 +296,14 @@ public class ApplicationRepositoryTest {
                 .withTenantRepository(tenantRepository)
                 .withOrchestrator(orchestrator)
                 .withClock(clock)
+                .withConfigserverConfig(configserverConfig)
                 .build();
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now
         // PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         // deployApp(new File("src/test/apps/app"), prepareParams);
 
-        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory, keepFileReferencesDuration);
+        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory);
         List<String> expected = List.of("bar", "baz0", "baz1");
         assertEquals(expected.stream().sorted().toList(), deleted.stream().sorted().toList());
         // bar, baz0 and baz1 will be deleted and foo is not old enough to be considered
