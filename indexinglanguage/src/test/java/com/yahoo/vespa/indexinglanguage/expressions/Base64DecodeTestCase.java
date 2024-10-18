@@ -28,10 +28,10 @@ public class Base64DecodeTestCase {
     @Test
     public void requireThatInputIsDecoded() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("zcIoHQ"));
+        ctx.setCurrentValue(new StringFieldValue("zcIoHQ"));
         new Base64DecodeExpression().execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof LongFieldValue);
         assertEquals(489210573L, ((LongFieldValue)val).getLong());
     }

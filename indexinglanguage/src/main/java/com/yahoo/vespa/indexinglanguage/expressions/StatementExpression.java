@@ -11,14 +11,16 @@ import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
+ * An indexing statement consisting of a list of indexing expressions, e.g "input foo | index | attribute".
+ *
  * @author Simon Thoresen Hult
  */
 public final class StatementExpression extends ExpressionList<Expression> {
@@ -29,12 +31,12 @@ public final class StatementExpression extends ExpressionList<Expression> {
     /** The name of the (last) output field this statement will write to, or null if none */
     private String outputField;
 
-    public StatementExpression(Expression... lst) {
-        this(Arrays.asList(lst)); //TODO Can contain null - necessary ?
+    public StatementExpression(Expression... list) {
+        this(Arrays.asList(list)); // TODO: Can contain null - necessary ?
     }
 
-    public StatementExpression(Iterable<Expression> lst) {
-        this(filterList(lst), null);
+    public StatementExpression(Iterable<Expression> list) {
+        this(filterList(list), null);
     }
 
     private StatementExpression(Iterable<Expression> list, Object unused) {
@@ -54,22 +56,49 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        if (expressions().isEmpty()) return;
+
+        outputField = outputFieldName();
+        if (outputField != null)
+            context.setOutputField(outputField);
+
+        // Result input and output types:
+        // Some expressions can only determine their input from their output, and others only their output from
+        // their input. Therefore, we try resolving in both directions, which should always meet up to produce
+        // uniquely determined inputs and outputs of all expressions.
+        // forward:
+        int i = 0;
+        var inputType = getInputType(context); // A nested statement; input imposed from above
+        if (inputType == null) // otherwise the first expression will be an input deciding the type
+            inputType = expressions().get(i++).getOutputType(context);
+        while (i < expressions().size() && inputType != null)
+            inputType = expressions().get(i++).setInputType(inputType, context);
+        // reverse:
+        int j = expressions().size();
+        var outputType = getOutputType(context); // A nested statement; output imposed from above
+        if (outputType == null) // otherwise the last expression will be an output deciding the type
+            outputType = expressions().get(--j).getInputType(context);
+        while (--j >= 0 && outputType != null)
+            outputType = expressions().get(j).setOutputType(outputType, context);
+
+        for (Expression expression : expressions())
+            context.verify(expression);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         for (Expression expression : this) {
             context.execute(expression);
         }
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
+    private String outputFieldName() {
         for (Expression expression : this) {
-            if (expression instanceof OutputExpression)
-                outputField = ((OutputExpression)expression).getFieldName();
+            if (expression instanceof OutputExpression output)
+                return output.getFieldName();
         }
-        if (outputField != null)
-            context.setOutputField(outputField);
-        for (Expression expression : this)
-            context.execute(expression);
+        return null;
     }
 
     private static DataType resolveInputType(Iterable<Expression> expressions) {
@@ -115,16 +144,16 @@ public final class StatementExpression extends ExpressionList<Expression> {
         return ScriptParser.parseStatement(config);
     }
 
-    private static List<Expression> filterList(Iterable<Expression> lst) {
-        List<Expression> ret = new LinkedList<>();
-        for (Expression exp : lst) {
-            if (exp instanceof StatementExpression) {
-                ret.addAll(filterList((StatementExpression)exp));
-            } else if (exp != null) {
-                ret.add(exp);
+    private static List<Expression> filterList(Iterable<Expression> list) {
+        List<Expression> filtered = new ArrayList<>();
+        for (Expression expression : list) {
+            if (expression instanceof StatementExpression statement) {
+                filtered.addAll(filterList(statement));
+            } else if (expression != null) {
+                filtered.add(expression);
             }
         }
-        return ret;
+        return filtered;
     }
 
 }

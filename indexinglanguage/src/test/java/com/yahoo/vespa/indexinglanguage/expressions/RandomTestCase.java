@@ -45,7 +45,7 @@ public class RandomTestCase {
             ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
             new RandomExpression(69).execute(ctx);
 
-            FieldValue val = ctx.getValue();
+            FieldValue val = ctx.getCurrentValue();
             assertTrue(val instanceof IntegerFieldValue);
             assertTrue(((IntegerFieldValue)val).getInteger() < 69);
         }
@@ -54,10 +54,10 @@ public class RandomTestCase {
     @Test
     public void requireThatInputValueIsParsedAsMaxIfNoneIsConfigured() {
         for (int i = 0; i < 666; ++i) {
-            ExecutionContext ctx = new ExecutionContext().setValue(new IntegerFieldValue(69));
+            ExecutionContext ctx = new ExecutionContext().setCurrentValue(new IntegerFieldValue(69));
             new RandomExpression().execute(ctx);
 
-            FieldValue val = ctx.getValue();
+            FieldValue val = ctx.getCurrentValue();
             assertTrue(val instanceof IntegerFieldValue);
             assertTrue(((IntegerFieldValue)val).getInteger() < 69);
         }
@@ -72,7 +72,7 @@ public class RandomTestCase {
 
         }
         try {
-            new RandomExpression().execute(new ExecutionContext().setValue(new StringFieldValue("foo")));
+            new RandomExpression().execute(new ExecutionContext().setCurrentValue(new StringFieldValue("foo")));
             fail();
         } catch (NumberFormatException e) {
 

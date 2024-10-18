@@ -47,10 +47,10 @@ public class InputTestCase {
     @Test
     public void requireThatFieldIsRead() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter(new Field("in", DataType.STRING)));
-        ctx.setOutputValue(null, "in", new StringFieldValue("69"));
+        ctx.setFieldValue("in", new StringFieldValue("69"), null);
         new InputExpression("in").execute(ctx);
 
-        assertEquals(new StringFieldValue("69"), ctx.getValue());
+        assertEquals(new StringFieldValue("69"), ctx.getCurrentValue());
     }
 
     @Test
