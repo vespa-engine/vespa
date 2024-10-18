@@ -11,30 +11,31 @@ fi
 readonly VESPA_VERSION=$1
 readonly IMAGE_NAME="vespaengine/vespa-generic-intel-x86_64"
 
-if curl -fsSL https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/ &> /dev/null; then
+if curl -fsSL "https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/" &> /dev/null; then
   echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
   exit 0
 fi
 
 TMPDIR=$(mktemp -d)
+# shellcheck disable=2064
 trap "rm -rf $TMPDIR" EXIT
 
-pushd $TMPDIR
+pushd "$TMPDIR"
 git clone -q --filter tree:0 https://github.com/vespa-engine/vespa
-(cd vespa && git checkout v$VESPA_VERSION)
-(cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+(cd vespa && git checkout "v$VESPA_VERSION")
+(cd vespa && .buildkite/replace-vespa-version-in-poms.sh "$VESPA_VERSION" "$(pwd)" )
 
-make -C vespa -f .copr/Makefile srpm outdir=$(pwd)
+make -C vespa -f .copr/Makefile srpm outdir="$(pwd)"
 
 rpmbuild --rebuild \
   --define="_topdir $TMPDIR/vespa-rpmbuild" \
   --define "debug_package %{nil}" \
   --define "_debugsource_template %{nil}" \
   --define '_cmake_extra_opts "-DDEFAULT_VESPA_CPU_ARCH_FLAGS=-msse3 -mcx16 -mtune=intel"' \
-  *.src.rpm
+  ./*.src.rpm
 
-rm -f *.src.rpm
-mv $TMPDIR/vespa-rpmbuild/RPMS/*/*.rpm .
+rm -f ./*.src.rpm
+mv "$TMPDIR"/vespa-rpmbuild/RPMS/*/*.rpm .
 
 cat <<EOF > Dockerfile
 ARG VESPA_VERSION
@@ -46,18 +47,18 @@ EOF
 
 
 docker build --progress plain \
-  --build-arg VESPA_VERSION=$VESPA_VERSION \
-  --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
-  --tag docker.io/$IMAGE_NAME:latest \
+  --build-arg VESPA_VERSION="$VESPA_VERSION" \
+  --tag "docker.io/$IMAGE_NAME:$VESPA_VERSION" \
+  --tag "docker.io/$IMAGE_NAME:latest" \
   --tag vespaengine/vespa:latest \
   --file Dockerfile .
 
-vespa/screwdriver/test-quick-start-guide.sh
+vespa/.buildkite/test-quick-start-guide.sh
 
 OPT_STATE="$(set +o)"
 set +x
 docker login --username aressem --password "$DOCKER_HUB_DEPLOY_TOKEN"
 eval "$OPT_STATE"
-docker push docker.io/$IMAGE_NAME:$VESPA_VERSION
-docker push docker.io/$IMAGE_NAME:latest
+docker push "docker.io/$IMAGE_NAME:$VESPA_VERSION"
+docker push "docker.io/$IMAGE_NAME:latest"
 

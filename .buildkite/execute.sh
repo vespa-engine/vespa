@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 set -euo pipefail
 
@@ -7,7 +8,7 @@ if [[ $# != 1 ]]; then
   exit 1
 fi
 
-readonly MYDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd )"
+MYDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd )"
 readonly STEP=$1
 readonly VERBOSE=${VERBOSE:-}
 
