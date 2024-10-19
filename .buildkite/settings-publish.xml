@@ -20,7 +20,7 @@
                 <gpg.executable>gpg</gpg.executable>
                 <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
                 <gpg.defaultKeyring>false</gpg.defaultKeyring>
-                <gpg.homedir>${env.SOURCE_DIR}/screwdriver/deploy</gpg.homedir>
+                <gpg.homedir>${env.SOURCE_DIR}/.buildkite/deploy</gpg.homedir>
                 <gpg.publickeyring>pubring.gpg</gpg.publickeyring>
                 <gpg.secretkeyring>secring.gpg</gpg.secretkeyring>
             </properties>

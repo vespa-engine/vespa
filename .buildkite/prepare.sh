@@ -1,8 +1,9 @@
 #!/bin/bash
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 set -euo pipefail
 
-"$SOURCE_DIR/screwdriver/replace-vespa-version-in-poms.sh" "$VESPA_VERSION" "$SOURCE_DIR"
+"$SOURCE_DIR/.buildkite/replace-vespa-version-in-poms.sh" "$VESPA_VERSION" "$SOURCE_DIR"
 
 # We disable javadoc for all modules not marked as public API
 for MODULE in $(comm -2 -3 \
