@@ -1,4 +1,3 @@
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 export TOP := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 export ARCH ?= $(shell if [[ $$(arch) == x86_64 ]]; then echo amd64; else echo arm64; fi)

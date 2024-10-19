@@ -11,7 +11,7 @@ URL=$1
 WEB_URL=$2
 TIMEOUT=$3
 
-WAIT_UNTIL=$(( $(date +%s) + "$TIMEOUT" ))
+WAIT_UNTIL=$(( $(date +%s) + $TIMEOUT ))
 while [[ $(date +%s) -le $WAIT_UNTIL ]]; do
     STATUS=$(curl -sSL -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_TRIGGER_TOKEN" "$URL" | jq -re '.state')
 
