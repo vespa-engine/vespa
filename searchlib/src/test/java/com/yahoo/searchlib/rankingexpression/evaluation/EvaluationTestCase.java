@@ -733,6 +733,14 @@ public class EvaluationTestCase {
                                "tensor(x[3]):[1.0, 2.0, 3]");
         tester.assertEvaluates("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:0}:2.0, {x:c,y:0}:3.0 }",
                                "tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:0}:2.0, {x:c,y:0}:3.0 }");
+        tester.assertEvaluates("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:0}:2.0, {x:c,y:0}:3.0 }",
+                               "tensor(x{},y{}):{ a:{0:1}, b:{0:2}, c:{0:3} }");
+        tester.assertEvaluates("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:0}:2.0, {x:c,y:0}:3.0 }",
+                               "tensor(y{},x{}):{ 0:{a:1, b:2, c:3} }");
+        tester.assertEvaluates("tensor(x{},y{}):{{x:a,y:0}:1.0,{x:a,y:1}:2.0,{x:b,y:0}:3.0,{x:b,y:1}:4.0}",
+                               "tensor(x{},y{}):{ a:{0:1, 1:2}, b:{0:3, 1:4} }");
+        tester.assertEvaluates("tensor(x{},y{},z[3]):{a:{aa:[1,0,2],bb:[3,0,4]},b:{aa:[5,0,6],bb:[7,0,8]}}",
+                               "tensor(x{},y{},z[3]):{a:{aa:[1,0,2],bb:[3,0,4]},b:{aa:[5,0,6],bb:[7,0,8]}}");
         tester.assertEvaluates("tensor(x{}):{}",
                                "tensor(x{}):{}");
         tester.assertEvaluates("tensor():{{}:1}",
@@ -789,6 +797,43 @@ public class EvaluationTestCase {
         }
         catch (Exception e) {
             assertEquals("Need 6 values to fill tensor(x[2],y[3]) but got 7", e.getMessage());
+        }
+        try {
+            new RankingExpression("tensor(a{},b{},x[2]):{a1:{b2:{c3:[1,2]}}}");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("At {a:'a1', b:'b2'}: Got label 'c3' but all mapped dimensions already have labels",
+                         e.getMessage());
+        }
+        try {
+            new RankingExpression("tensor(a{},b{},x[2]):{a1:{b2:[1,2]}, a2:[3,4]}");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("At 'a2': Missing label for dimension 'b'", e.getMessage());
+        }
+        try {
+            new RankingExpression("tensor(a{},b{},x[2]):{a1:{b2:42.0}}");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("At {a:'a1', b:'b2'}: Need an array of values", e.getMessage());
+        }
+        try {
+            new RankingExpression("tensor(a{},b{},c{}):{a1:{b2:{c3:[0.0]}}}");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("At {a:'a1', b:'b2', c:'c3'}: Need a single value", e.getMessage());
+        }
+        try {
+            new RankingExpression("tensor(a{},b{},x[3]):{a1:{b2:[1,2]}}");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("At {a:'a1', b:'b2'}: Need 3 values to fill" +
+                         " a dense subspace of tensor(a{},b{},x[3]) but got 2", e.getMessage());
         }
     }
 
