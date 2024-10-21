@@ -19,8 +19,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
+ * Helper to incrementally build addresses and insert values (expression nodes) into a map.
+ * Only used as an internal component of the RankingExpression parser.
+ * @author arnej
  */
-class CellMapHelper {
+public class CellMapHelper {
 
     private record Common(Map<TensorAddress, ScalarFunction<Reference>> receivingMap,
                           TensorType type,
@@ -44,7 +47,7 @@ class CellMapHelper {
     private final Common meta;
     private final List<String> labels;
 
-    CellMapHelper(TensorType type, List<String> dimensionOrder) {
+    public CellMapHelper(TensorType type, List<String> dimensionOrder) {
         this.meta = new Common(type, dimensionOrder);
         this.labels = new ArrayList<>();
     }
@@ -54,11 +57,11 @@ class CellMapHelper {
         this.labels = labels;
     }
 
-    Map<TensorAddress, ScalarFunction<Reference>> map() {
+    public Map<TensorAddress, ScalarFunction<Reference>> map() {
         return meta.receivingMap();
     }
 
-    CellMapHelper bind(String label) {
+    public CellMapHelper bind(String label) {
         if (labels.size() >= meta.mappedDims().size()) {
             throw new IllegalArgumentException("At " + address() + ": Got label '" + label +
                                                "' but all mapped dimensions already have labels");
@@ -90,7 +93,7 @@ class CellMapHelper {
         return addr.toString();
     }
 
-    void handleScalar(ExpressionNode node) {
+    public void handleScalar(ExpressionNode node) {
         if (labels.size() < meta.mappedDims().size()) {
             throw new IllegalArgumentException("At " + address() + ": Missing label for dimension '" +
                                                meta.mappedDims().get(labels.size()) + "'");
@@ -105,7 +108,7 @@ class CellMapHelper {
         meta.receivingMap().put(addr.build(), TensorFunctionNode.wrapScalar(node));
     }
 
-    void handleDenseSubspace(List<ExpressionNode> nodes) {
+    public void handleDenseSubspace(List<ExpressionNode> nodes) {
         if (labels.size() < meta.mappedDims().size()) {
             throw new IllegalArgumentException("At " + address() + ": Missing label for dimension '" +
                                                meta.mappedDims().get(labels.size()) + "'");

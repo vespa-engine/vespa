@@ -21,6 +21,7 @@ options {
 
 INJECT RankingExpressionParser :
     import com.yahoo.searchlib.rankingexpression.Reference;
+    import com.yahoo.searchlib.rankingexpression.parser.CellMapHelper;
     import com.yahoo.searchlib.rankingexpression.rule.*;
     import com.yahoo.searchlib.rankingexpression.evaluation.Value;
     import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
@@ -1105,48 +1106,52 @@ DynamicTensor mappedTensorValueBody(TensorType type) :
 
 DynamicTensor mixedTensorValueBody(TensorType type, List dimensionOrder) :
 {
-    java.util.Map cells = new LinkedHashMap();
+    CellMapHelper cells = new CellMapHelper(type, dimensionOrder);
 }
- 
+    mixedValueObject(cells)
+    { return DynamicTensor.from(type, cells.map()); }
+;
+
+mixedValueObject(CellMapHelper cells) :
     <LCURLY>
-        keyValueOrMixedBlock(type, dimensionOrder, cells)
-        ( <COMMA> keyValueOrMixedBlock(type, dimensionOrder, cells))*
+        keyValueOrMixedBlock(cells)
+        ( <COMMA> keyValueOrMixedBlock(cells))*
     <RCURLY>
-    { return DynamicTensor.from(type, cells); }
 ;
 
 DynamicTensor indexedTensorValueBody(TensorType type, List dimensionOrder) :
 {
     List cells;
 }
- 
     cells = indexedTensorCells()
     { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(type, dimensionOrder, cells)); }
 ;
 
-void keyValueOrMixedBlock(TensorType type, List dimensionOrder, java.util.Map cellMap) : {}
- 
-    SCAN 3 mixedBlock(type, dimensionOrder, cellMap) | keyValue(type, cellMap)
-;
-
-void keyValue(TensorType type, java.util.Map cellMap) :
+keyValueOrMixedBlock(CellMapHelper cellMap) :
 {
     String label;
+    CellMapHelper next;
+}
+    label = label <COLON> { next = cellMap.bind(label); }
+    (
+        keyValue(next) | mixedBlock(next) | mixedValueObject(next)
+    )
+;
+
+keyValue(CellMapHelper cellMap) :
+{
     ExpressionNode value;
 }
- 
-    label = label() <COLON> value = expression()
-    { cellMap.put(TensorAddress.ofLabels(label), TensorFunctionNode.wrapScalar(value)); }
+    value = expression
+    { cellMap.handleScalar(value); }
 ;
 
-void mixedBlock(TensorType type, List dimensionOrder, java.util.Map cellMap) :
+mixedBlock(CellMapHelper cellMap) :
 {
-    String label;
     List cells;
 }
- 
-    label = label() <COLON> cells = indexedTensorCells()
-    { TensorFunctionNode.wrapScalarBlock(type, dimensionOrder, label, cells, cellMap); }
+    cells = indexedTensorCells
+    { cellMap.handleDenseSubspace(cells); }
 ;
 
 List indexedTensorCells() :

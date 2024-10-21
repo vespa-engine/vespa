@@ -865,6 +865,21 @@
       "protected int maxNextCharInd"
     ]
   },
+  "com.yahoo.searchlib.rankingexpression.parser.CellMapHelper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.TensorType, java.util.List)",
+      "public java.util.Map map()",
+      "public com.yahoo.searchlib.rankingexpression.parser.CellMapHelper bind(java.lang.String)",
+      "public void handleScalar(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public void handleDenseSubspace(java.util.List)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.searchlib.rankingexpression.parser.CharStream" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
