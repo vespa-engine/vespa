@@ -146,7 +146,7 @@ public class ScriptTestCase {
     }
 
     @Test
-    // nput debug_src | lowercase | summary | index | split ";" | for_each {
+    // input debug_src | lowercase | summary | index | split ";" | for_each {
     public void testSplitAndForEach() {
         var adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myString", DataType.STRING));
