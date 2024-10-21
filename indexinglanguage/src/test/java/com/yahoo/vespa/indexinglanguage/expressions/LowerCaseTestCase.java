@@ -35,10 +35,10 @@ public class LowerCaseTestCase {
     @Test
     public void requireThatStringIsLowerCased() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("FOO"));
+        ctx.setCurrentValue(new StringFieldValue("FOO"));
         new LowerCaseExpression().execute(ctx);
 
-        FieldValue val = ctx.getValue();
+        FieldValue val = ctx.getCurrentValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("foo", ((StringFieldValue)val).getString());
     }

@@ -23,7 +23,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  */
 public final class ExactExpression extends Expression {
 
-    private int maxTokenLength;
+    private final int maxTokenLength;
 
     private ExactExpression(OptionalInt maxTokenLength) {
         super(DataType.STRING);
@@ -40,11 +40,11 @@ public final class ExactExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue) context.getValue();
+        StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (input.getString().isEmpty()) return;
 
         StringFieldValue output = input.clone();
-        context.setValue(output);
+        context.setCurrentValue(output);
 
         String prev = output.getString();
         String next = toLowerCase(prev);
@@ -74,24 +74,16 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
-    }
+    public DataType createdOutputType() { return null; }
 
     @Override
-    public DataType createdOutputType() {
-        return null;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder ret = new StringBuilder();
-        ret.append("exact");
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        s.append("exact");
         if (maxTokenLength != AnnotatorConfig.getDefaultMaxTokenLength()) {
-            ret.append(" max-token-length:" + maxTokenLength);
+            s.append(" max-token-length:").append(maxTokenLength);
         }
-        return ret.toString();
+        return s.toString();
     }
 
     @Override

@@ -18,14 +18,19 @@ public final class ZCurveExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
-        Struct input = ((Struct) context.getValue());
+        Struct input = ((Struct) context.getCurrentValue());
         Integer x = getFieldValue(input, PositionDataType.FIELD_X);
         Integer y = getFieldValue(input, PositionDataType.FIELD_Y);
         if (x != null && y != null) {
-            context.setValue(new LongFieldValue(ZCurve.encode(x, y)));
+            context.setCurrentValue(new LongFieldValue(ZCurve.encode(x, y)));
         } else {
-            context.setValue(DataType.LONG.createFieldValue());
+            context.setCurrentValue(DataType.LONG.createFieldValue());
         }
     }
 
@@ -35,25 +40,14 @@ public final class ZCurveExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setValueType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.LONG;
-    }
-
-    @Override
-    public String toString() {
-        return "zcurve";
-    }
+    public String toString() { return "zcurve"; }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ZCurveExpression)) {
-            return false;
-        }
+        if (!(obj instanceof ZCurveExpression)) return false;
         return true;
     }
 

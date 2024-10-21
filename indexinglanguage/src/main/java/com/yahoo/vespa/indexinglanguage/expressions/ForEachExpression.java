@@ -18,75 +18,69 @@ import java.util.Objects;
  */
 public final class ForEachExpression extends CompositeExpression {
 
-    private final Expression exp;
+    private final Expression expression;
 
-    public ForEachExpression(Expression exp) {
+    public ForEachExpression(Expression expression) {
         super(UnresolvedDataType.INSTANCE);
-        this.exp = Objects.requireNonNull(exp);
+        this.expression = Objects.requireNonNull(expression);
     }
 
-    public Expression getInnerExpression() {
-        return exp;
-    }
+    public Expression getInnerExpression() { return expression; }
 
     @Override
     public ForEachExpression convertChildren(ExpressionConverter converter) {
-        Expression converted = converter.convert(exp);
+        Expression converted = converter.convert(expression);
         return converted != null ?  new ForEachExpression(converted) : null;
     }
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        exp.setStatementOutput(documentType, field);
+        expression.setStatementOutput(documentType, field);
     }
 
     @Override
-    protected void doExecute(final ExecutionContext context) {
-        FieldValue input = context.getValue();
-        if (input instanceof Array || input instanceof WeightedSet) {
-            FieldValue next = new MyConverter(context, exp).convert(input);
-            if (next == null) {
-                VerificationContext vctx = new VerificationContext(context);
-                context.fillVariableTypes(vctx);
-                vctx.setValueType(input.getDataType()).execute(this);
-                next = vctx.getValueType().createFieldValue();
-            }
-            context.setValue(next);
-        } else if (input instanceof Struct) {
-            context.setValue(new MyConverter(context, exp).convert(input));
-        } else {
-            throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
-                                               input.getDataType().getName());
-        }
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        if ( ! inputType.isMultivalue())
+            throw new IllegalArgumentException("for_each requires a multivalue type, but gets " + inputType);
+        expression.setInputType(inputType.getNestedType(), context);
+        return super.setInputType(inputType, context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        if ( ! outputType.isMultivalue())
+            throw new IllegalArgumentException("for_each produces a multivalue type, but " + outputType + " is required");
+        expression.setOutputType(outputType.getNestedType(), context);
+        return super.setOutputType(outputType, context);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType valueType = context.getValueType();
+        DataType valueType = context.getCurrentType();
         if (valueType instanceof ArrayDataType || valueType instanceof WeightedSetDataType) {
             // Set type for block evaluation
-            context.setValueType(((CollectionDataType)valueType).getNestedType());
+            context.setCurrentType(((CollectionDataType)valueType).getNestedType());
 
-            // Evaluate block, which sets value>Type to the output of the block
-            context.execute(exp);
+            // Evaluate block, which sets valueType to the output of the block
+            context.verify(expression);
 
             // Value type outside block becomes the collection type having the block output type as argument
             if (valueType instanceof ArrayDataType) {
-                context.setValueType(DataType.getArray(context.getValueType()));
+                context.setCurrentType(DataType.getArray(context.getCurrentType()));
             } else {
                 WeightedSetDataType wset = (WeightedSetDataType)valueType;
-                context.setValueType(DataType.getWeightedSet(context.getValueType(), wset.createIfNonExistent(), wset.removeIfZero()));
+                context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), wset.createIfNonExistent(), wset.removeIfZero()));
             }
         }
         else if (valueType instanceof StructDataType) {
             for (Field field : ((StructDataType)valueType).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType structValueType = context.setValueType(fieldType).execute(exp).getValueType();
+                DataType structValueType = context.setCurrentType(fieldType).verify(expression).getCurrentType();
                 if (!fieldType.isAssignableFrom(structValueType))
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
                                                           structValueType.getName());
             }
-            context.setValueType(valueType);
+            context.setCurrentType(valueType);
         }
         else {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
@@ -95,8 +89,28 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getCurrentValue();
+        if (input instanceof Array || input instanceof WeightedSet) {
+            FieldValue next = new MyConverter(context, expression).convert(input);
+            if (next == null) {
+                VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
+                context.fillVariableTypes(verificationContext);
+                verificationContext.setCurrentType(input.getDataType()).verify(this);
+                next = verificationContext.getCurrentType().createFieldValue();
+            }
+            context.setCurrentValue(next);
+        } else if (input instanceof Struct) {
+            context.setCurrentValue(new MyConverter(context, expression).convert(input));
+        } else {
+            throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
+                                               input.getDataType().getName());
+        }
+    }
+
+    @Override
     public DataType createdOutputType() {
-        if (exp.createdOutputType() == null) {
+        if (expression.createdOutputType() == null) {
             return null;
         }
         return UnresolvedDataType.INSTANCE;
@@ -104,19 +118,19 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public String toString() {
-        return "for_each { " + exp + " }";
+        return "for_each { " + expression + " }";
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ForEachExpression rhs)) return false;
-        if (!exp.equals(rhs.exp)) return false;
+        if (!expression.equals(rhs.expression)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + exp.hashCode();
+        return getClass().hashCode() + expression.hashCode();
     }
 
     private static final class MyConverter extends FieldValueConverter {
@@ -137,14 +151,14 @@ public final class ForEachExpression extends CompositeExpression {
 
         @Override
         protected FieldValue doConvert(FieldValue value) {
-            context.setValue(value).execute(expression);
-            return context.getValue();
+            context.setCurrentValue(value).execute(expression);
+            return context.getCurrentValue();
         }
     }
 
     @Override
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
-        select(exp, predicate, operation);
+        select(expression, predicate, operation);
     }
 
 }
