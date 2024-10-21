@@ -130,7 +130,7 @@ public:
                                                           const query::Node &term) override;
 
     /**
-     * Get the size on disk of this index.
+     * Get stats for this index.
      */
     SearchableStats get_stats() const;
     const index::Schema &getSchema() const { return _schema; }
