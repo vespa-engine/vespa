@@ -910,7 +910,14 @@ public class NodesV2ApiTest {
         String id1 = SlimeUtils.entriesStream(SlimeUtils.jsonToSlime(listResponse).get().field("snapshots"))
                                .toList().get(1).field("id").asString();
 
-        // Cannot change state of previous snapshot
+        // Cannot trigger restore while busy with a different snapshot
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0 + "/restore",
+                                          new byte[0],
+                                          Request.Method.POST),
+                              400,
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot restore snapshot: Node host4.yahoo.com is busy with snapshot " + id1 + " in creating state\"}");
+
+        // Cannot change state of a non-active snapshot
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0,
                                           """
                                                   {"state": "restored"}
@@ -918,6 +925,21 @@ public class NodesV2ApiTest {
                                           Request.Method.PATCH),
                               400,
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot move snapshot " + id0 + " to restored: Node host4.yahoo.com is not working on this snapshot\"}");
+
+        // Snapshot completes
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id1,
+                                          """
+                                                  {"state": "created"}
+                                                  """,
+                                          Request.Method.PATCH),
+                              "{\"message\":\"Updated snapshot '" + id1 + "' for node host4.yahoo.com\"}");
+
+        // Start restore of snapshot
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id1 + "/restore",
+                                          new byte[0],
+                                          Request.Method.POST),
+                              200,
+                              "{\"message\":\"Triggered restore of snapshot '" + id1 + "' to host4.yahoo.com\"}");
 
         // Forget about snapshot
         assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0, new byte[0], Request.Method.DELETE),

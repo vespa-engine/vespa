@@ -69,6 +69,21 @@ public class Snapshots {
         }
     }
 
+    /** Restore a node to given snapshot */
+    public Snapshot restore(SnapshotId id, String hostname) {
+        try (var lock = db.lockSnapshots(hostname)) {
+            Snapshot snapshot = require(id, hostname);
+            return write(id, hostname, (node) -> {
+                if (busy(node)) {
+                    throw new IllegalArgumentException("Cannot restore snapshot: Node " + hostname +
+                                                       " is busy with snapshot " + node.status().snapshot().get().id() + " in "+
+                                                       node.status().snapshot().get().state() + " state");
+                }
+                return Optional.of(snapshot.with(Snapshot.State.restoring));
+            }, lock).get();
+        }
+    }
+
     /** Remove given snapshot. Note that this only removes metadata about the snapshot, and not the underlying data */
     public void remove(SnapshotId id, String hostname, boolean force) {
         try (var lock = db.lockSnapshots(hostname)) {
@@ -82,7 +97,7 @@ public class Snapshots {
         }
     }
 
-    /** Move snapshot to given state */
+    /** Change state of an active snapshot */
     public Snapshot move(SnapshotId id, String hostname, Snapshot.State newState) {
         try (var lock = db.lockSnapshots(hostname)) {
             Snapshot current = require(id, hostname);
