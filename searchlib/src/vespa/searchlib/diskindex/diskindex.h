@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include "bitvectordictionary.h"
-#include "zcposoccrandread.h"
-#include <vespa/searchlib/index/dictionaryfile.h>
-#include <vespa/searchlib/index/field_length_info.h>
+#include "field_index.h"
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -16,10 +13,6 @@ namespace search::diskindex {
 
 /**
  * This class represents a disk index that contains a set of field indexes that are independent of each other.
- *
- * Each field index has a dictionary, posting list files and bit vector files.
- * Parts of the disk dictionary and all bit vector dictionaries are loaded into memory during setup.
- * All other files are just opened, ready for later access.
  */
 class DiskIndex : public queryeval::Searchable {
 public:
@@ -68,28 +61,19 @@ public:
     };
 
 private:
-    using DiskPostingFile = index::PostingListFileRandRead;
-    using DiskPostingFileReal = Zc4PosOccRandRead;
-    using DiskPostingFileDynamicKReal = ZcPosOccRandRead;
     using Cache = vespalib::cache<vespalib::CacheParam<vespalib::LruParam<Key, LookupResultVector>, DiskIndex>>;
 
     std::string                       _indexDir;
     size_t                                 _cacheSize;
     index::Schema                          _schema;
-    std::vector<DiskPostingFile::SP>       _postingFiles;
-    std::vector<BitVectorDictionary::SP>   _bitVectorDicts;
-    std::vector<std::unique_ptr<index::DictionaryFileRandRead>> _dicts;
-    std::vector<uint64_t>                  _field_index_sizes_on_disk;
+    std::vector<FieldIndex>                _field_indexes;
     uint32_t                               _nonfield_size_on_disk;
     TuneFileSearch                         _tuneFileSearch;
     Cache                                  _cache;
 
-    static uint64_t calculate_size_on_disk(const std::string& dir, const std::vector<std::string>& file_names);
-    static uint64_t calculate_field_index_size_on_disk(const std::string& field_dir);
     void calculate_nonfield_size_on_disk();
     bool loadSchema();
     bool openDictionaries(const TuneFileSearch &tuneFileSearch);
-    bool openField(const std::string &fieldDir, const TuneFileSearch &tuneFileSearch);
 
 public:
     /**

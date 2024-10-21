@@ -52,10 +52,7 @@ DiskIndex::DiskIndex(const std::string &indexDir, size_t cacheSize)
     : _indexDir(indexDir),
       _cacheSize(cacheSize),
       _schema(),
-      _postingFiles(),
-      _bitVectorDicts(),
-      _dicts(),
-      _field_index_sizes_on_disk(),
+      _field_indexes(),
       _nonfield_size_on_disk(0),
       _tuneFileSearch(),
       _cache(*this, cacheSize)
@@ -84,65 +81,13 @@ bool
 DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
 {
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
-        std::string dictName = _indexDir + "/" + itr.getName() + "/dictionary";
-        auto dict = std::make_unique<PageDict4RandRead>();
-        if (!dict->open(dictName, tuneFileSearch._read)) {
-            LOG(warning, "Could not open disk dictionary '%s'", dictName.c_str());
-            _dicts.clear();
+        std::string field_dir = _indexDir + "/" + itr.getName();
+        _field_indexes.emplace_back();
+        if (!_field_indexes.back().open_dictionary(field_dir, tuneFileSearch)) {
+            _field_indexes.clear();
             return false;
         }
-        _dicts.push_back(std::move(dict));
     }
-    return true;
-}
-
-bool
-DiskIndex::openField(const std::string &fieldDir,
-                     const TuneFileSearch &tuneFileSearch)
-{
-    std::string postingName = fieldDir + "posocc.dat.compressed";
-
-    DiskPostingFile::SP pFile;
-    BitVectorDictionary::SP bDict;
-    FileHeader fileHeader;
-    bool dynamicK = false;
-    if (fileHeader.taste(postingName, tuneFileSearch._read)) {
-        if (fileHeader.getVersion() == 1 &&
-            fileHeader.getBigEndian() &&
-            fileHeader.getFormats().size() == 2 &&
-            fileHeader.getFormats()[0] ==
-            DiskPostingFileDynamicKReal::getIdentifier() &&
-            fileHeader.getFormats()[1] ==
-            DiskPostingFileDynamicKReal::getSubIdentifier()) {
-            dynamicK = true;
-        } else if (fileHeader.getVersion() == 1 &&
-                   fileHeader.getBigEndian() &&
-                   fileHeader.getFormats().size() == 2 &&
-                   fileHeader.getFormats()[0] ==
-                   DiskPostingFileReal::getIdentifier() &&
-                   fileHeader.getFormats()[1] ==
-                   DiskPostingFileReal::getSubIdentifier()) {
-            dynamicK = false;
-        } else {
-            LOG(warning, "Could not detect format for posocc file read %s", postingName.c_str());
-        }
-    }
-    pFile.reset(dynamicK
-                ? new DiskPostingFileDynamicKReal()
-                : new DiskPostingFileReal());
-    if (!pFile->open(postingName, tuneFileSearch._read)) {
-        LOG(warning, "Could not open posting list file '%s'", postingName.c_str());
-        return false;
-    }
-
-    bDict.reset(new BitVectorDictionary());
-    if (!bDict->open(fieldDir, tuneFileSearch._read, BitVectorKeyScope::PERFIELD_WORDS)) {
-        LOG(warning, "Could not open bit vector dictionary in '%s'", fieldDir.c_str());
-        return false;
-    }
-    _postingFiles.push_back(pFile);
-    _bitVectorDicts.push_back(bDict);
-    _field_index_sizes_on_disk.push_back(calculate_field_index_size_on_disk(fieldDir));
     return true;
 }
 
@@ -157,7 +102,8 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch)
     }
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
         std::string fieldDir = _indexDir + "/" + itr.getName() + "/";
-        if (!openField(fieldDir, tuneFileSearch)) {
+        auto& field_index = _field_indexes[itr.getIndex()];
+        if (!field_index.open(fieldDir, tuneFileSearch)) {
             return false;
         }
     }
@@ -181,16 +127,15 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
         if (settings.hasError()) {
             return false;
         }
+        auto& field_index = _field_indexes[itr.getIndex()];
         SchemaUtil::IndexIterator oItr(oldSchema, itr);
         if (!itr.hasMatchingOldFields(oldSchema) || !oItr.isValid()) {
-            if (!openField(fieldDir, tuneFileSearch)) {
+            if (!field_index.open(fieldDir, tuneFileSearch)) {
                 return false;
             }
         } else {
-            uint32_t oldPacked = oItr.getIndex();
-            _postingFiles.push_back(old._postingFiles[oldPacked]);
-            _bitVectorDicts.push_back(old._bitVectorDicts[oldPacked]);
-            _field_index_sizes_on_disk.push_back(old._field_index_sizes_on_disk[oldPacked]);
+            auto& old_field_index = old._field_indexes[oItr.getIndex()];
+            field_index.reuse_files(old_field_index);
         }
     }
     _tuneFileSearch = tuneFileSearch;
@@ -281,8 +226,8 @@ DiskIndex::read(const Key & key, LookupResultVector & result)
         wordNum = 0;
         SchemaUtil::IndexIterator it(_schema, lr.indexId);
         uint32_t fieldId = it.getIndex();
-        if (fieldId < _dicts.size()) {
-            (void) _dicts[fieldId]->lookup(key.getWord(), wordNum,offsetAndCounts);
+        if (fieldId < _field_indexes.size()) {
+            (void) _field_indexes[fieldId].get_dictionary()->lookup(key.getWord(), wordNum,offsetAndCounts);
         }
         lr.wordNum = wordNum;
         lr.counts.swap(offsetAndCounts._counts);
@@ -298,7 +243,7 @@ DiskIndex::readPostingList(const LookupResult &lookupRes) const
     handle->_bitOffset = lookupRes.bitOffset;
     handle->_bitLength = lookupRes.counts._bitLength;
     SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
-    handle->_file = _postingFiles[it.getIndex()].get();
+    handle->_file = _field_indexes[it.getIndex()].get_posting_file();
     if (handle->_file == nullptr) {
         return {};
     }
@@ -312,7 +257,7 @@ BitVector::UP
 DiskIndex::readBitVector(const LookupResult &lookupRes) const
 {
     SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
-    BitVectorDictionary * dict = _bitVectorDicts[it.getIndex()].get();
+    BitVectorDictionary * dict = _field_indexes[it.getIndex()].get_bit_vector_dictionary();
     if (dict == nullptr) {
         return {};
     }
@@ -320,15 +265,6 @@ DiskIndex::readBitVector(const LookupResult &lookupRes) const
 }
 
 namespace {
-
-const std::vector<std::string> field_file_names{
-    "boolocc.bdat",
-    "boolocc.idx",
-    "posocc.dat.compressed",
-    "dictionary.pdat",
-    "dictionary.spdat",
-    "dictionary.ssdat"
-};
 
 const std::vector<std::string> nonfield_file_names{
     "docsum.qcnt",
@@ -340,33 +276,10 @@ const std::vector<std::string> nonfield_file_names{
 
 }
 
-uint64_t
-DiskIndex::calculate_size_on_disk(const std::string& dir, const std::vector<std::string>& file_names)
-{
-    uint64_t size_on_disk = 0;
-    std::error_code ec;
-    DiskSpaceCalculator calc;
-    for (auto& file_name : file_names) {
-        // Note: dir ends with slash
-        std::filesystem::path path(dir + file_name);
-        auto size = std::filesystem::file_size(path, ec);
-        if (!ec) {
-            size_on_disk += calc(size);
-        }
-    }
-    return size_on_disk;
-}
-
-uint64_t
-DiskIndex::calculate_field_index_size_on_disk(const std::string& field_dir)
-{
-    return calculate_size_on_disk(field_dir, field_file_names);
-}
-
 void
 DiskIndex::calculate_nonfield_size_on_disk()
 {
-    _nonfield_size_on_disk = calculate_size_on_disk(_indexDir + "/", nonfield_file_names);
+    _nonfield_size_on_disk = FieldIndex::calculate_size_on_disk(_indexDir + "/", nonfield_file_names);
 }
 
 namespace {
@@ -509,7 +422,7 @@ DiskIndex::get_field_length_info(const std::string& field_name) const
 {
     uint32_t fieldId = _schema.getIndexFieldId(field_name);
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {
-        return _postingFiles[fieldId]->get_field_length_info();
+        return _field_indexes[fieldId].get_posting_file()->get_field_length_info();
     } else {
         return {};
     }
@@ -521,7 +434,8 @@ DiskIndex::get_stats() const
     SearchableStats stats;
     uint64_t size_on_disk = _nonfield_size_on_disk;
     uint32_t field_id = 0;
-    for (const auto& field_index_size_on_disk : _field_index_sizes_on_disk) {
+    for (const auto& field_index : _field_indexes) {
+        auto field_index_size_on_disk = field_index.get_size_on_disk();
         size_on_disk += field_index_size_on_disk;
         stats.add_field_stats(_schema.getIndexField(field_id).getName(),
                               FieldIndexStats().size_on_disk(field_index_size_on_disk));
