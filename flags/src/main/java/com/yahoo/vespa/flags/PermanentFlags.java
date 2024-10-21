@@ -495,7 +495,7 @@ public class PermanentFlags {
             "Takes effect on next iteration of UserManagementMaintainer");
 
     public static final UnboundBooleanFlag FORWARD_ALL_LOG_LEVELS = defineFeatureFlag(
-            "forward-all-log-levels", false,
+            "forward-all-log-levels", true,
             "Forward all log levels from nodes to logserver (debug and spam levels will be forwarded only if this flag is enabled)",
             "Takes effect at redeployment");
 
