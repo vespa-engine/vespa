@@ -155,13 +155,10 @@ public:
 
 
     /**
-     * Read (possibly partial) posting list into handle.
+     * Read posting list into handle.
      */
     virtual void
-    readPostingList(const PostingListCounts &counts,
-                    uint32_t firstSegment,
-                    uint32_t numSegments,
-                    PostingListHandle &handle) = 0;
+    readPostingList(PostingListHandle &handle) = 0;
 
     /**
      * Open posting list file for random read.
@@ -200,8 +197,7 @@ public:
                    const search::fef::TermFieldMatchDataArray &matchData,
                    bool usebitVector) const override;
 
-    void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
-                         uint32_t numSegments, PostingListHandle &handle) override;
+    void readPostingList(PostingListHandle &handle) override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;

@@ -87,16 +87,8 @@ createIterator(const PostingListCounts &counts,
 
 
 void
-ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
-                                  uint32_t firstSegment,
-                                  uint32_t numSegments,
-                                  PostingListHandle &handle)
+ZcPosOccRandRead::readPostingList(PostingListHandle &handle)
 {
-    // XXX: Ignore segments for now.
-    (void) firstSegment;
-    (void) numSegments;
-    (void) counts;
-
     handle.drop();
     if (handle._bitLength == 0) {
         return;
