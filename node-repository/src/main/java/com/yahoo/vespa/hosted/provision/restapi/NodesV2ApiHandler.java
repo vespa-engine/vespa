@@ -242,6 +242,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
             return new MessageResponse("Triggered dropping of documents on " + count + " nodes");
         }
         if (path.matches("/nodes/v2/snapshot/{hostname}")) return snapshot(path.get("hostname"));
+        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}/restore")) return restoreSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"));
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
@@ -249,6 +250,11 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse snapshot(String hostname) {
         Snapshot snapshot = nodeRepository.snapshots().create(hostname, nodeRepository.clock().instant());
         return new MessageResponse("Triggered a new snapshot of " + hostname + ": " + snapshot.id());
+    }
+
+    private HttpResponse restoreSnapshot(SnapshotId id, String hostname) {
+        Snapshot snapshot = nodeRepository.snapshots().restore(id, hostname);
+        return new MessageResponse("Triggered restore of snapshot '" + snapshot.id() + "' to " + hostname);
     }
 
     private HttpResponse forgetSnapshot(SnapshotId id, String hostname, HttpRequest request) {
