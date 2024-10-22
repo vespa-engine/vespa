@@ -33,21 +33,20 @@ class SnapshotTest {
 
     private static void assertAllowed(Snapshot.State from, Snapshot.State to) {
         Snapshot snapshot = snapshot(from);
-        assertSame(to, snapshot.with(to).state());
+        assertSame(to, snapshot.with(to, Instant.ofEpochMilli(123)).state());
     }
 
     private static void assertDisallowed(Snapshot.State from, Snapshot.State to) {
         Snapshot snapshot = snapshot(from);
         try {
-            snapshot.with(to);
+            snapshot.with(to, Instant.ofEpochMilli(123));
             fail("Changing state " + from + " -> " + to + " should fail");
         } catch (IllegalArgumentException ignored) {}
     }
 
     private static Snapshot snapshot(Snapshot.State state) {
         return new Snapshot(Snapshot.generateId(), HostName.of("h1.example.com"), state,
-                            Instant.ofEpochMilli(123), new ClusterId(ApplicationId.defaultId(),
-                                                                     ClusterSpec.Id.from("c1")),
+                            Snapshot.History.of(state, Instant.ofEpochMilli(123)), new ClusterId(ApplicationId.defaultId(), ClusterSpec.Id.from("c1")),
                             0);
     }
 

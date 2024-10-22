@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.backup.Snapshot;
 import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
 import com.yahoo.vespa.hosted.provision.persistence.SnapshotSerializer;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +47,9 @@ public class SnapshotResponse extends SlimeJsonResponse {
             Cursor snapshotsArray = root.setArray("snapshots");
             snapshots.stream()
                      .sorted(Comparator.comparing(Snapshot::hostname)
-                                       .thenComparing(Snapshot::createdAt))
+                                       .thenComparing(snapshot -> snapshot.history().event(Snapshot.State.creating)
+                                                                          .map(Snapshot.History.Event::at)
+                                                                          .orElse(Instant.EPOCH)))
                      .forEach(snapshot -> SnapshotSerializer.toSlime(snapshot, snapshotsArray.addObject()));
         }
     }

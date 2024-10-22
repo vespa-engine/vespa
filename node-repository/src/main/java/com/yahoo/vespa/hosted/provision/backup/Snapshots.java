@@ -64,7 +64,7 @@ public class Snapshots {
                                                        " is busy with snapshot " + node.status().snapshot().get().id());
                 }
                 ClusterId cluster = new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id());
-                return Optional.of(Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), cluster, node.allocation().get().membership().index(), instant));
+                return Optional.of(Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), instant, cluster, node.allocation().get().membership().index()));
             }, lock).get();
         }
     }
@@ -73,13 +73,14 @@ public class Snapshots {
     public Snapshot restore(SnapshotId id, String hostname) {
         try (var lock = db.lockSnapshots(hostname)) {
             Snapshot snapshot = require(id, hostname);
+            Instant now = nodeRepository.clock().instant();
             return write(id, hostname, (node) -> {
                 if (busy(node)) {
                     throw new IllegalArgumentException("Cannot restore snapshot: Node " + hostname +
                                                        " is busy with snapshot " + node.status().snapshot().get().id() + " in "+
                                                        node.status().snapshot().get().state() + " state");
                 }
-                return Optional.of(snapshot.with(Snapshot.State.restoring));
+                return Optional.of(snapshot.with(Snapshot.State.restoring, now));
             }, lock).get();
         }
     }
@@ -101,12 +102,13 @@ public class Snapshots {
     public Snapshot move(SnapshotId id, String hostname, Snapshot.State newState) {
         try (var lock = db.lockSnapshots(hostname)) {
             Snapshot current = require(id, hostname);
+            Instant now = nodeRepository.clock().instant();
             return write(id, hostname, node -> {
                 if (!busyWith(id, node)) {
                     throw new IllegalArgumentException("Cannot move snapshot " + id + " to " + newState +
                                                        ": Node " + hostname + " is not working on this snapshot");
                 }
-                return Optional.of(current.with(newState));
+                return Optional.of(current.with(newState, now));
             }, lock).get();
         }
     }
