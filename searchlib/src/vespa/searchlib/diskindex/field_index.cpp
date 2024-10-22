@@ -132,4 +132,10 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
     _size_on_disk = rhs._size_on_disk;
 }
 
+FieldIndexStats
+FieldIndex::get_stats() const
+{
+    return FieldIndexStats().size_on_disk(_size_on_disk);
+}
+
 }

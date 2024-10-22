@@ -6,6 +6,7 @@
 #include "zcposoccrandread.h"
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/field_length_info.h>
+#include <vespa/searchlib/util/field_index_stats.h>
 #include <string>
 
 namespace search::diskindex {
@@ -39,7 +40,7 @@ public:
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
     index::PostingListFileRandRead* get_posting_file() const noexcept { return _posting_file.get(); }
     BitVectorDictionary* get_bit_vector_dictionary() const noexcept { return _bit_vector_dict.get(); }
-    uint64_t get_size_on_disk() const noexcept { return _size_on_disk; }
+    FieldIndexStats get_stats() const;
 };
 
 }
