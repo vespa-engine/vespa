@@ -27,8 +27,6 @@ public:
     uint64_t _bitLength;    // Length of posting list, in bits
 
     // Value portion
-    uint32_t _firstSegment; // First segment for word
-    uint32_t _numSegments;  // Number of segments
     uint64_t _bitOffsetMem; // _mem relative to start of file
     const void *_mem;       // Memory backing posting list after read/mmap
     void *_allocMem;        // What to free after posting list
@@ -38,8 +36,6 @@ public:
     : _file(nullptr),
       _bitOffset(0),
       _bitLength(0),
-      _firstSegment(0),
-      _numSegments(0),
       _bitOffsetMem(0),
       _mem(nullptr),
       _allocMem(nullptr),
@@ -70,8 +66,6 @@ public:
      * Drop value portion of handle.
      */
     void drop() {
-        _firstSegment = 0;
-        _numSegments = 0;
         _bitOffsetMem = 0;
         _mem = nullptr;
         if (_allocMem != nullptr) {
