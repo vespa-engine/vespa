@@ -54,7 +54,7 @@ trap "rm -rf $TMP_STAGING" EXIT
 sign_module() {
 
     #Debug
-    set +x
+    set -x
 
     ECHO=""
 
@@ -106,7 +106,7 @@ sign_module() {
 export -f sign_module
 
 #Debug
-set +x
+set -x
 
 aws s3 cp "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar" .
 aws s3 cp "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar.pem" .
