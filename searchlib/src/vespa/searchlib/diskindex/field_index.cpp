@@ -27,13 +27,21 @@ const std::vector<std::string> field_file_names{
 
 }
 
+FieldIndex::LockedDiskIoStats::LockedDiskIoStats() noexcept
+    : DiskIoStats(),
+      _mutex()
+{
+}
+
+FieldIndex::LockedDiskIoStats::~LockedDiskIoStats() = default;
+
 FieldIndex::FieldIndex()
     : _posting_file(),
       _bit_vector_dict(),
       _dict(),
-      _size_on_disk(0)
+      _size_on_disk(0),
+      _disk_io_stats(std::make_shared<LockedDiskIoStats>())
 {
-
 }
 
 FieldIndex::FieldIndex(FieldIndex&&) = default;
@@ -146,6 +154,9 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
         return {};
     }
     handle->_file->readPostingList(*handle);
+    if (handle->_read_bytes != 0) {
+        _disk_io_stats->add_read_operation(handle->_read_bytes);
+    }
     return handle;
 }
 
@@ -167,7 +178,8 @@ FieldIndex::get_field_length_info() const
 FieldIndexStats
 FieldIndex::get_stats() const
 {
-    return FieldIndexStats().size_on_disk(_size_on_disk);
+    auto disk_io_stats = _disk_io_stats->read_and_clear();
+    return FieldIndexStats().size_on_disk(_size_on_disk).disk_io_stats(disk_io_stats);
 }
 
 }

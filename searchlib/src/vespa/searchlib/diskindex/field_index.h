@@ -22,10 +22,29 @@ class FieldIndex {
     using DiskPostingFileReal = Zc4PosOccRandRead;
     using DiskPostingFileDynamicKReal = ZcPosOccRandRead;
 
+    class LockedDiskIoStats : public DiskIoStats {
+        std::mutex _mutex;
+
+    public:
+        LockedDiskIoStats() noexcept;
+        ~LockedDiskIoStats();
+
+        void add_read_operation(uint64_t bytes) {
+            std::lock_guard guard(_mutex);
+            DiskIoStats::add_read_operation(bytes);
+        }
+
+        DiskIoStats read_and_clear() {
+            std::lock_guard guard(_mutex);
+            return DiskIoStats::read_and_clear();
+        }
+    };
+
     std::shared_ptr<DiskPostingFile> _posting_file;
     std::shared_ptr<BitVectorDictionary> _bit_vector_dict;
     std::unique_ptr<index::DictionaryFileRandRead> _dict;
     uint64_t _size_on_disk;
+    std::shared_ptr<LockedDiskIoStats> _disk_io_stats;
 
 public:
     FieldIndex();
