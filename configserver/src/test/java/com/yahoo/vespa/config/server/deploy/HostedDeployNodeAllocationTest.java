@@ -83,7 +83,7 @@ public class HostedDeployNodeAllocationTest {
                     .quota(new Quota(Optional.of(4), Optional.of(valueOf(0)))));
             fail("Expected to get a QuotaExceededException");
         } catch (QuotaExceededException e) {
-            assertEquals("main: The resources used cost $1.02 but your quota is $0.00: Contact support to upgrade your plan.", e.getMessage());
+            assertEquals("main: The resources used cost $1.02 but your remaining quota is $0.00: Contact support to upgrade your plan.", e.getMessage());
         }
     }
 

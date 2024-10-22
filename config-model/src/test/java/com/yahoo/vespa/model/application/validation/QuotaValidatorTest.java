@@ -49,7 +49,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("The resources used cost $1.63 but your quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
+            assertEquals("The resources used cost $1.63 but your remaining quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
         }
     }
 
@@ -66,7 +66,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: The resources used cost $1.63 but your quota is $1.00: Contact support to upgrade your plan.", e.getMessage());
+            assertEquals("publiccd: The resources used cost $1.63 but your remaining quota is $1.00: Contact support to upgrade your plan.", e.getMessage());
         }
     }
 
@@ -77,7 +77,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: The resources used cost $1.63 but your quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
+            assertEquals("publiccd: The resources used cost $1.63 but your remaining quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
         }
     }
 
@@ -92,7 +92,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices(2, false), Environment.dev, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("The resources used cost $0.16 but your quota is $0.01: Contact support to upgrade your plan.", e.getMessage());
+            assertEquals("The resources used cost $0.16 but your remaining quota is $0.01: Contact support to upgrade your plan.", e.getMessage());
         }
 
         // Override so that we will get 2 nodes in content cluster
@@ -100,7 +100,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices(2, true), Environment.dev, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("The resources used cost $0.33 but your quota is $0.01: Contact support to upgrade your plan.", e.getMessage());
+            assertEquals("The resources used cost $0.33 but your remaining quota is $0.01: Contact support to upgrade your plan.", e.getMessage());
         }
     }
 
@@ -112,7 +112,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("The resources used cost $-.-- but your quota is $--.--: Please free up some capacity.",
+            assertEquals("The resources used cost $-.-- but your remaining quota is $--.--: Please free up some capacity.",
                          ValidationTester.censorNumbers(e.getMessage()));
         }
     }
