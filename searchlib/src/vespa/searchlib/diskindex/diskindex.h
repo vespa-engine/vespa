@@ -19,19 +19,13 @@ public:
     /**
      * The result after performing a disk dictionary lookup.
      **/
-    struct LookupResult {
+    struct LookupResult : public search::index::DictionaryLookupResult {
         uint32_t                         indexId;
-        uint64_t                         wordNum;
-        index::PostingListCounts         counts;
-        uint64_t                         bitOffset;
         using UP = std::unique_ptr<LookupResult>;
         LookupResult() noexcept;
-        bool valid() const noexcept { return counts._numDocs > 0; }
         void swap(LookupResult & rhs) noexcept {
+            DictionaryLookupResult::swap(rhs);
             std::swap(indexId , rhs.indexId);
-            std::swap(wordNum , rhs.wordNum);
-            counts.swap(rhs.counts);
-            std::swap(bitOffset , rhs.bitOffset);
         }
     };
     using LookupResultVector = std::vector<LookupResult>;
