@@ -113,7 +113,7 @@ public class QuotaValidator implements Validator {
 
     private static String quotaMessage(String message, SystemName system, double spend, BigDecimal budget, boolean actual) {
         String quotaDescription = String.format(Locale.ENGLISH,
-                                                "The %s cost $%.2f but your quota is $%.2f",
+                                                "The %s cost $%.2f but your remaining quota is $%.2f",
                                                 actual ? "resources used" : "max resources specified",
                                                 spend,
                                                 budget);
