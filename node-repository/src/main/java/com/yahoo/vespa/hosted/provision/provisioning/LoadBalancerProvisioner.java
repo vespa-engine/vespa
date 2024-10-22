@@ -15,7 +15,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.Dimension;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -68,7 +67,7 @@ public class LoadBalancerProvisioner {
     private final CuratorDb db;
     private final LoadBalancerService service;
     private final BooleanFlag deactivateRouting;
-    private final BooleanFlag ipv6AwsTargetGroups;
+    private final BooleanFlag enclaveWithoutWireguard;
     private final IntFlag preProvisionPoolSize;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service) {
@@ -76,7 +75,7 @@ public class LoadBalancerProvisioner {
         this.db = nodeRepository.database();
         this.service = service;
         this.deactivateRouting = PermanentFlags.DEACTIVATE_ROUTING.bindTo(nodeRepository.flagSource());
-        this.ipv6AwsTargetGroups = Flags.IPV6_AWS_TARGET_GROUPS.bindTo(nodeRepository.flagSource());
+        this.enclaveWithoutWireguard = PermanentFlags.ENCLAVE_WITHOUT_WIREGUARD.bindTo(nodeRepository.flagSource());
         this.preProvisionPoolSize = PermanentFlags.PRE_PROVISIONED_LB_COUNT.bindTo(nodeRepository.flagSource());
 
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
@@ -425,7 +424,7 @@ public class LoadBalancerProvisioner {
     /** Find IP addresses reachable by the load balancer service */
     private Set<String> reachableIpAddresses(Node node, CloudAccount cloudAccount) {
         Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
-        boolean forceIpv6 = ipv6AwsTargetGroups.with(Dimension.CLOUD_ACCOUNT, cloudAccount.account()).value();
+        boolean forceIpv6 = !enclaveWithoutWireguard.with(Dimension.CLOUD_ACCOUNT, cloudAccount.account()).value();
         var protocol = forceIpv6 ? LoadBalancerService.Protocol.ipv6 :
                 service.protocol(node.cloudAccount().isExclave(nodeRepository.zone()));
         // Remove addresses unreachable by the load balancer service
