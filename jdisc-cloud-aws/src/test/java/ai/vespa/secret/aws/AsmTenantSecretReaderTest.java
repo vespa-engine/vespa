@@ -6,6 +6,7 @@ import ai.vespa.secret.model.SecretName;
 import ai.vespa.secret.model.SecretVersionId;
 import ai.vespa.secret.model.SecretVersionState;
 import ai.vespa.secret.model.VaultName;
+import com.yahoo.vespa.athenz.api.AwsRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -34,12 +35,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author gjoranv
  */
-public class AsmSecretStoreTest {
+public class AsmTenantSecretReaderTest {
 
     record SecretVersion(String version, SecretVersionState state, String value) {}
 
     static final Map<Key, List<SecretVersion>> secrets = new HashMap<>();
     static final List<MockSecretsManagerClient> clients = new ArrayList<>();
+
+    String system = "publiccd";
+    String tenant = "tenant1";
 
     @BeforeEach
     void reset() {
@@ -47,9 +51,8 @@ public class AsmSecretStoreTest {
         clients.clear();
     }
 
-    AsmSecretStore createStore() {
-        return new AsmSecretStore(AwsRoleMapper.infrastructureReader(),
-                                  MockSecretsManagerClient::new);
+    AsmTenantSecretReader secretReader() {
+        return new AsmTenantSecretReader(MockSecretsManagerClient::new, system, tenant);
     }
 
     @Test
@@ -66,9 +69,9 @@ public class AsmSecretStoreTest {
         secrets.put(key1, List.of(secret1));
         secrets.put(key2, List.of(secret2));
 
-        try (var store = createStore()){
-            store.getSecret(key1);
-            store.getSecret(key2);
+        try (var reader = secretReader()){
+            reader.getSecret(key1);
+            reader.getSecret(key2);
 
             assertEquals(2, clients.size());
         }
@@ -84,9 +87,9 @@ public class AsmSecretStoreTest {
         var expected2 = new SecretVersion("2", SecretVersionState.PENDING, "v2");
         secrets.put(key, List.of(expected1, expected2));
 
-        try (var store = createStore()) {
-            var retrieved1 = store.getSecret(key, SecretVersionId.of("1"));
-            var retrieved2 = store.getSecret(key, SecretVersionId.of("2"));
+        try (var reader = secretReader()) {
+            var retrieved1 = reader.getSecret(key, SecretVersionId.of("1"));
+            var retrieved2 = reader.getSecret(key, SecretVersionId.of("2"));
 
             assertSame(expected1, retrieved1);
             assertSame(expected2, retrieved2);
@@ -102,7 +105,7 @@ public class AsmSecretStoreTest {
         var pending = new SecretVersion("2", SecretVersionState.PENDING, "pending");
         secrets.put(key, List.of(current, pending));
 
-        try (var store = createStore()) {
+        try (var store = secretReader()) {
             var retrieved = store.getSecret(key);
             assertSame(current, retrieved);
         }
@@ -112,7 +115,7 @@ public class AsmSecretStoreTest {
     void it_throws_exception_if_secret_not_found() {
         var vault = VaultName.of("vault1");
         var key = new Key(vault, SecretName.of("secret1"));
-        try (var store = createStore()) {
+        try (var store = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key));
             assertEquals("Failed to retrieve current version of secret with key vault1/secret1", e.getMessage());
 
@@ -129,7 +132,7 @@ public class AsmSecretStoreTest {
         var v1 = new SecretVersion("1", SecretVersionState.CURRENT, "v1");
         secrets.put(key, List.of(v1));
 
-        try (var store = createStore()) {
+        try (var store = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key, SecretVersionId.of("2")));
             assertEquals("Failed to retrieve secret with key vault1/secret1, version: 2", e.getMessage());
         }
@@ -146,7 +149,7 @@ public class AsmSecretStoreTest {
         var pend = new SecretVersion("3", SecretVersionState.PENDING, "v3");
 
         secrets.put(key, List.of(prev, pend, curr));
-        try (var store = createStore()) {
+        try (var store = secretReader()) {
             var versions = store.listSecretVersions(key);
             assertEquals(3, versions.size());
             assertSame(pend, versions.get(0));
@@ -159,7 +162,7 @@ public class AsmSecretStoreTest {
     void it_returns_empty_list_of_versions_for_unknown_secret() {
         var vault = VaultName.of("vault1");
         var key = new Key(vault, SecretName.of("secret1"));
-        try (var store = createStore()) {
+        try (var store = secretReader()) {
             var versions = store.listSecretVersions(key);
             assertEquals(0, versions.size());
         }
@@ -175,12 +178,13 @@ public class AsmSecretStoreTest {
         return new Key(VaultName.of(parts[0]), SecretName.of(parts[1]));
     }
 
+
     private static class MockSecretsManagerClient implements SecretsManagerClient {
-        final VaultName vault;
+        final AwsRole awsRole;
         boolean isClosed = false;
 
-        MockSecretsManagerClient(VaultName vault) {
-            this.vault = vault;
+        MockSecretsManagerClient(AwsRole awsRole) {
+            this.awsRole = awsRole;
             clients.add(this);
         }
 

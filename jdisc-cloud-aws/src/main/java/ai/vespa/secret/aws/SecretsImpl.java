@@ -21,7 +21,7 @@ public class SecretsImpl implements Secrets {
     private final TypedSecretStore secretStore;
 
     @Inject
-    public SecretsImpl(SecretsConfig config, AsmSecretStore asmSecretStore) {
+    public SecretsImpl(SecretsConfig config, AsmSecretReader asmSecretStore) {
         this.secretStore = asmSecretStore;
         this.secretsConfig = config;
     }
