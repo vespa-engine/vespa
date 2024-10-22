@@ -124,7 +124,8 @@ find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC 
 export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED"
 
 LOGFILE=$(mktemp)
-"$MVN" "$MVN_OPTS" --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
+# shellcheck disable=2086
+$MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
     org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:deploy-staged-repository \
     -DrepositoryDirectory="$TMP_STAGING" \
     -DnexusUrl=https://oss.sonatype.org \
@@ -134,7 +135,8 @@ LOGFILE=$(mktemp)
     -DstagingProfileId=407c0c3e1a197 | tee "$LOGFILE"
 
 STG_REPO=$(grep 'Staging repository at http' "$LOGFILE" | head -1 | awk -F/ '{print $NF}')
-"$MVN" "$MVN_OPTS" --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" -N \
+# shellcheck disable=2086
+$MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" -N \
     org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:rc-release \
     -DnexusUrl=https://oss.sonatype.org/ \
     -DserverId=ossrh \
