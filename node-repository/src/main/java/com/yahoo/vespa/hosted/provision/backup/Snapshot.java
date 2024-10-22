@@ -27,10 +27,18 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, Instant cr
     }
 
     public Snapshot with(State state) {
-        if (state.compareTo(this.state) < 0) {
+        if (!canChangeTo(state)) {
             throw new IllegalArgumentException("Cannot change state of " + this + " to " + state);
         }
         return new Snapshot(id, hostname, state, createdAt, cluster, clusterIndex);
+    }
+
+    private boolean canChangeTo(State state) {
+        // Allow repeated restores
+        if (state == State.restoring && this.state == State.restored) return true;
+        // Otherwise only allow state changes in the order of the state enum, and at most one step at a time
+        return state.compareTo(this.state) >= 0 &&
+               state.ordinal() - this.state.ordinal() <= 1;
     }
 
     public enum State {
