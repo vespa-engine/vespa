@@ -44,10 +44,10 @@ public class SplitTestCase {
     @Test
     public void requireThatValueIsSplit() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("6;9"));
+        ctx.setValue(new StringFieldValue("6;9"));
         new SplitExpression(";").execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val.getDataType().equals(DataType.getArray(DataType.STRING)));
         assertTrue(val instanceof Array);
 
@@ -61,16 +61,16 @@ public class SplitTestCase {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new SplitExpression(";").execute(ctx);
 
-        assertNull(ctx.getCurrentValue());
+        assertNull(ctx.getValue());
     }
 
     @Test
     public void requireThatEmptyInputProducesEmptyArray() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue(""));
+        ctx.setValue(new StringFieldValue(""));
         new SplitExpression(";").execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val.getDataType().equals(DataType.getArray(DataType.STRING)));
         assertTrue(val instanceof Array);
         assertEquals(0, ((Array)val).size());

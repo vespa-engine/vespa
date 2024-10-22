@@ -126,6 +126,6 @@ public class SwitchTestCase {
     }
 
     private static void assertEvaluate(FieldValue input, Expression exp, FieldValue expectedOutVar) {
-        assertEquals(expectedOutVar, new ExecutionContext().setCurrentValue(input).execute(exp).getVariable("out"));
+        assertEquals(expectedOutVar, new ExecutionContext().setValue(input).execute(exp).getVariable("out"));
     }
 }

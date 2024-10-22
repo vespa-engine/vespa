@@ -22,7 +22,9 @@ public class UnresolvedFieldValue extends FieldValue {
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
 
     @Override
-    public DataType getDataType() { return UnresolvedDataType.INSTANCE; }
+    public DataType getDataType() {
+        return UnresolvedDataType.INSTANCE;
+    }
 
     @Override
     @Deprecated

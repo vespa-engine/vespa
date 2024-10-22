@@ -200,7 +200,6 @@
       "public int getCode()",
       "public com.yahoo.document.FieldPath buildFieldPath(java.lang.String)",
       "public com.yahoo.document.PrimitiveDataType getPrimitiveType()",
-      "public com.yahoo.document.DataType getNestedType()",
       "public void visitMembers(com.yahoo.vespa.objects.ObjectVisitor)",
       "public int compareTo(com.yahoo.document.DataType)",
       "public boolean isMultivalue()",

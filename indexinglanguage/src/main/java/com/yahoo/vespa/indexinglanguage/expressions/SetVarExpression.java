@@ -15,11 +15,18 @@ public final class SetVarExpression extends Expression {
         this.varName = varName;
     }
 
-    public String getVariableName() { return varName; }
+    public String getVariableName() {
+        return varName;
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        context.setVariable(varName, context.getValue());
+    }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType next = context.getCurrentType();
+        DataType next = context.getValueType();
         DataType prev = context.getVariable(varName);
         if (prev != null && !prev.equals(next)) {
             throw new VerificationException(this, "Attempting to assign conflicting types to variable '" + varName +
@@ -29,12 +36,9 @@ public final class SetVarExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        context.setVariable(varName, context.getCurrentValue());
+    public DataType createdOutputType() {
+        return null;
     }
-
-    @Override
-    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() {

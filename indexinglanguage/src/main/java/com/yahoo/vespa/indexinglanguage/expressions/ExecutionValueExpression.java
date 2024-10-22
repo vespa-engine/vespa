@@ -30,10 +30,17 @@ public final class ExecutionValueExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
+    protected void doVerify(VerificationContext context) {}
 
     @Override
-    public String toString() { return "_"; }
+    public DataType createdOutputType() {
+        return UnresolvedDataType.INSTANCE;
+    }
+
+    @Override
+    public String toString() {
+        return "_";
+    }
 
     @Override
     public boolean equals(Object obj) {

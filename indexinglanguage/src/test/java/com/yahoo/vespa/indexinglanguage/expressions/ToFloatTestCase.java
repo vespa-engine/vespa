@@ -36,9 +36,9 @@ public class ToFloatTestCase {
     @Test
     public void requireThatValueIsConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("6.9f")).execute(new ToFloatExpression());
+        ctx.setValue(new StringFieldValue("6.9f")).execute(new ToFloatExpression());
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof FloatFieldValue);
         assertEquals(6.9f, ((FloatFieldValue)val).getFloat(), 1e-6);
     }

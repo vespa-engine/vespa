@@ -344,7 +344,7 @@ public class MixedTensor implements Tensor {
 
         @Override
         public MixedTensor build() {
-            // TODO: This can be solved more efficiently with a single map.
+            //TODO This can be solved more efficiently with a single map.
             Set<Map.Entry<TensorAddress, double[]>> entrySet = denseSubspaceMap.entrySet();
             for (Map.Entry<TensorAddress, double[]> entry : entrySet) {
                 TensorAddress sparsePart = entry.getKey();
@@ -356,7 +356,7 @@ public class MixedTensor implements Tensor {
         }
 
         public static BoundBuilder of(TensorType type) {
-            // TODO: Wire in expected map size to avoid expensive resize
+            //TODO Wire in expected map size to avoid expensive resize
             return new BoundBuilder(type, INITIAL_HASH_CAPACITY);
         }
     }

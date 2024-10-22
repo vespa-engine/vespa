@@ -17,10 +17,12 @@ public abstract class CompositeExpression extends Expression {
     }
 
     protected static String toScriptBlock(Expression exp) {
-        if (exp instanceof ScriptExpression)
+        if (exp instanceof ScriptExpression) {
             return exp.toString();
-        if (exp instanceof StatementExpression)
+        }
+        if (exp instanceof StatementExpression) {
             return new ScriptExpression((StatementExpression)exp).toString();
+        }
         return new ScriptExpression(new StatementExpression(exp)).toString();
     }
 

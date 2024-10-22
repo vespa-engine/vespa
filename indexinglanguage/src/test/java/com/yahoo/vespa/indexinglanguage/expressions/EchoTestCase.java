@@ -42,7 +42,7 @@ public class EchoTestCase {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("69"));
+        ctx.setValue(new StringFieldValue("69"));
         new EchoExpression(new PrintStream(out)).execute(ctx);
 
         assertEquals("69" + System.getProperty("line.separator"), out.toString());

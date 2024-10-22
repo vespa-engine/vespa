@@ -18,15 +18,10 @@ public final class HexDecodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getCurrentValue());
+        String input = String.valueOf(context.getValue());
         if (input.isEmpty()) {
-            context.setCurrentValue(new LongFieldValue(Long.MIN_VALUE));
+            context.setValue(new LongFieldValue(Long.MIN_VALUE));
             return;
         }
         BigInteger output;
@@ -41,14 +36,23 @@ public final class HexDecodeExpression extends Expression {
         if (output.compareTo(BigInteger.ZERO) > 0 && output.bitLength() == 64) {
             output = output.subtract(ULONG_MAX); // flip to negative
         }
-        context.setCurrentValue(new LongFieldValue(output.longValue()));
+        context.setValue(new LongFieldValue(output.longValue()));
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.LONG; }
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
+    }
 
     @Override
-    public String toString() { return "hexdecode"; }
+    public DataType createdOutputType() {
+        return DataType.LONG;
+    }
+
+    @Override
+    public String toString() {
+        return "hexdecode";
+    }
 
     @Override
     public boolean equals(Object obj) {

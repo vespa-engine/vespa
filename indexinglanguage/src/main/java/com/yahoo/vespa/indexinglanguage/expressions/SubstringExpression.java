@@ -22,20 +22,24 @@ public final class SubstringExpression extends Expression {
         this.to = to;
     }
 
-    public int getFrom() { return from; }
+    public int getFrom() {
+        return from;
+    }
 
-    public int getTo() { return to; }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
+    public int getTo() {
+        return to;
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getCurrentValue());
+        String input = String.valueOf(context.getValue());
         String substring = Text.substringByCodepoints(input, from, to);
-        context.setCurrentValue(new StringFieldValue(substring));
+        context.setValue(new StringFieldValue(substring));
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
     }
 
     @Override

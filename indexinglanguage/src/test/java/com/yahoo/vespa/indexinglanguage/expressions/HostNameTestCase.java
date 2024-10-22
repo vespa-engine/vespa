@@ -38,7 +38,7 @@ public class HostNameTestCase {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new HostNameExpression().execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals(HostNameExpression.normalizeHostName(getDefaults().vespaHostname()),
                      ((StringFieldValue)val).getString());

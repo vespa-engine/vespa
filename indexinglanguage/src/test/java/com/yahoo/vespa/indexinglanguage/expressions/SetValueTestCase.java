@@ -55,7 +55,7 @@ public class SetValueTestCase {
     public void requireThatValueIsSet() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new ConstantExpression(new StringFieldValue("69")).execute(ctx);
-        assertEquals(new StringFieldValue("69"), ctx.getCurrentValue());
+        assertEquals(new StringFieldValue("69"), ctx.getValue());
     }
 
     @Test

@@ -13,20 +13,24 @@ public final class ThisExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         // empty
     }
 
     @Override
-    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
+    protected void doVerify(VerificationContext context) {
+        // empty
+    }
 
     @Override
-    public String toString() { return "this"; }
+    public DataType createdOutputType() {
+        return UnresolvedDataType.INSTANCE;
+    }
+
+    @Override
+    public String toString() {
+        return "this";
+    }
 
     @Override
     public boolean equals(Object obj) {

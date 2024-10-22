@@ -32,27 +32,17 @@ public class BinarizeExpression extends Expression  {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        return super.setInputType(inputType, TensorDataType.any(), context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        return super.setOutputType(outputType, TensorDataType.any(), context);
+    protected void doExecute(ExecutionContext context) {
+        Optional<Tensor> tensor = ((TensorFieldValue)context.getValue()).getTensor();
+        if (tensor.isEmpty()) return;
+        context.setValue(new TensorFieldValue(tensor.get().map(v -> v > threshold ? 1 : 0)));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        type = context.getCurrentType();
+        type = context.getValueType();
         if (! (type instanceof TensorDataType))
             throw new IllegalArgumentException("The 'binarize' function requires a tensor, but got " + type);
-    }
-
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
-        if (tensor.isEmpty()) return;
-        context.setCurrentValue(new TensorFieldValue(tensor.get().map(v -> v > threshold ? 1 : 0)));
     }
 
     @Override
@@ -67,9 +57,6 @@ public class BinarizeExpression extends Expression  {
     public int hashCode() { return Objects.hash(threshold, toString().hashCode()); }
 
     @Override
-    public boolean equals(Object o) {
-        if ( ! (o instanceof BinarizeExpression other)) return false;
-        return this.threshold == other.threshold;
-    }
+    public boolean equals(Object o) { return o instanceof BinarizeExpression; }
 
 }

@@ -17,11 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Deprecated.
- *
  * @author Simon Thoresen Hult
  */
-// TODO: Remove on Vespa 9
 public final class FlattenExpression extends Expression {
 
     public FlattenExpression() {
@@ -29,30 +26,28 @@ public final class FlattenExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue) context.getCurrentValue();
+        StringFieldValue input = (StringFieldValue) context.getValue();
         SpanTree tree = input.getSpanTree(SpanTrees.LINGUISTICS);
         Map<Integer, List<String>> map = new HashMap<>();
         for (Annotation anno : tree) {
             SpanNode span = anno.getSpanNode();
-            if (span == null) continue;
-            if (anno.getType() != AnnotationTypes.TERM) continue;
-
+            if (span == null) {
+                continue;
+            }
+            if (anno.getType() != AnnotationTypes.TERM) {
+                continue;
+            }
             FieldValue val = anno.getFieldValue();
-            String s;
+            String str;
             if (val instanceof StringFieldValue) {
-                s = ((StringFieldValue)val).getString();
+                str = ((StringFieldValue)val).getString();
             } else {
-                s = input.getString().substring(span.getFrom(), span.getTo());
+                str = input.getString().substring(span.getFrom(), span.getTo());
             }
             Integer pos = span.getTo();
             List<String> entry = map.computeIfAbsent(pos, k -> new LinkedList<>());
-            entry.add(s);
+            entry.add(str);
         }
         String inputVal = String.valueOf(input);
         StringBuilder output = new StringBuilder();
@@ -66,14 +61,23 @@ public final class FlattenExpression extends Expression {
                 output.append(inputVal.charAt(i));
             }
         }
-        context.setCurrentValue(new StringFieldValue(output.toString()));
+        context.setValue(new StringFieldValue(output.toString()));
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
+    }
 
     @Override
-    public String toString() { return "flatten"; }
+    public DataType createdOutputType() {
+        return DataType.STRING;
+    }
+
+    @Override
+    public String toString() {
+        return "flatten";
+    }
 
     @Override
     public boolean equals(Object obj) {

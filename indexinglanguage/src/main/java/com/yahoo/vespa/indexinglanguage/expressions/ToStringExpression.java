@@ -14,20 +14,24 @@ public final class ToStringExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        context.setCurrentValue(new StringFieldValue(String.valueOf(context.getCurrentValue())));
+        context.setValue(new StringFieldValue(String.valueOf(context.getValue())));
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
+    }
 
     @Override
-    public String toString() { return "to_string"; }
+    public DataType createdOutputType() {
+        return DataType.STRING;
+    }
+
+    @Override
+    public String toString() {
+        return "to_string";
+    }
 
     @Override
     public boolean equals(Object obj) {

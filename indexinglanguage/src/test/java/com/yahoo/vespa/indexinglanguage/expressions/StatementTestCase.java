@@ -108,7 +108,7 @@ public class StatementTestCase {
         StatementExpression statement = newStatement(new ConstantExpression(new IntegerFieldValue(69)));
         newStatement(statement).execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof IntegerFieldValue);
         assertEquals(69, ((IntegerFieldValue)val).getInteger());
     }

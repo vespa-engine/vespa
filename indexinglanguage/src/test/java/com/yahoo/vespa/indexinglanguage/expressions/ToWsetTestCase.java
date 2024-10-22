@@ -65,9 +65,9 @@ public class ToWsetTestCase {
 
     private static void assertConvert(boolean createIfNonExistent, boolean removeIfZero) {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("69")).execute(new ToWsetExpression(createIfNonExistent, removeIfZero));
+        ctx.setValue(new StringFieldValue("69")).execute(new ToWsetExpression(createIfNonExistent, removeIfZero));
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertEquals(WeightedSet.class, val.getClass());
 
         WeightedSet wset = (WeightedSet)val;

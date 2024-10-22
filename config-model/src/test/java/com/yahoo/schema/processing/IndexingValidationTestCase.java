@@ -36,7 +36,7 @@ public class IndexingValidationTestCase extends AbstractExportingTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'indexing_attribute_changed', field 'foo': For expression 'attribute foo': " +
-                         "Attempting to assign conflicting values to field 'foo'",
+                         "Attempting to assign conflicting values to field 'foo'.",
                          Exceptions.toMessageString(e));
         }
     }
@@ -80,7 +80,7 @@ public class IndexingValidationTestCase extends AbstractExportingTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'indexing_index_changed', field 'foo': For expression 'index foo': " +
-                         "Attempting to assign conflicting values to field 'foo'",
+                         "Attempting to assign conflicting values to field 'foo'.",
                          Exceptions.toMessageString(e));
         }
     }
@@ -124,7 +124,7 @@ public class IndexingValidationTestCase extends AbstractExportingTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'indexing_summary_fail', field 'foo': For expression 'summary foo': Attempting " +
-                         "to assign conflicting values to field 'foo'",
+                         "to assign conflicting values to field 'foo'.",
                          Exceptions.toMessageString(e));
         }
     }
@@ -186,7 +186,7 @@ public class IndexingValidationTestCase extends AbstractExportingTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'indexing_multiline_output_confict', field 'cox': For expression 'index cox': " +
-                         "Attempting to assign conflicting values to field 'cox'",
+                         "Attempting to assign conflicting values to field 'cox'.",
                          Exceptions.toMessageString(e));
         }
     }

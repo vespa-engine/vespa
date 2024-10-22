@@ -8,9 +8,9 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,7 +19,7 @@ import java.util.Objects;
  */
 public abstract class ExpressionList<T extends Expression> extends CompositeExpression implements Iterable<T> {
 
-    private final List<T> expressions = new ArrayList<T>();
+    private final List<T> expressions = new LinkedList<T>();
 
     protected ExpressionList(Iterable<? extends T> expressions, DataType inputType) {
         super(inputType);
@@ -27,8 +27,6 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
             this.expressions.add(exp);
         }
     }
-
-    public List<T> expressions() { return expressions; }
 
     protected List<Expression> convertChildList(ExpressionConverter converter) {
         return asList().stream().map(converter::convert).filter(Objects::nonNull).toList();

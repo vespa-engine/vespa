@@ -19,17 +19,19 @@ public class LiteralBoolExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        context.setCurrentValue(new BoolFieldValue(value));
+        context.setValue(new BoolFieldValue(value));
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.BOOL; }
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
+    }
+
+    @Override
+    public DataType createdOutputType() {
+        return DataType.BOOL;
+    }
 
     @Override
     public String toString() {

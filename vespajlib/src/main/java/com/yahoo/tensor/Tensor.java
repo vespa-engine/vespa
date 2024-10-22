@@ -96,7 +96,7 @@ public interface Tensor {
 
     /**
      * Returns the cell of this in some undefined order.
-     * A cell instance is only valid until next() is called.
+     * A cell instances is only valid until next() is called.
      * Call detach() on the cell to obtain a long-lived instance.
      */
     Iterator<Cell> cellIterator();

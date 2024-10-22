@@ -22,36 +22,10 @@ public final class NormalizeExpression extends Expression {
         this.linguistics = linguistics;
     }
 
-    public Linguistics getLinguistics() { return linguistics; }
+    public Linguistics getLinguistics() {
+        return linguistics;
+    }
     
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        Transformer transformer = linguistics.getTransformer();
-        var orig = String.valueOf(context.getCurrentValue());
-        if (orig.isEmpty()) {
-            return; // must be a no-op for all linguistics/language combinations
-        }
-        var lang = context.resolveLanguage(linguistics);
-        var transformed = transformer.accentDrop(orig, lang);
-        try {
-            context.setCurrentValue(new StringFieldValue(transformed));
-            return;
-        } catch (IllegalArgumentException ex) {
-            String msg = ("bad normalize, \n" +
-                          "original: >>> " + escape(orig) + " <<<\n" +
-                          " -> accentDrop(" + lang + ") -> \n" +
-                          "transformed: >>> " + escape(transformed) + " <<<");
-            logger.log(Level.SEVERE, msg);
-        }
-        context.setCurrentValue(new StringFieldValue(transformer.accentDrop(String.valueOf(context.getCurrentValue()),
-                                                                            context.resolveLanguage(linguistics))));
-    }
-
     private static String escape(String str) {
         StringBuilder buf = new StringBuilder();
         for (char c : str.toCharArray()) {
@@ -62,6 +36,34 @@ public final class NormalizeExpression extends Expression {
             }
         }
         return buf.toString();
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        Transformer transformer = linguistics.getTransformer();
+        var orig = String.valueOf(context.getValue());
+        if (orig.isEmpty()) {
+            return; // must be a no-op for all linguistics/language combinations
+        }
+        var lang = context.resolveLanguage(linguistics);
+        var transformed = transformer.accentDrop(orig, lang);
+        try {
+            context.setValue(new StringFieldValue(transformed));
+            return;
+        } catch (IllegalArgumentException ex) {
+            String msg = ("bad normalize, \n" +
+                          "original: >>> " + escape(orig) + " <<<\n" +
+                          " -> accentDrop(" + lang + ") -> \n" +
+                          "transformed: >>> " + escape(transformed) + " <<<");
+            logger.log(Level.SEVERE, msg);
+        }
+        context.setValue(new StringFieldValue(transformer.accentDrop(String.valueOf(context.getValue()),
+                                                                     context.resolveLanguage(linguistics))));
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
     }
 
     @Override

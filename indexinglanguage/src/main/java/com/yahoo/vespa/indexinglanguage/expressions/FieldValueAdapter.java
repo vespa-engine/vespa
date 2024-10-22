@@ -12,7 +12,7 @@ public interface FieldValueAdapter extends FieldTypeAdapter {
     FieldValue getInputValue(String fieldName);
     FieldValue getInputValue(FieldPath fieldPath);
 
-    FieldValueAdapter setOutputValue(Expression expression, String fieldName, FieldValue fieldValue);
+    FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue);
 
     /** Returns true if this has values for all possibly existing inputs, or represents a partial set of values. */
     boolean isComplete();

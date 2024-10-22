@@ -32,12 +32,8 @@ public class EmbeddingScriptTester {
     }
 
     public void testStatement(String expressionString, String input, String expected) {
-        testStatement(expressionString, input, "tensor(d[4])", expected);
-    }
-
-    public void testStatement(String expressionString, String input, String targetTensorType, String expected) {
         var expression = expressionFrom(expressionString);
-        TensorType tensorType = TensorType.fromSpec(targetTensorType);
+        TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myText", DataType.STRING));

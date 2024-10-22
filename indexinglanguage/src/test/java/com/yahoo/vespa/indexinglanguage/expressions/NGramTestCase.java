@@ -53,10 +53,10 @@ public class NGramTestCase {
     @Test
     public void testNGrams() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new StringFieldValue("en gul Bille sang... "));
+        context.setValue(new StringFieldValue("en gul Bille sang... "));
         new NGramExpression(new SimpleLinguistics(), 3).execute(context);
 
-        StringFieldValue value = (StringFieldValue)context.getCurrentValue();
+        StringFieldValue value = (StringFieldValue)context.getValue();
         assertEquals("Grams are pure annotations - field value is unchanged",
                      "en gul Bille sang... ", value.getString());
         SpanTree gramTree = value.getSpanTree(SpanTrees.LINGUISTICS);
@@ -80,15 +80,15 @@ public class NGramTestCase {
     @Test
     public void requireThatExecuteCanBeCalledMultipleTimes() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new StringFieldValue("some random text string"));
+        context.setValue(new StringFieldValue("some random text string"));
         NGramExpression expression = new NGramExpression(new SimpleLinguistics(), 3);
 
         expression.execute(context);
-        SpanTree firstTree = ((StringFieldValue)context.getCurrentValue()).getSpanTree(SpanTrees.LINGUISTICS);
+        SpanTree firstTree = ((StringFieldValue)context.getValue()).getSpanTree(SpanTrees.LINGUISTICS);
         assertNotNull(firstTree);
 
         expression.execute(context);
-        SpanTree secondTree = ((StringFieldValue)context.getCurrentValue()).getSpanTree(SpanTrees.LINGUISTICS);
+        SpanTree secondTree = ((StringFieldValue)context.getValue()).getSpanTree(SpanTrees.LINGUISTICS);
         // The span tree instance should be the same.
         assertEquals(firstTree, secondTree);
     }
