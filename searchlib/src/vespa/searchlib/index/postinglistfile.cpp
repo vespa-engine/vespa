@@ -107,12 +107,9 @@ createIterator(const PostingListCounts &counts,
 
 void
 PostingListFileRandReadPassThrough::
-readPostingList(const PostingListCounts &counts,
-                uint32_t firstSegment,
-                uint32_t numSegments,
-                PostingListHandle &handle)
+readPostingList(PostingListHandle &handle)
 {
-    _lower->readPostingList(counts, firstSegment, numSegments,handle);
+    _lower->readPostingList(handle);
 }
 
 bool

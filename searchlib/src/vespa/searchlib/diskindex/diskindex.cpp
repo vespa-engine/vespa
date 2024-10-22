@@ -247,9 +247,7 @@ DiskIndex::readPostingList(const LookupResult &lookupRes) const
     if (handle->_file == nullptr) {
         return {};
     }
-    const uint32_t firstSegment = 0;
-    const uint32_t numSegments = 0; // means all segments
-    handle->_file->readPostingList(lookupRes.counts, firstSegment, numSegments,*handle);
+    handle->_file->readPostingList(*handle);
     return handle;
 }
 

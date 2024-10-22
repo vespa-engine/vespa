@@ -508,10 +508,7 @@ randReadField(FakeWordSet &wordSet,
                 handle._file = postingFile;
                 handle._bitOffset = offsetAndCounts._offset;
 
-                postingFile->readPostingList(counts,
-                        0,
-                        counts._segments.empty() ? 1 : counts._segments.size(),
-                        handle);
+                postingFile->readPostingList(handle);
 
                 TermFieldMatchData mdfield1;
                 TermFieldMatchDataArray tfmda;
