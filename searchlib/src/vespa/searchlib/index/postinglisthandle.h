@@ -31,6 +31,7 @@ public:
     const void *_mem;       // Memory backing posting list after read/mmap
     void *_allocMem;        // What to free after posting list
     size_t _allocSize;      // Size of allocated memory
+    uint64_t _read_bytes;   // Bytes read from disk (used by disk io stats)
 
     PostingListHandle()
     : _file(nullptr),
@@ -39,7 +40,8 @@ public:
       _bitOffsetMem(0),
       _mem(nullptr),
       _allocMem(nullptr),
-      _allocSize(0)
+      _allocSize(0),
+      _read_bytes(0)
     { }
 
     ~PostingListHandle()
@@ -68,6 +70,7 @@ public:
             _allocMem = nullptr;
         }
         _allocSize = 0;
+        _read_bytes = 0;
     }
 };
 

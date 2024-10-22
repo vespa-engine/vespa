@@ -136,6 +136,7 @@ ZcPosOccRandRead::readPostingList(PostingListHandle &handle)
         handle._mem = static_cast<char *>(alignedBuffer) + padBefore;
         handle._allocMem = mallocStart;
         handle._allocSize = mallocLen;
+        handle._read_bytes = padBefore + vectorLen + padAfter;
     }
     handle._bitOffsetMem = (startOffset << 3) - _headerBitSize;
 }

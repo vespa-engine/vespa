@@ -6,7 +6,8 @@
 namespace search {
 
 std::ostream& operator<<(std::ostream& os, const FieldIndexStats& stats) {
-    os << "{memory: " << stats.memory_usage() << ", disk: " << stats.size_on_disk() << "}";
+    os << "{memory: " << stats.memory_usage() << ", disk: " << stats.size_on_disk() <<
+    ", diskio: " << stats.disk_io_stats() << "}";
     return os;
 }
 
