@@ -865,6 +865,21 @@
       "protected int maxNextCharInd"
     ]
   },
+  "com.yahoo.searchlib.rankingexpression.parser.CellMapHelper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.TensorType, java.util.List)",
+      "public java.util.Map map()",
+      "public com.yahoo.searchlib.rankingexpression.parser.CellMapHelper bind(java.lang.String)",
+      "public void handleScalar(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public void handleDenseSubspace(java.util.List)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.searchlib.rankingexpression.parser.CharStream" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -979,10 +994,11 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorValueBody(com.yahoo.tensor.TensorType, java.util.List)",
       "public final com.yahoo.tensor.functions.DynamicTensor mappedTensorValueBody(com.yahoo.tensor.TensorType)",
       "public final com.yahoo.tensor.functions.DynamicTensor mixedTensorValueBody(com.yahoo.tensor.TensorType, java.util.List)",
+      "public final void mixedValueObject(com.yahoo.searchlib.rankingexpression.parser.CellMapHelper)",
       "public final com.yahoo.tensor.functions.DynamicTensor indexedTensorValueBody(com.yahoo.tensor.TensorType, java.util.List)",
-      "public final void keyValueOrMixedBlock(com.yahoo.tensor.TensorType, java.util.List, java.util.Map)",
-      "public final void keyValue(com.yahoo.tensor.TensorType, java.util.Map)",
-      "public final void mixedBlock(com.yahoo.tensor.TensorType, java.util.List, java.util.Map)",
+      "public final void keyValueOrMixedBlock(com.yahoo.searchlib.rankingexpression.parser.CellMapHelper)",
+      "public final void keyValue(com.yahoo.searchlib.rankingexpression.parser.CellMapHelper)",
+      "public final void mixedBlock(com.yahoo.searchlib.rankingexpression.parser.CellMapHelper)",
       "public final java.util.List indexedTensorCells()",
       "public final void indexedTensorCellSubspaceList(java.util.List)",
       "public final void indexedTensorCellSubspace(java.util.List)",
