@@ -83,7 +83,7 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
             getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);
         return BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict());
     }
-    SearchIterator::UP search(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
+    SearchIterator::UP search(_postingHandle->createIterator(_lookupRes->counts, tfmda));
     if (_useBitVector) {
         LOG(debug, "Return BooleanMatchIteratorWrapper: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);
@@ -102,7 +102,7 @@ DiskTermBlueprint::createFilterSearch(FilterConstraint) const
     if (_bitVector) {
         wrapper->wrap(BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict()));
     } else {
-        wrapper->wrap(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
+        wrapper->wrap(_postingHandle->createIterator(_lookupRes->counts, tfmda));
     }
     return wrapper;
 }

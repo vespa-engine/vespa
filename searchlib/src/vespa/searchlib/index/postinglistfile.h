@@ -150,8 +150,7 @@ public:
     virtual std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const = 0;
+                   const search::fef::TermFieldMatchDataArray &matchData) const = 0;
 
 
     /**
@@ -194,8 +193,7 @@ public:
     std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const override;
+                   const search::fef::TermFieldMatchDataArray &matchData) const override;
 
     void readPostingList(PostingListHandle &handle) override;
 
