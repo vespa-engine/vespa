@@ -4,6 +4,7 @@
 
 #include "bitvectordictionary.h"
 #include "zcposoccrandread.h"
+#include <vespa/searchlib/index/dictionary_lookup_result.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/field_index_stats.h>
@@ -36,10 +37,11 @@ public:
     bool open_dictionary(const std::string& field_dir, const TuneFileSearch& tune_file_search);
     bool open(const std::string& field_dir, const TuneFileSearch &tune_file_search);
     void reuse_files(const FieldIndex& rhs);
+    std::unique_ptr<index::PostingListHandle> read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
+    std::unique_ptr<BitVector> read_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
+    index::FieldLengthInfo get_field_length_info() const;
 
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
-    index::PostingListFileRandRead* get_posting_file() const noexcept { return _posting_file.get(); }
-    BitVectorDictionary* get_bit_vector_dictionary() const noexcept { return _bit_vector_dict.get(); }
     FieldIndexStats get_stats() const;
 };
 

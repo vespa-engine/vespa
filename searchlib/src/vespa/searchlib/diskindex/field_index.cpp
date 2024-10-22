@@ -9,6 +9,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.field_index");
 
+using search::index::DictionaryLookupResult;
+using search::index::PostingListHandle;
+
 namespace search::diskindex {
 
 namespace {
@@ -130,6 +133,35 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
     _posting_file = rhs._posting_file;
     _bit_vector_dict = rhs._bit_vector_dict;
     _size_on_disk = rhs._size_on_disk;
+}
+
+std::unique_ptr<PostingListHandle>
+FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
+{
+    auto handle = std::make_unique<PostingListHandle>();
+    handle->_bitOffset = lookup_result.bitOffset;
+    handle->_bitLength = lookup_result.counts._bitLength;
+    handle->_file = _posting_file.get();
+    if (handle->_file == nullptr) {
+        return {};
+    }
+    handle->_file->readPostingList(*handle);
+    return handle;
+}
+
+std::unique_ptr<BitVector>
+FieldIndex::read_bit_vector(const DictionaryLookupResult& lookup_result) const
+{
+    if (!_bit_vector_dict) {
+        return {};
+    }
+    return _bit_vector_dict->lookup(lookup_result.wordNum);
+}
+
+index::FieldLengthInfo
+FieldIndex::get_field_length_info() const
+{
+    return _posting_file->get_field_length_info();
 }
 
 FieldIndexStats
