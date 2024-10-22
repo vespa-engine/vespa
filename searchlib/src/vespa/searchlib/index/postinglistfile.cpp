@@ -99,10 +99,9 @@ std::unique_ptr<search::queryeval::SearchIterator>
 PostingListFileRandReadPassThrough::
 createIterator(const PostingListCounts &counts,
                const PostingListHandle &handle,
-               const search::fef::TermFieldMatchDataArray &matchData,
-               bool usebitVector) const
+               const search::fef::TermFieldMatchDataArray &matchData) const
 {
-    return _lower->createIterator(counts, handle, matchData, usebitVector);
+    return _lower->createIterator(counts, handle, matchData);
 }
 
 void

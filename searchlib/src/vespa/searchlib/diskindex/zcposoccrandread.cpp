@@ -59,11 +59,8 @@ std::unique_ptr<search::queryeval::SearchIterator>
 ZcPosOccRandRead::
 createIterator(const PostingListCounts &counts,
                const PostingListHandle &handle,
-               const search::fef::TermFieldMatchDataArray &matchData,
-               bool usebitVector) const
+               const search::fef::TermFieldMatchDataArray &matchData) const
 {
-    (void) usebitVector;
-
     assert((handle._bitLength != 0) == (counts._bitLength != 0));
     assert((counts._numDocs != 0) == (counts._bitLength != 0));
     assert(handle._bitOffsetMem <= handle._bitOffset);

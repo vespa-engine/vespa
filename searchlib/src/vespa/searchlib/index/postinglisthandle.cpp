@@ -8,10 +8,9 @@ namespace search::index {
 
 std::unique_ptr<search::queryeval::SearchIterator>
 PostingListHandle::createIterator(const PostingListCounts &counts,
-                                  const search::fef::TermFieldMatchDataArray &matchData,
-                                  bool useBitVector) const
+                                  const search::fef::TermFieldMatchDataArray &matchData) const
 {
-    return _file->createIterator(counts, *this, matchData, useBitVector);
+    return _file->createIterator(counts, *this, matchData);
 }
 
 }

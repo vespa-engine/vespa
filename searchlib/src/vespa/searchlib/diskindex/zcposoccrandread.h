@@ -35,7 +35,7 @@ public:
      */
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
-                   const fef::TermFieldMatchDataArray &matchData, bool usebitVector) const override;
+                   const fef::TermFieldMatchDataArray &matchData) const override;
 
     /**
      * Read (possibly partial) posting list into handle.

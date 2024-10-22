@@ -56,15 +56,10 @@ public:
     /**
      * Create iterator for single word.  Semantic lifetime of counts and
      * handle must exceed lifetime of iterator.
-     *
-     * XXX: TODO: How to read next set of segments from disk if handle
-     * didn't cover the whole word, probably need access to higher level
-     * API above caches.
      */
     std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool useBitVector=false) const;
+                   const search::fef::TermFieldMatchDataArray &matchData) const;
 
     /**
      * Drop value portion of handle.
