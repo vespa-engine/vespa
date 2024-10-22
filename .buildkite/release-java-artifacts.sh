@@ -90,8 +90,9 @@ sign_module() {
         EXTRA_FILES_OPTS="-Dfiles=$(echo "${AFILES[@]}" | sed 's/\ /,/g') -Dtypes=$(echo "${ATYPES[@]}" | sed 's/\ /,/g') -Dclassifiers=$(echo "${ACLASSIFIERS[@]}" | sed 's/\ /,/g')"
     fi
 
-    "$ECHO" "$MVN" --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
-          "$MVN_OPTS" gpg:sign-and-deploy-file \
+    # shellcheck disable=2086
+    $ECHO $MVN --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
+          $MVN_OPTS gpg:sign-and-deploy-file \
           -Durl="file://$TMP_STAGING" \
           -DrepositoryId=maven-central \
           -DgroupId="$G" \
@@ -99,8 +100,8 @@ sign_module() {
           -Dversion="$V" \
           -DpomFile="$POM" \
           -DgeneratePom=false \
-          "$FILE_OPTS" \
-          "$EXTRA_FILES_OPTS"
+          $FILE_OPTS \
+          $EXTRA_FILES_OPTS
 
 }
 export -f sign_module
