@@ -23,17 +23,20 @@ class SnapshotSerializerTest {
         Snapshot snapshot0 = new Snapshot(SnapshotId.of("ccf0b6de-3e06-4045-acba-458d99ef73e5"),
                                           HostName.of("host0.example.com"),
                                           Snapshot.State.creating,
-                                          Instant.ofEpochMilli(123),
+                                          Snapshot.History.of(Snapshot.State.creating, Instant.ofEpochMilli(123)),
                                           new ClusterId(ApplicationId.from("t1", "a1", "i1"),
                                                         ClusterSpec.Id.from("c1")),
-                                          1);
+                                          0
+        );
         Snapshot snapshot1 = new Snapshot(SnapshotId.of("7e45b44a-0f1a-4729-a4f4-20fff5d1e85d"),
                                           HostName.of("host1.example.com"),
                                           Snapshot.State.restored,
-                                          Instant.ofEpochMilli(456),
+                                          Snapshot.History.of(Snapshot.State.restoring, Instant.ofEpochMilli(123))
+                                                          .with(Snapshot.State.restored, Instant.ofEpochMilli(456)),
                                           new ClusterId(ApplicationId.from("t2", "a2", "i2"),
                                                         ClusterSpec.Id.from("c2")),
-                                          2);
+                                          2
+        );
         assertEquals(snapshot0, SnapshotSerializer.fromSlime(SnapshotSerializer.toSlime(snapshot0)));
         List<Snapshot> snapshots = List.of(snapshot0, snapshot1);
         assertEquals(snapshots, SnapshotSerializer.listFromSlime(SnapshotSerializer.toSlime(snapshots)));
