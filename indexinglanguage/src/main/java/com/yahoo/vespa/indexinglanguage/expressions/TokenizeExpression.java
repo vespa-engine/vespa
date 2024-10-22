@@ -23,20 +23,19 @@ public final class TokenizeExpression extends Expression {
         this.config = config;
     }
 
-    public Linguistics getLinguistics() { return linguistics; }
+    public Linguistics getLinguistics() {
+        return linguistics;
+    }
 
-    public AnnotatorConfig getConfig() { return config; }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
+    public AnnotatorConfig getConfig() {
+        return config;
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue)context.getCurrentValue();
+        StringFieldValue input = (StringFieldValue)context.getValue();
         StringFieldValue output = input.clone();
-        context.setCurrentValue(output);
+        context.setValue(output);
 
         AnnotatorConfig cfg = new AnnotatorConfig(config);
         Language lang = context.resolveLanguage(linguistics);
@@ -48,7 +47,14 @@ public final class TokenizeExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return null; }
+    protected void doVerify(VerificationContext context) {
+        // empty
+    }
+
+    @Override
+    public DataType createdOutputType() {
+        return null;
+    }
 
     @Override
     public String toString() {

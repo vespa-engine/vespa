@@ -85,36 +85,36 @@ public final class IfThenExpression extends CompositeExpression {
     public Expression getIfFalseExpression() { return ifFalse; }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(input).verify(left);
-        context.setCurrentType(input).verify(right);
-        var trueValue = context.setCurrentType(input).verify(ifTrue);
-        var falseValue = context.setCurrentType(input).verify(ifFalse);
-        var valueType = trueValue.getCurrentType().isAssignableFrom(falseValue.getCurrentType()) ?
-                                trueValue.getCurrentType() : falseValue.getCurrentType();
-        context.setCurrentType(valueType);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getCurrentValue();
-        FieldValue leftValue = context.setCurrentValue(input).execute(left).getCurrentValue();
+        FieldValue input = context.getValue();
+        FieldValue leftValue = context.setValue(input).execute(left).getValue();
         if (leftValue == null) {
-            context.setCurrentValue(null);
+            context.setValue(null);
             return;
         }
-        FieldValue rightValue = context.setCurrentValue(input).execute(right).getCurrentValue();
+        FieldValue rightValue = context.setValue(input).execute(right).getValue();
         if (rightValue == null) {
-            context.setCurrentValue(null);
+            context.setValue(null);
             return;
         }
-        context.setCurrentValue(input);
+        context.setValue(input);
         if (isTrue(leftValue, comparator, rightValue)) {
             ifTrue.execute(context);
         } else if (ifFalse != null) {
             ifFalse.execute(context);
         }
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getValueType();
+        context.setValueType(input).execute(left);
+        context.setValueType(input).execute(right);
+        var trueValue = context.setValueType(input).execute(ifTrue);
+        var falseValue = context.setValueType(input).execute(ifFalse);
+        var valueType = trueValue.getValueType().isAssignableFrom(falseValue.getValueType()) ?
+                        trueValue.getValueType() : falseValue.getValueType();
+        context.setValueType(valueType);
     }
 
     @Override

@@ -44,10 +44,10 @@ public class ParenthesisTestCase {
     @Test
     public void requireThatNestedExpressionIsRun() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter(new Field("in", DataType.STRING)));
-        ctx.setFieldValue("in", new StringFieldValue("69"), null);
+        ctx.setOutputValue(null, "in", new StringFieldValue("69"));
         new ParenthesisExpression(new InputExpression("in")).execute(ctx);
 
-        assertTrue(ctx.getCurrentValue() instanceof StringFieldValue);
-        assertEquals("69", ((StringFieldValue)ctx.getCurrentValue()).getString());
+        assertTrue(ctx.getValue() instanceof StringFieldValue);
+        assertEquals("69", ((StringFieldValue)ctx.getValue()).getString());
     }
 }

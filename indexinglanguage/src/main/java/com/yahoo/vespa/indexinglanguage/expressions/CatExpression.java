@@ -18,12 +18,12 @@ import java.util.*;
  */
 public final class CatExpression extends ExpressionList<Expression> {
 
-    public CatExpression(Expression... expressions) {
-        this(List.of(expressions));
+    public CatExpression(Expression... lst) {
+        this(List.of(lst));
     }
 
-    public CatExpression(Collection<? extends Expression> expressions) {
-        super(expressions, resolveInputType(expressions));
+    public CatExpression(Collection<? extends Expression> lst) {
+        super(lst, resolveInputType(lst));
     }
 
     @Override
@@ -32,41 +32,41 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        List<DataType> types = new LinkedList<>();
-        for (Expression exp : this) {
-            DataType val = context.setCurrentType(input).verify(exp).getCurrentType();
-            types.add(val);
-            if (val == null) {
-                throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ")");
-            }
-        }
-        context.setCurrentType(resolveOutputType(types));
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getCurrentValue();
+        FieldValue input = context.getValue();
         DataType inputType = input != null ? input.getDataType() : null;
-        VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
-        context.fillVariableTypes(verificationContext);
+        VerificationContext ver = new VerificationContext(context);
+        context.fillVariableTypes(ver);
         List<FieldValue> values = new LinkedList<>();
         List<DataType> types = new LinkedList<>();
         for (Expression exp : this) {
-            FieldValue val = context.setCurrentValue(input).execute(exp).getCurrentValue();
+            FieldValue val = context.setValue(input).execute(exp).getValue();
             values.add(val);
 
             DataType type;
             if (val != null) {
                 type = val.getDataType();
             } else {
-                type = verificationContext.setCurrentType(inputType).verify(this).getCurrentType();
+                type = ver.setValueType(inputType).execute(this).getValueType();
             }
             types.add(type);
         }
         DataType type = resolveOutputType(types);
-        context.setCurrentValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
+        context.setValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getValueType();
+        List<DataType> types = new LinkedList<>();
+        for (Expression exp : this) {
+            DataType val = context.setValueType(input).execute(exp).getValueType();
+            types.add(val);
+            if (val == null) {
+                throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ")");
+            }
+        }
+        context.setValueType(resolveOutputType(types));
     }
 
     private static DataType resolveInputType(Collection<? extends Expression> list) {

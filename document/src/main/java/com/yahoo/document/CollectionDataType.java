@@ -33,8 +33,9 @@ public abstract class CollectionDataType extends DataType {
         return type;
     }
 
-    @Override
-    public DataType getNestedType() { return nestedType; }
+    public DataType getNestedType() {
+        return nestedType;
+    }
 
     @Override
     protected FieldValue createByReflection(Object arg) { return null; }

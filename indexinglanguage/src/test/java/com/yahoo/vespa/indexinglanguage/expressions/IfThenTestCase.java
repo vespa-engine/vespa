@@ -146,7 +146,7 @@ public class IfThenTestCase {
                                               Comparator.GT,
                                               new ConstantExpression(new IntegerFieldValue(9)),
                                               new ConstantExpression(new StringFieldValue("69")));
-        FieldValue val = ctx.setCurrentValue(new IntegerFieldValue(96)).execute(exp).getCurrentValue();
+        FieldValue val = ctx.setValue(new IntegerFieldValue(96)).execute(exp).getValue();
         assertTrue(val instanceof IntegerFieldValue);
         assertEquals(96, ((IntegerFieldValue)val).getInteger());
     }

@@ -36,9 +36,9 @@ public class ToLongTestCase {
     @Test
     public void requireThatValueIsConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("69")).execute(new ToLongExpression());
+        ctx.setValue(new StringFieldValue("69")).execute(new ToLongExpression());
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof LongFieldValue);
         assertEquals(69L, ((LongFieldValue)val).getLong());
     }

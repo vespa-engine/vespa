@@ -44,30 +44,30 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        for (Expression exp : this)
-            context.setCurrentType(input).verify(exp);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getCurrentValue();
+        FieldValue input = context.getValue();
         for (StatementExpression statement : this) {
             if (context.isComplete() ||
                 (statement.getInputFields().isEmpty() || containsAtLeastOneInputFrom(statement.getInputFields(), context))) {
-                context.setCurrentValue(input);
+                context.setValue(input);
                 context.execute(statement);
             }
         }
-        context.setCurrentValue(input);
+        context.setValue(input);
     }
 
     private boolean containsAtLeastOneInputFrom(List<String> inputFields, ExecutionContext context) {
         for (String inputField : inputFields)
-            if (context.getFieldValue(inputField) != null)
+            if (context.getInputValue(inputField) != null)
                 return true;
         return false;
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getValueType();
+        for (Expression exp : this)
+            context.setValueType(input).execute(exp);
     }
 
     private static DataType resolveInputType(Collection<? extends StatementExpression> list) {

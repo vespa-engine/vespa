@@ -36,9 +36,9 @@ public class ToDoubleTestCase {
     @Test
     public void requireThatValueIsConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("6.9")).execute(new ToDoubleExpression());
+        ctx.setValue(new StringFieldValue("6.9")).execute(new ToDoubleExpression());
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof DoubleFieldValue);
         assertEquals(6.9, ((DoubleFieldValue)val).getDouble(), 1e-6);
     }

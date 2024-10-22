@@ -97,7 +97,7 @@ public class MathResolverTestCase {
     }
 
     private static int evaluate(Expression exp) {
-        FieldValue val = new ExecutionContext(new SimpleTestAdapter()).execute(exp).getCurrentValue();
+        FieldValue val = new ExecutionContext(new SimpleTestAdapter()).execute(exp).getValue();
         assertTrue(val instanceof IntegerFieldValue);
         return ((IntegerFieldValue)val).getInteger();
     }

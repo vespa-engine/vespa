@@ -36,10 +36,10 @@ public class HexDecodeTestCase {
     @Test
     public void requireInputIsDecoded() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("1d28c2cd"));
+        ctx.setValue(new StringFieldValue("1d28c2cd"));
         new HexDecodeExpression().execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof LongFieldValue);
         assertEquals(489210573L, ((LongFieldValue)val).getLong());
     }
@@ -47,10 +47,10 @@ public class HexDecodeTestCase {
     @Test
     public void requireThatLargeInputIsDecoded() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("ff7a3c87fd74abff"));
+        ctx.setValue(new StringFieldValue("ff7a3c87fd74abff"));
         new HexDecodeExpression().execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof LongFieldValue);
         assertEquals(-37651092108694529L, ((LongFieldValue)val).getLong());
     }

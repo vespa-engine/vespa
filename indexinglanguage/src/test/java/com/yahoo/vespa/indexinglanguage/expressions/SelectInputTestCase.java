@@ -73,7 +73,7 @@ public class SelectInputTestCase {
     }
 
     private static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        assertEquals(value, exp.verify(new VerificationContext(adapter).setCurrentType(value)));
+        assertEquals(value, exp.verify(new VerificationContext(adapter).setValueType(value)));
     }
 
     private static void assertVerifyThrows(FieldTypeAdapter adapter, Expression exp, String expectedException) {
@@ -98,7 +98,7 @@ public class SelectInputTestCase {
         ExecutionContext ctx = new ExecutionContext(adapter);
         for (String fieldName : availableFields) {
             adapter.createField(new Field(fieldName, DataType.STRING));
-            ctx.setFieldValue(fieldName, new StringFieldValue(fieldName), null);
+            ctx.setOutputValue(null, fieldName, new StringFieldValue(fieldName));
         }
         List<Pair<String, Expression>> cases = new LinkedList<>();
         for (String fieldName : inputField) {

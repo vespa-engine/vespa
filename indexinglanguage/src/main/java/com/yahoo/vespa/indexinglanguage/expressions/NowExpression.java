@@ -20,23 +20,29 @@ public final class NowExpression extends Expression {
         this.timer = timer;
     }
 
-    public Timer getTimer() { return timer; }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
+    public Timer getTimer() {
+        return timer;
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setCurrentValue(new LongFieldValue(timer.currentTimeSeconds()));
+        context.setValue(new LongFieldValue(timer.currentTimeSeconds()));
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.LONG; }
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
+    }
 
     @Override
-    public String toString() { return "now"; }
+    public DataType createdOutputType() {
+        return DataType.LONG;
+    }
+
+    @Override
+    public String toString() {
+        return "now";
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -64,7 +70,6 @@ public final class NowExpression extends Expression {
         public long currentTimeSeconds() {
             return System.currentTimeMillis() / 1000;
         }
-
     }
 
 }

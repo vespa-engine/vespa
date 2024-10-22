@@ -51,10 +51,10 @@ public class NormalizeTestCase {
     public void requireThatInputIsNormalized() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         ctx.setLanguage(Language.ENGLISH);
-        ctx.setCurrentValue(new StringFieldValue("b\u00e9yonc\u00e8"));
+        ctx.setValue(new StringFieldValue("b\u00e9yonc\u00e8"));
         new NormalizeExpression(new SimpleLinguistics()).execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("beyonce", ((StringFieldValue)val).getString());
     }
@@ -93,11 +93,11 @@ public class NormalizeTestCase {
     public void requireThatBadNormalizeRetries() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         ctx.setLanguage(Language.ENGLISH);
-        ctx.setCurrentValue(new StringFieldValue("bad norm"));
+        ctx.setValue(new StringFieldValue("bad norm"));
         var linguistics = new MyMockLinguistics();
         assertTrue(getFirst(linguistics.getTransformer()));
         new NormalizeExpression(linguistics).execute(ctx);
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("bad/norm", ((StringFieldValue)val).getString());
         assertFalse(getFirst(linguistics.getTransformer()));
@@ -108,11 +108,11 @@ public class NormalizeTestCase {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         ctx.setLanguage(Language.ENGLISH);
         var orig = new StringFieldValue("");
-        ctx.setCurrentValue(orig);
+        ctx.setValue(orig);
         var linguistics = new MyMockLinguistics();
         assertTrue(getFirst(linguistics.getTransformer()));
         new NormalizeExpression(linguistics).execute(ctx);
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val == orig);
         assertTrue(getFirst(linguistics.getTransformer()));
     }

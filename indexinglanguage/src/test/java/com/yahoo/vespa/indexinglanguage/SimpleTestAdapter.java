@@ -17,8 +17,8 @@ import java.util.Map;
  */
 public class SimpleTestAdapter implements FieldValueAdapter {
 
-    public final Map<String, DataType> types = new HashMap<>();
-    public final Map<String, FieldValue> values = new HashMap<>();
+    final Map<String, DataType> types = new HashMap<>();
+    final Map<String, FieldValue> values = new HashMap<>();
 
     public SimpleTestAdapter(Field... fields) {
         for (Field field : fields) {

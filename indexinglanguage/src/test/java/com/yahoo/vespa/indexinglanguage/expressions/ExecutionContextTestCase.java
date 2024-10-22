@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import org.junit.Test;
 
@@ -18,8 +19,8 @@ public class ExecutionContextTestCase {
     public void requireThatValueCanBeSet() {
         ExecutionContext ctx = new ExecutionContext();
         FieldValue val = new StringFieldValue("foo");
-        ctx.setCurrentValue(val);
-        assertSame(val, ctx.getCurrentValue());
+        ctx.setValue(val);
+        assertSame(val, ctx.getValue());
     }
 
     @Test
@@ -51,9 +52,9 @@ public class ExecutionContextTestCase {
     @Test
     public void requireThatClearRemovesValue() {
         ExecutionContext ctx = new ExecutionContext();
-        ctx.setCurrentValue(new StringFieldValue("foo"));
+        ctx.setValue(new StringFieldValue("foo"));
         ctx.clear();
-        assertNull(ctx.getCurrentValue());
+        assertNull(ctx.getValue());
     }
 
     @Test
@@ -87,9 +88,9 @@ public class ExecutionContextTestCase {
     @Test
     public void requireThatLanguageCanBeResolved() {
         ExecutionContext ctx = new ExecutionContext();
-        ctx.setCurrentValue(new StringFieldValue("\u3072\u3089\u304c\u306a"));
+        ctx.setValue(new StringFieldValue("\u3072\u3089\u304c\u306a"));
         assertEquals(Language.JAPANESE, ctx.resolveLanguage(new SimpleLinguistics()));
-        ctx.setCurrentValue(new StringFieldValue("\ud55c\uae00\uacfc"));
+        ctx.setValue(new StringFieldValue("\ud55c\uae00\uacfc"));
         assertEquals(Language.KOREAN, ctx.resolveLanguage(new SimpleLinguistics()));
     }
 
@@ -97,9 +98,9 @@ public class ExecutionContextTestCase {
     public void requireThatExplicitLanguagePreventsDetection() {
         ExecutionContext ctx = new ExecutionContext();
         ctx.setLanguage(Language.ARABIC);
-        ctx.setCurrentValue(new StringFieldValue("\u3072\u3089\u304c\u306a"));
+        ctx.setValue(new StringFieldValue("\u3072\u3089\u304c\u306a"));
         assertEquals(Language.ARABIC, ctx.resolveLanguage(new SimpleLinguistics()));
-        ctx.setCurrentValue(new StringFieldValue("\ud55c\uae00\uacfc"));
+        ctx.setValue(new StringFieldValue("\ud55c\uae00\uacfc"));
         assertEquals(Language.ARABIC, ctx.resolveLanguage(new SimpleLinguistics()));
     }
 }

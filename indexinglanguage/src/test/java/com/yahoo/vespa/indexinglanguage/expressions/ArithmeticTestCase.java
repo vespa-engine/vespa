@@ -170,7 +170,7 @@ public class ArithmeticTestCase {
     private static FieldValue evaluate(Expression lhs, Operator op, Expression rhs) {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new ArithmeticExpression(lhs, op, rhs).execute(ctx);
-        return ctx.getCurrentValue();
+        return ctx.getValue();
     }
 
     private static ArithmeticExpression newArithmetic(long lhs, Operator op, long rhs) {

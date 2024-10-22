@@ -10,29 +10,33 @@ import java.time.Instant;
  *
  * @author bergum
  */
-public class ToEpochSecondExpression extends Expression {
 
+public class ToEpochSecondExpression extends Expression {
     public ToEpochSecondExpression() {
         super(DataType.STRING); //only accept string input
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
-        String inputString = String.valueOf(context.getCurrentValue());
+        String inputString = String.valueOf(context.getValue());
         long epochTime =  Instant.parse(inputString).getEpochSecond();
-        context.setCurrentValue(new LongFieldValue(epochTime));
+        context.setValue(new LongFieldValue(epochTime));
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.LONG; }
+    protected void doVerify(VerificationContext context) {
+        context.setValueType(createdOutputType());
+    }
 
     @Override
-    public String toString() { return "to_epoch_second"; }
+    public DataType createdOutputType() {
+        return DataType.LONG;
+    }
+
+    @Override
+    public String toString() {
+        return "to_epoch_second";
+    }
 
     @Override
     public boolean equals(Object obj) {

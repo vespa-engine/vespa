@@ -5,6 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
@@ -39,8 +40,8 @@ public class ToBoolTestCase {
     @Test
     public void requireThatNonEmptyStringBecomesTrue() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new StringFieldValue("false")).execute(new ToBoolExpression());
-        FieldValue value = context.getCurrentValue();
+        context.setValue(new StringFieldValue("false")).execute(new ToBoolExpression());
+        FieldValue value = context.getValue();
         assertTrue(value instanceof BoolFieldValue);
         assertTrue(((BoolFieldValue)value).getBoolean());
     }
@@ -48,8 +49,8 @@ public class ToBoolTestCase {
     @Test
     public void requireThatEmptyStringBecomesFalse() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new StringFieldValue("")).execute(new ToBoolExpression());
-        FieldValue value = context.getCurrentValue();
+        context.setValue(new StringFieldValue("")).execute(new ToBoolExpression());
+        FieldValue value = context.getValue();
         assertTrue(value instanceof BoolFieldValue);
         assertFalse(((BoolFieldValue)value).getBoolean());
     }
@@ -57,8 +58,8 @@ public class ToBoolTestCase {
     @Test
     public void requireThatNonZeroBecomesTrue() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new IntegerFieldValue(37)).execute(new ToBoolExpression());
-        FieldValue value = context.getCurrentValue();
+        context.setValue(new IntegerFieldValue(37)).execute(new ToBoolExpression());
+        FieldValue value = context.getValue();
         assertTrue(value instanceof BoolFieldValue);
         assertTrue(((BoolFieldValue)value).getBoolean());
     }
@@ -66,8 +67,8 @@ public class ToBoolTestCase {
     @Test
     public void requireThatZeroBecomesFalse() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new IntegerFieldValue(0)).execute(new ToBoolExpression());
-        FieldValue value = context.getCurrentValue();
+        context.setValue(new IntegerFieldValue(0)).execute(new ToBoolExpression());
+        FieldValue value = context.getValue();
         assertTrue(value instanceof BoolFieldValue);
         assertFalse(((BoolFieldValue)value).getBoolean());
     }

@@ -35,9 +35,9 @@ public class ThisTestCase {
     @Test
     public void requireThatValueIsPreserved() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("69"));
+        ctx.setValue(new StringFieldValue("69"));
         new ThisExpression().execute(ctx);
 
-        assertEquals(new StringFieldValue("69"), ctx.getCurrentValue());
+        assertEquals(new StringFieldValue("69"), ctx.getValue());
     }
 }

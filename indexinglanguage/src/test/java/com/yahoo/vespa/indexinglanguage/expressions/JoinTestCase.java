@@ -46,10 +46,10 @@ public class JoinTestCase {
         Array<StringFieldValue> arr = new Array<>(DataType.getArray(DataType.STRING));
         arr.add(new StringFieldValue("6"));
         arr.add(new StringFieldValue("9"));
-        ctx.setCurrentValue(arr);
+        ctx.setValue(arr);
 
         new JoinExpression(";").execute(ctx);
-        assertEquals(new StringFieldValue("6;9"), ctx.getCurrentValue());
+        assertEquals(new StringFieldValue("6;9"), ctx.getValue());
     }
 
     @Test

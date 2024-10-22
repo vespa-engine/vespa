@@ -36,9 +36,9 @@ public class ToIntegerTestCase {
     @Test
     public void requireThatValueIsConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new StringFieldValue("69")).execute(new ToIntegerExpression());
+        ctx.setValue(new StringFieldValue("69")).execute(new ToIntegerExpression());
 
-        FieldValue val = ctx.getCurrentValue();
+        FieldValue val = ctx.getValue();
         assertTrue(val instanceof IntegerFieldValue);
         assertEquals(69, ((IntegerFieldValue)val).getInteger());
     }
