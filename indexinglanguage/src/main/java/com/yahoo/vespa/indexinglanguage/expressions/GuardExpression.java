@@ -15,68 +15,78 @@ import com.yahoo.vespa.objects.ObjectPredicate;
  */
 public final class GuardExpression extends CompositeExpression {
 
-    private final Expression exp;
+    private final Expression expression;
     private final boolean shouldExecute;
 
-    public GuardExpression(Expression exp) {
-        super(exp.requiredInputType());
-        this.exp = exp;
-        shouldExecute = shouldExecute(exp);
+    public GuardExpression(Expression expression) {
+        super(expression.requiredInputType());
+        this.expression = expression;
+        shouldExecute = shouldExecute(expression);
     }
 
-    public Expression getInnerExpression() {
-        return exp;
-    }
+    public Expression getInnerExpression() { return expression; }
 
     @Override
     public GuardExpression convertChildren(ExpressionConverter converter) {
-        return new GuardExpression(converter.convert(exp));
+        return new GuardExpression(converter.convert(expression));
     }
 
     @Override
-    public void setStatementOutput(DocumentType documentType, Field field) {
-        exp.setStatementOutput(documentType, field);
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        return expression.setInputType(inputType, context);
     }
 
     @Override
-    protected void doExecute(ExecutionContext context) {
-        if (!shouldExecute && context.getAdapter() instanceof UpdateAdapter) {
-            context.setValue(null);
-        } else {
-            exp.execute(context);
-        }
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+        return expression.setOutputType(outputType, context);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        exp.verify(context);
+        expression.verify(context);
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        if (!shouldExecute && context.getFieldValue() instanceof UpdateAdapter) {
+            context.setCurrentValue(null);
+        } else {
+            expression.execute(context);
+        }
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        expression.setStatementOutput(documentType, field);
     }
 
     @Override
     public DataType createdOutputType() {
-        return exp.createdOutputType();
+        return expression.createdOutputType();
     }
 
     @Override
     public String toString() {
-        return "guard " + toScriptBlock(exp);
+        return "guard " + toScriptBlock(expression);
     }
 
     @Override
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
-         select(exp, predicate, operation);
+         select(expression, predicate, operation);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof GuardExpression rhs)) return false;
-        if (!exp.equals(rhs.exp)) return false;
+        if (!expression.equals(rhs.expression)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + exp.hashCode();
+        return getClass().hashCode() + expression.hashCode();
     }
 
     private static boolean shouldExecute(Expression exp) {

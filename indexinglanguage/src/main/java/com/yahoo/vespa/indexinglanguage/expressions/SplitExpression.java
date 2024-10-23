@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
@@ -20,13 +21,34 @@ public final class SplitExpression extends Expression {
         this.splitPattern = Pattern.compile(splitString);
     }
 
-    public Pattern getSplitPattern() {
-        return splitPattern;
+    public Pattern getSplitPattern() { return splitPattern; }
+
+    @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
+        // TODO: Activate type checking
+        // if (input != DataType.STRING)
+        //    throw new IllegalArgumentException("split requires a string input, but got " + input);
+        return new ArrayDataType(DataType.STRING);
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(output, context);
+        // TODO: Activate type checking
+        // if ( ! (output instanceof ArrayDataType) && output.getNestedType() == DataType.STRING)
+        //    throw new IllegalArgumentException("split produces a string array, but needs " + output);
+        return DataType.STRING;
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getValue());
+        String input = String.valueOf(context.getCurrentValue());
         Array<StringFieldValue> output = new Array<>(DataType.getArray(DataType.STRING));
         if (!input.isEmpty()) {
             String[] splits = splitPattern.split(input);
@@ -34,12 +56,7 @@ public final class SplitExpression extends Expression {
                 output.add(new StringFieldValue(split));
             }
         }
-        context.setValue(output);
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setValueType(createdOutputType());
+        context.setCurrentValue(output);
     }
 
     @Override
