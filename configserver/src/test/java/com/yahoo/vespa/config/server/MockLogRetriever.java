@@ -16,12 +16,22 @@ import java.util.Optional;
  */
 public class MockLogRetriever extends LogRetriever {
 
+    private final int statuCode;
+    private final String logLine;
+
+    public MockLogRetriever() { this(200, "log line"); }
+
+    public MockLogRetriever(int statusCode, String logLine) {
+        this.statuCode = statusCode;
+        this.logLine = logLine;
+    }
+
     @Override
     public HttpResponse getLogs(HttpURL logServerUri, Optional<Instant> deployTime) {
-        return new HttpResponse(200) {
+        return new HttpResponse(statuCode) {
             @Override
             public void render(OutputStream outputStream) throws IOException {
-                outputStream.write("log line".getBytes(StandardCharsets.UTF_8));
+                outputStream.write(logLine.getBytes(StandardCharsets.UTF_8));
             }
         };
     }

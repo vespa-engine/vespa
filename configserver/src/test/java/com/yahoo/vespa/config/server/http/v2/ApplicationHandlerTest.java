@@ -108,7 +108,7 @@ public class ApplicationHandlerTest {
     private final static ApplicationId myTenantApplicationId = ApplicationId.from(mytenantName, ApplicationName.defaultName(), InstanceName.defaultName());
     private final static ApplicationId applicationId = ApplicationId.defaultId();
     private final static MockTesterClient testerClient = new MockTesterClient();
-    private static final MockLogRetriever logRetriever = new MockLogRetriever();
+    private MockLogRetriever logRetriever = new MockLogRetriever();
     private static final Version vespaVersion = Version.fromString("7.8.9");
     private static final SecretStoreValidator secretStoreValidator = new MockSecretStoreValidator();
 
@@ -460,6 +460,20 @@ public class ApplicationHandlerTest {
         assertEquals(200, response.getStatus());
 
         assertEquals("log line", getRenderedString(response));
+    }
+
+    @Test
+    public void testGetLogsConnectionTimeout() throws IOException {
+        logRetriever = new MockLogRetriever(504, "Connection error when getting logs");
+        setup();
+        applicationRepository.deploy(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/logs?from=100&to=200";
+        ApplicationHandler mockHandler = createApplicationHandler();
+
+        HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
+        assertEquals(504, response.getStatus());
+
+        assertEquals("Connection error when getting logs", getRenderedString(response));
     }
 
     @Test
