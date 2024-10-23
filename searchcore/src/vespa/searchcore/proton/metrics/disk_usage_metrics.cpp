@@ -11,7 +11,7 @@ namespace proton {
 DiskUsageMetrics::DiskUsageMetrics(metrics::MetricSet* parent)
     : MetricSet("disk_usage", {}, "The disk usage for a given component", parent),
       _size_on_disk("size_on_disk", {}, "Size on disk (bytes)", this),
-      _read_bytes("read_bytes", {}, "Read bytes", this)
+      _search_read_bytes("search_read_bytes", {}, "Bytes read in posting list files as part of search", this)
 {
 }
 
@@ -21,10 +21,10 @@ void
 DiskUsageMetrics::update(uint64_t size_on_disk, const DiskIoStats& disk_io_stats)
 {
     _size_on_disk.set(size_on_disk);
-    _read_bytes.addTotalValueBatch(disk_io_stats.read_bytes_total(),
-                                   disk_io_stats.read_operations(),
-                                   disk_io_stats.read_bytes_min(),
-                                   disk_io_stats.read_bytes_max());
+    _search_read_bytes.addTotalValueBatch(disk_io_stats.read_bytes_total(),
+                                          disk_io_stats.read_operations(),
+                                          disk_io_stats.read_bytes_min(),
+                                          disk_io_stats.read_bytes_max());
 }
 
 }

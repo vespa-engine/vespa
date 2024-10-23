@@ -14,7 +14,7 @@ namespace proton {
  */
 class DiskUsageMetrics : public metrics::MetricSet {
     metrics::LongValueMetric _size_on_disk;
-    metrics::LongValueMetric _read_bytes;
+    metrics::LongValueMetric _search_read_bytes;
 
 public:
     explicit DiskUsageMetrics(metrics::MetricSet* parent);
