@@ -26,16 +26,18 @@ public final class SplitExpression extends Expression {
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);
-        if (input != DataType.STRING)
-            throw new IllegalArgumentException("split requires a string input, but got " + input);
+        // TODO: Activate type checking
+        // if (input != DataType.STRING)
+        //    throw new IllegalArgumentException("split requires a string input, but got " + input);
         return new ArrayDataType(DataType.STRING);
     }
 
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         super.setOutputType(output, context);
-        if ( ! (output instanceof ArrayDataType) && output.getNestedType() == DataType.STRING)
-            throw new IllegalArgumentException("split produces a string array, but needs " + output);
+        // TODO: Activate type checking
+        // if ( ! (output instanceof ArrayDataType) && output.getNestedType() == DataType.STRING)
+        //    throw new IllegalArgumentException("split produces a string array, but needs " + output);
         return DataType.STRING;
     }
 

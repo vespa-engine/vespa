@@ -7,6 +7,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
@@ -146,7 +147,7 @@ public class ScriptTestCase {
     }
 
     @Test
-    // input debug_src | lowercase | summary | index | split ";" | for_each {
+    // input myString | lowercase | summary | index | split ";" | for_each {
     public void testSplitAndForEach() {
         var adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myString", DataType.STRING));
@@ -161,6 +162,26 @@ public class ScriptTestCase {
         statement.verify(adapter);
         statement.execute(adapter);
         assertEquals("[m, t, v]", adapter.values.get("myArray").toString());
+    }
+
+    @Test
+    //  input myString | lowercase | split ";" |
+    //            for_each { trim | normalize } |
+    //            to_string | index;
+    public void testForEachToString() {
+        var adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myString", DataType.STRING));
+        adapter.setValue("myString", new StringFieldValue("my;tEsT;Values"));
+        var statement =
+                newStatement(new InputExpression("myString"),
+                             new LowerCaseExpression(),
+                             new SplitExpression(";"),
+                             new ForEachExpression(new StatementExpression(new TrimExpression(), new NormalizeExpression(new SimpleLinguistics()))),
+                             new ToStringExpression(),
+                             new IndexExpression("myString"));
+        statement.verify(adapter);
+        statement.execute(adapter);
+        assertEquals("[my, test, values]", adapter.values.get("myString").toString());
     }
 
     private static ScriptExpression newScript(StatementExpression... args) {

@@ -65,7 +65,7 @@ public abstract class Expression extends Selectable {
      * @throws IllegalArgumentException if inputType isn't assignable to requiredType
      */
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
-        // TODO: Activate type chedcking
+        // TODO: Activate type checking
         // if ( ! (inputType instanceof TensorDataType))
         //    throw new IllegalArgumentException(this + " requires a " + requiredType + ", but gets " + inputType);
         this.inputType = inputType;
