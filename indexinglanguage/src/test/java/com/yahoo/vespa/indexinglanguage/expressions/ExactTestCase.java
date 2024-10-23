@@ -29,55 +29,55 @@ public class ExactTestCase {
     @Test
     public void requireThatValueIsNotChanged() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("FOO"));
+        ctx.setCurrentValue(new StringFieldValue("FOO"));
         new ExactExpression().execute(ctx);
 
-        assertEquals("FOO", String.valueOf(ctx.getValue()));
+        assertEquals("FOO", String.valueOf(ctx.getCurrentValue()));
     }
 
     @Test
     public void requireThatValueIsAnnotated() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("FOO"));
+        ctx.setCurrentValue(new StringFieldValue("FOO"));
         new ExactExpression().execute(ctx);
 
-        assertAnnotation(0, 3, new StringFieldValue("foo"), (StringFieldValue)ctx.getValue());
+        assertAnnotation(0, 3, new StringFieldValue("foo"), (StringFieldValue)ctx.getCurrentValue());
     }
 
     @Test
     public void requireThatThereIsNoSegmentation() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("FOO BAR"));
+        ctx.setCurrentValue(new StringFieldValue("FOO BAR"));
         new ExactExpression().execute(ctx);
 
-        assertAnnotation(0, 7, new StringFieldValue("foo bar"), (StringFieldValue)ctx.getValue());
+        assertAnnotation(0, 7, new StringFieldValue("foo bar"), (StringFieldValue)ctx.getCurrentValue());
     }
 
     @Test
     public void requireThatRedundantAnnotationValueIsIgnored() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("foo"));
+        ctx.setCurrentValue(new StringFieldValue("foo"));
         new ExactExpression().execute(ctx);
 
-        assertAnnotation(0, 3, null, (StringFieldValue)ctx.getValue());
+        assertAnnotation(0, 3, null, (StringFieldValue)ctx.getCurrentValue());
     }
 
     @Test
     public void requireThatLongStringsAreNotAnnotated() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("foo"));
+        ctx.setCurrentValue(new StringFieldValue("foo"));
         new ExactExpression(2).execute(ctx);
 
-        assertNull(((StringFieldValue)ctx.getValue()).getSpanTree(SpanTrees.LINGUISTICS));
+        assertNull(((StringFieldValue)ctx.getCurrentValue()).getSpanTree(SpanTrees.LINGUISTICS));
     }
 
     @Test
     public void requireThatEmptyStringsAreNotAnnotated() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue(""));
+        ctx.setCurrentValue(new StringFieldValue(""));
         new ExactExpression().execute(ctx);
 
-        assertNull(((StringFieldValue)ctx.getValue()).getSpanTree(SpanTrees.LINGUISTICS));
+        assertNull(((StringFieldValue)ctx.getCurrentValue()).getSpanTree(SpanTrees.LINGUISTICS));
     }
 
     @Test

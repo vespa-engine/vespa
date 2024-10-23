@@ -291,9 +291,10 @@ public abstract class DataType extends Identifiable implements Comparable<DataTy
      *
      * @return primitive data type, or null
      */
-    public PrimitiveDataType getPrimitiveType() {
-        return null;
-    }
+    public PrimitiveDataType getPrimitiveType() { return null; }
+
+    /** Returns the nested type of this if it is a collection type, null otherwise. */
+    public DataType getNestedType() { return null; }
 
     @Override
     public void visitMembers(ObjectVisitor visitor) {
