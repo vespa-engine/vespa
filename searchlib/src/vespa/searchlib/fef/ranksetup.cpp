@@ -132,6 +132,7 @@ RankSetup::configure()
     set_target_hits_max_adjustment_factor(matching::TargetHitsMaxAdjustmentFactor::lookup(_indexEnv.getProperties()));
     set_fuzzy_matching_algorithm(matching::FuzzyAlgorithm::lookup(_indexEnv.getProperties()));
     set_weakand_range(temporary::WeakAndRange::lookup(_indexEnv.getProperties()));
+    set_weakand_stop_word_limit(matching::WeakAndStopWordLimit::lookup(_indexEnv.getProperties()));
     _mutateOnMatch._attribute = mutate::on_match::Attribute::lookup(_indexEnv.getProperties());
     _mutateOnMatch._operation = mutate::on_match::Operation::lookup(_indexEnv.getProperties());
     _mutateOnFirstPhase._attribute = mutate::on_first_phase::Attribute::lookup(_indexEnv.getProperties());
