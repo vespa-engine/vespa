@@ -71,7 +71,7 @@ public class LLMSearcher extends Searcher {
         return complete(query, StringPrompt.from(getPrompt(query)), null, execution);
     }
 
-    private String loadDefaultPrompt(LlmSearcherConfig config) {
+    private static String loadDefaultPrompt(LlmSearcherConfig config) {
         if (config.prompt() != null && ! config.prompt().isEmpty()) {
             return config.prompt();
         } else if (config.promptTemplate().isPresent()) {
@@ -109,11 +109,14 @@ public class LLMSearcher extends Searcher {
         return languageModel;
     }
 
+    public LanguageModel getLanguageModel() {
+        return languageModel;
+    }
+
     protected Result complete(Query query, Prompt prompt, Result result, Execution execution) {
         var options = new InferenceParameters(getApiKeyHeader(query), s -> lookupProperty(s, query));
-        var stream = lookupPropertyBool(STREAM_PROPERTY, query, this.stream);  // query value overwrites config
         try {
-            if (stream) {
+            if (shouldStream(query)) {
                 return completeAsync(query, prompt, options, result, execution);
             }
             return completeSync(query, prompt, options, result, execution);
@@ -125,6 +128,10 @@ public class LLMSearcher extends Searcher {
     private boolean shouldAddPrompt(Query query) {
         var includePrompt = lookupPropertyBool(INCLUDE_PROMPT_IN_RESULT, query, false);
         return query.getTrace().getLevel() >= 1 || includePrompt;
+    }
+
+    protected boolean shouldStream(Query query) {
+        return lookupPropertyBool(STREAM_PROPERTY, query, this.stream); // query value overwrites config
     }
 
     private boolean shouldAddTokenStats(Query query) {
@@ -233,6 +240,11 @@ public class LLMSearcher extends Searcher {
         return query.properties().getBoolean(propertyWithPrefix, defaultValue);
     }
 
+    public int lookupPropertyInt(String property, Query query, int defaultValue) {
+        String propertyWithPrefix = this.propertyPrefix + "." + property;
+        return query.properties().getInteger(propertyWithPrefix, defaultValue);
+    }
+
     public String lookupPropertyWithOrWithoutPrefix(String property, Function<String, String> lookup) {
         String value = lookup.apply(getPropertyPrefix() + "." + property);
         if (value != null)
@@ -256,7 +268,7 @@ public class LLMSearcher extends Searcher {
         return Utf8.toString(bs.toByteArray());
     }
 
-    private static class TokenStats {
+    static class TokenStats {
 
         private final long start;
         private long timeToFirstToken;

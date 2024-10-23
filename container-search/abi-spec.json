@@ -9311,11 +9311,14 @@
     "methods" : [
       "public void <init>(ai.vespa.search.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "public ai.vespa.llm.LanguageModel getLanguageModel()",
       "protected com.yahoo.search.Result complete(com.yahoo.search.Query, ai.vespa.llm.completion.Prompt, com.yahoo.search.Result, com.yahoo.search.searchchain.Execution)",
+      "protected boolean shouldStream(com.yahoo.search.Query)",
       "public java.lang.String getPrompt(com.yahoo.search.Query)",
       "public java.lang.String getPropertyPrefix()",
       "public java.lang.String lookupProperty(java.lang.String, com.yahoo.search.Query)",
       "public java.lang.Boolean lookupPropertyBool(java.lang.String, com.yahoo.search.Query, boolean)",
+      "public int lookupPropertyInt(java.lang.String, com.yahoo.search.Query, int)",
       "public java.lang.String lookupPropertyWithOrWithoutPrefix(java.lang.String, java.util.function.Function)",
       "public java.lang.String getApiKeyHeader(com.yahoo.search.Query)"
     ],
@@ -9338,6 +9341,7 @@
       "public ai.vespa.search.llm.LlmSearcherConfig$Builder providerId(java.lang.String)",
       "public ai.vespa.search.llm.LlmSearcherConfig$Builder prompt(java.lang.String)",
       "public ai.vespa.search.llm.LlmSearcherConfig$Builder promptTemplate(java.util.Optional)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder maxContextLength(int)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -9379,7 +9383,8 @@
       "public boolean stream()",
       "public java.lang.String providerId()",
       "public java.lang.String prompt()",
-      "public java.util.Optional promptTemplate()"
+      "public java.util.Optional promptTemplate()",
+      "public int maxContextLength()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

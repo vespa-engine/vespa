@@ -31,10 +31,15 @@ public class RAGSearcher extends LLMSearcher {
 
     private static final String CONTEXT_PROPERTY = "context";
     private static final String FIELDS_TO_INCLUDE_PROPERTY = "fields";
+    private static final String MAX_CONTEXT_LENGTH_PROPERTY = "maxContextLength";
+
+    private final int maxContextLength;
 
     @Inject
     public RAGSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
         super(config, languageModels);
+        this.maxContextLength = config.maxContextLength();
+
         log.info("Starting " + RAGSearcher.class.getName() + " with language model " + config.providerId());
     }
 
@@ -66,6 +71,8 @@ public class RAGSearcher extends LLMSearcher {
     private String buildContext(Result result) {
         Set<String> fieldsToInclude = getFieldsToInclude(result.getQuery());
 
+        int maxContextLength = getMaxContextLength(result.getQuery());
+
         StringBuilder sb = new StringBuilder();
         var hits = result.hits();
         int counter = 1;
@@ -77,6 +84,11 @@ public class RAGSearcher extends LLMSearcher {
                 }
             });
             sb.append("\n");
+
+            if (maxContextLength > 0 && sb.length() > maxContextLength) {
+                sb.setLength(maxContextLength);
+                break;
+            }
         }
         return sb.toString();
     }
@@ -87,6 +99,10 @@ public class RAGSearcher extends LLMSearcher {
             return Arrays.stream(includedFields.split(",")).map(String::trim).collect(Collectors.toSet());
         }
         return new HashSet<>();
+    }
+
+    private int getMaxContextLength(Query query) {
+        return lookupPropertyInt(MAX_CONTEXT_LENGTH_PROPERTY, query, maxContextLength);
     }
 
 }

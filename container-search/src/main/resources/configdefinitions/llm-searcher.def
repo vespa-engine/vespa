@@ -15,3 +15,6 @@ prompt string default=""
 
 # The default prompt template file to use if not overridden in query. Above prompt has precedence if it is set.
 promptTemplate path optional
+
+# Maximum number of tokens to use for context (-1 means no limit)
+maxContextLength int default=-1

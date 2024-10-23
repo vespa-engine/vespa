@@ -76,6 +76,26 @@ public class RAGSearcherTest {
     }
 
     @Test
+    public void testPromptGenerationMaxLength() {
+        var eventStream = runRAGQuery(Map.of(
+                "query", "why are ducks better than cats?",
+                "llm.fields", "title,content",
+                "llm.maxContextLength", "64",
+                "llm.prompt", "Content:\n{context}\nGiven these documents, answer this query as concisely as possible: @query",
+                "traceLevel", "1"));
+        var events = eventStream.incoming().drain();
+
+        var promptEvent = (EventStream.Event) events.get(0);
+        assertEquals("prompt", promptEvent.type());
+        assertEquals("Content:\n" +
+                "document [1]:\n" +
+                "title: " + DOC1_TITLE + "\n" +
+                // No content field and document 2 because of context length restriction
+                "Given these documents, answer this query as concisely as possible: " +
+                "why are ducks better than cats?", promptEvent.toString());
+    }
+
+    @Test
     public void testSkipContextInPrompt() {
         var eventStream = runRAGQuery(Map.of(
                 "query", "why are ducks better than cats?",
