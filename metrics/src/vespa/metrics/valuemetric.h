@@ -115,6 +115,11 @@ public:
             addValueWithCount(avg, avg * count, count, min, max);
         }
     }
+    void addTotalValueBatch(TotVal tot, uint32_t count, AvgVal min, AvgVal max) {
+        if (count > 0) {
+            addValueWithCount(tot / count, tot, count, min, max);
+        }
+    }
     virtual void addValue(AvgVal avg) { addAvgValueWithCount(avg, 1); }
     virtual void set(AvgVal avg) { addValue(avg); }
     virtual void inc(AvgVal val = 1);
