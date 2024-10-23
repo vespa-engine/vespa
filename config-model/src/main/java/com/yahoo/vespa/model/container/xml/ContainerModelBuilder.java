@@ -238,7 +238,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Must be added after nodes:
         addDeploymentSpecConfig(cluster, context, deployState.getDeployLogger());
         addZooKeeper(cluster, spec);
-        addAthenzServiceIdentityProvider(cluster, context, deployState.getDeployLogger());
+        addAthenzServiceIdentityProvider(cluster, context);
 
         addParameterStoreValidationHandler(cluster, deployState);
     }
@@ -368,7 +368,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addComponent(cloudSecretStore);
     }
 
-    private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
+    private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context) {
         if ( ! context.getDeployState().isHosted()) return;
         if ( ! context.getDeployState().zone().system().isPublic()) return; // Non-public is handled by deployment spec config.
         if ( ! context.properties().launchApplicationAthenzService()) return;
