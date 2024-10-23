@@ -23,28 +23,19 @@ struct MyWandSpec : public WandSpec
     SharedWeakAndPriorityQueue scores;
     uint32_t n;
     MatchingPhase matching_phase;
-    wand::MatchParams my_params;
 
     explicit MyWandSpec(uint32_t n_in)
         : WandSpec(),
           scores(n_in),
           n(n_in),
-          matching_phase(MatchingPhase::FIRST_PHASE),
-          my_params(scores, 1, -1, 1)
+          matching_phase(MatchingPhase::FIRST_PHASE)
     {}
     SearchIterator *create() {
         bool readonly_scores_heap = (matching_phase != MatchingPhase::FIRST_PHASE);
         return new TrackedSearch("WAND", getHistory(),
-                                 WeakAndSearch::create(getTerms(), my_params, n, true, readonly_scores_heap));
+                                 WeakAndSearch::create(getTerms(), wand::MatchParams(scores, 1, 1), n, true, readonly_scores_heap));
     }
     void set_second_phase() { matching_phase = MatchingPhase::SECOND_PHASE; }
-    void set_abs_stop_word_limit(uint32_t limit) { my_params.abs_stop_word_limit = limit; }
-    SimpleResult search() {
-        SearchIterator::UP search(create());
-        SimpleResult hits;
-        hits.search(*search);
-        return hits;
-    }
 };
 
 struct SimpleWandFixture {
@@ -149,22 +140,6 @@ TEST(WeakAndTest, require_that_initial_docid_for_subsearches_are_taken_into_acco
               history);
 }
 
-TEST(WeakAndTest, require_that_the_worst_normal_word_must_match_when_using_stop_word_limit) {
-    MyWandSpec spec(1000); // avoid limiting hits with heap
-    spec.leaf(LeafSpec("1").doc(1).doc(2).doc(3).doc(4));
-    spec.leaf(LeafSpec("2").doc(5).doc(6).doc(7));
-    spec.leaf(LeafSpec("3").doc(8).doc(9));
-    spec.set_abs_stop_word_limit(4);
-    EXPECT_EQ(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(4).addHit(5)
-                      .addHit(6).addHit(7).addHit(8).addHit(9), spec.search());
-    spec.set_abs_stop_word_limit(3);
-    EXPECT_EQ(SimpleResult().addHit(5).addHit(6).addHit(7).addHit(8).addHit(9), spec.search());
-    spec.set_abs_stop_word_limit(2);
-    EXPECT_EQ(SimpleResult().addHit(8).addHit(9), spec.search()); // Note: must match only non-stop word
-    spec.set_abs_stop_word_limit(1);
-    EXPECT_EQ(SimpleResult().addHit(8).addHit(9), spec.search()); // Note: must match best stop word
-}
-
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
 public:
     IteratorChildrenVerifier();
@@ -179,7 +154,7 @@ private:
         }
         static constexpr size_t LARGE_ENOUGH_HEAP_FOR_ALL = 10000;
         _scores.push_back(std::make_unique<SharedWeakAndPriorityQueue>(LARGE_ENOUGH_HEAP_FOR_ALL));
-        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), 1, -1, 1), -1, strict, false);
+        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), 1, 1), -1, strict, false);
     }
 };
 
