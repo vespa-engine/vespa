@@ -92,6 +92,7 @@ private:
     std::unique_ptr<WeakAndPriorityQueue>  _scores;
     uint32_t              _n;
     float                 _idf_range;
+    uint32_t              _abs_stop_word_limit;
     std::vector<uint32_t> _weights;
     MatchingPhase         _matching_phase;
 
@@ -109,8 +110,8 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
-    explicit WeakAndBlueprint(uint32_t n) : WeakAndBlueprint(n, 0.0, true) {}
-    WeakAndBlueprint(uint32_t n, float idf_range, bool thread_safe);
+    explicit WeakAndBlueprint(uint32_t n) : WeakAndBlueprint(n, 0.0, -1, true) {}
+    WeakAndBlueprint(uint32_t n, float idf_range, uint32_t abs_stop_word_limit, bool thread_safe);
     ~WeakAndBlueprint() override;
     void addTerm(Blueprint::UP bp, uint32_t weight) {
         addChild(std::move(bp));
