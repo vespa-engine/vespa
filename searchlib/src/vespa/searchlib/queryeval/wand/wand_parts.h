@@ -35,15 +35,13 @@ struct MatchParams
 {
     WeakAndHeap   &scores;
     score_t        scoreThreshold;
-    uint32_t       abs_stop_word_limit;
     const uint32_t scoresAdjustFrequency;
     MatchParams(WeakAndHeap &scores_in) noexcept
-        : MatchParams(scores_in, 1, -1, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY)
+        : MatchParams(scores_in, 1, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY)
     {}
-    MatchParams(WeakAndHeap &scores_in, score_t scoreThreshold_in, uint32_t abs_stop_word_limit_in, uint32_t scoresAdjustFrequency_in) noexcept
+    MatchParams(WeakAndHeap &scores_in, score_t scoreThreshold_in, uint32_t scoresAdjustFrequency_in) noexcept
         : scores(scores_in),
           scoreThreshold(scoreThreshold_in),
-          abs_stop_word_limit(abs_stop_word_limit_in),
           scoresAdjustFrequency(scoresAdjustFrequency_in)
     {}
 };

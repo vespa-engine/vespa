@@ -29,7 +29,7 @@ struct ParallelWeakAndSearch : public SearchIterator
                     double thresholdBoostFactor_in,
                     uint32_t scoresAdjustFrequency_in,
                     uint32_t docIdLimit_in) noexcept
-            : wand::MatchParams(scores_in, scoreThreshold_in, -1, scoresAdjustFrequency_in),
+            : wand::MatchParams(scores_in, scoreThreshold_in, scoresAdjustFrequency_in),
               thresholdBoostFactor(thresholdBoostFactor_in),
               docIdLimit(docIdLimit_in)
         {}
