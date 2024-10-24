@@ -65,7 +65,7 @@ public:
     size_t getMaxTotal() const { return _max_total; }
     static std::unique_ptr<DiversityFilter>
     create(const IAttributeVector &diversity_attr, size_t wanted_hits,
-           size_t max_per_group,size_t cutoff_max_groups, bool cutoff_strict);
+           size_t max_per_group, size_t cutoff_max_groups, bool cutoff_strict);
 protected:
     size_t _max_total;
 };
