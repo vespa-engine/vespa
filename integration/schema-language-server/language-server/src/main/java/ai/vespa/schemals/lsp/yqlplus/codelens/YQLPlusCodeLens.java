@@ -28,10 +28,11 @@ public class YQLPlusCodeLens {
 
         for (Node child : rootNode) {
             if (child.size() == 0) continue;
+            String command = child.getText();
             Range range = child.get(0).getRange();
             ret.add(new CodeLens(
                 range,
-                CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of()),
+                CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of(command)),
                 null
             ));
         }

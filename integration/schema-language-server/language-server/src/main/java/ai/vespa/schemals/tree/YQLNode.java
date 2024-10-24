@@ -3,6 +3,7 @@ package ai.vespa.schemals.tree;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.parser.grouping.ast.request;
 import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
 import ai.vespa.schemals.tree.grouping.GroupingUtils;
@@ -11,6 +12,8 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
     
     private Node originalYQLNode;
     private ai.vespa.schemals.parser.grouping.Node originalGroupingNode;
+
+    private String customText;
 
     public YQLNode(Node node, Position offset) {
         super(LanguageType.YQLPlus, CSTUtils.addPositionToRange(offset, YQLUtils.getNodeRange(node)), node.isDirty());
@@ -34,6 +37,11 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
         super(LanguageType.CUSTOM, range, false);
     }
 
+    public YQLNode(Range range, String customText) {
+        this(range);
+        this.customText = customText;
+    }
+
     public Range setRange(Range range) {
         this.range = range;
         return range;
@@ -45,10 +53,27 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
         }
 
         if (language == LanguageType.GROUPING) {
-            return originalGroupingNode.getSource();
+            if (getASTClass() != request.class) {
+                return originalGroupingNode.getSource();
+            }
+
+            if (originalGroupingNode.size() == 0) return "";
+            // Ignore the EOF token
+            var lastChild = originalGroupingNode.get(originalGroupingNode.size() - 1);
+            int beginOffset = originalGroupingNode.getBeginOffset();
+            int endOffset = lastChild.getBeginOffset();
+            return originalGroupingNode.getTokenSource().getText(beginOffset, endOffset);
         }
 
-        throw new UnsupportedOperationException("Not supported for CUSTOM language for YQL Nodes.");
+        if (customText != null) return customText;
+
+        String ret = "";
+        for (int i = 0; i < size(); i++) {
+            var child = get(i);
+            ret += " " + child.getText();
+        }
+
+        return ret.substring(1);
     }
 
     public ai.vespa.schemals.parser.grouping.Node getOriginalGroupingNode() {

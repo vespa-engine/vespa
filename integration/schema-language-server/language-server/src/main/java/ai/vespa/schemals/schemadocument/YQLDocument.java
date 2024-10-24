@@ -132,8 +132,12 @@ public class YQLDocument implements DocumentManager {
             String charsBeforePipe = queryString.substring(charsRead, pipeIndex);
             if (charsBeforePipe.strip().length() == 0) {
                 String groupingString = queryString.substring(pipeIndex + 1); // Do not include pipe char
-                Position YQLStringWithPipe = CSTUtils.addPositions(new Position(0, 1), StringUtils.getStringPosition(YQLString));
-                Position groupOffset = CSTUtils.addPositions(offset, YQLStringWithPipe);
+                Position YQLStringPosition = StringUtils.getStringPosition(YQLString);
+                Position groupOffsetWithoutPipe = CSTUtils.addPositions(offset, YQLStringPosition);
+
+                Position groupOffset = CSTUtils.addPositions(groupOffsetWithoutPipe, new Position(0, 1)); // Add pipe char
+
+                ret.addChild(new YQLNode(new Range(groupOffsetWithoutPipe, groupOffset), "|"));
     
                 YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset);
                 if (groupingResult.CST.isPresent()) {
@@ -176,16 +180,12 @@ public class YQLDocument implements DocumentManager {
                 ret.addChild(result.CST().get());
             }
             
-            context.logger().info("Chars Read: ");
-            context.logger().info(result.charsRead());
             int newOffset = content.indexOf('\n', charsRead + result.charsRead());
             if (newOffset == -1) {
                 newOffset = content.length();
             }
             String substr = content.substring(charsRead, newOffset);
-            context.logger().info(substr);
             linesRead += StringUtils.countNewLines(substr);
-            context.logger().info(linesRead);
             charsRead = newOffset;
         }
 

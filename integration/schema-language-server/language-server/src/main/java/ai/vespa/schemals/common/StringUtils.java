@@ -133,7 +133,7 @@ public class StringUtils {
         for (int i = str.length() - 1; i >= 0; i--) {
             if (str.charAt(i) == '\n') {
                 if (lines == 0) {
-                    column = str.length() - i;
+                    column = str.length() - i - 1;
                 }
                 lines++;
             }

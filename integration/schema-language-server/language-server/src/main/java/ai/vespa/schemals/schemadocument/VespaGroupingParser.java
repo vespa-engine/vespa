@@ -44,17 +44,14 @@ class VespaGroupingParser {
      * @return Number of chars in the EOF token
      */
     static private int removeEOFToken(YQLNode CST, ClientLogger logger) {
-        logger.info("CST size: " + CST.size());
         if (CST.size() == 0) return 0;
 
         YQLNode child = CST.get(CST.size() - 1).getYQLNode();
-        logger.info(child);
 
         if (child.getASTClass() != Token.class) {
             return 0;
         }
         Node origNode = child.getOriginalGroupingNode();
-        logger.info(origNode.getType());
         if (origNode.getType() != Token.TokenType.EOF) {
             return 0;
         }
