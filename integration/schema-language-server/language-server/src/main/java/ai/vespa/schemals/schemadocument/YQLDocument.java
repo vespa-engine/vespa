@@ -134,9 +134,8 @@ public class YQLDocument implements DocumentManager {
                 String groupingString = queryString.substring(pipeIndex + 1); // Do not include pipe char
                 context.logger().info("Grouping string:");
                 context.logger().info(groupingString);
-                Position groupOffset = CSTUtils.addPositions(offset, StringUtils.getStringPosition(YQLString));
-                
-                groupOffset = CSTUtils.addPositions(groupOffset, new Position(0, 1)); // Include pipe char
+                Position YQLStringWithPipe = CSTUtils.addPositions(new Position(0, 1), StringUtils.getStringPosition(YQLString));
+                Position groupOffset = CSTUtils.addPositions(offset, YQLStringWithPipe);
     
                 YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset);
                 if (groupingResult.CST.isPresent()) {
