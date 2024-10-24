@@ -6,7 +6,9 @@
 namespace search {
 
 std::ostream& operator<<(std::ostream& os, const DiskIoStats& stats) {
-    os << "{read_operations: " << stats.read_operations() << ", read_bytes: " << stats.read_bytes() << "}";
+    os << "{read_operations: " << stats.read_operations() << ", read_bytes: " <<
+       "{total: " << stats.read_bytes_total() << ", min: " << stats.read_bytes_min() <<
+       ", max: " << stats.read_bytes_max() << "}}";
     return os;
 }
 
