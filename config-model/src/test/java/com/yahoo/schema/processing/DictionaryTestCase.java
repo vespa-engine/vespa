@@ -144,6 +144,12 @@ public class DictionaryTestCase {
     @Test
     void testStringBtreeCasedSettings() throws ParseException {
         verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.CASED, Case.CASED, "dictionary { btree\ncased\n}", "match:cased");
+        verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.CASED, Case.CASED, "dictionary: btree", "match: cased");
+        try {
+            verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.CASED, "dictionary { hash\nuncased\n}", "match: cased");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For schema 'test', field 'n1': dictionary match mode has already been set to CASED", e.getMessage());
+        }
     }
 
     @Test
