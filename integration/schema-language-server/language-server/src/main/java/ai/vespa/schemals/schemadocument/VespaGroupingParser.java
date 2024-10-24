@@ -9,12 +9,12 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.parser.grouping.GroupingParser;
 import ai.vespa.schemals.parser.grouping.Node;
 import ai.vespa.schemals.parser.grouping.ParseException;
-import ai.vespa.schemals.schemadocument.YQLDocument.ParseResult;
+import ai.vespa.schemals.schemadocument.YQLDocument.YQLPartParseResult;
 import ai.vespa.schemals.tree.YQLNode;
 
 class VespaGroupingParser {
 
-    static ParseResult parseVespaGrouping(String input, ClientLogger logger, Position offset) {
+    static YQLPartParseResult parseVespaGrouping(String input, ClientLogger logger, Position offset) {
 
         CharSequence charSequence = input.toLowerCase();
         GroupingParser parser = new GroupingParser(charSequence);
@@ -29,6 +29,6 @@ class VespaGroupingParser {
         YQLNode CST = new YQLNode(node, offset);
         // GroupingUtils.printTree(logger, node);
 
-        return new ParseResult(List.of(), Optional.of(CST));
+        return new YQLPartParseResult(List.of(), Optional.of(CST), parser.getToken(0).getEndOffset());
     }
 }

@@ -12,12 +12,12 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
     private Node originalYQLNode;
     private ai.vespa.schemals.parser.grouping.Node originalGroupingNode;
 
-    public YQLNode(Node node) {
-        super(LanguageType.YQLPlus, YQLUtils.getNodeRange(node), node.isDirty());
+    public YQLNode(Node node, Position offset) {
+        super(LanguageType.YQLPlus, CSTUtils.addPositionToRange(offset, YQLUtils.getNodeRange(node)), node.isDirty());
         originalYQLNode = node;
 
         for (Node child : node.children()) {
-            addChild(new YQLNode(child));
+            addChild(new YQLNode(child, offset));
         }
     }
 
@@ -32,6 +32,11 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
 
     public YQLNode(Range range) {
         super(LanguageType.CUSTOM, range, false);
+    }
+
+    public Range setRange(Range range) {
+        this.range = range;
+        return range;
     }
 
     public String getText() {
@@ -59,5 +64,12 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
         if (language == LanguageType.GROUPING) return originalGroupingNode.getBeginOffset();
 
         throw new RuntimeException("Could not find the begin offset of YQLNode.");
+    }
+
+    public String toString() {
+        Range range = getRange();
+        Position start = range.getStart();
+        Position end = range.getEnd();
+        return "YQLNode(" + getASTClass() + ", " + start.getLine() + "," + start.getCharacter() + "->" + end.getLine() + "," + end.getCharacter() + ")";
     }
 }

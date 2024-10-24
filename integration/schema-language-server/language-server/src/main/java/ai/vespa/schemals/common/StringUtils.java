@@ -129,7 +129,7 @@ public class StringUtils {
 
     public static Position getStringPosition(String str) {
         int lines = 0;
-        int column = 0;
+        int column = str.length();
         for (int i = str.length() - 1; i >= 0; i--) {
             if (str.charAt(i) == '\n') {
                 if (lines == 0) {

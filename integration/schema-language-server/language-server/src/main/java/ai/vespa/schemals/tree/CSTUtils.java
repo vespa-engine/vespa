@@ -205,7 +205,7 @@ public class CSTUtils {
      * Logger utils
      * */
 
-    private static final String SPACER = " ";
+    public static final String SPACER = " ";
 
     public static void printTree(ClientLogger logger, ai.vespa.schemals.parser.Node node) {
         printTree(logger, node, 0);
