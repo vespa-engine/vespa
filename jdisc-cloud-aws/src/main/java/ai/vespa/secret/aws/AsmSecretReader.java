@@ -64,7 +64,7 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     }
 
     // For testing
-    AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
+    public AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
         super(clientAndCredentialsSupplier);
         cache = initCache();
         ztsClientCloser = () -> {};
