@@ -496,6 +496,12 @@ public class Flags {
             "Takes effect on next host-admin run",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
+            "snapshots-enabled", false,
+            List.of("mpolden"), "2024-10-22", "2025-01-10",
+            "Whether node snapshots should be created when host storage is discarded",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
