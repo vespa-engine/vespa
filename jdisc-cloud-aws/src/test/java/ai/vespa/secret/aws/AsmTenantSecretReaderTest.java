@@ -1,32 +1,15 @@
 package ai.vespa.secret.aws;
 
+import ai.vespa.secret.aws.testutil.AsmSecretStoreTester;
+import ai.vespa.secret.aws.testutil.AsmSecretStoreTester.SecretVersion;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretName;
 import ai.vespa.secret.model.SecretVersionId;
 import ai.vespa.secret.model.SecretVersionState;
 import ai.vespa.secret.model.VaultName;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
-import software.amazon.awssdk.services.secretsmanager.model.InternalServiceErrorException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidNextTokenException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidParameterException;
-import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsRequest;
-import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsResponse;
-import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.secretsmanager.model.SecretVersionsListEntry;
-import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,26 +20,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class AsmTenantSecretReaderTest {
 
-    record SecretVersion(String version, SecretVersionState state, String value) {}
-
-    static final Map<String, List<SecretVersion>> secrets = new HashMap<>();
-    static final List<MockSecretsManagerClient> clients = new ArrayList<>();
-
+    AsmSecretStoreTester tester = new AsmSecretStoreTester(this::awsSecretId);
+    
     String system = "publiccd";
     String tenant = "tenant1";
 
+    // The mapping from Key to AWS secret id for tenant secrets
+    private String awsSecretId(Key key) {
+        return "%s.%s.%s/%s".formatted(
+                system, tenant, key.vaultName().value(), key.secretName().value());
+    }
+
     @BeforeEach
     void reset() {
-        secrets.clear();
-        clients.clear();
+        tester.reset();
     }
 
     AsmTenantSecretReader secretReader() {
-        return new AsmTenantSecretReader(MockSecretsManagerClient::new, system, tenant);
-    }
-
-    private void putSecretVersions(Key key, SecretVersion... versions) {
-        secrets.put(awsSecretId(key), List.of(versions));
+        return new AsmTenantSecretReader(tester::newClient, system, tenant);
     }
 
     @Test
@@ -70,16 +51,16 @@ public class AsmTenantSecretReaderTest {
         var key1 = new Key(vault1, SecretName.of("secret1"));
         var key2 = new Key(vault2, SecretName.of("secret2"));
 
-        putSecretVersions(key1, secret1);
-        putSecretVersions(key2, secret2);
+        tester.put(key1, secret1);
+        tester.put(key2, secret2);
 
         try (var reader = secretReader()){
             reader.getSecret(key1);
             reader.getSecret(key2);
 
-            assertEquals(2, clients.size());
+            assertEquals(2, tester.clients().size());
         }
-        assertTrue(clients.stream().allMatch(c -> c.isClosed));
+        assertTrue(tester.clients().stream().allMatch(c -> c.isClosed));
     }
 
     @Test
@@ -89,7 +70,7 @@ public class AsmTenantSecretReaderTest {
 
         var expected1 = new SecretVersion("1", SecretVersionState.CURRENT, "v1");
         var expected2 = new SecretVersion("2", SecretVersionState.PENDING, "v2");
-        putSecretVersions(key, expected1, expected2);
+        tester.put(key, expected1, expected2);
 
         try (var reader = secretReader()) {
             var retrieved1 = reader.getSecret(key, SecretVersionId.of("1"));
@@ -107,7 +88,7 @@ public class AsmTenantSecretReaderTest {
 
         var current = new SecretVersion("1", SecretVersionState.CURRENT, "current");
         var pending = new SecretVersion("2", SecretVersionState.PENDING, "pending");
-        putSecretVersions(key, current, pending);
+        tester.put(key, current, pending);
 
         try (var store = secretReader()) {
             var retrieved = store.getSecret(key);
@@ -134,7 +115,7 @@ public class AsmTenantSecretReaderTest {
         var key = new Key(vault, SecretName.of("secret1"));
 
         var v1 = new SecretVersion("1", SecretVersionState.CURRENT, "v1");
-        putSecretVersions(key, v1);
+        tester.put(key, v1);
 
         try (var store = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key, SecretVersionId.of("2")));
@@ -152,7 +133,7 @@ public class AsmTenantSecretReaderTest {
         var curr = new SecretVersion("2", SecretVersionState.CURRENT, "v2");
         var pend = new SecretVersion("3", SecretVersionState.PENDING, "v3");
 
-        putSecretVersions(key, prev, pend, curr);
+        tester.put(key, prev, pend, curr);
         try (var store = secretReader()) {
             var versions = store.listSecretVersions(key);
             assertEquals(3, versions.size());
@@ -175,80 +156,6 @@ public class AsmTenantSecretReaderTest {
     private void assertSame(SecretVersion version, Secret secret) {
         assertEquals(version.value(), secret.secretAsString());
         assertEquals(version.version(), secret.version().value());
-    }
-
-    private String awsSecretId(Key key) {
-        return "%s.%s.%s/%s".formatted(
-                system, tenant, key.vaultName().value(), key.secretName().value());
-    }
-
-    private static class MockSecretsManagerClient implements SecretsManagerClient {
-        final AwsRole awsRole;
-        boolean isClosed = false;
-
-        MockSecretsManagerClient(AwsRole awsRole) {
-            this.awsRole = awsRole;
-            clients.add(this);
-        }
-
-        @Override
-        public GetSecretValueResponse getSecretValue(GetSecretValueRequest request) {
-            String id = request.secretId();
-            String reqVersion = request.versionId();
-
-            var versions = secrets.get(id);
-            if (versions == null) {
-                throw ResourceNotFoundException.builder().message("Secret not found").build();
-            }
-            var secret = findSecret(versions, reqVersion);
-            return GetSecretValueResponse.builder()
-                    .name(request.secretId())
-                    .secretString(secret.value())
-                    .versionId(secret.version)
-                    .versionStages(List.of(toAwsStage(secret.state)))
-                    .build();
-        }
-
-        SecretVersion findSecret(List<SecretVersion> versions, String reqVersion) {
-            return versions.stream()
-                    .filter(reqVersion == null ?
-                                    v -> v.state() == SecretVersionState.CURRENT
-                                    : v -> v.version().equals(reqVersion))
-                    .findFirst()
-                    .orElseThrow(() -> ResourceNotFoundException.builder().message("Version not found: " + reqVersion).build());
-        }
-
-        @Override
-        public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) throws InvalidNextTokenException, ResourceNotFoundException, InternalServiceErrorException, InvalidParameterException, AwsServiceException, SdkClientException, SecretsManagerException {
-            return ListSecretVersionIdsResponse.builder()
-                    .name(request.secretId())
-                    .versions(secrets.getOrDefault(request.secretId(), List.of()).stream()
-                                      .map(version -> SecretVersionsListEntry.builder()
-                                              .versionId(version.version())
-                                              .versionStages(List.of(toAwsStage(version.state())))
-                                              .build())
-                                      .toList())
-                    .build();
-        }
-
-        private String toAwsStage(SecretVersionState state) {
-            return switch(state) {
-                case CURRENT -> "AWSCURRENT";
-                case PENDING -> "AWSPENDING";
-                case PREVIOUS -> "AWSPREVIOUS";
-                default -> throw new IllegalArgumentException("Unknown state: " + state);
-            };
-        }
-
-        @Override
-        public String serviceName() {
-            return MockSecretsManagerClient.class.getSimpleName();
-        }
-
-        @Override
-        public void close() {
-            isClosed = true;
-        }
     }
 
 }
