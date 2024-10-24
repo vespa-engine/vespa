@@ -419,10 +419,11 @@ WeakAndBlueprint::my_flow(InFlow in_flow) const
     return AnyFlow::create<OrFlow>(in_flow);
 }
 
-WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range, bool thread_safe)
+WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range, uint32_t abs_stop_word_limit, bool thread_safe)
     : _scores(WeakAndPriorityQueue::createHeap(n, thread_safe)),
       _n(n),
       _idf_range(idf_range),
+      _abs_stop_word_limit(abs_stop_word_limit),
       _weights(),
       _matching_phase(MatchingPhase::FIRST_PHASE)
 {}
