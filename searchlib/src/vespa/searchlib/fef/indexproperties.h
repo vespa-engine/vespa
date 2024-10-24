@@ -342,6 +342,16 @@ namespace matching {
     };
 
     /**
+     * Property to control how much of the corpus a single term must match to be treated as a stop word by Vespa Wand
+     **/
+    struct WeakAndStopWordLimit {
+        static const std::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
+
+    /**
      * Property to control the algorithm using for fuzzy matching.
      **/
     struct FuzzyAlgorithm {
@@ -350,6 +360,7 @@ namespace matching {
         static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props);
         static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props, vespalib::FuzzyMatchingAlgorithm default_value);
     };
+
     /**
      * Sort blueprints based on relative cost estimate rather than est_hits
      **/
