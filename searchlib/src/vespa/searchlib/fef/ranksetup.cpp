@@ -75,6 +75,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _global_filter_upper_limit(1.0),
       _target_hits_max_adjustment_factor(20.0),
       _weakand_range(0.0),
+      _weakand_stop_word_limit(matching::WeakAndStopWordLimit::DEFAULT_VALUE),
       _fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm::DfaTable),
       _mutateOnMatch(),
       _mutateOnFirstPhase(),
