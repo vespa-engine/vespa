@@ -16,7 +16,7 @@ import java.net.URI;
  */
 public class CloudAsmSecrets extends SimpleComponent implements AsmSecretConfig.Producer {
 
-    private static final String CLASS = "ai.vespa.secret.aws.AsmSecretStore";
+    private static final String CLASS = "ai.vespa.secret.aws.AsmTenantSecretReader";
     private static final String BUNDLE = "jdisc-cloud-aws";
 
     private final URI ztsUri;
