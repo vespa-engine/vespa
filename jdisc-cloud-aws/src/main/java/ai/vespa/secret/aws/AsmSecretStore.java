@@ -6,11 +6,12 @@ import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretVersionId;
 import ai.vespa.secret.model.SecretVersionState;
+import ai.vespa.secret.model.VaultName;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -30,49 +31,53 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 /**
- * Base class for read-only client for AWS Secrets Manager, with caching of secrets.
+ * A read-only client for AWS Secrets Manager, with caching of secrets.
+ * Based on ASMSecretStore in hosted-configserver.
  *
  * @author gjoranv
  */
-public abstract class AsmSecretReader extends AsmSecretStoreBase
-        implements TypedSecretStore {
+public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSecretStore {
 
     private static final Duration CACHE_EXPIRE = Duration.ofMinutes(30);
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
 
     private final LoadingCache<VersionKey, Secret> cache;
-    private final Runnable ztsClientCloser;
+    private final Runnable closeable;
 
     protected record VersionKey(Key key, SecretVersionId version) {}
 
-    // For subclasses using dependency injection
-    public AsmSecretReader(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        this(ztsClient(URI.create(config.ztsUri()), identities.getIdentitySslContext()),
+    // TODO: create a subclass for infrastructure secrets
+    //       This is currently used both for tenant and infrastructure secrets (in controller/cfgserver)
+    @Inject
+    public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
+        this(roleMapper(config.system(), config.tenant()),
+             ztsClient(URI.create(config.ztsUri()), identities.getIdentitySslContext()),
              athenzDomain(config, identities));
     }
 
-    public AsmSecretReader(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
-        this(ztsClient(ztsUri, sslContext), domain);
+    private static AwsRoleMapper roleMapper(String system, String tenant) {
+        return (system.isEmpty()) ?
+                AwsRoleMapper.infrastructureReader() :
+                AwsRoleMapper.tenantReader(system, tenant);
     }
 
-    private AsmSecretReader(ZtsClient ztsClient, AthenzDomain domain) {
-        super(ztsClient, domain);
+    public static AsmSecretStore forInfrastructure(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
+        return new AsmSecretStore(AwsRoleMapper.infrastructureReader(), ztsClient(ztsUri, sslContext), domain);
+    }
+
+    private AsmSecretStore(AwsRoleMapper roleMapper, ZtsClient ztsClient, AthenzDomain domain) {
+        super(roleMapper, ztsClient, domain);
         cache = initCache();
-        ztsClientCloser = ztsClient::close;
+        closeable = ztsClient::close;
     }
 
     // For testing
-    AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
-        super(clientAndCredentialsSupplier);
+    AsmSecretStore(AwsRoleMapper roleMapper, Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
+        super(roleMapper, clientAndCredentialsSupplier);
         cache = initCache();
-        ztsClientCloser = () -> {};
+        closeable = () -> {};
     }
-
-
-    /** Returns the AWS secret id to use for the given key. */
-    protected abstract String awsSecretId(Key key);
-
 
     private static ZtsClient ztsClient(URI ztsUri, SSLContext sslContext) {
         return new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build();
@@ -130,7 +135,6 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     /**
      * If version is null, the version with label AWSCURRENT is returned.
      */
-    @Override
     public Secret getSecret(Key key, SecretVersionId version) {
         try {
             return cache.getUnchecked(new VersionKey(key, version));
@@ -170,18 +174,18 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     }
 
     @Override
-    public void close() {
-        scheduler.shutdown();
-        ztsClientCloser.run();
-        super.close();
-    }
-
-    @Override
     public Type type() {
         return Type.PUBLIC;
     }
 
     @Override
+    public void close() {
+        scheduler.shutdown();
+        closeable.run();
+        super.close();
+    }
+
+        @Override
     public String getSecret(String key) {
         throw new UnsupportedOperationException("This secret store does not support String lookups.");
     }
