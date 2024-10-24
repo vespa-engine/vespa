@@ -39,7 +39,7 @@ public class AsmTenantSecretReaderTest {
 
     record SecretVersion(String version, SecretVersionState state, String value) {}
 
-    static final Map<Key, List<SecretVersion>> secrets = new HashMap<>();
+    static final Map<String, List<SecretVersion>> secrets = new HashMap<>();
     static final List<MockSecretsManagerClient> clients = new ArrayList<>();
 
     String system = "publiccd";
@@ -55,6 +55,10 @@ public class AsmTenantSecretReaderTest {
         return new AsmTenantSecretReader(MockSecretsManagerClient::new, system, tenant);
     }
 
+    private void putSecretVersions(Key key, SecretVersion... versions) {
+        secrets.put(awsSecretId(key), List.of(versions));
+    }
+
     @Test
     void it_creates_one_credentials_and_client_per_vault_and_closes_them() {
         var vault1 = VaultName.of("vault1");
@@ -66,8 +70,8 @@ public class AsmTenantSecretReaderTest {
         var key1 = new Key(vault1, SecretName.of("secret1"));
         var key2 = new Key(vault2, SecretName.of("secret2"));
 
-        secrets.put(key1, List.of(secret1));
-        secrets.put(key2, List.of(secret2));
+        putSecretVersions(key1, secret1);
+        putSecretVersions(key2, secret2);
 
         try (var reader = secretReader()){
             reader.getSecret(key1);
@@ -85,7 +89,7 @@ public class AsmTenantSecretReaderTest {
 
         var expected1 = new SecretVersion("1", SecretVersionState.CURRENT, "v1");
         var expected2 = new SecretVersion("2", SecretVersionState.PENDING, "v2");
-        secrets.put(key, List.of(expected1, expected2));
+        putSecretVersions(key, expected1, expected2);
 
         try (var reader = secretReader()) {
             var retrieved1 = reader.getSecret(key, SecretVersionId.of("1"));
@@ -103,7 +107,7 @@ public class AsmTenantSecretReaderTest {
 
         var current = new SecretVersion("1", SecretVersionState.CURRENT, "current");
         var pending = new SecretVersion("2", SecretVersionState.PENDING, "pending");
-        secrets.put(key, List.of(current, pending));
+        putSecretVersions(key, current, pending);
 
         try (var store = secretReader()) {
             var retrieved = store.getSecret(key);
@@ -130,7 +134,7 @@ public class AsmTenantSecretReaderTest {
         var key = new Key(vault, SecretName.of("secret1"));
 
         var v1 = new SecretVersion("1", SecretVersionState.CURRENT, "v1");
-        secrets.put(key, List.of(v1));
+        putSecretVersions(key, v1);
 
         try (var store = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key, SecretVersionId.of("2")));
@@ -148,7 +152,7 @@ public class AsmTenantSecretReaderTest {
         var curr = new SecretVersion("2", SecretVersionState.CURRENT, "v2");
         var pend = new SecretVersion("3", SecretVersionState.PENDING, "v3");
 
-        secrets.put(key, List.of(prev, pend, curr));
+        putSecretVersions(key, prev, pend, curr);
         try (var store = secretReader()) {
             var versions = store.listSecretVersions(key);
             assertEquals(3, versions.size());
@@ -173,11 +177,10 @@ public class AsmTenantSecretReaderTest {
         assertEquals(version.version(), secret.version().value());
     }
 
-    private static Key toKey(String awsId) {
-        var parts = awsId.split("/");
-        return new Key(VaultName.of(parts[0]), SecretName.of(parts[1]));
+    private String awsSecretId(Key key) {
+        return "%s.%s.%s/%s".formatted(
+                system, tenant, key.vaultName().value(), key.secretName().value());
     }
-
 
     private static class MockSecretsManagerClient implements SecretsManagerClient {
         final AwsRole awsRole;
@@ -193,7 +196,7 @@ public class AsmTenantSecretReaderTest {
             String id = request.secretId();
             String reqVersion = request.versionId();
 
-            var versions = secrets.get(toKey(id));
+            var versions = secrets.get(id);
             if (versions == null) {
                 throw ResourceNotFoundException.builder().message("Secret not found").build();
             }
@@ -219,7 +222,7 @@ public class AsmTenantSecretReaderTest {
         public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) throws InvalidNextTokenException, ResourceNotFoundException, InternalServiceErrorException, InvalidParameterException, AwsServiceException, SdkClientException, SecretsManagerException {
             return ListSecretVersionIdsResponse.builder()
                     .name(request.secretId())
-                    .versions(secrets.getOrDefault(toKey(request.secretId()), List.of()).stream()
+                    .versions(secrets.getOrDefault(request.secretId(), List.of()).stream()
                                       .map(version -> SecretVersionsListEntry.builder()
                                               .versionId(version.version())
                                               .versionStages(List.of(toAwsStage(version.state())))
