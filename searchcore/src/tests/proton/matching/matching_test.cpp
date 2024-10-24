@@ -1324,4 +1324,25 @@ TEST_F(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
     EXPECT_EQ(0.48, params.global_filter_upper_limit);
 }
 
+TEST_F(MatchingTest, abs_weak_and_stop_word_limit_is_calculated_correctly)
+{
+    AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
+    EXPECT_EQ(WeakAndStopWordLimit::DEFAULT_VALUE, 1.0);
+    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 1.0);
+    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(-1));
+    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(-1));
+    f.rank_setup.set_weakand_stop_word_limit(0.0);
+    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 0.0);
+    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(0));
+    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(0));
+    f.rank_setup.set_weakand_stop_word_limit(0.25);
+    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 0.25);
+    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(25));
+    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(250));
+    f.rank_setup.set_weakand_stop_word_limit(0.99);
+    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 0.99);
+    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(99));
+    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(990));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
