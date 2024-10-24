@@ -142,6 +142,14 @@ public class StringUtils {
         return new Position(lines, column);
     }
 
+    public static int countNewLines(String str) {
+        int ret = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == '\n') ret++;
+        }
+        return ret;
+    }
+
     public static Range getStringRange(String str) {
         return new Range(new Position(0, 0), getStringPosition(str));
     }

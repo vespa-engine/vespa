@@ -40,7 +40,19 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
     }
 
     public String getText() {
-        throw new UnsupportedOperationException("Not implemented");
+        if (language == LanguageType.YQLPlus) {
+            return originalYQLNode.getSource();
+        }
+
+        if (language == LanguageType.GROUPING) {
+            return originalGroupingNode.getSource();
+        }
+
+        throw new UnsupportedOperationException("Not supported for CUSTOM language for YQL Nodes.");
+    }
+
+    public ai.vespa.schemals.parser.grouping.Node getOriginalGroupingNode() {
+        return originalGroupingNode;
     }
 
     @Override

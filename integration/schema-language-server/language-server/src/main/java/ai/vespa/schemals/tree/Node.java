@@ -77,6 +77,13 @@ public abstract class Node implements Iterable<Node> {
         children.clear();
     }
 
+    public Node removeChild(int i) {
+        Node child = children.remove(i);
+        child.setParent(null);
+
+        return child;
+    }
+
     public Node getParent(int levels) {
         if (levels == 0) {
             return this;

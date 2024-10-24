@@ -132,8 +132,6 @@ public class YQLDocument implements DocumentManager {
             String charsBeforePipe = queryString.substring(charsRead, pipeIndex);
             if (charsBeforePipe.strip().length() == 0) {
                 String groupingString = queryString.substring(pipeIndex + 1); // Do not include pipe char
-                context.logger().info("Grouping string:");
-                context.logger().info(groupingString);
                 Position YQLStringWithPipe = CSTUtils.addPositions(new Position(0, 1), StringUtils.getStringPosition(YQLString));
                 Position groupOffset = CSTUtils.addPositions(offset, YQLStringWithPipe);
     
@@ -186,8 +184,9 @@ public class YQLDocument implements DocumentManager {
             }
             String substr = content.substring(charsRead, newOffset);
             context.logger().info(substr);
-            linesRead += substr.lines().count();
-            charsRead = newOffset + 1;
+            linesRead += StringUtils.countNewLines(substr);
+            context.logger().info(linesRead);
+            charsRead = newOffset;
         }
 
         YQLUtils.printTree(context.logger(), ret);
