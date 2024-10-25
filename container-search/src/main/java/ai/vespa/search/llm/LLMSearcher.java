@@ -279,10 +279,11 @@ public class LLMSearcher extends Searcher {
         }
 
         String report() {
+            long generationTime = timeToLastToken - timeToFirstToken;
             return "Time to first token: " + timeToFirstToken + " ms, " +
-                   "Generation time: " + timeToLastToken + " ms, " +
+                   "Generation time: " + generationTime + " ms, " +
                    "Generated tokens: " + tokens + " " +
-                   String.format("(%.2f tokens/sec)", tokens / (timeToLastToken / 1000.0));
+                   String.format("(%.2f tokens/sec)", tokens / (generationTime / 1000.0));
         }
 
     }
