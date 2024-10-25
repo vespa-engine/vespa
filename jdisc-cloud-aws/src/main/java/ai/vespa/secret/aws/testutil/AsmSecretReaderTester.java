@@ -10,7 +10,6 @@ import ai.vespa.secret.model.SecretVersionState;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import software.amazon.awssdk.services.secretsmanager.model.InternalServiceErrorException;
@@ -22,54 +21,32 @@ import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundExce
 import software.amazon.awssdk.services.secretsmanager.model.SecretVersionsListEntry;
 import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 /**
  *
  * @author gjoranv
  */
-public class AsmSecretStoreTester {
+public class AsmSecretReaderTester extends AsmSecretTesterBase {
 
-    public record SecretVersion(String version, SecretVersionState state, String value) {}
-
-    private final Map<String, List<SecretVersion>> secrets = new HashMap<>();
-    private final List<MockSecretsManagerClient> clients = new ArrayList<>();
-    private final Function<Key, String> awsSecretIdMapper;
-
-    public AsmSecretStoreTester(Function<Key, String> awsSecretId) {
-        this.awsSecretIdMapper = awsSecretId;
-    }
-
-    public void reset() {
-        secrets.clear();
-        clients.clear();
+    public AsmSecretReaderTester(Function<Key, String> awsSecretId) {
+        super(awsSecretId);
     }
 
     public void put(Key key, SecretVersion... versions) {
         secrets.put(awsSecretIdMapper.apply(key), List.of(versions));
     }
 
-    public MockSecretsManagerClient newClient(AwsRole awsRole) {
-        return new MockSecretsManagerClient(awsRole);
-    }
-
-    public List<MockSecretsManagerClient> clients() {
-        return List.copyOf(clients);
+    public MockSecretsReader newClient(AwsRole awsRole) {
+        return new MockSecretsReader(awsRole);
     }
 
 
-    public class MockSecretsManagerClient implements SecretsManagerClient {
+    public class MockSecretsReader extends MockSecretsManagerClient {
 
-        public final AwsRole awsRole;
-        public boolean isClosed = false;
-
-        MockSecretsManagerClient(AwsRole awsRole) {
-            this.awsRole = awsRole;
-            clients.add(this);
+        MockSecretsReader(AwsRole awsRole) {
+            super(awsRole);
         }
 
         @Override
@@ -85,8 +62,8 @@ public class AsmSecretStoreTester {
             return GetSecretValueResponse.builder()
                     .name(request.secretId())
                     .secretString(secret.value())
-                    .versionId(secret.version)
-                    .versionStages(List.of(toAwsStage(secret.state)))
+                    .versionId(secret.version())
+                    .versionStages(List.of(toAwsStage(secret.state())))
                     .build();
         }
 
@@ -114,21 +91,7 @@ public class AsmSecretStoreTester {
 
         @Override
         public String serviceName() {
-            return AsmSecretStoreTester.class.getSimpleName();
-        }
-
-        @Override
-        public void close() {
-            isClosed = true;
-        }
-
-        private String toAwsStage(SecretVersionState state) {
-            return switch (state) {
-                case CURRENT -> "AWSCURRENT";
-                case PENDING -> "AWSPENDING";
-                case PREVIOUS -> "AWSPREVIOUS";
-                default -> throw new IllegalArgumentException("Unknown state: " + state);
-            };
+            return MockSecretsReader.class.getSimpleName();
         }
 
     }

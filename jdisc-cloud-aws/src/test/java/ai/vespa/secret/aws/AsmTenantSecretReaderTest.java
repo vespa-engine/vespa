@@ -1,7 +1,7 @@
 package ai.vespa.secret.aws;
 
-import ai.vespa.secret.aws.testutil.AsmSecretStoreTester;
-import ai.vespa.secret.aws.testutil.AsmSecretStoreTester.SecretVersion;
+import ai.vespa.secret.aws.testutil.AsmSecretReaderTester;
+import ai.vespa.secret.aws.testutil.AsmSecretTesterBase.SecretVersion;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretName;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class AsmTenantSecretReaderTest {
 
-    AsmSecretStoreTester tester = new AsmSecretStoreTester(this::awsSecretId);
+    AsmSecretReaderTester tester = new AsmSecretReaderTester(this::awsSecretId);
     
     String system = "publiccd";
     String tenant = "tenant1";
