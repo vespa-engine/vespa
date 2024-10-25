@@ -17,11 +17,13 @@ import com.google.gson.Gson;
 public class SchemaLSCommands {
     private static final Logger logger = Logger.getLogger(SchemaLSCommands.class.getName());
     private IXMLCommandService commandService;
+    private Gson gson;
 
     private static SchemaLSCommands INSTANCE;
     private SchemaLSCommands() {}
     private SchemaLSCommands(IXMLCommandService commandService) { 
         this.commandService = commandService;
+        this.gson = new Gson();
     }
 
     public static void init(IXMLCommandService commandService) {
@@ -33,7 +35,22 @@ public class SchemaLSCommands {
     }
 
     public void sendSetupWorkspaceRequest(String fileURI) {
-        commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.servicesxml.setupWorkspace", List.of(fileURI)));
+        commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.commands.setupWorkspace", List.of(fileURI)));
+    }
+
+    public boolean hasSetupWorkspace() {
+        Object result = commandService.executeClientCommand(
+                new ExecuteCommandParams("vespaSchemaLS.commands.hasSetupWorkspace", List.of())).join();
+        if (result == null) return false;
+        try {
+            String json = gson.toJson(result);
+            Type booleanType = new TypeToken<Boolean>() {}.getType();
+            return gson.fromJson(json, booleanType);
+        } catch (Exception ex) {
+            logger.severe("Error when parsing json: " + ex.getMessage());
+        }
+
+        return false;
     }
 
     /**
@@ -42,11 +59,10 @@ public class SchemaLSCommands {
     public List<Location> findSchemaDefinition(String schemaName) {
         // run sync
         Object findDocumentResult = commandService.executeClientCommand(
-            new ExecuteCommandParams("vespaSchemaLS.servicesxml.findDocument", List.of(schemaName))).join();
+            new ExecuteCommandParams("vespaSchemaLS.commands.findSchemaDefinition", List.of(schemaName))).join();
 
         if (findDocumentResult == null) return List.of();
         try {
-            Gson gson = new Gson();
             String json = gson.toJson(findDocumentResult);
             Type listOfLocationType = new TypeToken<List<Location>>() {}.getType();
             return gson.fromJson(json, listOfLocationType);
