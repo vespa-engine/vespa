@@ -1,7 +1,6 @@
 package ai.vespa.lemminx;
 
 import java.nio.file.Path;
-import java.util.logging.Logger;
 
 import org.eclipse.lemminx.uriresolver.URIResolverExtension;
 

@@ -1,4 +1,4 @@
-package ai.vespa.lemminx;
+package ai.vespa.lemminx.participants;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -9,6 +9,8 @@ import org.eclipse.lemminx.services.extensions.IDefinitionRequest;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+
+import ai.vespa.lemminx.command.SchemaLSCommands;
 
 public class DefinitionParticipant implements IDefinitionParticipant {
     private static final Logger logger = Logger.getLogger(DefinitionParticipant.class.getName());

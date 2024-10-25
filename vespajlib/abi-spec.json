@@ -753,15 +753,15 @@
       "public com.yahoo.tensor.IndexedTensor$Builder cell(com.yahoo.tensor.Tensor$Cell, double)",
       "public void cellByDirectIndex(long, float)",
       "public void cellByDirectIndex(long, double)",
-      "public bridge synthetic com.yahoo.tensor.IndexedTensor$Builder cell(float, long[])",
-      "public bridge synthetic com.yahoo.tensor.IndexedTensor$Builder cell(double, long[])",
       "public bridge synthetic com.yahoo.tensor.Tensor build()",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell, float)",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell, double)",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])",
+      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell, float)",
+      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)"
+      "public bridge varargs synthetic com.yahoo.tensor.IndexedTensor$Builder cell(double, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.IndexedTensor$Builder cell(float, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])"
     ],
     "fields" : [ ]
   },
@@ -782,15 +782,15 @@
       "public com.yahoo.tensor.IndexedTensor$Builder cell(com.yahoo.tensor.Tensor$Cell, float)",
       "public void cellByDirectIndex(long, double)",
       "public void cellByDirectIndex(long, float)",
-      "public bridge synthetic com.yahoo.tensor.IndexedTensor$Builder cell(float, long[])",
-      "public bridge synthetic com.yahoo.tensor.IndexedTensor$Builder cell(double, long[])",
       "public bridge synthetic com.yahoo.tensor.Tensor build()",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell, float)",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell, double)",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)"
+      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
+      "public bridge varargs synthetic com.yahoo.tensor.IndexedTensor$Builder cell(float, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.IndexedTensor$Builder cell(double, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])"
     ],
     "fields" : [ ]
   },
@@ -830,8 +830,8 @@
       "public com.yahoo.tensor.TensorType type()",
       "public abstract com.yahoo.tensor.IndexedTensor build()",
       "public bridge synthetic com.yahoo.tensor.Tensor build()",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])"
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])"
     ],
     "fields" : [ ]
   },
@@ -950,10 +950,10 @@
       "public varargs com.yahoo.tensor.MappedTensor$Builder cell(double, long[])",
       "public com.yahoo.tensor.MappedTensor build()",
       "public bridge synthetic com.yahoo.tensor.Tensor build()",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
-      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)"
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])",
+      "public bridge varargs synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
+      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
+      "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)"
     ],
     "fields" : [ ]
   },
@@ -1158,9 +1158,9 @@
       "public int hashCode()",
       "public java.lang.String toString(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.Tensor$Cell detach()",
+      "public bridge synthetic java.lang.Object getKey()",
       "public bridge synthetic java.lang.Object setValue(java.lang.Object)",
-      "public bridge synthetic java.lang.Object getValue()",
-      "public bridge synthetic java.lang.Object getKey()"
+      "public bridge synthetic java.lang.Object getValue()"
     ],
     "fields" : [ ]
   },
@@ -1460,14 +1460,14 @@
       "enum"
     ],
     "methods" : [
-      "public static com.yahoo.tensor.TensorType$Value[] values()",
-      "public static com.yahoo.tensor.TensorType$Value valueOf(java.lang.String)",
       "public java.lang.String id()",
       "public boolean isEqualOrLargerThan(com.yahoo.tensor.TensorType$Value)",
       "public static com.yahoo.tensor.TensorType$Value largestOf(java.util.List)",
       "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)",
       "public java.lang.String toString()",
-      "public static com.yahoo.tensor.TensorType$Value fromId(java.lang.String)"
+      "public static com.yahoo.tensor.TensorType$Value fromId(java.lang.String)",
+      "public static com.yahoo.tensor.TensorType$Value[] values()",
+      "public static com.yahoo.tensor.TensorType$Value valueOf(java.lang.String)"
     ],
     "fields" : [
       "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
@@ -4223,8 +4223,8 @@
       "public ai.vespa.llm.completion.StringPrompt append(ai.vespa.llm.completion.Completion)",
       "public java.lang.String toString()",
       "public static ai.vespa.llm.completion.StringPrompt from(java.lang.String)",
-      "public bridge synthetic ai.vespa.llm.completion.Prompt append(java.lang.String)",
-      "public bridge synthetic ai.vespa.llm.completion.Prompt append(ai.vespa.llm.completion.Completion)"
+      "public bridge synthetic ai.vespa.llm.completion.Prompt append(ai.vespa.llm.completion.Completion)",
+      "public bridge synthetic ai.vespa.llm.completion.Prompt append(java.lang.String)"
     ],
     "fields" : [ ]
   },
