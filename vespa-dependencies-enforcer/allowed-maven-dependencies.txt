@@ -21,6 +21,7 @@ com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
+com.google.code.gson:gson:2.10.1
 com.google.code.gson:gson:2.11.0
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:${failureaccess.vespa.version}
@@ -31,6 +32,7 @@ com.google.jimfs:jimfs:${jimfs.vespa.version}
 com.google.protobuf:protobuf-java:${protobuf.vespa.version}
 com.huaban:jieba-analysis:${jieba.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
+com.kotcrab.remark:remark:1.0.0
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
 com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}
 com.sun.istack:istack-commons-runtime:4.1.2
@@ -98,6 +100,7 @@ io.prometheus:simpleclient_common:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}
+isorelax:isorelax:20030108
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
 javax.activation:javax.activation-api:${javax.activation-api.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
@@ -187,10 +190,17 @@ org.eclipse.jetty:jetty-security:${jetty.vespa.version}
 org.eclipse.jetty:jetty-server:${jetty.vespa.version}
 org.eclipse.jetty:jetty-servlet:${jetty.vespa.version}
 org.eclipse.jetty:jetty-util:${jetty.vespa.version}
+org.eclipse.lemminx:org.eclipse.lemminx:0.28.0
+org.eclipse.lsp4j:org.eclipse.lsp4j.generator:0.20.1
+org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.20.1
 org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1
+org.eclipse.lsp4j:org.eclipse.lsp4j:0.20.1
 org.eclipse.lsp4j:org.eclipse.lsp4j:0.23.1
 org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
 org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
+org.eclipse.xtend:org.eclipse.xtend.lib.macro:2.28.0
+org.eclipse.xtend:org.eclipse.xtend.lib:2.28.0
+org.eclipse.xtext:org.eclipse.xtext.xbase.lib:2.28.0
 org.fusesource.jansi:jansi:1.18
 org.glassfish.jaxb:jaxb-core:${jaxb.runtime.vespa.version}
 org.glassfish.jaxb:jaxb-runtime:${jaxb.runtime.vespa.version}
@@ -200,6 +210,7 @@ org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}
 org.jetbrains:annotations:24.0.1
 org.json:json:${org.json.vespa.version}
+org.jsoup:jsoup:1.14.2
 org.jsoup:jsoup:1.17.2
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}
@@ -226,6 +237,7 @@ org.ow2.asm:asm-util:${asm.vespa.version}
 org.ow2.asm:asm:${asm.vespa.version}
 org.questdb:questdb:${questdb.vespa.version}
 org.reactivestreams:reactive-streams:1.0.4
+org.relaxng:jing:20220510
 org.slf4j:jcl-over-slf4j:${slf4j.vespa.version}
 org.slf4j:log4j-over-slf4j:${slf4j.vespa.version}
 org.slf4j:slf4j-api:${slf4j.vespa.version}
@@ -263,3 +275,5 @@ software.amazon.awssdk:third-party-jackson-core:${aws-sdk2.vespa.version}
 software.amazon.awssdk:utils:${aws-sdk2.vespa.version}
 software.amazon.eventstream:eventstream:1.0.1
 xerces:xercesImpl:${xerces.vespa.version}
+xml-apis:xml-apis:1.0.b2
+xml-resolver:xml-resolver:${javax.annotation.vespa.version}
