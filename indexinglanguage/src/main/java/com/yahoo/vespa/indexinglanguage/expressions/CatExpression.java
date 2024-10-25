@@ -35,12 +35,11 @@ public final class CatExpression extends ExpressionList<Expression> {
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
         List<DataType> types = new LinkedList<>();
-        for (Expression exp : this) {
-            DataType val = context.setCurrentType(input).verify(exp).getCurrentType();
-            types.add(val);
-            if (val == null) {
-                throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ")");
-            }
+        for (Expression expression : this) {
+            DataType type = context.setCurrentType(input).verify(expression).getCurrentType();
+            if (type == null)
+                throw new VerificationException(this, "In " + expression + ": Attempting to concatenate a null value");
+            types.add(type);
         }
         context.setCurrentType(resolveOutputType(types));
     }
@@ -107,19 +106,18 @@ public final class CatExpression extends ExpressionList<Expression> {
         return super.equals(obj) && obj instanceof CatExpression;
     }
 
+    /** We're either concatenating strings, or collections. */
     private static DataType resolveOutputType(List<DataType> types) {
-        DataType ret = null;
+        DataType resolved = null;
         for (DataType type : types) {
-            if (!(type instanceof CollectionDataType)) {
+            if (!(type instanceof CollectionDataType)) return DataType.STRING;
+
+            if (resolved == null)
+                resolved = type;
+            else if (!resolved.isAssignableFrom(type))
                 return DataType.STRING;
-            }
-            if (ret == null) {
-                ret = type;
-            } else if (!ret.isAssignableFrom(type)) {
-                return DataType.STRING;
-            }
         }
-        return ret;
+        return resolved;
     }
 
     private static FieldValue asString(List<FieldValue> outputs) {
@@ -128,7 +126,7 @@ public final class CatExpression extends ExpressionList<Expression> {
             if (val == null) {
                 return null;
             }
-            ret.append(val.toString());
+            ret.append(val);
         }
         return new StringFieldValue(ret.toString());
     }
@@ -166,4 +164,5 @@ public final class CatExpression extends ExpressionList<Expression> {
         }
         return out;
     }
+
 }

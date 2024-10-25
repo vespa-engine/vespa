@@ -37,65 +37,57 @@ public abstract class FieldValueConverter {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private FieldValue convertArray(Array val) {
-        List<FieldValue> next = new LinkedList<FieldValue>();
-        DataType nextType = null;
-        for (Iterator<FieldValue> it = val.fieldValueIterator(); it.hasNext();) {
-            FieldValue prevVal = it.next();
-            FieldValue nextVal = convert(prevVal);
-            if (nextVal == null) {
-                continue;
+        List<FieldValue> next = new LinkedList<>();
+        DataType type = null;
+        for (Iterator<FieldValue> i = val.fieldValueIterator(); i.hasNext();) {
+            FieldValue value = convert(i.next());
+            if (value == null) continue;
+            if (type == null) {
+                type = value.getDataType();
+            } else if (!type.isValueCompatible(value)) {
+                throw new IllegalArgumentException("Expected " + type.getName() + ", got " +
+                                                   value.getDataType().getName());
             }
-            if (nextType == null) {
-                nextType = nextVal.getDataType();
-            } else if (!nextType.isValueCompatible(nextVal)) {
-                throw new IllegalArgumentException("Expected " + nextType.getName() + ", got " +
-                                                   nextVal.getDataType().getName());
-            }
-            next.add(nextVal);
+            next.add(value);
         }
-        if (nextType == null) {
-            return null;
-        }
-        Array ret = DataType.getArray(nextType).createFieldValue();
-        ret.addAll(next);
-        return ret;
+        if (type == null) return null;
+
+        Array convertedValue = DataType.getArray(type).createFieldValue();
+        convertedValue.addAll(next);
+        return convertedValue;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private FieldValue convertMap(MapFieldValue<FieldValue, FieldValue> val) {
-        Map<FieldValue, FieldValue> next = new LinkedHashMap<>();
-        DataType nextKeyType = null, nextValType = null;
+    protected FieldValue convertMap(MapFieldValue<FieldValue, FieldValue> val) {
+        Map<FieldValue, FieldValue> convertedMap = new LinkedHashMap<>();
+        DataType keyType = null;
+        DataType valueType = null;
         for (Map.Entry<FieldValue, FieldValue> entry : val.entrySet()) {
-            FieldValue prevKey = entry.getKey();
-            FieldValue nextKey = convert(prevKey);
-            if (nextKey == null) {
-                continue;
+            FieldValue key = convert(entry.getKey());
+            if (key == null) continue;
+
+            if (keyType == null) {
+                keyType = key.getDataType();
+            } else if (!keyType.isValueCompatible(key)) {
+                throw new IllegalArgumentException("Expected " + keyType.getName() + ", got " +
+                                                   key.getDataType().getName());
             }
-            if (nextKeyType == null) {
-                nextKeyType = nextKey.getDataType();
-            } else if (!nextKeyType.isValueCompatible(nextKey)) {
-                throw new IllegalArgumentException("Expected " + nextKeyType.getName() + ", got " +
-                                                   nextKey.getDataType().getName());
+            FieldValue value = convert(entry.getValue());
+            if (value == null) continue;
+
+            if (valueType == null) {
+                valueType = value.getDataType();
+            } else if (!valueType.isValueCompatible(value)) {
+                throw new IllegalArgumentException("Expected " + valueType.getName() + ", got " +
+                                                   value.getDataType().getName());
             }
-            FieldValue prevVal = entry.getValue();
-            FieldValue nextVal = convert(prevVal);
-            if (nextVal == null) {
-                continue;
-            }
-            if (nextValType == null) {
-                nextValType = nextVal.getDataType();
-            } else if (!nextValType.isValueCompatible(nextVal)) {
-                throw new IllegalArgumentException("Expected " + nextValType.getName() + ", got " +
-                                                   nextVal.getDataType().getName());
-            }
-            next.put(nextKey, nextVal);
+            convertedMap.put(key, value);
         }
-        if (nextKeyType == null || nextValType == null) {
-            return null;
-        }
-        MapFieldValue ret = DataType.getMap(nextKeyType, nextValType).createFieldValue();
-        ret.putAll(next);
-        return ret;
+        if (keyType == null || valueType == null) return null;
+
+        MapFieldValue convertedValue = DataType.getMap(keyType, valueType).createFieldValue();
+        convertedValue.putAll(convertedMap);
+        return convertedValue;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

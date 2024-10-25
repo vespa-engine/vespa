@@ -39,7 +39,7 @@ public class GetFieldTestCase {
         Expression exp = new GetFieldExpression("foo");
         assertVerify(type, exp, DataType.STRING);
         assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected structured input, got int");
+        assertVerifyThrows(DataType.INT, exp, "Expected a struct or map, bit got an int");
         assertVerifyThrows(type, new GetFieldExpression("bar"), "Field 'bar' not found in struct type 'my_struct'");
     }
 
@@ -69,7 +69,7 @@ public class GetFieldTestCase {
             new GetFieldExpression("foo").execute(new StringFieldValue("bar"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Expected structured input, got string", e.getMessage());
+            assertEquals("In get_field foo: Expected structured input, got string", e.getMessage());
         }
     }
 
@@ -79,7 +79,7 @@ public class GetFieldTestCase {
             new GetFieldExpression("foo").execute(new StructDataType("my_struct").createFieldValue());
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Field 'foo' not found in struct type 'my_struct'", e.getMessage());
+            assertEquals("In get_field foo: Field 'foo' not found in struct type 'my_struct'", e.getMessage());
         }
     }
 }

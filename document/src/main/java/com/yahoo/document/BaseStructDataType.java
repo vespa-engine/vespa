@@ -7,8 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Date: Apr 15, 2008
- *
  * @author humbe
  */
 public abstract class BaseStructDataType extends StructuredDataType {
