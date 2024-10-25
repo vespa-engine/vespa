@@ -3,11 +3,11 @@ package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.transaction.Mutex;
@@ -667,31 +667,30 @@ public class Nodes {
     }
 
     private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
-        Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
-        if (nodeMutex.isEmpty()) return List.of();
-        List<Node> result = new ArrayList<>();
         boolean wantToDeprovision = op == HostOperation.deprovision;
         boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
         boolean wantToRetire = op.needsRetirement();
         boolean wantToUpgradeFlavor = op == HostOperation.upgradeFlavor;
-        Node host = nodeMutex.get().node();
-        try (NodeMutex lock = nodeMutex.get()) {
-            if ( ! host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
-            try (Mutex allocationLock = lockUnallocated()) {
-                // Modify parent with wantToRetire while holding the allocationLock to prevent
-                // any further allocation of nodes on this host
-                Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor, agent, instant);
-                result.add(write(newHost, lock));
+        try (var nodeMutexes = lockAndGetRecursively(hostname, Optional.empty())) {
+            if (nodeMutexes.parent.isEmpty()) return List.of();
+
+            NodeMutex hostMutex = nodeMutexes.parent.get();
+            if ( ! hostMutex.node().type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + hostMutex.node());
+
+            // Update host
+            List<Node> result = new ArrayList<>();
+            Node newHost = hostMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor, agent, instant);
+            result.add(write(newHost, hostMutex));
+
+            // Update children
+            for (var childMutex : nodeMutexes.children()) {
+                if (wantToRetire || op == HostOperation.cancel) {
+                    Node newNode = childMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
+                    result.add(write(newNode, childMutex));
+                }
             }
+            return result;
         }
-        if (wantToRetire || op == HostOperation.cancel) { // Apply recursively if we're retiring, or cancelling
-            List<Node> updatedNodes = performOn(list().childrenOf(host), (node, nodeLock) -> {
-                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
-                return write(newNode, nodeLock);
-            });
-            result.addAll(updatedNodes);
-        }
-        return result;
     }
 
     /**
