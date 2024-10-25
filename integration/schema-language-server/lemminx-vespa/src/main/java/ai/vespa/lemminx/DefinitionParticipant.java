@@ -1,28 +1,17 @@
 package ai.vespa.lemminx;
 
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.logging.Logger;
 
 import org.eclipse.lemminx.dom.DOMAttr;
 import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
 import org.eclipse.lemminx.services.extensions.IDefinitionRequest;
-import org.eclipse.lemminx.services.extensions.commands.IXMLCommandService;
-import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
-
 public class DefinitionParticipant implements IDefinitionParticipant {
     private static final Logger logger = Logger.getLogger(DefinitionParticipant.class.getName());
-    private IXMLCommandService commandService;
-
-    public DefinitionParticipant(IXMLCommandService commandService) { 
-        this.commandService = commandService;
-    }
 
     @Override
     public void findDefinition(IDefinitionRequest request, List<LocationLink> locations, CancelChecker cancelChecker) {
@@ -36,11 +25,7 @@ public class DefinitionParticipant implements IDefinitionParticipant {
             attribute.getOwnerElement().getNodeName().equals("document")) {
             String schemaName = attribute.getValue();
 
-            // run sync
-            Object result = commandService.executeClientCommand(
-                new ExecuteCommandParams("vespaSchemaLS.servicesxml.findDocument", List.of(schemaName))).join();
-
-            List<Location> locationResult = parseFindDocumentResult(result);
+            List<Location> locationResult = SchemaLSCommands.instance().findSchemaDefinition(schemaName);
 
             locationResult.stream()
                           .map(loc -> new LocationLink(loc.getUri(), loc.getRange(), loc.getRange()))
@@ -48,19 +33,4 @@ public class DefinitionParticipant implements IDefinitionParticipant {
         }
     }
 
-    /**
-     * Converts from LinkedTreeMap based structure to typed LSP4J structure.
-     */
-    private List<Location> parseFindDocumentResult(Object findDocumentResult) {
-        if (findDocumentResult == null) return List.of();
-        try {
-            Gson gson = new Gson();
-            String json = gson.toJson(findDocumentResult);
-            Type listOfLocationType = new TypeToken<List<Location>>() {}.getType();
-            return gson.fromJson(json, listOfLocationType);
-        } catch (Exception ex) {
-            logger.severe("Error when parsing json: " + ex.getMessage());
-            return List.of();
-        }
-    }
 }

@@ -20,10 +20,10 @@ public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipa
     public void didOpen(DOMDocument document) {
         try {
             String fileURI = document.getTextDocument().getUri();
-            commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.servicesxml.setupWorkspace", List.of(fileURI)));
+            SchemaLSCommands.instance().sendSetupWorkspaceRequest(fileURI);
         } catch (Exception ex) {
             // not very severe from our point of view
-            logger.warning("Error when issuing setup workspce command: " + ex.getMessage());
+            logger.warning("Error when issuing setup workspace command: " + ex.getMessage());
         }
     }
 

@@ -9,6 +9,7 @@ import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
 import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
 import org.eclipse.lemminx.services.extensions.IXMLExtension;
 import org.eclipse.lemminx.services.extensions.XMLExtensionsRegistry;
+import org.eclipse.lemminx.services.extensions.diagnostics.IDiagnosticsParticipant;
 import org.eclipse.lemminx.services.extensions.save.ISaveContext;
 import org.eclipse.lemminx.uriresolver.URIResolverExtension;
 import org.eclipse.lsp4j.InitializeParams;
@@ -21,6 +22,7 @@ public class VespaExtension implements IXMLExtension {
     URIResolverExtension uriResolverExtension;
     IDefinitionParticipant definitionParticipant;
     IDocumentLifecycleParticipant documentLifecycleParticipant;
+    IDiagnosticsParticipant diagnosticsParticipant;
     Path serverPath;
 
     @Override
@@ -41,15 +43,19 @@ public class VespaExtension implements IXMLExtension {
             return;
         }
 
-        hoverParticipant = new HoverParticipant(serverPath);
-        uriResolverExtension = new ServicesURIResolverExtension(serverPath);
-        definitionParticipant = new DefinitionParticipant(registry.getCommandService());
+        SchemaLSCommands.init(registry.getCommandService());
+
+        hoverParticipant             = new HoverParticipant(serverPath);
+        uriResolverExtension         = new ServicesURIResolverExtension(serverPath);
+        definitionParticipant        = new DefinitionParticipant();
         documentLifecycleParticipant = new DocumentLifecycleParticipant(registry.getCommandService());
+        diagnosticsParticipant       = new DiagnosticsParticipant();
 
         registry.getResolverExtensionManager().registerResolver(uriResolverExtension);
         registry.registerHoverParticipant(hoverParticipant);
         registry.registerDefinitionParticipant(definitionParticipant);
         registry.registerDocumentLifecycleParticipant(documentLifecycleParticipant);
+        registry.registerDiagnosticsParticipant(diagnosticsParticipant);
 
         logger.info("Vespa LemminX extension activated");
 
