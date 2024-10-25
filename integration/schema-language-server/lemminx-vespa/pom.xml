@@ -19,6 +19,11 @@
       <version>0.28.0</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>config-model</artifactId>
+      <version>8-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
