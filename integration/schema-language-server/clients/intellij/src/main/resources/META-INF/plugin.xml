@@ -25,10 +25,7 @@
   <change-notes><![CDATA[
 <h2>Refactored to use LSP4IJ</h2>
 The plugin will now support better syntax highlighting with semantic tokens and renaming.
-<<<<<<< HEAD
-=======
 In addition, the plugin will be available for community editions as well.
->>>>>>> 25ae8f2cc2f (chore: Update the IntelliJ plugin change notes)
 ]]></change-notes>
   <depends>com.intellij.modules.platform</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>
