@@ -35,11 +35,22 @@
 ]]></change-notes>
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.modules.ultimate</depends>
-  <extensions defaultExtensionNs="com.intellij">
+  <depends>com.redhat.devtools.lsp4ij</depends>
+  <!--extensions defaultExtensionNs="com.intellij">
     <fileType name="Schema" extensions="sd;profile" implementationClass="ai.vespa.schemals.intellij.SchemaFileType" language="Schema" fieldName="INSTANCE"/>
 
     <platform.lsp.serverSupportProvider implementation="ai.vespa.schemals.intellij.SchemaLspServerSupportProvider"/>
     <lang.syntaxHighlighter language="Schema" implementationClass="ai.vespa.schemals.intellij.SchemaSyntaxHighlighter" />
+  </extensions-->
+  <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+    <server id="vespaSchemaLanguageServer"
+      name="Vespa Schema Language Server"
+      factoryClass="ai.vespa.schemals.intellij.SchemaLanguageServerFactory"
+    >
+    </server>
+    <fileNamePatternMapping patterns="*.sd"
+                            serverId="vespaSchemaLanguageServer"
+                            languageId="vespaSchema"/>
   </extensions>
   <extensions defaultExtensionNs="com.intellij">
     <applicationService
