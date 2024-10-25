@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.*;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.indexinglanguage.FieldValueConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -61,7 +63,7 @@ public final class ForEachExpression extends CompositeExpression {
         DataType valueType = context.getCurrentType();
         if (valueType instanceof ArrayDataType || valueType instanceof WeightedSetDataType) {
             // Set type for block evaluation
-            context.setCurrentType(((CollectionDataType)valueType).getNestedType());
+            context.setCurrentType(valueType.getNestedType());
 
             // Evaluate block, which sets valueType to the output of the block
             context.verify(expression);
@@ -84,8 +86,13 @@ public final class ForEachExpression extends CompositeExpression {
             }
             context.setCurrentType(valueType);
         }
+        else if (valueType instanceof MapDataType) {
+            // Inner value will be MapEntryFieldValue which has the same type as the map
+            DataType outputType = context.verify(expression).getCurrentType();
+            context.setCurrentType(new ArrayDataType(outputType));
+        }
         else {
-            throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
+            throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
                                                   valueType.getName());
         }
     }
@@ -94,7 +101,7 @@ public final class ForEachExpression extends CompositeExpression {
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         if (input instanceof Array || input instanceof WeightedSet) {
-            FieldValue next = new MyConverter(context, expression).convert(input);
+            FieldValue next = new ExecutionConverter(context, expression).convert(input);
             if (next == null) {
                 VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
                 context.fillVariableTypes(verificationContext);
@@ -102,10 +109,10 @@ public final class ForEachExpression extends CompositeExpression {
                 next = verificationContext.getCurrentType().createFieldValue();
             }
             context.setCurrentValue(next);
-        } else if (input instanceof Struct) {
-            context.setCurrentValue(new MyConverter(context, expression).convert(input));
+        } else if (input instanceof Struct || input instanceof Map) {
+            context.setCurrentValue(new ExecutionConverter(context, expression).convert(input));
         } else {
-            throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
+            throw new IllegalArgumentException("Expected Array, Struct, WeightedSet or Map input, got " +
                                                input.getDataType().getName());
         }
     }
@@ -135,13 +142,14 @@ public final class ForEachExpression extends CompositeExpression {
         return getClass().hashCode() + expression.hashCode();
     }
 
-    private static final class MyConverter extends FieldValueConverter {
+    /** Converts field values by executing the given expression on them. */
+    private static final class ExecutionConverter extends FieldValueConverter {
 
         final ExecutionContext context;
         final Expression expression;
         int depth = 0;
 
-        MyConverter(ExecutionContext context, Expression expression) {
+        ExecutionConverter(ExecutionContext context, Expression expression) {
             this.context = context;
             this.expression = expression;
         }
@@ -149,6 +157,15 @@ public final class ForEachExpression extends CompositeExpression {
         @Override
         protected boolean shouldConvert(FieldValue value) {
             return ++depth > 1;
+        }
+
+        /** Converts a map into an array by passing each entry through the expression. */
+        @Override
+        protected FieldValue convertMap(MapFieldValue<FieldValue, FieldValue> map) {
+            var values = new Array<>(new ArrayDataType(expression.createdOutputType()), map.size());
+            for (var entry : map.entrySet())
+                values.add(doConvert(new MapEntryFieldValue(entry.getKey(), entry.getValue())));
+            return values;
         }
 
         @Override

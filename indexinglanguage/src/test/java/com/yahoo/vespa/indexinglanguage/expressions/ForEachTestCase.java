@@ -54,7 +54,7 @@ public class ForEachTestCase {
         Expression exp = new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.getArray(DataType.INT), exp, DataType.getArray(DataType.STRING));
         assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected Array, Struct or WeightedSet input, got int");
+        assertVerifyThrows(DataType.INT, exp, "Expected Array, Struct, WeightedSet or Map input, got int");
         assertVerifyThrows(DataType.getArray(DataType.STRING), exp, "Expected int input, got string");
     }
 
@@ -134,7 +134,7 @@ public class ForEachTestCase {
             new ForEachExpression(new SimpleExpression()).execute(new StringFieldValue("foo"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Expected Array, Struct or WeightedSet input, got string", e.getMessage());
+            assertEquals("Expected Array, Struct, WeightedSet or Map input, got string", e.getMessage());
         }
     }
 

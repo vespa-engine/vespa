@@ -75,6 +75,11 @@ final class SimpleExpression extends Expression {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "SimpleExpression";
+    }
+
     public static SimpleExpression newOutput(DataType createdOutput) {
         return new SimpleExpression(null).setCreatedOutput(createdOutput)
                                      .setVerifyValue(createdOutput);

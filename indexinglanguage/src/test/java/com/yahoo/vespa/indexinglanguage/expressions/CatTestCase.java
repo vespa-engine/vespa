@@ -51,7 +51,7 @@ public class CatTestCase {
                      new SimpleExpression(DataType.STRING), DataType.STRING);
         assertVerifyThrows(new SimpleExpression().setCreatedOutput(null),
                            new SimpleExpression().setCreatedOutput(DataType.STRING), null,
-                           "Attempting to concatenate a null value");
+                           "In SimpleExpression: Attempting to concatenate a null value");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.INT), null,
                            "Operands require conflicting input types, string vs int");
