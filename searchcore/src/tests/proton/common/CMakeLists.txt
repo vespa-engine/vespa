@@ -2,7 +2,6 @@
 vespa_add_executable(searchcore_proton_common_vespa_test_app TEST
     SOURCES
     vespa_testrunner.cpp
-    index_writer_test.cpp
     job_load_sampler_test.cpp
     job_tracked_flush_test.cpp
     pendinglidtracker_test.cpp
@@ -27,6 +26,7 @@ vespa_add_executable(searchcore_proton_common_gtest_test_app TEST
     document_type_inspector_test.cpp
     documentdb_job_trackers_test.cpp
     feedoperation_test.cpp
+    index_writer_test.cpp
     metrics_engine_test.cpp
     proton_disk_layout_test.cpp
     DEPENDS
