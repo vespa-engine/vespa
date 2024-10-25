@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.time.TimeBudget;
@@ -14,6 +15,9 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -21,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
+import com.yahoo.vespa.hosted.provision.backup.Snapshots;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
@@ -74,13 +79,17 @@ public class Nodes {
     private final Clock clock;
     private final Orchestrator orchestrator;
     private final Applications applications;
+    private final Snapshots snapshots;
+    private final BooleanFlag snapshotsEnabled;
 
-    public Nodes(CuratorDb db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications) {
+    public Nodes(CuratorDb db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications, Snapshots snapshots, FlagSource flagSource) {
         this.zone = zone;
         this.clock = clock;
         this.db = db;
         this.orchestrator = orchestrator;
         this.applications = applications;
+        this.snapshots = snapshots;
+        this.snapshotsEnabled = Flags.SNAPSHOTS_ENABLED.bindTo(flagSource);
     }
 
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
@@ -667,15 +676,17 @@ public class Nodes {
     }
 
     private void decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
-        boolean wantToDeprovision = op == HostOperation.deprovision;
-        boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
-        boolean wantToRetire = op.needsRetirement();
-        boolean wantToUpgradeFlavor = op == HostOperation.upgradeFlavor;
-        try (var nodeMutexes = lockAndGetRecursively(hostname, Optional.empty())) {
+        try (var nodeMutexes = lockAndGetRecursively(hostname, Optional.of(Duration.ofSeconds(5)))) {
             if (nodeMutexes.parent.isEmpty()) return;
 
             NodeMutex hostMutex = nodeMutexes.parent.get();
             if ( ! hostMutex.node().type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + hostMutex.node());
+
+            boolean wantToDeprovision = op == HostOperation.deprovision;
+            boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
+            boolean wantToRetire = op.needsRetirement();
+            boolean wantToUpgradeFlavor = op == HostOperation.upgradeFlavor;
+            boolean wantToSnapshot = op.needsSnapshot(hostMutex.node(), snapshotsEnabled.value());
 
             // Update host
             Node newHost = hostMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor, agent, instant);
@@ -686,6 +697,9 @@ public class Nodes {
                 if (wantToRetire || op == HostOperation.cancel) {
                     Node newNode = childMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
                     write(newNode, childMutex);
+                }
+                if (wantToSnapshot) {
+                    snapshots.create(childMutex.node().hostname(), clock.instant());
                 }
             }
         }
@@ -1099,6 +1113,13 @@ public class Nodes {
         /** Returns whether this operation requires the host and its children to be retired */
         public boolean needsRetirement() {
             return needsRetirement;
+        }
+
+        /** Returns whether this operation requires a snapshot to be created for all children of given host */
+        public boolean needsSnapshot(Node host, boolean enabled) {
+            return this == softRebuild &&
+                   host.resources().storageType() == NodeResources.StorageType.local &&
+                   enabled;
         }
 
     }
