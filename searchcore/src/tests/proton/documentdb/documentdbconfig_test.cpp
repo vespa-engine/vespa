@@ -3,13 +3,13 @@
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
-#include <vespa/searchcore/proton/server/documentdbconfig.h>
-#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config-summary.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/datatype.h>
+#include <vespa/searchcore/proton/server/documentdbconfig.h>
+#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace document;
 using namespace proton;
@@ -26,7 +26,7 @@ using document::config_builder::Struct;
 
 using ConfigSP = shared_ptr<DocumentDBConfig>;
 
-namespace documentdbconfig_test {
+inline namespace documentdbconfig_test {
 
 namespace {
 
@@ -131,32 +131,40 @@ struct Fixture {
     ConfigSP fullCfg;
     ConfigSP replayCfg;
     ConfigSP nullCfg;
-    Fixture()
-        : basic_schema(make_shared<Schema>()),
-          full_schema(make_shared<Schema>()),
-          repo(make_shared<DocumentTypeRepo>()),
-          basicCfg(),
-          fullCfg(),
-          replayCfg(),
-          nullCfg()
-    {
-        basic_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
-        full_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
-        basicCfg = MyConfigBuilder(4, basic_schema, repo).addAttribute().addSummary(false, false).build();
-        fullCfg = MyConfigBuilder(4, full_schema, repo).addAttribute().
-                                                   addRankProfile().
-                                                   addRankingConstant().
-                                                   addRankingExpression().
-                                                   addOnnxModel().
-                                                   addImportedField().
-                                                   addSummary(true, true).
-                                                   build();
-        replayCfg = DocumentDBConfig::makeReplayConfig(fullCfg);
-    }
+    Fixture();
+    ~Fixture();
 };
 
-TEST_F("require that makeReplayConfig() drops unneeded configs", Fixture)
+Fixture::Fixture()
+    : basic_schema(make_shared<Schema>()),
+      full_schema(make_shared<Schema>()),
+      repo(make_shared<DocumentTypeRepo>()),
+      basicCfg(),
+      fullCfg(),
+      replayCfg(),
+      nullCfg()
 {
+    basic_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
+    full_schema->addAttributeField(Schema::AttributeField("my_attribute", schema::DataType::INT32));
+    basicCfg = MyConfigBuilder(4, basic_schema, repo).addAttribute().addSummary(false, false).build();
+    fullCfg = MyConfigBuilder(4, full_schema, repo).addAttribute().
+                                               addRankProfile().
+                                               addRankingConstant().
+                                               addRankingExpression().
+                                               addOnnxModel().
+                                               addImportedField().
+                                               addSummary(true, true).
+                                               build();
+    replayCfg = DocumentDBConfig::makeReplayConfig(fullCfg);
+}
+
+Fixture::~Fixture() = default;
+
+}
+
+TEST(DocumentDBConfigTest, require_that_makeReplayConfig_drops_unneeded_configs)
+{
+    Fixture f;
     using DDBC = DocumentDBConfig;
     EXPECT_FALSE(*f.basicCfg == *f.fullCfg);
     EXPECT_TRUE(*f.basicCfg == *f.replayCfg);
@@ -169,31 +177,15 @@ TEST_F("require that makeReplayConfig() drops unneeded configs", Fixture)
     EXPECT_TRUE(DDBC::preferOriginalConfig(f.nullCfg).get() == nullptr);
 }
 
+inline namespace documentdbconfig_test {
+
 struct DelayAttributeAspectFixture {
     std::shared_ptr<const Schema> schema;
     ConfigSP attrCfg;
     ConfigSP noAttrCfg;
-    explicit DelayAttributeAspectFixture(bool hasDocField)
-        : schema(make_shared<Schema>()),
-          attrCfg(),
-          noAttrCfg()
-    {
-        attrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(true)).addAttribute().
-                                                   addRankProfile().
-                                                   addRankingConstant().
-                                                   addRankingExpression().
-                                                   addOnnxModel().
-                                                   addImportedField().
-                                                   addSummary(true, true).
-                                                   build();
-        noAttrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(hasDocField)).addRankProfile().
-                         addRankingConstant().
-                         addRankingExpression().
-                         addOnnxModel().
-                         addImportedField().
-                         addSummary(hasDocField, false).
-                         build();
-    }
+
+    explicit DelayAttributeAspectFixture(bool hasDocField);
+    ~DelayAttributeAspectFixture();
 
     void assertDelayedConfig(const DocumentDBConfig &testCfg) {
         EXPECT_FALSE(noAttrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
@@ -211,16 +203,42 @@ struct DelayAttributeAspectFixture {
     }
 };
 
-TEST_F("require that makeDelayedAttributeAspectConfig works, field remains when attribute removed", DelayAttributeAspectFixture(true))
+DelayAttributeAspectFixture::DelayAttributeAspectFixture(bool hasDocField)
+    : schema(make_shared<Schema>()),
+      attrCfg(),
+      noAttrCfg()
 {
+    attrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(true)).addAttribute().
+                                               addRankProfile().
+                                               addRankingConstant().
+                                               addRankingExpression().
+                                               addOnnxModel().
+                                               addImportedField().
+                                               addSummary(true, true).
+                                               build();
+    noAttrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(hasDocField)).addRankProfile().
+                     addRankingConstant().
+                     addRankingExpression().
+                     addOnnxModel().
+                     addImportedField().
+                     addSummary(hasDocField, false).
+                     build();
+}
+
+DelayAttributeAspectFixture::~DelayAttributeAspectFixture() = default;
+
+}
+
+TEST(DocumentDBConfigTest, require_that_makeDelayedAttributeAspectConfig_works_field_remains_when_attribute_removed)
+{
+    DelayAttributeAspectFixture f(true);
     auto delayedRemove = DocumentDBConfig::makeDelayedAttributeAspectConfig(f.noAttrCfg, *f.attrCfg);
-    TEST_DO(f.assertDelayedConfig(*delayedRemove));
+    f.assertDelayedConfig(*delayedRemove);
 }
 
-TEST_F("require that makeDelayedAttributeAspectConfig works, field removed with attribute", DelayAttributeAspectFixture(false))
+TEST(DocumentDBConfigTest, require_that_makeDelayedAttributeAspectConfig_works_field_removed_with_attribute)
 {
+    DelayAttributeAspectFixture f(false);
     auto removed = DocumentDBConfig::makeDelayedAttributeAspectConfig(f.noAttrCfg, *f.attrCfg);
-    TEST_DO(f.assertNotDelayedConfig(*removed));
-}
-
+    f.assertNotDelayedConfig(*removed);
 }
