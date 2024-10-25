@@ -652,44 +652,42 @@ public class Nodes {
     }
 
     /** Retire and deprovision given host and all of its children */
-    public List<Node> deprovision(String hostname, Agent agent, Instant instant) {
-        return decommission(hostname, HostOperation.deprovision, agent, instant);
+    public void deprovision(String hostname, Agent agent, Instant instant) {
+        decommission(hostname, HostOperation.deprovision, agent, instant);
     }
 
     /** Rebuild given host */
-    public List<Node> rebuild(String hostname, boolean soft, Agent agent, Instant instant) {
-        return decommission(hostname, soft ? HostOperation.softRebuild : HostOperation.rebuild, agent, instant);
+    public void rebuild(String hostname, boolean soft, Agent agent, Instant instant) {
+        decommission(hostname, soft ? HostOperation.softRebuild : HostOperation.rebuild, agent, instant);
     }
 
     /** Upgrade flavor for given host */
-    public List<Node> upgradeFlavor(String hostname, Agent agent, Instant instant, boolean upgrade) {
-        return decommission(hostname, upgrade ? HostOperation.upgradeFlavor : HostOperation.cancel, agent, instant);
+    public void upgradeFlavor(String hostname, Agent agent, Instant instant, boolean upgrade) {
+        decommission(hostname, upgrade ? HostOperation.upgradeFlavor : HostOperation.cancel, agent, instant);
     }
 
-    private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
+    private void decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
         boolean wantToDeprovision = op == HostOperation.deprovision;
         boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
         boolean wantToRetire = op.needsRetirement();
         boolean wantToUpgradeFlavor = op == HostOperation.upgradeFlavor;
         try (var nodeMutexes = lockAndGetRecursively(hostname, Optional.empty())) {
-            if (nodeMutexes.parent.isEmpty()) return List.of();
+            if (nodeMutexes.parent.isEmpty()) return;
 
             NodeMutex hostMutex = nodeMutexes.parent.get();
             if ( ! hostMutex.node().type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + hostMutex.node());
 
             // Update host
-            List<Node> result = new ArrayList<>();
             Node newHost = hostMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor, agent, instant);
-            result.add(write(newHost, hostMutex));
+            write(newHost, hostMutex);
 
             // Update children
             for (var childMutex : nodeMutexes.children()) {
                 if (wantToRetire || op == HostOperation.cancel) {
                     Node newNode = childMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
-                    result.add(write(newNode, childMutex));
+                    write(newNode, childMutex);
                 }
             }
-            return result;
         }
     }
 
