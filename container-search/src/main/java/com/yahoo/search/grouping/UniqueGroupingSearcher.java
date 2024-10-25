@@ -149,7 +149,7 @@ public class UniqueGroupingSearcher extends Searcher {
                 case DESCENDING ->
                     // When we sort in descending order, the hit with the largest value should come first (and be surfaced).
                         orderingClause.add(new NegFunction(new MaxAggregator(new AttributeValue(fieldOrder.getFieldName()))));
-                default -> throw new UnsupportedOperationException("Can not handle sort order " + sortOrder + ".");
+                default -> throw new IllegalStateException("Can not handle sort order " + sortOrder + ".");
             }
         }
         return orderingClause;
@@ -170,7 +170,7 @@ public class UniqueGroupingSearcher extends Searcher {
                 case DESCENDING ->
                     // To sort descending, just take the negative. This is the most common case
                         new NegFunction(new AttributeValue(fieldOrder.getFieldName()));
-                default -> throw new UnsupportedOperationException("Can not handle sort order " + sortOrder + ".");
+                default -> throw new IllegalStateException("Can not handle sort order " + sortOrder + ".");
             };
         }
         return groupingClause;

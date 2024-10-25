@@ -39,8 +39,8 @@ public:
     size_t estimated_hits(double hit_rate, size_t num_docs) const noexcept {
         return (size_t) (hit_rate * num_docs);
     }
-    size_t max_group_size(size_t wanted_num_docs_in) const noexcept {
-        return (wanted_num_docs_in / _min_groups);
+    size_t max_group_size(size_t wanted_num_docs) const noexcept {
+        return std::max(size_t(1), wanted_num_docs / _min_groups);
     }
 };
 

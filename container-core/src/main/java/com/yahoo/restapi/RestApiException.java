@@ -69,6 +69,11 @@ public class RestApiException extends RuntimeException {
         public InternalServerError(String message, Throwable cause) { super(ErrorResponse::internalServerError, message, cause); }
     }
 
+    public static class GatewayTimeout extends RestApiException {
+        public GatewayTimeout(String message) { this(message, null); }
+        public GatewayTimeout(String message, Throwable cause) { super(ErrorResponse::gatewayTimeout, message, cause); }
+    }
+
     public static class Forbidden extends RestApiException {
         public Forbidden() { this("Forbidden"); }
         public Forbidden(String message) { super(ErrorResponse::forbidden, message, null); }

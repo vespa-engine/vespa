@@ -47,21 +47,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag USE_VESPA_ATHENZ = defineFeatureFlag(
-            "use-vespa-athenz", false,
-            List.of("hakonhall"), "2024-06-25", "2024-10-25",
-            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public systems. " +
-            "node-type is config in config server, controller in controller, and the appropriate " +
-            "host node type in host-admin.",
-            "Takes immediate effect wherever possible.",
-            NODE_TYPE);
-
-    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_ZMS = defineFeatureFlag(
-            "use-vespa-athenz-zms", false,
-            List.of("hakonhall"), "2024-08-16", "2024-10-16",
-            "Whether to communicate with Vespa Athenz ZMS instead of Yahoo Athenz ZMS in public systems.",
-            "Typically takes effect on start of config server/controller, or immediately for hosts (host-admin).");
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -442,13 +427,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag USE_VESPA_ATHENZ_HOST_IDENTITY = defineFeatureFlag(
-            "use-vespa-athenz-host-identity", false,
-            List.of("freva"), "2024-06-12", "2024-11-01",
-            "Whether the host should get identity from Vespa Athenz. Only valid in public systems, noclave, AWS. Vespa version dimension refers to OS version.",
-            "Takes effect on next provisioning",
-            INSTANCE_ID, NODE_TYPE, VESPA_VERSION);
-
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
             List.of("jonmv"), "2024-06-11", "2024-11-01",
@@ -517,6 +495,12 @@ public class Flags {
             "Override the S1 token",
             "Takes effect on next host-admin run",
             HOSTNAME);
+
+    public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
+            "snapshots-enabled", false,
+            List.of("mpolden"), "2024-10-22", "2025-01-10",
+            "Whether node snapshots should be created when host storage is discarded",
+            "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

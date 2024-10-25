@@ -202,6 +202,12 @@ public class PermanentFlags {
             "Takes effect immediately"
     );
 
+    public static final UnboundIntFlag MAX_TENANTS_PER_USER = defineIntFlag(
+            "max-tenants-per-user", 3,
+            "The maximum nr. of tenants a user can create",
+            "Takes effect immediately"
+    );
+
     public static final UnboundBooleanFlag ALLOW_DISABLE_MTLS = defineFeatureFlag(
             "allow-disable-mtls", true,
             "Allow application to disable client authentication",
@@ -489,7 +495,7 @@ public class PermanentFlags {
             "Takes effect on next iteration of UserManagementMaintainer");
 
     public static final UnboundBooleanFlag FORWARD_ALL_LOG_LEVELS = defineFeatureFlag(
-            "forward-all-log-levels", false,
+            "forward-all-log-levels", true,
             "Forward all log levels from nodes to logserver (debug and spam levels will be forwarded only if this flag is enabled)",
             "Takes effect at redeployment");
 

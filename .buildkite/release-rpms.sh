@@ -1,4 +1,5 @@
 #!/usr/bin/ssh-agent /bin/bash 
+# shellcheck shell=bash disable=SC1008
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 set -euo pipefail
@@ -32,18 +33,18 @@ fi
 echo "Using vespa repository git reference: $VESPA_REF"
 ssh-add -D
 set +x
-ssh-add <(echo $VESPA_DEPLOY_TOKEN | base64 -d)
+ssh-add <(echo "$VESPA_DEPLOY_TOKEN" | base64 -d)
 set -x
 git clone git@github.com:vespa-engine/vespa
 
 cd vespa
-dist/release-vespa-rpm.sh $VESPA_RELEASE $VESPA_REF
+dist/release-vespa-rpm.sh "$VESPA_RELEASE" "$VESPA_REF"
 
 upload_rpms() {
   local ARCH=$1
-  aws s3 cp  s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/$ARCH/rpm-repo.tar .
-  aws s3 cp  s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/$ARCH/rpm-repo.tar.pem .
-  aws s3 cp  s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/$ARCH/rpm-repo.tar.sig .
+  aws s3 cp  "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/$ARCH/rpm-repo.tar" .
+  aws s3 cp  "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/$ARCH/rpm-repo.tar.pem" .
+  aws s3 cp  "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/$ARCH/rpm-repo.tar.sig" .
   cosign verify-blob \
     --certificate-identity https://buildkite.com/vespaai/vespa-engine-vespa \
     --certificate-oidc-issuer https://agent.buildkite.com \
@@ -52,7 +53,7 @@ upload_rpms() {
     rpm-repo.tar
   tar xvf rpm-repo.tar
   for rpm in rpms/*.rpm; do
-    screwdriver/upload-rpm-to-cloudsmith.sh $rpm
+    .github/scripts/upload-rpm-to-cloudsmith.sh "$rpm"
   done
   rm -rf rpms rpm-repo.*
 }

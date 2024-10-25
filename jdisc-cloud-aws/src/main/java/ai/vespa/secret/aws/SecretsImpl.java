@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.secret.aws;
 
 import ai.vespa.secret.Secret;
@@ -21,8 +22,8 @@ public class SecretsImpl implements Secrets {
     private final TypedSecretStore secretStore;
 
     @Inject
-    public SecretsImpl(SecretsConfig config, AsmSecretStore asmSecretStore) {
-        this.secretStore = asmSecretStore;
+    public SecretsImpl(SecretsConfig config, AsmSecretReader asmSecretReader) {
+        this.secretStore = asmSecretReader;
         this.secretsConfig = config;
     }
 

@@ -92,8 +92,11 @@ public:
     void execute(vespalib::Identifiable & obj) override {
         FS4Hit & hit = static_cast<FS4Hit &>(obj);
         document::GlobalId gid;
-        _metaStore.getGid(hit.getDocId(), gid);
-        hit.setGlobalId(gid);
+        if (_metaStore.getGidEvenIfMoved(hit.getDocId(), gid)) {
+            hit.setGlobalId(gid);
+        } else {
+            LOG(warning, "Missing globalid for grouping hit %u", hit.getDocId());
+        }
         LOG(debug, "GlobalIdConverter: lid(%u) -> gid(%s)", hit.getDocId(), hit.getGlobalId().toString().c_str());
     }
     bool check(const vespalib::Identifiable & obj) const override {

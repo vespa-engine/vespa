@@ -150,18 +150,14 @@ public:
     virtual std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const = 0;
+                   const search::fef::TermFieldMatchDataArray &matchData) const = 0;
 
 
     /**
-     * Read (possibly partial) posting list into handle.
+     * Read posting list into handle.
      */
     virtual void
-    readPostingList(const PostingListCounts &counts,
-                    uint32_t firstSegment,
-                    uint32_t numSegments,
-                    PostingListHandle &handle) = 0;
+    readPostingList(PostingListHandle &handle) = 0;
 
     /**
      * Open posting list file for random read.
@@ -197,11 +193,9 @@ public:
     std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const override;
+                   const search::fef::TermFieldMatchDataArray &matchData) const override;
 
-    void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
-                         uint32_t numSegments, PostingListHandle &handle) override;
+    void readPostingList(PostingListHandle &handle) override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;

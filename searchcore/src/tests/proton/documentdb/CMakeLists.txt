@@ -19,6 +19,7 @@ vespa_add_executable(searchcore_documentdb_test_app TEST
     searchcore_pcommon
     searchcore_grouping
     searchcore_proton_metrics
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_documentdb_test_app COMMAND searchcore_documentdb_test_app)
 

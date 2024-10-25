@@ -12,7 +12,8 @@ const std::string entry_description("Metrics for indexes for a given field");
 }
 
 IndexMetricsEntry::IndexMetricsEntry(const std::string& field_name)
-    : FieldMetricsEntry(entry_name, field_name, entry_description)
+    : FieldMetricsEntry(entry_name, field_name, entry_description),
+      _disk_usage(this)
 {
 }
 

@@ -54,8 +54,8 @@ private:
     test::DocumentDBConfigBuilder _builder;
 
 public:
-    MyConfigBuilder(int64_t generation, const Schema::SP &schema, const std::shared_ptr<const DocumentTypeRepo> &repo)
-        : _builder(generation, schema, "client", "test")
+    MyConfigBuilder(int64_t generation, std::shared_ptr<const Schema> schema, const std::shared_ptr<const DocumentTypeRepo> &repo)
+        : _builder(generation, std::move(schema), "client", "test")
     {
         _builder.repo(repo);
     }
@@ -170,7 +170,7 @@ TEST_F("require that makeReplayConfig() drops unneeded configs", Fixture)
 }
 
 struct DelayAttributeAspectFixture {
-    Schema::SP schema;
+    std::shared_ptr<const Schema> schema;
     ConfigSP attrCfg;
     ConfigSP noAttrCfg;
     explicit DelayAttributeAspectFixture(bool hasDocField)

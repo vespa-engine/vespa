@@ -9,6 +9,7 @@ import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
+import com.yahoo.vespa.athenz.api.AzureTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.ZToken;
 
 import java.security.KeyPair;
@@ -167,7 +168,7 @@ public interface ZtsClient extends AutoCloseable {
     List<AthenzDomain> getTenantDomains(AthenzIdentity providerIdentity, AthenzIdentity userIdentity, String roleName);
 
     /**
-     * Get aws temporary credentials
+     * Get AWS temporary credentials
      *
      * @param awsRole AWS role to get credentials for
      * @param externalId External Id to get credentials, or <code>null</code> if not required
@@ -178,7 +179,7 @@ public interface ZtsClient extends AutoCloseable {
     }
 
     /**
-     * Get aws temporary credentials
+     * Get AWS temporary credentials
      *
      * @param awsRole AWS role to get credentials for
      * @param duration Duration for which the credentials should be valid, or <code>null</code> to use default
@@ -186,6 +187,21 @@ public interface ZtsClient extends AutoCloseable {
      * @return AWS temporary credentials
      */
     AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId);
+
+    /**
+     * @param athenzRole Athenz role to use when assuming credentials
+     * @param azureIdentityId Client ID of the Azure identity to assume
+     * @return Azure temporary credentials
+     */
+    AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId);
+
+    /**
+     * @param athenzRole Athenz role to use when assuming credentials
+     * @param azureResourceGroup Azure resource group that contains the target identity
+     * @param azureIdentityName Name of the Azure Identity to assume
+     * @return Azure temporary credentials
+     */
+    AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName);
 
     /**
      * Check access to resource for a given principal

@@ -57,7 +57,7 @@ public class IndexingOutputsTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'indexing_output_confict', field 'bar': For expression 'index bar': Attempting " +
-                         "to assign conflicting values to field 'bar'.",
+                         "to assign conflicting values to field 'bar'",
                          Exceptions.toMessageString(e));
         }
     }

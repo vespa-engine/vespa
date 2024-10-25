@@ -59,11 +59,8 @@ std::unique_ptr<search::queryeval::SearchIterator>
 ZcPosOccRandRead::
 createIterator(const PostingListCounts &counts,
                const PostingListHandle &handle,
-               const search::fef::TermFieldMatchDataArray &matchData,
-               bool usebitVector) const
+               const search::fef::TermFieldMatchDataArray &matchData) const
 {
-    (void) usebitVector;
-
     assert((handle._bitLength != 0) == (counts._bitLength != 0));
     assert((counts._numDocs != 0) == (counts._bitLength != 0));
     assert(handle._bitOffsetMem <= handle._bitOffset);
@@ -87,16 +84,8 @@ createIterator(const PostingListCounts &counts,
 
 
 void
-ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
-                                  uint32_t firstSegment,
-                                  uint32_t numSegments,
-                                  PostingListHandle &handle)
+ZcPosOccRandRead::readPostingList(PostingListHandle &handle)
 {
-    // XXX: Ignore segments for now.
-    (void) firstSegment;
-    (void) numSegments;
-    (void) counts;
-
     handle.drop();
     if (handle._bitLength == 0) {
         return;
@@ -147,6 +136,7 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
         handle._mem = static_cast<char *>(alignedBuffer) + padBefore;
         handle._allocMem = mallocStart;
         handle._allocSize = mallocLen;
+        handle._read_bytes = padBefore + vectorLen + padAfter;
     }
     handle._bitOffsetMem = (startOffset << 3) - _headerBitSize;
 }

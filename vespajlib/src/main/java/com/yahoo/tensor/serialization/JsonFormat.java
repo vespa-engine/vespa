@@ -294,7 +294,7 @@ public class JsonFormat {
     }
 
     private static void decodeSingleDimensionBlock(String key, Inspector value, MixedTensor.BoundBuilder mixedBuilder) {
-        if (value.type() != Type.ARRAY)
+        if (value.type() != Type.ARRAY && value.type() != Type.STRING)
             throw new IllegalArgumentException("Expected an item in a blocks array to be an array, not " + value.type());
         mixedBuilder.block(asAddress(key, mixedBuilder.type().mappedSubtype()),
                            decodeValuesInBlock(value, mixedBuilder));

@@ -35,13 +35,12 @@ public:
      */
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
-                   const fef::TermFieldMatchDataArray &matchData, bool usebitVector) const override;
+                   const fef::TermFieldMatchDataArray &matchData) const override;
 
     /**
      * Read (possibly partial) posting list into handle.
      */
-    void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
-                         uint32_t numSegments, PostingListHandle &handle) override;
+    void readPostingList(PostingListHandle &handle) override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;

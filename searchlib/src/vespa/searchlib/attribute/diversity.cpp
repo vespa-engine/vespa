@@ -101,7 +101,7 @@ DiversityFilterT<Fetcher>::accepted(uint32_t docId) {
 
 std::unique_ptr<DiversityFilter>
 DiversityFilter::create(const IAttributeVector &diversity_attr, size_t wanted_hits,
-                        size_t max_per_group,size_t cutoff_max_groups, bool cutoff_strict)
+                        size_t max_per_group, size_t cutoff_max_groups, bool cutoff_strict)
 {
     if (diversity_attr.hasEnum()) { // must handle enum first
         FetchEnumFast fastEnum(diversity_attr);

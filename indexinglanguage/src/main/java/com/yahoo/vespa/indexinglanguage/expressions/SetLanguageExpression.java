@@ -14,14 +14,15 @@ public final class SetLanguageExpression extends Expression {
     public SetLanguageExpression() {
         super(DataType.STRING);
     }
-    @Override
-    protected void doExecute(ExecutionContext context) {
-        context.setLanguage(Language.fromLanguageTag(String.valueOf(context.getValue())));
-    }
 
     @Override
     protected void doVerify(VerificationContext context) {
         // empty
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        context.setLanguage(Language.fromLanguageTag(String.valueOf(context.getCurrentValue())));
     }
 
     @Override
@@ -30,9 +31,7 @@ public final class SetLanguageExpression extends Expression {
     }
 
     @Override
-    public String toString() {
-        return "set_language";
-    }
+    public String toString() { return "set_language"; }
 
     @Override
     public boolean equals(Object obj) {

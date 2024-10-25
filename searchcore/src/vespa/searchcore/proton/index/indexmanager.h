@@ -86,7 +86,7 @@ public:
     /**
      * Implements searchcorespi::IIndexManager
      **/
-    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done) override {
+    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done) override {
         _maintainer.putDocument(lid, doc, serialNum, on_write_done);
     }
 
@@ -94,7 +94,7 @@ public:
         _maintainer.removeDocuments(std::move(lids), serialNum);
     }
 
-    void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override {
+    void commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone) override {
         _maintainer.commit(serialNum, onWriteDone);
     }
 

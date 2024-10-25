@@ -174,7 +174,9 @@ TEST("require that max group size is calculated correctly") {
     for (size_t min_groups: std::vector<size_t>({0, 1, 2, 3, 4, 10, 500})) {
         for (size_t wanted_hits: std::vector<size_t>({0, 3, 321, 921})) {
             MatchPhaseLimitCalculator calc(100, min_groups, 0.2);
-            if (min_groups == 0) {
+            if (wanted_hits <= min_groups) {
+                EXPECT_EQUAL(size_t(1), calc.max_group_size(wanted_hits));
+            } else if (min_groups == 0) {
                 EXPECT_EQUAL(wanted_hits, calc.max_group_size(wanted_hits));
             } else {
                 EXPECT_EQUAL((wanted_hits / min_groups), calc.max_group_size(wanted_hits));

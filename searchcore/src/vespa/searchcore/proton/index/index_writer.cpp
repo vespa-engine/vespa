@@ -24,7 +24,7 @@ IndexWriter::ignoreOperation(search::SerialNum serialNum) const {
 }
 
 void
-IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid, OnWriteDoneType on_write_done)
+IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid, const OnWriteDoneType& on_write_done)
 {
     if (ignoreOperation(serialNum)) {
         return;
@@ -56,7 +56,7 @@ IndexWriter::removeDocs(search::SerialNum serialNum, LidVector lids)
 }
 
 void
-IndexWriter::commit(search::SerialNum serialNum, OnWriteDoneType onWriteDone)
+IndexWriter::commit(search::SerialNum serialNum, const OnWriteDoneType& onWriteDone)
 {
     if (serialNum <= _mgr->getFlushedSerialNum()) {
         return;

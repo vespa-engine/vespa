@@ -28,12 +28,7 @@ template <bool bigEndian>
 void
 Zc4PostingWriter<bigEndian>::write_zc_view(std::span<const uint8_t> view)
 {
-    if (!view.empty()) {
-        _encode_context.writeBits(reinterpret_cast<const uint64_t *>(view.data()),
-                                  0,
-                                  view.size() * 8);
-    }
-
+    _encode_context.writeBytes(view);
 }
 
 template <bool bigEndian>

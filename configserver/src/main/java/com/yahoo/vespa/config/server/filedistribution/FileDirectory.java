@@ -133,12 +133,18 @@ public class FileDirectory extends AbstractComponent {
         }
     }
 
-    public void delete(FileReference fileReference, Function<FileReference, Boolean> isInUse) {
+    public boolean delete(FileReference fileReference, Function<FileReference, Boolean> isInUse, Function<File, Boolean> isOld) {
         try (Lock lock = locks.lock(fileReference)) {
             if (isInUse.apply(fileReference))
                 log.log(FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
-            else
+            else if ( ! isOld.apply(new File(getRoot(), fileReference.value())))
+                log.log(FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is recently used");
+            else {
                 deleteDirRecursively(destinationDir(fileReference));
+                log.log(FINE, "Deleted file reference '" + fileReference.value() + "'");
+                return true;
+            }
+            return false;
         }
     }
 

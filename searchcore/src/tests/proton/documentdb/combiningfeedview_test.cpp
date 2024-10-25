@@ -71,12 +71,12 @@ struct MyFeedView : public test::DummyFeedView
     void prepareRemove(RemoveOperation &) override { ++_prepareRemove; }
     void handleRemove(FeedToken, const RemoveOperation &) override { ++_handleRemove; }
     void prepareDeleteBucket(DeleteBucketOperation &) override { ++_prepareDeleteBucket; }
-    void handleDeleteBucket(const DeleteBucketOperation &, DoneCallback) override { ++_handleDeleteBucket; }
+    void handleDeleteBucket(const DeleteBucketOperation &, const DoneCallback&) override { ++_handleDeleteBucket; }
     void prepareMove(MoveOperation &) override { ++_prepareMove; }
-    void handleMove(const MoveOperation &, DoneCallback) override { ++_handleMove; }
-    void heartBeat(SerialNum, DoneCallback) override { ++_heartBeat; }
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &, DoneCallback) override { ++_handlePrune; }
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback) override {
+    void handleMove(const MoveOperation &, const DoneCallback&) override { ++_handleMove; }
+    void heartBeat(SerialNum, const DoneCallback&) override { ++_heartBeat; }
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &, const DoneCallback&) override { ++_handlePrune; }
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback&) override {
         _wantedLidLimit = op.getLidLimit();
     }
 };

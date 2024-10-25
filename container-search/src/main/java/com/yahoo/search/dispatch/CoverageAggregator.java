@@ -86,7 +86,9 @@ public class CoverageAggregator {
                 if (missingNodes > 0) {
                     clone.adjustActiveDocs(missingNodes);
                 }
-                clone.timedOut = true;
+                if (timeoutHandler.reason() == DEGRADED_BY_TIMEOUT) {
+                    clone.timedOut = true;
+                }
                 return clone;
             }
         }

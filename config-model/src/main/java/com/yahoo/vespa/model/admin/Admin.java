@@ -197,6 +197,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     }
 
     public void getConfig(LogdConfig.Builder builder) {
+        var forwardAllLogLevels = isHostedVespa && featureFlags.forwardAllLogLevels();
         if (logserver == null) {
             builder.logserver(new LogdConfig.Logserver.Builder().use(false));
         }
@@ -206,8 +207,8 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
                         host(logserver.getHostName()).
                         rpcport(logserver.getRelativePort(0)))
                     .loglevel(new LogdConfig.Loglevel.Builder().
-                            debug(new LogdConfig.Loglevel.Debug.Builder().forward(featureFlags.forwardAllLogLevels())).
-                            spam(new LogdConfig.Loglevel.Spam.Builder().forward(featureFlags.forwardAllLogLevels())));
+                            debug(new LogdConfig.Loglevel.Debug.Builder().forward(forwardAllLogLevels)).
+                            spam(new LogdConfig.Loglevel.Spam.Builder().forward(forwardAllLogLevels)));
         }
      }
 

@@ -76,9 +76,9 @@ class IndexMaintainer : public IIndexManager,
     std::shared_ptr<DiskIndexes>  _disk_indexes;
     IndexDiskLayout        _layout;
     Schema                  _schema;             // Protected by SL + IUL
-    std::shared_ptr<Schema> _activeFusionSchema; // Protected by SL + IUL
+    std::shared_ptr<const Schema> _activeFusionSchema; // Protected by SL + IUL
     // Protected by SL + IUL
-    std::shared_ptr<Schema> _activeFusionPrunedSchema;
+    std::shared_ptr<const Schema> _activeFusionPrunedSchema;
     uint32_t               _source_selector_changes; // Protected by IUL
     // _selector is protected by SL + IUL
     std::shared_ptr<ISourceSelector> _selector;
@@ -196,7 +196,7 @@ class IndexMaintainer : public IIndexManager,
         // or data structure limitations).
         FrozenMemoryIndexRefs _extraIndexes;
         ChangeGens _changeGens;
-        std::shared_ptr<Schema> _prunedSchema;
+        std::shared_ptr<const Schema> _prunedSchema;
 
         FlushArgs();
         FlushArgs(const FlushArgs &) = delete;
@@ -222,7 +222,7 @@ class IndexMaintainer : public IIndexManager,
         uint32_t   _new_fusion_id;
         ChangeGens _changeGens;
         Schema     _schema;
-        std::shared_ptr<Schema> _prunedSchema;
+        std::shared_ptr<const Schema> _prunedSchema;
         std::shared_ptr<ISearchableIndexCollection> _old_source_list; // Delays destruction
 
         FusionArgs();
@@ -247,7 +247,7 @@ class IndexMaintainer : public IIndexManager,
     void doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex>& newIndex, SerialNum serial_num);
 
     Schema getSchema(void) const;
-    std::shared_ptr<Schema> getActiveFusionPrunedSchema() const;
+    std::shared_ptr<const Schema> getActiveFusionPrunedSchema() const;
     search::TuneFileAttributes getAttrTune();
     ChangeGens getChangeGens();
 
@@ -337,9 +337,9 @@ public:
     vespalib::system_time getLastFlushTime() const { return _lastFlushTime; }
 
     // Implements IIndexManager
-    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done) override;
+    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done) override;
     void removeDocuments(LidVector lids, SerialNum serialNum) override;
-    void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
+    void commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone) override;
     void heartBeat(search::SerialNum serialNum) override;
     void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override;
 

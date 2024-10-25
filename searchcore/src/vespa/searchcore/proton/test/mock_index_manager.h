@@ -11,9 +11,9 @@ namespace proton::test {
 struct MockIndexManager : public searchcorespi::IIndexManager
 {
     ~MockIndexManager() override;
-    void putDocument(uint32_t, const Document &, SerialNum, OnWriteDoneType) override {}
+    void putDocument(uint32_t, const Document &, SerialNum, const OnWriteDoneType&) override {}
     void removeDocuments(LidVector, SerialNum) override {}
-    void commit(SerialNum, OnWriteDoneType) override {}
+    void commit(SerialNum, const OnWriteDoneType&) override {}
     SerialNum getCurrentSerialNum() const override { return 0; }
     SerialNum getFlushedSerialNum() const override { return 0; }
     searchcorespi::IndexSearchable::SP getSearchable() const override {

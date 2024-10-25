@@ -431,7 +431,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
 
     auto start_time = vespalib::steady_clock::now();
     DocumentDBConfig::ComparisonResult cmpres;
-    Schema::SP oldSchema;
     {
         lock_guard guard(_configMutex);
         assert(_activeConfigSnapshot.get());
@@ -568,6 +567,9 @@ DocumentDB::close()
     DocumentDBTaggedMetrics &metrics = getMetrics();
     _metricsWireService.set_attributes(metrics.ready.attributes, {});
     _metricsWireService.set_attributes(metrics.notReady.attributes, {});
+
+    // Tear down index metrics
+    _metricsWireService.set_index_fields(metrics.ready.index, {});
 
     masterExecute([this] () {
         closeSubDBs();

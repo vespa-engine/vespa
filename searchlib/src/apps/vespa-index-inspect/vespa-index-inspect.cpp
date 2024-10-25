@@ -570,13 +570,8 @@ ShowPostingListSubApp::showPostingList()
     handle->first = offsetAndCounts._counts;
     handle->second._bitOffset = offsetAndCounts._offset;
     handle->second._bitLength = handle->first._bitLength;
-    const uint32_t first_segment = 0;
-    const uint32_t num_segments = 0;    // means all segments
     handle->second._file = postingfile.get();
-    handle->second._file->readPostingList(handle->first,
-                                       first_segment,
-                                       num_segments,
-                                       handle->second);
+    handle->second._file->readPostingList(handle->second);
     std::vector<TermFieldMatchData> tfmdv(numFields);
     TermFieldMatchDataArray tfmda;
     for (auto& tfmd : tfmdv) {

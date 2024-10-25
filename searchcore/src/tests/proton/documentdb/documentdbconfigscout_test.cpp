@@ -41,11 +41,11 @@ std::ostream& operator<<(std::ostream& os, const AttributesConfig::Attribute::Di
 namespace {
 
 DDBCSP
-getConfig(int64_t generation, const Schema::SP &schema,
+getConfig(int64_t generation, std::shared_ptr<const Schema> schema,
           const shared_ptr<const DocumentTypeRepo> & repo,
           const AttributesConfig &attributes)
 {
-    return test::DocumentDBConfigBuilder(generation, schema, "client", "test").
+    return test::DocumentDBConfigBuilder(generation, std::move(schema), "client", "test").
             repo(repo).attributes(make_shared<AttributesConfig>(attributes)).build();
 }
 
@@ -382,7 +382,7 @@ TEST("Test that DocumentDBConfigScout::scout looks ahead")
     setupLiveAttributes(liveAttributes.attribute);
 
     shared_ptr<const DocumentTypeRepo> repo(make_shared<DocumentTypeRepo>());
-    Schema::SP schema(make_shared<Schema>());
+    std::shared_ptr<const Schema> schema(make_shared<Schema>());
     DDBCSP cfg = getConfig(4, schema, repo, attributes);
     DDBCSP liveCfg = getConfig(4, schema, repo, liveAttributes);
     EXPECT_FALSE(*cfg == *liveCfg);

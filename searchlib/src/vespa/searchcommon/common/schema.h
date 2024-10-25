@@ -17,7 +17,6 @@ class Schema
 {
 public:
     using UP = std::unique_ptr<Schema>;
-    using SP = std::shared_ptr<Schema>;
 
     using DataType = schema::DataType;
     using CollectionType = schema::CollectionType;

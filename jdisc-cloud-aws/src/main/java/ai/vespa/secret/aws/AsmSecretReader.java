@@ -1,18 +1,17 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.secret.aws;
 
 import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.internal.TypedSecretStore;
 import ai.vespa.secret.model.Key;
-import ai.vespa.secret.model.Role;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretVersionId;
 import ai.vespa.secret.model.SecretVersionState;
-import ai.vespa.secret.model.VaultName;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -32,42 +31,52 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 /**
- * A read-only client for AWS Secrets Manager, with caching of secrets.
- * Based on ASMSecretStore in hosted-configserver.
+ * Base class for read-only client for AWS Secrets Manager, with caching of secrets.
  *
  * @author gjoranv
  */
-public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSecretStore {
+public abstract class AsmSecretReader extends AsmSecretStoreBase
+        implements TypedSecretStore {
 
     private static final Duration CACHE_EXPIRE = Duration.ofMinutes(30);
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
 
     private final LoadingCache<VersionKey, Secret> cache;
-    private final Runnable closeable;
+    private final Runnable ztsClientCloser;
 
     protected record VersionKey(Key key, SecretVersionId version) {}
 
-    @Inject
-    public AsmSecretStore(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        this(URI.create(config.ztsUri()), identities.getIdentitySslContext(), athenzDomain(config, identities));
+    // For subclasses using dependency injection
+    public AsmSecretReader(AsmSecretConfig config, ServiceIdentityProvider identities) {
+        this(ztsClient(URI.create(config.ztsUri()), identities.getIdentitySslContext()),
+             athenzDomain(config, identities));
     }
 
-    public AsmSecretStore(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
-        this(new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build(), domain);
+    public AsmSecretReader(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
+        this(ztsClient(ztsUri, sslContext), domain);
     }
 
-    private AsmSecretStore(ZtsClient ztsClient, AthenzDomain domain) {
-        super(ztsClient, Role.READER, domain);
+    private AsmSecretReader(ZtsClient ztsClient, AthenzDomain domain) {
+        super(ztsClient, domain);
         cache = initCache();
-        closeable = ztsClient::close;
+        ztsClientCloser = ztsClient::close;
     }
 
     // For testing
-    AsmSecretStore(Function<VaultName, SecretsManagerClient> clientAndCredentialsSupplier) {
+    public AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
         super(clientAndCredentialsSupplier);
         cache = initCache();
-        closeable = () -> {};
+        ztsClientCloser = () -> {};
+    }
+
+
+    /** Returns the AWS secret id to use for the given key. */
+    protected abstract String awsSecretId(Key key);
+
+
+    private static ZtsClient ztsClient(URI ztsUri, SSLContext sslContext) {
+        return new DefaultZtsClient.Builder(ztsUri).withSslContext(sslContext).build();
     }
 
     private static AthenzDomain athenzDomain(AsmSecretConfig config, ServiceIdentityProvider identities) {
@@ -122,6 +131,7 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
     /**
      * If version is null, the version with label AWSCURRENT is returned.
      */
+    @Override
     public Secret getSecret(Key key, SecretVersionId version) {
         try {
             return cache.getUnchecked(new VersionKey(key, version));
@@ -161,18 +171,18 @@ public final class AsmSecretStore extends AsmSecretStoreBase implements TypedSec
     }
 
     @Override
+    public void close() {
+        scheduler.shutdown();
+        ztsClientCloser.run();
+        super.close();
+    }
+
+    @Override
     public Type type() {
         return Type.PUBLIC;
     }
 
     @Override
-    public void close() {
-        scheduler.shutdown();
-        closeable.run();
-        super.close();
-    }
-
-        @Override
     public String getSecret(String key) {
         throw new UnsupportedOperationException("This secret store does not support String lookups.");
     }

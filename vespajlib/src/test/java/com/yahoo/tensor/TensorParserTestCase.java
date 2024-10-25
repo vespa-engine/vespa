@@ -400,4 +400,18 @@ public class TensorParserTestCase {
         }
     }
 
+    @Test
+    public void testJsonFormatInside() {
+        var type = TensorType.fromSpec("tensor<int8>(key{}, x[2])");
+        var expected = Tensor.Builder.of(type)
+                .cell(TensorAddress.ofLabels("a", "0"), (byte)0xa1)
+                .cell(TensorAddress.ofLabels("a", "1"), 2)
+                .cell(TensorAddress.ofLabels("b", "0"), (byte)0xA3)
+                .cell(TensorAddress.ofLabels("b", "1"), 4)
+                .build();
+        assertEquals(expected, Tensor.from(type, "{'a': 'a102', 'b': 'A304'}"));
+        assertEquals(expected, Tensor.from(type, "{'blocks': {'a': 'a102', 'b': 'A304'}}"));
+        assertEquals(expected, Tensor.from(type, "{'blocks': [{'address': {'key': 'a'}, 'values': 'a102'}, {'address':{'key': 'b'}, 'values': 'A304'}]}"));
+    }
+
 }

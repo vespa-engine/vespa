@@ -7,6 +7,7 @@ import com.yahoo.slime.Slime;
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.jdisc.Response.Status.FORBIDDEN;
+import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -25,6 +26,7 @@ public class ErrorResponse extends SlimeJsonResponse {
         FORBIDDEN,
         METHOD_NOT_ALLOWED,
         INTERNAL_SERVER_ERROR,
+        GATEWAY_TIMEOUT,
         UNAUTHORIZED,
         CONFLICT
     }
@@ -47,6 +49,10 @@ public class ErrorResponse extends SlimeJsonResponse {
 
     public static ErrorResponse internalServerError(String message) {
         return new ErrorResponse(INTERNAL_SERVER_ERROR, errorCodes.INTERNAL_SERVER_ERROR.name(), message);
+    }
+
+    public static ErrorResponse gatewayTimeout(String message) {
+        return new ErrorResponse(GATEWAY_TIMEOUT, errorCodes.GATEWAY_TIMEOUT.name(), message);
     }
 
     public static ErrorResponse badRequest(String message) {
