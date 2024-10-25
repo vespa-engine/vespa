@@ -33,7 +33,7 @@ public class SchemaLSCommands {
     }
 
     public void sendSetupWorkspaceRequest(String fileURI) {
-        commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.servicesxml.setupWorkspace", List.of(fileURI)));
+        commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.commands.setupWorkspace", List.of(fileURI)));
     }
 
     /**
@@ -42,7 +42,7 @@ public class SchemaLSCommands {
     public List<Location> findSchemaDefinition(String schemaName) {
         // run sync
         Object findDocumentResult = commandService.executeClientCommand(
-            new ExecuteCommandParams("vespaSchemaLS.servicesxml.findDocument", List.of(schemaName))).join();
+            new ExecuteCommandParams("vespaSchemaLS.commands.findSchemaDefinition", List.of(schemaName))).join();
 
         if (findDocumentResult == null) return List.of();
         try {

@@ -144,7 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
     })));
 
 
-    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.servicesxml.findDocument", async (fileName) => {
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.findSchemaDefinition", async (fileName) => {
         if (schemaClient !== null) {
             try {
                 const result = await schemaClient.sendRequest("workspace/executeCommand", {
@@ -160,7 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     // This command exists to setup schema language server workspace in case the first opened document is an xml file (which not handled by schema language server)
-    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.servicesxml.setupWorkspace", async (fileURI) => {
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.setupWorkspace", async (fileURI) => {
         if (schemaClient !== null) {
             try {
                 schemaClient.sendRequest("workspace/executeCommand", {
