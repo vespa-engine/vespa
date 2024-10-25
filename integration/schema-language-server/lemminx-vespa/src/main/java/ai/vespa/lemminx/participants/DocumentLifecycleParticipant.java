@@ -1,4 +1,4 @@
-package ai.vespa.lemminx;
+package ai.vespa.lemminx.participants;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -7,6 +7,8 @@ import org.eclipse.lemminx.dom.DOMDocument;
 import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
 import org.eclipse.lemminx.services.extensions.commands.IXMLCommandService;
 import org.eclipse.lsp4j.ExecuteCommandParams;
+
+import ai.vespa.lemminx.command.SchemaLSCommands;
 
 public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipant {
     private static final Logger logger = Logger.getLogger(DocumentLifecycleParticipant.class.getName());

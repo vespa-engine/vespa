@@ -1,4 +1,4 @@
-package ai.vespa.lemminx;
+package ai.vespa.lemminx.command;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -35,12 +35,12 @@ public class SchemaLSCommands {
     }
 
     public void sendSetupWorkspaceRequest(String fileURI) {
-        commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.commands.setupWorkspace", List.of(fileURI)));
+        commandService.executeClientCommand(new ExecuteCommandParams("vespaSchemaLS.commands.schema.setupWorkspace", List.of(fileURI)));
     }
 
     public boolean hasSetupWorkspace() {
         Object result = commandService.executeClientCommand(
-                new ExecuteCommandParams("vespaSchemaLS.commands.hasSetupWorkspace", List.of())).join();
+                new ExecuteCommandParams("vespaSchemaLS.commands.schema.hasSetupWorkspace", List.of())).join();
         if (result == null) return false;
         try {
             String json = gson.toJson(result);
@@ -59,7 +59,7 @@ public class SchemaLSCommands {
     public List<Location> findSchemaDefinition(String schemaName) {
         // run sync
         Object findDocumentResult = commandService.executeClientCommand(
-            new ExecuteCommandParams("vespaSchemaLS.commands.findSchemaDefinition", List.of(schemaName))).join();
+            new ExecuteCommandParams("vespaSchemaLS.commands.schema.findSchemaDefinition", List.of(schemaName))).join();
 
         if (findDocumentResult == null) return List.of();
         try {
