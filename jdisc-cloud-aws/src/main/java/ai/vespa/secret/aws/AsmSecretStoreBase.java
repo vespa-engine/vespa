@@ -38,7 +38,8 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
         );
     }
 
-    AsmSecretStoreBase(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
+    // For testing
+    protected AsmSecretStoreBase(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
         this.clientAndCredentialsSupplier = clientAndCredentialsSupplier;
     }
 
