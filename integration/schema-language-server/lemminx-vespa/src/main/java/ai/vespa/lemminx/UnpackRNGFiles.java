@@ -41,12 +41,14 @@ public class UnpackRNGFiles {
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
-                if (!entry.isDirectory() && entry.getName().endsWith(".rng")) {
+                if (!entry.isDirectory() && entry.getName().endsWith(".rng") && entry.getName().startsWith("resources/schema")) {
                     Path writePath = serverPath.resolve(entry.getName());
                     try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(entry.getName())) {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                         String content = reader.lines().collect(Collectors.joining(System.lineSeparator()));
                         Files.write(writePath, content.getBytes(), StandardOpenOption.CREATE);
+                    } catch (Exception ex) {
+                        // Ignore: unwanted .rng file
                     }
                 }
             }

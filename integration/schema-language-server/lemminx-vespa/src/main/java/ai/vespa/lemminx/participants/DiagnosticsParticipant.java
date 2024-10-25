@@ -1,4 +1,4 @@
-package ai.vespa.lemminx;
+package ai.vespa.lemminx.participants;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -16,6 +16,8 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.w3c.dom.Node;
+
+import ai.vespa.lemminx.command.SchemaLSCommands;
 
 public class DiagnosticsParticipant implements IDiagnosticsParticipant {
     private static final Logger logger = Logger.getLogger(DiagnosticsParticipant.class.getName());

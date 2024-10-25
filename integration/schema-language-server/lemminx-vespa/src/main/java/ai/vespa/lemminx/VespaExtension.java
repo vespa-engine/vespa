@@ -14,6 +14,12 @@ import org.eclipse.lemminx.services.extensions.save.ISaveContext;
 import org.eclipse.lemminx.uriresolver.URIResolverExtension;
 import org.eclipse.lsp4j.InitializeParams;
 
+import ai.vespa.lemminx.command.SchemaLSCommands;
+import ai.vespa.lemminx.participants.DefinitionParticipant;
+import ai.vespa.lemminx.participants.DiagnosticsParticipant;
+import ai.vespa.lemminx.participants.DocumentLifecycleParticipant;
+import ai.vespa.lemminx.participants.HoverParticipant;
+
 public class VespaExtension implements IXMLExtension {
     private static final Logger logger = Logger.getLogger(VespaExtension.class.getName());
 

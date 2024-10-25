@@ -1,4 +1,4 @@
-package ai.vespa.lemminx;
+package ai.vespa.lemminx.participants;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import org.eclipse.lemminx.dom.DOMNode;
 import org.eclipse.lemminx.services.extensions.hover.IHoverParticipant;
 import org.eclipse.lemminx.services.extensions.hover.IHoverRequest;
 import org.eclipse.lsp4j.Hover;
@@ -17,6 +16,9 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+/**
+ * TODO: refactor and handle tags with the same name based on context.
+ */
 public class HoverParticipant implements IHoverParticipant {
     private static final Logger logger = Logger.getLogger(HoverParticipant.class.getName());
     private Path serverPath;
@@ -28,15 +30,6 @@ public class HoverParticipant implements IHoverParticipant {
     @Override
     public Hover onTag(IHoverRequest request, CancelChecker cancelChecker) throws Exception {
         if (request.getCurrentTag() == null) return null;
-
-        DOMNode node = request.getNode();
-
-        String logMsg = "";
-        while (node != null) {
-            logMsg += node.getNodeName() + " -> ";
-            node = node.getParentNode();
-        }
-        logger.info(logMsg);
 
         Optional<MarkupContent> content = getFileHover(request.getCurrentTag());
 
@@ -85,8 +78,8 @@ public class HoverParticipant implements IHoverParticipant {
                                 markdownFiles.put(tag, innerPath);
                             }
                         });
-                    } catch (IOException ex) {
-                        logger.severe("Inner ioexception");
+                    } catch (IOException ex) { 
+                        // Ignore
                     }
                 } else {
                     String tag = path.getFileName().toString();
