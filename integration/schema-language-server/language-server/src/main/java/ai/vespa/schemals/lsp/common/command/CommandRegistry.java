@@ -14,6 +14,7 @@ import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
 import ai.vespa.schemals.lsp.common.command.commandtypes.FindDocument;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SetupWorkspace;
+import ai.vespa.schemals.lsp.common.command.commandtypes.HasSetupWorkspace;
 
 /**
  * SchemaCommand
@@ -88,6 +89,18 @@ public class CommandRegistry {
              */
             public String title() { return "Find schema document"; }
             public SchemaCommand construct() { return new FindDocument(); }
+        },
+        HAS_SETUP_WORKSPACE {
+            /*
+             * Ask if the language server has setup a workspace directory yet.
+             *
+             * Parameters:
+             *
+             * Return value:
+             * boolean
+             */
+            public String title() { return "Has setup workspace"; }
+            public SchemaCommand construct() { return new HasSetupWorkspace(); }
         },
         SETUP_WORKSPACE {
             /*

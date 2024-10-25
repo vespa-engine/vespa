@@ -145,32 +145,51 @@ export function activate(context: vscode.ExtensionContext) {
 
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.findSchemaDefinition", async (fileName) => {
-        if (schemaClient !== null) {
-            try {
-                const result = await schemaClient.sendRequest("workspace/executeCommand", {
-                    command: "FIND_SCHEMA_DEFINITION",
-                    arguments: [fileName]
-                });
-                return result;
-            } catch (err) {
-                logger.error("Error when sending command: ", err);
-            }
+        if (schemaClient === null) {
+            return null;
+        }
+        try {
+            const result = await schemaClient.sendRequest("workspace/executeCommand", {
+                command: "FIND_SCHEMA_DEFINITION",
+                arguments: [fileName]
+            });
+            return result;
+        } catch (err) {
+            logger.error("Error when sending command: ", err);
         }
         return null;
     }));
 
     // This command exists to setup schema language server workspace in case the first opened document is an xml file (which not handled by schema language server)
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.setupWorkspace", async (fileURI) => {
-        if (schemaClient !== null) {
-            try {
-                schemaClient.sendRequest("workspace/executeCommand", {
-                    command: "SETUP_WORKSPACE",
-                    arguments: [fileURI]
-                });
-            } catch (err) {
-                logger.error("Error when trying to send setup workspace command: ", err);
-            }
+        if (schemaClient === null) {
+            return;
         }
+        try {
+            schemaClient.sendRequest("workspace/executeCommand", {
+                command: "SETUP_WORKSPACE",
+                arguments: [fileURI]
+            });
+        } catch (err) {
+            logger.error("Error when trying to send setup workspace command: ", err);
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.hasSetupWorkspace", async () =>  {
+        if (schemaClient === null) {
+            return false;
+        }
+
+        try {
+            const result: boolean = await schemaClient.sendRequest("workspace/executeCommand", {
+                command: "HAS_SETUP_WORKSPACE",
+                arguments: []
+            });
+            return result;
+        } catch (err) {
+            logger.error("Error when sending command: ", err);
+        }
+        return false;
     }));
 
     logger.info("Vespa language client activated");
