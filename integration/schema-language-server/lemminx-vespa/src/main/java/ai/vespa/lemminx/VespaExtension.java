@@ -9,12 +9,15 @@ import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
 import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
 import org.eclipse.lemminx.services.extensions.IXMLExtension;
 import org.eclipse.lemminx.services.extensions.XMLExtensionsRegistry;
+import org.eclipse.lemminx.services.extensions.codeaction.ICodeActionParticipant;
 import org.eclipse.lemminx.services.extensions.diagnostics.IDiagnosticsParticipant;
 import org.eclipse.lemminx.services.extensions.save.ISaveContext;
 import org.eclipse.lemminx.uriresolver.URIResolverExtension;
+import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.InitializeParams;
 
 import ai.vespa.lemminx.command.SchemaLSCommands;
+import ai.vespa.lemminx.participants.CodeActionParticipant;
 import ai.vespa.lemminx.participants.DefinitionParticipant;
 import ai.vespa.lemminx.participants.DiagnosticsParticipant;
 import ai.vespa.lemminx.participants.DocumentLifecycleParticipant;
@@ -29,6 +32,7 @@ public class VespaExtension implements IXMLExtension {
     IDefinitionParticipant definitionParticipant;
     IDocumentLifecycleParticipant documentLifecycleParticipant;
     IDiagnosticsParticipant diagnosticsParticipant;
+    ICodeActionParticipant codeActionParticipant;
     Path serverPath;
 
     @Override
@@ -56,12 +60,14 @@ public class VespaExtension implements IXMLExtension {
         definitionParticipant        = new DefinitionParticipant();
         documentLifecycleParticipant = new DocumentLifecycleParticipant(registry.getCommandService());
         diagnosticsParticipant       = new DiagnosticsParticipant();
+        codeActionParticipant        = new CodeActionParticipant();
 
         registry.getResolverExtensionManager().registerResolver(uriResolverExtension);
         registry.registerHoverParticipant(hoverParticipant);
         registry.registerDefinitionParticipant(definitionParticipant);
         registry.registerDocumentLifecycleParticipant(documentLifecycleParticipant);
         registry.registerDiagnosticsParticipant(diagnosticsParticipant);
+        registry.registerCodeActionParticipant(codeActionParticipant);
 
         logger.info("Vespa LemminX extension activated");
 

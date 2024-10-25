@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
 import ai.vespa.schemals.lsp.common.command.commandtypes.CommandList;
+import ai.vespa.schemals.lsp.common.command.commandtypes.CreateSchemaFile;
 import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentOpen;
 import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
 import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
@@ -114,6 +115,20 @@ public class CommandRegistry {
              */
             public String title() { return "Setup workspace"; }
             public SchemaCommand construct() { return new SetupWorkspace(); }
+        },
+        CREATE_SCHEMA_FILE {
+            /*
+             * Create a schema file with a schema definition.
+             *
+             * Parameters:
+             * schemaName: String -- Name of the schema to be created.
+             *
+             * Return value:
+             * boolean -- indicating success.
+             *
+             */
+            public String title() { return "Create Schema File"; }
+            public SchemaCommand construct() { return new CreateSchemaFile(); }
         }
     }
 
