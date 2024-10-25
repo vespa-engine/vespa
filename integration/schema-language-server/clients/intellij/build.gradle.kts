@@ -36,7 +36,7 @@ dependencies {
   implementation("com.vladsch.flexmark:flexmark-html2md-converter:0.64.8")
 
   intellijPlatform {
-    intellijIdeaUltimate("2024.2")
+    intellijIdeaCommunity("2024.2")
     instrumentationTools()
     plugin("com.redhat.devtools.lsp4ij:0.7.0")
   }
