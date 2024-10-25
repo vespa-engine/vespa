@@ -32,6 +32,7 @@ MatchParams::MatchParams(uint32_t          numDocs_in,
                 : 0),
       offset(std::min(numDocs_in, offset_in)),
       hits(std::min(numDocs_in - offset, hits_in)),
+      diversity_want_hits(heapSize_in),
       first_phase_rank_score_drop_limit(first_phase_rank_score_drop_limit_in),
       second_phase_rank_score_drop_limit(second_phase_rank_score_drop_limit_in)
 { }
