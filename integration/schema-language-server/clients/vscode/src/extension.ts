@@ -7,9 +7,12 @@ import { ExecuteCommandParams, ExecuteCommandRequest, LanguageClient, LanguageCl
 
 let schemaClient: LanguageClient | null = null;
 
-const JAVA_HOME_SETTING = 'vespaSchemaLS.javaHome';
+const EXTENSION_NAME = 'vespaSchemaLS';
+const JAVA_HOME_SETTING = 'javaHome';
+const RECOMMEND_XML_SETTING = 'recommendXML';
 // update if something changes
 const JAVA_DOWNLOAD_URL = 'https://www.oracle.com/java/technologies/downloads/#java17';
+
 
 type maybeString = string|null|undefined;
 
@@ -22,7 +25,7 @@ function javaExecutableExists(javaHome: maybeString) {
 
 function findJavaHomeExecutable(): maybeString {
 	// Try workspace setting first
-    const config = vscode.workspace.getConfiguration();
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
     const javaHome = config.get(JAVA_HOME_SETTING) as maybeString;
     if (javaExecutableExists(javaHome)) {
         return path.join(javaHome as string, 'bin', 'java');
@@ -121,6 +124,9 @@ function showJavaErrorMessage() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+
+    checkForXMLExtension();
+
 	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
 
     schemaClient = createAndStartClient(jarPath);
@@ -176,4 +182,21 @@ export function deactivate() {
 		return undefined;
 	}
 	return schemaClient.stop();
+}
+
+async function checkForXMLExtension() {
+    const xmlExtensionName = "redhat.vscode-xml";
+
+    const xmlExtension = vscode.extensions.getExtension(xmlExtensionName);
+
+    if (!xmlExtension && vscode.workspace.getConfiguration(EXTENSION_NAME).get(RECOMMEND_XML_SETTING, true)) {
+        const message = "It is recommended to install the Red Hat XML extension in order to get support when writing the services.xml file. Do you want to install it now?";
+        const choice = await vscode.window.showInformationMessage(message, "Install", "Not now", "Do not show again");
+        if (choice === "Install") {
+            await vscode.commands.executeCommand("extension.open", xmlExtensionName);
+            await vscode.commands.executeCommand("workbench.extensions.installExtension", xmlExtensionName);
+        } else if (choice === "Do not show again") {
+            vscode.workspace.getConfiguration(EXTENSION_NAME).set(RECOMMEND_XML_SETTING, false);
+        }
+    }
 }
