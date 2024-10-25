@@ -3,13 +3,16 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import hasbin from 'hasbin';
 
-import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import { ExecuteCommandParams, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, ProtocolRequestType, RequestType, ServerOptions, ExecuteCommandRegistrationOptions } from 'vscode-languageclient/node';
 
-let client: LanguageClient | null = null;
+let schemaClient: LanguageClient | null = null;
 
-const JAVA_HOME_SETTING = 'vespaSchemaLS.javaHome';
+const EXTENSION_NAME = 'vespaSchemaLS';
+const JAVA_HOME_SETTING = 'javaHome';
+const RECOMMEND_XML_SETTING = 'recommendXML';
 // update if something changes
 const JAVA_DOWNLOAD_URL = 'https://www.oracle.com/java/technologies/downloads/#java17';
+
 
 type maybeString = string|null|undefined;
 
@@ -22,7 +25,7 @@ function javaExecutableExists(javaHome: maybeString) {
 
 function findJavaHomeExecutable(): maybeString {
 	// Try workspace setting first
-    const config = vscode.workspace.getConfiguration();
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
     const javaHome = config.get(JAVA_HOME_SETTING) as maybeString;
     if (javaExecutableExists(javaHome)) {
         return path.join(javaHome as string, 'bin', 'java');
@@ -92,7 +95,10 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
         }
 	};
     const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
-    client.start();
+
+    client.start().then(result => {
+        console.log(result);
+    });
     return client; 
 } 
 
@@ -118,25 +124,79 @@ function showJavaErrorMessage() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+
+    checkForXMLExtension();
+
 	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
 
-    client = createAndStartClient(jarPath);
+    schemaClient = createAndStartClient(jarPath);
+
+    const logger = vscode.window.createOutputChannel("Vespa language client", {log: true});
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.restart", (() => {
-        if (client === null) {
-            client = createAndStartClient(jarPath);
-        } else if (client.isRunning()) {
-            client.restart();
+        if (schemaClient === null) {
+            schemaClient = createAndStartClient(jarPath);
+        } else if (schemaClient.isRunning()) {
+            schemaClient.restart();
         } else {
-            client.start();
+            schemaClient.start();
         }
     })));
+
+
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.servicesxml.findDocument", async (fileName) => {
+        if (schemaClient !== null) {
+            try {
+                const result = await schemaClient.sendRequest("workspace/executeCommand", {
+                    command: "FIND_SCHEMA_DEFINITION",
+                    arguments: [fileName]
+                });
+                return result;
+            } catch (err) {
+                logger.error("Error when sending command: ", err);
+            }
+        }
+        return null;
+    }));
+
+    // This command exists to setup schema language server workspace in case the first opened document is an xml file (which not handled by schema language server)
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.servicesxml.setupWorkspace", async (fileURI) => {
+        if (schemaClient !== null) {
+            try {
+                schemaClient.sendRequest("workspace/executeCommand", {
+                    command: "SETUP_WORKSPACE",
+                    arguments: [fileURI]
+                });
+            } catch (err) {
+                logger.error("Error when trying to send setup workspace command: ", err);
+            }
+        }
+    }));
+
+    logger.info("Vespa language client activated");
 }
 
 
 export function deactivate() { 
-	if (!client) {
+	if (!schemaClient) {
 		return undefined;
 	}
-	return client.stop();
+	return schemaClient.stop();
+}
+
+async function checkForXMLExtension() {
+    const xmlExtensionName = "redhat.vscode-xml";
+
+    const xmlExtension = vscode.extensions.getExtension(xmlExtensionName);
+
+    if (!xmlExtension && vscode.workspace.getConfiguration(EXTENSION_NAME).get(RECOMMEND_XML_SETTING, true)) {
+        const message = "It is recommended to install the Red Hat XML extension in order to get support when writing the services.xml file. Do you want to install it now?";
+        const choice = await vscode.window.showInformationMessage(message, "Install", "Not now", "Do not show again");
+        if (choice === "Install") {
+            await vscode.commands.executeCommand("extension.open", xmlExtensionName);
+            await vscode.commands.executeCommand("workbench.extensions.installExtension", xmlExtensionName);
+        } else if (choice === "Do not show again") {
+            vscode.workspace.getConfiguration(EXTENSION_NAME).set(RECOMMEND_XML_SETTING, false);
+        }
+    }
 }

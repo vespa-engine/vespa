@@ -22,8 +22,14 @@ public class EventCodeActionContext extends EventPositionContext {
     public final List<Diagnostic> diagnostics;
     public final List<String> codeActionKinds;
 
-	public EventCodeActionContext(SchemaDocumentScheduler scheduler, SchemaIndex schemaIndex,
-			SchemaMessageHandler messageHandler, TextDocumentIdentifier documentIdentifier, Range range, List<Diagnostic> quickfixDiagnostics, List<String> onlyKinds) {
+	public EventCodeActionContext(
+        SchemaDocumentScheduler scheduler, 
+        SchemaIndex schemaIndex,
+		SchemaMessageHandler messageHandler, 
+        TextDocumentIdentifier documentIdentifier, 
+        Range range, 
+        List<Diagnostic> quickfixDiagnostics, 
+        List<String> onlyKinds) throws InvalidContextException {
 		super(scheduler, schemaIndex, messageHandler, documentIdentifier, range.getStart());
         this.range = range;
         this.diagnostics = quickfixDiagnostics;

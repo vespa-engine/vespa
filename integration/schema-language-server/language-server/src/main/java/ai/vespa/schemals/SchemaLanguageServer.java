@@ -1,11 +1,13 @@
 package ai.vespa.schemals;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Files;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.CodeActionOptions;
+import org.eclipse.lsp4j.CodeLensOptions;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.ExecuteCommandOptions;
 import org.eclipse.lsp4j.InitializeParams;
@@ -42,8 +45,8 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.documentation.FetchDocumentation;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.lsp.command.CommandRegistry;
-import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.common.command.CommandRegistry;
+import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 /**
@@ -101,9 +104,10 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setDefinitionProvider(true);
         initializeResult.getCapabilities().setReferencesProvider(true);
         initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
-        initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
+        initializeResult.getCapabilities().setSemanticTokensProvider(CommonSemanticTokens.getSemanticTokensRegistrationOptions());
         initializeResult.getCapabilities().setDocumentSymbolProvider(true);
         initializeResult.getCapabilities().setExecuteCommandProvider(new ExecuteCommandOptions(CommandRegistry.getSupportedCommandList()));
+        initializeResult.getCapabilities().setCodeLensProvider(new CodeLensOptions());
 
         var options = new CodeActionOptions(List.of( 
             CodeActionKind.QuickFix,
@@ -170,6 +174,12 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
             setupDocumentation(docPath);
         } catch (IOException ioex) {
             this.logger.error("Failed to set up documentation. Error: " + ioex.getMessage());
+            try (ByteArrayOutputStream os = new ByteArrayOutputStream(); PrintStream ps = new PrintStream(os)) {
+                ioex.printStackTrace(ps);
+                logger.error(os.toString());
+            } catch (IOException bruh) {
+                logger.error("Error inside error " + bruh.getMessage());
+            }
         }
     }
 
@@ -181,6 +191,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         Files.createDirectories(documentationPath);
         Files.createDirectories(documentationPath.resolve("schema"));
         Files.createDirectories(documentationPath.resolve("rankExpression"));
+        Files.createDirectories(documentationPath.resolve("services"));
 
         ensureLocalDocumentationLoaded(documentationPath);
 
@@ -188,7 +199,8 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
             @Override
             public void run() {
                 try {
-                    FetchDocumentation.fetchDocs(documentationPath);
+                    FetchDocumentation.fetchSchemaDocs(documentationPath);
+                    FetchDocumentation.fetchServicesDocs(documentationPath);
                 } catch(Exception e) {
                     throw new RuntimeException(e.getMessage());
                 }
@@ -243,6 +255,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
                 JarEntry entry = entries.nextElement();
                 if (!entry.isDirectory() && entry.getName().startsWith(documentationPath.getFileName().toString())) {
                     Path destination = documentationPath.getParent().resolve(entry.getName());
+                    Files.createDirectories(destination.getParent());
                     try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(entry.getName())) {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                         String content = reader.lines().collect(Collectors.joining(System.lineSeparator()));

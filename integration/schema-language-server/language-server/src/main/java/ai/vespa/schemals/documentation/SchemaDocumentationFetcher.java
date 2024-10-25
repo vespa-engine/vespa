@@ -18,6 +18,8 @@ import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
  * SchemaDocumentationFetcher
  */
 public class SchemaDocumentationFetcher extends ContentFetcher {
+    // Store html content as well as id of h2 element. The id is used to append a read more link at the end.
+    private record HTMLContentEntry(StringBuilder htmlContent, String h2ID) { }
 
     private final static Set<String> IGNORE_H2_IDS = Set.of(
         "syntax",
@@ -30,8 +32,6 @@ public class SchemaDocumentationFetcher extends ContentFetcher {
 		super(relativeFileUrl);
 	}
 
-    // Store html content as well as id of h2 element. The id is used to append a read more link at the end.
-    private record HTMLContentEntry(StringBuilder htmlContent, String h2ID) { }
 
 	@Override
 	Map<String, String> getMarkdownContent() throws IOException {
@@ -39,11 +39,9 @@ public class SchemaDocumentationFetcher extends ContentFetcher {
 
         Element prevH2 = null;
 
-        Node nodeIterator = schemaDoc.selectFirst("h2#schema");
-
         Map<String, HTMLContentEntry> htmlContents = new HashMap<>();
 
-        for (; nodeIterator != null; nodeIterator = nodeIterator.nextSibling()) {
+        for (Node nodeIterator = schemaDoc.selectFirst("h2#schema"); nodeIterator != null; nodeIterator = nodeIterator.nextSibling()) {
             Element element = null;
             if (nodeIterator instanceof Element) {
                 element = (Element)nodeIterator;

@@ -20,7 +20,7 @@
 		{
             "label": "langserver",
 			"type": "npm",
-			"script": "langserver-install",
+			"script": "vscode:prepublish",
             "group": {
                 "kind": "build"
             },

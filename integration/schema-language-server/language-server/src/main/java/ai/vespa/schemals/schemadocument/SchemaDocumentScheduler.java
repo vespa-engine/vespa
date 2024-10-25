@@ -16,10 +16,11 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
-import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+
+import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
 
 /**
  * Class responsible for maintaining the set of open documents and reparsing them.
@@ -27,6 +28,12 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
  * and also other files that may have dependencies on the contents of the file.
  */
 public class SchemaDocumentScheduler {
+
+    private Map<String, DocumentType> fileExtensions = new HashMap<>() {{
+        put("sd", DocumentType.SCHEMA);
+        put("profile", DocumentType.PROFILE);
+        put("yql", DocumentType.YQL);
+    }};
 
     private ClientLogger logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
@@ -47,13 +54,30 @@ public class SchemaDocumentScheduler {
         updateFile(fileURI, content, null);
     }
 
+    private Optional<DocumentType> getDocumentTypeFromURI(String fileURI) {
+        int dotIndex = fileURI.lastIndexOf('.');
+        String fileExtension = fileURI.substring(dotIndex + 1).toLowerCase();
+
+        DocumentType documentType = fileExtensions.get(fileExtension);
+        if (documentType == null) return Optional.empty();
+        return Optional.of(documentType);
+    }
+
     public void updateFile(String fileURI, String content, Integer version) {
-        boolean isSchemaFile = fileURI.toLowerCase().endsWith(".sd");
+        Optional<DocumentType> documentType = getDocumentTypeFromURI(fileURI);
+        if (documentType.isEmpty()) return;
+
         if (!workspaceFiles.containsKey(fileURI)) {
-            if (isSchemaFile) {
-                workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
-            } else {
-                workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+            switch(documentType.get()) {
+                case PROFILE:
+                    workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case SCHEMA:
+                    workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case YQL:
+                    workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, fileURI));
+                    break;
             }
         }
 
@@ -61,7 +85,7 @@ public class SchemaDocumentScheduler {
         workspaceFiles.get(fileURI).updateFileContent(content, version);
         boolean needsReparse = false;
 
-        if (isSchemaFile && reparseDescendants) {
+        if (documentType.get() == DocumentType.SCHEMA && reparseDescendants) {
             Set<String> parsedURIs = new HashSet<>() {{ add(fileURI); }};
             for (String descendantURI : schemaIndex.getDocumentInheritanceGraph().getAllDescendants(fileURI)) {
                 if (descendantURI.equals(fileURI)) continue;
@@ -104,13 +128,19 @@ public class SchemaDocumentScheduler {
     }
 
     public String getWorkspaceURI() {
+        if (this.workspaceURI == null) return null;
         return this.workspaceURI.toString();
     }
 
     public void openDocument(TextDocumentItem document) {
         logger.info("Opening document: " + document.getUri());
 
-        if (workspaceURI == null) {
+        Optional<DocumentType> documentType = getDocumentTypeFromURI(document.getUri());
+
+        if (workspaceURI == null && documentType.isPresent() && (
+            documentType.get() == DocumentType.SCHEMA ||
+            documentType.get() == DocumentType.PROFILE
+        )) {
             Optional<URI> workspaceURI = FileUtils.findSchemaDirectory(URI.create(document.getUri()));
             if (workspaceURI.isEmpty()) {
                 messageHandler.sendMessage(MessageType.Warning, 
@@ -200,6 +230,9 @@ public class SchemaDocumentScheduler {
 
 
     public void setupWorkspace(URI workspaceURI) {
+        // already set up
+        if (this.workspaceURI != null) return;
+
         this.workspaceURI = workspaceURI;
 
         //messageHandler.messageTrace("Scanning workspace: " + workspaceURI.toString());

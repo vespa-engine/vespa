@@ -38,6 +38,7 @@ import ai.vespa.schemals.schemadocument.resolvers.TypeNodeResolver;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 
@@ -156,9 +157,8 @@ public class SchemaDocument implements DocumentManager {
     public boolean getIsOpen() { return isOpen; }
 
     @Override
-    public boolean setIsOpen(boolean value) {
+    public void setIsOpen(boolean value) {
         isOpen = value;
-        return isOpen;
     }
 
     public String getSchemaIdentifier() {
@@ -188,6 +188,10 @@ public class SchemaDocument implements DocumentManager {
 
     public SchemaNode getRootNode() {
         return CST;
+    }
+
+    public YQLNode getRootYQLNode() {
+        return null;
     }
 
 
@@ -348,4 +352,7 @@ public class SchemaDocument implements DocumentManager {
 	public SchemaDocumentLexer lexer() {
         return this.lexer;
 	}
+
+    @Override
+    public DocumentType getDocumentType() { return DocumentType.SCHEMA; }
 }

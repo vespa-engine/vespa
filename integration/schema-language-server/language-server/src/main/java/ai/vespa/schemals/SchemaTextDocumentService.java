@@ -47,6 +47,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
+import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
@@ -55,17 +56,21 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
+import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.lsp.codeaction.SchemaCodeAction;
-import ai.vespa.schemals.lsp.completion.SchemaCompletion;
-import ai.vespa.schemals.lsp.definition.SchemaDefinition;
-import ai.vespa.schemals.lsp.documentsymbols.SchemaDocumentSymbols;
-import ai.vespa.schemals.lsp.hover.SchemaHover;
-import ai.vespa.schemals.lsp.references.SchemaReferences;
-import ai.vespa.schemals.lsp.rename.SchemaPrepareRename;
-import ai.vespa.schemals.lsp.rename.SchemaRename;
-import ai.vespa.schemals.lsp.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.schema.codeaction.SchemaCodeAction;
+import ai.vespa.schemals.lsp.schema.completion.SchemaCompletion;
+import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.schema.documentsymbols.SchemaDocumentSymbols;
+import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
+import ai.vespa.schemals.lsp.schema.references.SchemaReferences;
+import ai.vespa.schemals.lsp.schema.rename.SchemaPrepareRename;
+import ai.vespa.schemals.lsp.schema.rename.SchemaRename;
+import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.yqlplus.codelens.YQLPlusCodeLens;
+import ai.vespa.schemals.lsp.yqlplus.semantictokens.YQLPlusSemanticTokens;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
+import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
 
 /**
  * SchemaTextDocumentService handles incomming requests from the client.
@@ -101,6 +106,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 return result;
             } catch(CancellationException ignore) {
                 // Ignore
+            } catch(InvalidContextException ignore) {
+                // Ignore
             }
 
             // Return the list of completion items.
@@ -119,6 +126,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
                 return SchemaCodeAction.provideActions(eventContextCreator.createContext(params));
+            } catch(InvalidContextException ignore) {
+                // Ignore
             } catch(Exception e) {
                 logger.error("Error during code action handling: " + e.getMessage());
             }
@@ -138,7 +147,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            return SchemaReferences.getReferences(eventContextCreator.createContext(params));
+            try {
+                return SchemaReferences.getReferences(eventContextCreator.createContext(params));
+            } catch(InvalidContextException ignore) {
+                // Ignore
+            }
+            return List.of();
         });
     }
 
@@ -149,6 +163,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
             try {
                 EventDocumentContext context = eventContextCreator.createContext(params);
                 return SchemaDocumentSymbols.documentSymbols(context);
+            } catch(InvalidContextException ignore) {
+                // Ignore
             } catch(Exception e) {
                 logger.error("Error during document symbol handling: " + e.getMessage());
             }
@@ -158,7 +174,18 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams codeLensParams) {
-        return null;
+
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            try {
+                EventDocumentContext context = eventContextCreator.createContext(codeLensParams);
+                return YQLPlusCodeLens.codeLens(context);
+            } catch(InvalidContextException ignore) {
+                // Ignore
+            } catch (Exception e) {
+                logger.error("Error during code lens request: " + e.getMessage());
+            }
+            return List.of();
+        });
     }
 
     @Override
@@ -185,7 +212,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> prepareRename(PrepareRenameParams params) {
 
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            return SchemaPrepareRename.prepareRename(eventContextCreator.createContext(params));
+            try {
+                return SchemaPrepareRename.prepareRename(eventContextCreator.createContext(params));
+            } catch(InvalidContextException ignore) {
+                // Ignore
+            }
+            return null;
         });
 	}
 
@@ -193,7 +225,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
 
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            return SchemaRename.rename(eventContextCreator.createContext(params), params.getNewName());
+            try {
+                return SchemaRename.rename(eventContextCreator.createContext(params), params.getNewName());
+            } catch(InvalidContextException ignore) {
+                // Ignore
+            }
+            return null;
         });
     }
 
@@ -253,10 +290,14 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
-
-                var result = SchemaSemanticTokens.getSemanticTokens(eventContextCreator.createContext(params));
-                return result;
+                EventDocumentContext context = eventContextCreator.createContext(params);
+                if (context.document.getDocumentType() == DocumentType.YQL) {
+                    return YQLPlusSemanticTokens.getSemanticTokens(context);
+                }
+                return SchemaSemanticTokens.getSemanticTokens(context);
                  
+            } catch (InvalidContextException ex) {
+                // ignore
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
             } catch (Exception e) {
@@ -279,6 +320,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
                 return SchemaHover.getHover(eventContextCreator.createContext(params));
 
+            } catch (InvalidContextException ex) {
+                // ignore
             } catch (CancellationException ignore) {
                 // Ignore
             } catch (Exception e) {
@@ -297,6 +340,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
     
                 return Either.forLeft(SchemaDefinition.getDefinition(eventContextCreator.createContext(params)));
     
+            } catch (InvalidContextException ex) {
+                // ignore
             } catch (CancellationException ignore) {
                 // Ignore
             } catch (Exception e) {

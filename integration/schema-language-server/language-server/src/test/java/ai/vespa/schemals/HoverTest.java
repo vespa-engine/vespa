@@ -23,6 +23,7 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
@@ -31,8 +32,6 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.context.EventPositionContext;
-import ai.vespa.schemals.lsp.hover.SchemaHover;
-
 import ai.vespa.schemals.schemadocument.DocumentManager;
 
 

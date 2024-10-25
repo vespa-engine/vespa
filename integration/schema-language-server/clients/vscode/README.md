@@ -22,3 +22,8 @@ The extension requires Java 17 or greater. Upon activation, the extension will l
 - User setting: vespaSchemaLS.javaHome
 - JDK_HOME environment variable
 - JAVA_HOME environment variable
+
+## XML support
+This extension bundles with an extension to the [LemMinX XML Language server](https://github.com/eclipse/lemminx).
+This is to provide additional support when editing the services.xml file in Vespa applications. 
+For the best possible experience, install the [VSCode XML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml) as well.

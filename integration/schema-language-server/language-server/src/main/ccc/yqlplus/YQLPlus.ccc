@@ -1,0 +1,703 @@
+PARSER_CLASS=YQLPlusParser;
+PARSER_PACKAGE=ai.vespa.schemals.parser.yqlplus;
+FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false; // Will create a tree node for every rule
+
+INJECT YQLPlusParser:
+
+    import java.util.Deque;
+    import java.util.ArrayDeque;
+    import com.yahoo.search.yql.*;
+{
+    protected Deque<Boolean> expression_stack = new ArrayDeque<>();
+}
+
+// --------------------------------------------------------------------------------
+//
+// Token declarations.
+//
+// --------------------------------------------------------------------------------
+
+SKIP :
+  " " | "\t" | "\r" | "\n"
+;
+
+TOKEN :
+  < SELECT: 'select' >
+
+| < LIMIT: 'limit' >
+| < OFFSET: 'offset' >
+| < WHERE: 'where' >
+| < ORDER: 'order' >
+| < BY: 'by' >
+| < ORDERBY: <ORDER> <BY> >
+| < DESC: 'desc' >
+| < ASC: 'asc' >
+| < FROM: 'from' >
+| < SOURCES: 'sources' >
+| < AS: 'as' >
+
+| < COMMA: ',' >
+| < OUTPUT: 'output' >
+| < COUNT: 'count' >
+
+| < TRUE: 'true' >
+| < FALSE: 'false' >
+
+// brackets and other tokens in literals
+| < LPAREN: '(' >
+| < RPAREN: ')' >
+| < LBRACKET: '[' >
+| < RBRACKET: ']' >
+| < LBRACE: '{' >
+| < RBRACE: '}' >
+| < COLON: ':' >
+| < PIPE: '|' >
+
+// operators
+| < AND: 'and' >
+| < OR: 'or' >
+| < NOT_IN: 'not in' >
+| < IN: 'in' >
+
+| < LT: '<' >
+| < GT: '>' >
+| < LTEQ: '<=' >
+| < GTEQ: '>=' >
+| < NEQ: '!=' >
+| < STAR: '*' >
+| < EQ: '=' >
+| < LIKE: 'like' >
+| < CONTAINS: 'contains' >
+| < NOTLIKE: 'not like' >
+| < MATCHES: 'matches' >
+| < NOTMATCHES: 'not matches' >
+
+| < PLUS: '+' >
+| < MINUS: '-' >
+| < DIV: '/' >
+| < MODULO: '%' >
+| < EXCLAMATION: '!' >
+
+// effectively unary operators
+| < NULL: 'null' >
+| < IS_NULL: 'is' <NULL> >
+| < IS_NOT_NULL: 'is not' <NULL> >
+
+// dereference
+| < DOT: '.' >
+| < AT: '@' >
+
+// quotes
+| < SQ: '\'' >
+| < DQ: '"' >
+
+// statement delimiter
+| < SEMI: ';' >
+
+| < TIMEOUT: 'timeout' >
+
+| < ALL: 'all' >
+| < EACH: 'each' >
+
+// identifier
+| < IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
+| < LONG_INT: ("-")?(["0"-"9"])+("L"|"l") >
+| < INT: ("-")?(["0"-"9"])+ >
+| < FLOAT: ("-")?(((["0"-"9"])+"."(["0"-"9"])* (<EXPONENT>)?)|("."(["0"-"9"])+ (<EXPONENT>)?)|((["0"-"9"])+ <EXPONENT>)) >
+| < EXPONENT: ("e"|"E") ("+"|"-")? (["0"-"9"])+ >
+//| < DIGIT: ["0"-"9"] > This is apparently never used
+| < LETTER: ["a"-"z","A"-"Z"] >
+
+| < HEX_DIGIT: ["0"-"9","a"-"f","A"-"F"] >
+| < UNICODE_ESC: '\\' 'u' <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> >
+| < ESC_SEQ: '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\'|'/') | <UNICODE_ESC> >
+| < STRING: (<DQ> ( <ESC_SEQ> | ~['\\','"'])* <DQ>) | ( <SQ> ( <ESC_SEQ> | ~['\\','"'])* <SQ> ) >
+
+;
+
+UNPARSED :
+  <COMMENT: ('//' (~['\n','\r'])* ('\r')? ('\n')?) | ( '/*' (~[])* '*/' ) >
+;
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+String identifierStr:
+    (
+        <SELECT>
+        | <LIMIT>
+        | <OFFSET>
+        | <ORDER>
+        | <BY>
+        | <DESC>
+        | <OUTPUT>
+        | <COUNT>
+        | <NOT_IN>
+        | <IN>
+        | <LIKE>
+        | <CONTAINS>
+        | <NOTLIKE>
+        | <MATCHES>
+        | <NOTMATCHES>
+        | <IS_NULL>
+        | <IS_NOT_NULL>
+        | <TIMEOUT>
+        | <IDENTIFIER>
+        | <LETTER>
+    )
+    {
+        return lastConsumedToken.toString();
+    }
+;
+
+vespa_grouping_identifier:
+    (
+        <SELECT>
+        | <LIMIT>
+        | <OFFSET>
+        | <WHERE>
+        | <ORDER>
+        | <BY>
+        | <ORDERBY>
+        | <DESC>
+        | <ASC>
+        | <FROM>
+        | <SOURCES>
+        | <AS>
+        | <COMMA>
+        | <OUTPUT>
+        | <COUNT>
+        | <LBRACE>
+        | <RBRACE>
+        | <COLON>
+        | <PIPE>
+        | <AND>
+        | <OR>
+        | <NOT_IN>
+        | <IN>
+        | <LIKE>
+        | <CONTAINS>
+        | <NOTLIKE>
+        | <MATCHES>
+        | <NOTMATCHES>
+        | <NULL>
+        | <IS_NULL>
+        | <IS_NOT_NULL>
+        | <DOT>
+        | <AT>
+        | <TIMEOUT>
+        | <ALL>
+        | <EACH>
+        | identifierStr
+    )
+;
+
+// TODO: This should match all tokens not containing ()[]<>
+vespa_grouping_node:
+    (
+        unary_op
+        | additive_op
+        | mult_op
+        | scalar_literal
+        | vespa_grouping_identifier
+    )
+;
+
+vespa_grouping:
+    (
+        (<ALL> | <EACH>) vespa_grouping_arg
+        (<AS> vespa_grouping_arg)?
+        (<WHERE> vespa_grouping_arg)? 
+    )
+;
+
+vespa_grouping_arg:
+    (
+        (<LPAREN> | <LBRACKET> | <LT>)
+        ( vespa_grouping_arg | (vespa_grouping_node)+ )*
+        (<RPAREN> | <RBRACKET> | <GT>)
+    )
+;
+
+String ident: {
+    String identifier;
+}
+
+    ( identifier = identifierStr { return identifier; } )
+    | (identifier = keyword_as_ident { return identifier; })
+;
+
+String keyword_as_ident:
+    (
+          <SELECT>
+        | <LIMIT>
+        | <OFFSET>
+        | <WHERE>
+        | <ORDER>
+        | <BY>
+        | <DESC>
+        | <OUTPUT>
+        | <COUNT>
+        | <SOURCES>
+        | <MATCHES>
+        | <LIKE>
+    )
+    {
+        return lastConsumedToken.toString();
+    }
+;
+
+program:
+    (
+        (statement (<SEMI>)?)* <EOF>
+    )
+;
+
+statement:
+    (
+        output_statement
+    )
+;
+
+output_statement:
+    (
+        source_statement (output_spec)?
+    )
+;
+
+source_statement:
+    (
+        query_statement (<PIPE> pipeline_step)*
+    )
+;
+
+pipeline_step:
+    (
+        namespaced_name (arguments(false))? | vespa_grouping_fun
+    )
+;
+
+vespa_grouping_fun:
+    (
+        vespa_grouping | annotation vespa_grouping
+    )
+;
+
+output_spec:
+    (
+        <OUTPUT> (<COUNT>)? <AS> ident
+    )
+;
+
+query_statement:
+    (
+        select_statement
+    )
+;
+
+select_statement:
+    (
+        <SELECT> select_field_spec (select_source)? (where_fun)? (orderby_fun)? (limit_fun)? (offset_fun)? (timeout_fun)?
+    )
+;
+
+// TODO: Missing field
+select_field_spec:
+    (
+        <STAR> | project_spec
+    )
+;
+
+project_spec:
+    (
+        field_def (<COMMA> field_def)*
+    )
+;
+
+timeout_fun:
+    (
+        <TIMEOUT> fixed_or_parameter
+    )
+;
+
+select_source:
+    (
+        <FROM> (
+            select_source_sources
+            | select_source_from
+        )
+    )
+;
+
+select_source_sources:
+    (
+        <SOURCES> (select_source_all | select_source_multi)
+    )
+;
+
+select_source_all:
+    (
+        <STAR>
+    )
+;
+
+select_source_multi:
+    (
+        source_list
+    )
+;
+
+select_source_from:
+    (
+        source_spec
+    )
+;
+
+source_list:
+    (
+        namespaced_name (<COMMA> namespaced_name)*
+    )
+;
+
+source_spec:
+    (
+        data_source (alias_def)? // TODO: Add missing java code
+    )
+;
+
+alias_def:
+    (
+        (<AS>)? identifierStr
+    )
+;
+
+data_source:
+    (
+        call_source |
+        (<LPAREN> source_statement <RPAREN>) |
+        sequence_source
+    )
+;
+
+call_source:
+    (
+        namespaced_name (arguments(true))?
+    )
+;
+
+sequence_source:
+    (
+        <AT> ident
+    )
+;
+
+namespaced_name:
+    (
+        dotted_idents (<DOT> <STAR>)?
+    )
+;
+
+orderby_fun:
+    (
+        <ORDERBY> orderby_fields
+    )
+;
+
+orderby_fields:
+    (
+        orderby_field (<COMMA> orderby_field)*
+    )
+;
+
+orderby_field:
+    (
+        (expression(true) <DESC>)
+        | (expression(true) (<ASC>)? )
+    )
+;
+
+limit_fun:
+    (
+        <LIMIT> fixed_or_parameter
+    )
+;
+
+offset_fun:
+    (
+        <OFFSET> fixed_or_parameter
+    )
+;
+
+where_fun:
+    (
+        <WHERE> expression(true)
+    )
+;
+
+field_def:
+    (
+        expression(true) (alias_def)?
+    )
+;
+
+map_expression:
+    (
+        <LBRACE> (property_name_and_value)? (<COMMA> property_name_and_value)* <RBRACE>
+    )
+;
+
+arguments(boolean in_select):
+    (
+        <LPAREN> (argument(in_select) (<COMMA> argument(in_select))*)? <RPAREN>
+    )
+;
+
+argument(boolean in_select):
+    (
+        expression(in_select)
+    )
+;
+
+// --------- expressions ------------
+
+expression(boolean select):
+    (
+        null_operator
+        | annotate_expression
+        | logical_OR_expression
+    )
+;
+// TODO: Add expression_stack code
+
+null_operator:
+    (
+        <NULL>
+    )
+;
+
+annotate_expression:
+    (
+        annotation logical_OR_expression
+    )
+;
+
+annotation:
+    (
+        (<LBRACKET> map_expression <RBRACKET>)
+        | map_expression
+    )
+;
+
+logical_OR_expression:
+    (
+        logical_AND_expression ( <OR> logical_AND_expression )*
+    )
+;
+
+logical_AND_expression:
+    (
+        equality_expression ( <AND> equality_expression )*
+    )
+;
+
+equality_expression:
+    (
+        relational_expression (
+            ( (<IN> | <NOT_IN>) in_not_in_target )
+            | ( <IS_NULL> | <IS_NOT_NULL> )
+            | ( equality_op relational_expression )
+        )?
+    )
+;
+
+in_not_in_target:
+    ( // TODO: Add expression stack peek
+        ( <LPAREN> select_statement <RPAREN> )
+        | literal_list
+    )
+;
+
+equality_op:
+    (
+        ( <EQ> | <NEQ> | <LIKE> | <NOTLIKE> | <MATCHES> | <NOTMATCHES> | <CONTAINS> )
+    )
+;
+
+relational_expression:
+    (
+        additive_expression (relational_op additive_expression)?
+    )
+;
+
+relational_op:
+    (
+        <LT> | <GT> | <LTEQ> | <GTEQ>
+    )
+;
+
+additive_expression:
+    (
+        multiplicative_expression ( additive_op additive_expression)?
+    )
+;
+
+additive_op:
+    (
+        <PLUS> | <MINUS>
+    )
+;
+
+multiplicative_expression:
+    (
+        unary_expression (mult_op multiplicative_expression)?
+    )
+;
+
+mult_op:
+    (
+        <STAR> | <DIV> | <MODULO>
+    )
+;
+
+unary_expression:
+    (
+        (unary_op)? dereferenced_expression
+    )
+;
+
+unary_op:
+    (
+        <MINUS> | <EXCLAMATION>
+    )
+;
+
+dereferenced_expression:
+{
+    boolean in_select = true; // TODO: Peek into epxression stack
+}
+    (
+        primary_expression (
+            indexref(in_select)
+            | propertyref
+        )*
+    )
+;
+
+indexref(boolean in_select):
+    ( // TODO: Store idx
+        <LBRACKET> expression(in_select) <RBRACKET>
+    )
+;
+
+propertyref:
+{
+    String nm; // TODO: handle this further
+}
+    (
+        <DOT> nm = identifierStr
+    )
+;
+
+primary_expression:
+{
+    boolean in_select = true; // TODO: peek into expression stack
+}
+    (
+        (<LPAREN> expression(in_select) <RPAREN> )
+        | constant_expression
+        | (
+            (SCAN 2 => call_expression(in_select))
+            | fieldref
+        )
+    )
+;
+
+call_expression(boolean in_select):
+    (
+        namespaced_name arguments(in_select)
+    )
+;
+
+fieldref:
+    (
+        namespaced_name
+    )
+;
+
+parameter:
+    (
+        <AT> ident
+    )
+;
+
+property_name_and_value:
+    (
+        property_name <COLON> constant_expression
+    )
+;
+
+property_name:
+    (
+        dotted_idents | <STRING>
+    )
+;
+
+dotted_idents:
+    (
+        ident (<DOT> ident)*
+    )
+;
+
+constant_expression:
+    (
+        scalar_literal
+        | array_literal
+        | parameter
+        | map_expression
+    )
+;
+
+array_literal:
+    (
+        <LBRACKET> (constant_expression)? (<COMMA> constant_expression)* <RBRACKET>
+    )
+;
+
+scalar_literal:
+    (
+        <TRUE>
+        | <FALSE>
+        | <STRING>
+        | <LONG_INT>
+        | <INT>
+        | <FLOAT>
+    )
+;
+
+array_parameter:
+    (
+        <AT> ident //TODO: Add isArrayParameter
+    )
+;
+
+literal_list:
+    (
+        <LPAREN> literal_element (<COMMA> literal_element)* <RPAREN>
+    )
+;
+
+literal_element:
+    (
+        scalar_literal | parameter
+    )
+;
+
+fixed_or_parameter:
+    (
+        <INT> | parameter
+    )
+;
