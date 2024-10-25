@@ -234,7 +234,7 @@ DiskIndex::read(const Key & key, LookupResultVector & result)
     return true;
 }
 
-index::PostingListHandle::UP
+std::unique_ptr<index::PostingListHandle>
 DiskIndex::readPostingList(const LookupResult &lookupRes) const
 {
     auto& field_index = _field_indexes[lookupRes.indexId];
@@ -246,6 +246,15 @@ DiskIndex::readBitVector(const LookupResult &lookupRes) const
 {
     auto& field_index = _field_indexes[lookupRes.indexId];
     return field_index.read_bit_vector(lookupRes);
+}
+
+std::unique_ptr<search::queryeval::SearchIterator>
+DiskIndex::create_iterator(const LookupResult& lookup_result,
+                           const index::PostingListHandle& handle,
+                           const search::fef::TermFieldMatchDataArray& tfmda) const
+{
+    auto& field_index = _field_indexes[lookup_result.indexId];
+    return field_index.create_iterator(lookup_result, handle, tfmda);
 }
 
 namespace {

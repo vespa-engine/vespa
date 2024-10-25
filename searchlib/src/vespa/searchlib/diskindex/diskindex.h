@@ -104,7 +104,12 @@ public:
      * @param lookupRes the result of the previous dictionary lookup.
      * @return a handle for the posting list in memory.
      */
-    index::PostingListHandle::UP readPostingList(const LookupResult &lookupRes) const;
+    std::unique_ptr<index::PostingListHandle> readPostingList(const LookupResult &lookupRes) const;
+
+    std::unique_ptr<search::queryeval::SearchIterator>
+    create_iterator(const LookupResult& lookup_result,
+                    const index::PostingListHandle& handle,
+                    const search::fef::TermFieldMatchDataArray& tfmda) const;
 
     /**
      * Read the bit vector corresponding to the given lookup result.

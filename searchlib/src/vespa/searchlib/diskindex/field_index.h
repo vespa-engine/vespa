@@ -58,6 +58,9 @@ public:
     void reuse_files(const FieldIndex& rhs);
     std::unique_ptr<index::PostingListHandle> read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
     std::unique_ptr<BitVector> read_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
+    std::unique_ptr<search::queryeval::SearchIterator> create_iterator(const search::index::DictionaryLookupResult& lookup_result,
+                                                                       const index::PostingListHandle& handle,
+                                                                       const search::fef::TermFieldMatchDataArray& tfmda) const;
     index::FieldLengthInfo get_field_length_info() const;
 
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }

@@ -1,16 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postinglisthandle.h"
-#include "postinglistfile.h"
-#include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::index {
 
-std::unique_ptr<search::queryeval::SearchIterator>
-PostingListHandle::createIterator(const PostingListCounts &counts,
-                                  const search::fef::TermFieldMatchDataArray &matchData) const
+PostingListHandle::~PostingListHandle()
 {
-    return _file->createIterator(counts, *this, matchData);
+    if (_allocMem != nullptr) {
+        free(_allocMem);
+    }
 }
+
+void
+PostingListHandle::drop()
+{
+    _bitOffsetMem = 0;
+    _mem = nullptr;
+    if (_allocMem != nullptr) {
+        free(_allocMem);
+        _allocMem = nullptr;
+    }
+    _allocSize = 0;
+    _read_bytes = 0;
+}
+
 
 }
