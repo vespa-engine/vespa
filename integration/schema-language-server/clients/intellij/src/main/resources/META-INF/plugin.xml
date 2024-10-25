@@ -23,13 +23,8 @@
 
   ]]></description>
   <change-notes><![CDATA[
-<h2>Rewritten from scratch to include LSP support</h2>
-<ul>
-    <li>Error and warning highlighting</li>
-    <li>Code actions, including Quick fixes</li>
-    <li>Code completion</li>
-    <li>Documentation on hover</li>
-</ul>
+<h2>Refactored to use LSP4IJ</h2>
+The plugin will now support better syntax highlighting with semantic tokens and renaming.
 ]]></change-notes>
   <depends>com.intellij.modules.platform</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>
