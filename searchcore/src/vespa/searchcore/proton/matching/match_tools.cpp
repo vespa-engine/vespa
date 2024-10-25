@@ -257,7 +257,7 @@ MatchToolsFactory::createMatchTools() const
 }
 
 std::unique_ptr<IDiversifier>
-MatchToolsFactory::createDiversifier(uint32_t heapSize) const
+MatchToolsFactory::createDiversifier(uint32_t want_hits) const
 {
     if ( !_diversityParams.enabled() ) {
         return {};
@@ -267,8 +267,8 @@ MatchToolsFactory::createDiversifier(uint32_t heapSize) const
         Issue::report("Skipping diversity due to no %s attribute.", _diversityParams.attribute.c_str());
         return {};
     }
-    size_t max_per_group = std::max(size_t(1), size_t(heapSize / _diversityParams.min_groups));
-    return DiversityFilter::create(*attr, heapSize, max_per_group, _diversityParams.min_groups,
+    size_t max_per_group = std::max(size_t(1), size_t(want_hits / _diversityParams.min_groups));
+    return DiversityFilter::create(*attr, want_hits, max_per_group, _diversityParams.min_groups,
                                    _diversityParams.cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
 }
 

@@ -90,7 +90,7 @@ MatchMaster::match(search::engine::Trace & trace,
      * We need a non-const first phase rank lookup since it will be populated
      * later on when selecting documents for second phase ranking.
      */
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.heapSize),
+    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.diversity_want_hits),
                                        mtf.get_first_phase_rank_lookup(),
                                        [&mtf]() noexcept { mtf.query().set_matching_phase(MatchingPhase::SECOND_PHASE); });
     TimedMatchLoopCommunicator timedCommunicator(communicator);

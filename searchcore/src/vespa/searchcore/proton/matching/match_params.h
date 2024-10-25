@@ -18,6 +18,7 @@ struct MatchParams {
     const uint32_t          arraySize;
     const uint32_t          offset;
     const uint32_t          hits;
+    const uint32_t          diversity_want_hits;
     const std::optional<search::feature_t> first_phase_rank_score_drop_limit;
     const std::optional<search::feature_t> second_phase_rank_score_drop_limit;
 
