@@ -135,7 +135,8 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
         this.clock = clock;
         this.zone = zone;
         this.applications = new Applications(db);
-        this.nodes = new Nodes(db, zone, clock, orchestrator, applications);
+        this.snapshots = new Snapshots(this);
+        this.nodes = new Nodes(db, zone, clock, orchestrator, applications, snapshots, flagSource);
         this.flavors = flavors;
         this.resourcesCalculator = provisionServiceProvider.getHostResourcesCalculator();
         this.nodeResourceLimits = new NodeResourceLimits(this);
@@ -151,7 +152,6 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
         this.orchestrator = orchestrator;
         this.spareCount = spareCount;
         this.healthChecker = provisionServiceProvider.getHealthChecker();
-        this.snapshots = new Snapshots(this);
         nodes.rewrite();
     }
 
