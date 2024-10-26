@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/searchlib/fef/ranking_assets_repo.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 using namespace vespalib::eval;
@@ -50,30 +49,38 @@ std::shared_ptr<RankingConstants> make_ranking_constants() {
 
 }
 
-struct Fixture {
+class ConstantValueRepoTest : public ::testing::Test {
+protected:
     MyConstantValueFactory factory;
     RankingAssetsRepo repo;
-    Fixture()
-        : factory(), repo(factory, make_ranking_constants(), {}, {})
-    {
-        factory.add("path_1", "double", 3);
-        factory.add("path_2", "double", 5);
-    }
+    ConstantValueRepoTest();
+    ~ConstantValueRepoTest() override;
 };
 
-TEST_F("require that constant value can be retrieved from repo", Fixture)
+ConstantValueRepoTest::ConstantValueRepoTest()
+    : ::testing::Test(),
+      factory(),
+      repo(factory, make_ranking_constants(), {}, {})
 {
-    EXPECT_EQUAL(3.0, f.repo.getConstant("foo")->value().as_double());
+    factory.add("path_1", "double", 3);
+    factory.add("path_2", "double", 5);
 }
 
-TEST_F("require that non-existing constant value in repo returns nullptr", Fixture)
+ConstantValueRepoTest::~ConstantValueRepoTest() = default;
+
+TEST_F(ConstantValueRepoTest, require_that_constant_value_can_be_retrieved_from_repo)
 {
-    EXPECT_TRUE(f.repo.getConstant("none").get() == nullptr);
+    EXPECT_EQ(3.0, repo.getConstant("foo")->value().as_double());
 }
 
-TEST_F("require that non-existing constant value in factory returns bad constant", Fixture)
+TEST_F(ConstantValueRepoTest, require_that_non_existing_constant_value_in_repo_returns_nullptr)
 {
-    EXPECT_TRUE(f.repo.getConstant("bar")->type().is_error());
+    EXPECT_TRUE(repo.getConstant("none").get() == nullptr);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_F(ConstantValueRepoTest, require_that_non_existing_constant_value_in_factory_returns_bad_constant)
+{
+    EXPECT_TRUE(repo.getConstant("bar")->type().is_error());
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()
