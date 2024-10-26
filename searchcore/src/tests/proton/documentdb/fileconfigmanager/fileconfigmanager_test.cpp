@@ -2,6 +2,7 @@
 
 #include "config-mycfg.h"
 #include <vespa/config-attributes.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
@@ -15,8 +16,8 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <filesystem>
 
 
@@ -40,6 +41,7 @@ using vespalib::nbostream;
 using vespalib::HwInfo;
 
 std::string myId("myconfigid");
+std::string base_dir("out");
 
 DocumentDBConfig::SP
 makeBaseConfigSnapshot(FNET_Transport & transport)
@@ -58,7 +60,6 @@ makeBaseConfigSnapshot(FNET_Transport & transport)
     dbcm.nextGeneration(transport, 0ms);
     DocumentDBConfig::SP snap = dbcm.getConfig();
     snap->setConfigId(myId);
-    ASSERT_TRUE(snap);
     return snap;
 }
 
@@ -83,15 +84,15 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
     EXPECT_TRUE(exp.getRankingConstants() == act.getRankingConstants());
     EXPECT_TRUE(exp.getRankingExpressions() == act.getRankingExpressions());
     EXPECT_TRUE(exp.getOnnxModels() == act.getOnnxModels());
-    EXPECT_EQUAL(0u, exp.getRankingConstants().size());
-    EXPECT_EQUAL(0u, exp.getRankingExpressions().size());
-    EXPECT_EQUAL(0u, exp.getOnnxModels().size());
+    EXPECT_EQ(0u, exp.getRankingConstants().size());
+    EXPECT_EQ(0u, exp.getRankingExpressions().size());
+    EXPECT_EQ(0u, exp.getOnnxModels().size());
     EXPECT_TRUE(exp.getIndexschemaConfig() == act.getIndexschemaConfig());
     EXPECT_TRUE(exp.getAttributesConfig() == act.getAttributesConfig());
     EXPECT_TRUE(exp.getSummaryConfig() == act.getSummaryConfig());
     EXPECT_TRUE(exp.getJuniperrcConfig() == act.getJuniperrcConfig());
     EXPECT_TRUE(exp.getImportedFieldsConfig() == act.getImportedFieldsConfig());
-    EXPECT_EQUAL(0u, exp.getImportedFieldsConfig().attribute.size());
+    EXPECT_EQ(0u, exp.getImportedFieldsConfig().attribute.size());
 
     int expTypeCount = 0;
     int actTypeCount = 0;
@@ -101,10 +102,10 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
     act.getDocumentTypeRepoSP()->forEachDocumentType([&actTypeCount](const DocumentType &) noexcept {
         actTypeCount++;
     });
-    EXPECT_EQUAL(expTypeCount, actTypeCount);
+    EXPECT_EQ(expTypeCount, actTypeCount);
     EXPECT_TRUE(*exp.getSchemaSP() == *act.getSchemaSP());
-    EXPECT_EQUAL(expTypeCount, actTypeCount);
-    EXPECT_EQUAL(exp.getConfigId(), act.getConfigId());
+    EXPECT_EQ(expTypeCount, actTypeCount);
+    EXPECT_EQ(exp.getConfigId(), act.getConfigId());
 }
 
 DocumentDBConfig::SP
@@ -129,9 +130,33 @@ addConfigsThatAreNotSavedToDisk(const DocumentDBConfig &cfg)
     return builder.build();
 }
 
-TEST_FF("requireThatConfigCanBeSavedAndLoaded", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
-{
+class FileConfigManagerTest : public ::testing::Test {
+protected:
+    FileConfigManagerTest();
+    ~FileConfigManagerTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
 
+FileConfigManagerTest::FileConfigManagerTest() = default;
+FileConfigManagerTest::~FileConfigManagerTest() = default;
+
+void
+FileConfigManagerTest::SetUpTestSuite()
+{
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
+}
+
+void
+FileConfigManagerTest::TearDownTestSuite()
+{
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
+}
+
+TEST_F(FileConfigManagerTest, requireThatConfigCanBeSavedAndLoaded)
+{
+    Transport f1;
+    auto f2(makeBaseConfigSnapshot(f1.transport()));
     DocumentDBConfig::SP fullCfg = addConfigsThatAreNotSavedToDisk(*f2);
     saveBaseConfigSnapshot(f1.transport(), *fullCfg, 20);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
@@ -142,8 +167,10 @@ TEST_FF("requireThatConfigCanBeSavedAndLoaded", Transport(), DocumentDBConfig::S
     assertEqualSnapshot(*f2, *esnap);
 }
 
-TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
+TEST_F(FileConfigManagerTest, requireThatConfigCanBeSerializedAndDeserialized)
 {
+    Transport f1;
+    auto f2(makeBaseConfigSnapshot(f1.transport()));
     saveBaseConfigSnapshot(f1.transport(), *f2, 30);
     nbostream stream;
     {
@@ -160,11 +187,13 @@ TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", Transport(), Document
         cm.loadConfig(*fsnap, 40, fsnap);
     }
     assertEqualSnapshot(*f2, *fsnap);
-    EXPECT_EQUAL("dummy", fsnap->getDocTypeName());
+    EXPECT_EQ("dummy", fsnap->getDocTypeName());
 }
 
-TEST_FF("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
+TEST_F(FileConfigManagerTest, requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile)
 {
+    Transport f1;
+    auto f2(makeBaseConfigSnapshot(f1.transport()));
     saveBaseConfigSnapshot(f1.transport(), *f2, 70);
     EXPECT_FALSE(std::filesystem::remove(std::filesystem::path("out/config-70/extraconfigs.dat")));
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
@@ -175,8 +204,10 @@ TEST_FF("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", Transport(), 
 }
 
 
-TEST_FF("requireThatVisibilityDelayIsPropagated", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
+TEST_F(FileConfigManagerTest, requireThatVisibilityDelayIsPropagated)
 {
+    Transport f1;
+    auto f2(makeBaseConfigSnapshot(f1.transport()));
     saveBaseConfigSnapshot(f1.transport(), *f2, 80);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
     {
@@ -190,7 +221,7 @@ TEST_FF("requireThatVisibilityDelayIsPropagated", Transport(), DocumentDBConfig:
         cm.setProtonConfig(std::make_shared<ProtonConfig>(protonConfigBuilder));
         cm.loadConfig(*esnap, 70, esnap);
     }
-    EXPECT_EQUAL(61s, esnap->getMaintenanceConfigSP()->getVisibilityDelay());
+    EXPECT_EQ(61s, esnap->getMaintenanceConfigSP()->getVisibilityDelay());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
