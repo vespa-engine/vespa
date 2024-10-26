@@ -60,7 +60,7 @@ public class SelectInputTestCase {
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_str"),
                            "Can not assign string to field 'my_int' which is int.");
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_unknown"),
-                           "Field 'my_unknown' not found");
+                           "Input field 'my_unknown' not found.");
     }
 
     @Test
