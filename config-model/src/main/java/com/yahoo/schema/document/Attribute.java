@@ -109,7 +109,7 @@ public final class Attribute implements Cloneable, Serializable {
         private final String exportAttributeTypeName;
 
         Type(String name, String exportAttributeTypeName) {
-            this.myName=name;
+            this.myName = name;
             this.exportAttributeTypeName = exportAttributeTypeName;
         }
 
