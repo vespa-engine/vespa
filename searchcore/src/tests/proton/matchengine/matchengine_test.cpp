@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/engine/docsumreply.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <mutex>
-#include <condition_variable>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 
 using namespace proton;
 using namespace search::engine;
@@ -64,7 +64,7 @@ public:
 LocalSearchClient::LocalSearchClient() = default;
 LocalSearchClient::~LocalSearchClient() = default;
 
-TEST("requireThatSearchesExecute")
+TEST(MatchEngineTest, requireThatSearchesExecute)
 {
     int numMatcherThreads = 16;
     MatchEngine engine(numMatcherThreads, 1, 7);
@@ -83,19 +83,20 @@ TEST("requireThatSearchesExecute")
     EXPECT_TRUE(reply);
 }
 
-bool
+void
 assertSearchReply(MatchEngine & engine, const std::string & searchDocType, size_t expHits)
 {
+    SCOPED_TRACE(searchDocType);
     auto *request = new SearchRequest();
     request->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", searchDocType);
     LocalSearchClient client;
     engine.search(SearchRequest::Source(request), client);
     SearchReply::UP reply = client.getReply(10000);
     ASSERT_TRUE(reply);
-    return EXPECT_EQUAL(expHits, reply->hits.size());
+    EXPECT_EQ(expHits, reply->hits.size());
 }
 
-TEST("requireThatCorrectHandlerIsUsed")
+TEST(MatchEngineTest, requireThatCorrectHandlerIsUsed)
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeUp(true);
@@ -109,10 +110,10 @@ TEST("requireThatCorrectHandlerIsUsed")
     engine.putSearchHandler(dtnvbar, h2);
     engine.putSearchHandler(dtnvbaz, h3);
 
-    EXPECT_TRUE(assertSearchReply(engine, "foo", 2));
-    EXPECT_TRUE(assertSearchReply(engine, "bar", 4));
-    EXPECT_TRUE(assertSearchReply(engine, "baz", 6));
-    EXPECT_TRUE(assertSearchReply(engine, "not", 4)); // uses the first (sorted on name)
+    assertSearchReply(engine, "foo", 2);
+    assertSearchReply(engine, "bar", 4);
+    assertSearchReply(engine, "baz", 6);
+    assertSearchReply(engine, "not", 4); // uses the first (sorted on name)
 }
 
 struct ObserveBundleMatchHandler : MySearchHandler {
@@ -129,7 +130,7 @@ struct ObserveBundleMatchHandler : MySearchHandler {
     }
 };
 
-TEST("requireThatBundlesAreUsed")
+TEST(MatchEngineTest, requireThatBundlesAreUsed)
 {
     MatchEngine engine(15, 5, 7);
     engine.setNodeUp(true);
@@ -142,11 +143,11 @@ TEST("requireThatBundlesAreUsed")
     SearchRequest::Source request(new SearchRequest());
     engine.search(std::move(request), client);
     SearchReply::UP reply = client.getReply(10000);
-    EXPECT_EQUAL(7u, reply->getDistributionKey());
-    EXPECT_EQUAL(5u, handler->bundleSize);
+    EXPECT_EQ(7u, reply->getDistributionKey());
+    EXPECT_EQ(5u, handler->bundleSize);
 }
 
-TEST("requireThatHandlersCanBeRemoved")
+TEST(MatchEngineTest, requireThatHandlersCanBeRemoved)
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeUp(true);
@@ -166,7 +167,7 @@ TEST("requireThatHandlersCanBeRemoved")
     EXPECT_FALSE(r);
 }
 
-TEST("requireThatEmptySearchReplyIsReturnedWhenEngineIsClosed")
+TEST(MatchEngineTest, requireThatEmptySearchReplyIsReturnedWhenEngineIsClosed)
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeUp(true);
@@ -175,8 +176,8 @@ TEST("requireThatEmptySearchReplyIsReturnedWhenEngineIsClosed")
     SearchRequest::Source request(new SearchRequest());
     SearchReply::UP reply = engine.search(std::move(request), client);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(0u, reply->hits.size());
-    EXPECT_EQUAL(7u, reply->getDistributionKey());
+    EXPECT_EQ(0u, reply->hits.size());
+    EXPECT_EQ(7u, reply->getDistributionKey());
 }
 
 namespace {
@@ -192,26 +193,26 @@ constexpr const char* search_interface_offline_slime_str() noexcept {
 
 }
 
-TEST("requireThatStateIsReported")
+TEST(MatchEngineTest, requireThatStateIsReported)
 {
     MatchEngine engine(1, 1, 7);
 
     Slime slime;
     SlimeInserter inserter(slime);
     engine.get_state(inserter, false);
-    EXPECT_EQUAL(search_interface_offline_slime_str(),
+    EXPECT_EQ(search_interface_offline_slime_str(),
                  slime.toString());
 }
 
-TEST("searches are executed when node is in maintenance mode")
+TEST(MatchEngineTest, searches_are_executed_when_node_is_in_maintenance_mode)
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeMaintenance(true);
     engine.putSearchHandler(DocTypeName("foo"), std::make_shared<MySearchHandler>(3));
-    EXPECT_TRUE(assertSearchReply(engine, "foo", 3));
+    assertSearchReply(engine, "foo", 3);
 }
 
-TEST("setNodeMaintenance(true) implies setNodeUp(false)")
+TEST(MatchEngineTest, setNodeMaintenance_true_implies_setNodeUp_false)
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeUp(true);
@@ -219,7 +220,7 @@ TEST("setNodeMaintenance(true) implies setNodeUp(false)")
     EXPECT_FALSE(engine.isOnline());
 }
 
-TEST("setNodeMaintenance(false) does not imply setNodeUp(false)")
+TEST(MatchEngineTest, setNodeMaintenance_false_does_not_imply_setNodeUp_false)
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeUp(true);
@@ -227,7 +228,7 @@ TEST("setNodeMaintenance(false) does not imply setNodeUp(false)")
     EXPECT_TRUE(engine.isOnline());
 }
 
-TEST("search interface is reported as offline when node is in maintenance mode")
+TEST(MatchEngineTest, search_interface_is_reported_as_offline_when_node_is_in_maintenance_mode)
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeMaintenance(true);
@@ -235,8 +236,8 @@ TEST("search interface is reported as offline when node is in maintenance mode")
     Slime slime;
     SlimeInserter inserter(slime);
     engine.get_state(inserter, false);
-    EXPECT_EQUAL(search_interface_offline_slime_str(),
+    EXPECT_EQ(search_interface_offline_slime_str(),
                  slime.toString());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
