@@ -124,6 +124,11 @@ public class ValidateSortingSearcher extends Searcher {
                             f.setSorter(new Sorting.LowerCaseSorter(name));
                         }
                     }
+                    else if (attrConfig.datatype() == AttributesConfig.Attribute.Datatype.TENSOR) {
+                        throw new IllegalArgumentException("Cannot sort on field '" + attrConfig.name() +
+                                                           "' because it is a tensor");
+                    }
+
                 }
                 if (f.getSorter() instanceof Sorting.UcaSorter sorter) {
                     String locale = sorter.getLocale();
