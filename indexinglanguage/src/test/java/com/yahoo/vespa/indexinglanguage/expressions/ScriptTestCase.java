@@ -4,9 +4,12 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
@@ -144,6 +147,45 @@ public class ScriptTestCase {
                      new GetVarExpression("tmp"),
                      new AttributeExpression("out")).execute(adapter);
         assertEquals(new IntegerFieldValue(9), adapter.getInputValue("out"));
+    }
+
+    @Test
+    //       indexing: input expressions | for_each {
+    //        get_field myStructField
+    //      } | attribute
+    @SuppressWarnings("unchecked")
+    public void testGetStructField() {
+        var structType = new StructDataType("myStruct");
+        var stringField = new Field("stringField", DataType.STRING);
+        var intField = new Field("intField", DataType.INT); // Nopt accesseed
+        structType.addField(stringField);
+        structType.addField(intField);
+
+        var adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myInput", new ArrayDataType(structType)));
+        adapter.createField(new Field("myOutput", new ArrayDataType(DataType.STRING)));
+
+        var array = new Array<Struct>(new ArrayDataType(structType));
+        var struct1 = new Struct(structType);
+        struct1.setFieldValue(stringField, "value1");
+        struct1.setFieldValue(intField, 1);
+        array.add(struct1);
+        var struct2 = new Struct(structType);
+        struct2.setFieldValue(stringField, "value2");
+        struct2.setFieldValue(intField, 2);
+        array.add(struct2);
+        adapter.setValue("myInput", array);
+        var statement =
+                newStatement(new InputExpression("myInput"),
+                             new ForEachExpression(new StatementExpression(new GetFieldExpression("stringField"))),
+                             new AttributeExpression("myOutput"));
+        statement.verify(adapter);
+        statement.execute(adapter);
+
+        var result = (Array<StringFieldValue>)adapter.values.get("myOutput");
+        assertEquals(2, result.size());
+        assertEquals("value1", result.get(0).toString());
+        assertEquals("value2", result.get(1).toString());
     }
 
     @Test

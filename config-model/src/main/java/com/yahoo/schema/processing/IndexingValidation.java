@@ -155,7 +155,7 @@ public class IndexingValidation extends Processor {
 
         private static DataType createCompatType(DataType origType) {
             if (origType instanceof ArrayDataType) {
-                return DataType.getArray(createCompatType(((ArrayDataType)origType).getNestedType()));
+                return DataType.getArray(createCompatType(origType.getNestedType()));
             } else if (origType instanceof MapDataType) {
                 MapDataType mapType = (MapDataType)origType;
                 return DataType.getMap(createCompatType(mapType.getKeyType()),
