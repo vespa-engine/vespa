@@ -159,7 +159,6 @@ assert_interleaved_features(DiskIndex &d, const std::string &field, const std::s
 {
     using LookupResult = DiskIndex::LookupResult;
     using PostingListHandle = index::PostingListHandle;
-    using SearchIterator = search::queryeval::SearchIterator;
 
     const Schema &schema = d.getSchema();
     uint32_t field_id(schema.getIndexFieldId(field));
@@ -170,7 +169,7 @@ assert_interleaved_features(DiskIndex &d, const std::string &field, const std::s
     TermFieldMatchData tfmd;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&tfmd);
-    std::unique_ptr<SearchIterator> sbap(d.create_iterator(*lookup_result, *handle, tfmda));
+    auto sbap(d.create_iterator(*lookup_result, *handle, tfmda));
     sbap->initFullRange();
     EXPECT_TRUE(sbap->seek(doc_id));
     sbap->unpack(doc_id);

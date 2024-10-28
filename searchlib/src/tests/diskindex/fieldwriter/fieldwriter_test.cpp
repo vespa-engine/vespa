@@ -513,7 +513,7 @@ randReadField(FakeWordSet &wordSet,
                 TermFieldMatchDataArray tfmda;
                 tfmda.add(&mdfield1);
 
-                std::unique_ptr<SearchIterator> sb(postingFile->createIterator(counts, handle, tfmda));
+                auto sb(postingFile->createIterator(counts, handle, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
                 word->validate(sb.get(), tfmda, true, decode_interleaved_features, verbose);
