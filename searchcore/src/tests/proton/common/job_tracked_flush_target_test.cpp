@@ -5,7 +5,7 @@
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
 #include <vespa/searchlib/common/flush_token.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/gate.h>
@@ -64,72 +64,81 @@ struct Fixture
     FlushTask::UP _task;
     Gate _taskGate;
     ThreadStackExecutor _exec;
-    Fixture(uint32_t numJobTrackings = 1)
-        : _tracker(std::make_shared<SimpleJobTracker>(numJobTrackings)),
-          _target(std::make_shared<MyFlushTarget>()),
-          _trackedFlush(_tracker, _target),
-          _task(),
-          _taskGate(),
-          _exec(1)
-    {
-    }
+    Fixture(uint32_t numJobTrackings = 1);
+    ~Fixture();
     void initFlush(SerialNum currentSerial) {
         _task = _trackedFlush.initFlush(currentSerial, std::make_shared<search::FlushToken>());
         _taskGate.countDown();
     }
 };
 
+Fixture::Fixture(uint32_t numJobTrackings)
+    : _tracker(std::make_shared<SimpleJobTracker>(numJobTrackings)),
+      _target(std::make_shared<MyFlushTarget>()),
+      _trackedFlush(_tracker, _target),
+      _task(),
+      _taskGate(),
+      _exec(1)
+{
+}
+
+Fixture::~Fixture() = default;
+
 constexpr SerialNum FLUSH_SERIAL = 10;
 
-TEST_F("require that flush target name, type and component is preserved", Fixture)
+TEST(JobTrackedFlushTargetTest, require_that_flush_target_name_type_and_component_is_preserved)
 {
-    EXPECT_EQUAL("mytarget", f._trackedFlush.getName());
+    Fixture f;
+    EXPECT_EQ("mytarget", f._trackedFlush.getName());
     EXPECT_TRUE(IFlushTarget::Type::FLUSH == f._trackedFlush.getType());
     EXPECT_TRUE(IFlushTarget::Component::OTHER == f._trackedFlush.getComponent());
 }
 
-TEST_F("require that flush task init is tracked", Fixture)
+TEST(JobTrackedFlushTargetTest, require_that_flush_task_init_is_tracked)
 {
-    EXPECT_EQUAL(1u, f._tracker->_started.getCount());
-    EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
+    Fixture f;
+    EXPECT_EQ(1u, f._tracker->_started.getCount());
+    EXPECT_EQ(1u, f._tracker->_ended.getCount());
 
     f._exec.execute(makeLambdaTask([&]() {f.initFlush(FLUSH_SERIAL); }));
     f._tracker->_started.await(5s);
-    EXPECT_EQUAL(0u, f._tracker->_started.getCount());
-    EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
+    EXPECT_EQ(0u, f._tracker->_started.getCount());
+    EXPECT_EQ(1u, f._tracker->_ended.getCount());
 
     f._target->_initGate.countDown();
     f._taskGate.await(5s);
-    EXPECT_EQUAL(0u, f._tracker->_ended.getCount());
+    EXPECT_EQ(0u, f._tracker->_ended.getCount());
     {
         JobTrackedFlushTask *trackedTask = dynamic_cast<JobTrackedFlushTask *>(f._task.get());
         EXPECT_TRUE(trackedTask != nullptr);
-        EXPECT_EQUAL(5u, trackedTask->getFlushSerial());
+        EXPECT_EQ(5u, trackedTask->getFlushSerial());
     }
-    EXPECT_EQUAL(FLUSH_SERIAL, f._target->_initFlushSerial);
+    EXPECT_EQ(FLUSH_SERIAL, f._target->_initFlushSerial);
 }
 
-TEST_F("require that flush task execution is tracked", Fixture(2))
+TEST(JobTrackedFlushTargetTest, require_that_flush_task_execution_is_tracked)
 {
+    Fixture f(2);
     f._exec.execute(makeLambdaTask([&]() { f.initFlush(FLUSH_SERIAL); }));
     f._target->_initGate.countDown();
     f._taskGate.await(5s);
 
-    EXPECT_EQUAL(1u, f._tracker->_started.getCount());
-    EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
+    EXPECT_EQ(1u, f._tracker->_started.getCount());
+    EXPECT_EQ(1u, f._tracker->_ended.getCount());
 
     f._exec.execute(std::move(f._task));
     f._tracker->_started.await(5s);
-    EXPECT_EQUAL(0u, f._tracker->_started.getCount());
-    EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
+    EXPECT_EQ(0u, f._tracker->_started.getCount());
+    EXPECT_EQ(1u, f._tracker->_ended.getCount());
 
     f._target->_execGate.countDown();
     f._tracker->_ended.await(5s);
-    EXPECT_EQUAL(0u, f._tracker->_ended.getCount());
+    EXPECT_EQ(0u, f._tracker->_ended.getCount());
 }
 
-TEST_F("require that nullptr flush task is not tracked", Fixture)
+TEST(JobTrackedFlushTargetTest, require_that_nullptr_flush_task_is_not_tracked)
 {
+    Fixture f;
     FlushTask::UP task = f._trackedFlush.initFlush(0, std::make_shared<search::FlushToken>());
     EXPECT_TRUE(task.get() == nullptr);
 }
