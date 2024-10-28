@@ -53,7 +53,7 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
     }
 
     public static String getAwsSecretId(String system, String tenant, Key key) {
-        return "%s.%s.%s/%s".formatted(system, tenant, key.vaultName().value(), key.secretName().value());
+        return "tenant-secret.%s.%s.%s/%s".formatted(system, tenant, key.vaultName().value(), key.secretName().value());
     }
 
 }

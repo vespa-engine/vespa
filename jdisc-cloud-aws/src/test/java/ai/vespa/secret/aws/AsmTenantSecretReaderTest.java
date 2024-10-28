@@ -26,8 +26,9 @@ public class AsmTenantSecretReaderTest {
     String tenant = "tenant1";
 
     // The mapping from Key to AWS secret id for tenant secrets
+    // Do NOT copy the production code here, as we want to fail upon changes.
     private String awsSecretId(Key key) {
-        return "%s.%s.%s/%s".formatted(
+        return "tenant-secret.%s.%s.%s/%s".formatted(
                 system, tenant, key.vaultName().value(), key.secretName().value());
     }
 
