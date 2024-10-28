@@ -9,6 +9,8 @@
 class FastOS_FileInterface;
 
 namespace search::common { class FileHeaderContext; }
+namespace search::fef { class TermFieldMatchDataArray; }
+namespace search::queryeval { class SearchIterator; }
 
 namespace search::index {
 

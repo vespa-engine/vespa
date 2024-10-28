@@ -570,14 +570,13 @@ ShowPostingListSubApp::showPostingList()
     handle->first = offsetAndCounts._counts;
     handle->second._bitOffset = offsetAndCounts._offset;
     handle->second._bitLength = handle->first._bitLength;
-    handle->second._file = postingfile.get();
-    handle->second._file->readPostingList(handle->second);
+    postingfile->readPostingList(handle->second);
     std::vector<TermFieldMatchData> tfmdv(numFields);
     TermFieldMatchDataArray tfmda;
     for (auto& tfmd : tfmdv) {
         tfmda.add(&tfmd);
     }
-    auto sb = handle->second.createIterator(handle->first, tfmda);
+    auto sb = postingfile->createIterator(handle->first, handle->second, tfmda);
     sb->initFullRange();
     uint32_t docId = 0;
     bool first = true;

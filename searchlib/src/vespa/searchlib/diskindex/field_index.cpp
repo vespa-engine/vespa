@@ -3,6 +3,7 @@
 #include "field_index.h"
 #include "fileheader.h"
 #include "pagedict4randread.h"
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <filesystem>
 
@@ -149,11 +150,11 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     auto handle = std::make_unique<PostingListHandle>();
     handle->_bitOffset = lookup_result.bitOffset;
     handle->_bitLength = lookup_result.counts._bitLength;
-    handle->_file = _posting_file.get();
-    if (handle->_file == nullptr) {
+    auto file = _posting_file.get();
+    if (file == nullptr) {
         return {};
     }
-    handle->_file->readPostingList(*handle);
+    file->readPostingList(*handle);
     if (handle->_read_bytes != 0) {
         _disk_io_stats->add_read_operation(handle->_read_bytes);
     }
@@ -168,6 +169,15 @@ FieldIndex::read_bit_vector(const DictionaryLookupResult& lookup_result) const
     }
     return _bit_vector_dict->lookup(lookup_result.wordNum);
 }
+
+std::unique_ptr<search::queryeval::SearchIterator>
+FieldIndex::create_iterator(const search::index::DictionaryLookupResult& lookup_result,
+                            const index::PostingListHandle& handle,
+                            const search::fef::TermFieldMatchDataArray& tfmda) const
+{
+    return _posting_file->createIterator(lookup_result.counts, handle, tfmda);
+}
+
 
 index::FieldLengthInfo
 FieldIndex::get_field_length_info() const

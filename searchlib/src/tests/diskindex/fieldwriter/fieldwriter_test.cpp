@@ -505,7 +505,6 @@ randReadField(FakeWordSet &wordSet,
                 search::index::PostingListHandle handle;
 
                 handle._bitLength = counts._bitLength;
-                handle._file = postingFile;
                 handle._bitOffset = offsetAndCounts._offset;
 
                 postingFile->readPostingList(handle);
@@ -514,8 +513,7 @@ randReadField(FakeWordSet &wordSet,
                 TermFieldMatchDataArray tfmda;
                 tfmda.add(&mdfield1);
 
-                std::unique_ptr<SearchIterator>
-                    sb(handle.createIterator(counts, tfmda));
+                auto sb(postingFile->createIterator(counts, handle, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
                 word->validate(sb.get(), tfmda, true, decode_interleaved_features, verbose);

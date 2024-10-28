@@ -247,8 +247,8 @@ DiskIndexTest::requireThatWeCanReadPostingList()
     TermFieldMatchDataArray mda;
     { // field 'f1'
         LookupResult::UP r = _index->lookup(0, "w1");
-        PostingListHandle::UP h = _index->readPostingList(*r);
-        auto sb = h->createIterator(r->counts, mda);
+        auto h = _index->readPostingList(*r);
+        auto sb = _index->create_iterator(*r, *h, mda);
         EXPECT_EQ(SimpleResult({1,3}), SimpleResult().search(*sb));
     }
 }

@@ -19,7 +19,7 @@ private:
     DiskIndex::LookupResult::UP      _lookupRes;
     bool                             _useBitVector;
     bool                             _fetchPostingsDone;
-    index::PostingListHandle::UP     _postingHandle;
+    std::unique_ptr<index::PostingListHandle> _postingHandle;
     BitVector::UP                    _bitVector;
 
 public:
