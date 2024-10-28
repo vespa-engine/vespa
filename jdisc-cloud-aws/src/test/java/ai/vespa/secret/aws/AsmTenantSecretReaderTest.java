@@ -91,8 +91,8 @@ public class AsmTenantSecretReaderTest {
         var pending = new SecretVersion("2", SecretVersionState.PENDING, "pending");
         tester.put(key, current, pending);
 
-        try (var store = secretReader()) {
-            var retrieved = store.getSecret(key);
+        try (var reader = secretReader()) {
+            var retrieved = reader.getSecret(key);
             assertSame(current, retrieved);
         }
     }
@@ -101,11 +101,11 @@ public class AsmTenantSecretReaderTest {
     void it_throws_exception_if_secret_not_found() {
         var vault = VaultName.of("vault1");
         var key = new Key(vault, SecretName.of("secret1"));
-        try (var store = secretReader()) {
-            var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key));
+        try (var reader = secretReader()) {
+            var e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key));
             assertEquals("Failed to retrieve current version of secret with key vault1/secret1", e.getMessage());
 
-            e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key, SecretVersionId.of("1")));
+            e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key, SecretVersionId.of("1")));
             assertEquals("Failed to retrieve secret with key vault1/secret1, version: 1", e.getMessage());
         }
     }
@@ -135,8 +135,8 @@ public class AsmTenantSecretReaderTest {
         var pend = new SecretVersion("3", SecretVersionState.PENDING, "v3");
 
         tester.put(key, prev, pend, curr);
-        try (var store = secretReader()) {
-            var versions = store.listSecretVersions(key);
+        try (var reader = secretReader()) {
+            var versions = reader.listSecretVersions(key);
             assertEquals(3, versions.size());
             assertSame(pend, versions.get(0));
             assertSame(curr, versions.get(1));
@@ -148,8 +148,8 @@ public class AsmTenantSecretReaderTest {
     void it_returns_empty_list_of_versions_for_unknown_secret() {
         var vault = VaultName.of("vault1");
         var key = new Key(vault, SecretName.of("secret1"));
-        try (var store = secretReader()) {
-            var versions = store.listSecretVersions(key);
+        try (var reader = secretReader()) {
+            var versions = reader.listSecretVersions(key);
             assertEquals(0, versions.size());
         }
     }
