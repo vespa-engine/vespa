@@ -8,18 +8,9 @@ package ai.vespa.secret.aws.testutil;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.SecretVersionState;
 import com.yahoo.vespa.athenz.api.AwsRole;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
-import software.amazon.awssdk.services.secretsmanager.model.InternalServiceErrorException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidNextTokenException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidParameterException;
-import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsRequest;
-import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsResponse;
 import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.secretsmanager.model.SecretVersionsListEntry;
-import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
 
 import java.util.List;
 import java.util.function.Function;
@@ -34,6 +25,7 @@ public class AsmSecretReaderTester extends AsmSecretTesterBase {
         super(awsSecretId);
     }
 
+    /** Ensures that tests fail if the mapping from Key to AWS secret id is not as expected. */
     public void put(Key key, SecretVersion... versions) {
         secrets.put(awsSecretIdMapper.apply(key), List.of(versions));
     }
@@ -74,19 +66,6 @@ public class AsmSecretReaderTester extends AsmSecretTesterBase {
                                     : v -> v.version().equals(reqVersion))
                     .findFirst()
                     .orElseThrow(() -> ResourceNotFoundException.builder().message("Version not found: " + reqVersion).build());
-        }
-
-        @Override
-        public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) throws InvalidNextTokenException, ResourceNotFoundException, InternalServiceErrorException, InvalidParameterException, AwsServiceException, SdkClientException, SecretsManagerException {
-            return ListSecretVersionIdsResponse.builder()
-                    .name(request.secretId())
-                    .versions(secrets.getOrDefault(request.secretId(), List.of()).stream()
-                                      .map(version -> SecretVersionsListEntry.builder()
-                                              .versionId(version.version())
-                                              .versionStages(List.of(toAwsStage(version.state())))
-                                              .build())
-                                      .toList())
-                    .build();
         }
 
         @Override
