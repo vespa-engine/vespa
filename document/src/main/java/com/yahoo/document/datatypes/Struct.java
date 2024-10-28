@@ -28,11 +28,11 @@ public class Struct extends StructuredFieldValue {
 
     public static final int classId = registerClass(Ids.document + 33, Struct.class);
     private Hashlet<Integer, FieldValue> values = new Hashlet<>();
-    private int [] order = null;
+    private int[] order = null;
 
     private int version;
 
-    private int [] getInOrder() {
+    private int[] getInOrder() {
         if (order == null) {
             order = new int[values.size()];
             for (int i = 0; i < values.size(); i++) {
