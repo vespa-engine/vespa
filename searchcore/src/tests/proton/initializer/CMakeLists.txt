@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_task_runner_test_app TEST
     task_runner_test.cpp
     DEPENDS
     searchcore_initializer
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_task_runner_test_app COMMAND searchcore_task_runner_test_app)
