@@ -163,6 +163,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_DURATION.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_NODE_ALLOCATION_FAILURE.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_ERROR.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILING_UPGRADES.min());
