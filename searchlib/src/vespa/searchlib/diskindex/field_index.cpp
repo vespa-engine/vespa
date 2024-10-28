@@ -172,7 +172,7 @@ FieldIndex::create_iterator(const search::index::DictionaryLookupResult& lookup_
                             const index::PostingListHandle& handle,
                             const search::fef::TermFieldMatchDataArray& tfmda) const
 {
-    return _posting_file->createIterator(lookup_result.counts, handle, tfmda);
+    return _posting_file->createIterator(lookup_result, handle, tfmda);
 }
 
 
