@@ -56,7 +56,7 @@ public:
     bool open_dictionary(const std::string& field_dir, const TuneFileSearch& tune_file_search);
     bool open(const std::string& field_dir, const TuneFileSearch &tune_file_search);
     void reuse_files(const FieldIndex& rhs);
-    std::unique_ptr<index::PostingListHandle> read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
+    index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
     std::unique_ptr<BitVector> read_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
     std::unique_ptr<search::queryeval::SearchIterator> create_iterator(const search::index::DictionaryLookupResult& lookup_result,
                                                                        const index::PostingListHandle& handle,

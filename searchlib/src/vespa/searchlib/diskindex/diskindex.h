@@ -104,7 +104,7 @@ public:
      * @param lookupRes the result of the previous dictionary lookup.
      * @return a handle for the posting list in memory.
      */
-    std::unique_ptr<index::PostingListHandle> readPostingList(const LookupResult &lookupRes) const;
+    index::PostingListHandle readPostingList(const LookupResult &lookupRes) const;
 
     std::unique_ptr<search::queryeval::SearchIterator>
     create_iterator(const LookupResult& lookup_result,

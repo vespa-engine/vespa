@@ -144,19 +144,16 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
     _size_on_disk = rhs._size_on_disk;
 }
 
-std::unique_ptr<PostingListHandle>
+PostingListHandle
 FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
 {
-    auto handle = std::make_unique<PostingListHandle>();
-    handle->_bitOffset = lookup_result.bitOffset;
-    handle->_bitLength = lookup_result.counts._bitLength;
     auto file = _posting_file.get();
     if (file == nullptr) {
         return {};
     }
-    file->readPostingList(*handle);
-    if (handle->_read_bytes != 0) {
-        _disk_io_stats->add_read_operation(handle->_read_bytes);
+    auto handle = file->read_posting_list(lookup_result);
+    if (handle._read_bytes != 0) {
+        _disk_io_stats->add_read_operation(handle._read_bytes);
     }
     return handle;
 }
