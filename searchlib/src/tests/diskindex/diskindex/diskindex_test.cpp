@@ -248,7 +248,7 @@ DiskIndexTest::requireThatWeCanReadPostingList()
     { // field 'f1'
         LookupResult::UP r = _index->lookup(0, "w1");
         auto h = _index->readPostingList(*r);
-        auto sb = _index->create_iterator(*r, *h, mda);
+        auto sb = _index->create_iterator(*r, h, mda);
         EXPECT_EQ(SimpleResult({1,3}), SimpleResult().search(*sb));
     }
 }

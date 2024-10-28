@@ -234,7 +234,7 @@ DiskIndex::read(const Key & key, LookupResultVector & result)
     return true;
 }
 
-std::unique_ptr<index::PostingListHandle>
+index::PostingListHandle
 DiskIndex::readPostingList(const LookupResult &lookupRes) const
 {
     auto& field_index = _field_indexes[lookupRes.indexId];

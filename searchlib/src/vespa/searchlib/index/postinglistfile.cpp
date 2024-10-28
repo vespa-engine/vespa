@@ -104,11 +104,10 @@ createIterator(const PostingListCounts &counts,
     return _lower->createIterator(counts, handle, matchData);
 }
 
-void
-PostingListFileRandReadPassThrough::
-readPostingList(PostingListHandle &handle)
+PostingListHandle
+PostingListFileRandReadPassThrough::read_posting_list(const DictionaryLookupResult& lookup_result)
 {
-    _lower->readPostingList(handle);
+    return _lower->read_posting_list(lookup_result);
 }
 
 bool

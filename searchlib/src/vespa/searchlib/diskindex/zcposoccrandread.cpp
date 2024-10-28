@@ -83,26 +83,26 @@ createIterator(const PostingListCounts &counts,
 }
 
 
-void
-ZcPosOccRandRead::readPostingList(PostingListHandle &handle)
+PostingListHandle
+ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
 {
-    handle.drop();
-    if (handle._bitLength == 0) {
-        return;
+    PostingListHandle handle;
+    handle._bitOffset = lookup_result.bitOffset;
+    handle._bitLength = lookup_result.counts._bitLength;
+    if (lookup_result.counts._bitLength == 0) {
+        return handle;
     }
 
-    uint64_t startOffset = (handle._bitOffset + _headerBitSize) >> 3;
+    uint64_t startOffset = (lookup_result.bitOffset + _headerBitSize) >> 3;
     // Align start at 64-bit boundary
     startOffset -= (startOffset & 7);
 
     void *mapPtr = _file->MemoryMapPtr(startOffset);
     if (mapPtr != nullptr) {
         handle._mem = mapPtr;
-        handle._allocMem = nullptr;
-        handle._allocSize = 0;
     } else {
-        uint64_t endOffset = (handle._bitOffset + _headerBitSize +
-                              handle._bitLength + 7) >> 3;
+        uint64_t endOffset = (lookup_result.bitOffset + _headerBitSize +
+                              lookup_result.counts._bitLength + 7) >> 3;
         // Align end at 64-bit boundary
         endOffset += (-endOffset & 7);
 
@@ -134,11 +134,12 @@ ZcPosOccRandRead::readPostingList(PostingListHandle &handle)
                    padExtraAfter);
         }
         handle._mem = static_cast<char *>(alignedBuffer) + padBefore;
-        handle._allocMem = mallocStart;
+        handle._allocMem = std::shared_ptr<void>(mallocStart, free);
         handle._allocSize = mallocLen;
         handle._read_bytes = padBefore + vectorLen + padAfter;
     }
     handle._bitOffsetMem = (startOffset << 3) - _headerBitSize;
+    return handle;
 }
 
 

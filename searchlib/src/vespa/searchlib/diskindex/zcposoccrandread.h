@@ -26,6 +26,7 @@ public:
     ZcPosOccRandRead();
     ~ZcPosOccRandRead();
 
+    using DictionaryLookupResult = index::DictionaryLookupResult;
     using PostingListCounts = index::PostingListCounts;
     using PostingListHandle = index::PostingListHandle;
 
@@ -40,7 +41,7 @@ public:
     /**
      * Read (possibly partial) posting list into handle.
      */
-    void readPostingList(PostingListHandle &handle) override;
+    PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
