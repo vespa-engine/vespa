@@ -13,9 +13,11 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Base class for AWS Secrets Manager read or write clients.
@@ -81,6 +83,11 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
     public void deconstruct() {
         close();
         super.deconstruct();
+    }
+
+    // Only for testing
+    public Set<String> clientRoleNames() {
+        return clientMap.keySet().stream().map(AwsRole::name).collect(Collectors.toSet());
     }
 
 }

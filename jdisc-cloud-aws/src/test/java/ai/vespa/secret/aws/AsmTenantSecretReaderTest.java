@@ -11,6 +11,8 @@ import ai.vespa.secret.model.VaultName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,7 +28,7 @@ public class AsmTenantSecretReaderTest {
     String tenant = "tenant1";
 
     // The mapping from Key to AWS secret id for tenant secrets
-    // Do NOT copy the production code here, as we want to fail upon changes.
+    // Do NOT use the production code here, as we want to fail upon changes.
     private String awsSecretId(Key key) {
         return "tenant-secret.%s.%s.%s/%s".formatted(
                 system, tenant, key.vaultName().value(), key.secretName().value());
@@ -44,7 +46,9 @@ public class AsmTenantSecretReaderTest {
     @Test
     void it_creates_one_credentials_and_client_per_vault_and_closes_them() {
         var vault1 = VaultName.of("vault1");
+        var awsRole1 = "tenant-secret.publiccd.tenant1.vault1.reader";
         var vault2 = VaultName.of("vault2");
+        var awsRole2 = "tenant-secret.publiccd.tenant1.vault2.reader";
 
         var secret1 = new SecretVersion("1", SecretVersionState.CURRENT, "secret1");
         var secret2 = new SecretVersion("2", SecretVersionState.CURRENT, "secret2");
@@ -59,7 +63,8 @@ public class AsmTenantSecretReaderTest {
             reader.getSecret(key1);
             reader.getSecret(key2);
 
-            assertEquals(2, tester.clients().size());
+            // Verify correct AWS roles
+            assertEquals(Set.of(awsRole1, awsRole2), reader.clientRoleNames());
         }
         assertTrue(tester.clients().stream().allMatch(c -> c.isClosed));
     }
