@@ -311,10 +311,6 @@ public final class Node implements Nodelike {
             wantToDeprovision == status.wantToDeprovision() &&
             wantToRebuild == status.wantToRebuild() &&
             wantToUpgradeFlavor == status.wantToUpgradeFlavor()) return this;
-        if (wantToRebuild && !wantToRetire && resources().storageType() != NodeResources.StorageType.remote) {
-            throw new IllegalArgumentException("Cannot rebuild " + this + " without retiring because storage is " +
-                                               resources().storageType());
-        }
         Node node = this.with(status.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor));
         if (wantToRetire)
             node = node.with(history.with(new History.Event(History.Event.Type.wantToRetire, agent, at)));
