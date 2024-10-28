@@ -37,13 +37,12 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedhandler_test");
@@ -119,7 +118,7 @@ struct Rendezvous {
 struct MyOwner : public IFeedHandlerOwner
 {
     bool _allowPrune;
-    
+
     MyOwner()
         :
         _allowPrune(false)
@@ -201,7 +200,7 @@ struct MyFeedView : public test::DummyFeedView {
     int remove_count;
     int move_count;
     int prune_removed_count;
-    
+
     int update_count;
     SerialNum update_serial;
     const DocumentType *documentType;
@@ -227,8 +226,8 @@ struct MyFeedView : public test::DummyFeedView {
         if (usePutRdz) {
             putRdz.run();
         }
-        EXPECT_EQUAL(_docTypeRepo.get(), putOp.getDocument()->getRepo());
-        EXPECT_EQUAL(documentType, &putOp.getDocument()->getType());
+        EXPECT_EQ(_docTypeRepo.get(), putOp.getDocument()->getRepo());
+        EXPECT_EQ(documentType, &putOp.getDocument()->getType());
         ++put_count;
         put_serial = putOp.getSerialNum();
         metaStore.allocate(putOp.getDocument()->getId().getGlobalId());
@@ -242,7 +241,7 @@ struct MyFeedView : public test::DummyFeedView {
     void handleUpdate(FeedToken token, const UpdateOperation &op) override {
         (void) token;
 
-        EXPECT_EQUAL(documentType, &op.getUpdate()->getType());
+        EXPECT_EQ(documentType, &op.getUpdate()->getType());
         ++update_count;
         update_serial = op.getSerialNum();
     }
@@ -259,11 +258,12 @@ struct MyFeedView : public test::DummyFeedView {
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return nullptr;
     }
-    void checkCounts(int exp_update_count, SerialNum exp_update_serial, int exp_put_count, SerialNum exp_put_serial) const {
-        EXPECT_EQUAL(exp_update_count, update_count);
-        EXPECT_EQUAL(exp_update_serial, update_serial);
-        EXPECT_EQUAL(exp_put_count, put_count);
-        EXPECT_EQUAL(exp_put_serial, put_serial);
+    void checkCounts(const std::string& label, int exp_update_count, SerialNum exp_update_serial, int exp_put_count, SerialNum exp_put_serial) const {
+        SCOPED_TRACE(label);
+        EXPECT_EQ(exp_update_count, update_count);
+        EXPECT_EQ(exp_update_serial, update_serial);
+        EXPECT_EQ(exp_put_count, put_count);
+        EXPECT_EQ(exp_put_serial, put_serial);
     }
 };
 
@@ -283,8 +283,8 @@ MyFeedView::MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr, const
       update_serial(0),
       documentType(dtr->getDocumentType(docTypeName.getName()))
 {}
-MyFeedView::~MyFeedView() = default;
 
+MyFeedView::~MyFeedView() = default;
 
 struct SchemaContext {
     DocBuilder builder;
@@ -469,35 +469,64 @@ struct FeedHandlerFixture
     }
 };
 
-TEST_F("require that heartBeat calls FeedView's heartBeat",
-       FeedHandlerFixture)
-{
-    f.runAsMaster([&]() { f.handler.heartBeat(); });
-    EXPECT_EQUAL(1, f.feedView.heartbeat_count);
 }
 
-TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
+class FeedHandlerTest : public ::testing::Test {
+protected:
+    FeedHandlerTest();
+    ~FeedHandlerTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+FeedHandlerTest::FeedHandlerTest() = default;
+FeedHandlerTest::~FeedHandlerTest() = default;
+
+void
+FeedHandlerTest::SetUpTestSuite()
 {
+    DummyFileHeaderContext::setCreator("feedhandler_test");
+}
+
+void
+FeedHandlerTest::TearDownTestSuite()
+{
+    std::filesystem::remove_all(std::filesystem::path("mytlsdir"));
+}
+
+TEST_F(FeedHandlerTest, require_that_heartBeat_calls_FeedViews_heartBeat)
+{
+    FeedHandlerFixture f;
+    f.runAsMaster([&]() { f.handler.heartBeat(); });
+    EXPECT_EQ(1, f.feedView.heartbeat_count);
+}
+
+TEST_F(FeedHandlerTest, require_that_outdated_remove_is_ignored)
+{
+    FeedHandlerFixture f;
     DocumentContext doc_context("id:ns:searchdocument::foo", f.schema.builder);
     auto op = std::make_unique<RemoveOperationWithDocId>(doc_context.bucketId, Timestamp(10), doc_context.doc->getId());
     static_cast<DocumentOperation &>(*op).setPrevDbDocumentId(DbDocumentId(4));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
-    EXPECT_EQUAL(0, f.feedView.remove_count);
-    EXPECT_EQUAL(0, f.tls_writer.store_count);
+    EXPECT_EQ(0, f.feedView.remove_count);
+    EXPECT_EQ(0, f.tls_writer.store_count);
 }
 
-TEST_F("require that outdated put is ignored", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_outdated_put_is_ignored)
 {
+    FeedHandlerFixture f;
     DocumentContext doc_context("id:ns:searchdocument::foo", f.schema.builder);
     auto op =std::make_unique<PutOperation>(doc_context.bucketId, Timestamp(10), std::move(doc_context.doc));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
-    EXPECT_EQUAL(0, f.feedView.put_count);
-    EXPECT_EQUAL(0, f.tls_writer.store_count);
+    EXPECT_EQ(0, f.feedView.put_count);
+    EXPECT_EQ(0, f.tls_writer.store_count);
 }
+
+namespace {
 
 void
 addLidToRemove(RemoveDocumentsOperation &op)
@@ -507,79 +536,87 @@ addLidToRemove(RemoveDocumentsOperation &op)
     op.setLidsToRemove(0, lids);
 }
 
+}
 
-TEST_F("require that handleMove calls FeedView", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_handleMove_calls_FeedView)
 {
+    FeedHandlerFixture f;
     DocumentContext doc_context("id:ns:searchdocument::foo", f.schema.builder);
     MoveOperation op(doc_context.bucketId, Timestamp(2), doc_context.doc, DbDocumentId(0, 2), 1);
     op.setDbDocumentId(DbDocumentId(1, 2));
     f.runAsMaster([&]() { f.handler.handleMove(op, IDestructorCallback::SP()); });
-    EXPECT_EQUAL(1, f.feedView.move_count);
-    EXPECT_EQUAL(1, f.tls_writer.store_count);
+    EXPECT_EQ(1, f.feedView.move_count);
+    EXPECT_EQ(1, f.tls_writer.store_count);
 }
 
-TEST_F("require that performPruneRemovedDocuments calls FeedView",
-       FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_performPruneRemovedDocuments_calls_FeedView)
 {
+    FeedHandlerFixture f;
     PruneRemovedDocumentsOperation op;
     f.handler.performPruneRemovedDocuments(op);
-    EXPECT_EQUAL(0, f.feedView.prune_removed_count);
-    EXPECT_EQUAL(0, f.tls_writer.store_count);
+    EXPECT_EQ(0, f.feedView.prune_removed_count);
+    EXPECT_EQ(0, f.tls_writer.store_count);
 
     addLidToRemove(op);
     f.handler.performPruneRemovedDocuments(op);
-    EXPECT_EQUAL(1, f.feedView.prune_removed_count);
-    EXPECT_EQUAL(1, f.tls_writer.store_count);
+    EXPECT_EQ(1, f.feedView.prune_removed_count);
+    EXPECT_EQ(1, f.tls_writer.store_count);
 }
 
-TEST_F("require that failed prune throws", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_failed_prune_throws)
 {
+    FeedHandlerFixture f;
     f.tls_writer.erase_return = false;
-    EXPECT_EXCEPTION(f.handler.tlsPrune(10), vespalib::IllegalStateException,
-                     "Failed to prune TLS to token 10.");
+    VESPA_EXPECT_EXCEPTION(f.handler.tlsPrune(10), vespalib::IllegalStateException,
+                           "Failed to prune TLS to token 10.");
 }
 
-TEST_F("require that flush done calls prune", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_flush_done_calls_prune)
 {
+    FeedHandlerFixture f;
     f.handler.changeToNormalFeedState();
     f.owner._allowPrune = true;
     f.handler.flushDone(10);
     f.syncMaster();
-    EXPECT_EQUAL(1, f.tls_writer.erase_count);
-    EXPECT_EQUAL(10u, f.handler.getPrunedSerialNum());
+    EXPECT_EQ(1, f.tls_writer.erase_count);
+    EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 }
 
-TEST_F("require that flush in init state delays pruning", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_flush_in_init_state_delays_pruning)
 {
+    FeedHandlerFixture f;
     f.handler.flushDone(10);
     f.syncMaster();
-    EXPECT_EQUAL(0, f.tls_writer.erase_count);
-    EXPECT_EQUAL(10u, f.handler.getPrunedSerialNum());
+    EXPECT_EQ(0, f.tls_writer.erase_count);
+    EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 }
 
-TEST_F("require that flush cannot unprune", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_flush_cannot_unprune)
 {
+    FeedHandlerFixture f;
     f.handler.flushDone(10);
     f.syncMaster();
-    EXPECT_EQUAL(10u, f.handler.getPrunedSerialNum());
+    EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 
     f.handler.flushDone(5);  // Try to unprune.
     f.syncMaster();
-    EXPECT_EQUAL(10u, f.handler.getPrunedSerialNum());
+    EXPECT_EQ(10u, f.handler.getPrunedSerialNum());
 }
 
-TEST_F("require that remove of unknown document with known data type stores remove", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_remove_of_unknown_document_with_known_data_type_stores_remove)
 {
+    FeedHandlerFixture f;
     DocumentContext doc_context("id:test:searchdocument::foo", f.schema.builder);
     auto op = std::make_unique<RemoveOperationWithDocId>(doc_context.bucketId, Timestamp(10), doc_context.doc->getId());
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
-    EXPECT_EQUAL(1, f.feedView.remove_count);
-    EXPECT_EQUAL(1, f.tls_writer.store_count);
+    EXPECT_EQ(1, f.feedView.remove_count);
+    EXPECT_EQ(1, f.tls_writer.store_count);
 }
 
-TEST_F("require that partial update for non-existing document is tagged as such", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_partial_update_for_non_existing_document_is_tagged_as_such)
 {
+    FeedHandlerFixture f;
     UpdateContext upCtx("id:test:searchdocument::foo", f.schema.builder);
     auto  op = std::make_unique<UpdateOperation>(upCtx.bucketId, Timestamp(10), upCtx.update);
     FeedTokenContext token_context;
@@ -587,14 +624,15 @@ TEST_F("require that partial update for non-existing document is tagged as such"
     const auto *result = dynamic_cast<const UpdateResult *>(token_context.getResult());
 
     EXPECT_FALSE(token_context.transport.documentWasFound);
-    EXPECT_EQUAL(0u, result->getExistingTimestamp());
-    EXPECT_EQUAL(0, f.feedView.put_count);
-    EXPECT_EQUAL(0, f.feedView.update_count);
-    EXPECT_EQUAL(0, f.tls_writer.store_count);
+    EXPECT_EQ(0u, result->getExistingTimestamp());
+    EXPECT_EQ(0, f.feedView.put_count);
+    EXPECT_EQ(0, f.feedView.update_count);
+    EXPECT_EQ(0, f.tls_writer.store_count);
 }
 
-TEST_F("require that partial update for non-existing document is created if specified", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_partial_update_for_non_existing_document_is_created_if_specified)
 {
+    FeedHandlerFixture f;
     f.handler.setSerialNum(15);
     UpdateContext upCtx("id:test:searchdocument::foo", f.schema.builder);
     upCtx.update->setCreateIfNonExistent(true);
@@ -605,17 +643,18 @@ TEST_F("require that partial update for non-existing document is created if spec
     const auto * result = dynamic_cast<const UpdateResult *>(token_context.getResult());
 
     EXPECT_TRUE(token_context.transport.documentWasFound);
-    EXPECT_EQUAL(10u, result->getExistingTimestamp());
-    EXPECT_EQUAL(1, f.feedView.put_count);
-    EXPECT_EQUAL(16u, f.feedView.put_serial);
-    EXPECT_EQUAL(0, f.feedView.update_count);
-    EXPECT_EQUAL(0u, f.feedView.update_serial);
-    EXPECT_EQUAL(1u, f.feedView.metaStore._allocated.size());
-    EXPECT_EQUAL(1, f.tls_writer.store_count);
+    EXPECT_EQ(10u, result->getExistingTimestamp());
+    EXPECT_EQ(1, f.feedView.put_count);
+    EXPECT_EQ(16u, f.feedView.put_serial);
+    EXPECT_EQ(0, f.feedView.update_count);
+    EXPECT_EQ(0u, f.feedView.update_serial);
+    EXPECT_EQ(1u, f.feedView.metaStore._allocated.size());
+    EXPECT_EQ(1, f.tls_writer.store_count);
 }
 
-TEST_F("require that put is rejected if resource limit is reached", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_put_is_rejected_if_resource_limit_is_reached)
 {
+    FeedHandlerFixture f;
     f.writeFilter._acceptWriteOperation = false;
     f.writeFilter._message = "Attribute resource limit reached";
 
@@ -623,14 +662,15 @@ TEST_F("require that put is rejected if resource limit is reached", FeedHandlerF
     auto op = std::make_unique<PutOperation>(docCtx.bucketId, Timestamp(10), std::move(docCtx.doc));
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
-    EXPECT_EQUAL(0, f.feedView.put_count);
-    EXPECT_EQUAL(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
-    EXPECT_EQUAL("Put operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
+    EXPECT_EQ(0, f.feedView.put_count);
+    EXPECT_EQ(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
+    EXPECT_EQ("Put operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
                  token.getResult()->getErrorMessage());
 }
 
-TEST_F("require that update is rejected if resource limit is reached", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_update_is_rejected_if_resource_limit_is_reached)
 {
+    FeedHandlerFixture f;
     f.writeFilter._acceptWriteOperation = false;
     f.writeFilter._message = "Attribute resource limit reached";
 
@@ -639,15 +679,16 @@ TEST_F("require that update is rejected if resource limit is reached", FeedHandl
     auto op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
-    EXPECT_EQUAL(0, f.feedView.update_count);
+    EXPECT_EQ(0, f.feedView.update_count);
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
-    EXPECT_EQUAL(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
-    EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
+    EXPECT_EQ(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
+    EXPECT_EQ("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
                  token.getResult()->getErrorMessage());
 }
 
-TEST_F("require that remove is NOT rejected if resource limit is reached", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_remove_is_NOT_rejected_if_resource_limit_is_reached)
 {
+    FeedHandlerFixture f;
     f.writeFilter._acceptWriteOperation = false;
     f.writeFilter._message = "Attribute resource limit reached";
 
@@ -655,11 +696,12 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
     auto op = std::make_unique<RemoveOperationWithDocId>(docCtx.bucketId, Timestamp(10), docCtx.doc->getId());
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
-    EXPECT_EQUAL(1, f.feedView.remove_count);
-    EXPECT_EQUAL(Result::ErrorType::NONE, token.getResult()->getErrorCode());
-    EXPECT_EQUAL("", token.getResult()->getErrorMessage());
+    EXPECT_EQ(1, f.feedView.remove_count);
+    EXPECT_EQ(Result::ErrorType::NONE, token.getResult()->getErrorCode());
+    EXPECT_EQ("", token.getResult()->getErrorMessage());
 }
 
+namespace {
 void
 checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
             const std::string &fieldName, bool expectReject, bool existing)
@@ -678,89 +720,101 @@ checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
     if (expectReject) {
-        TEST_DO(f.feedView.checkCounts(0, 0u, 0, 0u));
-        EXPECT_EQUAL(Result::ErrorType::TRANSIENT_ERROR, token.getResult()->getErrorCode());
+        f.feedView.checkCounts("expect reject", 0, 0u, 0, 0u);
+        EXPECT_EQ(Result::ErrorType::TRANSIENT_ERROR, token.getResult()->getErrorCode());
         if (fieldName == "tensor2") {
-            EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Wrong tensor type: Field tensor type is 'tensor(x{},y{})' but other tensor type is 'tensor(x{})''",
+            EXPECT_EQ("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Wrong tensor type: Field tensor type is 'tensor(x{},y{})' but other tensor type is 'tensor(x{})''",
                          token.getResult()->getErrorMessage());
         } else {
-            EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
+            EXPECT_EQ("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
                          token.getResult()->getErrorMessage());
         }
     } else {
         if (existing) {
-            TEST_DO(f.feedView.checkCounts(1, 16u, 0, 0u));
+            f.feedView.checkCounts("existing", 1, 16u, 0, 0u);
         } else {
-            TEST_DO(f.feedView.checkCounts(0, 0u, 1, 16u));
+            f.feedView.checkCounts("non-existing", 0, 0u, 1, 16u);
         }
-        EXPECT_EQUAL(Result::ErrorType::NONE, token.getResult()->getErrorCode());
-        EXPECT_EQUAL("", token.getResult()->getErrorMessage());
+        EXPECT_EQ(Result::ErrorType::NONE, token.getResult()->getErrorCode());
+        EXPECT_EQ("", token.getResult()->getErrorMessage());
     }
 }
 
-TEST_F("require that update with same document type repo is ok", FeedHandlerFixture)
+}
+
+TEST_F(FeedHandlerTest, require_that_update_with_same_document_type_repo_is_ok)
 {
+    FeedHandlerFixture f;
     checkUpdate(f, f.schema, "i1", false, true);
 }
 
-TEST_F("require that update with different document type repo can be ok", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_update_with_different_document_type_repo_can_be_ok)
 {
+    FeedHandlerFixture f;
     TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i1", false, true);
 }
 
-TEST_F("require that update with different document type repo can be rejected", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_update_with_different_document_type_repo_can_be_rejected)
 {
+    FeedHandlerFixture f;
     TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i2", true, true);
 }
 
-TEST_F("require that update with same document type repo is ok, fallback to create document", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_update_with_same_document_type_repo_is_ok_fallback_to_create_document)
 {
+    FeedHandlerFixture f;
     checkUpdate(f, f.schema, "i1", false, false);
 }
 
-TEST_F("require that update with different document type repo can be ok, fallback to create document", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_update_with_different_document_type_repo_can_be_ok_fallback_to_create_document)
 {
+    FeedHandlerFixture f;
     TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i1", false, false);
 }
 
-TEST_F("require that update with different document type repo can be rejected, preventing fallback to create document", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_update_with_different_document_type_repo_can_be_rejected_preventing_fallback_to_create_document)
 {
+    FeedHandlerFixture f;
     TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i2", true, false);
 }
 
-TEST_F("require that tensor update with correct tensor type works", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_tensor_update_with_correct_tensor_type_works)
 {
+    FeedHandlerFixture f;
     TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "tensor", false, true);
 }
 
-TEST_F("require that tensor update with wrong tensor type fails", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_tensor_update_with_wrong_tensor_type_fails)
 {
+    FeedHandlerFixture f;
     TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "tensor2", true, true);
 }
 
-TEST_F("require that put with different document type repo is ok", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_put_with_different_document_type_repo_is_ok)
 {
+    FeedHandlerFixture f;
     TwoFieldsSchemaContext schema;
     DocumentContext doc_context("id:ns:searchdocument::foo", schema.builder);
     auto op = std::make_unique<PutOperation>(doc_context.bucketId,
                                              Timestamp(10), std::move(doc_context.doc));
     FeedTokenContext token_context;
-    EXPECT_EQUAL(schema.getRepo().get(), op->getDocument()->getRepo());
-    EXPECT_NOT_EQUAL(f.schema.getRepo().get(), op->getDocument()->getRepo());
-    EXPECT_NOT_EQUAL(f.feedView.documentType, &op->getDocument()->getType());
+    EXPECT_EQ(schema.getRepo().get(), op->getDocument()->getRepo());
+    EXPECT_NE(f.schema.getRepo().get(), op->getDocument()->getRepo());
+    EXPECT_NE(f.feedView.documentType, &op->getDocument()->getType());
     f.handler.performOperation(std::move(token_context.token), std::move(op));
-    EXPECT_EQUAL(1, f.feedView.put_count);
-    EXPECT_EQUAL(1, f.tls_writer.store_count);
+    EXPECT_EQ(1, f.feedView.put_count);
+    EXPECT_EQ(1, f.tls_writer.store_count);
 }
 
-TEST_F("require that feed stats are updated", FeedHandlerFixture)
+TEST_F(FeedHandlerTest, require_that_feed_stats_are_updated)
 {
+    FeedHandlerFixture f;
     DocumentContext doc_context("id:ns:searchdocument::foo", f.schema.builder);
     auto op =std::make_unique<PutOperation>(doc_context.bucketId, Timestamp(10), std::move(doc_context.doc));
     FeedTokenContext token_context;
@@ -768,21 +822,25 @@ TEST_F("require that feed stats are updated", FeedHandlerFixture)
     f.syncMaster(); // wait for initateCommit
     f.syncMaster(); // wait for onCommitDone
     auto stats = f.handler.get_stats(false);
-    EXPECT_EQUAL(1u, stats.get_commits());
-    EXPECT_EQUAL(1u, stats.get_operations());
-    EXPECT_LESS(0.0, stats.get_total_latency());
+    EXPECT_EQ(1u, stats.get_commits());
+    EXPECT_EQ(1u, stats.get_operations());
+    EXPECT_LT(0.0, stats.get_total_latency());
 }
 
 using namespace document;
 
-TEST_F("require that update with a fieldpath update will be rejected", SchemaContext) {
+TEST_F(FeedHandlerTest, require_that_update_with_a_fieldpath_update_will_be_rejected)
+{
+    SchemaContext f;
     const DocumentType *docType = f.getRepo()->getDocumentType(f.getDocType().getName());
     auto docUpdate = std::make_unique<DocumentUpdate>(*f.getRepo(), *docType, DocumentId("id:ns:" + docType->getName() + "::1"));
     docUpdate->addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>());
     EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
 }
 
-TEST_F("require that all value updates will be inspected before rejected", SchemaContext) {
+TEST_F(FeedHandlerTest, require_that_all_value_updates_will_be_inspected_before_rejected)
+{
+    SchemaContext f;
     const DocumentType *docType = f.getRepo()->getDocumentType(f.getDocType().getName());
     auto docUpdate = std::make_unique<DocumentUpdate>(*f.getRepo(), *docType, DocumentId("id:ns:" + docType->getName() + "::1"));
     docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(std::make_unique<ClearValueUpdate>())));
@@ -793,11 +851,4 @@ TEST_F("require that all value updates will be inspected before rejected", Schem
     EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
 }
 
-}  // namespace
-
-TEST_MAIN()
-{
-    DummyFileHeaderContext::setCreator("feedhandler_test");
-    TEST_RUN_ALL();
-    std::filesystem::remove_all(std::filesystem::path("mytlsdir"));
-}
+GTEST_MAIN_RUN_ALL_TESTS()

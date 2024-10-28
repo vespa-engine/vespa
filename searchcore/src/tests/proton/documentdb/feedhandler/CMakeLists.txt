@@ -14,5 +14,4 @@ vespa_add_executable(searchcore_feedhandler_test_app TEST
     searchcore_grouping
     searchcore_proton_metrics
 )
-vespa_add_test(NAME searchcore_feedhandler_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/feedhandler_test.sh
-               DEPENDS searchcore_feedhandler_test_app)
+vespa_add_test(NAME searchcore_feedhandler_test_app COMMAND searchcore_feedhandler_test_app)
