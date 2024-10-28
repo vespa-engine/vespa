@@ -6,5 +6,6 @@ vespa_add_executable(searchcore_matchengine_test_app TEST
     searchcore_matchengine
     searchcore_matching
     searchcore_pcommon
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_matchengine_test_app COMMAND searchcore_matchengine_test_app)
