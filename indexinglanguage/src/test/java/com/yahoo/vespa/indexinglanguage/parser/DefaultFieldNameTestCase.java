@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.parser;
 
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.Generator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -18,10 +19,9 @@ public class DefaultFieldNameTestCase {
     @Test
     public void requireThatDefaultFieldNameIsAppliedWhenArgumentIsMissing() throws ParseException {
         IndexingInput input = new IndexingInput("input");
-        InputExpression exp = (InputExpression)Expression.newInstance(new ScriptParserContext(new SimpleLinguistics(),
-                                                                                              Embedder.throwsOnUse.asMap())
-                                                                              .setInputStream(input)
-                                                                              .setDefaultFieldName("foo"));
+        InputExpression exp = (InputExpression) Expression.newInstance(new ScriptParserContext(
+                new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), Generator.throwsOnUse.asMap()
+        ).setInputStream(input).setDefaultFieldName("foo"));
         assertEquals("foo", exp.getFieldName());
     }
 

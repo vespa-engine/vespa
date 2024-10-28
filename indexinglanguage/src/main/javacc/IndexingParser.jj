@@ -33,6 +33,7 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.Generator;
 import com.yahoo.language.Linguistics;
 
 /**
@@ -43,6 +44,7 @@ public class IndexingParser {
     private String defaultFieldName;
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
+    private Map<String, Generator> generators;
     private AnnotatorConfig annotatorCfg;
 
     public IndexingParser(String str) {
@@ -158,6 +160,7 @@ TOKEN :
     <ECHO: "echo"> |
     <ELSE: "else"> |
     <EMBED: "embed"> |
+    <GENERATE: "generate"> |
     <EXACT: "exact"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
@@ -306,6 +309,7 @@ Expression value() :
       val = clearStateExp()         |
       val = echoExp()               |
       val = embedExp()              |
+      val = generateExp()           |
       val = exactExp()              |
       val = executionValueExp()     |
       val = flattenExp()            |
@@ -410,6 +414,20 @@ Expression embedExp() :
       ( LOOKAHEAD(2) embedderArgument = identifier() { embedderArguments.add(embedderArgument); } )*
     )
     { return new EmbedExpression(linguistics, embedders, embedderId, embedderArguments); }
+}
+
+Expression generateExp() :
+{
+    String generatorId = "";
+    String generatorArgument;
+    List<String> generatorArguments = new ArrayList<String>();
+}
+{
+    (
+      <GENERATE> [ LOOKAHEAD(2) generatorId = identifier() ]
+      ( LOOKAHEAD(2) generatorArgument = identifier() { generatorArguments.add(generatorArgument); } )*
+    )
+    { return new GenerateExpression(linguistics, generators, generatorId, generatorArguments); }
 }
 
 Expression exactExp() :

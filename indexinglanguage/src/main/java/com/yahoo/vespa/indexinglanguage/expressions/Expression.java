@@ -10,6 +10,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.Generator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.*;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -273,7 +274,11 @@ public abstract class Expression extends Selectable {
     }
 
     public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedders).setInputStream(new IndexingInput(expression)));
+        return newInstance(new ScriptParserContext(linguistics, embedders, Map.of()).setInputStream(new IndexingInput(expression)));
+    }
+    
+    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders, Map<String, Generator> generators) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 
     public static Expression newInstance(ScriptParserContext context) throws ParseException {
