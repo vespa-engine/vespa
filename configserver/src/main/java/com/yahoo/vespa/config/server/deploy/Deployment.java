@@ -7,10 +7,10 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.transaction.NestedTransaction;
@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Memoized;
 
 import java.time.Clock;
@@ -38,7 +39,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.session.Session.Status.DELETE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
@@ -275,8 +275,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         while (true) {
             params.getTimeoutBudget().assertNotTimedOut(
                     () -> "Timeout exceeded while waiting for application resources of '" + session.getApplicationId() + "'" +
-                            Optional.ofNullable(lastException.get()).map(e -> ". Last exception: " + e.getMessage()).orElse(""));
-
+                          Optional.ofNullable(lastException.get()).map(e -> ". Last exception: " + Exceptions.toMessageString(e)).orElse(""),
+                    lastException.get());
             try (ApplicationMutex lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
