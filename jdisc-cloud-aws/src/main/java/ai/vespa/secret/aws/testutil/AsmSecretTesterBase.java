@@ -11,8 +11,6 @@ import com.yahoo.vespa.athenz.api.AwsRole;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import software.amazon.awssdk.services.secretsmanager.model.InternalServiceErrorException;
 import software.amazon.awssdk.services.secretsmanager.model.InvalidNextTokenException;
 import software.amazon.awssdk.services.secretsmanager.model.InvalidParameterException;
@@ -29,18 +27,22 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
+ * Base class for ASM reader and writer testers.
+ * Expected mapping from Key to AWS secret id must be provided by each test.
+ * This mapping is used when manually writing/reading secrets to/from the 'secrets' map,
+ * so that lookup will fail if the mapping does not match what the production code uses.
  *
  * @author gjoranv
  */
-public class AsmSecretStoreTester {
+public class AsmSecretTesterBase {
 
     public record SecretVersion(String version, SecretVersionState state, String value) {}
 
-    private final Map<String, List<SecretVersion>> secrets = new HashMap<>();
-    private final List<MockSecretsManagerClient> clients = new ArrayList<>();
-    private final Function<Key, String> awsSecretIdMapper;
+    protected final Map<String, List<SecretVersion>> secrets = new HashMap<>();
+    protected final List<MockSecretsManagerClient> clients = new ArrayList<>();
+    protected final Function<Key, String> awsSecretIdMapper;
 
-    public AsmSecretStoreTester(Function<Key, String> awsSecretId) {
+    public AsmSecretTesterBase(Function<Key, String> awsSecretId) {
         this.awsSecretIdMapper = awsSecretId;
     }
 
@@ -49,56 +51,22 @@ public class AsmSecretStoreTester {
         clients.clear();
     }
 
-    public void put(Key key, SecretVersion... versions) {
-        secrets.put(awsSecretIdMapper.apply(key), List.of(versions));
-    }
-
-    public MockSecretsManagerClient newClient(AwsRole awsRole) {
-        return new MockSecretsManagerClient(awsRole);
-    }
-
     public List<MockSecretsManagerClient> clients() {
         return List.copyOf(clients);
     }
 
 
-    public class MockSecretsManagerClient implements SecretsManagerClient {
+    public abstract class MockSecretsManagerClient implements SecretsManagerClient {
 
         public final AwsRole awsRole;
         public boolean isClosed = false;
 
-        MockSecretsManagerClient(AwsRole awsRole) {
+        protected MockSecretsManagerClient(AwsRole awsRole) {
             this.awsRole = awsRole;
             clients.add(this);
         }
 
-        @Override
-        public GetSecretValueResponse getSecretValue(GetSecretValueRequest request) {
-            String id = request.secretId();
-            String reqVersion = request.versionId();
-
-            var versions = secrets.get(id);
-            if (versions == null) {
-                throw ResourceNotFoundException.builder().message("Secret not found").build();
-            }
-            var secret = findSecret(versions, reqVersion);
-            return GetSecretValueResponse.builder()
-                    .name(request.secretId())
-                    .secretString(secret.value())
-                    .versionId(secret.version)
-                    .versionStages(List.of(toAwsStage(secret.state)))
-                    .build();
-        }
-
-        SecretVersion findSecret(List<SecretVersion> versions, String reqVersion) {
-            return versions.stream()
-                    .filter(reqVersion == null ?
-                                    v -> v.state() == SecretVersionState.CURRENT
-                                    : v -> v.version().equals(reqVersion))
-                    .findFirst()
-                    .orElseThrow(() -> ResourceNotFoundException.builder().message("Version not found: " + reqVersion).build());
-        }
-
+        // Used by both reader and writer testers
         @Override
         public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) throws InvalidNextTokenException, ResourceNotFoundException, InternalServiceErrorException, InvalidParameterException, AwsServiceException, SdkClientException, SecretsManagerException {
             return ListSecretVersionIdsResponse.builder()
@@ -113,16 +81,11 @@ public class AsmSecretStoreTester {
         }
 
         @Override
-        public String serviceName() {
-            return AsmSecretStoreTester.class.getSimpleName();
-        }
-
-        @Override
         public void close() {
             isClosed = true;
         }
 
-        private String toAwsStage(SecretVersionState state) {
+        protected String toAwsStage(SecretVersionState state) {
             return switch (state) {
                 case CURRENT -> "AWSCURRENT";
                 case PENDING -> "AWSPENDING";
