@@ -2,7 +2,6 @@
 vespa_add_executable(searchcore_proton_common_vespa_test_app TEST
     SOURCES
     vespa_testrunner.cpp
-    state_reporter_utils_test.cpp
     statusreport_test.cpp
     DEPENDS
     searchcore_proton_metrics
@@ -29,6 +28,7 @@ vespa_add_executable(searchcore_proton_common_gtest_test_app TEST
     proton_config_fetcher_test.cpp
     proton_disk_layout_test.cpp
     selectpruner_test.cpp
+    state_reporter_utils_test.cpp
     DEPENDS
     searchcore_feedoperation
     searchcore_pcommon
