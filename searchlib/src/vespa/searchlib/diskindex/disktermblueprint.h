@@ -16,7 +16,7 @@ private:
     queryeval::FieldSpec             _field;
     const DiskIndex               &  _diskIndex;
     std::string                 _query_term;
-    DiskIndex::LookupResult::UP      _lookupRes;
+    DiskIndex::LookupResult          _lookupRes;
     bool                             _useBitVector;
     bool                             _fetchPostingsDone;
     index::PostingListHandle         _postingHandle;
@@ -34,7 +34,7 @@ public:
     DiskTermBlueprint(const queryeval::FieldSpec & field,
                       const DiskIndex & diskIndex,
                       const std::string& query_term,
-                      DiskIndex::LookupResult::UP lookupRes,
+                      DiskIndex::LookupResult lookupRes,
                       bool useBitVector);
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
