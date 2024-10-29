@@ -200,33 +200,33 @@ DiskIndexTest::requireThatLookupIsWorking(const EmptySettings& empty_settings)
     uint32_t f2(_schema.getIndexFieldId("f2"));
     uint32_t f3(_schema.getIndexFieldId("f3"));
     auto r = _index->lookup(f1, "not");
-    EXPECT_TRUE(r.counts._numDocs == 0);
+    EXPECT_EQ(0, r.counts._numDocs);
     r = _index->lookup(f1, "w1not");
-    EXPECT_TRUE(r.counts._numDocs == 0);
+    EXPECT_EQ(0, r.counts._numDocs);
     r = _index->lookup(f1, "wnot");
-    EXPECT_TRUE(r.counts._numDocs == 0);
+    EXPECT_EQ(0, r.counts._numDocs);
     { // field 'f1'
         r = _index->lookup(f1, "w1");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(r.counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
             EXPECT_EQ(1u, r.wordNum);
             EXPECT_EQ(2u, r.counts._numDocs);
         }
         r = _index->lookup(f1, "w2");
-        EXPECT_TRUE(r.counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
     }
     { // field 'f2'
         r = _index->lookup(f2, "w1");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(r.counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
             EXPECT_EQ(1u, r.wordNum);
             EXPECT_EQ(3u, r.counts._numDocs);
         }
         r = _index->lookup(f2, "w2");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(r.counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
             EXPECT_EQ(2u, r.wordNum);
             EXPECT_EQ(17u, r.counts._numDocs);
@@ -234,9 +234,9 @@ DiskIndexTest::requireThatLookupIsWorking(const EmptySettings& empty_settings)
     }
     { // field 'f3' doesn't exist
         r = _index->lookup(f3, "w1");
-        EXPECT_TRUE(r.counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
         r = _index->lookup(f3, "w2");
-        EXPECT_TRUE(r.counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
     }
 }
 
