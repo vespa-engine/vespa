@@ -1345,4 +1345,14 @@ TEST_F(MatchingTest, abs_weak_and_stop_word_limit_is_calculated_correctly)
     EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(990));
 }
 
+TEST_F(MatchingTest, weak_and_stop_word_strategy_is_resolved_correctly)
+{
+    AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
+    EXPECT_EQ(WeakAndStopWordStrategy::DEFAULT_VALUE, WeakAndStopWordStrategy::Value::KEEP);
+    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_strategy(), WeakAndStopWordStrategy::Value::KEEP);
+    EXPECT_EQ(f.extract().weakand_stop_word_strategy, WeakAndStopWordStrategy::Value::KEEP);
+    f.rank_setup.set_weakand_stop_word_strategy(WeakAndStopWordStrategy::Value::DROP);
+    EXPECT_EQ(f.extract().weakand_stop_word_strategy, WeakAndStopWordStrategy::Value::DROP);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
