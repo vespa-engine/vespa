@@ -2,7 +2,6 @@
 vespa_add_executable(searchcore_proton_server_vespa_test_app TEST
     SOURCES
     vespa_testrunner.cpp
-    feeddebugger_test.cpp
     feedstates_test.cpp
     health_adapter_test.cpp
     memory_flush_config_updater_test.cpp
@@ -20,6 +19,7 @@ vespa_add_executable(searchcore_proton_server_gtest_test_app TEST
     SOURCES
     gtest_runner.cpp
     documentretriever_test.cpp
+    feeddebugger_test.cpp
     DEPENDS
     searchcore_server
     GTest::gtest
