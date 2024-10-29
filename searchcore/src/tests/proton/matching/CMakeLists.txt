@@ -57,5 +57,6 @@ vespa_add_executable(searchcore_querynodes_test_app TEST
     querynodes_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_querynodes_test_app COMMAND searchcore_querynodes_test_app)
