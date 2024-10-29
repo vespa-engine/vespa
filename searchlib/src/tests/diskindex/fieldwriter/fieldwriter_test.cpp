@@ -510,7 +510,7 @@ randReadField(FakeWordSet &wordSet,
                 TermFieldMatchDataArray tfmda;
                 tfmda.add(&mdfield1);
 
-                auto sb(postingFile->createIterator(lookup_result.counts, handle, tfmda));
+                auto sb(postingFile->createIterator(lookup_result, handle, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
                 word->validate(sb.get(), tfmda, true, decode_interleaved_features, verbose);

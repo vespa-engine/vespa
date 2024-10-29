@@ -35,7 +35,7 @@ public:
      * handle must exceed lifetime of iterator.
      */
     std::unique_ptr<queryeval::SearchIterator>
-    createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
+    createIterator(const DictionaryLookupResult& lookup_result, const PostingListHandle& handle,
                    const fef::TermFieldMatchDataArray &matchData) const override;
 
     /**

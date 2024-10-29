@@ -56,16 +56,14 @@ ZcPosOccRandRead::~ZcPosOccRandRead()
 
 
 std::unique_ptr<search::queryeval::SearchIterator>
-ZcPosOccRandRead::
-createIterator(const PostingListCounts &counts,
-               const PostingListHandle &handle,
-               const search::fef::TermFieldMatchDataArray &matchData) const
+ZcPosOccRandRead::createIterator(const DictionaryLookupResult& lookup_result,
+                                 const PostingListHandle &handle,
+                                 const search::fef::TermFieldMatchDataArray &matchData) const
 {
-    assert((handle._bitLength != 0) == (counts._bitLength != 0));
-    assert((counts._numDocs != 0) == (counts._bitLength != 0));
-    assert(handle._bitOffsetMem <= handle._bitOffset);
+    assert((lookup_result.counts._numDocs != 0) == (lookup_result.counts._bitLength != 0));
+    assert(handle._bitOffsetMem <= lookup_result.bitOffset);
 
-    if (handle._bitLength == 0) {
+    if (lookup_result.counts._bitLength == 0) {
         return std::make_unique<search::queryeval::EmptySearch>();
     }
 
@@ -73,13 +71,13 @@ createIterator(const PostingListCounts &counts,
     uint64_t memOffset = reinterpret_cast<unsigned long>(cmem) & 7;
     const uint64_t *mem = reinterpret_cast<const uint64_t *>
                           (cmem - memOffset) +
-                          (memOffset * 8 + handle._bitOffset -
+                          (memOffset * 8 + lookup_result.bitOffset -
                            handle._bitOffsetMem) / 64;
-    int bitOffset = (memOffset * 8 + handle._bitOffset -
+    int bitOffset = (memOffset * 8 + lookup_result.bitOffset -
                      handle._bitOffsetMem) & 63;
 
     Position start(mem, bitOffset);
-    return create_zc_posocc_iterator(true, counts, start, handle._bitLength, _posting_params, _fieldsParams, matchData);
+    return create_zc_posocc_iterator(true, lookup_result.counts, start, lookup_result.counts._bitLength, _posting_params, _fieldsParams, matchData);
 }
 
 
@@ -87,8 +85,6 @@ PostingListHandle
 ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
 {
     PostingListHandle handle;
-    handle._bitOffset = lookup_result.bitOffset;
-    handle._bitLength = lookup_result.counts._bitLength;
     if (lookup_result.counts._bitLength == 0) {
         return handle;
     }

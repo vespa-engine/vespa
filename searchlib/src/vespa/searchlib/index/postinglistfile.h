@@ -151,8 +151,8 @@ public:
      * API above caches.
      */
     virtual std::unique_ptr<search::queryeval::SearchIterator>
-    createIterator(const PostingListCounts &counts,
-                   const PostingListHandle &handle,
+    createIterator(const DictionaryLookupResult& lookup_result,
+                   const PostingListHandle& handle,
                    const search::fef::TermFieldMatchDataArray &matchData) const = 0;
 
 
@@ -194,8 +194,8 @@ public:
     ~PostingListFileRandReadPassThrough();
 
     std::unique_ptr<search::queryeval::SearchIterator>
-    createIterator(const PostingListCounts &counts,
-                   const PostingListHandle &handle,
+    createIterator(const DictionaryLookupResult& lookup_result,
+                   const PostingListHandle& handle,
                    const search::fef::TermFieldMatchDataArray &matchData) const override;
 
     PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;

@@ -575,7 +575,7 @@ ShowPostingListSubApp::showPostingList()
     for (auto& tfmd : tfmdv) {
         tfmda.add(&tfmd);
     }
-    auto sb = postingfile->createIterator(handle->first.counts, handle->second, tfmda);
+    auto sb = postingfile->createIterator(handle->first, handle->second, tfmda);
     sb->initFullRange();
     uint32_t docId = 0;
     bool first = true;

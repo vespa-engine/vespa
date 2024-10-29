@@ -14,11 +14,6 @@ namespace search::index {
  */
 class PostingListHandle {
 public:
-    // Key portion
-    uint64_t _bitOffset;    // posting list start relative to start of file
-    uint64_t _bitLength;    // Length of posting list, in bits
-
-    // Value portion
     uint64_t _bitOffsetMem; // _mem relative to start of file
     const void *_mem;       // Memory backing posting list after read/mmap
     std::shared_ptr<void> _allocMem; // Allocated memory for posting list
@@ -26,9 +21,7 @@ public:
     uint64_t _read_bytes;   // Bytes read from disk (used by disk io stats)
 
     PostingListHandle()
-    : _bitOffset(0),
-      _bitLength(0),
-      _bitOffsetMem(0),
+    : _bitOffsetMem(0),
       _mem(nullptr),
       _allocMem(),
       _allocSize(0),
