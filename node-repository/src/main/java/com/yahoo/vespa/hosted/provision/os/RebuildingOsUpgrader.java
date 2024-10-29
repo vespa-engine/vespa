@@ -56,7 +56,7 @@ public class RebuildingOsUpgrader extends OsUpgrader {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
         if (softRebuild) {
             // Soft rebuild is enabled so this should act on hosts having replaceable root disk
-            hostsOfTargetType = hostsOfTargetType.replaceableRootDisk();
+            hostsOfTargetType = hostsOfTargetType.remoteStorage();
         }
 
         // Find stateful clusters with retiring nodes

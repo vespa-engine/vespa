@@ -61,7 +61,7 @@ public class RetiringOsUpgrader extends OsUpgrader {
         NodeList nodes = allNodes.state(Node.State.active, Node.State.provisioned).nodeType(target.nodeType());
         if (softRebuild) {
             // Consider only hosts which do not have a replaceable root disk
-            nodes = nodes.not().replaceableRootDisk();
+            nodes = nodes.not().remoteStorage();
         }
         // Retire hosts up to slot limit while ensuring that only one group is retired at a time
         NodeList activeNodes = allNodes.state(Node.State.active);
