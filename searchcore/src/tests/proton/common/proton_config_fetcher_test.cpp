@@ -22,13 +22,12 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/config.h>
 #include <map>
 #include <thread>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace config;
 using namespace proton;
@@ -95,7 +94,7 @@ struct ConfigTestFixture {
         addDocType("_alwaysthere_");
     }
 
-    ~ConfigTestFixture() = default;
+    ~ConfigTestFixture();
 
     DoctypeFixture *addDocType(const std::string &name) {
         return addDocType(name, ProtonConfig::Documentdb::Mode::INDEX);
@@ -157,7 +156,9 @@ struct ConfigTestFixture {
 
     bool configEqual(const std::string & name, const DocumentDBConfig & dbc) {
         auto itr = dbConfig.find(name);
-        ASSERT_TRUE(itr != dbConfig.end());
+        if (itr == dbConfig.end()) {
+            return false;
+        }
         const auto *fixture = itr->second.get();
         return (fixture->attributesBuilder == dbc.getAttributesConfig() &&
                 fixture->rankProfilesBuilder == dbc.getRankProfilesConfig() &&
@@ -184,6 +185,8 @@ struct ConfigTestFixture {
 
     void reload() { context->reload(); }
 };
+
+ConfigTestFixture::~ConfigTestFixture() = default;
 
 struct ProtonConfigOwner : public proton::IProtonConfigurer
 {
@@ -232,9 +235,11 @@ ProtonConfigOwner::~ProtonConfigOwner() = default;
 
 }
 
-TEST_F("require that bootstrap config manager creats correct key set", BootstrapConfigManager("foo")) {
+TEST(ProtonConfigFetcherTest, require_that_bootstrap_config_manager_creats_correct_key_set)
+{
+    BootstrapConfigManager f1("foo");
     const ConfigKeySet set(f1.createConfigKeySet());
-    ASSERT_EQUAL(4u, set.size());
+    ASSERT_EQ(4u, set.size());
     ConfigKey protonKey(ConfigKey::create<ProtonConfig>("foo"));
     ConfigKey dtKey(ConfigKey::create<DocumenttypesConfig>("foo"));
     ConfigKey bsKey(ConfigKey::create<BucketspacesConfig>("foo"));
@@ -243,9 +248,11 @@ TEST_F("require that bootstrap config manager creats correct key set", Bootstrap
     ASSERT_TRUE(set.find(bsKey) != set.end());
 }
 
-TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixture("search"),
-                                                                 BootstrapConfigManager(f1.configId),
-                                                                 ConfigRetriever(f2.createConfigKeySet(), f1.context)) {
+TEST(ProtonConfigFetcherTest, require_that_bootstrap_config_manager_updates_config)
+{
+    ConfigTestFixture f1("search");
+    BootstrapConfigManager f2(f1.configId);
+    ConfigRetriever f3(f2.createConfigKeySet(), f1.context);
     f2.update(f3.getBootstrapConfigs());
     ASSERT_TRUE(f1.configEqual(*f2.getConfig()));
     f1.protonBuilder.rpcport = proton_rpc_port;
@@ -260,6 +267,8 @@ TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixtu
     f2.update(f3.getBootstrapConfigs());
     ASSERT_TRUE(f1.configEqual(*f2.getConfig()));
 }
+
+namespace {
 
 DocumentDBConfig::SP
 getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr, const HwInfo & hwInfo)
@@ -276,20 +285,22 @@ getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr)
     return getDocumentDBConfig(f, mgr, HwInfo());
 }
 
-TEST_FF("require that documentdb config manager subscribes for config",
-        ConfigTestFixture("search"),
-        DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
+}
+
+TEST(ProtonConfigFetcherTest, require_that_documentdb_config_manager_subscribes_for_config)
+{
+    ConfigTestFixture f1("search");
+    DocumentDBConfigManager f2(f1.configId + "/typea", "typea");
     f1.addDocType("typea");
     const ConfigKeySet keySet(f2.createConfigKeySet());
-    ASSERT_EQUAL(9u, keySet.size());
+    ASSERT_EQ(9u, keySet.size());
     ASSERT_TRUE(f1.configEqual("typea", *getDocumentDBConfig(f1, f2)));
 }
 
-TEST_FF("require that documentdb config manager builds schema with imported attribute fields"
-        " and that they are filtered from resulting attribute config",
-        ConfigTestFixture("search"),
-        DocumentDBConfigManager(f1.configId + "/typea", "typea"))
+TEST(ProtonConfigFetcherTest, require_that_documentdb_config_manager_builds_schema_with_imported_attribute_fields_and_that_they_are_filtered_from_resulting_attribute_config)
 {
+    ConfigTestFixture f1("search");
+    DocumentDBConfigManager f2(f1.configId + "/typea", "typea");
     auto *docType = f1.addDocType("typea");
     docType->attributesBuilder.attribute.resize(2);
     docType->attributesBuilder.attribute[0].name = "imported";
@@ -301,23 +312,24 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 
     for (size_t i(0); i < 3; i++) {
         const auto &schema = getDocumentDBConfig(f1, f2)->getSchemaSP();
-        EXPECT_EQUAL(1u, schema->getNumImportedAttributeFields());
-        EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
-        EXPECT_EQUAL(1u, schema->getNumAttributeFields());
-        EXPECT_EQUAL("regular", schema->getAttributeFields()[0].getName());
+        EXPECT_EQ(1u, schema->getNumImportedAttributeFields());
+        EXPECT_EQ("imported", schema->getImportedAttributeFields()[0].getName());
+        EXPECT_EQ(1u, schema->getNumAttributeFields());
+        EXPECT_EQ("regular", schema->getAttributeFields()[0].getName());
 
         const auto &attrCfg = getDocumentDBConfig(f1, f2)->getAttributesConfig();
-        EXPECT_EQUAL(1u, attrCfg.attribute.size());
-        EXPECT_EQUAL("regular", attrCfg.attribute[0].name);
+        EXPECT_EQ(1u, attrCfg.attribute.size());
+        EXPECT_EQ("regular", attrCfg.attribute[0].name);
         // This is required to trigger a change to schema, but not to the attributes config
         docType->summaryBuilder.classes[0].id = i+2;
     }
 }
 
-TEST_FFF("require that proton config fetcher follows changes to bootstrap",
-         ConfigTestFixture("search"),
-         ProtonConfigOwner(),
-         ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
+TEST(ProtonConfigFetcherTest, require_that_proton_config_fetcher_follows_changes_to_bootstrap)
+{
+    ConfigTestFixture f1("search");
+    ProtonConfigOwner f2;
+    ProtonConfigFetcher f3(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s);
     f3.start();
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(*f2.getBootstrapConfig()));
@@ -329,10 +341,11 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
     f3.close();
 }
 
-TEST_FFF("require that proton config fetcher follows changes to doctypes",
-         ConfigTestFixture("search"),
-         ProtonConfigOwner(),
-         ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
+TEST(ProtonConfigFetcherTest, require_that_proton_config_fetcher_follows_changes_to_doctypes)
+{
+    ConfigTestFixture f1("search");
+    ProtonConfigOwner f2;
+    ProtonConfigFetcher f3(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s);
     f3.start();
 
     f2._configured = false;
@@ -349,10 +362,11 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
     f3.close();
 }
 
-TEST_FFF("require that proton config fetcher reconfigures dbowners",
-         ConfigTestFixture("search"),
-         ProtonConfigOwner(),
-         ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
+TEST(ProtonConfigFetcherTest, require_that_proton_config_fetcher_reconfigures_dbowners)
+{
+    ConfigTestFixture f1("search");
+    ProtonConfigOwner f2;
+    ProtonConfigFetcher f3(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s);
     f3.start();
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 
@@ -374,31 +388,37 @@ TEST_FFF("require that proton config fetcher reconfigures dbowners",
     f3.close();
 }
 
-TEST_FF("require that lid space compaction is disabled for globally distributed document type",
-        ConfigTestFixture("search"),
-        DocumentDBConfigManager(f1.configId + "/global", "global"))
+TEST(ProtonConfigFetcherTest, require_that_lid_space_compaction_is_disabled_for_globally_distributed_document_type)
 {
+    ConfigTestFixture f1("search");
+    DocumentDBConfigManager f2(f1.configId + "/global", "global");
     f1.addDocType("global", ProtonConfig::Documentdb::Mode::INDEX, true);
     auto config = getDocumentDBConfig(f1, f2);
     EXPECT_TRUE(config->getMaintenanceConfigSP()->getLidSpaceCompactionConfig().isDisabled());
 }
+
+namespace {
 
 HwInfo
 createHwInfoWithMemory(uint64_t mem) {
     return {HwInfo::Disk(1, false, false), HwInfo::Memory(mem), HwInfo::Cpu(1)};
 }
 
-TEST_FF("require that target numdocs is fixed 1k for indexed mode",
-        ConfigTestFixture("search"),
-        DocumentDBConfigManager(f1.configId + "/test", "test"))
+}
+
+TEST(ProtonConfigFetcherTest, require_that_target_numdocs_is_fixed_1k_for_indexed_mode)
 {
+    ConfigTestFixture f1("search");
+    DocumentDBConfigManager f2(f1.configId + "/test", "test");
     f1.addDocType("test", ProtonConfig::Documentdb::Mode::INDEX, true);
     for (uint64_t memory : {1_Gi, 10_Gi}) {
         auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(memory));
         AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
-        EXPECT_EQUAL(1024u, strategy.get_grow_strategy().getMinimumCapacity());
+        EXPECT_EQ(1024u, strategy.get_grow_strategy().getMinimumCapacity());
     }
 }
+
+namespace {
 
 constexpr bool target_numdocs_hw_adjustment_is_enabled() noexcept {
     // Must mirror logic of `use_hw_memory_presized_target_num_docs()` in documentdbconfigmanager.cpp
@@ -409,63 +429,70 @@ constexpr bool target_numdocs_hw_adjustment_is_enabled() noexcept {
 #endif
 }
 
-TEST_FF("require that target numdocs follows memory for streaming mode",
-        ConfigTestFixture("search"),
-        DocumentDBConfigManager(f1.configId + "/test", "test"))
+}
+
+TEST(ProtonConfigFetcherTest, require_that_target_numdocs_follows_memory_for_streaming_mode)
 {
+    ConfigTestFixture f1("search");
+    DocumentDBConfigManager f2(f1.configId + "/test", "test");
     f1.addDocType("test", ProtonConfig::Documentdb::Mode::STREAMING, true);
     {
         auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(1_Gi));
         AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
         const auto expected = target_numdocs_hw_adjustment_is_enabled() ? 23342213u : 1024u;
-        EXPECT_EQUAL(expected, strategy.get_grow_strategy().getMinimumCapacity());
+        EXPECT_EQ(expected, strategy.get_grow_strategy().getMinimumCapacity());
     }
     {
         auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(10_Gi));
         AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
         const auto expected = target_numdocs_hw_adjustment_is_enabled() ? 233422135u : 1024u;
-        EXPECT_EQUAL(expected, strategy.get_grow_strategy().getMinimumCapacity());
+        EXPECT_EQ(expected, strategy.get_grow_strategy().getMinimumCapacity());
     }
 }
 
-TEST_FF("require that prune removed documents interval can be set based on age",
-        ConfigTestFixture("test"),
-        DocumentDBConfigManager(f1.configId + "/test", "test"))
+TEST(ProtonConfigFetcherTest, require_that_prune_removed_documents_interval_can_be_set_based_on_age)
 {
+    ConfigTestFixture f1("test");
+    DocumentDBConfigManager f2(f1.configId + "/test", "test");
     f1.protonBuilder.pruneremoveddocumentsage = 2000;
     f1.protonBuilder.pruneremoveddocumentsinterval = 0;
     f1.addDocType("test");
     auto config = getDocumentDBConfig(f1, f2);
-    EXPECT_EQUAL(20s, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
+    EXPECT_EQ(20s, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
 }
 
-TEST_FF("require that docstore config computes cachesize automatically if unset",
-        ConfigTestFixture("test"),
-        DocumentDBConfigManager(f1.configId + "/test", "test"))
+TEST(ProtonConfigFetcherTest, require_that_docstore_config_computes_cachesize_automatically_if_unset)
 {
+    ConfigTestFixture f1("test");
+    DocumentDBConfigManager f2(f1.configId + "/test", "test");
     HwInfo hwInfo = createHwInfoWithMemory(1000000);
     f1.addDocType("test");
     f1.protonBuilder.summary.cache.maxbytes = 2000;
     auto config = getDocumentDBConfig(f1, f2, hwInfo);
-    EXPECT_EQUAL(2000ul, config->getStoreConfig().getMaxCacheBytes());
+    EXPECT_EQ(2000ul, config->getStoreConfig().getMaxCacheBytes());
 
     f1.protonBuilder.summary.cache.maxbytes = -7;
     config = getDocumentDBConfig(f1, f2, hwInfo);
-    EXPECT_EQUAL(70000ul, config->getStoreConfig().getMaxCacheBytes());
+    EXPECT_EQ(70000ul, config->getStoreConfig().getMaxCacheBytes());
 
     f1.protonBuilder.summary.cache.maxbytes = -700;
     config = getDocumentDBConfig(f1, f2, hwInfo);
-    EXPECT_EQUAL(500000ul, config->getStoreConfig().getMaxCacheBytes());
+    EXPECT_EQ(500000ul, config->getStoreConfig().getMaxCacheBytes());
 }
+
+namespace {
 
 GrowStrategy
 growStrategy(uint32_t initial) {
     return {initial, 0.1, 1, initial, 0.15};
 }
-TEST_FF("require that allocation config is propagated",
-        ConfigTestFixture("test"),
-        DocumentDBConfigManager(f1.configId + "/test", "test"))
+
+}
+
+TEST(ProtonConfigFetcherTest, require_that_allocation_config_is_propagated)
 {
+    ConfigTestFixture f1("test");
+    DocumentDBConfigManager f2(f1.configId + "/test", "test");
     f1.protonBuilder.distribution.redundancy = 5;
     f1.protonBuilder.distribution.searchablecopies = 2;
     f1.addDocType("test");
@@ -482,13 +509,14 @@ TEST_FF("require that allocation config is propagated",
     auto config = getDocumentDBConfig(f1, f2);
     {
         auto& alloc_config = config->get_alloc_config();
-        EXPECT_EQUAL(AllocStrategy(growStrategy(20000000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::READY));
-        EXPECT_EQUAL(AllocStrategy(growStrategy(100000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::REMOVED));
-        EXPECT_EQUAL(AllocStrategy(growStrategy(30000000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::NOTREADY));
+        EXPECT_EQ(AllocStrategy(growStrategy(20000000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::READY));
+        EXPECT_EQ(AllocStrategy(growStrategy(100000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::REMOVED));
+        EXPECT_EQ(AllocStrategy(growStrategy(30000000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::NOTREADY));
     }
 }
 
-TEST("test HwInfo equality") {
+TEST(ProtonConfigFetcherTest, test_HwInfo_equality)
+{
     EXPECT_TRUE(HwInfo::Cpu(1) == HwInfo::Cpu(1));
     EXPECT_FALSE(HwInfo::Cpu(1) == HwInfo::Cpu(2));
     EXPECT_TRUE(HwInfo::Memory(1) == HwInfo::Memory(1));
