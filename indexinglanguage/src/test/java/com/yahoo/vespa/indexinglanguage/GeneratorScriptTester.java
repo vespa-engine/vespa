@@ -15,6 +15,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class GeneratorScriptTester {
     private final Map<String, Generator> generators;
@@ -22,36 +23,42 @@ public class GeneratorScriptTester {
     public GeneratorScriptTester(Map<String, Generator> generators) {
         this.generators = generators;
     }
-    
-    public static class RepeatMockGenerator implements Generator {
-        public String generate(String prompt) {
-            return prompt + " " + prompt;
-        }
-    }
 
     public void testStatement(String expressionString, String input, String expected) {
         var expression = expressionFrom(expressionString);
         
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myText", DataType.STRING));
+        var generatedField = new Field("myGeneratedText", DataType.STRING);
+        adapter.createField(generatedField);
         
         if (input != null)
             adapter.setValue("myText", new StringFieldValue(input));
-        
-        expression.setStatementOutput(new DocumentType("myDocument"), new Field("myText", DataType.STRING));
+
+        expression.setStatementOutput(new DocumentType("myDocument"), generatedField);
+
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
         
         if (input == null) {
-            assertFalse(adapter.values.containsKey("myText"));
+            assertFalse(adapter.values.containsKey("myGeneratedText"));
         }
         else {
-            assertTrue(adapter.values.containsKey("myText"));
-            assertEquals(expected, ((StringFieldValue)adapter.values.get("myText")).getString());
+            assertTrue(adapter.values.containsKey("myGeneratedText"));
+            assertEquals(expected, ((StringFieldValue)adapter.values.get("myGeneratedText")).getString());
+        }
+    }
+
+    public void testStatementThrows(String expressionString, String input, String expectedMessage) {
+        try {
+            testStatement(expressionString, input, null);
+            fail();
+        } catch (IllegalStateException e) {
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
     
-    private Expression expressionFrom(String string) {
+    public Expression expressionFrom(String string) {
         try {
             return Expression.fromString(string, new SimpleLinguistics(), Map.of(), generators);
         }
@@ -60,4 +67,32 @@ public class GeneratorScriptTester {
         }
     }
 
+    public static class RepeatMockGenerator implements Generator {
+        final String expectedDestination;
+        final int repetitions;
+        
+        public RepeatMockGenerator(String expectedDestination) {
+            this(expectedDestination, 2);
+        }
+
+        public RepeatMockGenerator(String expectedDestination, int repetitions) {
+            this.expectedDestination = expectedDestination;
+            this.repetitions = repetitions;
+        }
+
+        public String generate(String prompt, Context context, DataType dataType) {
+            var stringBuilder = new StringBuilder();
+            
+            for (int i = 0; i < repetitions; i++) {
+                stringBuilder.append(prompt);
+                stringBuilder.append(" ");
+            }
+            
+            return stringBuilder.toString().trim();
+        }
+
+        void verifyDestination(Generator.Context context) {
+            assertEquals(expectedDestination, context.getDestination());
+        }
+    }
 }

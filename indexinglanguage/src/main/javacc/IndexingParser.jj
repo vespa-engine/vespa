@@ -852,6 +852,7 @@ String identifier() :
         <EXACT>                  |
         <ELSE>                   |
         <EMBED>                  |
+        <GENERATE>               |    
         <FLATTEN>                |
         <FOR_EACH>               |
         <GET_FIELD>              |

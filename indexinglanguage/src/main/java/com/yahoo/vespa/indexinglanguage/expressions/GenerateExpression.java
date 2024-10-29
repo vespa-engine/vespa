@@ -1,21 +1,13 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.TensorDataType;
-import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.Generator;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -25,9 +17,12 @@ public class GenerateExpression extends Expression {
     private final String generatorId;
     private final List<String> generatorArguments;
 
-    /** The destination the embedding will be written to on the form [schema name].[field name] */
+    /** The destination the generated value will be written to in the form [schema name].[field name] */
     private String destination;
 
+    /** The target type we are generating into. */
+    private DataType targetType;
+    
     public GenerateExpression(
             Linguistics linguistics, 
             Map<String, Generator> generators, 
@@ -52,218 +47,114 @@ public class GenerateExpression extends Expression {
                     "Multiple generators are provided but no generator id is given. " +
                     "Valid generators are " + validGenerators(generators));
         }
-        else if ( ! embedders.containsKey(embedderId)) {
-            this.embedder = new Embedder.FailingEmbedder("Can't find embedder '" + embedderId + "'. " +
-                    "Valid embedders are " + validEmbedders(embedders));
+        else if ( ! generators.containsKey(generatorId)) {
+            this.generator = new Generator.FailingGenerator("Can't find generator '" + generatorId + "'. " +
+                    "Valid generators are " + validGenerators(generators));
         } else  {
-            this.embedder = embedders.get(embedderId);
+            this.generator = generators.get(generatorId);
         }
     }
 
     @Override
     public DataType setInputType(DataType type, VerificationContext context) {
+        // TODO: Not sure if this implementation of the methods is correct, needs careful review.
         super.setInputType(type, context);
-        // TODO: Activate type checking
-        // if ( ! (type == DataType.STRING)
-        //      && ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-        //     throw new IllegalArgumentException("embed request either a string or array<string> input type, but got " + type);
-        return null; // embed cannot determine the output type from the input
+        
+        if (type == DataType.STRING)
+             throw new IllegalArgumentException("generate requires a string input type, but got " + type);
+        
+        return DataType.STRING;
     }
 
     @Override
     public DataType setOutputType(DataType type, VerificationContext context) {
-        super.setOutputType(type, TensorDataType.any(), context);
-        return getInputType(context); // the input (string vs. array of string) cannot be determined from the output
+        // TODO: Not sure if this implementation of the methods is correct, needs careful review.
+        super.setOutputType(type, type, context);
+        
+        if (type != DataType.STRING)
+            throw new IllegalArgumentException("generate requires a string input type, but got " + type);
+        
+        return DataType.STRING;
     }
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        targetType = toTargetTensor(field.getDataType());
+        targetType = field.getDataType();
         destination = documentType.getName() + "." + field.getName();
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        targetType = toTargetTensor(getOutputType(context));
-        if ( ! validTarget(targetType))
-            throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, a mapped 1d tensor, a mapped 2d tensor, " +
-                    "an array of dense 1d tensors, or a mixed 2d or 3d tensor");
-        if (targetType.rank() == 2 && targetType.mappedSubtype().rank() == 2) {
-            if (embedderArguments.size() != 1)
-                throw new VerificationException(this, "When the embedding target field is a 2d mapped tensor " +
-                        "the name of the tensor dimension that corresponds to the input array elements must " +
-                        "be given as a second argument to embed, e.g: ... | embed splade paragraph | ...");
-            if ( ! targetType.mappedSubtype().dimensionNames().contains(embedderArguments.get(0))) {
-                throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
-                        "is not a sparse dimension of the target type " + targetType);
-
-            }
-        }
-        if (targetType.rank() == 3) {
-            if (embedderArguments.size() != 1)
-                throw new VerificationException(this, "When the embedding target field is a 3d tensor " +
-                        "the name of the tensor dimension that corresponds to the input array elements must " +
-                        "be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...");
-            if ( ! targetType.mappedSubtype().dimensionNames().contains(embedderArguments.get(0)))
-                throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
-                        "is not a sparse dimension of the target type " + targetType);
-        }
+        targetType = getOutputType(context);
+        
+        if (!validTarget(targetType))
+            throw new VerificationException(this, "The generate target field must be a String");
+    
         context.setCurrentType(createdOutputType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         if (context.getCurrentValue() == null) return;
-        Tensor output;
+        
+        String output;
         if (context.getCurrentValue().getDataType() == DataType.STRING) {
-            output = embedSingleValue(context);
-        }
-        else if (context.getCurrentValue().getDataType() instanceof ArrayDataType arrayType
-                && arrayType.getNestedType() == DataType.STRING) {
-            output = embedArrayValue(context);
+            output = generateSingleValue(context);
         }
         else {
-            throw new IllegalArgumentException("Embedding can only be done on string or string array fields, not " +
+            throw new IllegalArgumentException("Generate can only be done on string fields, not " +
                     context.getCurrentValue().getDataType());
         }
-        context.setCurrentValue(new TensorFieldValue(output));
+        
+        context.setCurrentValue(new StringFieldValue(output));
     }
 
-    private Tensor embedSingleValue(ExecutionContext context) {
+    private String generateSingleValue(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue)context.getCurrentValue();
-        return embed(input.getString(), targetType, context);
+        return generate(input.getString(), targetType, context);
     }
 
-    @SuppressWarnings("unchecked")
-    private Tensor embedArrayValue(ExecutionContext context) {
-        var input = (Array<StringFieldValue>)context.getCurrentValue();
-        var builder = Tensor.Builder.of(targetType);
-        if (targetType.rank() == 2)
-            if (targetType.indexedSubtype().rank() == 1)
-                embedArrayValueToRank2Tensor(input, builder, context);
-            else if(targetType.mappedSubtype().rank() == 2)
-                embedArrayValueToRank2MappedTensor(input, builder, context);
-            else
-                throw new IllegalArgumentException("Embedding an array into " + targetType + " is not supported");
-        else
-            embedArrayValueToRank3Tensor(input, builder, context);
-        return builder.build();
-    }
-
-    private void embedArrayValueToRank2Tensor(Array<StringFieldValue> input,
-                                              Tensor.Builder builder,
-                                              ExecutionContext context) {
-        String mappedDimension = targetType.mappedSubtype().dimensions().get(0).name();
-        String indexedDimension = targetType.indexedSubtype().dimensions().get(0).name();
-        for (int i = 0; i < input.size(); i++) {
-            Tensor tensor = embed(input.get(i).getString(), targetType.indexedSubtype(), context);
-            for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
-                Tensor.Cell cell = cells.next();
-                builder.cell()
-                        .label(mappedDimension, i)
-                        .label(indexedDimension, cell.getKey().numericLabel(0))
-                        .value(cell.getValue());
-            }
-        }
-    }
-
-    private void embedArrayValueToRank3Tensor(Array<StringFieldValue> input,
-                                              Tensor.Builder builder,
-                                              ExecutionContext context) {
-        String outerMappedDimension = embedderArguments.get(0);
-        String innerMappedDimension = targetType.mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
-        String indexedDimension = targetType.indexedSubtype().dimensions().get(0).name();
-        long indexedDimensionSize = targetType.indexedSubtype().dimensions().get(0).size().get();
-        var innerType = new TensorType.Builder(targetType.valueType()).mapped(innerMappedDimension).indexed(indexedDimension,indexedDimensionSize).build();
-        int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
-        int indexedDimensionIndex = innerType.indexOfDimensionAsInt(indexedDimension);
-        for (int i = 0; i < input.size(); i++) {
-            Tensor tensor = embed(input.get(i).getString(), innerType, context);
-            for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
-                Tensor.Cell cell = cells.next();
-                builder.cell()
-                        .label(outerMappedDimension, i)
-                        .label(innerMappedDimension, cell.getKey().label(innerMappedDimensionIndex))
-                        .label(indexedDimension, cell.getKey().numericLabel(indexedDimensionIndex))
-                        .value(cell.getValue());
-            }
-        }
-    }
-
-    private void embedArrayValueToRank2MappedTensor(Array<StringFieldValue> input,
-                                                    Tensor.Builder builder,
-                                                    ExecutionContext context) {
-        String outerMappedDimension = embedderArguments.get(0);
-        String innerMappedDimension = targetType.mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
-
-        var innerType = new TensorType.Builder(targetType.valueType()).mapped(innerMappedDimension).build();
-        int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
-
-        for (int i = 0; i < input.size(); i++) {
-            Tensor tensor = embed(input.get(i).getString(), innerType, context);
-            for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
-                Tensor.Cell cell = cells.next();
-                builder.cell()
-                        .label(outerMappedDimension, i)
-                        .label(innerMappedDimension, cell.getKey().label(innerMappedDimensionIndex))
-                        .value(cell.getValue());
-            }
-        }
-    }
-
-    private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
-        return embedder.embed(input,
-                new Embedder.Context(destination, context.getCache()).setLanguage(context.resolveLanguage(linguistics))
-                        .setEmbedderId(embedderId),
-                targetType);
+    private String generate(String input, DataType targetType, ExecutionContext context) {
+        return generator.generate(
+                input,
+                new Generator.Context(destination, context.getCache())
+                        .setLanguage(context.resolveLanguage(linguistics))
+                        .setGeneratorId(generatorId),
+                targetType
+        );
     }
 
     @Override
     public DataType createdOutputType() {
-        return new TensorDataType(targetType);
+        return targetType;
     }
 
-    private static TensorType toTargetTensor(DataType dataType) {
-        if (dataType instanceof ArrayDataType) return toTargetTensor(dataType.getNestedType());
-        if  ( ! ( dataType instanceof TensorDataType))
-            throw new IllegalArgumentException("Expected a tensor data type but got " + dataType);
-        return ((TensorDataType)dataType).getTensorType();
-    }
-
-    private boolean validTarget(TensorType target) {
-        if (target.rank() == 1) // indexed or mapped 1d tensor
-            return true;
-        if (target.rank() == 2 && target.indexedSubtype().rank() == 1)
-            return true; // mixed 2d tensor
-        if(target.rank() == 2 && target.mappedSubtype().rank() == 2)
-            return true; // mapped 2d tensor
-        if (target.rank() == 3 && target.indexedSubtype().rank() == 1)
-            return true; // mixed 3d tensor
-        return false;
+    private boolean validTarget(DataType target) {
+        return target == DataType.STRING;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("embed");
-        if (this.embedderId != null && !this.embedderId.isEmpty())
-            sb.append(" ").append(this.embedderId);
-        embedderArguments.forEach(arg -> sb.append(" ").append(arg));
+        sb.append("generate");
+        if (this.generatorId != null && !this.generatorId.isEmpty())
+            sb.append(" ").append(this.generatorId);
+        generatorArguments.forEach(arg -> sb.append(" ").append(arg));
         return sb.toString();
     }
 
     @Override
-    public int hashCode() { return EmbedExpression.class.hashCode(); }
+    public int hashCode() { return GenerateExpression.class.hashCode(); }
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof EmbedExpression;
+        return o instanceof GenerateExpression;
     }
 
-    private static String validEmbedders(Map<String, Embedder> embedders) {
-        List<String> embedderIds = new ArrayList<>();
-        embedders.forEach((key, value) -> embedderIds.add(key));
-        embedderIds.sort(null);
-        return String.join(", ", embedderIds);
+    private static String validGenerators(Map<String, Generator> generators) {
+        List<String> generatorIds = new ArrayList<>();
+        generators.forEach((key, value) -> generatorIds.add(key));
+        generatorIds.sort(null);
+        return String.join(", ", generatorIds);
     }
 }
