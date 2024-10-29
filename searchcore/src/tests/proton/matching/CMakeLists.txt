@@ -28,6 +28,7 @@ vespa_add_executable(searchcore_matching_stats_test_app TEST
     matching_stats_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_matching_stats_test_app COMMAND searchcore_matching_stats_test_app)
 vespa_add_executable(searchcore_query_test_app TEST
