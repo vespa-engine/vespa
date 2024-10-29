@@ -10,9 +10,12 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.backup.Snapshot;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
@@ -38,7 +41,8 @@ import static org.junit.Assert.fail;
  */
 public class OsVersionsTest {
 
-    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
 
     @Test
     public void upgrade() {
@@ -428,6 +432,51 @@ public class OsVersionsTest {
             hostsRebuilding = hostNodes.get().rebuilding(softRebuild);
             assertEquals(maxRebuilds, hostsRebuilding.size());
             completeSoftRebuildOf(hostsRebuilding.asList());
+        }
+
+        // All hosts upgraded and none are rebuilding
+        assertEquals(hostCount, hostNodes.get().onOsVersion(version1).not().rebuilding(softRebuild).size());
+
+        // Resuming after everything has upgraded has no effect
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertEquals(0, hostNodes.get().rebuilding(softRebuild).size());
+    }
+
+    @Test
+    public void upgrade_by_soft_rebuilding_with_snapshots() {
+        int hostCount = 2;
+        boolean softRebuild = true;
+        flagSource.withBooleanFlag(Flags.SNAPSHOTS_ENABLED.id(), true);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder()
+                                                                    .dynamicProvisioning(true)
+                                                                    .name(CloudName.AWS)
+                                                                    .account(CloudAccount.from("000000000000"))
+                                                                    .build(),
+                                      Optional.ofNullable(tester.hostProvisioner()));
+
+        ApplicationId app = ApplicationId.from("t1", "a1", "i1");
+        provisionInfraApplication(hostCount, NodeType.host, NodeResources.StorageType.local, NodeResources.Architecture.x86_64);
+        deployApplication(app);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
+        Supplier<NodeList> childNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
+
+        // New target is set
+        var version1 = Version.fromString("8.0");
+        versions.setTarget(NodeType.host, version1, false);
+
+        // Hosts rebuild
+        for (int i = 0; i < hostCount; i++) {
+            versions.resumeUpgradeOf(NodeType.host, true);
+            NodeList rebuilding = hostNodes.get().rebuilding(softRebuild);
+            assertEquals(1, rebuilding.size());
+            // Snapshot is triggered for children
+            {
+                NodeList children = childNodes.get().childrenOf(rebuilding.asList().get(0));
+                assertFalse(children.isEmpty());
+                assertTrue(children.stream().allMatch(node -> node.status().snapshot().isPresent() &&
+                                                              node.status().snapshot().get().state() == Snapshot.State.creating));
+            }
+            completeSoftRebuildOf(rebuilding.asList());
         }
 
         // All hosts upgraded and none are rebuilding
