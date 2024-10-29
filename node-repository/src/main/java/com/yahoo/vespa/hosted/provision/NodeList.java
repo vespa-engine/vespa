@@ -61,7 +61,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> node.status().wantToRetire() && node.status().wantToDeprovision());
     }
 
-    /** Returns the subset of nodes that are being rebuilt */
+    /**
+     * Returns the subset of nodes that are being rebuilt.
+     *
+     * @param soft When true, return only hosts that are being rebuilt without retirement
+     */
     public NodeList rebuilding(boolean soft) {
         return matching(node -> {
             if (soft) {

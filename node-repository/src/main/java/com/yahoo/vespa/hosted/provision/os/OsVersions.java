@@ -9,6 +9,8 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -51,6 +53,8 @@ public class OsVersions {
                                                                                     .expireAfterWrite(10, TimeUnit.MINUTES)
                                                                                     .build();
 
+    private final BooleanFlag snapshotsEnabled;
+
     public OsVersions(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
         this(nodeRepository, nodeRepository.zone().cloud(), hostProvisioner);
     }
@@ -60,6 +64,7 @@ public class OsVersions {
         this.db = nodeRepository.database();
         this.cloud = Objects.requireNonNull(cloud);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
+        this.snapshotsEnabled = Flags.SNAPSHOTS_ENABLED.bindTo(nodeRepository.flagSource());
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersionChange()) {
@@ -167,16 +172,21 @@ public class OsVersions {
     /** Returns the upgrader to use when upgrading given node type to target */
     private OsUpgrader chooseUpgrader(NodeType nodeType, Optional<Version> target) {
         if (cloud.dynamicProvisioning()) {
-            boolean canSoftRebuild = cloud.name().equals(CloudName.AWS);
-            RetiringOsUpgrader retiringOsUpgrader = new RetiringOsUpgrader(nodeRepository, canSoftRebuild);
-            if (canSoftRebuild) {
-                // If soft rebuild is enabled, we can use RebuildingOsUpgrader for hosts with remote storage.
-                // RetiringOsUpgrader is then only used for hosts with local storage.
-                return new CompositeOsUpgrader(nodeRepository,
-                                               List.of(new RebuildingOsUpgrader(nodeRepository, canSoftRebuild),
-                                                       retiringOsUpgrader));
+            boolean canRebuild = cloud.name().equals(CloudName.AWS);
+            boolean canSnapshot = snapshotsEnabled.value();
+            if (canRebuild) {
+                if (canSnapshot) {
+                    // When snapshots are supported, we can rebuild any host
+                    return new RebuildingOsUpgrader(nodeRepository, true, false);
+                } else {
+                    // Otherwise we need a combination of rebuilding (remote disks) and retiring (local disks)
+                    return new CompositeOsUpgrader(nodeRepository,
+                                                   List.of(new RebuildingOsUpgrader(nodeRepository, true, true),
+                                                           new RetiringOsUpgrader(nodeRepository, true)));
+                }
             }
-            return retiringOsUpgrader;
+            // Rebuild unsupported. Retire hosts regardless of storage type
+            return new RetiringOsUpgrader(nodeRepository, false);
         }
         // Require rebuild if we have any nodes of this type on a major version lower than target
         boolean rebuildRequired = target.isPresent() &&
@@ -186,7 +196,7 @@ public class OsVersions {
                                                 .anyMatch(osVersion -> osVersion.current().isPresent() &&
                                                                        osVersion.current().get().getMajor() < target.get().getMajor());
         if (rebuildRequired) {
-            return new RebuildingOsUpgrader(nodeRepository, false);
+            return new RebuildingOsUpgrader(nodeRepository, false, false);
         }
         return new DelegatingOsUpgrader(nodeRepository);
     }
