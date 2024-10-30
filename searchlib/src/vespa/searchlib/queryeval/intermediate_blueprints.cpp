@@ -419,11 +419,12 @@ WeakAndBlueprint::my_flow(InFlow in_flow) const
     return AnyFlow::create<OrFlow>(in_flow);
 }
 
-WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range, uint32_t abs_stop_word_limit, bool thread_safe)
+WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range, uint32_t abs_stop_word_limit, StopWordStrategy stop_word_strategy, bool thread_safe)
     : _scores(WeakAndPriorityQueue::createHeap(n, thread_safe)),
       _n(n),
       _idf_range(idf_range),
       _abs_stop_word_limit(abs_stop_word_limit),
+      _stop_word_strategy(stop_word_strategy),
       _weights(),
       _matching_phase(MatchingPhase::FIRST_PHASE)
 {}
@@ -455,6 +456,34 @@ FieldSpecBaseList
 WeakAndBlueprint::exposeFields() const
 {
     return {};
+}
+
+void
+WeakAndBlueprint::optimize_self(OptimizePass pass)
+{
+    if (pass == OptimizePass::FIRST && _stop_word_strategy == StopWordStrategy::DROP) {
+        uint32_t min_est = 0;
+        uint32_t min_est_idx = 0;
+        vespalib::SmallVector<uint32_t,16> stop_words;
+        for (size_t i = 0; i < childCnt(); ++i) {
+            uint32_t child_est = getChild(i).getState().estimate().estHits;
+            if (child_est > _abs_stop_word_limit) {
+                stop_words.push_back(i);
+            }
+            if (i == 0 || child_est < min_est) {
+                min_est = child_est;
+                min_est_idx = i;
+            }
+        }
+        while (!stop_words.empty()) {
+            uint32_t idx = stop_words.back();
+            stop_words.pop_back();
+            if (idx != min_est_idx) {
+                removeChild(idx);
+                _weights.erase(_weights.begin() + idx);
+            }
+        }
+    }
 }
 
 Blueprint::UP

@@ -6,6 +6,7 @@
 #include "iindexenvironment.h"
 #include "iqueryenvironment.h"
 #include "blueprintresolver.h"
+#include "indexproperties.h"
 #include "rank_program.h"
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
@@ -25,6 +26,7 @@ namespace search::fef {
 class RankSetup
 {
 public:
+    using WeakAndStopWordStrategy = indexproperties::matching::WeakAndStopWordStrategy::Value;
     using Warnings = BlueprintResolver::Warnings;
     struct MutateOperation {
     public:
@@ -85,6 +87,7 @@ private:
     double                   _target_hits_max_adjustment_factor;
     double                   _weakand_range;
     double                   _weakand_stop_word_limit;
+    WeakAndStopWordStrategy  _weakand_stop_word_strategy;
     vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
     MutateOperation          _mutateOnMatch;
     MutateOperation          _mutateOnFirstPhase;
@@ -415,6 +418,8 @@ public:
     double get_weakand_range() const { return _weakand_range; }
     void set_weakand_stop_word_limit(double v) { _weakand_stop_word_limit = v; }
     double get_weakand_stop_word_limit() const { return _weakand_stop_word_limit; }
+    void set_weakand_stop_word_strategy(WeakAndStopWordStrategy v) { _weakand_stop_word_strategy = v; }
+    auto get_weakand_stop_word_strategy() const { return _weakand_stop_word_strategy; }
 
     /**
      * This method may be used to indicate that certain features

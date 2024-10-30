@@ -794,6 +794,12 @@ struct make {
     static make NEAR(uint32_t window) { return make(std::make_unique<NearBlueprint>(window)); }
     static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
+    static make WEAKAND_DROP_STOP_WORDS(uint32_t limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, 1.0, limit, WeakAndBlueprint::StopWordStrategy::DROP, true));
+    }
+    static make WEAKAND_KEEP_STOP_WORDS(uint32_t limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, 1.0, limit, WeakAndBlueprint::StopWordStrategy::KEEP, true));
+    }
 };
 
 TEST("AND AND collapsing") {
@@ -878,6 +884,25 @@ TEST("test single child optimization") {
     //-------------------------------------------------------------------------
     Blueprint::UP expect = make::SB(selector).source(2).leaf(42);
     //-------------------------------------------------------------------------
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("test WeakAnd drop stop words") {
+    Blueprint::UP top = make::WEAKAND_DROP_STOP_WORDS(10).leafs({2,20,1,15,3,25});
+    Blueprint::UP expect = make::WEAKAND(100).leafs({2,1,3});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("test WeakAnd keep stop words") {
+    // added OR to satisfy requirement that optimize must modify blueprint
+    Blueprint::UP top = make::OR().add(make::WEAKAND_KEEP_STOP_WORDS(10).leafs({2,20,1,15,3,25}));
+    Blueprint::UP expect = make::WEAKAND(100).leafs({2,20,1,15,3,25});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("test WeakAnd drop stop words with only stop words") {
+    Blueprint::UP top = make::WEAKAND_DROP_STOP_WORDS(10).leafs({20,15,25});
+    Blueprint::UP expect(MyLeafSpec(15).create());
     optimize_and_compare(std::move(top), std::move(expect));
 }
 

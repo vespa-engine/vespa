@@ -352,6 +352,17 @@ namespace matching {
     };
 
     /**
+     * Property to control how Vespa Wand will treat stop words
+     **/
+    struct WeakAndStopWordStrategy {
+        enum class Value {KEEP, DROP};
+        static const std::string NAME;
+        static const Value DEFAULT_VALUE;
+        static Value lookup(const Properties &props);
+        static Value lookup(const Properties &props, Value defaultValue);
+    };
+
+    /**
      * Property to control the algorithm using for fuzzy matching.
      **/
     struct FuzzyAlgorithm {
