@@ -23,7 +23,7 @@ public class LlamaBundleActivator implements BundleActivator {
         log.fine("start bundle");
         String skipAll = LlamaBundleActivator.class.getSimpleName() + SKIP_SUFFIX;
         if (SKIP_VALUE.equals(System.getProperty(skipAll))) {
-            log.info("skip loading of native libraries");
+            log.fine("skip loading of native libraries");
             return;
         }
         if (checkFilenames(

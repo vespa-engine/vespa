@@ -116,7 +116,7 @@ public final class ConfiguredApplication implements Application {
     private volatile boolean shutdownReconfiguration = false;
 
     static {
-        log.log(Level.FINE, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
+        log.log(Level.INFO, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
         installBouncyCastleSecurityProvider();
     }
 
