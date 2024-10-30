@@ -1118,6 +1118,7 @@ public class Nodes {
         /** Returns whether this operation requires a snapshot to be created for all children of given host */
         public boolean needsSnapshot(Node host, boolean enabled) {
             return this == softRebuild &&
+                   host.type() == NodeType.host && // Only tenant hosts need/support snapshots
                    host.resources().storageType() == NodeResources.StorageType.local &&
                    enabled;
         }
