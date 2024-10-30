@@ -13,6 +13,7 @@ import ai.vespa.secret.model.VaultName;
  */
 public class AthenzUtil {
 
+    // Serves as a namespace for resources in athenz and AWS
     public static final String PREFIX = "tenant-secret";
 
     public static String roleAndPolicyPrefix(String systemName, String tenantName) {
