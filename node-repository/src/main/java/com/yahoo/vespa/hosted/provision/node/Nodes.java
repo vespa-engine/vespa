@@ -698,7 +698,10 @@ public class Nodes {
                     Node newNode = childMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
                     write(newNode, childMutex);
                 }
-                if (wantToSnapshot) {
+                boolean contentNode = childMutex.node().allocation()
+                                                .map(a -> a.membership().cluster().type() == ClusterSpec.Type.content)
+                                                .orElse(false);
+                if (wantToSnapshot && contentNode) {
                     snapshots.create(childMutex.node().hostname(), clock.instant());
                 }
             }

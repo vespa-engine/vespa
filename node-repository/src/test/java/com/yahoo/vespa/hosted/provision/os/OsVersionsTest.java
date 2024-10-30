@@ -454,9 +454,11 @@ public class OsVersionsTest {
                                                                     .build(),
                                       Optional.ofNullable(tester.hostProvisioner()));
 
-        ApplicationId app = ApplicationId.from("t1", "a1", "i1");
+        ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
+        ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
         provisionInfraApplication(hostCount, NodeType.host, NodeResources.StorageType.local, NodeResources.Architecture.x86_64);
-        deployApplication(app);
+        deployApplication(app1);
+        deployStatelessApplication(app2);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
         Supplier<NodeList> childNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
 
@@ -469,12 +471,16 @@ public class OsVersionsTest {
             versions.resumeUpgradeOf(NodeType.host, true);
             NodeList rebuilding = hostNodes.get().rebuilding(softRebuild);
             assertEquals(1, rebuilding.size());
-            // Snapshot is triggered for children
+            // Snapshot is triggered for stateful children
             {
                 NodeList children = childNodes.get().childrenOf(rebuilding.asList().get(0));
-                assertFalse(children.isEmpty());
-                assertTrue(children.stream().allMatch(node -> node.status().snapshot().isPresent() &&
+                NodeList contentNodes = children.stateful();
+                NodeList containerNodes = children.stateless();
+                assertFalse(contentNodes.isEmpty());
+                assertFalse(containerNodes.isEmpty());
+                assertTrue(contentNodes.stream().allMatch(node -> node.status().snapshot().isPresent() &&
                                                               node.status().snapshot().get().state() == Snapshot.State.creating));
+                assertTrue(containerNodes.stream().allMatch(node -> node.status().snapshot().isEmpty()));
             }
             completeSoftRebuildOf(rebuilding.asList());
         }
@@ -654,6 +660,12 @@ public class OsVersionsTest {
 
     private void deployApplication(ApplicationId application) {
         deployApplication(application, 1);
+    }
+
+    private void deployStatelessApplication(ApplicationId application) {
+        ClusterSpec contentSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1")).vespaVersion("7").build();
+        List<HostSpec> hostSpecs = tester.prepare(application, contentSpec, 2, 1, new NodeResources(4, 8, 100, 0.3));
+        tester.activate(application, hostSpecs);
     }
 
     private void deployApplication(ApplicationId application, int groups) {
