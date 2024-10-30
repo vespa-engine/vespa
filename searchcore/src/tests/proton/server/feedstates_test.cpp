@@ -17,8 +17,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::BucketId;
 using document::DocumentId;
@@ -62,39 +61,6 @@ struct MyIncSerialNum : IIncSerialNum {
     SerialNum inc_serial_num() override { return ++_serial_num; }
 };
 
-struct Fixture
-{
-    MyFeedView feed_view1;
-    MyFeedView feed_view2;
-    IFeedView *feed_view_ptr;
-    MyReplayConfig replay_config;
-    MemoryConfigStore config_store;
-    bucketdb::BucketDBOwner _bucketDB;
-    bucketdb::BucketDBHandler _bucketDBHandler;
-    ReplayThrottlingPolicy _replay_throttling_policy;
-    MyIncSerialNum _inc_serial_num;
-    ReplayTransactionLogState state;
-
-    Fixture();
-    ~Fixture();
-};
-
-Fixture::Fixture()
-    : feed_view1(),
-      feed_view2(),
-      feed_view_ptr(&feed_view1),
-      replay_config(),
-      config_store(),
-      _bucketDB(),
-      _bucketDBHandler(_bucketDB),
-      _replay_throttling_policy({}),
-      _inc_serial_num(9u),
-      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, _replay_throttling_policy, _inc_serial_num)
-{
-}
-Fixture::~Fixture() = default;
-
-
 struct RemoveOperationContext
 {
     DocumentId doc_id;
@@ -116,39 +82,75 @@ RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
     packet->add(Packet::Entry(serial, FeedOperation::REMOVE, buf));
 }
 RemoveOperationContext::~RemoveOperationContext() = default;
-TEST_F("require that active FeedView can change during replay", Fixture)
+
+}
+
+class FeedStatesTest : public ::testing::Test
+{
+protected:
+    MyFeedView feed_view1;
+    MyFeedView feed_view2;
+    IFeedView *feed_view_ptr;
+    MyReplayConfig replay_config;
+    MemoryConfigStore config_store;
+    bucketdb::BucketDBOwner _bucketDB;
+    bucketdb::BucketDBHandler _bucketDBHandler;
+    ReplayThrottlingPolicy _replay_throttling_policy;
+    MyIncSerialNum _inc_serial_num;
+    ReplayTransactionLogState state;
+
+    FeedStatesTest();
+    ~FeedStatesTest() override;
+};
+
+FeedStatesTest::FeedStatesTest()
+    : ::testing::Test(),
+      feed_view1(),
+      feed_view2(),
+      feed_view_ptr(&feed_view1),
+      replay_config(),
+      config_store(),
+      _bucketDB(),
+      _bucketDBHandler(_bucketDB),
+      _replay_throttling_policy({}),
+      _inc_serial_num(9u),
+      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, _replay_throttling_policy, _inc_serial_num)
+{
+}
+
+FeedStatesTest::~FeedStatesTest() = default;
+
+TEST_F(FeedStatesTest, require_that_active_FeedView_can_change_during_replay)
 {
     ForegroundThreadExecutor executor;
 
-    EXPECT_EQUAL(0, f.feed_view1.remove_handled);
-    EXPECT_EQUAL(0, f.feed_view2.remove_handled);
+    EXPECT_EQ(0, feed_view1.remove_handled);
+    EXPECT_EQ(0, feed_view2.remove_handled);
     {
         RemoveOperationContext opCtx(10);
         auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, nullptr);
-        f.state.receive(wrap, executor);
+        state.receive(wrap, executor);
     }
-    EXPECT_EQUAL(1, f.feed_view1.remove_handled);
-    EXPECT_EQUAL(0, f.feed_view2.remove_handled);
-    f.feed_view_ptr = &f.feed_view2;
+    EXPECT_EQ(1, feed_view1.remove_handled);
+    EXPECT_EQ(0, feed_view2.remove_handled);
+    feed_view_ptr = &feed_view2;
     {
         RemoveOperationContext opCtx(11);
         auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, nullptr);
-        f.state.receive(wrap, executor);
+        state.receive(wrap, executor);
     }
-    EXPECT_EQUAL(1, f.feed_view1.remove_handled);
-    EXPECT_EQUAL(1, f.feed_view2.remove_handled);
+    EXPECT_EQ(1, feed_view1.remove_handled);
+    EXPECT_EQ(1, feed_view2.remove_handled);
 }
 
-TEST_F("require that replay progress is tracked", Fixture)
+TEST_F(FeedStatesTest, require_that_replay_progress_is_tracked)
 {
     RemoveOperationContext opCtx(10);
     TlsReplayProgress progress("test", 5, 15);
     auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, &progress);
     ForegroundThreadExecutor executor;
 
-    f.state.receive(wrap, executor);
-    EXPECT_EQUAL(10u, progress.getCurrent());
-    EXPECT_EQUAL(0.5, progress.getProgress());
+    state.receive(wrap, executor);
+    EXPECT_EQ(10u, progress.getCurrent());
+    EXPECT_EQ(0.5, progress.getProgress());
 }
-
-}  // namespace
