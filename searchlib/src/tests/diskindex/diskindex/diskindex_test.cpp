@@ -199,45 +199,44 @@ DiskIndexTest::requireThatLookupIsWorking(const EmptySettings& empty_settings)
     uint32_t f1(_schema.getIndexFieldId("f1"));
     uint32_t f2(_schema.getIndexFieldId("f2"));
     uint32_t f3(_schema.getIndexFieldId("f3"));
-    LookupResult::UP r;
-    r = _index->lookup(f1, "not");
-    EXPECT_TRUE(!r || r->counts._numDocs == 0);
+    auto r = _index->lookup(f1, "not");
+    EXPECT_EQ(0, r.counts._numDocs);
     r = _index->lookup(f1, "w1not");
-    EXPECT_TRUE(!r || r->counts._numDocs == 0);
+    EXPECT_EQ(0, r.counts._numDocs);
     r = _index->lookup(f1, "wnot");
-    EXPECT_TRUE(!r || r->counts._numDocs == 0);
+    EXPECT_EQ(0, r.counts._numDocs);
     { // field 'f1'
         r = _index->lookup(f1, "w1");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(!r || r->counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
-            EXPECT_EQ(1u, r->wordNum);
-            EXPECT_EQ(2u, r->counts._numDocs);
+            EXPECT_EQ(1u, r.wordNum);
+            EXPECT_EQ(2u, r.counts._numDocs);
         }
         r = _index->lookup(f1, "w2");
-        EXPECT_TRUE(!r || r->counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
     }
     { // field 'f2'
         r = _index->lookup(f2, "w1");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(!r || r->counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
-            EXPECT_EQ(1u, r->wordNum);
-            EXPECT_EQ(3u, r->counts._numDocs);
+            EXPECT_EQ(1u, r.wordNum);
+            EXPECT_EQ(3u, r.counts._numDocs);
         }
         r = _index->lookup(f2, "w2");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(!r || r->counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
-            EXPECT_EQ(2u, r->wordNum);
-            EXPECT_EQ(17u, r->counts._numDocs);
+            EXPECT_EQ(2u, r.wordNum);
+            EXPECT_EQ(17u, r.counts._numDocs);
         }
     }
     { // field 'f3' doesn't exist
         r = _index->lookup(f3, "w1");
-        EXPECT_TRUE(!r || r->counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
         r = _index->lookup(f3, "w2");
-        EXPECT_TRUE(!r || r->counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
     }
 }
 
@@ -246,9 +245,9 @@ DiskIndexTest::requireThatWeCanReadPostingList()
 {
     TermFieldMatchDataArray mda;
     { // field 'f1'
-        LookupResult::UP r = _index->lookup(0, "w1");
-        auto h = _index->readPostingList(*r);
-        auto sb = _index->create_iterator(*r, h, mda);
+        auto r = _index->lookup(0, "w1");
+        auto h = _index->readPostingList(r);
+        auto sb = _index->create_iterator(r, h, mda);
         EXPECT_EQ(SimpleResult({1,3}), SimpleResult().search(*sb));
     }
 }
@@ -271,17 +270,16 @@ void
 DiskIndexTest::requireThatWeCanReadBitVector()
 {
     { // word 'w1'
-        LookupResult::UP r = _index->lookup(1, "w1");
+        auto r = _index->lookup(1, "w1");
         // not bit vector for 'w1'
-        EXPECT_TRUE(_index->readBitVector(*r).get() == NULL);
+        EXPECT_TRUE(_index->readBitVector(r).get() == NULL);
     }
     { // word 'w2'
         BitVector::UP exp(BitVector::create(32));
         for (uint32_t docId = 1; docId < 18; ++docId) exp->setBit(docId);
         { // field 'f2'
-            LookupResult::UP r =
-                _index->lookup(1, "w2");
-            BitVector::UP bv = _index->readBitVector(*r);
+            auto r = _index->lookup(1, "w2");
+            BitVector::UP bv = _index->readBitVector(r);
             EXPECT_TRUE(bv.get() != NULL);
             EXPECT_TRUE(*bv == *exp);
         }

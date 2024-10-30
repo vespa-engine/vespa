@@ -21,7 +21,6 @@ public:
      **/
     struct LookupResult : public search::index::DictionaryLookupResult {
         uint32_t                         indexId;
-        using UP = std::unique_ptr<LookupResult>;
         LookupResult() noexcept;
         void swap(LookupResult & rhs) noexcept {
             DictionaryLookupResult::swap(rhs);
@@ -94,7 +93,7 @@ public:
      * @param word the word to lookup.
      * @return the lookup result or nullptr if the word is not found.
      */
-    LookupResult::UP lookup(uint32_t indexId, std::string_view word);
+    LookupResult lookup(uint32_t indexId, std::string_view word);
 
     LookupResultVector lookup(const std::vector<uint32_t> & indexes, std::string_view word);
 

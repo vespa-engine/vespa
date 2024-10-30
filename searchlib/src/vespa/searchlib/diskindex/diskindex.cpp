@@ -140,7 +140,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
     return true;
 }
 
-DiskIndex::LookupResult::UP
+DiskIndex::LookupResult
 DiskIndex::lookup(uint32_t index, std::string_view word)
 {
     /** Only used for testing */
@@ -148,10 +148,9 @@ DiskIndex::lookup(uint32_t index, std::string_view word)
     indexes.push_back(index);
     Key key(std::move(indexes), word);
     LookupResultVector resultV(1);
-    LookupResult::UP result;
+    LookupResult result;
     if ( read(key, resultV)) {
-        result = std::make_unique<LookupResult>();
-        result->swap(resultV[0]);
+        result.swap(resultV[0]);
     }
     return result;
 }
@@ -334,7 +333,7 @@ public:
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
             bool useBitVector = _field.isFilter();
-            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex, termStr, std::make_unique<DiskIndex::LookupResult>(lookupRes), useBitVector));
+            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex, termStr, lookupRes, useBitVector));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }
