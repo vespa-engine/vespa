@@ -7,7 +7,8 @@
 namespace search::diskindex {
 
 /*
- * Class for caching posting lists.
+ * Class for caching posting lists read from disk.
+ * It uses an LRU cache from vespalib.
  */
 class PostingListCache : public IPostingListCache {
 public:

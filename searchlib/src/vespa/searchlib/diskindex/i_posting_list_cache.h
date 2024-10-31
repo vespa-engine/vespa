@@ -9,7 +9,7 @@
 namespace search::diskindex {
 
 /*
- * Interface class for caching posting lists.
+ * Interface class for caching posting lists read from disk.
  */
 class IPostingListCache {
 public:
