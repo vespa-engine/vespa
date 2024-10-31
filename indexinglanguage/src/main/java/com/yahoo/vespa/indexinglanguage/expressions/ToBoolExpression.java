@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
+import com.yahoo.document.NumericDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
@@ -14,6 +16,20 @@ public final class ToBoolExpression extends Expression {
 
     public ToBoolExpression() {
         super(UnresolvedDataType.INSTANCE);
+    }
+
+    @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
+        if ( ! (input.isAssignableTo(DataType.STRING) && ! (input instanceof NumericDataType)))
+            throw new VerificationException(this, "Input must be a string or number, but got " + input);
+        return DataType.BOOL;
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(DataType.BOOL, output, null, context);
+        return null;
     }
 
     @Override
