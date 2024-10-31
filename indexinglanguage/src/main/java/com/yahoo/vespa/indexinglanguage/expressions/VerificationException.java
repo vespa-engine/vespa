@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 /**
  * @author Simon Thoresen Hult
  */
-public class VerificationException extends RuntimeException {
+public class VerificationException extends IllegalArgumentException {
 
     private final Class<?> type;
     private final String expression;
