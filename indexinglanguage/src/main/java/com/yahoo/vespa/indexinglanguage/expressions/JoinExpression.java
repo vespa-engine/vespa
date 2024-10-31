@@ -34,7 +34,7 @@ public final class JoinExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(DataType.STRING, outputType, null,context);
+        super.setOutputType(DataType.STRING, outputType, null, context);
         return null; // Cannot deduce since any array type is accepted
     }
 
