@@ -6,7 +6,6 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
@@ -87,6 +86,13 @@ public abstract class Expression extends Selectable {
      * or null if this is not set or there is no output produced at the end of the statement.
      */
     public DataType getOutputType(VerificationContext context) { return outputType; }
+
+    /** Returns the already assigned (during verification) output type, or throws an exception if no type is assigned. */
+    public DataType requireOutputType() {
+        if (outputType == null)
+            throw new IllegalStateException("The output type of " + this + " is unresolved");
+        return outputType;
+    }
 
     /**
      * Sets the output type of this and returns the resulting input type, or null if it cannot be
