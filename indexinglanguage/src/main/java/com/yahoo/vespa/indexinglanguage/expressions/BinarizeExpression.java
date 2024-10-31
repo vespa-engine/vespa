@@ -45,7 +45,7 @@ public class BinarizeExpression extends Expression  {
     protected void doVerify(VerificationContext context) {
         type = context.getCurrentType();
         if (! (type instanceof TensorDataType))
-            throw new IllegalArgumentException("The 'binarize' function requires a tensor, but got " + type);
+            throw new VerificationException(this, "Require a tensor, but got " + type);
     }
 
     @Override

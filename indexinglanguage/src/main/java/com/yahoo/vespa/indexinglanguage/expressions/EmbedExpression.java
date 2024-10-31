@@ -70,7 +70,7 @@ public class EmbedExpression extends Expression  {
         // TODO: Activate type checking
         // if ( ! (type == DataType.STRING)
         //      && ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-        //     throw new IllegalArgumentException("embed request either a string or array<string> input type, but got " + type);
+        //     throw new IVerificationException(this, "This requires either a string or array<string> input type, but got " + type);
         return null; // embed cannot determine the output type from the input
     }
 

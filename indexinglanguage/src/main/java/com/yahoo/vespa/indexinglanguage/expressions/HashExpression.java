@@ -32,10 +32,8 @@ public class HashExpression extends Expression  {
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         if ( ! canStoreHash(field.getDataType()))
-            throw new IllegalArgumentException("Cannot use the hash function on an indexing statement for " +
-                                               field.getName() +
-                                               ": The hash function can only be used when the target field " +
-                                               "is int or long or an array of int or long, not " + field.getDataType());
+            throw new VerificationException(this, ": This function can only be used when the target field " +
+                                                  "is int or long, or an array of int or long, not " + field.getDataType());
         targetType = field.getDataType().getPrimitiveType();
     }
 
