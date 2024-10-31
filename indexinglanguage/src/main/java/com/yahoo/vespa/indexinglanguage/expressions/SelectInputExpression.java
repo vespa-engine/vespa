@@ -39,6 +39,40 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+
+        DataType outputType = null;
+        for (Pair<String, Expression> entry : cases) {
+            DataType fieldType = context.getFieldType(entry.getFirst(), this);
+            if (fieldType == null)
+                throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
+            outputType = mostGeneralOf(outputType, entry.getSecond().setInputType(fieldType, context));
+        }
+        return outputType;
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+
+        for (Pair<String, Expression> entry : cases) {
+            DataType fieldType = context.getFieldType(entry.getFirst(), this);
+            if (fieldType == null)
+                throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
+            DataType inputType = entry.getSecond().setOutputType(outputType, context);
+            if ( ! fieldType.isAssignableTo(inputType))
+                throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
+        }
+        return AnyDataType.instance;
+    }
+
+    private DataType mostGeneralOf(DataType leftOrNull, DataType right) {
+        if (leftOrNull == null) return right;
+        return leftOrNull.isAssignableTo(right) ? right : leftOrNull;
+    }
+
+    @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         for (var casePair : cases)
             casePair.getSecond().setStatementOutput(documentType, field);
