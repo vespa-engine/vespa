@@ -27,6 +27,18 @@ public final class SubstringExpression extends Expression {
     public int getTo() { return to; }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        return DataType.STRING;
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(DataType.STRING, outputType, null, context);
+        return AnyDataType.instance; // Takes the string value of any input
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());
     }
