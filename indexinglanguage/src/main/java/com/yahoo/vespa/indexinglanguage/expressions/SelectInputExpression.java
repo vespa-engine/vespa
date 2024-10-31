@@ -43,11 +43,14 @@ public final class SelectInputExpression extends CompositeExpression {
         super.setInputType(inputType, context);
 
         DataType outputType = null;
+        boolean outputNeverAssigned = true; // Needed to separate this null case from the "cannot be inferred" case
         for (Pair<String, Expression> entry : cases) {
             DataType fieldType = context.getFieldType(entry.getFirst(), this);
             if (fieldType == null)
                 throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
-            outputType = mostGeneralOf(outputType, entry.getSecond().setInputType(fieldType, context));
+            var entryOutputType = entry.getSecond().setInputType(fieldType, context);
+            outputType = outputNeverAssigned ? entryOutputType : mostGeneralOf(outputType, entryOutputType);
+            outputNeverAssigned = false;
         }
         return outputType;
     }
@@ -67,9 +70,9 @@ public final class SelectInputExpression extends CompositeExpression {
         return AnyDataType.instance;
     }
 
-    private DataType mostGeneralOf(DataType leftOrNull, DataType right) {
-        if (leftOrNull == null) return right;
-        return leftOrNull.isAssignableTo(right) ? right : leftOrNull;
+    private DataType mostGeneralOf(DataType left, DataType right) {
+        if (left == null || right == null) return right;
+        return left.isAssignableTo(right) ? right : left;
     }
 
     @Override
