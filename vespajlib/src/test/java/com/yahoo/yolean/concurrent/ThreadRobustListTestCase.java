@@ -21,8 +21,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
+@SuppressWarnings("removal")
 public class ThreadRobustListTestCase {
 
     private final static int NUM_THREADS = 64;
