@@ -27,8 +27,8 @@ class OutputAssert {
     public static void assertVerify(OutputExpression exp) {
         assertVerify(new MyAdapter(null), DataType.INT, exp);
         assertVerify(new MyAdapter(null), DataType.STRING, exp);
-        assertVerifyThrows(new MyAdapter(null), null, exp, "Expected any input, but no input is specified");
-        assertVerifyThrows(new MyAdapter(new VerificationException((Expression) null, "foo")), DataType.INT, exp, "foo");
+        assertVerifyThrows(new MyAdapter(null), null, exp, "Invalid expression '" + exp + "': Expected any input, but no input is specified");
+        assertVerifyThrows(new MyAdapter(new VerificationException((Expression) null, "foo")), DataType.INT, exp, "Invalid expression 'null': foo");
     }
 
     public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {

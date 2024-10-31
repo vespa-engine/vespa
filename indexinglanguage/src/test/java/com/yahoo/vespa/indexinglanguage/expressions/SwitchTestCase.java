@@ -57,18 +57,18 @@ public class SwitchTestCase {
         Expression foo = SimpleExpression.newConversion(DataType.STRING, DataType.INT);
         Expression exp = new SwitchExpression(Map.of("foo", foo));
         assertVerify(DataType.STRING, exp, DataType.STRING); // does not touch output
-        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
+        assertVerifyThrows("Invalid expression 'switch { case \"foo\": SimpleExpression; }': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'switch { case \"foo\": SimpleExpression; }': Expected string input, got int", DataType.INT, exp);
     }
 
     @Test
     public void requireThatCasesAreVerified() {
         Map<String, Expression> cases = new HashMap<>();
         cases.put("foo", SimpleExpression.newRequired(DataType.INT));
-        assertVerifyThrows(DataType.STRING, new SwitchExpression(cases),
-                           "Expected int input, got string");
-        assertVerifyThrows(DataType.STRING, new SwitchExpression(Map.of(), SimpleExpression.newRequired(DataType.INT)),
-                           "Expected int input, got string");
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, new SwitchExpression(cases)
+                          );
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, new SwitchExpression(Map.of(), SimpleExpression.newRequired(DataType.INT))
+                          );
     }
 
     @Test

@@ -66,7 +66,7 @@ public class Base64DecodeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new Base64DecodeExpression();
         assertVerify(DataType.STRING, exp, DataType.LONG);
-        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
-        assertVerifyThrows(DataType.LONG, exp, "Expected string input, got long");
+        assertVerifyThrows("Invalid expression 'base64decode': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'base64decode': Expected string input, got long", DataType.LONG, exp);
     }
 }

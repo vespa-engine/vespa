@@ -60,7 +60,7 @@ public class ScriptTestCase {
             fail();
         } catch (VerificationException e) {
             assertEquals(e.getExpressionType(), ScriptExpression.class);
-            assertEquals("Expected any input, but no input is specified", e.getMessage());
+            assertEquals("Invalid expression '{ input in-1 | attribute out-1; attribute out-2; }': Expected any input, but no input is specified", e.getMessage());
         }
     }
 

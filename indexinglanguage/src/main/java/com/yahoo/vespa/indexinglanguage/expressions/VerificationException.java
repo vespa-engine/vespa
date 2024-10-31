@@ -7,32 +7,32 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 public class VerificationException extends RuntimeException {
 
     private final Class<?> type;
-    private final String exp;
+    private final String expression;
 
-    public VerificationException(Expression exp, String msg) {
-        super(msg);
-        if (exp != null) {
-            this.type = exp.getClass();
-            this.exp = exp.toString();
+    public VerificationException(Expression expression, String message) {
+        super("Invalid expression '" + expression + "': " + message);
+        if (expression != null) {
+            this.type = expression.getClass();
+            this.expression = expression.toString();
         } else {
             this.type = null;
-            this.exp = "null";
+            this.expression = "null";
         }
     }
 
-    public VerificationException(Class<?> exp, String msg) {
-        super(msg);
-        this.type = exp;
-        this.exp = exp.getName();
+    public VerificationException(Class<?> expression, String message) {
+        super("Invalid expression of type '" + expression.getSimpleName() + "': " + message);
+        this.type = expression;
+        this.expression = expression.getName();
     }
 
-    public String getExpression() { return exp; }
+    public String getExpression() { return expression; }
 
     public Class<?> getExpressionType() { return type; }
 
     @Override
     public String toString() {
-        return getClass().getName() + ": For expression '" + exp + "': " + getMessage();
+        return getClass().getName() + ": " + getMessage();
     }
 
 }
