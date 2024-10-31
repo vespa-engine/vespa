@@ -5,13 +5,16 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A backup snapshot of a node's local data. Only {@link ClusterSpec.Type#content} nodes support snapshots.
+ * A backup snapshot of a {@link com.yahoo.vespa.hosted.provision.Node}'s local data. Snapshots can only be created for
+ * {@link ClusterSpec.Type#content} nodes.
  *
  * @author mpolden
  */
@@ -26,6 +29,15 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
         if (clusterIndex < 0) {
             throw new IllegalArgumentException("clusterIndex cannot be negative, got " + cluster);
         }
+    }
+
+    /** Returns how long this snapshot has been idle at given instant */
+    public Duration idle(Instant instant) {
+        Instant latestEvent = history.events().values().stream()
+                                     .max(Comparator.comparing(History.Event::at))
+                                     .map(History.Event::at)
+                                     .get();
+        return Duration.between(latestEvent, instant);
     }
 
     public Snapshot with(State state, Instant at) {
