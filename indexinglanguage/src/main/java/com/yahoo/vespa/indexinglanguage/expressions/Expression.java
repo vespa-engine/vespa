@@ -66,7 +66,7 @@ public abstract class Expression extends Selectable {
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
         // TODO: Activate type checking
         // if ( ! (inputType.isAssignableTo(requiredType))
-        //    throw new VerificationException(this, "This requires type " + requiredType + ", but gets " + inputType);
+        //    throw new VerificationException(this, "This requires type " + requiredType.getName() + ", but gets " + inputType.getName());
         this.inputType = inputType;
         return inputType;
     }
@@ -113,9 +113,9 @@ public abstract class Expression extends Selectable {
                                            VerificationContext context) {
         // TODO: Activate type checking
         // if (actualOutput != null && requiredOutput != null && ! actualOutput.isAssignableTo(requiredOutput))
-        //     throw new VerificationException(this, "This produces type " + actualOutput + " but " + requiredOutput + " is required");
+        //     throw new VerificationException(this, "This produces type " + actualOutput.getName() + " but " + requiredOutput.getName() + " is required");
         // if (requiredType != null && requiredOutput != null && ! requiredOutputOutput.isAssignableTo(requiredType))
-        //     throw new VerificationException(this, "This is required to produce type " + requiredOutput + " but is produces " + requiredType);;
+        //     throw new VerificationException(this, "This is required to produce type " + requiredOutput.getName() + " but is produces " + requiredType.getName());;
         if (actualOutput != null)
             this.outputType = actualOutput; // Use the more precise type when known
         else
