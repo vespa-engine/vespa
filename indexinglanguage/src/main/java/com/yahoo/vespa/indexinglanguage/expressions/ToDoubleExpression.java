@@ -14,6 +14,18 @@ public final class ToDoubleExpression extends Expression {
     }
 
     @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
+        return DataType.DOUBLE;
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(DataType.DOUBLE, output, null, context);
+        return null;
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());
     }
