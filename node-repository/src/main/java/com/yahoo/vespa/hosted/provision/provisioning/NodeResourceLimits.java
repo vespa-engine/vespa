@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -40,11 +39,12 @@ public class NodeResourceLimits {
     // TODO: Remove this when we are ready to fail, not just warn on this. */
     public boolean isWithinAdvertisedDiskLimits(NodeResources requested, ClusterSpec cluster) {
         if (requested.diskIsUnspecified() || requested.memoryIsUnspecified()) return true;
-        return requested.diskGb() >= minAdvertisedDiskGb(requested, cluster);
+        // Override disk limit to be able to use more flavors as content nodes
+        return requested.diskGb() >= minAdvertisedDiskGb(requested, cluster, 2.9);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
         return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
                                   cluster);
@@ -89,8 +89,12 @@ public class NodeResourceLimits {
 
     // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
     private static double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster) {
+        return minAdvertisedDiskGb(requested, cluster, 3);
+    }
+
+    private static double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster, double contentNodeDiskToMemoryRatio) {
         return requested.memoryGiB() * switch (cluster.type()) {
-            case combined, content -> 3;
+            case combined, content -> contentNodeDiskToMemoryRatio;
             case container -> 2;
             default -> 0; // No constraint on other types
         };

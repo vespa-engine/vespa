@@ -11,6 +11,7 @@
 
 namespace documentapi { class TestAndSetCondition; }
 namespace storage::lib { class ClusterState; }
+namespace storage::api { class TestAndSetCommand; }
 
 namespace storage::distributor {
 
@@ -107,6 +108,7 @@ private:
                                        const document::Bucket& bucket,
                                        PersistenceOperationMetricSet& metrics,
                                        Func f);
+    void normalize_tas_condition(api::TestAndSetCommand& tas_cmd);
 
     void bounce_with_wrong_distribution(api::StorageCommand& cmd, const lib::ClusterState& cluster_state);
     // Bounce with the current _default_ space cluster state.
@@ -124,10 +126,11 @@ private:
             api::StorageCommand& cmd,
             const document::BucketId &bucketId,
             PersistenceOperationMetricSet& persistenceMetrics);
-    std::shared_ptr<api::StorageMessage> makeConcurrentMutationRejectionReply(
+    static std::shared_ptr<api::StorageMessage> make_concurrent_mutation_rejection_reply(
             api::StorageCommand& cmd,
-            const document::DocumentId& docId,
-            PersistenceOperationMetricSet& persistenceMetrics) const;
+            const document::DocumentId& doc_id,
+            const SequencingHandle& blocked_handle,
+            PersistenceOperationMetricSet& persistence_metrics);
     bool allowMutation(const SequencingHandle& handle) const;
 
     api::InternalReadConsistency desired_get_read_consistency() const noexcept;

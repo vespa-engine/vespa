@@ -5,6 +5,7 @@
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "externaloperationhandler.h"
+#include "node_supported_features_repo.h"
 #include "operation_sequencer.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/util/feed_reject_helper.h>
@@ -157,7 +158,7 @@ void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageComman
     // (derived) state strings for global/non-global document types for the same state version.
     // Similarly, if we've yet to activate any version at all we send back BUSY instead
     // of a suspiciously empty WrongDistributionReply.
-    // TOOD consider NOT_READY instead of BUSY once we're sure this won't cause any other issues.
+    // TODO consider NOT_READY instead of BUSY once we're sure this won't cause any other issues.
     if (cluster_state.getVersion() != 0) {
         auto cluster_state_str = cluster_state.toString();
         LOG(debug, "Got %s with wrong distribution, sending back state '%s'",
@@ -223,14 +224,21 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
 }
 
 std::shared_ptr<api::StorageMessage>
-ExternalOperationHandler::makeConcurrentMutationRejectionReply(api::StorageCommand& cmd,
-                                                               const document::DocumentId& docId,
-                                                               PersistenceOperationMetricSet& persistenceMetrics) const
+ExternalOperationHandler::make_concurrent_mutation_rejection_reply(api::StorageCommand& cmd,
+                                                                   const document::DocumentId& doc_id,
+                                                                   const SequencingHandle& blocked_handle,
+                                                                   PersistenceOperationMetricSet& persistence_metrics)
 {
-    auto err_msg = vespalib::make_string("A mutating operation for document '%s' is already in progress",
-                                         docId.toString().c_str());
+    std::string err_msg;
+    if (blocked_handle.is_blocked_by_pending_operation()) {
+        err_msg = vespalib::make_string("A mutating operation for document '%s' is already in progress",
+                                        doc_id.toString().c_str());
+    } else { // bucket-level blocking
+        err_msg = vespalib::make_string("A reindexing operation is in progress for the data bucket containing '%s'",
+                                        doc_id.toString().c_str());
+    }
     LOG(debug, "Aborting incoming %s operation: %s", cmd.getType().toString().c_str(), err_msg.c_str());
-    persistenceMetrics.failures.concurrent_mutations.inc();
+    persistence_metrics.failures.concurrent_mutations.inc();
     api::StorageReply::UP reply(cmd.makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, err_msg));
     return std::shared_ptr<api::StorageMessage>(reply.release());
@@ -270,6 +278,21 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
     }
 }
 
+// TestAndSetConditions may have a persisted timestamp requirement which overrides any condition
+// selection that may be present. If the cluster is partially upgraded and the distributor but
+// only a subset of the receiving replicas know about this flag, the semantics of the TaS operation
+// will differ across replicas, which is likely to cause the replicas to get out of sync. To avoid
+// this, detect replica divergence support and fall back to a condition without the timestamp.
+// TODO Remove on Vespa 9 (fallback behavior during upgrades)
+void ExternalOperationHandler::normalize_tas_condition(api::TestAndSetCommand& tas_cmd) {
+    const auto& cond = tas_cmd.getCondition(); // always valid, but may be empty
+    if (cond.has_required_timestamp() &&
+        !_op_ctx.node_supported_features_repo().supported_by_all_nodes().timestamps_in_tas_conditions) [[unlikely]]
+    {
+        tas_cmd.setCondition(documentapi::TestAndSetCondition(cond.getSelection()));
+    }
+}
+
 namespace {
 
 bool put_is_from_reindexing_visitor(const api::PutCommand& cmd) {
@@ -299,6 +322,7 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
+    normalize_tas_condition(*cmd);
 
     if (cmd->getTimestamp() == 0) {
         cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
@@ -332,7 +356,7 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
                                              getMetrics().puts, getMetrics().put_condition_probes,
                                              std::move(handle));
     } else {
-        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
     }
 
     return true;
@@ -351,6 +375,7 @@ bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand
     if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
+    normalize_tas_condition(*cmd);
 
     if (cmd->getTimestamp() == 0) {
         cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
@@ -362,7 +387,7 @@ bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand
                                                         _op_ctx.bucket_space_repo().get(bucket_space),
                                                         std::move(cmd), getMetrics(), std::move(handle));
     } else {
-        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
     }
 
     return true;
@@ -374,6 +399,7 @@ bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand
     if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
+    normalize_tas_condition(*cmd);
 
     if (cmd->getTimestamp() == 0) {
         cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
@@ -387,7 +413,7 @@ bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand
                                                 getMetrics().removes, getMetrics().remove_condition_probes,
                                                 std::move(handle));
     } else {
-        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
     }
 
     return true;

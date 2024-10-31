@@ -113,14 +113,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -662,21 +655,25 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public List<String> deleteUnusedFileDistributionReferences(FileDirectory fileDirectory, Duration keepFileReferencesDuration) {
+    public List<String> deleteUnusedFileDistributionReferences(FileDirectory fileDirectory) {
         Set<String> fileReferencesInUse = getFileReferencesInUse();
         log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
-        Instant instant = clock.instant().minus(keepFileReferencesDuration);
-        log.log(Level.FINE, () -> "Remove unused file references last modified before " + instant);
 
-        List<String> fileReferencesToDelete = sortedUnusedFileReferences(fileDirectory.getRoot(), fileReferencesInUse, instant);
-        // Do max 20 at a time
-        var toDelete = fileReferencesToDelete.subList(0, Math.min(fileReferencesToDelete.size(), 20));
-        if (toDelete.size() > 0) {
-            log.log(Level.FINE, () -> "Will delete file references not in use: " + toDelete);
-            toDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse));
-            log.log(Level.FINE, () -> "Deleted " + toDelete.size() + " file references not in use");
-        }
-        return toDelete;
+        List<String> toDelete = sortedUnusedFileReferences(fileDirectory.getRoot(), fileReferencesInUse);
+        log.log(Level.FINE, () -> "File references not in use: " + toDelete);
+        List<String> deleted = new ArrayList<>();
+        toDelete.forEach(fileReference -> {
+            if (fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse, this::isFileReferenceOld))
+                deleted.add(fileReference);
+        });
+        log.log(Level.FINE, () -> "Deleted " + deleted.size() + " file references not in use");
+        return deleted;
+    }
+
+    private boolean isFileReferenceOld(File file) {
+        var keepFileReferencesDuration = Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes());
+        var instant = clock.instant().minus(keepFileReferencesDuration);
+        return isLastModifiedBefore(file, instant);
     }
 
     private boolean isFileReferenceInUse(FileReference fileReference) {
@@ -694,14 +691,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileReferencesInUse;
     }
 
-    private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Instant instant) {
+    private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
         log.log(Level.FINEST, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .filter(fileReference -> isLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .sorted(Comparator.comparing(a -> lastModified(new File(fileReferencesPath, a))))
+                // Do max 20 at a time
+                .limit(20)
                 .toList();
     }
 
@@ -956,23 +954,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public void deleteExpiredLocalSessions() {
-        for (Tenant tenant : tenantRepository.getAllTenants()) {
-            tenant.getSessionRepository().deleteExpiredSessions(session -> sessionIsActiveForItsApplication(tenant, session));
-        }
-    }
-
-    public int deleteExpiredRemoteSessions() {
-        return tenantRepository.getAllTenants()
-                .stream()
-                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(session -> sessionIsActiveForItsApplication(tenant, session)))
-                .mapToInt(i -> i)
-                .sum();
-    }
-
     public void deleteExpiredSessions() {
         tenantRepository.getAllTenants()
-                .forEach(tenant -> tenant.getSessionRepository().deleteExpiredRemoteAndLocalSessions(clock, session -> sessionIsActiveForItsApplication(tenant, session)));
+                .forEach(tenant -> tenant.getSessionRepository().deleteExpiredRemoteAndLocalSessions(session -> sessionIsActiveForItsApplication(tenant, session)));
     }
 
     private boolean sessionIsActiveForItsApplication(Tenant tenant, Session session) {

@@ -360,15 +360,14 @@ TEST("require that you can format a number into a std::string easily") {
     EXPECT_EQUAL(vespalib::stringify(18446744073709551615uLL), "18446744073709551615");
 }
 
-using vespalib::contains;
 TEST("require that contains works") {
     std::string s("require that contains works");
-    EXPECT_TRUE(contains(s, "require"));
-    EXPECT_TRUE(contains(s, "require that contains work"));
-    EXPECT_TRUE(contains(s, "require that contains works"));
-    EXPECT_TRUE(contains(s, "equire"));
-    EXPECT_TRUE(contains(s, "ks"));
-    EXPECT_FALSE(contains(s, "not in there"));
+    EXPECT_TRUE(s.contains("require"));
+    EXPECT_TRUE(s.contains("require that contains work"));
+    EXPECT_TRUE(s.contains("require that contains works"));
+    EXPECT_TRUE(s.contains("equire"));
+    EXPECT_TRUE(s.contains("ks"));
+    EXPECT_FALSE(s.contains("not in there"));
 }
 
 TEST("require that starts_with works") {

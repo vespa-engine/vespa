@@ -87,6 +87,7 @@ public class Request extends AbstractResource {
         this(current, uri, isServerRequest, -1);
     }
 
+    @SuppressWarnings("this-escape")
     public Request(CurrentContainer current, URI uri, boolean isServerRequest, long creationTime) {
         this.parent = null;
         this.container = current.newReference(uri, this);
@@ -121,6 +122,7 @@ public class Request extends AbstractResource {
      * @param parent The parent Request of this.
      * @param uri    The identifier of this request.
      */
+    @SuppressWarnings("this-escape")
     public Request(Request parent, URI uri) {
         this.parent = parent;
         this.container = null;

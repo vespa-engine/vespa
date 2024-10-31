@@ -42,14 +42,14 @@ final class SimpleExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         if (hasExecuteValue) {
-            context.setValue(executeValue);
+            context.setCurrentValue(executeValue);
         }
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
         if (hasVerifyValue) {
-            context.setValueType(verifyValue);
+            context.setCurrentType(verifyValue);
         }
     }
 
@@ -73,6 +73,11 @@ final class SimpleExpression extends Expression {
         if (!equals(requiredInputType(), other.requiredInputType())) return false;
         if (!equals(createdOutput, other.createdOutput)) return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleExpression";
     }
 
     public static SimpleExpression newOutput(DataType createdOutput) {

@@ -33,6 +33,16 @@ public final class SwitchExpression extends CompositeExpression {
         this.cases.putAll(cases);
     }
 
+    public boolean isEmpty() {
+        return defaultExp == null && cases.isEmpty();
+    }
+
+    public Map<String, Expression> getCases() {
+        return Collections.unmodifiableMap(cases);
+    }
+
+    public Expression getDefaultExpression() { return defaultExp; }
+
     @Override
     public SwitchExpression convertChildren(ExpressionConverter converter) {
         var convertedCases = new LinkedHashMap<String, Expression>();
@@ -44,18 +54,6 @@ public final class SwitchExpression extends CompositeExpression {
         return new SwitchExpression(convertedCases, converter.branch().convert(defaultExp));
     }
 
-    public boolean isEmpty() {
-        return defaultExp == null && cases.isEmpty();
-    }
-
-    public Map<String, Expression> getCases() {
-        return Collections.unmodifiableMap(cases);
-    }
-
-    public Expression getDefaultExpression() {
-        return defaultExp;
-    }
-
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         defaultExp.setStatementOutput(documentType, field);
@@ -64,8 +62,25 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        DataType input = context.getCurrentType();
+        if (input == null) {
+            throw new VerificationException(this, "Expected " + DataType.STRING.getName() + " input, but no input is specified");
+        }
+        if (input != DataType.STRING) {
+            throw new VerificationException(this, "Expected " + DataType.STRING.getName() + " input, got " +
+                                                  input.getName());
+        }
+        for (Expression exp : cases.values()) {
+            context.setCurrentType(input).verify(exp);
+        }
+        context.setCurrentType(input).verify(defaultExp);
+        context.setCurrentType(input);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
-        FieldValue input = context.getValue();
+        FieldValue input = context.getCurrentValue();
         Expression exp = null;
         if (input != null) {
             if (!(input instanceof StringFieldValue)) {
@@ -80,7 +95,7 @@ public final class SwitchExpression extends CompositeExpression {
         if (exp != null) {
             exp.execute(context);
         }
-        context.setValue(input);
+        context.setCurrentValue(input);
     }
 
     @Override
@@ -92,26 +107,7 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
-        if (input == null) {
-            throw new VerificationException(this, "Expected " + DataType.STRING.getName() + " input, but no input is specified");
-        }
-        if (input != DataType.STRING) {
-            throw new VerificationException(this, "Expected " + DataType.STRING.getName() + " input, got " +
-                                                  input.getName());
-        }
-        for (Expression exp : cases.values()) {
-            context.setValueType(input).execute(exp);
-        }
-        context.setValueType(input).execute(defaultExp);
-        context.setValueType(input);
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return null;
-    }
+    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() {

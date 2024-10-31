@@ -7,6 +7,7 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/documentapi/messagebus/docapi_feed.pb.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -14,7 +15,11 @@
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
+#include <vespa/storage/distributor/operations/external/putoperation.h>
+#include <vespa/storage/distributor/operations/external/removeoperation.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
+#include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
@@ -89,6 +94,18 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     }
 
     void do_test_get_weak_consistency_is_propagated(bool use_weak);
+
+    template <typename OperationType>
+    void process_tas_and_get_forwarded_condition(
+        std::shared_ptr<api::TestAndSetCommand> client_cmd_in,
+        const documentapi::TestAndSetCondition& cond_in,
+        documentapi::TestAndSetCondition& fwd_cond_out);
+
+    void set_two_nodes_tas_cond_timestamp_supported(bool node0, bool node1);
+    template <typename OperationType>
+    void do_test_tas_condition_rewrite(std::shared_ptr<api::TestAndSetCommand> cmd);
+    template <typename OperationType>
+    void do_test_tas_condition_no_rewrite(std::shared_ptr<api::TestAndSetCommand> cmd);
 };
 
 TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
@@ -483,6 +500,25 @@ TEST_F(ExternalOperationHandlerTest, sequencing_works_across_mutation_types) {
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(makeUpdateCommand("testdoctype1", _dummy_id)));
 }
 
+TEST_F(ExternalOperationHandlerTest, bucket_level_lock_rejection_includes_reason_in_error_message) {
+    set_up_distributor_for_sequencing_test();
+    auto put = makePutCommand("testdoctype1", _dummy_id);
+
+    auto doc_bucket_id    = document::BucketIdFactory().getBucketId(put->getDocumentId());
+    auto parent_bucket_id = document::BucketId(16, doc_bucket_id.getRawId());
+    auto parent_bucket    = document::Bucket(document::FixedBucketSpaces::default_space(), parent_bucket_id);
+
+    auto handle = getExternalOperationHandler().operation_sequencer().try_acquire(parent_bucket, "foo-token");
+    ASSERT_TRUE(handle.valid());
+    // A put towards a bucket that is covered (exactly or transitively) by a locked bucket must be rejected.
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(put)));
+
+    EXPECT_EQ(vespalib::make_string(
+              "ReturnCode(BUSY, A reindexing operation is in progress for "
+              "the data bucket containing '%s')", _dummy_id.c_str()),
+              _sender.reply(0)->getResult().toString());
+}
+
 TEST_F(ExternalOperationHandlerTest, gets_are_started_with_mutable_db_outside_transition_period) {
     createLinks();
     std::string current = "version:1 distributor:1 storage:3";
@@ -591,6 +627,87 @@ TEST_F(ExternalOperationHandlerTest, trivial_updates_are_not_rejected_if_feed_is
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo"), generated));
 }
 
+void
+ExternalOperationHandlerTest::set_two_nodes_tas_cond_timestamp_supported(bool node0, bool node1)
+{
+    NodeSupportedFeatures f;
+    f.timestamps_in_tas_conditions = node0;
+    set_node_supported_features(0, f);
+    f.timestamps_in_tas_conditions = node1;
+    set_node_supported_features(1, f);
+}
+
+template <typename OperationType>
+void
+ExternalOperationHandlerTest::process_tas_and_get_forwarded_condition(
+    std::shared_ptr<api::TestAndSetCommand> client_cmd_in,
+    const documentapi::TestAndSetCondition& cond_in,
+    documentapi::TestAndSetCondition& fwd_cond_out)
+{
+    client_cmd_in->setCondition(cond_in);
+    Operation::SP generated;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(client_cmd_in), generated));
+    ASSERT_TRUE(generated);
+
+    auto* op = dynamic_cast<OperationType*>(generated.get());
+    ASSERT_TRUE(op);
+    auto fwd_cmd = op->command();
+    ASSERT_TRUE(fwd_cmd);
+    fwd_cond_out = fwd_cmd->getCondition();
+}
+
+template <typename OperationType>
+void
+ExternalOperationHandlerTest::do_test_tas_condition_rewrite(std::shared_ptr<api::TestAndSetCommand> cmd)
+{
+    createLinks();
+    setup_stripe(1, 2, "version:1 distributor:1 storage:2");
+    set_two_nodes_tas_cond_timestamp_supported(true, false); // _not_ supported on all nodes
+
+    documentapi::TestAndSetCondition cond_before(123456789, "testdoctype1.stuff");
+    documentapi::TestAndSetCondition cond_after;
+    ASSERT_NO_FATAL_FAILURE(process_tas_and_get_forwarded_condition<OperationType>(std::move(cmd), cond_before, cond_after));
+    // Timestamp predicate has been removed entirely
+    EXPECT_EQ(cond_after, documentapi::TestAndSetCondition("testdoctype1.stuff"));
+}
+
+TEST_F(ExternalOperationHandlerTest, remove_timestamp_from_tas_condition_if_not_supported_across_all_nodes_put_case) {
+    do_test_tas_condition_rewrite<PutOperation>(makePutCommand("testdoctype1", _dummy_id));
+}
+
+TEST_F(ExternalOperationHandlerTest, remove_timestamp_from_tas_condition_if_not_supported_across_all_nodes_remove_case) {
+    do_test_tas_condition_rewrite<RemoveOperation>(makeRemoveCommand(_dummy_id));
+}
+
+TEST_F(ExternalOperationHandlerTest, remove_timestamp_from_tas_condition_if_not_supported_across_all_nodes_update_case) {
+    do_test_tas_condition_rewrite<TwoPhaseUpdateOperation>(makeUpdateCommand("testdoctype1", _dummy_id));
+}
+
+template <typename OperationType>
+void
+ExternalOperationHandlerTest::do_test_tas_condition_no_rewrite(std::shared_ptr<api::TestAndSetCommand> cmd)
+{
+    createLinks();
+    setup_stripe(1, 2, "version:1 distributor:1 storage:2");
+    set_two_nodes_tas_cond_timestamp_supported(true, true); // supported on all nodes
+
+    documentapi::TestAndSetCondition cond_before(123456789, "testdoctype1.stuff");
+    documentapi::TestAndSetCondition cond_after;
+    ASSERT_NO_FATAL_FAILURE(process_tas_and_get_forwarded_condition<OperationType>(std::move(cmd), cond_before, cond_after));
+    EXPECT_EQ(cond_after, cond_before); // No timestamp removal
+}
+
+TEST_F(ExternalOperationHandlerTest, do_not_remove_timestamp_from_tas_condition_if_supported_across_all_nodes_put_case) {
+    do_test_tas_condition_no_rewrite<PutOperation>(makePutCommand("testdoctype1", _dummy_id));
+}
+
+TEST_F(ExternalOperationHandlerTest, do_not_remove_timestamp_from_tas_condition_if_supported_across_all_nodes_remove_case) {
+    do_test_tas_condition_no_rewrite<RemoveOperation>(makeRemoveCommand(_dummy_id));
+}
+
+TEST_F(ExternalOperationHandlerTest, do_not_remove_timestamp_from_tas_condition_if_supported_across_all_nodes_update_case) {
+    do_test_tas_condition_no_rewrite<TwoPhaseUpdateOperation>(makeUpdateCommand("testdoctype1", _dummy_id));
+}
 
 struct OperationHandlerSequencingTest : ExternalOperationHandlerTest {
     void SetUp() override {

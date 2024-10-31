@@ -214,6 +214,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean launchApplicationAthenzService;
         private final boolean distributionConfigFromClusterController;
         private final boolean useLegacyWandQueryParsing;
+        private final boolean forwardAllLogLevels;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -224,7 +225,7 @@ public class ModelContextImpl implements ModelContext {
             this.feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.feedNiceness = Flags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
             this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
-            this.allowedAthenzProxyIdentities = Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
+            this.allowedAthenzProxyIdentities = PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
@@ -251,7 +252,7 @@ public class ModelContextImpl implements ModelContext {
             this.heapPercentage = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version).value();
             this.summaryDecodePolicy = Flags.SUMMARY_DECODE_POLICY.bindTo(source).with(appId).with(version).value();
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
-            this.unknownConfigDefinition = Flags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
+            this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
             this.searchHandlerThreadpool = Flags.SEARCH_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
             this.alwaysMarkPhraseExpensive = Flags.ALWAYS_MARK_PHRASE_EXPENSIVE.bindTo(source).with(appId).with(version).value();
             this.sortBlueprintsByCost = Flags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
@@ -265,6 +266,7 @@ public class ModelContextImpl implements ModelContext {
             this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(source).with(appId).with(version).value();
             this.distributionConfigFromClusterController = Flags.DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
+            this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -321,6 +323,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
         @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
+        @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
     }
 
     public static class Properties implements ModelContext.Properties {
@@ -331,6 +334,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<ConfigServerSpec> configServerSpecs;
         private final HostName loadBalancerName;
         private final URI ztsUrl;
+        private final String tenantSecretDomain;
         private final String athenzDnsSuffix;
         private final boolean hostedVespa;
         private final Zone zone;
@@ -377,6 +381,7 @@ public class ModelContextImpl implements ModelContext {
             this.configServerSpecs = fromConfig(configserverConfig);
             this.loadBalancerName = configserverConfig.loadBalancerAddress().isEmpty() ? null : HostName.of(configserverConfig.loadBalancerAddress());
             this.ztsUrl = configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null;
+            this.tenantSecretDomain = configserverConfig.tenantSecretDomain();
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
             this.hostedVespa = configserverConfig.hostedVespa();
             this.zone = zone;
@@ -421,6 +426,13 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public URI ztsUrl() {
             return ztsUrl;
+        }
+
+        @Override
+        public AthenzDomain tenantSecretDomain() {
+            if (tenantSecretDomain.isEmpty())
+                throw new IllegalArgumentException("Tenant secret domain is not set for zone " + zone);
+            return AthenzDomain.from(tenantSecretDomain);
         }
 
         @Override

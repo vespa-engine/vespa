@@ -3,6 +3,7 @@ package com.yahoo.language.opennlp;
 
 import ai.vespa.opennlp.OpenNlpConfig;
 import com.yahoo.language.Language;
+import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Stemmer;
@@ -23,6 +24,7 @@ public class OpenNlpLinguisticsTester {
     private final Tokenizer tokenizer;
     private final Segmenter segmenter;
     private final Stemmer stemmer;
+    private final Normalizer normalizer;
 
     public OpenNlpLinguisticsTester() {
         this(new OpenNlpLinguistics());
@@ -36,14 +38,25 @@ public class OpenNlpLinguisticsTester {
         this.tokenizer = linguistics.getTokenizer();
         this.segmenter = linguistics.getSegmenter();
         this.stemmer = linguistics.getStemmer();
+        this.normalizer = linguistics.getNormalizer();
     }
 
     Tokenizer tokenizer() { return tokenizer; }
     Segmenter segmenter() { return segmenter; }
     Stemmer stemmer() { return stemmer; }
+    Normalizer normalizer() { return normalizer; }
 
     Iterable<Token> tokenize(String input, Language language) {
         return tokenizer.tokenize(input, language, StemMode.SHORTEST, true);
+    }
+
+    String tokenizeToString(String input, Language language) {
+        return tokenize(input, language).iterator().next().getTokenString();
+    }
+
+    String stemAndNormalize(String input, Language language) {
+        var stemListList = stemmer.stem(input, language, StemMode.SHORTEST, true);
+        return normalizer.normalize(stemListList.get(0).get(0));
     }
 
     void recurseDecompose(Token t) {

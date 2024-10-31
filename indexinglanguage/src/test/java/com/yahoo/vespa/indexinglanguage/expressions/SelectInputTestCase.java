@@ -60,7 +60,7 @@ public class SelectInputTestCase {
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_str"),
                            "Can not assign string to field 'my_int' which is int.");
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_unknown"),
-                           "Field 'my_unknown' not found");
+                           "Input field 'my_unknown' not found.");
     }
 
     @Test
@@ -73,7 +73,7 @@ public class SelectInputTestCase {
     }
 
     private static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        assertEquals(value, exp.verify(new VerificationContext(adapter).setValueType(value)));
+        assertEquals(value, exp.verify(new VerificationContext(adapter).setCurrentType(value)));
     }
 
     private static void assertVerifyThrows(FieldTypeAdapter adapter, Expression exp, String expectedException) {
@@ -98,7 +98,7 @@ public class SelectInputTestCase {
         ExecutionContext ctx = new ExecutionContext(adapter);
         for (String fieldName : availableFields) {
             adapter.createField(new Field(fieldName, DataType.STRING));
-            ctx.setOutputValue(null, fieldName, new StringFieldValue(fieldName));
+            ctx.setFieldValue(fieldName, new StringFieldValue(fieldName), null);
         }
         List<Pair<String, Expression>> cases = new LinkedList<>();
         for (String fieldName : inputField) {

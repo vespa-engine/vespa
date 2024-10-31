@@ -154,6 +154,7 @@ public class Symbol {
         LAMBDA_FUNCTION,
         MAP_KEY,
         MAP_VALUE,
+        ONNX_MODEL,
         PARAMETER,
         PROPERTY,
         QUERY_INPUT,

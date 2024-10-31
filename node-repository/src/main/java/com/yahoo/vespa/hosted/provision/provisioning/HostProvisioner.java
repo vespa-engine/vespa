@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostEvent;
 import com.yahoo.config.provision.NodeAllocationException;
@@ -100,8 +99,5 @@ public interface HostProvisioner {
 
     /** Returns all OS versions available to host for the given major version */
     Set<Version> osVersions(Node host, int majorVersion);
-
-    /** Updates the given hosts to indicate that they are allocated to the given application. */
-    default void updateAllocation(Collection<Node> hosts, ApplicationId owner) { }
 
 }

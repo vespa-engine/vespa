@@ -18,18 +18,18 @@ class ExpressionAssert {
     }
 
     public static void assertVerify(DataType valueBefore, Expression exp, DataType expectedValueAfter) {
-        assertVerifyCtx(new VerificationContext().setValueType(valueBefore), exp, expectedValueAfter);
+        assertVerifyCtx(new VerificationContext().setCurrentType(valueBefore), exp, expectedValueAfter);
     }
 
     public static void assertVerifyThrows(DataType valueBefore, Expression exp, String expectedException) {
-        assertVerifyCtxThrows(new VerificationContext().setValueType(valueBefore), exp, expectedException);
+        assertVerifyCtxThrows(new VerificationContext().setCurrentType(valueBefore), exp, expectedException);
     }
 
     interface CreateExpression {
         Expression create();
     }
     public static void assertVerifyThrows(DataType valueBefore, CreateExpression createExp, String expectedException) {
-        assertVerifyCtxThrows(new VerificationContext().setValueType(valueBefore), createExp, expectedException);
+        assertVerifyCtxThrows(new VerificationContext().setCurrentType(valueBefore), createExp, expectedException);
     }
 
     public static void assertVerifyCtxThrows(VerificationContext ctx, CreateExpression createExp, String expectedException) {

@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ExportPackagesIT {
 
-
     private static final File expectedExportPackages = new File("src/test/resources" + ExportPackages.PROPERTIES_FILE);
 
     private static final String JAR_PATH = "target/dependency/";
@@ -126,8 +125,10 @@ public class ExportPackagesIT {
         assertNotNull(expectedValue, "Missing exportPackages property in file.");
 
         var expectedPackages = parsePackages(expectedValue).removeJavaVersion();
-               // .removePackages(removedPackagesInJava21)
-               // .addPackages(newPackagesInJava21);
+        if (Runtime.version().feature() >= 21) {
+            expectedPackages = expectedPackages.removePackages(removedPackagesInJava21)
+                    .addPackages(newPackagesInJava21);
+        }
         var actualPackages = parsePackages(actualValue).removeJavaVersion();
 
         if (!actualPackages.isEquivalentTo(expectedPackages)) {

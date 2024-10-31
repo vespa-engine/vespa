@@ -78,7 +78,7 @@ MemoryIndex::MemoryIndex(const Schema& schema,
 MemoryIndex::~MemoryIndex() = default;
 
 void
-MemoryIndex::insertDocument(uint32_t docId, const document::Document &doc, OnWriteDoneType on_write_done)
+MemoryIndex::insertDocument(uint32_t docId, const document::Document &doc, const OnWriteDoneType& on_write_done)
 {
     if (_frozen) {
         LOG(warning, "Memory index frozen: ignoring insert of document '%s'(%u): '%s'",
@@ -112,7 +112,7 @@ MemoryIndex::removeDocuments(LidVector lids)
 }
 
 void
-MemoryIndex::commit(OnWriteDoneType on_write_done)
+MemoryIndex::commit(const OnWriteDoneType& on_write_done)
 {
     auto& inverter = _inverters->get_active_inverter();
     inverter.pushDocuments(on_write_done);
@@ -236,7 +236,7 @@ MemoryIndex::pruneRemovedFields(const Schema &schema)
     }
 }
 
-Schema::SP
+std::shared_ptr<const Schema>
 MemoryIndex::getPrunedSchema() const
 {
     std::lock_guard lock(_lock);

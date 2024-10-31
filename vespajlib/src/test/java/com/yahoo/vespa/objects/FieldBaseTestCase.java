@@ -30,7 +30,7 @@ public class FieldBaseTestCase {
         assertThat(f1.hashCode(), equalTo(f2.hashCode()));
         assertThat(f1.hashCode(), equalTo(f3.hashCode()));
 
-        assertThat(f1.toString(), equalTo("field test"));
+        assertThat(f1.toString(), equalTo("field 'test'"));
 
         FieldBase f4 = new FieldBase("foo");
         FieldBase f5 = new FieldBase("bar");

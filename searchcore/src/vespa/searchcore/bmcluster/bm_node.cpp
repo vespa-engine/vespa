@@ -12,7 +12,7 @@
 #include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/metrics/dummy_wire_service.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>

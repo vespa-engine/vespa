@@ -4,7 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/test/mock_index_manager.h>
 #include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace proton;
@@ -38,11 +38,7 @@ struct MyIndexManager : public proton::test::MockIndexManager
     SerialNum commitSerial;
     uint32_t  wantedLidLimit;
     SerialNum compactSerial;
-    MyIndexManager() : puts(), removes(), current(0), flushed(0),
-                       commitSerial(0),
-                       wantedLidLimit(0), compactSerial(0)
-    {
-    }
+    MyIndexManager() noexcept;
     ~MyIndexManager() override;
     std::string getPut(uint32_t lid) {
         return toString(puts[lid]);
@@ -51,7 +47,7 @@ struct MyIndexManager : public proton::test::MockIndexManager
         return toString(removes[lid]);
     }
     // Implements IIndexManager
-    void putDocument(uint32_t lid, const Document &, SerialNum serialNum, OnWriteDoneType) override {
+    void putDocument(uint32_t lid, const Document &, SerialNum serialNum, const OnWriteDoneType&) override {
         puts[lid].push_back(serialNum);
     }
     void removeDocuments(LidVector lids, SerialNum serialNum) override {
@@ -59,7 +55,7 @@ struct MyIndexManager : public proton::test::MockIndexManager
             removes[lid].push_back(serialNum);
         }
     }
-    void commit(SerialNum serialNum, OnWriteDoneType) override {
+    void commit(SerialNum serialNum, const OnWriteDoneType&) override {
         commitSerial = serialNum;
     }
     SerialNum getCurrentSerialNum() const override {
@@ -74,23 +70,31 @@ struct MyIndexManager : public proton::test::MockIndexManager
     }
 };
 
+MyIndexManager::MyIndexManager() noexcept
+    : puts(),
+      removes(),
+      current(0),
+      flushed(0),
+      commitSerial(0),
+      wantedLidLimit(0),
+      compactSerial(0)
+{
+}
+
 MyIndexManager::~MyIndexManager() = default;
 
-struct Fixture
+}
+
+class IndexWriterTest : public ::testing::Test
 {
+protected:
     IIndexManager::SP iim;
     MyIndexManager   &mim;
     IndexWriter      iw;
     DocBuilder   builder;
     Document::UP      dummyDoc;
-    Fixture()
-        : iim(new MyIndexManager()),
-          mim(static_cast<MyIndexManager &>(*iim)),
-          iw(iim),
-          builder(),
-          dummyDoc(createDoc(1234)) // This content of this is not used
-    {
-    }
+    IndexWriterTest();
+    ~IndexWriterTest() override;
     Document::UP createDoc(uint32_t lid) {
         return builder.make_document(vespalib::make_string("id:ns:searchdocument::%u", lid));
     }
@@ -104,34 +108,44 @@ struct Fixture
     }
 };
 
+IndexWriterTest::IndexWriterTest()
+    : ::testing::Test(),
+      iim(std::make_shared<MyIndexManager>()),
+      mim(static_cast<MyIndexManager &>(*iim)),
+      iw(iim),
+      builder(),
+      dummyDoc(createDoc(1234)) // This content of this is not used
+{
 }
 
-TEST_F("require that index writer ignores old operations", Fixture)
+IndexWriterTest::~IndexWriterTest() = default;
+
+TEST_F(IndexWriterTest, require_that_index_writer_ignores_old_operations)
 {
-    f.mim.flushed = 10;
-    f.put(8, 1);
-    f.remove(9, 2);
-    EXPECT_EQUAL("", f.mim.getPut(1));
-    EXPECT_EQUAL("", f.mim.getRemove(2));
+    mim.flushed = 10;
+    put(8, 1);
+    remove(9, 2);
+    EXPECT_EQ("", mim.getPut(1));
+    EXPECT_EQ("", mim.getRemove(2));
 }
 
-TEST_F("require that commit is forwarded to index manager", Fixture)
+TEST_F(IndexWriterTest, require_that_commit_is_forwarded_to_index_manager)
 {
-    f.iw.commit(10, std::shared_ptr<IDestructorCallback>());
-    EXPECT_EQUAL(10u, f.mim.commitSerial);
+    iw.commit(10, std::shared_ptr<IDestructorCallback>());
+    EXPECT_EQ(10u, mim.commitSerial);
 }
 
-TEST_F("require that compactLidSpace is forwarded to index manager", Fixture)
+TEST_F(IndexWriterTest, require_that_compactLidSpace_is_forwarded_to_index_manager)
 {
-    f.iw.compactLidSpace(4, 2);
-    EXPECT_EQUAL(2u, f.mim.wantedLidLimit);
-    EXPECT_EQUAL(4u, f.mim.compactSerial);
+    iw.compactLidSpace(4, 2);
+    EXPECT_EQ(2u, mim.wantedLidLimit);
+    EXPECT_EQ(4u, mim.compactSerial);
 }
 
-TEST_F("require that old compactLidSpace is not forwarded to index manager", Fixture)
+TEST_F(IndexWriterTest, require_that_old_compactLidSpace_is_not_forwarded_to_index_manager)
 {
-    f.mim.flushed = 10;
-    f.iw.compactLidSpace(4, 2);
-    EXPECT_EQUAL(0u, f.mim.wantedLidLimit);
-    EXPECT_EQUAL(0u, f.mim.compactSerial);
+    mim.flushed = 10;
+    iw.compactLidSpace(4, 2);
+    EXPECT_EQ(0u, mim.wantedLidLimit);
+    EXPECT_EQ(0u, mim.compactSerial);
 }

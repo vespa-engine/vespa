@@ -26,6 +26,7 @@ public:
     ZcPosOccRandRead();
     ~ZcPosOccRandRead();
 
+    using DictionaryLookupResult = index::DictionaryLookupResult;
     using PostingListCounts = index::PostingListCounts;
     using PostingListHandle = index::PostingListHandle;
 
@@ -34,14 +35,13 @@ public:
      * handle must exceed lifetime of iterator.
      */
     std::unique_ptr<queryeval::SearchIterator>
-    createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
-                   const fef::TermFieldMatchDataArray &matchData, bool usebitVector) const override;
+    createIterator(const DictionaryLookupResult& lookup_result, const PostingListHandle& handle,
+                   const fef::TermFieldMatchDataArray &matchData) const override;
 
     /**
      * Read (possibly partial) posting list into handle.
      */
-    void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
-                         uint32_t numSegments, PostingListHandle &handle) override;
+    PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;

@@ -46,6 +46,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     private Application application;
     private ApplicationInUseTracker applicationInUseTracker;
 
+    @SuppressWarnings("this-escape")
     public ApplicationLoader(OsgiFramework osgiFramework, Iterable<? extends Module> guiceModules) {
         LogSetup.initVespaLogging("Container");
         this.osgiFramework = osgiFramework;

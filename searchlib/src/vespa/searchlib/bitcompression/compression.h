@@ -302,45 +302,6 @@ public:
                    ctx ## valI, EC);                    \
   } while (0)
 
-#define UC64BE_DECODEDEXPGOLOMB_NS(prefix, k, EC)           \
-  do {                                                      \
-    if ((prefix ## Val & TOP_BIT64) == 0) {                 \
-      length = 1;                                           \
-      prefix ## Val <<= 1;                                  \
-      val64 = 0;                                            \
-      UC64BE_READBITS_NS(prefix, EC);                       \
-    } else {                                                \
-      if ((prefix ## Val & TOP_2_BITS64) != TOP_2_BITS64) { \
-    length = 2;                                             \
-    prefix ## Val <<= 2;                                    \
-    val64 = 1;                                              \
-    UC64BE_READBITS_NS(prefix, EC);                         \
-      } else {                                              \
-    length = 2;                                             \
-    prefix ## Val <<= 2;                                    \
-    UC64BE_READBITS_NS(prefix, EC);                         \
-    UC64BE_DECODEEXPGOLOMB_NS(prefix, k, EC);               \
-    val64 += 2;                                             \
-      }                                                     \
-    }                                                       \
-  } while (0)
-
-#define UC64BE_DECODED0EXPGOLOMB_NS(prefix, k, EC) \
-  do {                                             \
-    if ((prefix ## Val & TOP_BIT64) == 0) {        \
-      length = 1;                                  \
-      prefix ## Val <<= 1;                         \
-      val64 = 0;                                   \
-      UC64BE_READBITS_NS(prefix, EC);              \
-    } else {                                       \
-      length = 1;                                  \
-      prefix ## Val <<= 1;                         \
-      UC64BE_READBITS_NS(prefix, EC);              \
-      UC64BE_DECODEEXPGOLOMB_NS(prefix, k, EC);    \
-      val64 += 1;                                  \
-    }                                              \
-  } while (0)
-
 #define UC64LE_READBITS(val, valI, preRead, cacheInt, EC)          \
   do {                                                             \
     if (__builtin_expect(length <= preRead, true)) {               \
@@ -1008,53 +969,6 @@ public:
         return k + asmlog2((x >> k) + 1) * 2 + 1;
     }
 
-    void
-    encodeDExpGolomb(uint64_t x, uint32_t k)
-    {
-        if (x == 0) {
-            writeBits(0, 1);
-            return;
-        }
-        if (x == 1) {
-            writeBits(bigEndian ? 2 : 1, 2);
-            return;
-        }
-        writeBits(3, 2);
-        encodeExpGolomb(x - 2, k);
-    }
-
-    static uint32_t
-    encodeDExpGolombSpace(uint64_t x, uint32_t k)
-    {
-        if (x == 0) {
-            return 1;
-        }
-        if (x == 1) {
-            return 2;
-        }
-        return 2 + encodeExpGolombSpace(x, k);
-    }
-
-    void
-    encodeD0ExpGolomb(uint64_t x, uint32_t k)
-    {
-        if (x == 0) {
-            writeBits(0, 1);
-            return;
-        }
-        writeBits(1, 1);
-        encodeExpGolomb(x - 1, k);
-    }
-
-    static uint32_t
-    encodeD0ExpGolombSpace(uint64_t x, uint32_t k)
-    {
-        if (x == 0) {
-            return 1;
-        }
-        return 1 + encodeExpGolombSpace(x, k);
-    }
-
     static uint64_t
     convertToUnsigned(int64_t val)
     {
@@ -1579,11 +1493,12 @@ public:
 
     void writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
     void writeBytes(std::span<const char> buf);
+    void writeBytes(std::span<const unsigned char> buf);
     void writeString(std::string_view buf);
     virtual void writeHeader(const vespalib::GenericHeader &header);
 
     void writeComprBufferIfNeeded() {
-        if (_valI >= _valE) {
+        if (_valI >= _valE) [[unlikely]] {
             _writeContext->writeComprBuffer(false);
         }
     }

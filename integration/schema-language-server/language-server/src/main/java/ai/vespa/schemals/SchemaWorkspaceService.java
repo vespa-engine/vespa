@@ -63,7 +63,12 @@ public class SchemaWorkspaceService implements WorkspaceService {
     @Override
     public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
         return CompletableFutures.computeAsync(cancelChecker -> {
-            return ExecuteCommand.executeCommand(eventContextCreator.createContext(params));
+            try {
+                return ExecuteCommand.executeCommand(eventContextCreator.createContext(params));
+            } catch (Exception ex) {
+                logger.error("Internal error when executing command: " + ex.getMessage());
+                return null;
+            }
         });
     }
 }

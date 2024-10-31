@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -24,27 +23,23 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
-import static com.yahoo.vespa.flags.Flags.DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE;
-import static com.yahoo.vespa.flags.PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Note: Some test depend on sessionLifetime being 60 (set in config server config in MaintainerTester)
 public class SessionsMaintainerTest {
 
     private static final File testApp = new File("src/test/apps/hosted");
     private static final ApplicationId applicationId = ApplicationId.from("deploytester", "myApp", "default");
-    private static final long sessionLifeTime = 60;
 
     private final ManualClock clock = new ManualClock();
-    private InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private MaintainerTester tester;
     private ApplicationRepository applicationRepository;
     private SessionsMaintainer maintainer;
@@ -150,7 +145,6 @@ public class SessionsMaintainerTest {
         assertNumberOfLocalSessions(1);
     }
 
-
     @Test
     public void testDeletingInactiveSessions3() throws IOException {
         tester = createTester();
@@ -185,61 +179,6 @@ public class SessionsMaintainerTest {
         assertFalse(applicationPath.toFile().exists()); // App has been deleted
     }
 
-    @Test
-    @Ignore
-    // Fails, due to delay between deleting local and remote sessions so that remote session
-    // might be deleted without local session being deleted. On next run there is no data in ZK, so
-    // info about when session was created is lost. New method for deleting sessions should be used, see
-    // test below
-    public void testDeletionWithDelayOldMethod() {
-        testDeletionWithDelay(flagSource.withLongFlag(CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime));
-    }
-
-    @Test
-    public void testDeletionWithDelayNewMethod() {
-        testDeletionWithDelay(flagSource.withLongFlag(CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime)
-                                      .withBooleanFlag(DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE.id(), true));
-    }
-
-    // Delay between deletion of local and remote sessions, simulate delay that will
-    // occur when deleting many sessions
-    private void testDeletionWithDelay(InMemoryFlagSource flagSource) {
-        tester = createTester(flagSource);
-        tester.deployApp(testApp, prepareParams()); // session 2 (numbering starts at 2)
-
-        clock.advance(Duration.ofSeconds(10));
-        createDeployment().activate(); // session 3
-        long activeSessionId = getActiveSessionId(applicationRepository);
-
-        // Deploy, but do not activate
-        clock.advance(Duration.ofSeconds(10));
-        var deployment = createDeployment();
-        deployment.prepare(); // session 4 (not activated)
-
-        var deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment).session();
-        assertNotEquals(activeSessionId, deployment3session.getSessionId());
-        // No change to active session id
-        assertEquals(activeSessionId, getActiveSessionId(applicationRepository));
-        assertRemoteSessions(Set.of(2L, 3L, 4L));
-        assertLocalSessions(Set.of(2L, 3L, 4L));
-
-        // advance clock session lifetime minus time elapsed since session 2 was created
-        // minus 2 seconds
-        clock.advance(Duration.ofSeconds(applicationRepository.configserverConfig().sessionLifetime())
-                              .minus(Duration.ofSeconds(20).plus(Duration.ofSeconds(2))));
-
-        // Nothing should be deleted after maintainer has run
-        maintainer.maintain(() -> clock.advance(Duration.ofSeconds(5)));;
-        assertRemoteSessions(Set.of(2L, 3L, 4L));
-        assertLocalSessions(Set.of(2L, 3L, 4L));
-
-        // Sessions 3 and 4 should be left after maintainer has run, 2 should be deleted
-        clock.advance(Duration.ofSeconds(5));
-        maintainer.maintain();
-        assertRemoteSessions(Set.of(3L, 4L));
-        assertLocalSessions(Set.of(3L, 4L));
-    }
-
     private MaintainerTester createTester() {
         return createTester(flagSource);
     }
@@ -250,8 +189,6 @@ public class SessionsMaintainerTest {
     }
 
     private MaintainerTester setup(MaintainerTester tester) {
-        flagSource.withLongFlag(CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime);
-
         applicationRepository = tester.applicationRepository();
         applicationRepository.tenantRepository().addTenant(applicationId.tenant());
         maintainer = new SessionsMaintainer(applicationRepository, tester.curator(), Duration.ofMinutes(1));
@@ -287,16 +224,6 @@ public class SessionsMaintainerTest {
 
     private void assertNumberOfRemoteSessions(int expectedNumberOfSessions) {
         assertEquals(expectedNumberOfSessions, sessionRepository.getRemoteSessionsFromZooKeeper().size());
-    }
-
-    private void assertRemoteSessions(Set<Long> sessions) {
-        var set = new HashSet<>(sessionRepository.getRemoteSessionsFromZooKeeper());
-        assertEquals(sessions, set);
-    }
-
-    private void assertLocalSessions(Set<Long> sessions) {
-        var set = new HashSet<>(sessionRepository.getLocalSessionsIdsFromFileSystem());
-        assertEquals(sessions, set);
     }
 
     private PrepareParams.Builder prepareParams() {

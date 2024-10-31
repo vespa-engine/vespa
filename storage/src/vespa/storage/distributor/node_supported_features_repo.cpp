@@ -2,15 +2,35 @@
 
 #include "node_supported_features_repo.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <algorithm>
+#include <numeric>
 
 namespace storage::distributor {
+
+namespace {
+
+NodeSupportedFeatures feature_intersection(const vespalib::hash_map<uint16_t, NodeSupportedFeatures>& features) {
+    // TODO replace with C++23 std::ranges::fold_left_first() once supported
+    if (features.empty()) {
+        return {};
+    }
+    auto iter = features.begin();
+    auto first = iter->second;
+    ++iter;
+    return std::accumulate(iter, features.end(), first, [](const auto& accu, const auto& v) {
+        return accu.intersect(v.second);
+    });
+}
+
+}
 
 NodeSupportedFeaturesRepo::NodeSupportedFeaturesRepo() = default;
 
 NodeSupportedFeaturesRepo::NodeSupportedFeaturesRepo(
         vespalib::hash_map<uint16_t, NodeSupportedFeatures> features,
         PrivateCtorTag) noexcept
-    : _node_features(std::move(features))
+    : _node_features(std::move(features)),
+      _supported_by_all_nodes(feature_intersection(_node_features))
 {}
 
 NodeSupportedFeaturesRepo::~NodeSupportedFeaturesRepo() = default;

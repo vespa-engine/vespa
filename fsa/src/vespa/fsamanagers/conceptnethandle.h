@@ -84,7 +84,7 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const std::string &fsafile, const std::string &datafile=NULL, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
+  Handle(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
     _conceptNet(new RefCountableConceptNet(fsafile.c_str(),datafile.c_str(),fam))
   {
     _conceptNet->addReference();

@@ -18,7 +18,7 @@ namespace searchcorespi::index {
 struct IMemoryIndex : public searchcorespi::IndexSearchable {
     using LidVector = std::vector<uint32_t>;
     using SP = std::shared_ptr<IMemoryIndex>;
-    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
+    using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
     virtual ~IMemoryIndex() {}
 
     /**
@@ -44,7 +44,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
      * @param doc the document to insert.
      * @param on_write_done shared object that notifies write done when destructed.
      */
-    virtual void insertDocument(uint32_t lid, const document::Document &doc, OnWriteDoneType on_write_done) = 0;
+    virtual void insertDocument(uint32_t lid, const document::Document &doc, const OnWriteDoneType& on_write_done) = 0;
 
     /**
      * Removes the given document from this memory index.
@@ -61,7 +61,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
     /**
      * Commits the inserts and removes since the last commit, making them searchable.
      **/
-    virtual void commit(OnWriteDoneType onWriteDone, search::SerialNum serialNum) = 0;
+    virtual void commit(const OnWriteDoneType& onWriteDone, search::SerialNum serialNum) = 0;
 
     /**
      * Flushes this memory index to disk as a disk index.
@@ -78,7 +78,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
                              search::SerialNum serialNum) = 0;
 
     virtual void pruneRemovedFields(const search::index::Schema &schema) = 0;
-    virtual search::index::Schema::SP getPrunedSchema() const = 0;
+    virtual std::shared_ptr<const search::index::Schema> getPrunedSchema() const = 0;
 
     virtual void insert_write_context_state(vespalib::slime::Cursor& object) const = 0;
 };

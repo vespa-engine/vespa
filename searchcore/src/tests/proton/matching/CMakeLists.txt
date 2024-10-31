@@ -28,6 +28,7 @@ vespa_add_executable(searchcore_matching_stats_test_app TEST
     matching_stats_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_matching_stats_test_app COMMAND searchcore_matching_stats_test_app)
 vespa_add_executable(searchcore_query_test_app TEST
@@ -36,6 +37,7 @@ vespa_add_executable(searchcore_query_test_app TEST
     DEPENDS
     searchcore_server
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_query_test_app COMMAND searchcore_query_test_app)
 vespa_add_executable(searchcore_termdataextractor_test_app TEST
@@ -57,5 +59,6 @@ vespa_add_executable(searchcore_querynodes_test_app TEST
     querynodes_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_querynodes_test_app COMMAND searchcore_querynodes_test_app)

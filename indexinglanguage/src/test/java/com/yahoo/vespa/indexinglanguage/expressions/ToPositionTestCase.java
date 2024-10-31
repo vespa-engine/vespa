@@ -38,9 +38,9 @@ public class ToPositionTestCase {
     @Test
     public void requireThatPositionIsParsed() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("6;9")).execute(new ToPositionExpression());
+        ctx.setCurrentValue(new StringFieldValue("6;9")).execute(new ToPositionExpression());
 
-        FieldValue out = ctx.getValue();
+        FieldValue out = ctx.getCurrentValue();
         assertTrue(out instanceof StructuredFieldValue);
         assertEquals(PositionDataType.INSTANCE, out.getDataType());
 

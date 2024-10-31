@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "dictionary_lookup_result.h"
 #include "postinglistcounts.h"
 #include "postinglisthandle.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -9,6 +10,8 @@
 class FastOS_FileInterface;
 
 namespace search::common { class FileHeaderContext; }
+namespace search::fef { class TermFieldMatchDataArray; }
+namespace search::queryeval { class SearchIterator; }
 
 namespace search::index {
 
@@ -34,7 +37,7 @@ public:
     /**
      * Read counts for a word.
      */
-    virtual void readCounts(const PostingListCounts &counts) = 0;
+    virtual void read_word_and_counts(const std::string& word, const PostingListCounts& counts) = 0;
 
     /**
      * Open posting list file for sequential read.
@@ -148,20 +151,16 @@ public:
      * API above caches.
      */
     virtual std::unique_ptr<search::queryeval::SearchIterator>
-    createIterator(const PostingListCounts &counts,
-                   const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const = 0;
+    createIterator(const DictionaryLookupResult& lookup_result,
+                   const PostingListHandle& handle,
+                   const search::fef::TermFieldMatchDataArray &matchData) const = 0;
 
 
     /**
-     * Read (possibly partial) posting list into handle.
+     * Read posting list into handle.
      */
-    virtual void
-    readPostingList(const PostingListCounts &counts,
-                    uint32_t firstSegment,
-                    uint32_t numSegments,
-                    PostingListHandle &handle) = 0;
+    virtual PostingListHandle
+    read_posting_list(const DictionaryLookupResult& lookup_result) = 0;
 
     /**
      * Open posting list file for random read.
@@ -195,13 +194,11 @@ public:
     ~PostingListFileRandReadPassThrough();
 
     std::unique_ptr<search::queryeval::SearchIterator>
-    createIterator(const PostingListCounts &counts,
-                   const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const override;
+    createIterator(const DictionaryLookupResult& lookup_result,
+                   const PostingListHandle& handle,
+                   const search::fef::TermFieldMatchDataArray &matchData) const override;
 
-    void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
-                         uint32_t numSegments, PostingListHandle &handle) override;
+    PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;

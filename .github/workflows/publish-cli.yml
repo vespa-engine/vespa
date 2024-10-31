@@ -28,9 +28,14 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
+      changes-detected: ${{ steps.check-diff.outputs.has-changes }}
       build-version: ${{ steps.meta.outputs.version }}
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for git operations.
+
       - name: Define Build Version
         id: meta
         run: |
@@ -43,7 +48,44 @@ jobs:
             BUILD_VERSION="0.0.0-dev_${{ github.run_number }}"
           fi
 
-          echo "version=${BUILD_VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${BUILD_VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check for Changes
+        id: check-diff
+        env:
+          VERSION_PATTERN: '^v8\.' # We need the 8 prefix or else "vespa-7." will match and sort before "v8.x.y"
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+
+          # Checks for changes since the last release.
+          new_tag="v${{ steps.meta.outputs.version }}"
+          previous_tag=$(gh release list --exclude-drafts --exclude-pre-releases --json tagName --jq '.[] | .tagName' | grep -E "${VERSION_PATTERN}" | head -n 1)
+
+          # If the previous tag and the current tag are the same, there are no changes.
+          if [[ "${previous_tag}" == "${new_tag}" ]]; then
+            echo "No changes detected between ${previous_tag} and ${new_tag}."
+            echo "has-changes=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Detect if we are using a dev version (starts with "0.0.0-dev").
+          if [[ "${new_tag:0:}" == "0.0.0-dev" ]]; then
+            echo "Dev version being used, skipping check for changes."
+            echo "has-changes=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Git will return a non-zero exit code if there are changes.
+          if git diff --quiet "${previous_tag}" "${new_tag}" -- client/go; then
+              echo "No changes detected between ${previous_tag} and ${new_tag}."
+              echo "has-changes=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+          fi
+
+          echo "Changes detected between ${previous_tag} and ${new_tag}."
+          echo "has-changes=true" >> "${GITHUB_OUTPUT}"
+
 
   build-test:
     runs-on: ubuntu-latest
@@ -56,14 +98,16 @@ jobs:
         # This workflow only interacts with the client/go directory, so we can set the working directory here.
         working-directory: client/go
 
+    env:
+      VERSION: ${{ needs.prepare.outputs.build-version }}
+      HAS_CHANGES: ${{ needs.prepare.outputs.changes-detected }}
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
 
       - name: build
-        env:
-          VERSION: ${{ needs.prepare.outputs.build-version }}
         run: |
           make clean dist
 
@@ -80,8 +124,8 @@ jobs:
   publish:
     runs-on: macos-latest
 
-    # Publish the CLI when a tag is pushed or a workflow is triggered manually.
-    if: contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
+    # Publish if there are changes detected or if the workflow was manually triggered.
+    if: (github.event_name == 'push' && needs.prepare.outputs.changes-detected == 'true') || (github.event_name == 'workflow_dispatch')
     needs:
       - prepare
       - build-test
@@ -98,9 +142,12 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.build-version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository at tagged version
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Prefix the version with "v" to checkout the tag.
+          ref: "v${{ needs.prepare.outputs.build-version }}"
 
       - uses: actions/download-artifact@v4
         with:
@@ -116,17 +163,25 @@ jobs:
           brew install --quiet coreutils gh zip go
 
       - name: Publish to GitHub Releases
+        id: github-release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          make clean dist-github
+          # Release to Github directly, bypassing the diff check as we already perform this check in the "prepare" job.
+          make -- --dist-github
+          release_url="$(cat /tmp/vespa-cli-release-url.txt)"
+          echo "release-url=${release_url}" > "${GITHUB_OUTPUT}"
 
       - name: Publish to Homebrew
+        if: steps.github-release.outputs.release-url != ''
         env:
+          GITHUB_RELEASE_URL: ${{ steps.github-release.outputs.release-url }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
         run: |
-          make clean dist-homebrew
+          # Release to Homebrew directly, bypassing the diff check as we already perform this check in the "prepare" job.
+          make -- --dist-homebrew
 
       - name: Install via Homebrew
+        if: steps.github-release.outputs.release-url != ''
         run: |
           make install-brew

@@ -32,17 +32,17 @@ api_read_consistency_to_spi(api::InternalReadConsistency consistency) noexcept {
 }
 
 document::FieldSet::SP
-getFieldSet(const document::FieldSetRepo & repo, std::string_view name, MessageTracker & tracker) {
+getFieldSet(const document::FieldSetRepo& repo, std::string_view name, MessageTracker& tracker) {
     try {
         return repo.getFieldSet(name);
-    } catch (document::FieldNotFoundException & e) {
+    } catch (document::FieldNotFoundException& e) {
         tracker.fail(storage::api::ReturnCode::ILLEGAL_PARAMETERS,
                      fmt("Field %s in fieldset %s not found in document", e.getFieldName().c_str(), to_str(name).c_str()));
-    } catch (const vespalib::Exception & e) {
+    } catch (const vespalib::Exception& e) {
         tracker.fail(storage::api::ReturnCode::ILLEGAL_PARAMETERS,
                      fmt("Failed parsing fieldset %s with : %s", to_str(name).c_str(), e.getMessage().c_str()));
     }
-    return document::FieldSet::SP();
+    return {};
 }
 
 }

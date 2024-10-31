@@ -74,8 +74,6 @@
     ],
     "methods" : [
       "public void <init>(java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
-      "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
-      "public java.lang.String getDeployPath()",
       "public com.yahoo.config.provision.ApplicationId getApplicationId()",
       "public java.lang.Long getDeployTimestamp()",
       "public java.lang.Long getGeneration()",
@@ -256,7 +254,6 @@
     "methods" : [
       "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.util.Map, com.yahoo.config.application.api.Bcp, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
-      "public com.yahoo.config.provision.Tags tags()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionTarget revisionTarget()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionChange revisionChange()",
@@ -265,7 +262,6 @@
       "public int maxRisk()",
       "public int maxIdleHours()",
       "public java.util.List changeBlocker()",
-      "public java.util.Optional globalServiceId()",
       "public boolean canUpgradeAt(java.time.Instant)",
       "public boolean canChangeRevisionAt(java.time.Instant)",
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
@@ -803,7 +799,6 @@
       "public void invalid(java.util.Map, java.time.Instant)",
       "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
       "public java.util.Optional invalidException(java.util.Map, java.time.Instant)",
-      "public boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
       "public void validate(java.time.Instant, java.util.function.Consumer)",
       "public boolean validate(java.time.Instant)",
@@ -859,8 +854,6 @@
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder dnsName(com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName)",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder zoneScope()",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder scope(com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope)",
-      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder sharedRouting()",
-      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder sharedL4Routing()",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder routingMethod(com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod)",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder weight(int)",
       "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder hosts(java.util.List)",
@@ -880,7 +873,6 @@
     ],
     "methods" : [
       "public java.lang.String value()",
-      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName sharedL4NameFrom(com.yahoo.config.provision.SystemName, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ApplicationId, java.lang.String)",
       "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName from(java.lang.String)",
       "public java.lang.String toString()",
       "public int compareTo(com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName)",
@@ -1233,7 +1225,6 @@
       "abstract"
     ],
     "methods" : [
-      "public void startDownload(java.lang.String, int, java.util.Set)",
       "public abstract void triggerDownload(java.lang.String, int, java.util.Set)"
     ],
     "fields" : [ ]
@@ -1326,7 +1317,6 @@
       "public int heapSizePercentage()",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
-      "public java.lang.String jvmOmitStackTraceInFastThrowOption(com.yahoo.config.provision.ClusterSpec$Type)",
       "public double resourceLimitDisk()",
       "public double resourceLimitMemory()",
       "public double minNodeRatioPerGroup()",
@@ -1350,7 +1340,8 @@
       "public boolean symmetricPutAndActivateReplicaSelection()",
       "public boolean enforceStrictlyIncreasingClusterStateVersions()",
       "public boolean distributionConfigFromClusterController()",
-      "public boolean useLegacyWandQueryParsing()"
+      "public boolean useLegacyWandQueryParsing()",
+      "public boolean forwardAllLogLevels()"
     ],
     "fields" : [ ]
   },
@@ -1387,6 +1378,7 @@
       "public abstract java.util.List configServerSpecs()",
       "public abstract com.yahoo.config.provision.HostName loadBalancerName()",
       "public abstract java.net.URI ztsUrl()",
+      "public abstract com.yahoo.config.provision.AthenzDomain tenantSecretDomain()",
       "public abstract java.lang.String athenzDnsSuffix()",
       "public abstract boolean hostedVespa()",
       "public abstract com.yahoo.config.provision.Zone zone()",

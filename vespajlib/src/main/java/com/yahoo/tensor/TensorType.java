@@ -35,6 +35,14 @@ public class TensorType {
         // Types added must also be added to TensorTypeParser.parseValueTypeSpec, serialization, and largestOf below
         DOUBLE("double"), FLOAT("float"), BFLOAT16("bfloat16"), INT8("int8");
 
+        int sizeOfCell() {
+            return switch (this) {
+                case DOUBLE -> 8;
+                case FLOAT -> 4;
+                case BFLOAT16 -> 2;
+                case INT8 -> 1;
+            };
+        }
         private final String id;
 
         Value(String id) { this.id = id; }
@@ -364,6 +372,11 @@ public class TensorType {
 
         /** Returns a copy of this with the name set to the given name */
         public abstract Dimension withName(String name);
+
+        /** Returns a copy of this with the size set to the given value */
+        public Dimension withSize(long size) {
+            return IndexedBoundDimension.indexed(name, size);
+        }
 
         /** Returns true if this is an indexed bound or unbound type */
         public boolean isIndexed() { return type() == Type.indexedBound || type() == Type.indexedUnbound; }

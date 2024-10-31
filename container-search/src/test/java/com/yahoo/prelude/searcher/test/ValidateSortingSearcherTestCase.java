@@ -48,6 +48,17 @@ public class ValidateSortingSearcherTestCase {
     }
 
     @Test
+    void testDisallowSortingOnTensors() {
+        try {
+            quoteAndTransform("aTensor");
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Cannot sort on field 'aTensor' because it is a tensor", e.getMessage());
+        }
+    }
+
+    @Test
     void testInvalidSpec() {
         assertNull(quoteAndTransform("+a -e +c"));
     }

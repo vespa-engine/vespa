@@ -1,10 +1,12 @@
 package ai.vespa.schemals.lsp.common.command.commandtypes;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.google.gson.JsonPrimitive;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
+import ai.vespa.schemals.lsp.common.command.CommandUtils;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 
 /**
@@ -22,18 +24,18 @@ public class DocumentParse implements SchemaCommand {
 	public boolean setArguments(List<Object> arguments) {
         assert arguments.size() == getArity();
 
-        if (!(arguments.get(0) instanceof JsonPrimitive))
-            return false;
+        Optional<String> argument = CommandUtils.getStringArgument(arguments.get(0));
+        if (argument.isEmpty()) return false;
 
-        JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
-        this.fileURI = arg.getAsString();
+        fileURI = argument.get();
         return true;
 	}
 
 	@Override
-	public void execute(EventExecuteCommandContext context) {
+	public Object execute(EventExecuteCommandContext context) {
         DocumentManager document = context.scheduler.getDocument(fileURI);
-        if (document == null) return;
+        if (document == null) return null;
         document.reparseContent();
+        return null;
 	}
 }

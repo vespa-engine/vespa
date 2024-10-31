@@ -61,7 +61,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> node.status().wantToRetire() && node.status().wantToDeprovision());
     }
 
-    /** Returns the subset of nodes that are being rebuilt */
+    /**
+     * Returns the subset of nodes that are being rebuilt.
+     *
+     * @param soft When true, return only hosts that are being rebuilt without retirement
+     */
     public NodeList rebuilding(boolean soft) {
         return matching(node -> {
             if (soft) {
@@ -84,8 +88,8 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the subset of nodes having exactly the given resources */
     public NodeList resources(NodeResources resources) { return matching(node -> node.resources().equals(resources)); }
 
-    /** Returns the subset of nodes which have a replaceable root disk */
-    public NodeList replaceableRootDisk() {
+    /** Returns the subset of nodes which have remote storage */
+    public NodeList remoteStorage() {
         return matching(node -> node.resources().storageType() == NodeResources.StorageType.remote);
     }
 

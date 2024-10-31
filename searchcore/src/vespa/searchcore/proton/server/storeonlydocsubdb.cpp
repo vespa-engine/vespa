@@ -323,6 +323,7 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
     summaryTask->addDependency(dmsInitTask);
 
     result->writableResult().setFlushConfig(configSnapshot.getMaintenanceConfigSP()->getFlushConfig());
+    result->writableResult().set_schema(configSnapshot.getSchemaSP());
     return result;
 }
 
@@ -537,7 +538,7 @@ StoreOnlyDocSubDB::pruneRemovedFields(SerialNum)
 }
 
 void
-StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &, SerialNum )
+StoreOnlyDocSubDB::setIndexSchema(std::shared_ptr<const Schema>, SerialNum)
 {
     assert(_writeService.master().isCurrentThread());
 }

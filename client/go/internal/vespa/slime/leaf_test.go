@@ -22,12 +22,23 @@ func checkLeaf(t *testing.T, value Value, expect expectLeaf) {
 		expect.dataVal = emptyBytes
 	}
 	assert.Equal(t, value.Valid(), !expect.invalid)
+	if expect.invalid {
+		assert.Equal(t, AsError(value).Error(), "invalid value")
+	} else {
+		assert.Equal(t, AsError(value), nil)
+	}
 	assert.Equal(t, value.Type(), expect.mytype)
 	assert.Equal(t, value.AsBool(), expect.boolVal)
 	assert.Equal(t, value.AsLong(), expect.longVal)
 	assert.Equal(t, value.AsDouble(), expect.doubleVal)
 	assert.Equal(t, value.AsString(), expect.stringVal)
 	assert.Equal(t, value.AsData(), expect.dataVal)
+}
+
+func TestError(t *testing.T) {
+	err := ErrorMsg("test error")
+	assert.False(t, err.Valid())
+	assert.Equal(t, AsError(err).Error(), "test error")
 }
 
 func TestEmpty(t *testing.T) {

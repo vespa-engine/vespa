@@ -3,8 +3,7 @@
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::DocumentId;
 using std::string;
@@ -37,42 +36,41 @@ public:
     }
 };
 
-TEST("require that when environment variable is not set, debugging is off") {
+}
+
+TEST(FeedDebuggerTest, require_that_when_environment_variable_is_not_set_debugging_is_off)
+{
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
     FeedDebugger debugger;
     EXPECT_FALSE(debugger.isDebugging());
 }
 
-TEST("require that setting an environment variable turns on lid-specific debugging.") {
+TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_lid_specific_debugging)
+{
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
     setenv(lid_env_name, "1,3,5", true);
 
     FeedDebugger debugger;
     EXPECT_TRUE(debugger.isDebugging());
-    EXPECT_EQUAL(ns_log::Logger::info, debugger.getDebugLevel(1, 0));
-    EXPECT_EQUAL(ns_log::Logger::spam, debugger.getDebugLevel(2, 0));
-    EXPECT_EQUAL(ns_log::Logger::info, debugger.getDebugLevel(3, 0));
-    EXPECT_EQUAL(ns_log::Logger::spam, debugger.getDebugLevel(4, 0));
-    EXPECT_EQUAL(ns_log::Logger::info, debugger.getDebugLevel(5, 0));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(1, 0));
+    EXPECT_EQ(ns_log::Logger::spam, debugger.getDebugLevel(2, 0));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(3, 0));
+    EXPECT_EQ(ns_log::Logger::spam, debugger.getDebugLevel(4, 0));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(5, 0));
 }
 
-TEST("require that setting an environment variable turns on docid-specific debugging.") {
+TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_docid_specific_debugging)
+{
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
     setenv(docid_env_name, "id:ns:type::test:foo,id:ns:type::test:bar,id:ns:type::test:baz", true);
 
     FeedDebugger debugger;
     EXPECT_TRUE(debugger.isDebugging());
-    EXPECT_EQUAL(ns_log::Logger::info,
-                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:foo")));
-    EXPECT_EQUAL(ns_log::Logger::info,
-                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:bar")));
-    EXPECT_EQUAL(ns_log::Logger::info,
-                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:baz")));
-    EXPECT_EQUAL(ns_log::Logger::spam,
-                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:qux")));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(1, DocumentId("id:ns:type::test:foo")));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(1, DocumentId("id:ns:type::test:bar")));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(1, DocumentId("id:ns:type::test:baz")));
+    EXPECT_EQ(ns_log::Logger::spam, debugger.getDebugLevel(1, DocumentId("id:ns:type::test:qux")));
 }
-
-}  // namespace

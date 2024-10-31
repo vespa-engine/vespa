@@ -4,6 +4,10 @@
 #include "zc4_posting_header.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <cassert>
+#include <cinttypes>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.zc4_posting_reader");
 
 namespace search::diskindex {
 
@@ -77,6 +81,15 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
             features.set_num_occs(_no_skip.get_num_occs());
         }
         _decodeContext->readFeatures(features);
+        if (_last_doc_id > 0) {
+            // Verify that features pos is within expected range after reading features for common word
+            uint64_t features_rel_pos = _decodeContext->getReadOffset() - _features_start_pos;
+            if ((_residue == 1) ? (features_rel_pos != _features_size) : (features_rel_pos >= _features_size)) {
+                LOG(error, "Inconsistency in posting list file '%s', word '%s', docid %u, residue %u, after read features_rel_pos=%" PRIu64 ", _features_size=%" PRIu64,
+                    _readContext.get_file_name().c_str(), _word.c_str(), _no_skip.get_doc_id(), _residue, features_rel_pos, _no_skip.get_features_pos());
+                abort();
+            }
+        }
     }
     --_residue;
 }
@@ -90,9 +103,9 @@ Zc4PostingReader<bigEndian>::read_word_start()
 
 template <bool bigEndian>
 void
-Zc4PostingReader<bigEndian>::set_counts(const PostingListCounts &counts)
+Zc4PostingReader<bigEndian>::set_word_and_counts(const std::string& word, const index::PostingListCounts& counts)
 {
-    Zc4PostingReaderBase::set_counts(*_decodeContext, counts);
+    Zc4PostingReaderBase::set_word_and_counts(*_decodeContext, word, counts);
 }
 
 template <bool bigEndian>

@@ -126,6 +126,16 @@ public class TensorParserTestCase {
                      .cell(1.25, 1)
                      .cell(-19.125, 2).build(),
                      Tensor.from(floatTT, "000000003FA00000c1990000"));
+
+        assertEquals("binary matrix",
+                     Tensor.Builder.of(int8TT)
+                     .cell(1, 0, 0)
+                     .cell(3, 0, 1)
+                     .cell(5, 0, 2)
+                     .cell(2, 1, 0)
+                     .cell(4, 1, 1)
+                     .cell(6, 1, 2).build(),
+                     Tensor.from("tensor<int8>(y[3],x[2]): 010203040506"));
     }
 
     @Test
@@ -155,6 +165,117 @@ public class TensorParserTestCase {
                                    .cell(TensorAddress.ofLabels("b", "0"), 3)
                                    .cell(TensorAddress.ofLabels("b", "1"), 4).build(),
                      Tensor.from("tensor(key{}, x[2]):{',:':[1, 2], b:[3, 4]}"));
+    }
+
+    @Test
+    public void testMultiMappedParsing() {
+        Tensor expected = Tensor.Builder.of(TensorType.fromSpec("tensor(ma{}, mb{}, x[2], y[3])"))
+                .cell(TensorAddress.ofLabels("a", "b", "0", "0"), 1)
+                .cell(TensorAddress.ofLabels("a", "b", "0", "1"), 2)
+                .cell(TensorAddress.ofLabels("a", "b", "0", "2"), 3)
+                .cell(TensorAddress.ofLabels("a", "b", "1", "0"), 4)
+                .cell(TensorAddress.ofLabels("a", "b", "1", "1"), 5)
+                .cell(TensorAddress.ofLabels("a", "b", "1", "2"), 6)
+                .cell(TensorAddress.ofLabels("foo", "bar", "0", "0"), 7)
+                .cell(TensorAddress.ofLabels("foo", "bar", "0", "1"), 8)
+                .cell(TensorAddress.ofLabels("foo", "bar", "0", "2"), 9)
+                .cell(TensorAddress.ofLabels("foo", "bar", "1", "0"), 10)
+                .cell(TensorAddress.ofLabels("foo", "bar", "1", "1"), 11)
+                .cell(TensorAddress.ofLabels("foo", "bar", "1", "2"), 12)
+                .build();
+
+        assertEquals(expected,
+                     Tensor.from("tensor(ma{}, mb{}, x[2], y[3]):{a:{b:[[1,2,3],[4,5,6]]}, foo:{bar:[[7,8,9],[10,11,12]]}}"));
+
+        assertEquals(expected,
+                     Tensor.from("tensor(mb{}, ma{}, x[2], y[3]):{b:{a:[[1,2,3],[4,5,6]]}, bar:{foo:[[7,8,9],[10,11,12]]}}"));
+
+        assertEquals(expected,
+                     Tensor.from("tensor(mb{}, ma{}, y[3], x[2]):{b:{a:[[1,4], [2,5], [3,6]]}, bar:{foo:[[7,10], [8,11], [9,12]]}}"));
+
+
+        assertEquals(
+                Tensor.from("""
+                            tensor(category{},key{},x[2],y[3]):{
+                               {category:cat1, key:key1, x:0, y:0}: 1.0,
+                               {category:cat1, key:key1, x:0, y:1}: 2.0,
+                               {category:cat1, key:key1, x:0, y:2}: 3.0,
+                               {category:cat1, key:key1, x:1, y:0}: 4.0,
+                               {category:cat1, key:key1, x:1, y:1}: 5.0,
+                               {category:cat1, key:key1, x:1, y:2}: 6.0,
+
+                               {category:cat1, key:key2, x:0, y:0}: 1.1,
+                               {category:cat1, key:key2, x:0, y:1}: 2.1,
+                               {category:cat1, key:key2, x:0, y:2}: 3.1,
+                               {category:cat1, key:key2, x:1, y:0}: 4.1,
+                               {category:cat1, key:key2, x:1, y:1}: 5.1,
+                               {category:cat1, key:key2, x:1, y:2}: 6.1,
+
+                               {category:cat2, key:key1, x:0, y:0}: 7.3,
+                               {category:cat2, key:key1, x:0, y:1}: 8.3,
+                               {category:cat2, key:key1, x:0, y:2}: 9.3,
+                               {category:cat2, key:key1, x:1, y:0}: 7.0,
+                               {category:cat2, key:key1, x:1, y:1}: 8.0,
+                               {category:cat2, key:key1, x:1, y:2}: 9.0,
+
+                               {category:cat2, key:key3, x:0, y:0}: 7.5,
+                               {category:cat2, key:key3, x:0, y:1}: 8.5,
+                               {category:cat2, key:key3, x:0, y:2}: 9.5,
+                               {category:cat2, key:key3, x:1, y:0}: 7.9,
+                               {category:cat2, key:key3, x:1, y:1}: 8.9,
+                               {category:cat2, key:key3, x:1, y:2}: 9.9
+                            }
+                            """),
+                Tensor.from("""
+                            tensor(category{},key{},x[2],y[3]):{
+                               cat1:{key1:[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+                                     key2:[[1.1, 2.1, 3.1], [4.1, 5.1, 6.1]]},
+                               cat2:{key1:[[7.3, 8.3, 9.3], [7.0, 8.0, 9.0]],
+                                     key3:[[7.5, 8.5, 9.5], [7.9, 8.9, 9.9]]}
+                            }
+                            """));
+    }
+
+    @Test
+    public void testMixedHexParsing() {
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(key{}, x[2])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), (byte)0xa1)
+                                   .cell(TensorAddress.ofLabels("a", "1"), 2)
+                                   .cell(TensorAddress.ofLabels("b", "0"), (byte)0xA3)
+                                   .cell(TensorAddress.ofLabels("b", "1"), 4).build(),
+                     Tensor.from("tensor<int8>(key{}, x[2]):{a: a102, b: A304}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<float>(key{}, x[1])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), 0)
+                                   .cell(TensorAddress.ofLabels("b", "0"), 1.25)
+                                   .cell(TensorAddress.ofLabels("c", "0"), -19.125).build(),
+                     Tensor.from("tensor<float>(key{}, x[1]):{a: 00000000, b:3FA00000, c:  c1990000 }"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<float>(key{}, x[1])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), 0)
+                                   .cell(TensorAddress.ofLabels("b", "0"), 1.25)
+                                   .cell(TensorAddress.ofLabels("c", "0"), -19.125).build(),
+                     Tensor.from("tensor<float>(key{}, x[1])", "{a: 00000000, b:3FA00000, c:  c1990000 }"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(key{}, x[2], y[2])"))
+                     .cell(TensorAddress.ofLabels("a", "0", "0"), 1)
+                     .cell(TensorAddress.ofLabels("a", "0", "1"), 2)
+                     .cell(TensorAddress.ofLabels("a", "1", "0"), 3)
+                     .cell(TensorAddress.ofLabels("a", "1", "1"), 4)
+                     .cell(TensorAddress.ofLabels("b", "0", "0"), 5)
+                     .cell(TensorAddress.ofLabels("b", "0", "1"), 6)
+                     .cell(TensorAddress.ofLabels("b", "1", "0"), 7)
+                     .cell(TensorAddress.ofLabels("b", "1", "1"), 8)
+                     .build(),
+                     Tensor.from("tensor<int8>(key{}, y[2], x[2])", "{a: 01020304, b: 05060708}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(key{}, x[2], y[2])"))
+                     .cell(TensorAddress.ofLabels("a", "0", "0"), 1)
+                     .cell(TensorAddress.ofLabels("a", "0", "1"), 3)
+                     .cell(TensorAddress.ofLabels("a", "1", "0"), 2)
+                     .cell(TensorAddress.ofLabels("a", "1", "1"), 4)
+                     .cell(TensorAddress.ofLabels("b", "0", "0"), 5)
+                     .cell(TensorAddress.ofLabels("b", "0", "1"), 7)
+                     .cell(TensorAddress.ofLabels("b", "1", "0"), 6)
+                     .cell(TensorAddress.ofLabels("b", "1", "1"), 8)
+                     .build(),
+                     Tensor.from("tensor<int8>(key{}, y[2], x[2]):{a: 01020304, b: 05060708}"));
     }
 
     @Test
@@ -253,7 +374,9 @@ public class TensorParserTestCase {
                       "{{'x':\"l0\"}:1.0}");
         assertIllegal("A dimension name must be an identifier or integer, not '\"x\"'",
                       "{{\"x\":\"l0\", \"y\":\"l0\"}:1.0, {\"x\":\"l0\", \"y\":\"l1\"}:2.0}");
-        assertIllegal("At {x:0}: '1-.0' is not a valid double",
+ //     assertIllegal("At {x:0}: '1-.0' is not a valid double",
+ //                   "{{x:0}:1-.0}");
+        assertIllegal("At value position 7: '1-.0' is not a valid double",
                       "{{x:0}:1-.0}");
         assertIllegal("At value position 1: '1-.0' is not a valid double",
                       "tensor(x[1]):[1-.0]");
@@ -263,6 +386,8 @@ public class TensorParserTestCase {
                       "tensor(x[3]):[1, 2, 3, 4]");
         assertIllegal("No suitable dimension in tensor(x[3]) for parsing a tensor on the mixed form: Should have one mapped dimension",
                       "tensor(x[3]):{1:[1,2,3], 2:[2,3,4], 3:[3,4,5]}");
+        assertIllegal("Garbage after mapped tensor string: foo",
+                      "{{x:0}:1.0} foo");
     }
 
     private void assertIllegal(String message, String tensor) {
@@ -273,6 +398,20 @@ public class TensorParserTestCase {
         catch (IllegalArgumentException e) {
             assertEquals(message, e.getCause().getMessage());
         }
+    }
+
+    @Test
+    public void testJsonFormatInside() {
+        var type = TensorType.fromSpec("tensor<int8>(key{}, x[2])");
+        var expected = Tensor.Builder.of(type)
+                .cell(TensorAddress.ofLabels("a", "0"), (byte)0xa1)
+                .cell(TensorAddress.ofLabels("a", "1"), 2)
+                .cell(TensorAddress.ofLabels("b", "0"), (byte)0xA3)
+                .cell(TensorAddress.ofLabels("b", "1"), 4)
+                .build();
+        assertEquals(expected, Tensor.from(type, "{'a': 'a102', 'b': 'A304'}"));
+        assertEquals(expected, Tensor.from(type, "{'blocks': {'a': 'a102', 'b': 'A304'}}"));
+        assertEquals(expected, Tensor.from(type, "{'blocks': [{'address': {'key': 'a'}, 'values': 'a102'}, {'address':{'key': 'b'}, 'values': 'A304'}]}"));
     }
 
 }

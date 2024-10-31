@@ -101,6 +101,7 @@ public class NodeSerializer {
     private static final String cloudAccountKey = "cloudAccount";
     private static final String wireguardPubKeyKey = "wireguardPubkey";
     private static final String wireguardKeyTimestampKey = "wireguardKeyTimestamp";
+    private static final String snapshotKey = "snapshot";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -178,6 +179,7 @@ public class NodeSerializer {
         node.status().osVersion().current().ifPresent(version -> object.setString(osVersionKey, version.toString()));
         node.status().osVersion().wanted().ifPresent(version -> object.setString(wantedOsVersionKey, version.toFullString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
+        node.status().snapshot().ifPresent(snapshot -> SnapshotSerializer.toSlime(snapshot, object.setObject(snapshotKey)));
         node.switchHostname().ifPresent(switchHostname -> object.setString(switchHostnameKey, switchHostname));
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
@@ -305,8 +307,8 @@ public class NodeSerializer {
                           object.field(wantToFailKey).asBool(),
                           object.field(wantToUpgradeFlavorKey).asBool(),
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
-                                                       versionFromSlime(object.field(wantedOsVersionKey))),
-                          SlimeUtils.optionalInstant(object.field(firmwareCheckKey)));
+                                                       versionFromSlime(object.field(wantedOsVersionKey))), SlimeUtils.optionalInstant(object.field(firmwareCheckKey)),
+                          SlimeUtils.optional(object.field(snapshotKey), SnapshotSerializer::fromInspector));
     }
 
     private Flavor flavorFromSlime(Inspector object) {

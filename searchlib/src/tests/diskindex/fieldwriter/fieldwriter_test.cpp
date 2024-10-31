@@ -230,7 +230,6 @@ public:
     std::unique_ptr<FieldReader> _fieldReader;
 private:
     std::string _namepref;
-    uint32_t _numWordIds;
     uint32_t _docIdLimit;
     WordNumMapping _wmap;
     DocIdMapping _dmap;
@@ -239,8 +238,7 @@ private:
 
 public:
     WrappedFieldReader(const std::string &namepref,
-                      uint32_t numWordIds,
-                      uint32_t docIdLimit);
+                       uint32_t docIdLimit);
 
     ~WrappedFieldReader();
     void open();
@@ -249,11 +247,9 @@ public:
 
 
 WrappedFieldReader::WrappedFieldReader(const std::string &namepref,
-                                     uint32_t numWordIds,
-                                     uint32_t docIdLimit)
+                                       uint32_t docIdLimit)
     : _fieldReader(),
       _namepref(dirprefix + namepref),
-      _numWordIds(numWordIds),
       _docIdLimit(docIdLimit),
       _wmap(),
       _dmap(),
@@ -418,7 +414,7 @@ readField(FakeWordSet &wordSet,
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
 
-    WrappedFieldReader istate(namepref, wordSet.getNumWords(), docIdLimit);
+    WrappedFieldReader istate(namepref, docIdLimit);
     LOG(info, "enter readField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
         namepref.c_str(), dynamicKStr, bool_to_str(decode_interleaved_features));
 
@@ -460,8 +456,6 @@ randReadField(FakeWordSet &wordSet,
               bool verbose)
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
-
-    PostingListCounts counts;
 
     LOG(info, "enter randReadField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
         namepref.c_str(), dynamicKStr, bool_to_str(decode_interleaved_features));
@@ -505,24 +499,18 @@ randReadField(FakeWordSet &wordSet,
                                  offsetAndCounts);
                 assert(wordNum == checkWordNum);
 
-                counts = offsetAndCounts._counts;
-                search::index::PostingListHandle handle;
+                DictionaryLookupResult lookup_result;
+                lookup_result.wordNum = wordNum;
+                lookup_result.counts = offsetAndCounts._counts;
+                lookup_result.bitOffset = offsetAndCounts._offset;
 
-                handle._bitLength = counts._bitLength;
-                handle._file = postingFile;
-                handle._bitOffset = offsetAndCounts._offset;
-
-                postingFile->readPostingList(counts,
-                        0,
-                        counts._segments.empty() ? 1 : counts._segments.size(),
-                        handle);
+                auto handle = postingFile->read_posting_list(lookup_result);
 
                 TermFieldMatchData mdfield1;
                 TermFieldMatchDataArray tfmda;
                 tfmda.add(&mdfield1);
 
-                std::unique_ptr<SearchIterator>
-                    sb(handle.createIterator(counts, tfmda));
+                auto sb(postingFile->createIterator(lookup_result, handle, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
                 word->validate(sb.get(), tfmda, true, decode_interleaved_features, verbose);
@@ -571,7 +559,7 @@ fusionField(uint32_t numWordIds,
         dynamicKStr, bool_to_str(encode_interleaved_features));
 
     WrappedFieldWriter ostate(opref, dynamicK, encode_interleaved_features, numWordIds, docIdLimit);
-    WrappedFieldReader istate(ipref, numWordIds, docIdLimit);
+    WrappedFieldReader istate(ipref, docIdLimit);
 
     vespalib::Timer tv;
 

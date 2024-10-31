@@ -121,10 +121,12 @@ using ProtonFalse =       search::query::SimpleFalse;
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     search::fef::MatchDataLayout children_mdl;
     using ProtonTermBase::ProtonTermBase;
+    ~ProtonEquiv() override;
 };
 
 struct ProtonSameElement final : public ProtonTermBase<search::query::SameElement> {
     using ProtonTermBase::ProtonTermBase;
+    ~ProtonSameElement() override;
 };
 
 struct ProtonNearestNeighborTerm : public ProtonTermBase<search::query::NearestNeighborTerm> {
@@ -132,6 +134,7 @@ struct ProtonNearestNeighborTerm : public ProtonTermBase<search::query::NearestN
     [[nodiscard]] std::optional<std::string> query_tensor_name() const override {
         return ProtonTermBase::NearestNeighborTerm::get_query_tensor_name();
     }
+    ~ProtonNearestNeighborTerm() override;
 };
 
 using ProtonLocationTerm = ProtonTerm<search::query::LocationTerm>;
@@ -180,5 +183,21 @@ struct ProtonNodeTypes {
     using FuzzyTerm =           ProtonFuzzyTerm;
     using InTerm =              ProtonInTerm;
 };
+
+extern template struct ProtonTerm<search::query::LocationTerm>;
+extern template struct ProtonTerm<search::query::NumberTerm>;
+extern template struct ProtonTerm<search::query::Phrase>;
+extern template struct ProtonTerm<search::query::PrefixTerm>;
+extern template struct ProtonTerm<search::query::RangeTerm>;
+extern template struct ProtonTerm<search::query::StringTerm>;
+extern template struct ProtonTerm<search::query::SubstringTerm>;
+extern template struct ProtonTerm<search::query::SuffixTerm>;
+extern template struct ProtonTerm<search::query::WeightedSetTerm>;
+extern template struct ProtonTerm<search::query::DotProduct>;
+extern template struct ProtonTerm<search::query::WandTerm>;
+extern template struct ProtonTerm<search::query::PredicateQuery>;
+extern template struct ProtonTerm<search::query::RegExpTerm>;
+extern template struct ProtonTerm<search::query::FuzzyTerm>;
+extern template struct ProtonTerm<search::query::InTerm>;
 
 }

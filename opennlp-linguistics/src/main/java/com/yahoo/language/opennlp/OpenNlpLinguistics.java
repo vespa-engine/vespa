@@ -50,7 +50,9 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
     }
 
     @Override
-    public Segmenter getSegmenter() { return new SegmenterImpl(forQuerying(getTokenizer())); }
+    public Segmenter getSegmenter() {
+        return new SegmenterImpl(forQuerying(getTokenizer()));
+    }
 
     @Override
     public Detector getDetector() { return detector; }

@@ -2,7 +2,7 @@
 
 # The version to release. Defaults to the current tag or revision.
 # Use env VERSION=X.Y.Z make ... to override
-VERSION ?= $(shell git describe --tags --exact-match 2> /dev/null | sed "s/^v//")
+VERSION ?= $(shell git describe --tags --match "v*" 2> /dev/null | sed "s/^v\([0-9]*[.][0-9]*[.][0-9]*\).*/\1/")
 DEVEL_VERSION := $(shell echo "0.0.0-`git rev-parse --short HEAD 2> /dev/null || echo unknown`")
 ifeq ($(VERSION),)
 	VERSION = $(DEVEL_VERSION)
@@ -52,10 +52,14 @@ dist-homebrew:
 #
 # $ make dist-github
 --dist-github: dist
-	gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --title "Vespa CLI $(VERSION)" \
+	gh release create v$(VERSION) \
+		--verify-tag \
+		--repo vespa-engine/vespa \
+		--notes-file $(CURDIR)/README.md \
+		--title "Vespa CLI $(VERSION)" \
 		$(DIST)/vespa-cli_$(VERSION)_sha256sums.txt \
 		$(DIST)/vespa-cli_$(VERSION)_*.zip \
-		$(DIST)/vespa-cli_$(VERSION)_*.tar.gz
+		$(DIST)/vespa-cli_$(VERSION)_*.tar.gz | tee /tmp/vespa-cli-release-url.txt
 
 dist-github:
 	go run cond_make.go --dist-github

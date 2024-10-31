@@ -211,6 +211,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
+        addSecrets(cluster, spec, deployState);
 
         addProcessing(deployState, spec, cluster, context);
         addSearch(deployState, spec, cluster, context);
@@ -237,7 +238,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Must be added after nodes:
         addDeploymentSpecConfig(cluster, context, deployState.getDeployLogger());
         addZooKeeper(cluster, spec);
-        addAthenzServiceIdentityProvider(cluster, context, deployState.getDeployLogger());
+        addAthenzServiceIdentityProvider(cluster, context);
 
         addParameterStoreValidationHandler(cluster, deployState);
     }
@@ -301,6 +302,26 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new SimpleComponent(new ComponentModel(idSpec, null, "zookeeper-server", configId));
     }
 
+    private void addSecrets(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
+        if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublic())
+            return;
+        Element secretsElement = XML.getChild(spec, "secrets");
+        if (secretsElement != null) {
+            CloudSecrets secretsConfig = new CloudSecrets();
+            for (Element element : XML.getChildren(secretsElement)) {
+                String key = element.getTagName();
+                String name = element.getAttribute("name");
+                String vault = element.getAttribute("vault");
+                secretsConfig.addSecret(key, name, vault);
+            }
+            cluster.addComponent(secretsConfig);
+            cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
+                                                     deployState.getProperties().tenantSecretDomain(),
+                                                     deployState.zone().system(),
+                                                     deployState.getProperties().applicationId().tenant()));
+        }
+    }
+
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
 
         Element secretStoreElement = XML.getChild(spec, "secret-store");
@@ -347,10 +368,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addComponent(cloudSecretStore);
     }
 
-    private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
+    private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context) {
         if ( ! context.getDeployState().isHosted()) return;
         if ( ! context.getDeployState().zone().system().isPublic()) return; // Non-public is handled by deployment spec config.
         if ( ! context.properties().launchApplicationAthenzService()) return;
+        var appContext = context.getDeployState().zone().environment().isManuallyDeployed() ? "sandbox" : "production";
         addIdentityProvider(cluster,
                             context.getDeployState().getProperties().configServerSpecs(),
                             context.getDeployState().getProperties().loadBalancerName(),
@@ -358,7 +380,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
                             AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
-                            AthenzService.from(context.properties().applicationId().application().value()));
+                            AthenzService.from("%s-%s".formatted(context.properties().applicationId().application().value(), appContext)));
     }
 
     private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {

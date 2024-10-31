@@ -19,20 +19,20 @@ namespace proton {
  * Otherwise we can drop it and ack the operation right away.
  */
 void
-FastAccessFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, OnPutDoneType onWriteDone)
+FastAccessFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, const OnPutDoneType& onWriteDone)
 {
     _attributeWriter->put(serialNum, doc, lid, onWriteDone);
 }
 
 void
 FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
-                                     OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate)
+                                     const OnOperationDoneType& onWriteDone, IFieldUpdateCallback & onUpdate)
 {
     _attributeWriter->update(serialNum, upd, lid, onWriteDone, onUpdate);
 }
 
 void
-FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc, OnOperationDoneType onWriteDone)
+FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc, const OnOperationDoneType& onWriteDone)
 {
     if (_attributeWriter->hasStructFieldAttribute()) {
         const std::unique_ptr<const Document> & doc = futureDoc.get();
@@ -43,19 +43,19 @@ FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc fut
 }
 
 void
-FastAccessFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone)
+FastAccessFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid, const OnRemoveDoneType& onWriteDone)
 {
     _attributeWriter->remove(serialNum, lid, onWriteDone);
 }
 
 void
-FastAccessFeedView::removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone)
+FastAccessFeedView::removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone)
 {
     _attributeWriter->remove(lidsToRemove, serialNum, onWriteDone);
 }
 
 void
-FastAccessFeedView::heartBeatAttributes(SerialNum serialNum, DoneCallback onDone)
+FastAccessFeedView::heartBeatAttributes(SerialNum serialNum, const DoneCallback& onDone)
 {
     _attributeWriter->heartBeat(serialNum, onDone);
 }
@@ -69,7 +69,7 @@ FastAccessFeedView::FastAccessFeedView(StoreOnlyFeedView::Context storeOnlyCtx, 
 FastAccessFeedView::~FastAccessFeedView() = default;
 
 void
-FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
+FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone)
 {
     // Drain pending PutDoneContext and ForceCommitContext objects
     forceCommitAndWait(search::CommitParam(op.getSerialNum()));
@@ -79,7 +79,7 @@ FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, Do
 }
 
 void
-FastAccessFeedView::internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone)
+FastAccessFeedView::internalForceCommit(const CommitParam & param, const OnForceCommitDoneType& onCommitDone)
 {
     _attributeWriter->forceCommit(param, onCommitDone);
     onCommitDone->registerCommittedDocIdLimit(_metaStore.getCommittedDocIdLimit(), &_docIdLimit);

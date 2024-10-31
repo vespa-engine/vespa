@@ -3,7 +3,7 @@
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 
 using namespace proton;
@@ -29,16 +29,23 @@ struct DocStoreFlush : public MFT { DocStoreFlush() noexcept : MFT(FTT::SYNC, FT
 struct DocStoreCompaction : public MFT { DocStoreCompaction() noexcept : MFT(FTT::GC, FTC::DOCUMENT_STORE) {} };
 struct OtherFlush : public MFT { OtherFlush() noexcept : MFT(FTT::FLUSH, FTC::OTHER) {} };
 
-struct Fixture
+class DocumentDBJobTrackersTest : public ::testing::Test
 {
+protected:
     DocumentDBJobTrackers _trackers;
     DocumentDBTaggedMetrics::JobMetrics _metrics;
-    Fixture()
-        : _trackers(),
-          _metrics(nullptr)
-    {
-    }
+    DocumentDBJobTrackersTest();
+    ~DocumentDBJobTrackersTest() override;
 };
+
+DocumentDBJobTrackersTest::DocumentDBJobTrackersTest()
+    : ::testing::Test(),
+      _trackers(),
+      _metrics(nullptr)
+{
+}
+
+DocumentDBJobTrackersTest::~DocumentDBJobTrackersTest() = default;
 
 void
 startJobs(IJobTracker &tracker, uint32_t numJobs)
@@ -48,44 +55,48 @@ startJobs(IJobTracker &tracker, uint32_t numJobs)
     }
 }
 
-TEST_F("require that job metrics are updated", Fixture)
+TEST_F(DocumentDBJobTrackersTest, require_that_job_metrics_are_updated)
 {
-    startJobs(f._trackers.getAttributeFlush(), 1);
-    startJobs(f._trackers.getMemoryIndexFlush(), 2);
-    startJobs(f._trackers.getDiskIndexFusion(), 3);
-    startJobs(f._trackers.getDocumentStoreFlush(), 4);
-    startJobs(f._trackers.getDocumentStoreCompact(), 5);
-    startJobs(*f._trackers.getBucketMove(), 6);
-    startJobs(*f._trackers.getLidSpaceCompact(), 7);
-    startJobs(*f._trackers.getRemovedDocumentsPrune(), 8);
+    startJobs(_trackers.getAttributeFlush(), 1);
+    startJobs(_trackers.getMemoryIndexFlush(), 2);
+    startJobs(_trackers.getDiskIndexFusion(), 3);
+    startJobs(_trackers.getDocumentStoreFlush(), 4);
+    startJobs(_trackers.getDocumentStoreCompact(), 5);
+    startJobs(*_trackers.getBucketMove(), 6);
+    startJobs(*_trackers.getLidSpaceCompact(), 7);
+    startJobs(*_trackers.getRemovedDocumentsPrune(), 8);
 
     // Update metrics 2 times to ensure that all jobs are running
     // in the last interval we actually care about.
-    f._trackers.updateMetrics(f._metrics);
+    _trackers.updateMetrics(_metrics);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    f._trackers.updateMetrics(f._metrics);
+    _trackers.updateMetrics(_metrics);
 
-    EXPECT_APPROX(1.0, f._metrics.attributeFlush.getLast(), EPS);
-    EXPECT_APPROX(2.0, f._metrics.memoryIndexFlush.getLast(), EPS);
-    EXPECT_APPROX(3.0, f._metrics.diskIndexFusion.getLast(), EPS);
-    EXPECT_APPROX(4.0, f._metrics.documentStoreFlush.getLast(), EPS);
-    EXPECT_APPROX(5.0, f._metrics.documentStoreCompact.getLast(), EPS);
-    EXPECT_APPROX(6.0, f._metrics.bucketMove.getLast(), EPS);
-    EXPECT_APPROX(7.0, f._metrics.lidSpaceCompact.getLast(), EPS);
-    EXPECT_APPROX(8.0, f._metrics.removedDocumentsPrune.getLast(), EPS);
-    EXPECT_APPROX(36.0, f._metrics.total.getLast(), EPS);
+    EXPECT_NEAR(1.0, _metrics.attributeFlush.getLast(), EPS);
+    EXPECT_NEAR(2.0, _metrics.memoryIndexFlush.getLast(), EPS);
+    EXPECT_NEAR(3.0, _metrics.diskIndexFusion.getLast(), EPS);
+    EXPECT_NEAR(4.0, _metrics.documentStoreFlush.getLast(), EPS);
+    EXPECT_NEAR(5.0, _metrics.documentStoreCompact.getLast(), EPS);
+    EXPECT_NEAR(6.0, _metrics.bucketMove.getLast(), EPS);
+    EXPECT_NEAR(7.0, _metrics.lidSpaceCompact.getLast(), EPS);
+    EXPECT_NEAR(8.0, _metrics.removedDocumentsPrune.getLast(), EPS);
+    EXPECT_NEAR(36.0, _metrics.total.getLast(), EPS);
 }
 
 bool
 assertFlushTarget(const IJobTracker &tracker, const IFlushTarget &target)
 {
     const auto *tracked = dynamic_cast<const JobTrackedFlushTarget *>(&target);
-    if (!EXPECT_TRUE(tracked != nullptr)) return false;
-    if (!EXPECT_EQUAL(&tracker, &tracked->getTracker())) return false;
-    return true;
+    bool failed = false;
+    EXPECT_TRUE(tracked != nullptr) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
+    EXPECT_EQ(&tracker, &tracked->getTracker()) << (failed = true, "");
+    return !failed;
 }
 
-TEST_F("require that known flush targets are tracked", Fixture)
+TEST_F(DocumentDBJobTrackersTest, require_that_known_flush_targets_are_tracked)
 {
     IFlushTarget::List input;
     input.emplace_back(std::make_shared<AttributeFlush>());
@@ -95,24 +106,24 @@ TEST_F("require that known flush targets are tracked", Fixture)
     input.emplace_back(std::make_shared<DocStoreCompaction>());
     input.emplace_back(std::make_shared<AttributeShrink>());
 
-    IFlushTarget::List output = f._trackers.trackFlushTargets(input);
-    EXPECT_EQUAL(6u, output.size());
-    EXPECT_TRUE(assertFlushTarget(f._trackers.getAttributeFlush(), *output[0]));
-    EXPECT_TRUE(assertFlushTarget(f._trackers.getMemoryIndexFlush(), *output[1]));
-    EXPECT_TRUE(assertFlushTarget(f._trackers.getDiskIndexFusion(), *output[2]));
-    EXPECT_TRUE(assertFlushTarget(f._trackers.getDocumentStoreFlush(), *output[3]));
-    EXPECT_TRUE(assertFlushTarget(f._trackers.getDocumentStoreCompact(), *output[4]));
-    EXPECT_TRUE(assertFlushTarget(f._trackers.getAttributeFlush(), *output[5]));
+    IFlushTarget::List output = _trackers.trackFlushTargets(input);
+    EXPECT_EQ(6u, output.size());
+    EXPECT_TRUE(assertFlushTarget(_trackers.getAttributeFlush(), *output[0]));
+    EXPECT_TRUE(assertFlushTarget(_trackers.getMemoryIndexFlush(), *output[1]));
+    EXPECT_TRUE(assertFlushTarget(_trackers.getDiskIndexFusion(), *output[2]));
+    EXPECT_TRUE(assertFlushTarget(_trackers.getDocumentStoreFlush(), *output[3]));
+    EXPECT_TRUE(assertFlushTarget(_trackers.getDocumentStoreCompact(), *output[4]));
+    EXPECT_TRUE(assertFlushTarget(_trackers.getAttributeFlush(), *output[5]));
 }
 
-TEST_F("require that un-known flush targets are not tracked", Fixture)
+TEST_F(DocumentDBJobTrackersTest, require_that_unknown_flush_targets_are_not_tracked)
 {
     IFlushTarget::List input;
     input.emplace_back(std::make_shared<OtherFlush>());
 
-    IFlushTarget::List output = f._trackers.trackFlushTargets(input);
-    EXPECT_EQUAL(1u, output.size());
-    EXPECT_EQUAL(&*output[0].get(), &*input[0]);
+    IFlushTarget::List output = _trackers.trackFlushTargets(input);
+    EXPECT_EQ(1u, output.size());
+    EXPECT_EQ(&*output[0].get(), &*input[0]);
 }
 
 }

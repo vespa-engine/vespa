@@ -9,6 +9,8 @@ using std::string;
 
 namespace document {
 
+AnnotationReferenceFieldValue::~AnnotationReferenceFieldValue() = default;
+
 int AnnotationReferenceFieldValue::compare(const FieldValue &other) const {
     if (getDataType()->equals(*other.getDataType())) {
         const AnnotationReferenceFieldValue &val(static_cast<const AnnotationReferenceFieldValue &>(other));

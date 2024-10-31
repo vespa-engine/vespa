@@ -59,6 +59,14 @@ public class SiaUtils {
         return root.resolve("certs").resolve("ca.cert.pem");
     }
 
+    public static Path getVespaCaCertificatesFile() {
+        return getVespaCaCertificatesFile(DEFAULT_SIA_DIRECTORY);
+    }
+
+    public static Path getVespaCaCertificatesFile(Path root) {
+        return root.resolve("certs").resolve("vespa.ca.cert.pem");
+    }
+
     public static Optional<PrivateKey> readPrivateKeyFile(AthenzIdentity service) {
         return readPrivateKeyFile(DEFAULT_SIA_DIRECTORY, service);
     }

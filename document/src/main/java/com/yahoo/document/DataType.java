@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * Enumeration of the possible types of fields. Since arrays and weighted sets may be defined for any types, including
- * themselves, this enumeration is open ended.
+ * themselves, this enumeration is open-ended.
  *
  * @author bratseth
  */
@@ -291,9 +291,10 @@ public abstract class DataType extends Identifiable implements Comparable<DataTy
      *
      * @return primitive data type, or null
      */
-    public PrimitiveDataType getPrimitiveType() {
-        return null;
-    }
+    public PrimitiveDataType getPrimitiveType() { return null; }
+
+    /** Returns the nested type of this if it is a collection type, null otherwise. */
+    public DataType getNestedType() { return null; }
 
     @Override
     public void visitMembers(ObjectVisitor visitor) {

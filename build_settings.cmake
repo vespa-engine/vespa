@@ -133,6 +133,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION
   # Turn off dynamic_cast optimization that came with clang 17.0.1
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-assume-unique-vtables")
 endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0)
+  # Turn off dynamic_cast optimization that came with Command Line Tools 16
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-assume-unique-vtables")
+endif()
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGOOGLE_PROTOBUF_NO_RDTSC")
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
@@ -163,8 +167,8 @@ SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -rdynamic" )
 
 message("-- CMAKE_SHARED_LINKER_FLAGS is ${CMAKE_SHARED_LINKER_FLAGS}")
 
-# Use C++ 20
-set(CMAKE_CXX_STANDARD 20)
+# Use C++ 23
+set(CMAKE_CXX_STANDARD 23)
 
 # Always build shared libs if not explicitly specified
 set(BUILD_SHARED_LIBS ON)

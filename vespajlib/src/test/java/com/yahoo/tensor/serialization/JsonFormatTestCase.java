@@ -464,19 +464,22 @@ public class JsonFormatTestCase {
     @Test
     public void testMixedInt8TensorWithHexForm() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(x{},y[3])"));
-        builder.cell().label("x", 0).label("y", 0).value(2.0);
-        builder.cell().label("x", 0).label("y", 1).value(3.0);
-        builder.cell().label("x", 0).label("y", 2).value(4.0);
-        builder.cell().label("x", 1).label("y", 0).value(5.0);
-        builder.cell().label("x", 1).label("y", 1).value(6.0);
-        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        builder.cell().label("x", "a").label("y", 0).value(2.0);
+        builder.cell().label("x", "a").label("y", 1).value(3.0);
+        builder.cell().label("x", "a").label("y", 2).value(4.0);
+        builder.cell().label("x", "b").label("y", 0).value(5.0);
+        builder.cell().label("x", "b").label("y", 1).value(6.0);
+        builder.cell().label("x", "b").label("y", 2).value(7.0);
         Tensor expected = builder.build();
 
         String mixedJson = "{\"blocks\":[" +
-                           "{\"address\":{\"x\":\"0\"},\"values\":\"020304\"}," +
-                           "{\"address\":{\"x\":\"1\"},\"values\":\"050607\"}" +
+                           "{\"address\":{\"x\":\"a\"},\"values\":\"020304\"}," +
+                           "{\"address\":{\"x\":\"b\"},\"values\":\"050607\"}" +
                            "]}";
         Tensor decoded = JsonFormat.decode(expected.type(), mixedJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+        String shortJson = "{\"a\": \"020304\", \"b\": \"050607\"}";
+        decoded = JsonFormat.decode(expected.type(), shortJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
     }
 

@@ -34,16 +34,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonFeederTest {
 
+    static String lulVal(int i) {
+        var buf = new StringBuilder();
+        while (i-- > 0) {
+            buf.append("lal");
+            i = (int) (i/1.005);
+        }
+        return buf.toString();
+    }
+
     @Test
     void test() throws IOException {
-        int docs = 1 << 14;
+        int docs = 1 << 12;
         String json = "[\n" +
 
                       IntStream.range(0, docs).mapToObj(i ->
                                                                 "  {\n" +
                                                                 "    \"id\": \"id:ns:type::abc" + i + "\",\n" +
                                                                 "    \"fields\": {\n" +
-                                                                "      \"lul\":\"lal\"\n" +
+                                                                "      \"lul\":\"" + lulVal(i) + "\"\n" +
                                                                 "    }\n" +
                                                                 "  },\n"
                       ).collect(joining()) +
@@ -64,7 +73,7 @@ class JsonFeederTest {
             long startNanos = System.nanoTime();
             MockClient feedClient = new MockClient();
             JsonFeeder.builder(feedClient).build()
-                    .feedMany(in, 1 << 10,
+                    .feedMany(in, 1 << 7,
                             new JsonFeeder.ResultCallback() {
                                 @Override
                                 public void onNextResult(Result result, FeedException error) { resultsReceived.incrementAndGet(); }

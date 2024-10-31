@@ -84,10 +84,10 @@ vector_map<K, V, LT>::operator[](const K &key) {
     LT lt;
     iterator f = std::lower_bound(begin(), end(), key, KeyOrder());
     if (f == end()) {
-        _ht.template emplace_back(key, V());
+        _ht.emplace_back(key, V());
         return _ht.rbegin()->second;
     } else if (lt(key, f->first)) {
-        f = _ht.template emplace(f, key, V());
+        f = _ht.emplace(f, key, V());
     }
     return f->second;
 }

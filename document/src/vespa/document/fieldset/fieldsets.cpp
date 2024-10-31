@@ -24,6 +24,14 @@ computeHash(const Field::Set & set) {
 
 }
 
+AllFields::~AllFields() = default;
+
+NoFields::~NoFields() = default;
+
+DocIdOnly::~DocIdOnly() = default;
+
+DocumentOnly::~DocumentOnly() = default;
+
 FieldCollection::FieldCollection(const DocumentType& type, Field::Set set)
     : _set(std::move(set)),
       _hash(computeHash(_set)),

@@ -5,5 +5,6 @@
 
 namespace document {
 
+DoubleFieldValue::~DoubleFieldValue() = default;
 
 } // document

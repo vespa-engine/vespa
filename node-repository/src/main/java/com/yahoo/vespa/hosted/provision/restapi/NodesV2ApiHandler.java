@@ -36,6 +36,9 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
+import com.yahoo.vespa.hosted.provision.backup.Snapshot;
+import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
+import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -45,7 +48,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
-import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
 import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
@@ -120,7 +122,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
         String pathS = request.getUri().getPath();
-        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "node", "state", "acl", "command", "archive", "locks", "maintenance", "upgrade", "capacity", "application", "stats", "wireguard");
+        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "node", "state", "acl", "command", "archive", "locks", "maintenance", "upgrade", "capacity", "application", "stats", "wireguard", "snapshot");
         if (path.matches(    "/nodes/v2/node")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
         if (path.matches(    "/nodes/v2/state")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
@@ -136,6 +138,9 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         if (path.matches(    "/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
         if (path.matches(    "/nodes/v2/stats")) return stats();
         if (path.matches(    "/nodes/v2/wireguard")) return new WireguardResponse(nodeRepository);
+        if (path.matches(    "/nodes/v2/snapshot")) return new SnapshotResponse(nodeRepository);
+        if (path.matches(    "/nodes/v2/snapshot/{hostname}")) return new SnapshotResponse(nodeRepository, path.get("hostname"));
+        if (path.matches(    "/nodes/v2/snapshot/{hostname}/{snapshotId}")) return new SnapshotResponse(nodeRepository, SnapshotId.of(path.get("snapshotId")), path.get("hostname"));
         throw new NotFoundException("Nothing at " + path);
     }
 
@@ -199,6 +204,9 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         else if (path.matches("/nodes/v2/upgrade/{nodeType}")) {
             return setTargetVersions(path.get("nodeType"), toSlime(request));
         }
+        else if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}")) {
+            return updateSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"), toSlime(request));
+        }
 
         throw new NotFoundException("Nothing at '" + path + "'");
     }
@@ -233,8 +241,43 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                     Optional.ofNullable(request.getProperty("clusterId")).map(ClusterSpec.Id::from)).size();
             return new MessageResponse("Triggered dropping of documents on " + count + " nodes");
         }
+        if (path.matches("/nodes/v2/snapshot/{hostname}")) return snapshot(path.get("hostname"));
+        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}/restore")) return restoreSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"));
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+    }
+
+    private HttpResponse snapshot(String hostname) {
+        Snapshot snapshot = nodeRepository.snapshots().create(hostname, nodeRepository.clock().instant());
+        return new MessageResponse("Triggered a new snapshot of " + hostname + ": " + snapshot.id());
+    }
+
+    private HttpResponse restoreSnapshot(SnapshotId id, String hostname) {
+        Snapshot snapshot = nodeRepository.snapshots().restore(id, hostname);
+        return new MessageResponse("Triggered restore of snapshot '" + snapshot.id() + "' to " + hostname);
+    }
+
+    private HttpResponse forgetSnapshot(SnapshotId id, String hostname, HttpRequest request) {
+        boolean force = request.getBooleanProperty("force");
+        nodeRepository.snapshots().remove(id, hostname, force);
+        return new MessageResponse("Removed snapshot '" + id + "' belonging to " + hostname);
+    }
+
+    private HttpResponse updateSnapshot(SnapshotId id, String hostname, Inspector body) {
+        Inspector stateField = body.field("state");
+        if (!stateField.valid()) {
+            throw new IllegalArgumentException("No 'state' field present in request body");
+        }
+        String value = stateField.asString();
+        Snapshot.State newState = switch (value) {
+            case "creating" -> Snapshot.State.creating;
+            case "created" -> Snapshot.State.created;
+            case "restoring" -> Snapshot.State.restoring;
+            case "restored" -> Snapshot.State.restored;
+            default -> throw new IllegalArgumentException("Invalid snapshot state '" + value + "'");
+        };
+        nodeRepository.snapshots().move(id, hostname, newState);
+        return new MessageResponse("Updated snapshot '" + id + "' for node " + hostname);
     }
 
     private HttpResponse handleDELETE(HttpRequest request) {
@@ -243,6 +286,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         if (path.matches("/nodes/v2/archive/account/{key}") || path.matches("/nodes/v2/archive/tenant/{key}"))
             return setArchiveUri(path.get("key"), Optional.empty(), !path.getPath().segments().get(3).equals("account"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
+        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}")) return forgetSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"), request);
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }

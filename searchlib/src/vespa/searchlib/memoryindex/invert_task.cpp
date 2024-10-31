@@ -25,7 +25,7 @@ get_field_value(const Document& doc, const std::unique_ptr<const Field>& field)
 
 }
 
-InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,  const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, uint32_t lid, const document::Document& doc, OnWriteDoneType on_write_done)
+InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters, const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, uint32_t lid, const document::Document& doc, const OnWriteDoneType& on_write_done)
     : _inv_context(inv_context),
       _context(context),
       _inverters(inverters),

@@ -126,7 +126,7 @@
                 <configuration>
                   <compilerArgs>
                     <!-- Turn off classfile warnings where spotbugs is pulled in transitively. -->
-                    <arg>-Xlint:all</arg>
+                    <arg>${vespaCompilerArgs.xlint}</arg>
                     <arg>-Xlint:-classfile</arg>
                     <arg>-Xlint:-serial</arg>
                     <arg>-Werror</arg>

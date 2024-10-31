@@ -19,7 +19,6 @@
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -76,8 +75,13 @@ using generation_t = vespalib::GenerationHandler::generation_t;
 
 std::string sparseSpec("tensor(x{},y{})");
 std::string denseSpec("tensor(x[2],y[3])");
+std::string a_dimension("a");
+std::string b_dimension("b");
+std::string x_dimension("x");
 std::string vec_2d_spec("tensor(x[2])");
-std::string vec_mixed_2d_spec("tensor(a{},x[2])");
+std::string vec_mixed_1m_2d_spec("tensor(a{},x[2])");
+std::string vec_mixed_2m_2d_spec("tensor(a{},b{},x[2])");
+std::vector<std::string> vec_specs{vec_2d_spec, vec_mixed_1m_2d_spec, vec_mixed_2m_2d_spec};
 
 Value::UP createTensor(const TensorSpec &spec) {
     return value_from_spec(spec, FastValueBuilderFactory::get());
@@ -100,27 +104,31 @@ vec_2d(double x0, double x1)
 }
 
 TensorSpec
-vec_mixed_2d(std::vector<std::vector<double>> val)
+vec_mixed_2d(uint32_t mapped_dimensions, std::vector<std::vector<double>> val)
 {
-    TensorSpec spec(vec_mixed_2d_spec);
+    TensorSpec spec(vec_specs[mapped_dimensions]);
     for (uint32_t a = 0; a < val.size(); ++a) {
-        vespalib::asciistream a_stream;
-        a_stream << a;
-        std::string a_as_string = a_stream.str();
+        TensorSpec::Address address;
+        address.insert(std::make_pair(a_dimension, std::to_string(a)));
+        if (mapped_dimensions > 1) {
+            address.insert(std::make_pair(b_dimension, std::to_string(a + 10)));
+        }
+        address.insert(std::make_pair(x_dimension, 0u));
         for (uint32_t x = 0; x < val[a].size(); ++x) {
-            spec.add({{"a", a_as_string.c_str()},{"x", x}}, val[a][x]);
+            address.find(x_dimension)->second = x;
+            spec.add(address, val[a][x]);
         }
     }
     return spec;
 }
 
 TensorSpec
-typed_vec_2d(HnswIndexType type, double x0, double x1)
+typed_vec_2d(uint32_t mapped_dimensions, double x0, double x1)
 {
-    if (type == HnswIndexType::SINGLE) {
+    if (mapped_dimensions == 0) {
         return vec_2d(x0, x1);
     } else {
-        return vec_mixed_2d({{x0, x1}});
+        return vec_mixed_2d(mapped_dimensions, {{x0, x1}});
     }
 }
 
@@ -452,6 +460,7 @@ struct Fixture {
     Config _cfg;
     std::string _name;
     std::string _typeSpec;
+    ValueType _tensor_type;
     bool _use_mock_index;
     std::unique_ptr<NearestNeighborIndexFactory> _index_factory;
     std::shared_ptr<TensorAttribute> _tensorAttr;
@@ -619,6 +628,8 @@ struct Fixture {
         return denseSpec;
     }
 
+    uint32_t count_mapped_dimensions() { return _tensor_type.count_mapped_dimensions(); }
+
     vespalib::FileHeader get_file_header();
     void set_example_tensors();
     void assert_example_tensors();
@@ -640,6 +651,7 @@ Fixture::Fixture(const std::string &typeSpec, FixtureTraits traits)
       _cfg(BasicType::TENSOR, CollectionType::SINGLE),
       _name(attr_name),
       _typeSpec(typeSpec),
+      _tensor_type(ValueType::from_spec(typeSpec)),
       _index_factory(),
       _tensorAttr(),
       _attr(),
@@ -1025,12 +1037,13 @@ template <HnswIndexType type>
 void
 TensorAttributeHnswIndex<type>::test_save_load(bool multi_node)
 {
+    uint32_t mapped_dimensions = count_mapped_dimensions();
     // Set two points that will be linked together in level 0 of the hnsw graph.
     if (multi_node) {
-        set_tensor(1, vec_mixed_2d({{3, 5}, {7, 9}}));
+        set_tensor(1, vec_mixed_2d(mapped_dimensions, {{3, 5}, {7, 9}}));
     } else {
-        set_tensor(1, typed_vec_2d(type, 3, 5));
-        set_tensor(2, typed_vec_2d(type, 7, 9));
+        set_tensor(1, typed_vec_2d(mapped_dimensions, 3, 5));
+        set_tensor(2, typed_vec_2d(mapped_dimensions, 7, 9));
     }
 
     auto old_attr = _attr;
@@ -1071,8 +1084,21 @@ public:
 
 class MixedTensorAttributeHnswIndex : public TensorAttributeHnswIndex<HnswIndexType::MULTI> {
 public:
-    MixedTensorAttributeHnswIndex() : TensorAttributeHnswIndex<HnswIndexType::MULTI>(vec_mixed_2d_spec, FixtureTraits().mixed_hnsw()) {}
+    MixedTensorAttributeHnswIndex(uint32_t mapped_dimensions) : TensorAttributeHnswIndex<HnswIndexType::MULTI>(vec_specs[mapped_dimensions], FixtureTraits().mixed_hnsw()) {}
 };
+
+class MixedTensorAttributeTest : public ::testing::TestWithParam<uint32_t> {
+protected:
+    MixedTensorAttributeTest();
+    ~MixedTensorAttributeTest() override;
+};
+
+MixedTensorAttributeTest::MixedTensorAttributeTest()
+    : ::testing::TestWithParam<uint32_t>()
+{
+}
+
+MixedTensorAttributeTest::~MixedTensorAttributeTest() = default;
 
 TEST(TensorAttributeTest, Hnsw_index_is_instantiated_in_dense_tensor_attribute_when_specified_in_config)
 {
@@ -1086,21 +1112,21 @@ TEST(TensorAttributeTest, Hnsw_index_is_integrated_in_dense_tensor_attribute_and
     f.test_save_load(false);
 }
 
-TEST(TensorAttributeTest, Hnsw_index_is_instantiated_in_mixed_tensor_attribute_when_specified_in_config)
+TEST_P(MixedTensorAttributeTest, Hnsw_index_is_instantiated_in_mixed_tensor_attribute_when_specified_in_config)
 {
-    MixedTensorAttributeHnswIndex f;
+    MixedTensorAttributeHnswIndex f(GetParam());
     f.test_setup();
 }
 
-TEST(TensorAttributeTest, Hnsw_index_is_integrated_in_mixed_tensor_attribute_and_can_be_saved_and_loaded)
+TEST_P(MixedTensorAttributeTest, Hnsw_index_is_integrated_in_mixed_tensor_attribute_and_can_be_saved_and_loaded)
 {
-    MixedTensorAttributeHnswIndex f;
+    MixedTensorAttributeHnswIndex f(GetParam());
     f.test_save_load(false);
 }
 
-TEST(TensorAttributeTest, Hnsw_index_is_integrated_in_mixed_tensor_attribute_and_can_be_saved_and_loaded_with_multiple_points_per_document)
+TEST_P(MixedTensorAttributeTest, Hnsw_index_is_integrated_in_mixed_tensor_attribute_and_can_be_saved_and_loaded_with_multiple_points_per_document)
 {
-    MixedTensorAttributeHnswIndex f;
+    MixedTensorAttributeHnswIndex f(GetParam());
     f.test_save_load(true);
 }
 
@@ -1110,9 +1136,9 @@ TEST(TensorAttributeTest, Populates_address_space_usage_in_dense_tensor_attribut
     f.test_address_space_usage();
 }
 
-TEST(TensorAttributeTest, Populates_address_space_usage_in_mixed_tensor_attribute_with_hnsw_index)
+TEST_P(MixedTensorAttributeTest, Populates_address_space_usage_in_mixed_tensor_attribute_with_hnsw_index)
 {
-    MixedTensorAttributeHnswIndex f;
+    MixedTensorAttributeHnswIndex f(GetParam());
     f.test_address_space_usage();
 }
 
@@ -1537,5 +1563,9 @@ TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_NOT_having
     auto bp = f.make_blueprint();
     EXPECT_FALSE(bp->getState().want_global_filter());
 }
+
+auto test_values = ::testing::Values(1u, 2u);
+
+INSTANTIATE_TEST_SUITE_P(MixedTensors, MixedTensorAttributeTest, test_values, testing::PrintToStringParamName());
 
 GTEST_MAIN_RUN_ALL_TESTS()

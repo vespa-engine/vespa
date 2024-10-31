@@ -1,11 +1,8 @@
 package ai.vespa.schemals.schemadocument.resolvers;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -17,9 +14,14 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
 import ai.vespa.schemals.tree.SchemaNode;
 
+/**
+ * This checks that the type or indexing settings for a referenced field are correct.
+ * For instance, some uses require that a field has indexing 'attribute'. Other uses require that a field is of a certain type 
+ * or set of types.
+ * The information about the required data is in class {@link ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument}
+ * The resolver then looks up the field definition and chcks if the registered indexing settings are correct.
+ */
 public class FieldArgumentResolver {
-    
-
     public static Optional<Diagnostic> resolveFieldArgument(ParseContext context, UnresolvedFieldArgument fieldArgument) {
 
         if (fieldArgument.indexingTypes().size() == 0) {
@@ -53,6 +55,7 @@ public class FieldArgumentResolver {
             .setRange(node.getRange())
             .setMessage("The referenced field are missing one of the following indexing types: " + missingFields)
             .setSeverity(DiagnosticSeverity.Error)
+            .setCode(SchemaDiagnostic.DiagnosticCode.FIELD_ARGUMENT_MISSING_INDEXING_TYPE)
             .build());
 
     }

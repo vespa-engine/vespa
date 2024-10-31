@@ -1,8 +1,11 @@
 package ai.vespa.schemals.lsp.schema.hover;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +18,7 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.SchemaLanguageServer;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -36,8 +40,6 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
  * As a TODO it would have been nice with some highlighting on the generated Markdown.
  */
 public class SchemaHover {
-    private static final String markdownPathRoot = "hover/";
-
     private static Map<String, Optional<MarkupContent>> markdownContentCache = new HashMap<>();
 
     /**
@@ -217,9 +219,9 @@ public class SchemaHover {
     private static Hover getIndexingHover(SchemaNode hoverNode, EventPositionContext context) {
         // Taken from:
         // https://docs.vespa.ai/en/reference/schema-reference.html#indexing
-        // Too specific to include in buildDocs.py
+        // Too specific to include in documentation fetcher IMO.
         
-        // Note: these classes belong to the indexinglanguage parser
+        // Note: these AST classes belong to the indexinglanguage parser
         if (hoverNode.isASTInstance(ATTRIBUTE.class)) {
             return new Hover(new MarkupContent(MarkupKind.MARKDOWN, 
                 "## Attribute\n"
@@ -346,19 +348,21 @@ public class SchemaHover {
             }
         }
 
-        String fileName = markdownPathRoot + markdownKey + ".md";
-        InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
+        if (SchemaLanguageServer.serverPath == null)return Optional.empty();
+        String fileName = markdownKey + ".md";
 
-        if (inputStream == null) {
-            markdownContentCache.put(markdownKey, Optional.empty());
+        Path markdownPath = SchemaLanguageServer.serverPath.resolve("hover").resolve(fileName);
+
+        try {
+            String markdown = Files.readString(markdownPath);
+
+            MarkupContent mdContent = new MarkupContent(MarkupKind.MARKDOWN, markdown);
+            Hover hover = new Hover(mdContent, range);
+            markdownContentCache.put(markdownKey, Optional.of(mdContent));
+            return Optional.of(hover);
+
+        } catch(IOException ex) {
             return Optional.empty();
         }
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        String markdown = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-
-        MarkupContent mdContent = new MarkupContent(MarkupKind.MARKDOWN, markdown);
-        Hover hover = new Hover(mdContent, range);
-		markdownContentCache.put(markdownKey, Optional.of(mdContent));
-        return Optional.of(hover);
     }
 }

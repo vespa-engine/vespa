@@ -111,7 +111,7 @@ public class SchemaDocument implements DocumentManager {
             this.CST = parsingResult.CST().get();
             lexer.setCST(CST);
 
-            // logger.info("======== CST for file: " + fileURI + " ========");
+            //logger.info("======== CST for file: " + fileURI + " ========");
      
             //CSTUtils.printTree(logger, CST);
         }
@@ -157,9 +157,8 @@ public class SchemaDocument implements DocumentManager {
     public boolean getIsOpen() { return isOpen; }
 
     @Override
-    public boolean setIsOpen(boolean value) {
+    public void setIsOpen(boolean value) {
         isOpen = value;
-        return isOpen;
     }
 
     public String getSchemaIdentifier() {
@@ -239,6 +238,8 @@ public class SchemaDocument implements DocumentManager {
 
             diagnostics.addAll(ResolverTraversal.traverse(context, tolerantResult.CST().get()));
 
+            // Unresolved field arguments (type and indexing settings) need to be resolved after 'ResolverTraversal'
+            // because the indexing language is traversed in the ResolverTraversal
             for (UnresolvedFieldArgument fieldArg : context.unresolvedFieldArguments()) {
                 Optional<Diagnostic> diagnostic = FieldArgumentResolver.resolveFieldArgument(context, fieldArg);
                 if (diagnostic.isPresent()) {

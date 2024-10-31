@@ -39,4 +39,9 @@ public class AthenzPolicy {
                 ", assertions=" + assertions +
                 '}';
     }
+
+    public boolean hasMatchingAssertion(AthenzRole role, AthenzResourceName resource, String action) {
+        return assertions.stream().anyMatch(assertion -> assertion.matches(role, resource, action));
+    }
+
 }

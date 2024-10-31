@@ -46,7 +46,7 @@ public class LiteralBoolExpressionTestCase {
     public void requireThatTrueBecomesTrue() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
         context.execute(new LiteralBoolExpression(true));
-        FieldValue value = context.getValue();
+        FieldValue value = context.getCurrentValue();
         assertTrue(value instanceof BoolFieldValue);
         assertTrue(((BoolFieldValue)value).getBoolean());
     }
@@ -55,7 +55,7 @@ public class LiteralBoolExpressionTestCase {
     public void requireThatFalseBecomesFalse() {
         ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
         context.execute(new LiteralBoolExpression(false));
-        FieldValue value = context.getValue();
+        FieldValue value = context.getCurrentValue();
         assertTrue(value instanceof BoolFieldValue);
         assertFalse(((BoolFieldValue)value).getBoolean());
     }

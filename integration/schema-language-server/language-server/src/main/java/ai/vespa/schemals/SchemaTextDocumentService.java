@@ -56,6 +56,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
+import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.schema.codeaction.SchemaCodeAction;
 import ai.vespa.schemals.lsp.schema.completion.SchemaCompletion;
@@ -105,6 +106,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 return result;
             } catch(CancellationException ignore) {
                 // Ignore
+            } catch(InvalidContextException ignore) {
+                // Ignore
             }
 
             // Return the list of completion items.
@@ -123,6 +126,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
                 return SchemaCodeAction.provideActions(eventContextCreator.createContext(params));
+            } catch(InvalidContextException ignore) {
+                // Ignore
             } catch(Exception e) {
                 logger.error("Error during code action handling: " + e.getMessage());
             }
@@ -142,7 +147,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            return SchemaReferences.getReferences(eventContextCreator.createContext(params));
+            try {
+                return SchemaReferences.getReferences(eventContextCreator.createContext(params));
+            } catch(InvalidContextException ignore) {
+                // Ignore
+            }
+            return List.of();
         });
     }
 
@@ -153,6 +163,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
             try {
                 EventDocumentContext context = eventContextCreator.createContext(params);
                 return SchemaDocumentSymbols.documentSymbols(context);
+            } catch(InvalidContextException ignore) {
+                // Ignore
             } catch(Exception e) {
                 logger.error("Error during document symbol handling: " + e.getMessage());
             }
@@ -167,6 +179,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
             try {
                 EventDocumentContext context = eventContextCreator.createContext(codeLensParams);
                 return YQLPlusCodeLens.codeLens(context);
+            } catch(InvalidContextException ignore) {
+                // Ignore
             } catch (Exception e) {
                 logger.error("Error during code lens request: " + e.getMessage());
             }
@@ -198,7 +212,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> prepareRename(PrepareRenameParams params) {
 
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            return SchemaPrepareRename.prepareRename(eventContextCreator.createContext(params));
+            try {
+                return SchemaPrepareRename.prepareRename(eventContextCreator.createContext(params));
+            } catch(InvalidContextException ignore) {
+                // Ignore
+            }
+            return null;
         });
 	}
 
@@ -206,7 +225,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
 
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            return SchemaRename.rename(eventContextCreator.createContext(params), params.getNewName());
+            try {
+                return SchemaRename.rename(eventContextCreator.createContext(params), params.getNewName());
+            } catch(InvalidContextException ignore) {
+                // Ignore
+            }
+            return null;
         });
     }
 
@@ -272,6 +296,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 }
                 return SchemaSemanticTokens.getSemanticTokens(context);
                  
+            } catch (InvalidContextException ex) {
+                // ignore
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
             } catch (Exception e) {
@@ -294,6 +320,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
                 return SchemaHover.getHover(eventContextCreator.createContext(params));
 
+            } catch (InvalidContextException ex) {
+                // ignore
             } catch (CancellationException ignore) {
                 // Ignore
             } catch (Exception e) {
@@ -312,6 +340,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
     
                 return Either.forLeft(SchemaDefinition.getDefinition(eventContextCreator.createContext(params)));
     
+            } catch (InvalidContextException ex) {
+                // ignore
             } catch (CancellationException ignore) {
                 // Ignore
             } catch (Exception e) {

@@ -56,19 +56,14 @@ ZcPosOccRandRead::~ZcPosOccRandRead()
 
 
 std::unique_ptr<search::queryeval::SearchIterator>
-ZcPosOccRandRead::
-createIterator(const PostingListCounts &counts,
-               const PostingListHandle &handle,
-               const search::fef::TermFieldMatchDataArray &matchData,
-               bool usebitVector) const
+ZcPosOccRandRead::createIterator(const DictionaryLookupResult& lookup_result,
+                                 const PostingListHandle &handle,
+                                 const search::fef::TermFieldMatchDataArray &matchData) const
 {
-    (void) usebitVector;
+    assert((lookup_result.counts._numDocs != 0) == (lookup_result.counts._bitLength != 0));
+    assert(handle._bitOffsetMem <= lookup_result.bitOffset);
 
-    assert((handle._bitLength != 0) == (counts._bitLength != 0));
-    assert((counts._numDocs != 0) == (counts._bitLength != 0));
-    assert(handle._bitOffsetMem <= handle._bitOffset);
-
-    if (handle._bitLength == 0) {
+    if (lookup_result.counts._bitLength == 0) {
         return std::make_unique<search::queryeval::EmptySearch>();
     }
 
@@ -76,44 +71,34 @@ createIterator(const PostingListCounts &counts,
     uint64_t memOffset = reinterpret_cast<unsigned long>(cmem) & 7;
     const uint64_t *mem = reinterpret_cast<const uint64_t *>
                           (cmem - memOffset) +
-                          (memOffset * 8 + handle._bitOffset -
+                          (memOffset * 8 + lookup_result.bitOffset -
                            handle._bitOffsetMem) / 64;
-    int bitOffset = (memOffset * 8 + handle._bitOffset -
+    int bitOffset = (memOffset * 8 + lookup_result.bitOffset -
                      handle._bitOffsetMem) & 63;
 
     Position start(mem, bitOffset);
-    return create_zc_posocc_iterator(true, counts, start, handle._bitLength, _posting_params, _fieldsParams, matchData);
+    return create_zc_posocc_iterator(true, lookup_result.counts, start, lookup_result.counts._bitLength, _posting_params, _fieldsParams, matchData);
 }
 
 
-void
-ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
-                                  uint32_t firstSegment,
-                                  uint32_t numSegments,
-                                  PostingListHandle &handle)
+PostingListHandle
+ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
 {
-    // XXX: Ignore segments for now.
-    (void) firstSegment;
-    (void) numSegments;
-    (void) counts;
-
-    handle.drop();
-    if (handle._bitLength == 0) {
-        return;
+    PostingListHandle handle;
+    if (lookup_result.counts._bitLength == 0) {
+        return handle;
     }
 
-    uint64_t startOffset = (handle._bitOffset + _headerBitSize) >> 3;
+    uint64_t startOffset = (lookup_result.bitOffset + _headerBitSize) >> 3;
     // Align start at 64-bit boundary
     startOffset -= (startOffset & 7);
 
     void *mapPtr = _file->MemoryMapPtr(startOffset);
     if (mapPtr != nullptr) {
         handle._mem = mapPtr;
-        handle._allocMem = nullptr;
-        handle._allocSize = 0;
     } else {
-        uint64_t endOffset = (handle._bitOffset + _headerBitSize +
-                              handle._bitLength + 7) >> 3;
+        uint64_t endOffset = (lookup_result.bitOffset + _headerBitSize +
+                              lookup_result.counts._bitLength + 7) >> 3;
         // Align end at 64-bit boundary
         endOffset += (-endOffset & 7);
 
@@ -145,10 +130,12 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
                    padExtraAfter);
         }
         handle._mem = static_cast<char *>(alignedBuffer) + padBefore;
-        handle._allocMem = mallocStart;
+        handle._allocMem = std::shared_ptr<void>(mallocStart, free);
         handle._allocSize = mallocLen;
+        handle._read_bytes = padBefore + vectorLen + padAfter;
     }
     handle._bitOffsetMem = (startOffset << 3) - _headerBitSize;
+    return handle;
 }
 
 

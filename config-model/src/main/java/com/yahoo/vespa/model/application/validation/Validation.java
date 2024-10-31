@@ -109,6 +109,7 @@ public class Validation {
         new InfrastructureDeploymentValidator().validate(execution);
         new EndpointCertificateSecretsValidator().validate(execution);
         new CloudClientsValidator().validate(execution);
+        new PagedAttributesRemoteStorageValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {

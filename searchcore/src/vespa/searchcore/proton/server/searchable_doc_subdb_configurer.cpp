@@ -33,7 +33,7 @@ using ARIConfig = AttributeReprocessingInitializer::Config;
 
 void
 SearchableDocSubDBConfigurer::reconfigureFeedView(std::shared_ptr<IAttributeWriter> attrWriter,
-                                                  std::shared_ptr<Schema> schema,
+                                                  std::shared_ptr<const Schema> schema,
                                                   std::shared_ptr<const DocumentTypeRepo> repo)
 {
     auto curr = _feedView.get();

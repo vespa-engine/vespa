@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.LongFieldValue;
 
 import java.util.Base64;
@@ -16,10 +17,27 @@ public final class Base64DecodeExpression extends Expression {
     }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, DataType.STRING, context);
+        return DataType.LONG;
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, DataType.LONG, context);
+        return DataType.STRING;
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
-        String input = String.valueOf(context.getValue());
-        if (input.isEmpty()) {
-            context.setValue(new LongFieldValue(Long.MIN_VALUE));
+        String input = String.valueOf(context.getCurrentValue());
+        if (input.isEmpty()) { // TODO: Or if context.getCurrentValue() is null or if context.getCurrentValue().getDataType() != DataType.STRING
+            context.setCurrentValue(new LongFieldValue(Long.MIN_VALUE));
             return;
         }
         if (input.length() > 12) {
@@ -33,23 +51,14 @@ public final class Base64DecodeExpression extends Expression {
         for (int i = decoded.length; --i >= 0;) {
             output = (output << 8) + (((int)decoded[i]) & 0xff);
         }
-        context.setValue(new LongFieldValue(output));
+        context.setCurrentValue(new LongFieldValue(output));
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setValueType(createdOutputType());
-    }
+    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.LONG;
-    }
-
-    @Override
-    public String toString() {
-        return "base64decode";
-    }
+    public String toString() { return "base64decode"; }
 
     @Override
     public boolean equals(Object obj) {
@@ -57,7 +66,6 @@ public final class Base64DecodeExpression extends Expression {
     }
 
     @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
+    public int hashCode() { return getClass().hashCode(); }
+
 }

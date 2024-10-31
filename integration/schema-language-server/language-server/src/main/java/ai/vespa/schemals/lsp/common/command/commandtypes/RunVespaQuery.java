@@ -31,7 +31,7 @@ public class RunVespaQuery implements SchemaCommand {
         return true;
     }
 
-    public void execute(EventExecuteCommandContext context) {
+    public Object execute(EventExecuteCommandContext context) {
         context.logger.info("Running Vespa query...");
         context.logger.info(queryCommand);
 
@@ -39,10 +39,12 @@ public class RunVespaQuery implements SchemaCommand {
 
         if (!result.success()) {
             context.messageHandler.sendMessage(MessageType.Error, "Failed to run query:\n" + result.result());
-            return;
+            return null;
         }
 
         context.logger.info(result.result());
+
+        return null;
     }
 
     private record QueryResult(boolean success, String result) {};
@@ -91,7 +93,6 @@ public class RunVespaQuery implements SchemaCommand {
             logger.error(e.getMessage());
             return new QueryResult(false, "IOException occurred.");
         }
-
     }
     
 }

@@ -23,7 +23,7 @@ public class OpenNlpLinguisticsSubclassingTest {
         var subclass = new OpenNlpLinguisticsSubclass();
         assertEquals("the only token", subclass.getTokenizer().tokenize("whatever", Language.ENGLISH, StemMode.ALL, false).iterator().next().getTokenString());
         assertEquals("the only token", subclass.getSegmenter().segment("whatever", Language.ENGLISH).iterator().next());
-        assertEquals("the only token", subclass.getStemmer().stem("whatever", StemMode.ALL, Language.ENGLISH).get(0).get(0));
+        assertEquals("the only token", subclass.getStemmer().stem("whatever", Language.ENGLISH, StemMode.ALL, true).get(0).get(0));
     }
 
     static class OpenNlpLinguisticsSubclass extends OpenNlpLinguistics {

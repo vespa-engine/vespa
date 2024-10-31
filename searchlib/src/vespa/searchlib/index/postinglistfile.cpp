@@ -97,22 +97,17 @@ PostingListFileRandReadPassThrough::~PostingListFileRandReadPassThrough()
 
 std::unique_ptr<search::queryeval::SearchIterator>
 PostingListFileRandReadPassThrough::
-createIterator(const PostingListCounts &counts,
-               const PostingListHandle &handle,
-               const search::fef::TermFieldMatchDataArray &matchData,
-               bool usebitVector) const
+createIterator(const DictionaryLookupResult& lookup_result,
+               const PostingListHandle& handle,
+               const search::fef::TermFieldMatchDataArray &matchData) const
 {
-    return _lower->createIterator(counts, handle, matchData, usebitVector);
+    return _lower->createIterator(lookup_result, handle, matchData);
 }
 
-void
-PostingListFileRandReadPassThrough::
-readPostingList(const PostingListCounts &counts,
-                uint32_t firstSegment,
-                uint32_t numSegments,
-                PostingListHandle &handle)
+PostingListHandle
+PostingListFileRandReadPassThrough::read_posting_list(const DictionaryLookupResult& lookup_result)
 {
-    _lower->readPostingList(counts, firstSegment, numSegments,handle);
+    return _lower->read_posting_list(lookup_result);
 }
 
 bool

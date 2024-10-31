@@ -11,8 +11,8 @@ import java.time.Instant;
  * @author mortent
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AwsTemporaryCredentialsResponseEntity {
-    private AwsTemporaryCredentials credentials;
+public class AwsTemporaryCredentialsResponseEntity implements TemporaryCredentialsResponse<AwsTemporaryCredentials> {
+    private final AwsTemporaryCredentials credentials;
 
     public AwsTemporaryCredentialsResponseEntity(
             @JsonProperty("accessKeyId") String accessKeyId,

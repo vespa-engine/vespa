@@ -14,7 +14,7 @@ public class UnboundDoubleFlag extends UnboundFlagImpl<Double, DoubleFlag, Unbou
 
     public UnboundDoubleFlag(FlagId id, Double defaultValue, FetchVector defaultFetchVector) {
         super(id, defaultValue, defaultFetchVector,
-                new SimpleFlagSerializer<>(DoubleNode::new, JsonNode::isFloatingPointNumber, JsonNode::asDouble),
+                new SimpleFlagSerializer<>(DoubleNode::new, JsonNode::isNumber, JsonNode::asDouble),
                 UnboundDoubleFlag::new, DoubleFlag::new);
     }
 }

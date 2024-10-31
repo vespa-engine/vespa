@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("task_runner_test");
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <mutex>
@@ -124,24 +124,27 @@ struct Fixture
 
 Fixture::~Fixture() = default;
 
-TEST_F("1 thread, 2 dependees, 1 depender", Fixture(1))
+TEST(TaskRunnerTest, 1_thread_2_dependees_1_depender)
 {
+    Fixture f(1);
     TestJob job = TestJob::setupCDependsOnAandB();
     f.run(job._root);
-    EXPECT_EQUAL("ABC", job._log->result());
+    EXPECT_EQ("ABC", job._log->result());
 }
 
-TEST_F("1 thread, dag graph", Fixture(1))
+TEST(TaskRunnerTest, 1_thread_dag_graph)
 {
+    Fixture f(1);
     for (int iter = 0; iter < 1000; ++iter) {
         TestJob job = TestJob::setupDiamond();
         f.run(job._root);
-        EXPECT_EQUAL("DABC", job._log->result());
+        EXPECT_EQ("DABC", job._log->result());
     }
 }
 
-TEST_F("multiple threads, dag graph", Fixture(10))
+TEST(TaskRunnerTest, multiple_threads_dag_graph)
 {
+    Fixture f(10);
     int dabc_count = 0;
     int dbac_count = 0;
     for (int iter = 0; iter < 1000; ++iter) {
@@ -159,14 +162,12 @@ TEST_F("multiple threads, dag graph", Fixture(10))
     LOG(info, "dabc=%d, dbac=%d", dabc_count, dbac_count);
 }
 
-TEST_F("single thread with resource using tasks", Fixture(1))
+TEST(TaskRunnerTest, single_thread_with_resource_using_tasks)
 {
+    Fixture f(1);
     auto job = TestJob::setupResourceUsingTasks();
     f.run(job._root);
-    EXPECT_EQUAL("BDCAE", job._log->result());
+    EXPECT_EQ("BDCAE", job._log->result());
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

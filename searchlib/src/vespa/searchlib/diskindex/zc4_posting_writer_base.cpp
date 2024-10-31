@@ -16,7 +16,7 @@ class DocIdEncoder {
 protected:
     uint32_t _doc_id;
     uint32_t _doc_id_pos;
-    uint32_t _feature_pos;
+    uint64_t _feature_pos;
     using DocIdAndFeatureSize = Zc4PostingWriterBase::DocIdAndFeatureSize;
 
 public:
@@ -31,7 +31,7 @@ public:
     void set_doc_id(uint32_t doc_id) { _doc_id = doc_id; }
     uint32_t get_doc_id() const { return _doc_id; }
     uint32_t get_doc_id_pos() const { return _doc_id_pos; }
-    uint32_t get_feature_pos() const { return _feature_pos; }
+    uint64_t get_feature_pos() const { return _feature_pos; }
 };
 
 class L1SkipEncoder : public DocIdEncoder {
@@ -105,13 +105,13 @@ void
 DocIdEncoder::write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size, bool encode_interleaved_features)
 {
     _feature_pos += doc_id_and_feature_size._features_size;
-    zc_buf.encode(doc_id_and_feature_size._doc_id - _doc_id - 1);
+    zc_buf.encode32(doc_id_and_feature_size._doc_id - _doc_id - 1);
     _doc_id = doc_id_and_feature_size._doc_id;
     if (encode_interleaved_features) {
         assert(doc_id_and_feature_size._field_length > 0);
-        zc_buf.encode(doc_id_and_feature_size._field_length - 1);
+        zc_buf.encode32(doc_id_and_feature_size._field_length - 1);
         assert(doc_id_and_feature_size._num_occs > 0);
-        zc_buf.encode(doc_id_and_feature_size._num_occs - 1);
+        zc_buf.encode32(doc_id_and_feature_size._num_occs - 1);
     }
     _doc_id_pos = zc_buf.size();
 }
@@ -123,14 +123,14 @@ L1SkipEncoder::encode_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder)
     // doc id
     uint32_t doc_id_delta = doc_id_encoder.get_doc_id() - _doc_id;
     assert(static_cast<int32_t>(doc_id_delta) > 0);
-    zc_buf.encode(doc_id_delta - 1);
+    zc_buf.encode32(doc_id_delta - 1);
     _doc_id = doc_id_encoder.get_doc_id();
     // doc id pos
-    zc_buf.encode(doc_id_encoder.get_doc_id_pos() - _doc_id_pos - 1);
+    zc_buf.encode32(doc_id_encoder.get_doc_id_pos() - _doc_id_pos - 1);
     _doc_id_pos = doc_id_encoder.get_doc_id_pos();
     if (_encode_features) {
         // features pos
-        zc_buf.encode(doc_id_encoder.get_feature_pos() - _feature_pos - 1);
+        zc_buf.encode42(doc_id_encoder.get_feature_pos() - _feature_pos - 1);
         _feature_pos = doc_id_encoder.get_feature_pos();
     }
 }
@@ -146,7 +146,7 @@ void
 L1SkipEncoder::write_partial_skip(ZcBuf &zc_buf, uint32_t doc_id)
 {
     if (zc_buf.size() > 0) {
-        zc_buf.encode(doc_id - _doc_id - 1);
+        zc_buf.encode32(doc_id - _doc_id - 1);
     }
 }
 
@@ -155,7 +155,7 @@ L2SkipEncoder::encode_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip)
 {
     L1SkipEncoder::encode_skip(zc_buf, l1_skip);
     // L1 skip pos
-    zc_buf.encode(l1_skip.get_l1_skip_pos() - _l1_skip_pos - 1);
+    zc_buf.encode32(l1_skip.get_l1_skip_pos() - _l1_skip_pos - 1);
     _l1_skip_pos = l1_skip.get_l1_skip_pos();
 }
 
@@ -171,7 +171,7 @@ L3SkipEncoder::encode_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip)
 {
     L2SkipEncoder::encode_skip(zc_buf, l2_skip);
     // L2 skip pos
-    zc_buf.encode(l2_skip.get_l2_skip_pos() - _l2_skip_pos - 1);
+    zc_buf.encode32(l2_skip.get_l2_skip_pos() - _l2_skip_pos - 1);
     _l2_skip_pos = l2_skip.get_l2_skip_pos();
 }
 
@@ -187,7 +187,7 @@ L4SkipEncoder::encode_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip)
 {
     L3SkipEncoder::encode_skip(zc_buf, l3_skip);
     // L3 skip pos
-    zc_buf.encode(l3_skip.get_l3_skip_pos() - _l3_skip_pos - 1);
+    zc_buf.encode32(l3_skip.get_l3_skip_pos() - _l3_skip_pos - 1);
     _l3_skip_pos = l3_skip.get_l3_skip_pos();
 }
 
@@ -219,12 +219,6 @@ Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
       _featureWriteContext(sizeof(uint64_t))
 {
     _featureWriteContext.allocComprBuf(64, 1);
-    // Ensure that some space is initially available in encoding buffers
-    _zcDocIds.maybeExpand();
-    _l1Skip.maybeExpand();
-    _l2Skip.maybeExpand();
-    _l3Skip.maybeExpand();
-    _l4Skip.maybeExpand();
 }
 
 Zc4PostingWriterBase::~Zc4PostingWriterBase() = default;

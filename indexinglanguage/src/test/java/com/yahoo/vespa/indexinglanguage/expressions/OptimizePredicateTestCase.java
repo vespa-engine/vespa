@@ -26,7 +26,7 @@ public class OptimizePredicateTestCase {
         final Predicate predicateB = Mockito.mock(Predicate.class);
         final PredicateFieldValue input = new PredicateFieldValue(predicateA);
         ExecutionContext ctx = new ExecutionContext()
-                .setValue(input)
+                .setCurrentValue(input)
                 .setVariable("arity", new IntegerFieldValue(10));
         FieldValue output = new OptimizePredicateExpression(
                 (predicate, options) -> {
@@ -44,7 +44,7 @@ public class OptimizePredicateTestCase {
         final Predicate predicate = Mockito.mock(Predicate.class);
         final PredicateFieldValue input = new PredicateFieldValue(predicate);
         ExecutionContext ctx = new ExecutionContext()
-                .setValue(input)
+                .setCurrentValue(input)
                 .setVariable("arity", new IntegerFieldValue(10));
         new OptimizePredicateExpression((predicate1, options) -> {
             assertEquals(10, options.getArity());
@@ -80,7 +80,7 @@ public class OptimizePredicateTestCase {
         assertVerifyThrows(DataType.INT, exp, "Expected predicate input, got int");
         assertVerifyThrows(DataType.PREDICATE, exp, "Variable 'arity' must be set");
 
-        VerificationContext context = new VerificationContext().setValueType(DataType.PREDICATE);
+        VerificationContext context = new VerificationContext().setCurrentType(DataType.PREDICATE);
         context.setVariable("arity", DataType.STRING);
         assertVerifyCtxThrows(context, exp, "Variable 'arity' must have type int");
         context.setVariable("arity", DataType.INT);

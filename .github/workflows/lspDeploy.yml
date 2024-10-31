@@ -8,13 +8,15 @@ on:
         description: Which kind of release is this
         required: true
         options:
-          - major
-          - minor
           - patch
+          - minor
+          - major
 
 jobs:
   lspDeploy:
     name: Vespa Schema LSP Deployment Job
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -36,6 +38,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      
+      - name: "Retrieve version"
+        id: retrieve_version
+        working-directory: ./integration/schema-language-server/utils
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 updateVersion.py ${{ github.event.inputs.version }} >> $GITHUB_OUTPUT
 
       - name: Download node dependencies
         run: npm ci
@@ -46,17 +55,10 @@ jobs:
         working-directory: ./integration/schema-language-server/clients/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-          VERSION_TYPE: ${{ github.event.inputs.version }}
-
-      - name: Retrieve version
-        id: retrieve_version
-        run: |
-          python3 bumpVersion.py
-          echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
-        working-directory: ./integration/schema-language-server/clients/intellij
 
       - name: Publish IntelliJ plugin
         run: |
+          echo $VERSION > VERSION
           gradle buildPlugin
           curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$VERSION.zip https://plugins.jetbrains.com/plugin/uploadPlugin
         working-directory: ./integration/schema-language-server/clients/intellij
@@ -82,19 +84,4 @@ jobs:
             --notes-file ./clients/github-release/README.md \
             --latest=false \
             -t "Vespa Language Server ${{ steps.retrieve_version.outputs.VERSION }}" \
-            './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar'
-
-      - name: Commit and PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEW_BRANCH:  "update-language-server-version-${{ steps.retrieve_version.outputs.VERSION }}"
-        run: |
-          git config user.email "noreply@vespa.ai"
-          git config user.name "Language Server Release Action"
-          git checkout -b "${NEW_BRANCH}"
-          git commit -a -m "Update language server version to ${{ steps.retrieve_version.outputs.VERSION }}"
-          git push --set-upstream origin "${NEW_BRANCH}"
-          gh pr create -B master -H "${NEW_BRANCH}" \
-            -t "Update Language Server version to ${{ steps.retrieve_version.outputs.VERSION }}" \
-            -b ":robot: This PR updates the langauge server version to ${{ steps.retrieve_version.outputs.VERSION }}"
-          
+            './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar' 

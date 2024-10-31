@@ -18,7 +18,7 @@ public class EventPositionContext extends EventDocumentContext {
         SchemaMessageHandler messageHandler,
         TextDocumentIdentifier documentIdentifier,
         Position position
-    ) {
+    ) throws InvalidContextException {
         super(scheduler, schemaIndex, messageHandler, documentIdentifier);
         this.position = position;
 

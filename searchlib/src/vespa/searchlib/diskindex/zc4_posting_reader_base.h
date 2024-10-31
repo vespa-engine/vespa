@@ -3,6 +3,7 @@
 #pragma once
 
 #include "zc4_posting_params.h"
+#include "zc_decoder_validator.h"
 #include "zcbuf.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
@@ -22,7 +23,8 @@ protected:
 
     class NoSkipBase {
     protected:
-        ZcBuf _zc_buf;
+        std::vector<uint8_t> _zc_buf;
+        ZcDecoderValidator _zc_decoder;
         uint32_t _doc_id;
         uint32_t _doc_id_pos;
         uint64_t _features_pos;
@@ -59,7 +61,7 @@ protected:
     public:
         L1Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const NoSkipBase &no_skip, bool top_level, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const NoSkipBase &no_skip, bool top_level, bool decode_features);
         void next_skip_entry();
         uint32_t get_l1_skip_pos() const { return _l1_skip_pos; }
     };
@@ -70,7 +72,7 @@ protected:
     public:
         L2Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const L1Skip &l1_skip, bool top_level, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L1Skip &l1_skip, bool top_level, bool decode_features);
         uint32_t get_l2_skip_pos() const { return _l2_skip_pos; }
     };
     class L3Skip : public L2Skip
@@ -80,7 +82,7 @@ protected:
     public:
         L3Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const L2Skip &l2_skip, bool top_level, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L2Skip &l2_skip, bool top_level, bool decode_features);
         uint32_t get_l3_skip_pos() const { return _l3_skip_pos; }
     };
     class L4Skip : public L3Skip
@@ -88,7 +90,7 @@ protected:
     public:
         L4Skip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
-        void check(const L3Skip &l3_skip, bool decode_features);
+        void check(const Zc4PostingReaderBase& rb, const std::string& level_name, const L3Skip &l3_skip, bool decode_features);
     };
     uint32_t _doc_id_k;
     uint32_t _num_docs;      // Documents in chunk or word
@@ -107,7 +109,9 @@ protected:
     uint32_t _chunkNo;      // Chunk number
 
     // Variable for validating chunk information while reading
+    uint64_t _features_start_pos;
     uint64_t _features_size;
+    std::string              _word;
     index::PostingListCounts _counts;
 
     uint32_t _residue;            // Number of unread documents after word header
@@ -122,7 +126,7 @@ public:
     Zc4PostingReaderBase &operator=(Zc4PostingReaderBase &&) = delete;
     ~Zc4PostingReaderBase();
     void read_doc_id_and_features(index::DocIdAndFeatures &features);
-    void set_counts(bitcompression::DecodeContext64Base &decode_context, const index::PostingListCounts &counts);
+    void set_word_and_counts(bitcompression::DecodeContext64Base &decode_context, const std::string& word, const index::PostingListCounts& counts);
     ComprFileReadContext &get_read_context() { return _readContext; }
     Zc4PostingParams &get_posting_params() { return _posting_params; }
 };

@@ -63,6 +63,7 @@ public:
         auto qt = make_tensor(query_tensor);
         DistanceCalculator::make_with_validation(*attr, *qt);
     }
+    void verify_mixed_tensors(const std::string& qt_1, const std::string& qt_2);
 };
 
 constexpr double max_distance = std::numeric_limits<double>::max();
@@ -80,13 +81,9 @@ TEST_F(DistanceCalculatorTest, calculation_over_dense_tensor_attribute)
     EXPECT_EQ(OptSubspace(), calc_closest_subspace(2, qt));
 }
 
-TEST_F(DistanceCalculatorTest, calculation_over_mixed_tensor_attribute)
+void
+DistanceCalculatorTest::verify_mixed_tensors(const std::string& qt_1, const std::string& qt_2)
 {
-    build_attribute("tensor(x{},y[2])",
-                    {"{{x:\"a\",y:0}:3,{x:\"a\",y:1}:10,{x:\"b\",y:0}:5,{x:\"b\",y:1}:10}",
-                     "{}", ""});
-    std::string qt_1 = "tensor(y[2]):[9,10]";
-    std::string qt_2 = "tensor(y[2]):[1,10]";
     EXPECT_DOUBLE_EQ(16, calc_distance(1, qt_1));
     EXPECT_DOUBLE_EQ(4, calc_distance(1, qt_2));
     EXPECT_EQ(OptSubspace(1), calc_closest_subspace(1, qt_1));
@@ -102,13 +99,31 @@ TEST_F(DistanceCalculatorTest, calculation_over_mixed_tensor_attribute)
     EXPECT_DOUBLE_EQ(0.0, calc_rawscore(3, qt_1));
 }
 
+TEST_F(DistanceCalculatorTest, calculation_over_mixed_tensor_attribute)
+{
+    build_attribute("tensor(x{},y[2])",
+                    {"{{x:\"a\",y:0}:3,{x:\"a\",y:1}:10,{x:\"b\",y:0}:5,{x:\"b\",y:1}:10}",
+                     "{}", ""});
+    std::string qt_1 = "tensor(y[2]):[9,10]";
+    std::string qt_2 = "tensor(y[2]):[1,10]";
+    verify_mixed_tensors(qt_1, qt_2);
+}
+
+TEST_F(DistanceCalculatorTest, calculation_over_mixed_tensor_attribute_with_multiple_mapped_dimensions)
+{
+    build_attribute("tensor(x{},y{},z[2])",
+                    {"{{x:\"a\",y:\"K\",z:0}:3,{x:\"a\",y:\"K\",z:1}:10,"
+                     "{x:\"b\",y:\"L\",z:0}:5,{x:\"b\",y:\"L\",z:1}:10}",
+                     "{}", ""});
+    std::string qt_1 = "tensor(z[2]):[9,10]";
+    std::string qt_2 = "tensor(z[2]):[1,10]";
+    verify_mixed_tensors(qt_1, qt_2);
+}
+
 TEST_F(DistanceCalculatorTest, make_calculator_for_unsupported_types_throws)
 {
     build_attribute("tensor(x{},y{})", {});
     EXPECT_THROW(make_calc_throws("tensor(y[2]):[9,10]"), vespalib::IllegalArgumentException);
-
-    build_attribute("tensor(x{},y{},z[2])", {});
-    EXPECT_THROW(make_calc_throws("tensor(z[2]):[9,10]"), vespalib::IllegalArgumentException);
 
     build_attribute("tensor(x{},y[2])", {});
     EXPECT_THROW(make_calc_throws("tensor(y{}):{{y:\"a\"}:9,{y:\"b\"}:10}"), vespalib::IllegalArgumentException);

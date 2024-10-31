@@ -34,7 +34,7 @@ public:
     Zc4PostingReader &operator=(Zc4PostingReader &&) = delete;
     ~Zc4PostingReader();
     void read_doc_id_and_features(index::DocIdAndFeatures &features);
-    void set_counts(const index::PostingListCounts &counts);
+    void set_word_and_counts(const std::string& word, const index::PostingListCounts& counts);
     void set_decode_features(DecodeContext *decode_features);
     DecodeContext &get_decode_features() const { return *_decodeContext; }
 };

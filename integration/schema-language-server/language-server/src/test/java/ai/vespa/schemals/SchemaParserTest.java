@@ -337,6 +337,8 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
+            new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2)
         };
 
         return Arrays.stream(tests)

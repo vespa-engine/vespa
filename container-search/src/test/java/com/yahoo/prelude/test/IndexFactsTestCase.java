@@ -204,6 +204,31 @@ public class IndexFactsTestCase {
         assertFalse(session.getIndex("b").isUriIndex());
         assertFalse(session.getIndex("b").isHostIndex());
         assertEquals(StemMode.NONE, session.getIndex("b").getStemMode());
+        assertEquals("NAME", session.getCanonicName("name"));
+        assertEquals("NAME", session.getCanonicName("Name"));
+        assertEquals("NAME", session.getCanonicName("NAME"));
+        assertEquals("NAME", session.getCanonicName("nAmE"));
+        query = new Query();
+        session = indexFacts.newSession(query);
+        assertEquals("name", session.getCanonicName("name"));
+        assertEquals("NAME", session.getCanonicName("NAME"));
+        // no way to choose among the valid names:
+        assertEquals("nAmE", session.getCanonicName("nAmE"));
+        query = new Query();
+        query.getModel().getRestrict().add("one");
+        query.getModel().getRestrict().add("two");
+        session = indexFacts.newSession(query);
+        assertEquals("name", session.getCanonicName("nAmE"));
+        query = new Query();
+        query.getModel().getRestrict().add("two");
+        query.getModel().getRestrict().add("three");
+        session = indexFacts.newSession(query);
+        assertEquals("NAME", session.getCanonicName("nAmE"));
+        query = new Query();
+        query.getModel().getRestrict().add("one");
+        query.getModel().getRestrict().add("three");
+        session = indexFacts.newSession(query);
+        assertEquals("nAmE", session.getCanonicName("nAmE"));
     }
 
     @Test

@@ -25,7 +25,8 @@ public:
     {}
     ~FieldVisitor() override;
 
-    document::FieldCollection getFieldSet() {
+    // Postcondition: `this` is invalidated. I.e. must only be called once.
+    [[nodiscard]] document::FieldCollection steal_field_set() {
         return document::FieldCollection(_docType, _fields.build());
     }
 
@@ -34,12 +35,12 @@ public:
     void visitAndBranch(const document::select::And &) override;
     void visitOrBranch(const document::select::Or &) override;
     void visitNotBranch(const document::select::Not &) override;
+    void visitArithmeticValueNode(const document::select::ArithmeticValueNode &) override;
 
     // Ignored node types 
     void visitConstant(const document::select::Constant &) override {}
     void visitInvalidConstant(const document::select::InvalidConstant &) override {}
     void visitDocumentType(const document::select::DocType &) override {}
-    void visitArithmeticValueNode(const document::select::ArithmeticValueNode &) override {}
     void visitFunctionValueNode(const document::select::FunctionValueNode &) override {}
     void visitIdValueNode(const document::select::IdValueNode &) override {}
     void visitFloatValueNode(const document::select::FloatValueNode &) override {}

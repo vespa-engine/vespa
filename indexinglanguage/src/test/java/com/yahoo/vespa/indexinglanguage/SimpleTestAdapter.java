@@ -17,8 +17,8 @@ import java.util.Map;
  */
 public class SimpleTestAdapter implements FieldValueAdapter {
 
-    final Map<String, DataType> types = new HashMap<>();
-    final Map<String, FieldValue> values = new HashMap<>();
+    public final Map<String, DataType> types = new HashMap<>();
+    public final Map<String, FieldValue> values = new HashMap<>();
 
     public SimpleTestAdapter(Field... fields) {
         for (Field field : fields) {
@@ -33,6 +33,9 @@ public class SimpleTestAdapter implements FieldValueAdapter {
 
     @Override
     public DataType getInputType(Expression exp, String fieldName) {
+        // Same check as in config-model IndexingValidation:
+        if ( ! types.containsKey(fieldName))
+            throw new VerificationException(exp, "Input field '" + fieldName + "' not found.");
         return types.get(fieldName);
     }
 

@@ -5,6 +5,7 @@
 #include "blueprint.h"
 #include "multisearch.h"
 #include <vespa/searchlib/queryeval/wand/weak_and_heap.h>
+#include <vespa/searchlib/fef/indexproperties.h>
 
 namespace search::queryeval {
 
@@ -88,10 +89,14 @@ private:
 
 class WeakAndBlueprint : public IntermediateBlueprint
 {
+public:
+    using StopWordStrategy = fef::indexproperties::matching::WeakAndStopWordStrategy::Value;
 private:
     std::unique_ptr<WeakAndPriorityQueue>  _scores;
     uint32_t              _n;
     float                 _idf_range;
+    uint32_t              _abs_stop_word_limit;
+    StopWordStrategy      _stop_word_strategy;
     std::vector<uint32_t> _weights;
     MatchingPhase         _matching_phase;
 
@@ -100,6 +105,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
+    void optimize_self(OptimizePass pass) override;
     Blueprint::UP get_replacement() override;
     void sort(Children &children, InFlow in_flow) const override;
     bool always_needs_unpack() const override;
@@ -109,8 +115,11 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
-    explicit WeakAndBlueprint(uint32_t n) : WeakAndBlueprint(n, 0.0, true) {}
-    WeakAndBlueprint(uint32_t n, float idf_range, bool thread_safe);
+    explicit WeakAndBlueprint(uint32_t n)
+        : WeakAndBlueprint(n, 0.0, -1,
+                           fef::indexproperties::matching::WeakAndStopWordStrategy::DEFAULT_VALUE,
+                           true) {}
+    WeakAndBlueprint(uint32_t n, float idf_range, uint32_t abs_stop_word_limit, StopWordStrategy stop_word_strategy, bool thread_safe);
     ~WeakAndBlueprint() override;
     void addTerm(Blueprint::UP bp, uint32_t weight) {
         addChild(std::move(bp));

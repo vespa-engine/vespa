@@ -58,7 +58,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     _subDBs.push_back
         (new SearchableDocSubDB(FastAccessDocSubDB::Config(
                 StoreOnlyDocSubDB::Config(docTypeName, "0.ready", baseDir,_readySubDbId, SubDbType::READY),
-                true, true, false),
+                false),
                                 SearchableDocSubDB::Context(
                                         FastAccessDocSubDB::Context(context,
                                                                     metrics.ready.attributes,
@@ -73,7 +73,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     _subDBs.push_back
         (new FastAccessDocSubDB(FastAccessDocSubDB::Config(
                 StoreOnlyDocSubDB::Config(docTypeName, "2.notready", baseDir,_notReadySubDbId, SubDbType::NOTREADY),
-                true, true, true),
+                true),
                                 FastAccessDocSubDB::Context(context,
                                                             metrics.notReady.attributes,
                                                             metricsWireService,

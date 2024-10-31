@@ -122,8 +122,7 @@ public class OpenNlpTokenizer implements Tokenizer {
         return tokens;
     }
 
-    private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents,
-                                Stemmer stemmer) {
+    private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents, Stemmer stemmer) {
         token = normalizer.normalize(token);
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)

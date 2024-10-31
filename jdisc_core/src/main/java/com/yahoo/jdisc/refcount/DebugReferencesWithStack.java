@@ -23,6 +23,7 @@ public class DebugReferencesWithStack implements References {
     private final DestructableResource resource;
     private final DebugResourceReference initialreference;
 
+    @SuppressWarnings("this-escape")
     public DebugReferencesWithStack(DestructableResource resource) {
         final Throwable referenceStack = new Throwable();
         this.activeReferences.put(referenceStack, this);

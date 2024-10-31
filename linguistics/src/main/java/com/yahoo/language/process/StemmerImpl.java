@@ -18,12 +18,17 @@ public class StemmerImpl implements Stemmer {
     }
 
     @Override
-    public List<StemList> stem(String input, StemMode stemMode, Language language) {
+    public List<StemList> stem(String input, Language language, StemMode stemMode, boolean removeAccents) {
         List<StemList> stems = new ArrayList<>();
-        for (Token token : tokenizer.tokenize(input, language, stemMode, false)) {
+        for (Token token : tokenizer.tokenize(input, language, stemMode, removeAccents)) {
             findStems(token, stems);
         }
         return stems;
+    }
+
+    @Override
+    public List<StemList> stem(String input, StemMode stemMode, Language language) {
+        return stem(input, language, stemMode, false);
     }
 
     private void findStems(Token token, List<StemList> out) {

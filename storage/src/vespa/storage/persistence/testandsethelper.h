@@ -31,7 +31,7 @@ public:
           _code(std::move(code))
     {}
 
-    const api::ReturnCode & getCode() const { return _code; }
+    const api::ReturnCode& getCode() const { return _code; }
 };
 
 class TestAndSetHelper {
@@ -43,11 +43,6 @@ class TestAndSetHelper {
     const document::DocumentType*           _docTypePtr;
     std::unique_ptr<document::select::Node> _docSelectionUp;
     bool                                    _missingDocumentImpliesMatch;
-
-    void resolveDocumentType(const document::DocumentTypeRepo & documentTypeRepo);
-    void parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo,
-                                const document::BucketIdFactory & bucketIdFactory);
-    spi::GetResult retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context);
 
 public:
     struct Result {
@@ -74,6 +69,15 @@ public:
             return condition_outcome == ConditionOutcome::IsTombstone;
         }
     };
+private:
+    void resolveDocumentType(const document::DocumentTypeRepo& documentTypeRepo);
+    void parseDocumentSelection(const document::DocumentTypeRepo& documentTypeRepo,
+                                const document::BucketIdFactory& bucketIdFactory);
+    [[nodiscard]] spi::GetResult fetch_document(const document::FieldSet& fieldSet, spi::Context& context);
+    [[nodiscard]] Result fetch_and_match_selection(spi::Context& context);
+    [[nodiscard]] api::ReturnCode to_api_return_code(const Result& result) const;
+    [[nodiscard]] Result timestamp_predicate_match_to_result(const spi::GetResult& spi_result) const;
+public:
 
     TestAndSetHelper(const PersistenceUtil& env,
                      const spi::PersistenceProvider& _spi,
@@ -85,10 +89,8 @@ public:
                      bool missingDocumentImpliesMatch = false);
     ~TestAndSetHelper();
 
-    Result fetch_and_match_raw(spi::Context& context);
-    api::ReturnCode to_api_return_code(const Result& result) const;
-
-    api::ReturnCode retrieveAndMatch(spi::Context & context);
+    [[nodiscard]] Result fetch_and_match_raw(spi::Context& context);
+    [[nodiscard]] api::ReturnCode retrieveAndMatch(spi::Context & context);
 };
 
 } // storage

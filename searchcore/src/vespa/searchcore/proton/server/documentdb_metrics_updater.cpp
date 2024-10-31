@@ -79,6 +79,14 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableSta
     updateDiskUsageMetric(indexMetrics.diskUsage, stats.sizeOnDisk(), totalStats);
     updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalStats);
     indexMetrics.docsInMemory.set(stats.docsInMemory());
+    auto& field_metrics = metrics.ready.index;
+    for (auto& field : stats.get_field_stats()) {
+        auto entry = field_metrics.get_field_metrics_entry(field.first);
+        if (entry) {
+            entry->memoryUsage.update(field.second.memory_usage());
+            entry->_disk_usage.update(field.second.size_on_disk(), field.second.disk_io_stats());
+        }
+    }
 }
 
 struct TempAttributeMetric
@@ -165,7 +173,7 @@ void
 updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tmpMetrics)
 {
     for (const auto &attr : tmpMetrics.attrs) {
-        auto entry = metrics.get(attr.first);
+        auto entry = metrics.get_field_metrics_entry(attr.first);
         if (entry) {
             entry->memoryUsage.update(attr.second.memoryUsage);
         }

@@ -60,20 +60,8 @@ public class TensorFieldProcessor extends Processor {
      */
     public static boolean isTensorTypeThatSupportsHnswIndex(TensorType type) {
         // Tensors with 1 indexed dimension support hnsw index (used for approximate nearest neighbor search).
-        if ((type.dimensions().size() == 1) &&
-                type.dimensions().get(0).isIndexed()) {
-            return true;
-        }
-        // Tensors with 1 mapped + 1 indexed dimension support hnsw index (aka multiple vectors per document).
-        if (type.dimensions().size() == 2) {
-            var a = type.dimensions().get(0);
-            var b = type.dimensions().get(1);
-            if ((a.isMapped() && b.isIndexed()) ||
-                    (a.isIndexed() && b.isMapped())) {
-                return true;
-            }
-        }
-        return false;
+        var indexedSubtype = type.indexedSubtype();
+        return (indexedSubtype.rank() == 1 && indexedSubtype.hasOnlyIndexedBoundDimensions());
     }
 
     private boolean isTensorTypeThatSupportsDirectStore(ImmutableSDField field) {

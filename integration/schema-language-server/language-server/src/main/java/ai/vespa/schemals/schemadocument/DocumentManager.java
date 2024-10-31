@@ -22,7 +22,7 @@ public interface DocumentManager {
 
     public void reparseContent();
 
-    public boolean setIsOpen(boolean isOpen);
+    public void setIsOpen(boolean isOpen);
     public boolean getIsOpen();
 
     public SchemaNode getRootNode();

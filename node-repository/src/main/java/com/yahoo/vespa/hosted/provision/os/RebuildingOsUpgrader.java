@@ -33,11 +33,13 @@ public class RebuildingOsUpgrader extends OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RebuildingOsUpgrader.class.getName());
 
+    private final boolean remoteStorageOnly;
     private final boolean softRebuild;
 
-    public RebuildingOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
+    public RebuildingOsUpgrader(NodeRepository nodeRepository, boolean softRebuild, boolean remoteStorageOnly) {
         super(nodeRepository);
         this.softRebuild = softRebuild;
+        this.remoteStorageOnly = remoteStorageOnly;
     }
 
     @Override
@@ -54,9 +56,9 @@ public class RebuildingOsUpgrader extends OsUpgrader {
 
     private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes, Instant now) {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
-        if (softRebuild) {
-            // Soft rebuild is enabled so this should act on hosts having replaceable root disk
-            hostsOfTargetType = hostsOfTargetType.replaceableRootDisk();
+        if (remoteStorageOnly) {
+            // Act only on hosts which have remote storage
+            hostsOfTargetType = hostsOfTargetType.remoteStorage();
         }
 
         // Find stateful clusters with retiring nodes

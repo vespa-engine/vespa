@@ -15,26 +15,28 @@
     <li>Code actions, including Quick fixes</li>
     <li>Code completion</li>
     <li>Go-to-definition</li>
+    <li>Go-to-references</li>
     <li>Documentation on hover</li>
     <li>Syntax highlighting</li>
+    <li>Renaming</li>
 </ul>
 
   ]]></description>
   <change-notes><![CDATA[
-<h2>Rewritten from scratch to include LSP support</h2>
-<ul>
-    <li>Error and warning highlighting</li>
-    <li>Code actions, including Quick fixes</li>
-    <li>Code completion</li>
-    <li>Documentation on hover</li>
-</ul>
+<h2>Refactored to use LSP4IJ</h2>
+The plugin will now support better syntax highlighting with semantic tokens and renaming.
+In addition, the plugin will be available for community editions as well.
 ]]></change-notes>
   <depends>com.intellij.modules.platform</depends>
-  <depends>com.intellij.modules.ultimate</depends>
-  <extensions defaultExtensionNs="com.intellij">
-    <fileType name="Schema" extensions="sd;profile" implementationClass="ai.vespa.schemals.intellij.SchemaFileType" language="Schema" fieldName="INSTANCE"/>
-
-    <platform.lsp.serverSupportProvider implementation="ai.vespa.schemals.intellij.SchemaLspServerSupportProvider"/>
-    <lang.syntaxHighlighter language="Schema" implementationClass="ai.vespa.schemals.intellij.SchemaSyntaxHighlighter" />
+  <depends>com.redhat.devtools.lsp4ij</depends>
+  <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+    <server id="vespaSchemaLanguageServer"
+      name="Vespa Schema Language Server"
+      factoryClass="ai.vespa.schemals.intellij.SchemaLanguageServerFactory"
+    >
+    </server>
+    <fileNamePatternMapping patterns="*.sd;*.profile"
+                            serverId="vespaSchemaLanguageServer"
+                            languageId="vespaSchema"/>
   </extensions>
 </idea-plugin>

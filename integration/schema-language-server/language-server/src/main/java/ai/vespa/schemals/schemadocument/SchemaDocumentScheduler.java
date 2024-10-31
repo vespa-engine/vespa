@@ -64,17 +64,20 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content, Integer version) {
-        
         Optional<DocumentType> documentType = getDocumentTypeFromURI(fileURI);
         if (documentType.isEmpty()) return;
 
         if (!workspaceFiles.containsKey(fileURI)) {
-            if (documentType.get() == DocumentType.SCHEMA) {
-                workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
-            } else if (documentType.get() == DocumentType.PROFILE) {
-                workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
-            } else if (documentType.get() == DocumentType.YQL) {
-                workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+            switch(documentType.get()) {
+                case PROFILE:
+                    workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case SCHEMA:
+                    workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
+                case YQL:
+                    workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
+                    break;
             }
         }
 
@@ -125,6 +128,7 @@ public class SchemaDocumentScheduler {
     }
 
     public String getWorkspaceURI() {
+        if (this.workspaceURI == null) return null;
         return this.workspaceURI.toString();
     }
 
@@ -226,6 +230,9 @@ public class SchemaDocumentScheduler {
 
 
     public void setupWorkspace(URI workspaceURI) {
+        // already set up
+        if (this.workspaceURI != null) return;
+
         this.workspaceURI = workspaceURI;
 
         //messageHandler.messageTrace("Scanning workspace: " + workspaceURI.toString());

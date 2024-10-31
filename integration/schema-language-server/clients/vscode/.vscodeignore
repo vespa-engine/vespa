@@ -7,5 +7,7 @@ src/**
 **/.eslintrc.json
 **/*.map
 **/*.ts
+out/
 node_modules
 esbuild.js
+out/

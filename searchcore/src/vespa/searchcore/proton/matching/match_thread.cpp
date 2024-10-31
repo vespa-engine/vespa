@@ -123,7 +123,7 @@ MatchThread::Context::rankHit(uint32_t docId) {
         if (__builtin_expect(score > _first_phase_rank_score_drop_limit, true)) {
             _hits.addHit(docId, score);
         } else if (use_rank_drop_limit == RankDropLimitE::track) {
-            dropped.template emplace_back(docId);
+            dropped.emplace_back(docId);
         }
     } else {
         _hits.addHit(docId, score);

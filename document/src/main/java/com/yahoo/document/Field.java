@@ -180,7 +180,7 @@ public class Field extends FieldBase implements FieldSet, Comparable<Field> {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + dataType + ")";
+        return super.toString() + " of type " + dataType.getName();
     }
 
     @Override

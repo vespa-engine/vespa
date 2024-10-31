@@ -20,13 +20,6 @@ lib*.so
 out/
 target/
 test-report.json
-/zorg.log
-*-PREINST.log
-*-PREINST/
-*-HEAD.log
-*-HEAD/
-*-YINST.log
-*-YINST/
 .mbuild.Makefile
 CMakeFiles
 CMakeCache.txt
@@ -56,3 +49,4 @@ install_manifest.txt
 !/.copr/Makefile
 !/.buildkite/Makefile
 .vscode
+.metadata

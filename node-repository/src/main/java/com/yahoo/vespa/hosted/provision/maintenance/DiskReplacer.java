@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.backup.Snapshot;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.RebuildResult;
 import com.yahoo.yolean.Exceptions;
@@ -44,9 +45,13 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
             rebuilding = locked.nodes().stream().map(NodeMutex::node).toList();
             RebuildResult result = hostProvisioner.replaceRootDisk(rebuilding);
 
-            for (Node updated : result.rebuilt())
-                if (!updated.status().wantToRebuild())
-                    nodeRepository().nodes().write(updated, () -> { });
+            for (Node updated : result.rebuilt()) {
+                if (!updated.status().wantToRebuild()) {
+                    NodeList children = nodeRepository().nodes().list().childrenOf(updated);
+                    restoreSnapshotsOf(children);
+                    nodeRepository().nodes().write(updated, () -> {});
+                }
+            }
 
             for (var entry : result.failed().entrySet()) {
                 ++failures;
@@ -55,6 +60,15 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
             }
         }
         return asSuccessFactorDeviation(rebuilding.size(), failures);
+    }
+
+    private void restoreSnapshotsOf(NodeList children) {
+        for (Node child : children) {
+            Optional<Snapshot> snapshot = child.status().snapshot();
+            if (snapshot.isPresent() && snapshot.get().state() == Snapshot.State.created) {
+                nodeRepository().snapshots().restore(snapshot.get().id(), child.hostname());
+            }
+        }
     }
 
 }

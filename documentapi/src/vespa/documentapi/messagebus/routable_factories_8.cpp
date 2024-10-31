@@ -84,12 +84,25 @@ document::GlobalId get_global_id(const protobuf::GlobalId& src) {
     return document::GlobalId(src.raw_gid().data()); // By copy
 }
 
-documentapi::TestAndSetCondition get_tas_condition(const protobuf::TestAndSetCondition& src) {
-    return documentapi::TestAndSetCondition(src.selection());
+TestAndSetCondition get_tas_condition(const protobuf::TestAndSetCondition& src) {
+    if (!src.selection().empty()) {
+        if (src.required_timestamp() != 0) {
+            return {src.required_timestamp(), src.selection()};
+        }
+        return TestAndSetCondition(src.selection());
+    } else if (src.required_timestamp() != 0) {
+        return TestAndSetCondition(src.required_timestamp());
+    }
+    return {};
 }
 
-void set_tas_condition(protobuf::TestAndSetCondition& dest, const documentapi::TestAndSetCondition& src) {
-    dest.set_selection(src.getSelection().data(), src.getSelection().size());
+void set_tas_condition(protobuf::TestAndSetCondition& dest, const TestAndSetCondition& src) {
+    if (src.has_selection()) {
+        dest.set_selection(src.getSelection().data(), src.getSelection().size());
+    }
+    if (src.has_required_timestamp()) {
+        dest.set_required_timestamp(src.required_timestamp());
+    }
 }
 
 std::shared_ptr<document::Document> get_document(const protobuf::Document& src_doc,

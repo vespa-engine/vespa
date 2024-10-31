@@ -562,27 +562,20 @@ ShowPostingListSubApp::showPostingList()
             offsetAndCounts._counts._bitLength,
             offsetAndCounts._counts._numDocs);
     }
-    using Counts = PostingListCounts;
     using Handle = PostingListHandle;
-    using CH = std::pair<Counts, Handle>;
+    using CH = std::pair<DictionaryLookupResult, Handle>;
     using CHAP = std::unique_ptr<CH>;
     CHAP handle(new CH);
-    handle->first = offsetAndCounts._counts;
-    handle->second._bitOffset = offsetAndCounts._offset;
-    handle->second._bitLength = handle->first._bitLength;
-    const uint32_t first_segment = 0;
-    const uint32_t num_segments = 0;    // means all segments
-    handle->second._file = postingfile.get();
-    handle->second._file->readPostingList(handle->first,
-                                       first_segment,
-                                       num_segments,
-                                       handle->second);
+    handle->first.wordNum = wordNum;
+    handle->first.counts = offsetAndCounts._counts;
+    handle->first.bitOffset = offsetAndCounts._offset;
+    handle->second = postingfile->read_posting_list(handle->first);
     std::vector<TermFieldMatchData> tfmdv(numFields);
     TermFieldMatchDataArray tfmda;
     for (auto& tfmd : tfmdv) {
         tfmda.add(&tfmd);
     }
-    auto sb = handle->second.createIterator(handle->first, tfmda);
+    auto sb = postingfile->createIterator(handle->first, handle->second, tfmda);
     sb->initFullRange();
     uint32_t docId = 0;
     bool first = true;

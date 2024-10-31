@@ -12,11 +12,13 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
+import ai.vespa.schemals.parser.rankingexpression.ast.tensorGenerateBody;
 import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -186,13 +188,18 @@ public class CSTUtils {
                 if (currentNode.getASTClass() == lambdaFunction.class) {
                     indexGuess = 0;
                 }
-
                 if (indexGuess < currentNode.size()) {
                     Node potentialDefinition = currentNode.get(indexGuess);
                     if (potentialDefinition.hasSymbol() && potentialDefinition.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
                         return Optional.of(potentialDefinition.getSymbol());
                     }
                 }
+            } else if (currentNode.isASTInstance(tensorGenerateBody.class) && 
+                       currentNode.getPreviousSibling() != null && 
+                       currentNode.getPreviousSibling().hasSymbol() &&
+                       currentNode.getPreviousSibling().getSymbol().getType() == SymbolType.TENSOR) {
+                // Edge case for tensor type in rank expression
+                return Optional.of(currentNode.getPreviousSibling().getSymbol());
             }
 
             currentNode = currentNode.getParent();

@@ -200,6 +200,7 @@
       "public int getCode()",
       "public com.yahoo.document.FieldPath buildFieldPath(java.lang.String)",
       "public com.yahoo.document.PrimitiveDataType getPrimitiveType()",
+      "public com.yahoo.document.DataType getNestedType()",
       "public void visitMembers(com.yahoo.vespa.objects.ObjectVisitor)",
       "public int compareTo(com.yahoo.document.DataType)",
       "public boolean isMultivalue()",
@@ -1040,6 +1041,7 @@
       "public com.yahoo.tensor.TensorType getTensorType()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
+      "public static com.yahoo.document.TensorDataType any()",
       "public bridge synthetic com.yahoo.document.DataType clone()",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -1058,8 +1060,11 @@
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public java.lang.String getSelection()",
+      "public long requiredTimestamp()",
       "public boolean isPresent()",
       "public static com.yahoo.document.TestAndSetCondition fromConditionString(java.util.Optional)",
+      "public static com.yahoo.document.TestAndSetCondition ofRequiredTimestampWithSelectionFallback(long, java.lang.String)",
+      "public static com.yahoo.document.TestAndSetCondition ofRequiredTimestamp(long)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"

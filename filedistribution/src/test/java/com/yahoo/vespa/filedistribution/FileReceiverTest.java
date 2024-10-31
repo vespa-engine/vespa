@@ -48,8 +48,8 @@ public class FileReceiverTest {
         }
         String all = sb.toString();
         transferPartsAndAssert(new FileReference("ref-a"), "myfile-1", all, 1);
-        transferPartsAndAssert(new FileReference("ref-a"), "myfile-2", all, 2);
-        transferPartsAndAssert(new FileReference("ref-a"), "myfile-3", all, 3);
+        transferPartsAndAssert(new FileReference("ref-b"), "myfile-2", all, 2);
+        transferPartsAndAssert(new FileReference("ref-c"), "myfile-3", all, 3);
     }
 
     @Test

@@ -22,6 +22,7 @@ public abstract class AbstractResource implements SharedResource {
 
     private final References references;
 
+    @SuppressWarnings("this-escape")
     protected AbstractResource() {
         DestructableResource destructable = new WrappedResource(this);
         if (debug == Debug.STACK) {

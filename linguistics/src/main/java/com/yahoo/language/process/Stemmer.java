@@ -14,6 +14,21 @@ public interface Stemmer {
 
     /**
      * Stem input according to specified stemming mode.
+     * This default implementation invokes stem(input, mode, language) and so ignores the removeAccents argument.
+     *
+     * @param input    the string to stem.
+     * @param language the language to use for stemming
+     * @param mode     the stemming mode
+     * @param removeAccents whether to normalize accents and similar
+     * @return a list of possible stems. Empty if none.
+     * @throws ProcessingException thrown if there is an exception stemming this input
+     */
+    default List<StemList> stem(String input, Language language, StemMode mode, boolean removeAccents) {
+        return stem(input, mode, language);
+    }
+
+    /**
+     * Stem input according to specified stemming mode.
      *
      * @param input    the string to stem.
      * @param mode     the stemming mode

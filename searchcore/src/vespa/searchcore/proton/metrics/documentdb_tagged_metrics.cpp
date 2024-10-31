@@ -34,7 +34,8 @@ DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const std::string &name, Met
     : MetricSet(name, {}, "Sub database metrics", parent),
       lidSpace(this),
       documentStore(this),
-      attributes(this)
+      attributes(this),
+      index(this)
 {
 }
 

@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
     PidFile mypf(pidfile);
     if (checkWouldRun) {
         if (mypf.anotherRunning()) {
-            fprintf(stderr, "%s already running with pid %d\n", service, mypf.readPid());
+            fprintf(stderr, "runserver(%s) already running with pid %d\n", service, mypf.readPid());
             return 1;
         } else {
             return 0;
@@ -462,8 +462,7 @@ int main(int argc, char *argv[])
     }
 
     if (mypf.anotherRunning()) {
-        fprintf(stderr, "runserver already running with pid %d\n",
-                mypf.readPid());
+        fprintf(stderr, "runserver(%s) already running with pid %d\n", service, mypf.readPid());
         return 0;
     }
 

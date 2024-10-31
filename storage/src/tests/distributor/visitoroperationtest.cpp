@@ -235,7 +235,7 @@ TEST_F(VisitorOperationTest, shutdown) {
     op->onClose(_sender); // This will fail the visitor
 
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-              "ReturnCode(ABORTED, Process is shutting down)",
+              "ReturnCode(ABORTED, Operation has been aborted)",
               _sender.getLastReply());
 }
 

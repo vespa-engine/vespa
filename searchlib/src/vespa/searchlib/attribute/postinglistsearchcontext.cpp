@@ -9,9 +9,11 @@ namespace search::attribute {
 
 using vespalib::btree::BTreeNode;
 
+bool PostingListSearchContext::_preserve_weight = true;
+
 PostingListSearchContext::
 PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
-                         uint64_t numValues, bool hasWeight, bool useBitVector, const ISearchContext &baseSearchCtx)
+                         uint64_t numValues, bool useBitVector, const ISearchContext &baseSearchCtx)
     : _dictionary(dictionary),
       _baseSearchCtx(baseSearchCtx),
       _bv(nullptr),
@@ -24,7 +26,6 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_
       _dictSize(_frozenDictionary.size()),
       _pidx(),
       _frozenRoot(),
-      _hasWeight(hasWeight),
       _useBitVector(useBitVector),
       _estimated_hits()
 {

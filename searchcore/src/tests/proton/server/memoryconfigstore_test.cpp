@@ -15,16 +15,16 @@ using namespace proton;
 namespace {
 
 DocumentDBConfig::SP
-getConfig(int64_t generation, const Schema::SP &schema)
+getConfig(int64_t generation, std::shared_ptr<const Schema> schema)
 {
-    return test::DocumentDBConfigBuilder(generation, schema, "client", "test").build();
+    return test::DocumentDBConfigBuilder(generation, std::move(schema), "client", "test").build();
 }
 
 
 DocumentDBConfig::SP
 getConfig(int64_t generation)
 {
-    return getConfig(generation, Schema::SP());
+    return getConfig(generation, {});
 }
 
 

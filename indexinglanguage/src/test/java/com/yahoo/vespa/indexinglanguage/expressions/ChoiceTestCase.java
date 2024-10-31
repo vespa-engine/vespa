@@ -2,11 +2,9 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
@@ -31,7 +29,7 @@ public class ChoiceTestCase {
             adapter.setValue("foo", new StringFieldValue("foo1"));
             ExecutionContext context = new ExecutionContext(adapter);
             choice.execute(context);
-            assertEquals("foo1", context.getValue().getWrappedValue());
+            assertEquals("foo1", context.getCurrentValue().getWrappedValue());
         }
 
         {   // bar only
@@ -39,7 +37,7 @@ public class ChoiceTestCase {
             adapter.setValue("bar", new StringFieldValue("bar1"));
             ExecutionContext context = new ExecutionContext(adapter);
             choice.execute(context);
-            assertEquals("bar1", context.getValue().getWrappedValue());
+            assertEquals("bar1", context.getCurrentValue().getWrappedValue());
         }
 
         {   // both foo and bar
@@ -49,7 +47,7 @@ public class ChoiceTestCase {
             choice.verify(adapter);
             ExecutionContext context = new ExecutionContext(adapter);
             choice.execute(context);
-            assertEquals("foo1", context.getValue().getWrappedValue());
+            assertEquals("foo1", context.getCurrentValue().getWrappedValue());
         }
     }
 
@@ -63,7 +61,7 @@ public class ChoiceTestCase {
             adapter.setValue("timestamp", new LongFieldValue(34));
             ExecutionContext context = new ExecutionContext(adapter);
             choice.execute(context);
-            assertEquals(34L, context.getValue().getWrappedValue());
+            assertEquals(34L, context.getCurrentValue().getWrappedValue());
         }
 
         { // fallback to default
@@ -71,7 +69,7 @@ public class ChoiceTestCase {
             choice.verify(adapter);
             ExecutionContext context = new ExecutionContext(adapter);
             choice.execute(context);
-            assertEquals(99999999L, context.getValue().getWrappedValue());
+            assertEquals(99999999L, context.getCurrentValue().getWrappedValue());
         }
     }
 

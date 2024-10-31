@@ -36,19 +36,19 @@ private:
     const IAttributeWriter::SP _attributeWriter;
     DocIdLimit                 &_docIdLimit;
 
-    void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, OnPutDoneType onWriteDone) override;
+    void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, const OnPutDoneType& onWriteDone) override;
 
     void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
-                          OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate) override;
-    void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc, OnOperationDoneType onWriteDone) override;
-    void removeAttributes(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone) override;
+                          const OnOperationDoneType& onWriteDone, IFieldUpdateCallback & onUpdate) override;
+    void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc, const OnOperationDoneType& onWriteDone) override;
+    void removeAttributes(SerialNum serialNum, search::DocumentIdT lid, const OnRemoveDoneType& onWriteDone) override;
 
-    void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone) override;
+    void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone) override;
 
-    void heartBeatAttributes(SerialNum serialNum, DoneCallback onDone) override;
+    void heartBeatAttributes(SerialNum serialNum, const DoneCallback& onDone) override;
 
 protected:
-    void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone) override;
+    void internalForceCommit(const CommitParam & param, const OnForceCommitDoneType& onCommitDone) override;
 
 public:
     FastAccessFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params, const Context &ctx);
@@ -62,7 +62,7 @@ public:
         return _docIdLimit;
     }
 
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone) override;
 };
 
 } // namespace proton

@@ -115,8 +115,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     public InstanceName name() { return name; }
 
-    // TODO: make package private after 8.370 is gone.
-    public Tags tags() { return tags; }
+    Tags tags() { return tags; }
 
     /**
      * Throws an IllegalArgumentException if any production deployment or test is declared multiple times,
@@ -235,9 +234,6 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     /** Returns time windows where upgrades are disallowed for these instances */
     public List<DeploymentSpec.ChangeBlocker> changeBlocker() { return changeBlockers; }
-
-    // TODO(mpolden): Remove after Vespa < 8.203 is no longer in use
-    public Optional<String> globalServiceId() { return Optional.empty(); }
 
     /** Returns whether the instances in this step can upgrade at the given instant */
     public boolean canUpgradeAt(Instant instant) {

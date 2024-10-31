@@ -157,20 +157,14 @@ make_schema(bool interleaved_features)
 void
 assert_interleaved_features(DiskIndex &d, const std::string &field, const std::string &term, uint32_t doc_id, uint32_t exp_num_occs, uint32_t exp_field_length)
 {
-    using LookupResult = DiskIndex::LookupResult;
-    using PostingListHandle = index::PostingListHandle;
-    using SearchIterator = search::queryeval::SearchIterator;
-
     const Schema &schema = d.getSchema();
     uint32_t field_id(schema.getIndexFieldId(field));
-    std::unique_ptr<LookupResult> lookup_result(d.lookup(field_id, term));
-    ASSERT_TRUE(lookup_result);
-    std::unique_ptr<PostingListHandle> handle(d.readPostingList(*lookup_result));
-    ASSERT_TRUE(handle);
+    auto lookup_result(d.lookup(field_id, term));
+    auto handle(d.readPostingList(lookup_result));
     TermFieldMatchData tfmd;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&tfmd);
-    std::unique_ptr<SearchIterator> sbap(handle->createIterator(lookup_result->counts, tfmda));
+    auto sbap(d.create_iterator(lookup_result, handle, tfmda));
     sbap->initFullRange();
     EXPECT_TRUE(sbap->seek(doc_id));
     sbap->unpack(doc_id);
@@ -181,22 +175,16 @@ assert_interleaved_features(DiskIndex &d, const std::string &field, const std::s
 void
 validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
 {
-    using LR = DiskIndex::LookupResult;
-    using PH = index::PostingListHandle;
-    using SB = search::queryeval::SearchIterator;
-
     const Schema &schema(dw.getSchema());
 
     {
         uint32_t id1(schema.getIndexFieldId("f0"));
-        LR::UP lr1(dw.lookup(id1, "c"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto lr1(dw.lookup(id1, "c"));
+        auto wh1(dw.readPostingList(lr1));
         TermFieldMatchData f0;
         TermFieldMatchDataArray a;
         a.add(&f0);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(dw.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f0.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
@@ -205,14 +193,12 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f2"));
-        LR::UP lr1(dw.lookup(id1, "ax"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto lr1(dw.lookup(id1, "ax"));
+        auto wh1(dw.readPostingList(lr1));
         TermFieldMatchData f2;
         TermFieldMatchDataArray a;
         a.add(&f2);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(dw.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f2.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
@@ -227,14 +213,12 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f3"));
-        LR::UP lr1(dw.lookup(id1, "wx"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto lr1(dw.lookup(id1, "wx"));
+        auto wh1(dw.readPostingList(lr1));
         TermFieldMatchData f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(dw.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
@@ -249,14 +233,12 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f3"));;
-        LR::UP lr1(dw.lookup(id1, "zz"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto lr1(dw.lookup(id1, "zz"));
+        auto wh1(dw.readPostingList(lr1));
         TermFieldMatchData f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(dw.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(11));
@@ -271,14 +253,12 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f3"));;
-        LR::UP lr1(dw.lookup(id1, "zz0"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto lr1(dw.lookup(id1, "zz0"));
+        auto wh1(dw.readPostingList(lr1));
         TermFieldMatchData f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(dw.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(12));

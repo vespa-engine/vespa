@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +24,9 @@ import java.util.logging.Logger;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 /**
  * When asking for a file reference, this handles RPC callbacks from config server with file data and metadata.
@@ -59,7 +61,8 @@ public class FileReceiver {
         private final long currentHash;
         private final File fileReferenceDir;
         private final File tmpDir;
-        private final File inprogressFile;
+        private final File inProgressDir;
+        private final File file;
 
         Session(File downloadDirectory,
                 int sessionId,
@@ -82,7 +85,8 @@ public class FileReceiver {
             this.tmpDir = downloadDirectory;
 
             try {
-                inprogressFile = Files.createTempFile(tmpDir.toPath(), fileName, ".inprogress").toFile();
+                inProgressDir = Files.createTempDirectory(tmpDir.toPath(), "inprogress").toFile();
+                file = new File(inProgressDir, fileName);
             } catch (IOException e) {
                 String msg = "Failed creating temp file for inprogress file for " + fileName + " in '" + tmpDir.toPath() + "': ";
                 log.log(Level.SEVERE, msg + e.getMessage(), e);
@@ -99,13 +103,13 @@ public class FileReceiver {
                                                 (currentFileSize + part.length) + ", but " + fileSize + " is max.");
             }
             try {
-                Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+                Files.write(file.toPath(), part, WRITE, file.exists() ? APPEND : CREATE);
             } catch (IOException e) {
-                String message = "Failed writing to file (" + inprogressFile.toPath() + "): ";
+                String message = "Failed writing to file (" + inProgressDir.toPath() + "): ";
                 log.log(Level.SEVERE, message + e.getMessage(), e);
-                boolean successfulDelete = inprogressFile.delete();
+                boolean successfulDelete = inProgressDir.delete();
                 if ( ! successfulDelete)
-                    log.log(Level.INFO, "Unable to delete " + inprogressFile.toPath());
+                    log.log(Level.INFO, "Unable to delete " + inProgressDir.toPath());
                 throw new RuntimeException(message, e);
             }
             currentFileSize += part.length;
@@ -116,32 +120,25 @@ public class FileReceiver {
         File close(long hash) {
             verifyHash(hash);
 
-            File file = new File(fileReferenceDir, fileName);
             File decompressedDir = null;
             try {
                 if (fileType == Type.file) {
-                    try {
-                        Files.createDirectories(fileReferenceDir.toPath());
-                    } catch (IOException e) {
-                        log.log(Level.SEVERE, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
-                        throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
-                    }
                     log.log(Level.FINE, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
-                    moveFileToDestination(inprogressFile, file);
+                    moveFileToDestination(inProgressDir, fileReferenceDir);
                 } else {
                     decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
                     log.log(Level.FINEST, () -> "compression type to use=" + compressionType);
-                    new FileReferenceCompressor(fileType, compressionType).decompress(inprogressFile, decompressedDir);
+                    new FileReferenceCompressor(fileType, compressionType).decompress(file, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 }
             } catch (IOException e) {
                 log.log(Level.SEVERE, "Failed writing file: " + e.getMessage(), e);
                 throw new RuntimeException("Failed writing file: ", e);
             } finally {
-                deletePath(inprogressFile);
+                deletePath(inProgressDir);
                 deletePath(decompressedDir);
             }
-            return file;
+            return new File(fileReferenceDir, fileName);
         }
 
         double percentageReceived() {
