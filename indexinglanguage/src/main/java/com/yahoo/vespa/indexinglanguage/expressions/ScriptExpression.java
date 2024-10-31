@@ -51,6 +51,18 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        return null; // Undefined input/output to a script
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+        return null; // Undefined input/output to a script
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         for (StatementExpression statement : this) {

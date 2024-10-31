@@ -87,10 +87,12 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     private DataType mostGeneralOf(DataType left, DataType right) {
+        if (left == null || right == null) return null;
         return left.isAssignableTo(right) ? right : left;
     }
 
     private DataType leastGeneralOf(DataType left, DataType right) {
+        if (left == null || right == null) return null;
         return left.isAssignableTo(right) ? left : right;
     }
 

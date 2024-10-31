@@ -28,9 +28,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
     /** The names of the fields consumed by this. */
     private final List<String> inputFields;
 
-    /** The name of the (last) output field this statement will write to, or null if none */
-    private String outputField;
-
     public StatementExpression(Expression... list) {
         this(Arrays.asList(list)); // TODO: Can contain null - necessary ?
     }
@@ -59,9 +56,11 @@ public final class StatementExpression extends ExpressionList<Expression> {
     protected void doVerify(VerificationContext context) {
         if (expressions().isEmpty()) return;
 
-        outputField = outputFieldName();
+        String outputField = outputFieldName();
         if (outputField != null)
             context.setOutputField(outputField);
+
+        // TODO: Do this (both ways) from setInputType and setOutputType instead
 
         // Result input and output types:
         // Some expressions can only determine their input from their output, and others only their output from
