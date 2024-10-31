@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.NumericDataType;
 import com.yahoo.document.datatypes.ByteFieldValue;
 
 /**
@@ -11,6 +12,18 @@ public final class ToByteExpression extends Expression {
 
     public ToByteExpression() {
         super(UnresolvedDataType.INSTANCE);
+    }
+
+    @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
+        return DataType.BYTE;
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(DataType.BYTE, output, null, context);
+        return null;
     }
 
     @Override
