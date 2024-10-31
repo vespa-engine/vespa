@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/select.h>
 #include <atomic>
+#include <limits>
 #include <vector>
 
 namespace vespalib {
