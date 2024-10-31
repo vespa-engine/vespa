@@ -219,7 +219,7 @@ verifyResult(const FakeResult &expect,
     FieldSpecList fields;
     fields.add(field);
 
-    Blueprint::UP result = index.createBlueprint(requestContext, fields, term);
+    auto result = index.createBlueprint(requestContext, fields, term);
     bool valid_result = result.get() != 0;
     EXPECT_TRUE(valid_result);
     if (!valid_result) {
@@ -254,7 +254,7 @@ verifyResult(const FakeResult &expect,
     }
     bool success = true;
     EXPECT_EQ(expect, actual) << (success = false, "");
-    using FilterConstraint = Blueprint::FilterConstraint;
+    using FilterConstraint = search::queryeval::Blueprint::FilterConstraint;
     for (auto constraint : { FilterConstraint::LOWER_BOUND, FilterConstraint::UPPER_BOUND }) {
         constexpr uint32_t docid_limit = 10u;
         auto filter_search = result->createFilterSearch(constraint);
@@ -520,7 +520,7 @@ TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
         fields.add(field);
 
         Searchable &searchable = index.index;
-        Blueprint::UP res = searchable.createBlueprint(requestContext, fields, makeTerm(foo));
+        auto res = searchable.createBlueprint(requestContext, fields, makeTerm(foo));
         EXPECT_TRUE(res);
 
         res->basic_plan(true, 100);

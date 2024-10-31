@@ -321,7 +321,7 @@ Fixture::readWork(uint32_t cnt)
         FieldSpec field(fieldName, fieldId, handle);
         FieldSpecList fields;
         fields.add(field);
-        Blueprint::UP result = index.createBlueprint(requestContext, fields, term);
+        auto result = index.createBlueprint(requestContext, fields, term);
         if (!EXPECT_TRUE(result)) {
             LOG(error, "Did not get blueprint");
             break;
@@ -417,7 +417,7 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
     FieldSpecList fields;
     fields.add(field);
 
-    Blueprint::UP result = index.createBlueprint(requestContext, fields, term);
+    auto result = index.createBlueprint(requestContext, fields, term);
     if (!EXPECT_TRUE(result)) {
         return false;
     }

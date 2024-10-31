@@ -15,13 +15,13 @@ score_t calculate_initial_wand_threshold(const auto &scorer, const Terms &terms,
     std::optional<score_t> worst_normal_word;
     for (const auto &t: terms) {
         score_t s = scorer.calculateMaxScore(t);
-        if (t.estHits > matchParams.abs_stop_word_limit) {
+        if (matchParams.stop_words.is_stop_word(t.estHits)) {
             best_stop_word = std::max(s, best_stop_word.value_or(s));
         } else {
             worst_normal_word = std::min(s, worst_normal_word.value_or(s));
         }
     }
-    score_t limit = matchParams.scoreThreshold;
+    score_t limit = 1;
     limit = std::max(limit, best_stop_word.value_or(limit));
     limit = std::max(limit, worst_normal_word.value_or(limit));
     return limit;

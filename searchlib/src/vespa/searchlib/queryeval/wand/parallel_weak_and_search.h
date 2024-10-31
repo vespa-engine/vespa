@@ -20,24 +20,23 @@ struct ParallelWeakAndSearch : public SearchIterator
     /**
      * Params used to tweak the behavior of the WAND algorithm.
      */
-    struct MatchParams : wand::MatchParams
+    struct MatchParams
     {
-        const double  thresholdBoostFactor;
-        const docid_t docIdLimit;
+        WeakAndHeap   &scores;
+        score_t        scoreThreshold;
+        const uint32_t scoresAdjustFrequency;
+        const double   thresholdBoostFactor;
+        const docid_t  docIdLimit;
         MatchParams(WeakAndHeap &scores_in,
                     score_t scoreThreshold_in,
                     double thresholdBoostFactor_in,
                     uint32_t scoresAdjustFrequency_in,
                     uint32_t docIdLimit_in) noexcept
-            : wand::MatchParams(scores_in, scoreThreshold_in, -1, scoresAdjustFrequency_in),
+            : scores(scores_in),
+              scoreThreshold(scoreThreshold_in),
+              scoresAdjustFrequency(scoresAdjustFrequency_in),
               thresholdBoostFactor(thresholdBoostFactor_in),
               docIdLimit(docIdLimit_in)
-        {}
-        MatchParams(WeakAndHeap &scores_in,
-                    score_t scoreThreshold_in,
-                    double thresholdBoostFactor_in,
-                    uint32_t scoresAdjustFrequency_in) noexcept
-            : MatchParams(scores_in, scoreThreshold_in, thresholdBoostFactor_in, scoresAdjustFrequency_in, 0)
         {}
     };
 

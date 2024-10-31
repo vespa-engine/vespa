@@ -30,7 +30,7 @@ struct MyWandSpec : public WandSpec
           scores(n_in),
           n(n_in),
           matching_phase(MatchingPhase::FIRST_PHASE),
-          my_params(scores, 1, -1, 1)
+          my_params(scores, wand::StopWordStrategy::none(), 1)
     {}
     SearchIterator *create() {
         bool readonly_scores_heap = (matching_phase != MatchingPhase::FIRST_PHASE);
@@ -38,7 +38,9 @@ struct MyWandSpec : public WandSpec
                                  WeakAndSearch::create(getTerms(), my_params, n, true, readonly_scores_heap));
     }
     void set_second_phase() { matching_phase = MatchingPhase::SECOND_PHASE; }
-    void set_abs_stop_word_limit(uint32_t limit) { my_params.abs_stop_word_limit = limit; }
+    void set_abs_stop_word_limit(uint32_t limit) {
+        my_params.stop_words = wand::StopWordStrategy::abs(limit, uint32_t(-1), uint32_t(-1));
+    }
     SimpleResult search() {
         SearchIterator::UP search(create());
         SimpleResult hits;
@@ -179,7 +181,7 @@ private:
         }
         static constexpr size_t LARGE_ENOUGH_HEAP_FOR_ALL = 10000;
         _scores.push_back(std::make_unique<SharedWeakAndPriorityQueue>(LARGE_ENOUGH_HEAP_FOR_ALL));
-        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), 1, -1, 1), -1, strict, false);
+        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), wand::StopWordStrategy::none(), 1), -1, strict, false);
     }
 };
 

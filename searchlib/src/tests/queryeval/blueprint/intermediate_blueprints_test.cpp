@@ -795,10 +795,10 @@ struct make {
     static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
     static make WEAKAND_DROP_STOP_WORDS(uint32_t limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, 1.0, limit, WeakAndBlueprint::StopWordStrategy::DROP, true));
+        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy::abs(limit, limit, limit), true));
     }
     static make WEAKAND_KEEP_STOP_WORDS(uint32_t limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, 1.0, limit, WeakAndBlueprint::StopWordStrategy::KEEP, true));
+        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy::abs(limit, uint32_t(-1), uint32_t(-1)), true));
     }
 };
 
