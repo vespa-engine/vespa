@@ -27,8 +27,10 @@ public class HashExpression extends Expression  {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
+        if ( inputType != DataType.STRING)
+            throw new VerificationException(this, ": This require a string input, but got " + inputType);
         super.setInputType(inputType, context);
-        return null; // Can infer array, but not int or long
+        return null; // Can not infer int or long
     }
 
     @Override
