@@ -86,7 +86,7 @@ public:
      * Will create a lrucache with max elements. Use the chained setter
      * @ref reserve to control initial size.
      *
-     * @param maxElements in cache unless you override @ref removeOldest.
+     * @param maxElems in cache unless you override @ref removeOldest.
      */
     lrucache_map(size_t maxElems);
     virtual ~lrucache_map();
@@ -165,7 +165,7 @@ public:
     virtual void onInsert(const K & key);
 
     /**
-     * Method for testing that internal consitency is good.
+     * Method for testing that internal consistency is good.
      */
     bool verifyInternals();
 
