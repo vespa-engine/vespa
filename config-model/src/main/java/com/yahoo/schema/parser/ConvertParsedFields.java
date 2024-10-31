@@ -38,9 +38,17 @@ public class ConvertParsedFields {
         this.structProxies = structProxies;
     }
 
+    static void caseHandling(SDField field, Case casing) {
+        field.setMatchingCase(casing);
+        if (casing == Case.CASED) {
+            var dictionary = field.getOrSetDictionary();
+            dictionary.updateMatch(casing);
+        }
+    }
+
     static void convertMatchSettings(SDField field, ParsedMatchSettings parsed) {
         parsed.getMatchType().ifPresent(matchingType -> field.setMatchingType(matchingType));
-        parsed.getMatchCase().ifPresent(casing -> field.setMatchingCase(casing));
+        parsed.getMatchCase().ifPresent(casing -> caseHandling(field, casing));
         parsed.getGramSize().ifPresent(gramSize -> field.getMatching().setGramSize(gramSize));
         parsed.getMaxLength().ifPresent(maxLength -> field.getMatching().maxLength(maxLength));
         parsed.getMaxTermOccurrences().ifPresent(maxTermOccurrences -> field.getMatching().maxTermOccurrences(maxTermOccurrences));
@@ -290,21 +298,29 @@ public class ConvertParsedFields {
 
     SDField convertDocumentField(Schema schema, SDDocumentType document, ParsedField parsed) {
         String name = parsed.name();
-        DataType dataType = context.resolveType(parsed.getType());
-        var field = new SDField(document, name, dataType);
-        convertCommonFieldSettings(schema, field, parsed);
-        convertExtraFieldSettings(schema, field, parsed);
-        document.addField(field);
-        return field;
+        try {
+            DataType dataType = context.resolveType(parsed.getType());
+            var field = new SDField(document, name, dataType);
+            convertCommonFieldSettings(schema, field, parsed);
+            convertExtraFieldSettings(schema, field, parsed);
+            document.addField(field);
+            return field;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("For schema '" + schema.getName() + "', field '" + name + "': " + e.getMessage());
+        }
     }
 
     void convertExtraField(Schema schema, ParsedField parsed) {
         String name = parsed.name();
-        DataType dataType = context.resolveType(parsed.getType());
-        var field = new SDField(schema.getDocument(), name, dataType);
-        convertCommonFieldSettings(schema, field, parsed);
-        convertExtraFieldSettings(schema, field, parsed);
-        schema.addExtraField(field);
+        try {
+            DataType dataType = context.resolveType(parsed.getType());
+            var field = new SDField(schema.getDocument(), name, dataType);
+            convertCommonFieldSettings(schema, field, parsed);
+            convertExtraFieldSettings(schema, field, parsed);
+            schema.addExtraField(field);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("For schema '" + schema.getName() + "', field '" + name + "': " + e.getMessage());
+        }
     }
 
     void convertExtraIndex(Schema schema, ParsedIndex parsed) {
