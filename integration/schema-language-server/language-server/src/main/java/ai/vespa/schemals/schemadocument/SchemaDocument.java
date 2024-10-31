@@ -2,6 +2,7 @@ package ai.vespa.schemals.schemadocument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;

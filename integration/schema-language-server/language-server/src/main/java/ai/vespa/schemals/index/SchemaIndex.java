@@ -4,9 +4,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -53,10 +55,14 @@ public class SchemaIndex {
     private ClientLogger logger;
     private FieldIndex fieldIndex;
 
+    // SymbolType -> List of symbol definitions of that type
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
+    // Symbol definition -> List of symbols marked as reference to that symbol
     private Map<Symbol, List<Symbol>> symbolReferences;
+    // Symbol reference -> Symbol definition
     private Map<Symbol, Symbol> definitionOfReference;
-    private List<Symbol> unresolvedReferences;
+    // List of currently known to be unresolved symbol references
+    private Set<Symbol> unresolvedReferences;
 
     // TODO: bad to use string as node type here.
     private InheritanceGraph<String> documentInheritanceGraph;
@@ -78,7 +84,7 @@ public class SchemaIndex {
         this.symbolDefinitions     = new HashMap<>();
         this.symbolReferences      = new HashMap<>();
         this.definitionOfReference = new HashMap<>();
-        this.unresolvedReferences  = new ArrayList<>();
+        this.unresolvedReferences  = new HashSet<>();
 
         for (SymbolType type : SymbolType.values()) {
             this.symbolDefinitions.put(type, new ArrayList<Symbol>());
@@ -144,6 +150,11 @@ public class SchemaIndex {
             for (int i = list.size() - 1; i >= 0; i--) {
                 Symbol symbol = list.get(i);
                 if (symbol.fileURIEquals(fileURIURI)) {
+                    for (var referenceToMe : symbolReferences.get(symbol)) {
+                        definitionOfReference.remove(referenceToMe);
+                        unresolvedReferences.add(referenceToMe);
+                    }
+
                     symbolReferences.remove(symbol);
 
                     structInheritanceGraph.clearInheritsList(symbol);
@@ -231,9 +242,7 @@ public class SchemaIndex {
                                .toList();
         }
 
-        // logger.println("Looking for symbol: " + shortIdentifier + " type " + type.toString());
         while (scope != null) {
-            // logger.println("  Checking scope: " + scope.getLongIdentifier());
             List<Symbol> result = findSymbolsInScope(scope, type, shortIdentifier);
 
             if (!result.isEmpty()) {
@@ -447,6 +456,18 @@ public class SchemaIndex {
 
         definitionOfReference.put(reference, definition);
         list.add(reference);
+
+        if (reference.getType() == SymbolType.RANK_PROFILE && reference.getScope() != null) {
+            tryRegisterRankProfileInheritance(reference.getScope(), definition);
+        }
+
+        if (reference.getType() == SymbolType.STRUCT && reference.getScope() != null) {
+            tryRegisterStructInheritance(reference.getScope(), definition);
+        }
+
+        if (reference.getType() == SymbolType.DOCUMENT_SUMMARY && reference.getScope() != null) {
+            tryRegisterDocumentSummaryInheritance(reference.getScope(), definition);
+        }
     }
 
 
@@ -548,6 +569,7 @@ public class SchemaIndex {
     }
 
     public List<Symbol> getUnresolvedReferences() {
+        this.unresolvedReferences.removeIf(symbol -> getSymbolDefinition(symbol).isPresent());
         return List.copyOf(this.unresolvedReferences);
     }
 

@@ -56,6 +56,9 @@ public class RankProfileDocument implements DocumentManager {
 
     @Override
     public void updateFileContent(String content) {
+
+        logger.info("Parsing: " + fileURI);
+
         this.content = content;
 
         this.schemaIndex.clearDocument(this.fileURI);

@@ -30,6 +30,7 @@ public class SchemaReferences {
         Symbol originalSymbol = node.getSymbol();
 
         if (originalSymbol.getStatus() == SymbolStatus.INVALID || originalSymbol.getStatus() == SymbolStatus.UNRESOLVED) {
+            context.logger.info("Could not resolve because status is " + originalSymbol.getStatus().toString());
             return ret;
         }
 
@@ -39,6 +40,7 @@ public class SchemaReferences {
 
             Optional<Symbol> results = context.schemaIndex.getSymbolDefinition(originalSymbol);
             if (results.isEmpty()) {
+                context.logger.info("Could not resolve because definition was not found.");
                 return ret;
             }
             search = results.get();
@@ -50,6 +52,7 @@ public class SchemaReferences {
             symbols.add(search);
         }
 
+        context.logger.info("Getsymbolreferences returned " + symbols.size() + " results");
         for (Symbol symbol : symbols) {
             if (symbol != originalSymbol) {
                 ret.add(symbol.getLocation());

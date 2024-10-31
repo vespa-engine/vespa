@@ -186,6 +186,7 @@ public class SymbolReferenceResolver {
                     .setRange( node.getRange())
                     .setMessage( "Undefined symbol " + node.getText())
                     .setSeverity(DiagnosticSeverity.Error)
+                    .setCode(DiagnosticCode.UNDEFINED_SYMBOL)
                     .build() );
         }
     }

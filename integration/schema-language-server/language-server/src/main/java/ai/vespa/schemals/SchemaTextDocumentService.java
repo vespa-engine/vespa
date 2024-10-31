@@ -254,11 +254,10 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 scheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
             } catch(Exception e) {
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                PrintStream logger = new PrintStream(outputStream);
+                PrintStream logStream = new PrintStream(outputStream);
+                e.printStackTrace(logStream);
 
-                e.printStackTrace(logger);
-
-                schemaMessageHandler.logMessage(MessageType.Error, 
+                logger.error( 
                     "Updating file " + document.getUri() + " failed with error: " + outputStream.toString() 
                 );
             }
@@ -267,10 +266,14 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
-        TextDocumentIdentifier documentIdentifier = params.getTextDocument();
-        SchemaDocumentScheduler scheduler = eventContextCreator.scheduler;
+        try {
+            TextDocumentIdentifier documentIdentifier = params.getTextDocument();
+            SchemaDocumentScheduler scheduler = eventContextCreator.scheduler;
 
-        scheduler.closeDocument(documentIdentifier.getUri());
+            scheduler.closeDocument(documentIdentifier.getUri());
+        } catch (Exception e) {
+            logger.error("Unexpected error occured when closing document: " + e.getMessage());
+        }
     }
 
     @Override

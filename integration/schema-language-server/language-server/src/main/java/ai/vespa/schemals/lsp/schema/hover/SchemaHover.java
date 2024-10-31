@@ -106,8 +106,6 @@ public class SchemaHover {
             result += "\n";
         }
 
-        if (result.isEmpty())result = "no fields found";
-
         return new Hover(new MarkupContent(MarkupKind.MARKDOWN, result));
     }
 
