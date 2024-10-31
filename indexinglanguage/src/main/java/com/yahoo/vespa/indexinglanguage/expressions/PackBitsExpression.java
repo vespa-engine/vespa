@@ -41,7 +41,7 @@ public class PackBitsExpression extends Expression  {
         super.setOutputType(outputType, context);
         if ( ! validType(outputType))
             throw new IllegalArgumentException("pack_bits produces a tensor with one dense dimension, " +
-                                               "but need " + outputType);
+                                               "but needs " + outputType);
         outputTensorType = ((TensorDataType)outputType).getTensorType();
         return new TensorDataType(inputType(outputTensorType));
     }
