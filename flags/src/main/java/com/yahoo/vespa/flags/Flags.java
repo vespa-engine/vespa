@@ -199,13 +199,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    // TODO: Move to a permanent flag
-    public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
-            "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2025-10-01",
-            "Allowed Athenz proxy identities",
-            "takes effect at redeployment");
-
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
             List.of("vekterli"), "2021-02-19", "2025-02-01",

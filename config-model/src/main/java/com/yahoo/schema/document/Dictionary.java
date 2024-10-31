@@ -26,7 +26,7 @@ public class Dictionary {
         }
     }
     public void updateMatch(Case casing) {
-        if (this.casing != null && this.casing != casing) {
+        if (this.casing != null) {
             throw new IllegalArgumentException("dictionary match mode has already been set to " + this.casing);
         }
         this.casing = casing;
