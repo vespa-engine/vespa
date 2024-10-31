@@ -225,7 +225,7 @@ public class ModelContextImpl implements ModelContext {
             this.feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.feedNiceness = Flags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
             this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
-            this.allowedAthenzProxyIdentities = Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
+            this.allowedAthenzProxyIdentities = PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
