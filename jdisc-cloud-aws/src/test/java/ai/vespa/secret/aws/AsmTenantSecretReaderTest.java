@@ -46,9 +46,9 @@ public class AsmTenantSecretReaderTest {
     @Test
     void it_creates_one_credentials_and_client_per_vault_and_closes_them() {
         var vault1 = VaultName.of("vault1");
-        var awsRole1 = "tenant-secret.publiccd.tenant1.vault1.reader";
+        var awsRole1 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault1.reader");
         var vault2 = VaultName.of("vault2");
-        var awsRole2 = "tenant-secret.publiccd.tenant1.vault2.reader";
+        var awsRole2 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault2.reader");
 
         var secret1 = new SecretVersion("1", SecretVersionState.CURRENT, "secret1");
         var secret2 = new SecretVersion("2", SecretVersionState.CURRENT, "secret2");
@@ -59,7 +59,7 @@ public class AsmTenantSecretReaderTest {
         tester.put(key1, secret1);
         tester.put(key2, secret2);
 
-        try (var reader = secretReader()){
+        try (var reader = secretReader()) {
             reader.getSecret(key1);
             reader.getSecret(key2);
 

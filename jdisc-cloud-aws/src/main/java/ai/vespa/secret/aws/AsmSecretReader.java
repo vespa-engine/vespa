@@ -11,7 +11,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -64,7 +63,7 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     }
 
     // For testing
-    public AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
+    public AsmSecretReader(Function<AwsRolePath, SecretsManagerClient> clientAndCredentialsSupplier) {
         super(clientAndCredentialsSupplier);
         cache = initCache();
         ztsClientCloser = () -> {};

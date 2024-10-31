@@ -5,9 +5,9 @@
 
 package ai.vespa.secret.aws.testutil;
 
+import ai.vespa.secret.aws.AwsRolePath;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.SecretVersionState;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
@@ -30,14 +30,14 @@ public class AsmSecretReaderTester extends AsmSecretTesterBase {
         secrets.put(awsSecretIdMapper.apply(key), List.of(versions));
     }
 
-    public MockSecretsReader newClient(AwsRole awsRole) {
+    public MockSecretsReader newClient(AwsRolePath awsRole) {
         return new MockSecretsReader(awsRole);
     }
 
 
     public class MockSecretsReader extends MockSecretsManagerClient {
 
-        MockSecretsReader(AwsRole awsRole) {
+        MockSecretsReader(AwsRolePath awsRole) {
             super(awsRole);
         }
 

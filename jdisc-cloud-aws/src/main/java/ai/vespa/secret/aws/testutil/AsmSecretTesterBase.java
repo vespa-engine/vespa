@@ -5,9 +5,9 @@
 
 package ai.vespa.secret.aws.testutil;
 
+import ai.vespa.secret.aws.AwsRolePath;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.SecretVersionState;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
@@ -58,10 +58,10 @@ public class AsmSecretTesterBase {
 
     public abstract class MockSecretsManagerClient implements SecretsManagerClient {
 
-        public final AwsRole awsRole;
+        public final AwsRolePath awsRole;
         public boolean isClosed = false;
 
-        protected MockSecretsManagerClient(AwsRole awsRole) {
+        protected MockSecretsManagerClient(AwsRolePath awsRole) {
             this.awsRole = awsRole;
             clients.add(this);
         }
