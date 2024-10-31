@@ -108,7 +108,7 @@ public abstract class Expression extends Selectable {
     protected final DataType setOutputType(DataType outputType, DataType requiredType, VerificationContext context) {
         // TODO: Activate type checking
         // if (outputType != null && ! requiredType.isAssignableFrom(outputType))
-        //     throw new IllegalArgumentException(this + " produces a " + outputType + " but " + requiredType + " is required");
+        //     throw new VerificationException(this, "This produces type " + outputType + " but " + requiredType + " is required");
         this.outputType = outputType;
         return outputType;
     }
