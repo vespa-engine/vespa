@@ -21,7 +21,7 @@ public final class ZCurveExpression extends Expression {
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         if ( ! (input instanceof StructDataType struct))
-            throw new VerificationException(this, "This requires a struct as input, but got " + input);
+            throw new VerificationException(this, "This requires a struct as input, but got " + input.getName());
         requireIntegerField(PositionDataType.FIELD_X, struct);
         requireIntegerField(PositionDataType.FIELD_Y, struct);
 

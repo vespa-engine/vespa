@@ -21,6 +21,8 @@ import java.util.Map;
 public final class SwitchExpression extends CompositeExpression {
 
     private final Map<String, Expression> cases = new LinkedHashMap<>();
+
+    /** The default expression, or null if none */
     private final Expression defaultExp;
 
     public <T extends Expression> SwitchExpression(Map<String, T> cases) {
@@ -58,9 +60,13 @@ public final class SwitchExpression extends CompositeExpression {
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, DataType.STRING, context);
 
-        DataType outputType = defaultExp.setInputType(inputType, context);
-        for (Expression expression : cases.values())
-            outputType = mostGeneralOf(outputType, expression.setInputType(inputType, context));
+        DataType outputType = defaultExp == null ? null : defaultExp.setInputType(inputType, context);
+        boolean outputNeverAssigned = true; // Needed to separate this null case from the "cannot be inferred" case
+        for (Expression expression : cases.values()) {
+            DataType expressionOutputType = expression.setInputType(inputType, context);
+            outputType = outputNeverAssigned ? expressionOutputType : mostGeneralOf(outputType, expressionOutputType);
+            outputNeverAssigned = false;
+        }
         return outputType;
     }
 
