@@ -65,7 +65,7 @@ public abstract class Expression extends Selectable {
      */
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
         // TODO: Activate type checking
-        // if ( ! (inputType instanceof TensorDataType))
+        // if ( ! (inputType.isAssignableTo(requiredType))
         //    throw new VerificationException(this, "This requires type " + requiredType + ", but gets " + inputType);
         this.inputType = inputType;
         return inputType;
@@ -96,21 +96,31 @@ public abstract class Expression extends Selectable {
 
     /**
      * Sets the output type of this and returns the resulting input type, or null if it cannot be
-     * uniquely determined.
+     * uniquely determined, with additional arguments for convenience type checking.
      * This implementation returns the same type, which is appropriate for all statements
      * that do not change the type.
      *
-     * @param outputType the type to set as the output type of this, or null if it cannot be determined
-     * @param requiredType the type the output type must be assignable to
+     * @param actualOutput the type actually produced by this, musyt be assignable to the requiredOutput,
+     *                     or null if not known
+     * @param requiredOutput the type required by the next expression, which actualOutput must be assignable to,
+     *                       or null if it cannot be uniquely determined.
+     * @param requiredType a type the required output must be assignable to, or null to not verify this
      * @param context the context of this
-     * @throws IllegalArgumentException if outputType isn't assignable to requiredType
+     * @return the actualOutput if set, requiredOutput otherwise
+     * @throws IllegalArgumentException if actualOutput
      */
-    protected final DataType setOutputType(DataType outputType, DataType requiredType, VerificationContext context) {
+    protected final DataType setOutputType(DataType actualOutput, DataType requiredOutput, DataType requiredType,
+                                           VerificationContext context) {
         // TODO: Activate type checking
-        // if (outputType != null && ! requiredType.isAssignableFrom(outputType))
-        //     throw new VerificationException(this, "This produces type " + outputType + " but " + requiredType + " is required");
-        this.outputType = outputType;
-        return outputType;
+        // if (actualOutput != null && requiredOutput != null && ! actualOutput.isAssignableTo(requiredOutput))
+        //     throw new VerificationException(this, "This produces type " + actualOutput + " but " + requiredOutput + " is required");
+        // if (requiredType != null && requiredOutput != null && ! requiredOutputOutput.isAssignableTo(requiredType))
+        //     throw new VerificationException(this, "This is required to produce type " + requiredOutput + " but is produces " + requiredType);;
+        if (actualOutput != null)
+            this.outputType = actualOutput; // Use the more precise type when known
+        else
+            this.outputType = requiredOutput;
+        return this.outputType;
     }
 
     /**

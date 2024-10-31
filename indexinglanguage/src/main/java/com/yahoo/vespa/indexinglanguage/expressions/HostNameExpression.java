@@ -22,7 +22,7 @@ public final class HostNameExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, DataType.STRING, context);
+        super.setOutputType(DataType.STRING, outputType, null, context);
         return AnyDataType.instance;
     }
 

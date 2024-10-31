@@ -38,7 +38,7 @@ public class BinarizeExpression extends Expression  {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        return super.setOutputType(outputType, TensorDataType.any(), context);
+        return super.setOutputType(null, outputType, TensorDataType.any(), context);
     }
 
     @Override

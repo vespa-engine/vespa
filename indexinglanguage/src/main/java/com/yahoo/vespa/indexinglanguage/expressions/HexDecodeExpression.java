@@ -25,7 +25,7 @@ public final class HexDecodeExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, DataType.LONG, context);
+        super.setOutputType(DataType.LONG, outputType, null, context);
         return AnyDataType.instance;
     }
 
