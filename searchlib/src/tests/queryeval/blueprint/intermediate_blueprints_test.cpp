@@ -794,11 +794,14 @@ struct make {
     static make NEAR(uint32_t window) { return make(std::make_unique<NearBlueprint>(window)); }
     static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
-    static make WEAKAND_DROP_STOP_WORDS(uint32_t limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy::abs(limit, limit, limit), true));
+    static make WEAKAND_ADJUST(double limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy(-limit, 1.0, 1.0, 0), true));
     }
-    static make WEAKAND_KEEP_STOP_WORDS(uint32_t limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy::abs(limit, uint32_t(-1), uint32_t(-1)), true));
+    static make WEAKAND_SCORE(double limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy(1.0, -limit, 1.0, 0), true));
+    }
+    static make WEAKAND_DROP(double limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy(1.0, 1.0, -limit, 0), true));
     }
 };
 
@@ -888,21 +891,28 @@ TEST("test single child optimization") {
 }
 
 TEST("test WeakAnd drop stop words") {
-    Blueprint::UP top = make::WEAKAND_DROP_STOP_WORDS(10).leafs({2,20,1,15,3,25});
+    Blueprint::UP top = make::WEAKAND_DROP(10).leafs({2,20,1,15,3,25});
     Blueprint::UP expect = make::WEAKAND(100).leafs({2,1,3});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
-TEST("test WeakAnd keep stop words") {
+TEST("test WeakAnd drop stop words with only stop words") {
+    Blueprint::UP top = make::WEAKAND_DROP(10).leafs({20,15,25});
+    Blueprint::UP expect(MyLeafSpec(15).create());
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("test WeakAnd not scoring stop words") {
     // added OR to satisfy requirement that optimize must modify blueprint
-    Blueprint::UP top = make::OR().add(make::WEAKAND_KEEP_STOP_WORDS(10).leafs({2,20,1,15,3,25}));
+    Blueprint::UP top = make::OR().add(make::WEAKAND_SCORE(10).leafs({2,20,1,15,3,25}));
     Blueprint::UP expect = make::WEAKAND(100).leafs({2,20,1,15,3,25});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
-TEST("test WeakAnd drop stop words with only stop words") {
-    Blueprint::UP top = make::WEAKAND_DROP_STOP_WORDS(10).leafs({20,15,25});
-    Blueprint::UP expect(MyLeafSpec(15).create());
+TEST("test WeakAnd adjusting initial threshold based on stop words") {
+    // added OR to satisfy requirement that optimize must modify blueprint
+    Blueprint::UP top = make::OR().add(make::WEAKAND_ADJUST(10).leafs({2,20,1,15,3,25}));
+    Blueprint::UP expect = make::WEAKAND(100).leafs({2,20,1,15,3,25});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
