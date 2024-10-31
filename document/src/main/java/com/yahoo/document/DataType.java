@@ -164,6 +164,11 @@ public abstract class DataType extends Identifiable implements Comparable<DataTy
         return isValueCompatible(dataType.createFieldValue());
     }
 
+    /** The reverse of isAssignableFrom */
+    public final boolean isAssignableTo(DataType dataType) {
+        return dataType.isAssignableFrom(this);
+    }
+
     /**
      * Returns an array datatype, where the array elements are of the given type
      *
