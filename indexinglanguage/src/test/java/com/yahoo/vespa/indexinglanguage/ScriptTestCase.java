@@ -9,6 +9,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
@@ -163,6 +164,34 @@ public class ScriptTestCase {
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myLong"));
         assertEquals(7678158186624760752L, adapter.values.get("myLong").getWrappedValue());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testZCurveArray() throws ParseException {
+        var expression = Expression.fromString("input location_str | for_each { to_pos } | for_each { zcurve } | attribute location_zcurve");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("location_str", DataType.getArray(DataType.STRING)));
+        var zcurveField = new Field("location_zcurve", DataType.getArray(DataType.LONG));
+        adapter.createField(zcurveField);
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("pos1"));
+        array.add(new StringFieldValue("pos2"));
+        adapter.setValue("location_str", array);
+        expression.setStatementOutput(new DocumentType("myDocument"), zcurveField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(DataType.getArray(DataType.LONG), expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setCurrentValue(array);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("location_zcurve"));
+        var longArray = (Array<LongFieldValue>)adapter.values.get("location_zcurve");
+        assertEquals(  368658787, longArray.get(0).getLong());
+        assertEquals(-1382874952, longArray.get(1).getLong());
     }
 
 }

@@ -71,8 +71,9 @@ public final class StatementExpression extends ExpressionList<Expression> {
         var inputType = getInputType(context); // A nested statement; input imposed from above
         if (inputType == null) // otherwise the first expression will be an input deciding the type
             inputType = expressions().get(i++).getOutputType(context);
-        while (i < expressions().size() && inputType != null)
+        while (i < expressions().size() && inputType != null) {
             inputType = expressions().get(i++).setInputType(inputType, context);
+        }
         // reverse:
         int j = expressions().size();
         var outputType = getOutputType(context); // A nested statement; output imposed from above
