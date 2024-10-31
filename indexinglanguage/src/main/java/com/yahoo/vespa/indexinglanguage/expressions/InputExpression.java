@@ -48,10 +48,7 @@ public final class InputExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType val = context.getFieldType(fieldName, this);
-        if (val == null)
-            throw new VerificationException(this, "Field '" + fieldName + "' not found");
-        context.setCurrentType(val);
+        context.setCurrentType(requireFieldType(context));
     }
 
     @Override
