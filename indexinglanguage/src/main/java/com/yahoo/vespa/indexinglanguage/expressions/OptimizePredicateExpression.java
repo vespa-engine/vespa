@@ -30,6 +30,16 @@ public final class OptimizePredicateExpression extends Expression {
     }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        return super.setInputType(inputType, DataType.PREDICATE, context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        return super.setOutputType(DataType.PREDICATE, outputType, null, context);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         checkVariable(context, "arity", DataType.INT, true);
         checkVariable(context, "lower_bound", DataType.LONG, false);
