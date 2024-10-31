@@ -25,6 +25,17 @@ public abstract class OutputExpression extends Expression {
     public String getFieldName() { return fieldName; }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        return super.setInputType(inputType, context.getFieldType(fieldName, this), context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+        return context.getFieldType(fieldName, this);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         context.tryOutputType(fieldName, context.getCurrentType(), this);
     }
