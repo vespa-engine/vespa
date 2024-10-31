@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.document.DataType;
 
 /**
@@ -18,14 +19,29 @@ public final class SetVarExpression extends Expression {
     public String getVariableName() { return varName; }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        setVariableType(inputType, context);
+        return super.setInputType(inputType, context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        setVariableType(outputType, context);
+        return super.setOutputType(outputType, context);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
-        DataType next = context.getCurrentType();
-        DataType prev = context.getVariable(varName);
-        if (prev != null && !prev.equals(next)) {
-            throw new VerificationException(this, "Attempting to assign conflicting types to variable '" + varName +
-                                                  "', " + prev.getName() + " vs " + next.getName());
+        setVariableType(context.getCurrentType(), context);
+    }
+
+    private void setVariableType(DataType newType, VerificationContext context) {
+        DataType existingType = context.getVariable(varName);
+        if (existingType != null && ! newType.equals(existingType)) {
+            throw new VerificationException(this, "Cannot set variable '" + varName + "' to type " + newType.getName() +
+                                                  ": It is already set to type " + existingType.getName());
         }
-        context.setVariable(varName, next);
+        context.setVariable(varName, newType);
     }
 
     @Override

@@ -42,7 +42,7 @@ public class SetVarTestCase {
             new VerificationContext().setVariable("foo", DataType.INT).setCurrentType(DataType.STRING).verify(exp);
             fail();
         } catch (VerificationException e) {
-            assertEquals("Invalid expression 'set_var foo': Attempting to assign conflicting types to variable 'foo', int vs string", e.getMessage());
+            assertEquals("Invalid expression 'set_var foo': Cannot set variable 'foo' to type string: It is already set to type int", e.getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ public class SetVarTestCase {
             fail();
         } catch (VerificationException e) {
             assertTrue(e.getExpressionType().equals(SetVarExpression.class));
-            assertEquals("Invalid expression 'set_var out': Attempting to assign conflicting types to variable 'out', int vs string", e.getMessage());
+            assertEquals("Invalid expression 'set_var out': Cannot set variable 'out' to type string: It is already set to type int", e.getMessage());
         }
     }
 
