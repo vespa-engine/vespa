@@ -42,6 +42,13 @@ public class RankProfileDocument implements DocumentManager {
     }
 
     @Override
+    public ParseContext getParseContext() {
+        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, this.scheduler);
+        context.useRankProfileIdentifiers();
+        return context;
+    }
+
+    @Override
     public void updateFileContent(String content, Integer version) {
         this.version = version;
         this.updateFileContent(content);
@@ -53,8 +60,7 @@ public class RankProfileDocument implements DocumentManager {
 
         this.schemaIndex.clearDocument(this.fileURI);
 
-        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, this.scheduler);
-        context.useRankProfileIdentifiers();
+        ParseContext context = getParseContext();
         var result = parseContent(context);
 
         diagnosticsHandler.publishDiagnostics(this.fileURI, result.diagnostics());

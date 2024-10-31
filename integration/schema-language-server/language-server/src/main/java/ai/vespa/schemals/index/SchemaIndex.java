@@ -56,6 +56,7 @@ public class SchemaIndex {
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
     private Map<Symbol, List<Symbol>> symbolReferences;
     private Map<Symbol, Symbol> definitionOfReference;
+    private List<Symbol> unresolvedReferences;
 
     // TODO: bad to use string as node type here.
     private InheritanceGraph<String> documentInheritanceGraph;
@@ -77,6 +78,7 @@ public class SchemaIndex {
         this.symbolDefinitions     = new HashMap<>();
         this.symbolReferences      = new HashMap<>();
         this.definitionOfReference = new HashMap<>();
+        this.unresolvedReferences  = new ArrayList<>();
 
         for (SymbolType type : SymbolType.values()) {
             this.symbolDefinitions.put(type, new ArrayList<Symbol>());
@@ -153,6 +155,9 @@ public class SchemaIndex {
                 }
             }
         }
+
+        // Remove unresolved symbols
+        this.unresolvedReferences.removeIf(symbol -> symbol.fileURIEquals(fileURIURI));
 
         this.fieldIndex.clearFieldsByURI(fileURIURI);
 
@@ -536,6 +541,14 @@ public class SchemaIndex {
             );
         }
         return ret;
+    }
+
+    public void addUnresolvedReference(Symbol unresolvedSymbol) {
+        this.unresolvedReferences.add(unresolvedSymbol);
+    }
+
+    public List<Symbol> getUnresolvedReferences() {
+        return List.copyOf(this.unresolvedReferences);
     }
 
     /**

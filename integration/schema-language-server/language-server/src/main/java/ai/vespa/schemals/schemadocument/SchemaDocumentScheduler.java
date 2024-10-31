@@ -3,12 +3,15 @@ package ai.vespa.schemals.schemadocument;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.TextDocumentItem;
 
@@ -16,14 +19,16 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
 import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
+import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
 
 /**
- * Class responsible for maintaining the set of open documents and reparsing them.
+ * Class responsible for maintaining the set of open documents and reparsing them (in the correct order).
  * When {@link SchemaDocumentScheduler#updateFile} is called, it will call {@link DocumentManager#updateFileContent} on the appropriate file 
  * and also other files that may have dependencies on the contents of the file.
  */
@@ -124,6 +129,27 @@ public class SchemaDocumentScheduler {
 
         if (needsReparse) {
             workspaceFiles.get(fileURI).reparseContent();
+        }
+
+        // Resolve remaining unresolved symbols 
+        Set<String> remainingDocumentsToParse = new HashSet<>();
+        for (Symbol symbol : schemaIndex.getUnresolvedReferences()) {
+            DocumentManager doc = getDocument(symbol.getFileURI());
+            if (doc == null) {
+                continue;
+            }
+
+            var context = doc.getParseContext();
+            List<Diagnostic> diagnostics = new ArrayList<>();
+            SymbolReferenceResolver.resolveSymbolReference(symbol.getNode(), context, diagnostics);
+            if (diagnostics.isEmpty()) {
+                remainingDocumentsToParse.add(symbol.getFileURI());
+            }
+        }
+
+        for (String documentURI : remainingDocumentsToParse) {
+            // Calling this will also clear the symbols from the unresolved symbol list
+            getDocument(documentURI).reparseContent();
         }
     }
 
