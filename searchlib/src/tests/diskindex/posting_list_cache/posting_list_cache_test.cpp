@@ -13,7 +13,7 @@ class MockFile : public PostingListCache::IPostingListFileBacking {
 public:
     MockFile();
     ~MockFile() override;
-    PostingListHandle read(const PostingListCache::Key& key) override;
+    PostingListHandle read(const PostingListCache::Key& key) const override;
 };
 
 MockFile::MockFile()
@@ -24,7 +24,7 @@ MockFile::MockFile()
 MockFile::~MockFile() = default;
 
 PostingListHandle
-MockFile::read(const PostingListCache::Key& key)
+MockFile::read(const PostingListCache::Key& key) const
 {
     EXPECT_NE(0, key.bit_length);
     PostingListHandle handle;
