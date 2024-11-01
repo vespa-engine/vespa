@@ -14,9 +14,9 @@ namespace search::diskindex {
 class PostingListCache::BackingStore
 {
 public:
-   BackingStore();
-   ~BackingStore();
-   bool read(const IPostingListCache::Key& key, PostingListHandle& value) const;
+    BackingStore();
+    ~BackingStore();
+    bool read(const IPostingListCache::Key& key, PostingListHandle& value) const;
 };
 
 PostingListCache::BackingStore::BackingStore() = default;
