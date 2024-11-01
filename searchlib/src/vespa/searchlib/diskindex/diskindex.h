@@ -57,7 +57,7 @@ private:
     using Cache = vespalib::cache<vespalib::CacheParam<vespalib::LruParam<Key, LookupResultVector>, DiskIndex>>;
 
     std::string                       _indexDir;
-    size_t                                 _cacheSize;
+    size_t                                 _dictionary_cache_size;
     index::Schema                          _schema;
     std::vector<FieldIndex>                _field_indexes;
     uint32_t                               _nonfield_size_on_disk;
@@ -74,10 +74,10 @@ public:
      * Create a view of the disk index located in the given directory.
      *
      * @param indexDir the directory where the disk index is located.
-     * @param cacheSize optional size (in bytes) of the disk dictionary lookup cache.
+     * @param dictionary_cache_size optional size (in bytes) of the disk dictionary lookup cache.
      */
     explicit DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache,
-                       size_t cacheSize = 0);
+                       size_t dictionary_cache_size = 0);
     ~DiskIndex() override;
 
     /**
