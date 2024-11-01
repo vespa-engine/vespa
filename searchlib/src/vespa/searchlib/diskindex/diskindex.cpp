@@ -46,15 +46,15 @@ DiskIndex::Key::Key(const Key &) = default;
 DiskIndex::Key & DiskIndex::Key::operator = (const Key &) = default;
 DiskIndex::Key::~Key() = default;
 
-DiskIndex::DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache, size_t cacheSize)
+DiskIndex::DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache, size_t dictionary_cache_size)
     : _indexDir(indexDir),
-      _cacheSize(cacheSize),
+      _dictionary_cache_size(dictionary_cache_size),
       _schema(),
       _field_indexes(),
       _nonfield_size_on_disk(0),
       _tuneFileSearch(),
       _posting_list_cache(std::move(posting_list_cache)),
-      _cache(*this, cacheSize)
+      _cache(*this, dictionary_cache_size)
 {
     calculate_nonfield_size_on_disk();
 }
@@ -198,7 +198,7 @@ DiskIndex::lookup(const std::vector<uint32_t> & indexes, std::string_view word)
 {
     Key key(indexes, word);
     LookupResultVector result;
-    if (_cacheSize > 0) {
+    if (_dictionary_cache_size > 0) {
         result = _cache.read(key);
         if (!containsAll(indexes, result)) {
             key = Key(unite(indexes, result), word);
