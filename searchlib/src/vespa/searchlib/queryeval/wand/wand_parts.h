@@ -28,22 +28,58 @@ const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
 
 //-----------------------------------------------------------------------------
 
+class StopWordStrategy {
+private:
+    uint32_t _limit;
+    uint32_t _score_limit;
+    uint32_t _drop_limit;
+
+    static uint32_t to_abs(double rate, uint32_t docid_limit) {
+        if (rate >= 0.0 && rate < 1.0) {
+            return uint32_t(rate * docid_limit);
+        }
+        return uint32_t(-1);
+    }
+
+    StopWordStrategy(uint32_t adjust, uint32_t score, uint32_t drop) noexcept
+        : _limit(adjust), _score_limit(score), _drop_limit(drop)
+    {
+        if (_score_limit > _drop_limit) {
+            _score_limit = _drop_limit;
+        }
+        if (_limit > _score_limit) {
+            _limit = _score_limit;
+        }
+    }
+public:
+    StopWordStrategy(double adjust_limit, double score_limit, double drop_limit, uint32_t docid_limit) noexcept
+        : StopWordStrategy(to_abs(adjust_limit, docid_limit), to_abs(score_limit, docid_limit), to_abs(drop_limit, docid_limit)) {}
+    [[nodiscard]] bool no_stop_words() const noexcept { return _limit == uint32_t(-1); }
+    [[nodiscard]] bool score_all() const noexcept { return _score_limit == uint32_t(-1); }
+    [[nodiscard]] bool keep_all() const noexcept { return _drop_limit == uint32_t(-1); }
+    [[nodiscard]] bool is_stop_word(uint32_t hits) const noexcept { return hits > _limit; }
+    [[nodiscard]] bool should_score(uint32_t hits) const noexcept { return hits <= _score_limit; }
+    [[nodiscard]] bool should_drop(uint32_t hits) const noexcept { return hits > _drop_limit; }
+    [[nodiscard]] static StopWordStrategy none() { return {uint32_t(-1), uint32_t(-1), uint32_t(-1)}; }
+    [[nodiscard]] static StopWordStrategy abs(uint32_t adjust, uint32_t score, uint32_t drop) {
+        return {adjust, score, drop};
+    }
+};
+
 /**
  * Params used to tweak the behavior of the WAND algorithm.
  */
 struct MatchParams
 {
-    WeakAndHeap   &scores;
-    score_t        scoreThreshold;
-    uint32_t       abs_stop_word_limit;
-    const uint32_t scoresAdjustFrequency;
+    WeakAndHeap     &scores;
+    StopWordStrategy stop_words;
+    const uint32_t   scoresAdjustFrequency;
     MatchParams(WeakAndHeap &scores_in) noexcept
-        : MatchParams(scores_in, 1, -1, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY)
+        : MatchParams(scores_in, StopWordStrategy::none(), DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY)
     {}
-    MatchParams(WeakAndHeap &scores_in, score_t scoreThreshold_in, uint32_t abs_stop_word_limit_in, uint32_t scoresAdjustFrequency_in) noexcept
+    MatchParams(WeakAndHeap &scores_in, StopWordStrategy stop_word_strategy, uint32_t scoresAdjustFrequency_in) noexcept
         : scores(scores_in),
-          scoreThreshold(scoreThreshold_in),
-          abs_stop_word_limit(abs_stop_word_limit_in),
+          stop_words(stop_word_strategy),
           scoresAdjustFrequency(scoresAdjustFrequency_in)
     {}
 };

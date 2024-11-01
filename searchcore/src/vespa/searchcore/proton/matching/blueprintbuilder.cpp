@@ -72,7 +72,6 @@ private:
     void buildWeakAnd(ProtonWeakAnd &n) {
         auto *wand = new WeakAndBlueprint(n.getTargetNumHits(),
                                           _requestContext.get_attribute_blueprint_params().weakand_range,
-                                          _requestContext.get_attribute_blueprint_params().abs_weakand_stop_word_limit,
                                           _requestContext.get_attribute_blueprint_params().weakand_stop_word_strategy,
                                           is_search_multi_threaded());
         Blueprint::UP result(wand);

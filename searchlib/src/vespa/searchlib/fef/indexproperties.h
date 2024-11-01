@@ -342,9 +342,10 @@ namespace matching {
     };
 
     /**
-     * Property to control how much of the corpus a single term must match to be treated as a stop word by Vespa Wand
+     * Try to find a word matching less that this whose score will be used as initial heap threshold.
+     * The value is given as a fraction of the corpus in the range [0,1]
      **/
-    struct WeakAndStopWordLimit {
+    struct WeakAndStopWordAdjustLimit {
         static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
@@ -352,14 +353,25 @@ namespace matching {
     };
 
     /**
-     * Property to control how Vespa Wand will treat stop words
+     * Terms matching more than this will not contribute to the internal weak and score.
+     * The value is given as a fraction of the corpus in the range [0,1]
      **/
-    struct WeakAndStopWordStrategy {
-        enum class Value {KEEP, DROP};
+    struct WeakAndStopWordScoreLimit {
         static const std::string NAME;
-        static const Value DEFAULT_VALUE;
-        static Value lookup(const Properties &props);
-        static Value lookup(const Properties &props, Value defaultValue);
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
+
+    /**
+     * Terms matching more than this will be dropped from the query altogether.
+     * The value is given as a fraction of the corpus in the range [0,1]
+     **/
+    struct WeakAndStopWordDropLimit {
+        static const std::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
     };
 
     /**
