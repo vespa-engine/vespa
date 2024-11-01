@@ -74,7 +74,8 @@ public class Snapshots {
                                                        " is busy with snapshot " + node.status().snapshot().get().id());
                 }
                 ClusterId cluster = new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id());
-                return Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), instant, cluster, node.allocation().get().membership().index());
+                return Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), node.cloudAccount(),
+                                       instant, cluster, node.allocation().get().membership().index());
             }, lock);
         }
     }
@@ -99,8 +100,12 @@ public class Snapshots {
     public void remove(SnapshotId id, String hostname, boolean force) {
         try (var lock = lock(hostname)) {
             List<Snapshot> snapshots = read(hostname);
+            Optional<Snapshot> snapshot = snapshots.stream().filter(s -> s.id().equals(id)).findFirst();
+            // Delete data if we have a snapshot store available
+            if (snapshot.isPresent() && snapshotStore.isPresent()) {
+                snapshotStore.get().delete(id, HostName.of(hostname), snapshot.get().cloudAccount());
+            }
             Optional<NodeMutex> nodeMutex = nodeRepository.nodes().lockAndGet(hostname);
-            snapshotStore.ifPresent(store -> store.delete(id, HostName.of(hostname)));
             try (var transaction = new NestedTransaction()) {
                 boolean removingActive = nodeMutex.isPresent() && active(id, nodeMutex.get().node());
                 if (removingActive) {
@@ -117,7 +122,7 @@ public class Snapshots {
                                transaction);
                 }
                 List<Snapshot> updated = new ArrayList<>(snapshots);
-                updated.removeIf(s -> s.id().equals(id));
+                snapshot.ifPresent(updated::remove);
                 db.writeSnapshots(hostname, updated, transaction);
                 transaction.commit();
             } finally {

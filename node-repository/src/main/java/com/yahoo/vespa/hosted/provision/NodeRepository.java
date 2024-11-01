@@ -131,7 +131,7 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                     zone.cloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
         this.flagSource = flagSource;
-        this.db = new CuratorDb(flavors, curator, clock, useCuratorClientCache);
+        this.db = new CuratorDb(flavors, curator, clock, useCuratorClientCache, zone.cloud().account());
         this.clock = clock;
         this.zone = zone;
         this.applications = new Applications(db);

@@ -1,4 +1,5 @@
 {
+  "cloudAccount": "aws:111222333444",
   "cluster": "id3",
   "clusterIndex": 0,
   "hostname": "host4.yahoo.com",

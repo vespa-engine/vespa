@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.provision.backup;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
@@ -18,7 +19,8 @@ import java.util.UUID;
  *
  * @author mpolden
  */
-public record Snapshot(SnapshotId id, HostName hostname, State state, History history, ClusterId cluster, int clusterIndex) {
+public record Snapshot(SnapshotId id, HostName hostname, State state, History history, ClusterId cluster,
+                       int clusterIndex, CloudAccount cloudAccount) {
 
     public Snapshot {
         Objects.requireNonNull(id);
@@ -44,7 +46,7 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
         if (!canChangeTo(state)) {
             throw new IllegalArgumentException("Cannot change state of " + this + " to " + state);
         }
-        return new Snapshot(id, hostname, state, history.with(state, at), cluster, clusterIndex);
+        return new Snapshot(id, hostname, state, history.with(state, at), cluster, clusterIndex, cloudAccount);
     }
 
     private boolean canChangeTo(State state) {
@@ -115,13 +117,12 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
 
     }
 
-
     public static SnapshotId generateId() {
         return new SnapshotId(UUID.randomUUID());
     }
 
-    public static Snapshot create(SnapshotId id, HostName hostname, Instant at, ClusterId cluster, int clusterIndex) {
-        return new Snapshot(id, hostname, State.creating, History.of(State.creating, at), cluster, clusterIndex);
+    public static Snapshot create(SnapshotId id, HostName hostname, CloudAccount cloudAccount, Instant at, ClusterId cluster, int clusterIndex) {
+        return new Snapshot(id, hostname, State.creating, History.of(State.creating, at), cluster, clusterIndex, cloudAccount);
     }
 
 }

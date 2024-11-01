@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
@@ -24,7 +25,7 @@ public class CuratorDbTest {
 
     private final Curator curator = new MockCurator();
     private final CuratorDb zkClient = new CuratorDb(
-            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), true);
+            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), true, CloudAccount.from("aws:999123456789"));
 
     @Test
     public void can_read_stored_host_information() throws Exception {

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.backup;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.provisioning.SnapshotStore;
 
@@ -25,7 +26,7 @@ public class SnapshotStoreMock implements SnapshotStore {
     }
 
     @Override
-    public void delete(SnapshotId snapshot, HostName hostname) {
+    public void delete(SnapshotId snapshot, HostName hostname, CloudAccount cloudAccount) {
         snapshots.remove(snapshot);
     }
 
