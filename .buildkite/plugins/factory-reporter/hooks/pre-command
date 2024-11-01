@@ -1,11 +1,15 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-set -euo pipefail
+set -eo pipefail
 
 PIPELINE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_PIPELINE_ID"
 FIRST_STEP="$BUILDKITE_PLUGIN_FACTORY_REPORTER_FIRST_STEP"
 
+if [[ $SKIP_BUILDKITE_PLUGINS == "true" ]]; then
+    echo "SKIP_BUILDKITE_PLUGINS is set. Skipping factory reporter"
+    exit 0
+fi
 if [[ $BUILDKITE_PULL_REQUEST != "false" ]]; then
     echo "This is a pull request, skipping factory reporter"
     exit 0
