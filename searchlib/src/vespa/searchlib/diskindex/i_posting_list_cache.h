@@ -15,7 +15,7 @@ class IPostingListCache {
 public:
     class IPostingListFileBacking;
     struct Key {
-       IPostingListFileBacking* backing_store_file; // Used by backing store on cache miss
+       const IPostingListFileBacking* backing_store_file; // Used by backing store on cache miss
        uint64_t file_id;
        uint64_t bit_offset;
        uint64_t bit_length;
@@ -34,7 +34,7 @@ public:
     class IPostingListFileBacking {
     public:
         virtual ~IPostingListFileBacking() = default;
-        virtual search::index::PostingListHandle read(const Key& key) = 0;
+        virtual search::index::PostingListHandle read(const Key& key) const = 0;
     };
     virtual ~IPostingListCache() = default;
     virtual search::index::PostingListHandle read(const Key& key) const = 0;

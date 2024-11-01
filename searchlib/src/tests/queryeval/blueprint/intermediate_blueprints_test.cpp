@@ -1168,7 +1168,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     search::diskindex::TestDiskIndex index;
     std::filesystem::create_directory(std::filesystem::path("index"));
     index.buildSchema();
-    index.openIndex("index/1", false, true, false, false, false);
+    index.openIndex("index/1", false, true, false, false, false, false);
     FieldSpecBaseList fields;
     fields.add(FieldSpecBase(1, 11));
     fields.add(FieldSpecBase(2, 22));
