@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bitvectordictionary.h"
+#include "i_posting_list_cache.h"
 #include "zcposoccrandread.h"
 #include <vespa/searchlib/index/dictionary_lookup_result.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
@@ -45,9 +46,11 @@ class FieldIndex {
     std::unique_ptr<index::DictionaryFileRandRead> _dict;
     uint64_t _size_on_disk;
     std::shared_ptr<LockedDiskIoStats> _disk_io_stats;
+    std::shared_ptr<IPostingListCache> _posting_list_cache;
 
 public:
     FieldIndex();
+    FieldIndex(std::shared_ptr<IPostingListCache> posting_list_cache);
     FieldIndex(const FieldIndex& rhs) = delete;
     FieldIndex(FieldIndex&& rhs);
     ~FieldIndex();

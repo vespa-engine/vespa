@@ -46,13 +46,14 @@ DiskIndex::Key::Key(const Key &) = default;
 DiskIndex::Key & DiskIndex::Key::operator = (const Key &) = default;
 DiskIndex::Key::~Key() = default;
 
-DiskIndex::DiskIndex(const std::string &indexDir, size_t cacheSize)
+DiskIndex::DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache, size_t cacheSize)
     : _indexDir(indexDir),
       _cacheSize(cacheSize),
       _schema(),
       _field_indexes(),
       _nonfield_size_on_disk(0),
       _tuneFileSearch(),
+      _posting_list_cache(std::move(posting_list_cache)),
       _cache(*this, cacheSize)
 {
     calculate_nonfield_size_on_disk();
@@ -80,7 +81,7 @@ DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
 {
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
         std::string field_dir = _indexDir + "/" + itr.getName();
-        _field_indexes.emplace_back();
+        _field_indexes.emplace_back(_posting_list_cache);
         if (!_field_indexes.back().open_dictionary(field_dir, tuneFileSearch)) {
             _field_indexes.clear();
             return false;

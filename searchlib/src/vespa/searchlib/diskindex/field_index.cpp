@@ -41,8 +41,15 @@ FieldIndex::FieldIndex()
       _bit_vector_dict(),
       _dict(),
       _size_on_disk(0),
-      _disk_io_stats(std::make_shared<LockedDiskIoStats>())
+      _disk_io_stats(std::make_shared<LockedDiskIoStats>()),
+      _posting_list_cache()
 {
+}
+
+FieldIndex::FieldIndex(std::shared_ptr<IPostingListCache> posting_list_cache)
+    : FieldIndex()
+{
+    _posting_list_cache = std::move(posting_list_cache);
 }
 
 FieldIndex::FieldIndex(FieldIndex&&) = default;

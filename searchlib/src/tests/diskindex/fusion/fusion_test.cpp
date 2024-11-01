@@ -365,7 +365,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     vespalib::ThreadStackExecutor executor(4);
 
     do {
-        DiskIndex dw2(prefix + "dump2");
+        DiskIndex dw2(prefix + "dump2", {});
         ASSERT_TRUE(dw2.setup(tuneFileSearch));
         validateDiskIndex(dw2, true, true);
     } while (0);
@@ -380,7 +380,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw3(prefix + "dump3");
+        DiskIndex dw3(prefix + "dump3", {});
         ASSERT_TRUE(dw3.setup(tuneFileSearch));
         validateDiskIndex(dw3, true, true);
     } while (0);
@@ -394,7 +394,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw4(prefix + "dump4");
+        DiskIndex dw4(prefix + "dump4", {});
         ASSERT_TRUE(dw4.setup(tuneFileSearch));
         validateDiskIndex(dw4, true, false);
     } while (0);
@@ -408,7 +408,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw5(prefix + "dump5");
+        DiskIndex dw5(prefix + "dump5", {});
         ASSERT_TRUE(dw5.setup(tuneFileSearch));
         validateDiskIndex(dw5, false, false);
     } while (0);
@@ -423,7 +423,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw6(prefix + "dump6");
+        DiskIndex dw6(prefix + "dump6", {});
         ASSERT_TRUE(dw6.setup(tuneFileSearch));
         validateDiskIndex(dw6, true, true);
     } while (0);
@@ -437,7 +437,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw3(prefix + "dump3");
+        DiskIndex dw3(prefix + "dump3", {});
         ASSERT_TRUE(dw3.setup(tuneFileSearch));
         validateDiskIndex(dw3, true, true);
     } while (0);
@@ -532,7 +532,7 @@ TEST_F(FusionTest, require_that_average_field_length_is_preserved)
     make_simple_index("fldump2", MockFieldLengthInspector());
     make_simple_index("fldump3", MyMockFieldLengthInspector());
     merge_simple_indexes("fldump4", {"fldump2", "fldump3"});
-    DiskIndex disk_index("fldump4");
+    DiskIndex disk_index("fldump4", {});
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
     EXPECT_EQ(3.5, disk_index.get_field_length_info("f0").get_average_field_length());
     clean_field_length_testdirs();
@@ -545,7 +545,7 @@ FusionTest::reconstruct_interleaved_features()
     make_simple_index("fldump2", MockFieldLengthInspector());
     _schema = make_schema(true); // want interleaved features
     merge_simple_indexes("fldump4", {"fldump2"});
-    DiskIndex disk_index("fldump4");
+    DiskIndex disk_index("fldump4", {});
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
     assert_interleaved_features(disk_index, "f0", "a", 10, 1, 7);
     assert_interleaved_features(disk_index, "f1", "w", 10, 1, 4);
