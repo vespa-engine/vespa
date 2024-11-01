@@ -561,7 +561,8 @@ MyBmNode::create_document_db(const BmClusterParams& params)
                                       _metrics_wire_service, _file_header_context,
                                       std::make_shared<search::attribute::Interlock>(),
                                       _config_stores.getConfigStore(_doc_type_name.toString()),
-                                      std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo());
+                                      std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo(),
+                                      std::shared_ptr<search::diskindex::IPostingListCache>());
     _document_db->start();
     _document_db->waitForOnlineState();
 }

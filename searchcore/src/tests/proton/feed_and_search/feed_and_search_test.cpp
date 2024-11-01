@@ -196,11 +196,11 @@ TEST(FeedAndSearchTest, require_that_memory_index_can_be_dumped_and_searched)
         ASSERT_TRUE(fret6);
     }
 
-    DiskIndex disk_index(index_dir);
+    DiskIndex disk_index(index_dir, {});
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
     testSearch(disk_index, word1, doc_id1);
     testSearch(disk_index, word2, doc_id2);
-    DiskIndex disk_index2(index_dir2);
+    DiskIndex disk_index2(index_dir2, {});
     ASSERT_TRUE(disk_index2.setup(TuneFileSearch()));
     testSearch(disk_index2, word1, doc_id1);
     testSearch(disk_index2, word2, doc_id2);

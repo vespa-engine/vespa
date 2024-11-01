@@ -16,6 +16,7 @@ private:
 public:
     DiskIndexWrapper(const std::string &indexDir,
                      const search::TuneFileSearch &tuneFileSearch,
+                     std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
                      size_t cacheSize);
 
     DiskIndexWrapper(const DiskIndexWrapper &oldIndex,

@@ -117,7 +117,7 @@ TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap,
     if (readmmap) {
         tuneFileRead.setWantMemoryMap();
     }
-    _index = std::make_unique<DiskIndex>(dir);
+    _index = std::make_unique<DiskIndex>(dir, std::shared_ptr<IPostingListCache>{});
     bool ok(_index->setup(tuneFileRead));
     assert(ok);
     (void) ok;

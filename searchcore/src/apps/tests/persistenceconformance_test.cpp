@@ -224,7 +224,8 @@ public:
                                   _shared_service, _tls, _metricsWireService,
                                   _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
                                   _config_stores.getConfigStore(docType.toString()),
-                                  std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo());
+                                  std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo(),
+                                  std::shared_ptr<search::diskindex::IPostingListCache>());
     }
 };
 

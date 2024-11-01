@@ -214,7 +214,8 @@ Fixture::initViewSet(ViewSet &views)
     using IndexConfig = proton::index::IndexConfig;
     RankingAssetsRepo ranking_assets_repo_source(_constantValueFactory, {}, {}, {});
     auto matchers = std::make_shared<Matchers>(_clock.nowRef(), _queryLimiter, ranking_assets_repo_source);
-    auto indexMgr = make_shared<IndexManager>(BASE_DIR, IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
+    auto indexMgr = make_shared<IndexManager>(BASE_DIR, std::shared_ptr<search::diskindex::IPostingListCache>(),
+                                              IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
                                               views._reconfigurer, views._service.write(), _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
     auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),

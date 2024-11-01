@@ -7,6 +7,8 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
 
+namespace search::diskindex { class IPostingListCache; }
+
 namespace proton::index {
 
 struct IndexConfig {
@@ -36,6 +38,7 @@ public:
     private:
         using IDiskIndex = searchcorespi::index::IDiskIndex;
         using IMemoryIndex = searchcorespi::index::IMemoryIndex;
+        std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
         const size_t _cacheSize;
         const search::common::FileHeaderContext &_fileHeaderContext;
         const search::TuneFileIndexing _tuneFileIndexing;
@@ -45,6 +48,7 @@ public:
     public:
         MaintainerOperations(const search::common::FileHeaderContext &fileHeaderContext,
                              const search::TuneFileIndexManager &tuneFileIndexManager,
+                             std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
                              size_t cacheSize,
                              searchcorespi::index::IThreadingService &threadingService);
 
@@ -68,6 +72,7 @@ public:
     IndexManager(const IndexManager &) = delete;
     IndexManager & operator = (const IndexManager &) = delete;
     IndexManager(const std::string &baseDir,
+                 std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
                  const IndexConfig & indexConfig,
                  const Schema &schema,
                  SerialNum serialNum,

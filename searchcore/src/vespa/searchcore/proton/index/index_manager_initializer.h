@@ -24,6 +24,7 @@ class IndexManagerInitializer :  public initializer::InitializerTask
     const search::TuneFileIndexManager          _tuneFileIndexManager;
     const search::TuneFileAttributes            _tuneFileAttributes;
     const search::common::FileHeaderContext    &_fileHeaderContext;
+    std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
     std::shared_ptr<searchcorespi::IIndexManager::SP> _indexManager;
 public:
     // Note: lifetime of indexManager must be handled by caller.
@@ -37,6 +38,7 @@ public:
                             const search::TuneFileIndexManager & tuneFileIndexManager,
                             const search::TuneFileAttributes & tuneFileAttributes,
                             const search::common::FileHeaderContext & fileHeaderContext,
+                            std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
                             std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager);
     ~IndexManagerInitializer() override;
     void run() override;

@@ -253,9 +253,10 @@ void
 IndexManagerTest::resetIndexManager(SerialNum serial_num)
 {
     _index_manager.reset();
-    _index_manager = std::make_unique<IndexManager>(index_dir, IndexConfig(), getSchema(_interleaved_features), serial_num,
-                             _reconfigurer, _service.write(), _service.shared(),
-                             TuneFileIndexManager(), TuneFileAttributes(), _fileHeaderContext);
+    _index_manager = std::make_unique<IndexManager>(index_dir, std::shared_ptr<search::diskindex::IPostingListCache>(),
+                                                    IndexConfig(), getSchema(_interleaved_features), serial_num,
+                                                    _reconfigurer, _service.write(), _service.shared(),
+                                                    TuneFileIndexManager(), TuneFileAttributes(), _fileHeaderContext);
     _serial_num = std::max(serial_num, _index_manager->getFlushedSerialNum());
 }
 

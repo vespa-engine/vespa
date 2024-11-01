@@ -268,7 +268,8 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _has_shut_down_config_and_state_components(false),
       _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
-      _nodeUp()
+      _nodeUp(),
+      _posting_list_cache()
 { }
 
 BootstrapConfig::SP
@@ -652,7 +653,8 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                   _attribute_interlock,
                                   std::move(config_store),
                                   initializeThreads,
-                                  bootstrapConfig->getHwInfo());
+                                  bootstrapConfig->getHwInfo(),
+                                  _posting_list_cache);
     try {
         ret->start();
     } catch (vespalib::Exception &e) {

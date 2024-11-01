@@ -37,7 +37,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const std::atomic<vespalib::steady_time> & now_ref,
         std::mutex &configMutex,
         const std::string &baseDir,
-        const vespalib::HwInfo &hwInfo)
+        const vespalib::HwInfo &hwInfo,
+        std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache)
     : _subDBs(),
       _owner(owner),
       _calc(),
@@ -64,7 +65,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                                                                     metrics.ready.attributes,
                                                                     metricsWireService,
                                                                     attribute_interlock),
-                                        queryLimiter, now_ref, warmupExecutor)));
+                                        queryLimiter, now_ref, warmupExecutor, posting_list_cache)));
 
     _subDBs.push_back
         (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir, _remSubDbId, SubDbType::REMOVED),
