@@ -449,6 +449,18 @@ public class SchemaIndex {
 
         definitionOfReference.put(reference, definition);
         list.add(reference);
+
+        if (reference.getType() == SymbolType.RANK_PROFILE && reference.getScope() != null) {
+            tryRegisterRankProfileInheritance(reference.getScope(), definition);
+        }
+
+        if (reference.getType() == SymbolType.STRUCT && reference.getScope() != null) {
+            tryRegisterStructInheritance(reference.getScope(), definition);
+        }
+
+        if (reference.getType() == SymbolType.DOCUMENT_SUMMARY && reference.getScope() != null) {
+            tryRegisterDocumentSummaryInheritance(reference.getScope(), definition);
+        }
     }
 
 
