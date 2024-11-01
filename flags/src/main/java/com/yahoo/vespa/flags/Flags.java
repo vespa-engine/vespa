@@ -470,12 +470,6 @@ public class Flags {
             "Whether to sync companies to HubSpot",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
-            "sdm-enabled-provisioning", true,
-            List.of("olaa"), "2024-07-31", "2024-11-01",
-            "Whether to provision with SDM enabled",
-            "Takes effect immediately");
-
     public static final UnboundStringFlag HOSTNAME_SCHEME = defineStringFlag(
             "hostname-scheme", "legacy",
             List.of("mpolden"), "2024-08-07", "2024-12-01",
