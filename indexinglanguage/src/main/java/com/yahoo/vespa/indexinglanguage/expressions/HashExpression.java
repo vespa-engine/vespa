@@ -27,17 +27,16 @@ public class HashExpression extends Expression  {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        if ( inputType != DataType.STRING)
-            throw new VerificationException(this, ": This require a string input, but got " + inputType);
-        super.setInputType(inputType, context);
-        return null; // Can not infer int or long
+        super.setInputType(inputType, DataType.STRING, context);
+        return getOutputType(context); // Can not infer int or long
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
         if ( ! isHashCompatible(outputType))
-            throw new VerificationException(this, "This requires the output to be int or long, but needs " + outputType.getName());
+            throw new VerificationException(this, "An " + outputType.getName() +
+                                                  " output is required, but this produces int or long");
         return DataType.STRING;
     }
 

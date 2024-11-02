@@ -37,7 +37,7 @@ public final class GetFieldExpression extends Expression {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        return null;
+        return getInputType(context);
     }
 
     @Override

@@ -73,7 +73,8 @@ public final class IfThenExpression extends CompositeExpression {
         right.setInputType(inputType, context);
         var trueOutputType = ifTrue.setInputType(inputType, context);
         var falseOutputType = ifFalse.setInputType(inputType, context);
-        return mostGeneralOf(trueOutputType, falseOutputType);
+        DataType output = mostGeneralOf(trueOutputType, falseOutputType);
+        return output != null ? output : getOutputType(context);
     }
 
     @Override
@@ -83,7 +84,8 @@ public final class IfThenExpression extends CompositeExpression {
         right.setOutputType(AnyDataType.instance, context);
         var trueInputType = ifTrue.setOutputType(outputType, context);
         var falseInputType = ifFalse.setOutputType(outputType, context);
-        return leastGeneralOf(trueInputType, falseInputType);
+        DataType input = leastGeneralOf(trueInputType, falseInputType);
+        return input != null ? input : getInputType(context);
     }
 
     @Override

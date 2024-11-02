@@ -54,7 +54,7 @@ public final class ForEachExpression extends CompositeExpression {
         if (inputType instanceof MapDataType) {
             // Inner value will be MapEntryFieldValue which has the same type as the map
             DataType outputType = expression.setInputType(inputType, context);
-            if (outputType == null) return null;
+            if (outputType == null) return getOutputType(context);
             return DataType.getArray(outputType);
         }
         else {
