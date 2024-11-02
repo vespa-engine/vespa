@@ -67,8 +67,7 @@ public abstract class Expression extends Selectable {
         // TODO: Activate type checking
         // if ( ! (inputType.isAssignableTo(requiredType))
         //    throw new VerificationException(this, "This requires type " + requiredType.getName() + ", but gets " + inputType.getName());
-        this.inputType = inputType;
-        return inputType;
+        return assignInputType(inputType);
     }
 
     /**
@@ -77,8 +76,14 @@ public abstract class Expression extends Selectable {
      * Subtypes may implement this by calling setInputType(inputType, requiredType, VerificationContext context).
      */
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        this.inputType = inputType;
-        return inputType;
+        return assignInputType(inputType);
+    }
+
+    private DataType assignInputType(DataType inputType) {
+        // Since we assign in both directions, in both orders, we may already know
+        if (this.inputType == null)
+            this.inputType = inputType;
+        return this.inputType;
     }
 
     /**
@@ -116,11 +121,7 @@ public abstract class Expression extends Selectable {
         //     throw new VerificationException(this, "This produces type " + actualOutput.getName() + " but " + requiredOutput.getName() + " is required");
         // if (requiredType != null && requiredOutput != null && ! requiredOutputOutput.isAssignableTo(requiredType))
         //     throw new VerificationException(this, "This is required to produce type " + requiredOutput.getName() + " but is produces " + requiredType.getName());;
-        if (actualOutput != null)
-            this.outputType = actualOutput; // Use the more precise type when known
-        else
-            this.outputType = requiredOutput;
-        return this.outputType;
+        return assignOutputType(actualOutput != null ? actualOutput : requiredOutput); // Use the more precise type when known
     }
 
     /**
@@ -129,8 +130,14 @@ public abstract class Expression extends Selectable {
      * Subtypes implement this by calling setOutputType(outputType, requiredType, VerificationContext context).
      */
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        this.outputType = outputType;
-        return outputType;
+        return assignOutputType(outputType);
+    }
+
+    private DataType assignOutputType(DataType outputType) {
+        // Since we assign in both directions, in both orders, we may already know
+        if (this.outputType == null)
+            this.outputType = outputType;
+        return this.outputType;
     }
 
     public abstract DataType createdOutputType();
