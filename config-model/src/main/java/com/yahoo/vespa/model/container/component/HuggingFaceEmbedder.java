@@ -35,8 +35,11 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     private final Boolean normalize;
     private final String poolingStrategy;
 
-    private Long queryTaskId;
-    private Long documentTaskId;
+    private Integer queryTaskId;
+    private Integer documentTaskId;
+
+    private String prependQuery;
+    private String prependDocument; 
 
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
@@ -56,11 +59,15 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
         poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
         Element prepend = getChild(xml, "prepend");
+        Element taskId = getChild(xml, "task-id");
         if (prepend != null) {
             prependQuery = getChildValue(prepend, "query").orElse(null);
             prependDocument = getChildValue(prepend, "document").orElse(null);
         }
-
+        if (taskId != null) {
+            queryTaskId = getChildValue(taskId, "query").map(Integer::parseInt).orElse(null);
+            documentTaskId = getChildValue(taskId, "document").map(Integer::parseInt).orElse(null);
+        }
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
@@ -76,6 +83,8 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
         if(prependQuery != null) b.prependQuery(prependQuery);
         if(prependDocument != null) b.prependDocument(prependDocument);
+        if (queryTaskId != null) b.queryTaskId(queryTaskId);
+        if (documentTaskId != null) b.documentTaskId(documentTaskId);
         onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
