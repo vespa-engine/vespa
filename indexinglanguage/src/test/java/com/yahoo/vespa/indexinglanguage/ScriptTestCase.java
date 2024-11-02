@@ -176,8 +176,8 @@ public class ScriptTestCase {
         var zcurveField = new Field("location_zcurve", DataType.getArray(DataType.LONG));
         adapter.createField(zcurveField);
         var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
-        array.add(new StringFieldValue("pos1"));
-        array.add(new StringFieldValue("pos2"));
+        array.add(new StringFieldValue("30;40"));
+        array.add(new StringFieldValue("50;60"));
         adapter.setValue("location_str", array);
         expression.setStatementOutput(new DocumentType("myDocument"), zcurveField);
 
@@ -190,8 +190,8 @@ public class ScriptTestCase {
         expression.execute(context);
         assertTrue(adapter.values.containsKey("location_zcurve"));
         var longArray = (Array<LongFieldValue>)adapter.values.get("location_zcurve");
-        assertEquals(  368658787, longArray.get(0).getLong());
-        assertEquals(-1382874952, longArray.get(1).getLong());
+        assertEquals(  2516, longArray.get(0).getLong());
+        assertEquals(4004, longArray.get(1).getLong());
     }
 
 }

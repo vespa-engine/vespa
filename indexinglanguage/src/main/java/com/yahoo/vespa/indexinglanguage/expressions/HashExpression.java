@@ -37,7 +37,7 @@ public class HashExpression extends Expression  {
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
         if ( ! isHashCompatible(outputType))
-            throw new VerificationException(this, ": This require the output to be int or long not " + outputType);
+            throw new VerificationException(this, "This requires the output to be int or long, but needs " + outputType.getName());
         return DataType.STRING;
     }
 
