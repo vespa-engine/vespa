@@ -70,11 +70,6 @@ public final class SelectInputExpression extends CompositeExpression {
         return AnyDataType.instance;
     }
 
-    private DataType mostGeneralOf(DataType left, DataType right) {
-        if (left == null || right == null) return right;
-        return left.isAssignableTo(right) ? right : left;
-    }
-
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         for (var casePair : cases)

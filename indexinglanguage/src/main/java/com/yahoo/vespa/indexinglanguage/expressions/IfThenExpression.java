@@ -86,16 +86,6 @@ public final class IfThenExpression extends CompositeExpression {
         return leastGeneralOf(trueInputType, falseInputType);
     }
 
-    private DataType mostGeneralOf(DataType left, DataType right) {
-        if (left == null || right == null) return null;
-        return left.isAssignableTo(right) ? right : left;
-    }
-
-    private DataType leastGeneralOf(DataType left, DataType right) {
-        if (left == null || right == null) return null;
-        return left.isAssignableTo(right) ? left : right;
-    }
-
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         left.setStatementOutput(documentType, field);

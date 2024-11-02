@@ -327,4 +327,14 @@ public abstract class Expression extends Selectable {
         return execute(new ExecutionContext());
     }
 
+    protected DataType mostGeneralOf(DataType left, DataType right) {
+        if (left == null || right == null) return null;
+        return left.isAssignableTo(right) ? right : left;
+    }
+
+    protected DataType leastGeneralOf(DataType left, DataType right) {
+        if (left == null || right == null) return null;
+        return left.isAssignableTo(right) ? left : right;
+    }
+
 }

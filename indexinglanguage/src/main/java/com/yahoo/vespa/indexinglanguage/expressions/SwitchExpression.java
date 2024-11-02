@@ -70,11 +70,6 @@ public final class SwitchExpression extends CompositeExpression {
         return outputType;
     }
 
-    private DataType mostGeneralOf(DataType left, DataType right) {
-        if (left == null || right == null) return null;
-        return left.isAssignableTo(right) ? right : left;
-    }
-
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
