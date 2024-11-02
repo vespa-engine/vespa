@@ -234,6 +234,8 @@ public class HuggingFaceEmbedderTest {
         builder.transformerTokenTypeIds("");
         builder.transformerOutput("text_embeds");
         builder.transformerTaskId("task_id");
+        builder.queryTaskId(0);
+        builder.documentTaskId(1);
         return new HuggingFaceEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
 

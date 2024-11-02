@@ -41,8 +41,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final OnnxEvaluator evaluator;
     private final PoolingStrategy poolingStrategy;
 
-    private final String prependQuery;
+    private final Integer queryTaskId;
+    private final Integer documentTaskId;
 
+    private final String prependQuery;
     private final String prependDocument;
 
     @Inject
@@ -56,6 +58,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         normalize = config.normalize();
         prependQuery = config.prependQuery();
         prependDocument = config.prependDocument();
+        queryTaskId = config.queryTaskId();
+        documentTaskId = config.documentTaskId();
         var tokenizerPath = Paths.get(config.tokenizerPath().toString());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
@@ -143,6 +147,16 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return text;
     }
 
+    Long getTaskId(Context context) {
+        if (queryTaskId != null && queryTaskId > -1 && context.getDestination().startsWith("query")) {
+            return queryTaskId.longValue();
+        }
+        if (documentTaskId != null && documentTaskId > -1) {
+            return documentTaskId.longValue();
+        }
+        return null;
+    }
+
     Tensor normalize(Tensor embedding, TensorType tensorType) {
         double sumOfSquares = 0.0;
 
@@ -174,7 +188,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
         Tensor tokenTypeIds = tokenTypeIdsName.isEmpty() ? null : createTensorRepresentation(encoding.typeIds(), "d1");
-        Tensor taskId = taskIdName.isEmpty() ? null : createTensorRepresentation(List.of(0L), "d0");
 
         Map<String, Tensor> inputs = new HashMap<>();
         inputs.put(inputIdsName, inputSequence.expand("d0"));
@@ -184,8 +197,9 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             inputs.put(tokenTypeIdsName, tokenTypeIds.expand("d0"));
         }
 
+        Long taskId = getTaskId(context);
         if (taskId != null) {
-            inputs.put(taskIdName, taskId.expand("d0")); 
+            inputs.put(taskIdName, createTensorRepresentation(List.of(taskId), "d0")); 
         }
 
         IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator.evaluate(inputs).get(outputName);

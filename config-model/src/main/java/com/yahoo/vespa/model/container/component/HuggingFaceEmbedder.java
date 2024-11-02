@@ -35,9 +35,8 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     private final Boolean normalize;
     private final String poolingStrategy;
 
-    private String prependQuery;
-
-    private String prependDocument;
+    private Long queryTaskId;
+    private Long documentTaskId;
 
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);

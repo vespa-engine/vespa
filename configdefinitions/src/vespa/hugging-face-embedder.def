@@ -19,6 +19,11 @@ transformerTaskId        string default=""
 # Output name
 transformerOutput string default=last_hidden_state
 
+# LoRA task id for query and document
+queryTaskId int default=-1
+documentTaskId int default=-1
+
+# Prepend strings to query and document
 prependQuery string default=""
 prependDocument string default=""
 
