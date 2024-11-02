@@ -22,7 +22,7 @@ public final class ToIntegerExpression extends Expression {
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         super.setOutputType(DataType.INT, output, null, context);
-        return null;
+        return getInputType(context);
     }
 
     @Override

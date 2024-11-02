@@ -22,7 +22,7 @@ public final class ToLongExpression extends Expression {
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         super.setOutputType(DataType.LONG, output, null, context);
-        return null;
+        return getInputType(context);
     }
 
     @Override

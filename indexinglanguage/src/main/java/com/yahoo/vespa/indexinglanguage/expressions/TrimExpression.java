@@ -20,14 +20,12 @@ public final class TrimExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
-        super.setInputType(input, DataType.STRING, context);
-        return DataType.STRING;
+        return super.setInputType(input, DataType.STRING, context);
     }
 
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
-        super.setOutputType(DataType.STRING, output, null, context);
-        return DataType.STRING;
+        return super.setOutputType(DataType.STRING, output, null, context);
     }
 
     @Override

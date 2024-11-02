@@ -32,7 +32,8 @@ public final class ZCurveExpression extends Expression {
     private void requireIntegerField(String fieldName, StructDataType struct) {
         var field = struct.getField(fieldName);
         if (field == null || field.getDataType() != DataType.INT)
-            throw new VerificationException(this, "The input struct must have an integer field named " + fieldName);
+            throw new VerificationException(this, "The struct '" + struct.getName() +
+                                                  "' does not have an integer field named '" + fieldName + "'");
     }
 
     @Override

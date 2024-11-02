@@ -33,9 +33,9 @@ public final class ToWsetExpression extends Expression {
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         if ( ! (output instanceof WeightedSetDataType))
-            throw new VerificationException(this, "This creates a WeightedSet, but type " + output + " is needed");
+            throw new VerificationException(this, "This creates a WeightedSet, but type " + output.getName() + " is needed");
         super.setOutputType(output, context);
-        return null;
+        return getInputType(context);
     }
 
     @Override

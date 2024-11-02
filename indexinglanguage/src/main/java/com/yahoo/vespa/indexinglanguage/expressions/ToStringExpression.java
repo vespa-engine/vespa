@@ -22,7 +22,7 @@ public final class ToStringExpression extends Expression {
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         super.setOutputType(DataType.STRING, output, null, context);
-        return null;
+        return getInputType(context);
     }
 
     @Override
