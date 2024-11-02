@@ -57,7 +57,7 @@ public final class CatExpression extends ExpressionList<Expression> {
         if (outputType instanceof CollectionDataType)
             return outputType;
         else
-            return getOutputType(context); // Cannot infer input type since we take the string value
+            return getInputType(context); // Cannot infer input type since we take the string value
     }
 
     @Override
