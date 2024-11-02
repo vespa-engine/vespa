@@ -23,17 +23,6 @@ vespa_add_executable(searchcore_documentdb_test_app TEST
 )
 vespa_add_test(NAME searchcore_documentdb_test_app COMMAND searchcore_documentdb_test_app)
 
-vespa_add_executable(searchcore_proton_documentdb_vespatest_test_app TEST
-    SOURCES
-    vespatest_runner.cpp
-    storeonlyfeedview_test.cpp
-    DEPENDS
-    searchcore_server
-    searchcore_feedoperation
-    searchcore_test
-)
-vespa_add_test(NAME searchcore_proton_documentdb_vespatest_test_app COMMAND searchcore_proton_documentdb_vespatest_test_app)
-
 vespa_add_executable(searchcore_proton_documentdb_gtest_test_app TEST
     SOURCES
     gtest_runner.cpp
@@ -56,6 +45,7 @@ vespa_add_executable(searchcore_proton_documentdb_gtest_test_app TEST
     lid_space_handler_test.cpp
     lid_space_jobtest.cpp
     maintenancecontroller_test.cpp
+    storeonlyfeedview_test.cpp
     DEPENDS
     searchcore_server
     searchcore_feedoperation
