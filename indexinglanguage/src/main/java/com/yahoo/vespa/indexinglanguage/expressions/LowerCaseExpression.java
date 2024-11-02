@@ -22,8 +22,7 @@ public final class LowerCaseExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(DataType.STRING, outputType, null, context);
-        return AnyDataType.instance; // We take the string value of any input
+        return super.setOutputType(DataType.STRING, outputType, null, context);
     }
 
     @Override

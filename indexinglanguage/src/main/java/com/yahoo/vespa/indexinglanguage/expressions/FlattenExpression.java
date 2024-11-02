@@ -30,14 +30,12 @@ public final class FlattenExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, DataType.STRING, context);
-        return DataType.STRING;
+        return super.setInputType(inputType, DataType.STRING, context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(DataType.STRING, outputType, null, context);
-        return DataType.STRING;
+        return super.setOutputType(DataType.STRING, outputType, null, context);
     }
     @Override
     protected void doVerify(VerificationContext context) {
