@@ -39,6 +39,16 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        return super.setInputType(inputType, DataType.STRING, context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        return super.setOutputType(DataType.STRING, outputType, null, context);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (input.getString().isEmpty()) return;

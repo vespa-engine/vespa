@@ -71,13 +71,13 @@ public class EmbedExpression extends Expression  {
         // if ( ! (type == DataType.STRING)
         //      && ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
         //     throw new VerificationException(this, "This requires either a string or array<string> input type, but got " + type);
-        return null; // embed cannot determine the output type from the input
+        return getInputType(context); // embed cannot determine the output type from the input
     }
 
     @Override
     public DataType setOutputType(DataType type, VerificationContext context) {
         super.setOutputType(null, type, TensorDataType.any(), context);
-        return null; // the input (string vs. array of string) cannot be determined from the output
+        return getOutputType(context); // the input (string vs. array of string) cannot be determined from the output
     }
 
     @Override
