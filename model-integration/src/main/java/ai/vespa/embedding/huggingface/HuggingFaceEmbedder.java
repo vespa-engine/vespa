@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
@@ -33,6 +34,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final String inputIdsName;
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
+    private final String taskIdName;
     private final String outputName;
     private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
@@ -49,6 +51,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
+        taskIdName = config.transformerTaskId();
         outputName = config.transformerOutput();
         normalize = config.normalize();
         prependQuery = config.prependQuery();
@@ -83,6 +86,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         validateName(inputs, inputIdsName, "input");
         validateName(inputs, attentionMaskName, "input");
         if (!tokenTypeIdsName.isEmpty()) validateName(inputs, tokenTypeIdsName, "input");
+        if (!taskIdName.isEmpty()) validateName(inputs, taskIdName, "input");
 
         Map<String, TensorType> outputs = evaluator.getOutputInfo();
         validateName(outputs, outputName, "output");
@@ -170,16 +174,20 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
         Tensor tokenTypeIds = tokenTypeIdsName.isEmpty() ? null : createTensorRepresentation(encoding.typeIds(), "d1");
+        Tensor taskId = taskIdName.isEmpty() ? null : createTensorRepresentation(List.of(0L), "d0");
 
-        Map<String, Tensor> inputs;
-        if (tokenTypeIdsName.isEmpty() || tokenTypeIds.isEmpty()) {
-            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                    attentionMaskName, attentionMask.expand("d0"));
-        } else {
-            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                    attentionMaskName, attentionMask.expand("d0"),
-                    tokenTypeIdsName, tokenTypeIds.expand("d0"));
+        Map<String, Tensor> inputs = new HashMap<>();
+        inputs.put(inputIdsName, inputSequence.expand("d0"));
+        inputs.put(attentionMaskName, attentionMask.expand("d0"));
+        
+        if (!tokenTypeIdsName.isEmpty() && !tokenTypeIds.isEmpty()) {
+            inputs.put(tokenTypeIdsName, tokenTypeIds.expand("d0"));
         }
+
+        if (taskId != null) {
+            inputs.put(taskIdName, taskId.expand("d0")); 
+        }
+
         IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator.evaluate(inputs).get(outputName);
         long[] resultShape = tokenEmbeddings.shape();
         //shape batch, sequence, embedding dimensionality

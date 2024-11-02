@@ -176,6 +176,14 @@ public class HuggingFaceEmbedderTest {
         assertEquals("Represent this text: This is a test",  queryResult);
     }
 
+    @Test
+    public void testJinaEmbedder() {
+        var embedder = getJinaEmbedder();
+        var context = new Embedder.Context("query.qt");
+        Tensor result = embedder.embed("This is a test", context, TensorType.fromSpec(("tensor<float>(x[8])")));
+        assertEquals("tensor<float>(x[8]):[0.23627631, -0.12577993, 0.55925184, 0.41222572, 0.5724204, -0.1809042, -0.18963632, 0.22205132]",  result.toAbbreviatedString());
+    }
+
     private static HuggingFaceEmbedder getEmbedder() {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/embedding_model.onnx";
@@ -209,6 +217,23 @@ public class HuggingFaceEmbedderTest {
         builder.normalize(true);
         builder.prependQuery("Represent this text:");
         builder.prependDocument("This is a document:");
+        return new HuggingFaceEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+    }
+
+    private static HuggingFaceEmbedder getJinaEmbedder() {
+        String vocabPath = "src/test/models/onnx/transformer/jina_tokenizer.json";
+        String modelPath = "src/test/models/onnx/transformer/jina_model_fp16.onnx";
+        assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
+        HuggingFaceEmbedderConfig.Builder builder = new HuggingFaceEmbedderConfig.Builder();
+        builder.tokenizerPath(ModelReference.valueOf(vocabPath));
+        builder.transformerModel(ModelReference.valueOf(modelPath));
+        builder.transformerGpuDevice(-1);
+        builder.normalize(true);
+        builder.prependQuery("Represent the query for retrieving evidence documents:");
+        builder.prependDocument("Represent the document for retrieval:");
+        builder.transformerTokenTypeIds("");
+        builder.transformerOutput("text_embeds");
+        builder.transformerTaskId("task_id");
         return new HuggingFaceEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
 
