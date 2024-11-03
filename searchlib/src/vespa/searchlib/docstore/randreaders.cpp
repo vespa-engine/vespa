@@ -27,6 +27,8 @@ DirectIORandRead::DirectIORandRead(const std::string & fileName)
     }
 }
 
+DirectIORandRead::~DirectIORandRead() = default;
+
 FileRandRead::FSP
 DirectIORandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
 {
@@ -64,6 +66,7 @@ MMapRandRead::MMapRandRead(const std::string & fileName, int mmapFlags, int fadv
     }
 }
 
+MMapRandRead::~MMapRandRead() = default;
 
 NormalRandRead::NormalRandRead(const std::string & fileName)
     : _file(std::make_unique<FastOS_File>(fileName.c_str()))
@@ -72,6 +75,8 @@ NormalRandRead::NormalRandRead(const std::string & fileName)
         throw SummaryException("Failed opening data file", *_file, VESPA_STRLOC);
     }
 }
+
+NormalRandRead::~NormalRandRead() = default;
 
 FileRandRead::FSP
 MMapRandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
@@ -102,6 +107,8 @@ MMapRandReadDynamic::MMapRandReadDynamic(const std::string &fileName, int mmapFl
 {
     remap(0);
 }
+
+MMapRandReadDynamic::~MMapRandReadDynamic() = default;
 
 void
 MMapRandReadDynamic::remap(size_t sz)
