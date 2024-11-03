@@ -30,8 +30,7 @@ public class PackBitsExpression extends Expression  {
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
         if ( ! validType(inputType))
-            throw new IllegalArgumentException("pack_bits requires a tensor with one dense dimension, " +
-                                               "but got " + inputType);
+            throw new VerificationException(this, "Require a tensor with one dense dimension, but got " + inputType.getName());
         outputTensorType = outputType(((TensorDataType)inputType).getTensorType());
         return new TensorDataType(outputTensorType);
     }
@@ -40,8 +39,8 @@ public class PackBitsExpression extends Expression  {
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
         if ( ! validType(outputType))
-            throw new IllegalArgumentException("pack_bits produces a tensor with one dense dimension, " +
-                                               "but need " + outputType);
+            throw new VerificationException(this, "Required to produce " + outputType.getName() +
+                                                  " but this produces a tensor with one dense dimension");
         outputTensorType = ((TensorDataType)outputType).getTensorType();
         return new TensorDataType(inputType(outputTensorType));
     }

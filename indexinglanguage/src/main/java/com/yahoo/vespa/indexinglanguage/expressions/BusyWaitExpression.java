@@ -41,4 +41,5 @@ public final class BusyWaitExpression extends Expression {
     @Override public String toString() { return "busy_wait"; }
     @Override public boolean equals(Object obj) { return obj instanceof BusyWaitExpression; }
     @Override public int hashCode() { return getClass().hashCode(); }
+
 }

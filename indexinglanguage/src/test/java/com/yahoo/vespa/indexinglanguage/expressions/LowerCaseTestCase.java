@@ -28,8 +28,8 @@ public class LowerCaseTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new LowerCaseExpression();
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
+        assertVerifyThrows("Invalid expression 'lowercase': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'lowercase': Expected string input, got int", DataType.INT, exp);
     }
 
     @Test

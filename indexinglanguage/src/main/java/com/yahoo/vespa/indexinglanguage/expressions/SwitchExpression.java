@@ -21,6 +21,8 @@ import java.util.Map;
 public final class SwitchExpression extends CompositeExpression {
 
     private final Map<String, Expression> cases = new LinkedHashMap<>();
+
+    /** The default expression, or null if none */
     private final Expression defaultExp;
 
     public <T extends Expression> SwitchExpression(Map<String, T> cases) {
@@ -52,6 +54,36 @@ public final class SwitchExpression extends CompositeExpression {
                 convertedCases.put(entry.getKey(), converted);
         }
         return new SwitchExpression(convertedCases, converter.branch().convert(defaultExp));
+    }
+
+    @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, DataType.STRING, context);
+
+        DataType outputType = defaultExp == null ? null : defaultExp.setInputType(inputType, context);
+        boolean outputNeverAssigned = true; // Needed to separate this null case from the "cannot be inferred" case
+        for (Expression expression : cases.values()) {
+            DataType expressionOutputType = expression.setInputType(inputType, context);
+            outputType = outputNeverAssigned ? expressionOutputType : mostGeneralOf(outputType, expressionOutputType);
+            outputNeverAssigned = false;
+        }
+        return outputType;
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+
+        setOutputType(outputType, defaultExp, context);
+        for (Expression expression : cases.values())
+            setOutputType(outputType, expression, context);
+        return DataType.STRING;
+    }
+
+    private void setOutputType(DataType outputType, Expression expression, VerificationContext context) {
+        DataType inputType = expression.setOutputType(outputType, context);
+        if (inputType != null && ! DataType.STRING.isAssignableTo(inputType))
+            throw new VerificationException(this, "This inputs a string, but '" + expression + "' requires type " + inputType);
     }
 
     @Override

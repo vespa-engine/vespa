@@ -17,6 +17,18 @@ public class ToEpochSecondExpression extends Expression {
     }
 
     @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, DataType.STRING, context);
+        return DataType.LONG;
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(DataType.LONG, output, null, context);
+        return DataType.STRING;
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());
     }
