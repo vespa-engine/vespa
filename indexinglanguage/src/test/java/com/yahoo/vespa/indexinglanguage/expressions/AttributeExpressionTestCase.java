@@ -38,5 +38,4 @@ public class AttributeExpressionTestCase {
     public void requireThatExpressionCanBeExecuted() {
         assertExecute(new AttributeExpression("foo"));
     }
-
 }

@@ -36,13 +36,13 @@ public class SetVarTestCase {
         Expression exp = new SetVarExpression("foo");
         assertVerify(DataType.INT, exp, DataType.INT);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'set_var foo': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
 
         try {
             new VerificationContext().setVariable("foo", DataType.INT).setCurrentType(DataType.STRING).verify(exp);
             fail();
         } catch (VerificationException e) {
-            assertEquals("Invalid expression 'set_var foo': Cannot set variable 'foo' to type string: It is already set to type int", e.getMessage());
+            assertEquals("Attempting to assign conflicting types to variable 'foo', int vs string", e.getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ public class SetVarTestCase {
             fail();
         } catch (VerificationException e) {
             assertTrue(e.getExpressionType().equals(SetVarExpression.class));
-            assertEquals("Invalid expression 'set_var out': Cannot set variable 'out' to type string: It is already set to type int", e.getMessage());
+            assertEquals("Attempting to assign conflicting types to variable 'out', int vs string", e.getMessage());
         }
     }
 

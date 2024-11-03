@@ -55,23 +55,22 @@ public class ToWsetTestCase {
     }
 
     private static void assertVerify(boolean createIfNonExistent, boolean removeIfZero) {
-        Expression expression = new ToWsetExpression(createIfNonExistent, removeIfZero);
-        ExpressionAssert.assertVerify(DataType.INT, expression,
+        Expression exp = new ToWsetExpression(createIfNonExistent, removeIfZero);
+        ExpressionAssert.assertVerify(DataType.INT, exp,
                                       DataType.getWeightedSet(DataType.INT, createIfNonExistent, removeIfZero));
-        ExpressionAssert.assertVerify(DataType.STRING, expression,
+        ExpressionAssert.assertVerify(DataType.STRING, exp,
                                       DataType.getWeightedSet(DataType.STRING, createIfNonExistent, removeIfZero));
-        assertVerifyThrows("Invalid expression '" + expression + "': " +
-                           "Expected any input, but no input is specified", null, expression);
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
     }
 
     private static void assertConvert(boolean createIfNonExistent, boolean removeIfZero) {
-        ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new StringFieldValue("69")).execute(new ToWsetExpression(createIfNonExistent, removeIfZero));
+        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
+        ctx.setCurrentValue(new StringFieldValue("69")).execute(new ToWsetExpression(createIfNonExistent, removeIfZero));
 
-        FieldValue value = context.getCurrentValue();
-        assertEquals(WeightedSet.class, value.getClass());
+        FieldValue val = ctx.getCurrentValue();
+        assertEquals(WeightedSet.class, val.getClass());
 
-        WeightedSet wset = (WeightedSet)value;
+        WeightedSet wset = (WeightedSet)val;
         WeightedSetDataType type = wset.getDataType();
         assertEquals(DataType.STRING, type.getNestedType());
         assertEquals(createIfNonExistent, type.createIfNonExistent());
@@ -82,9 +81,8 @@ public class ToWsetTestCase {
     }
 
     private static void assertAccessors(boolean createIfNonExistent, boolean removeIfZero) {
-        ToWsetExpression expression = new ToWsetExpression(createIfNonExistent, removeIfZero);
-        assertEquals(createIfNonExistent, expression.getCreateIfNonExistent());
-        assertEquals(removeIfZero, expression.getRemoveIfZero());
+        ToWsetExpression exp = new ToWsetExpression(createIfNonExistent, removeIfZero);
+        assertEquals(createIfNonExistent, exp.getCreateIfNonExistent());
+        assertEquals(removeIfZero, exp.getRemoveIfZero());
     }
-
 }

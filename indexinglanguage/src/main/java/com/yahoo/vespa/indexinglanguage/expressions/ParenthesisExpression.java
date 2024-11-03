@@ -28,18 +28,6 @@ public class ParenthesisExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
-        return innerExp.setInputType(inputType, context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
-        return innerExp.setInputType(outputType, context);
-    }
-
-    @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         innerExp.setStatementOutput(documentType, field);
     }

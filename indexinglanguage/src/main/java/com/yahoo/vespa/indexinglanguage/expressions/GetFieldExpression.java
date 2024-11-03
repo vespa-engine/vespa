@@ -31,21 +31,22 @@ public final class GetFieldExpression extends Expression {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
-        return getFieldType(inputType, context);
+        return getFieldType(context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
-        return getInputType(context);
+        super.setOutputType(getFieldType(context), outputType, context);
+        return AnyDataType.instance;
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setCurrentType(getFieldType(context.getCurrentType(), context));
+        context.setCurrentType(getFieldType(context));
     }
 
-    private DataType getFieldType(DataType input, VerificationContext context) {
+    private DataType getFieldType(VerificationContext context) {
+        DataType input = context.getCurrentType();
         if (input instanceof MapDataType entryInput) {
             if (structFieldName.equals(keyName))
                 return entryInput.getKeyType();
@@ -57,7 +58,7 @@ public final class GetFieldExpression extends Expression {
         else if (input instanceof StructuredDataType structInput) {
             return getStructFieldType(structInput);
         }
-        throw new VerificationException(this, "Expected a struct or map, but got an " + input.getName());
+        throw new VerificationException(this, "Expected a struct or map, bit got an " + input.getName());
     }
 
     private DataType getStructFieldType(StructuredDataType structInput) {

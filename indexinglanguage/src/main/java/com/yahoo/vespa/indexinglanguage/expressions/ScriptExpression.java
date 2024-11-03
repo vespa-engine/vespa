@@ -44,24 +44,6 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
-        DataType currentOutput = null;
-        for (var expression : expressions())
-            currentOutput = expression.setInputType(inputType, context);
-        return currentOutput != null ? currentOutput : getOutputType(context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
-        DataType currentInput = null;
-        for (var expression : expressions())
-            currentInput = expression.setInputType(outputType, context);
-        return currentInput != null ? currentInput : getInputType(context);
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
         for (Expression exp : this)
