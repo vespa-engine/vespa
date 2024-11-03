@@ -19,16 +19,6 @@ public final class TrimExpression extends Expression {
     }
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
-        return super.setInputType(input, DataType.STRING, context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
-        return super.setOutputType(DataType.STRING, output, null, context);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new StringFieldValue(String.valueOf(context.getCurrentValue()).trim()));
     }

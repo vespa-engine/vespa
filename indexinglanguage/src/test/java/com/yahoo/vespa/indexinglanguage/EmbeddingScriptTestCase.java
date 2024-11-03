@@ -246,7 +246,7 @@ public class EmbeddingScriptTestCase {
             fail("Expected exception");
         }
         catch (VerificationException e) {
-            assertEquals("Invalid expression 'embed emb1': When the embedding target field is a 3d tensor the name of the tensor dimension that corresponds to the input array elements must be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...",
+            assertEquals("When the embedding target field is a 3d tensor the name of the tensor dimension that corresponds to the input array elements must be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...",
                          e.getMessage());
         }
     }
@@ -268,7 +268,7 @@ public class EmbeddingScriptTestCase {
             fail("Expected exception");
         }
         catch (VerificationException e) {
-            assertEquals("Invalid expression 'embed emb1 d': The dimension 'd' given to embed is not a sparse dimension of the target type tensor(d[3],passage{},token{})",
+            assertEquals("The dimension 'd' given to embed is not a sparse dimension of the target type tensor(d[3],passage{},token{})",
                          e.getMessage());
         }
     }
@@ -323,7 +323,7 @@ public class EmbeddingScriptTestCase {
             fail("Expected exception");
         }
         catch (VerificationException e) {
-            assertEquals("Invalid expression 'embed emb1 doh': The dimension 'doh' given to embed is not a sparse dimension of the target type tensor(passage{},token{})",
+            assertEquals("The dimension 'doh' given to embed is not a sparse dimension of the target type tensor(passage{},token{})",
                          e.getMessage());
         }
     }

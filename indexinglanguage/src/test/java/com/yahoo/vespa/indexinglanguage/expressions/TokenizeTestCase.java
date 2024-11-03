@@ -48,8 +48,8 @@ public class TokenizeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new TokenizeExpression(new SimpleLinguistics(), new AnnotatorConfig());
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'tokenize': Expected string input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression 'tokenize': Expected string input, got int", DataType.INT, exp);
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
     }
 
     @Test

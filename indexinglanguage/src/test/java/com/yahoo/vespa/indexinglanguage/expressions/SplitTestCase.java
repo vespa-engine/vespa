@@ -37,8 +37,8 @@ public class SplitTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new SplitExpression(";");
         assertVerify(DataType.STRING, exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows("Invalid expression 'split \";\"': Expected string input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression 'split \";\"': Expected string input, got int", DataType.INT, exp);
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
     }
 
     @Test

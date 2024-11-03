@@ -25,8 +25,8 @@ public class ExpressionAssertTestCase {
 
         thrown = null;
         try {
-            assertVerifyThrows("unchecked expected exception message", DataType.INT, new SimpleExpression()
-                              );
+            assertVerifyThrows(DataType.INT, new SimpleExpression(),
+                               "unchecked expected exception message");
         } catch (Throwable t) {
             thrown = t;
         }
@@ -34,8 +34,8 @@ public class ExpressionAssertTestCase {
 
         thrown = null;
         try {
-            assertVerifyThrows("wrong expected exception message", DataType.INT, SimpleExpression.newRequired(DataType.STRING)
-                              );
+            assertVerifyThrows(DataType.INT, SimpleExpression.newRequired(DataType.STRING),
+                               "wrong expected exception message");
         } catch (Throwable t) {
             thrown = t;
         }

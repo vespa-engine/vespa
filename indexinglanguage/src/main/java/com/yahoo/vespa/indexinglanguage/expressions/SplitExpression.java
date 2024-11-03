@@ -25,7 +25,10 @@ public final class SplitExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
-        super.setInputType(input, DataType.STRING, context);
+        super.setInputType(input, context);
+        // TODO: Activate type checking
+        // if (input != DataType.STRING)
+        //    throw new IllegalArgumentException("split requires a string input, but got " + input);
         return new ArrayDataType(DataType.STRING);
     }
 
@@ -34,7 +37,7 @@ public final class SplitExpression extends Expression {
         super.setOutputType(output, context);
         // TODO: Activate type checking
         // if ( ! (output instanceof ArrayDataType) && output.getNestedType() == DataType.STRING)
-        //    throw new VerificationException(this, "This produces a string array, but needs type " + output.getName());
+        //    throw new IllegalArgumentException("split produces a string array, but needs " + output);
         return DataType.STRING;
     }
 

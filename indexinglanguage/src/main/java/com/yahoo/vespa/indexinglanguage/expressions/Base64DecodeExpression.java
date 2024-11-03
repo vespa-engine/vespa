@@ -24,7 +24,7 @@ public final class Base64DecodeExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(DataType.LONG, outputType, null, context);
+        super.setOutputType(outputType, DataType.LONG, context);
         return DataType.STRING;
     }
 

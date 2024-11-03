@@ -87,7 +87,7 @@ public class FlattenTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new FlattenExpression();
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'flatten': Expected string input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression 'flatten': Expected string input, got int", DataType.INT, exp);
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
     }
 }

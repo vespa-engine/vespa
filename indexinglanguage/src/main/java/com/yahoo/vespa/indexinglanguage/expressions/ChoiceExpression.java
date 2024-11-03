@@ -1,12 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,34 +34,6 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     @Override
     public ChoiceExpression convertChildren(ExpressionConverter converter) {
         return new ChoiceExpression(asList().stream().map(choice -> converter.branch().convert(choice)).toList());
-    }
-
-    @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
-
-        DataType resolvedType = null;
-        boolean resolvedTypeNeverAssigned = true;
-        for (var expression : expressions()) {
-            DataType outputType = expression.setInputType(inputType, context);
-            resolvedType = resolvedTypeNeverAssigned ? outputType : mostGeneralOf(resolvedType, outputType);
-            resolvedTypeNeverAssigned = false;
-        }
-        return resolvedType != null ? resolvedType : getOutputType(context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
-
-        DataType resolvedType = null;
-        boolean resolvedTypeNeverAssigned = true;
-        for (var expression : expressions()) {
-            DataType inputType = expression.setOutputType(outputType, context);
-            resolvedType = resolvedTypeNeverAssigned ? inputType : mostGeneralOf(resolvedType, inputType);
-            resolvedTypeNeverAssigned = false;
-        }
-        return resolvedType != null ? resolvedType : getInputType(context);
     }
 
     @Override

@@ -67,47 +67,10 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
-        DataType leftOutput = left.setInputType(inputType, context);
-        DataType rightOutput = right.setInputType(inputType, context);
-        return resultingType(leftOutput, rightOutput);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
-        DataType leftInput = left.setOutputType(outputType, context);
-        DataType rightInput = right.setOutputType(outputType, context);
-        if (leftInput == rightInput) // TODO: Generalize
-            return leftInput;
-        else
-            return getInputType(context);
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
-        context.setCurrentType(resultingType(context.setCurrentType(input).verify(left).getCurrentType(),
-                                             context.setCurrentType(input).verify(right).getCurrentType()));
-    }
-
-    private DataType resultingType(DataType left, DataType right) {
-        if (left == null || right == null)
-            return null;
-        if (!(left instanceof NumericDataType))
-            throw new VerificationException(this, "The first argument must be a number, but has type " + left.getName());
-        if (!(right instanceof NumericDataType))
-            throw new VerificationException(this, "The second argument must be a number, but has type " + right.getName());
-
-        if (left == DataType.FLOAT || left == DataType.DOUBLE || right == DataType.FLOAT || right == DataType.DOUBLE) {
-            if (left == DataType.DOUBLE || right == DataType.DOUBLE)
-                return DataType.DOUBLE;
-            return DataType.FLOAT;
-        }
-        if (left == DataType.LONG || right == DataType.LONG)
-            return DataType.LONG;
-        return DataType.INT;
+        context.setCurrentType(evaluate(context.setCurrentType(input).verify(left).getCurrentType(),
+                                        context.setCurrentType(input).verify(right).getCurrentType()));
     }
 
     @Override
@@ -117,15 +80,15 @@ public final class ArithmeticExpression extends CompositeExpression {
                                          context.setCurrentValue(input).execute(right).getCurrentValue()));
     }
 
-    private static DataType requiredInputType(Expression left, Expression right) {
-        DataType leftType = left.requiredInputType();
-        DataType rightType = right.requiredInputType();
-        if (leftType == null) return rightType;
-        if (rightType == null) return leftType;
-        if (!leftType.equals(rightType))
+    private static DataType requiredInputType(Expression lhs, Expression rhs) {
+        DataType lhsType = lhs.requiredInputType();
+        DataType rhsType = rhs.requiredInputType();
+        if (lhsType == null) return rhsType;
+        if (rhsType == null) return lhsType;
+        if (!lhsType.equals(rhsType))
             throw new VerificationException(ArithmeticExpression.class, "Operands require conflicting input types, " +
-                                                                        leftType.getName() + " vs " + rightType.getName());
-        return leftType;
+                                                                        lhsType.getName() + " vs " + rhsType.getName());
+        return lhsType;
     }
 
     @Override
@@ -151,6 +114,23 @@ public final class ArithmeticExpression extends CompositeExpression {
     @Override
     public int hashCode() {
         return getClass().hashCode() + left.hashCode() + op.hashCode() + right.hashCode();
+    }
+
+    private DataType evaluate(DataType lhs, DataType rhs) {
+        if (lhs == null || rhs == null)
+            throw new VerificationException(this, "Attempting to perform arithmetic on a null value");
+        if (!(lhs instanceof NumericDataType) || !(rhs instanceof NumericDataType))
+            throw new VerificationException(this, "Attempting to perform unsupported arithmetic: [" +
+                                                  lhs.getName() + "] " + op + " [" + rhs.getName() + "]");
+
+        if (lhs == DataType.FLOAT || lhs == DataType.DOUBLE || rhs == DataType.FLOAT || rhs == DataType.DOUBLE) {
+            if (lhs == DataType.DOUBLE || rhs == DataType.DOUBLE)
+                return DataType.DOUBLE;
+            return DataType.FLOAT;
+        }
+        if (lhs == DataType.LONG || rhs == DataType.LONG)
+            return DataType.LONG;
+        return DataType.INT;
     }
 
     private FieldValue evaluate(FieldValue lhs, FieldValue rhs) {
