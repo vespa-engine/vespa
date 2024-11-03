@@ -46,8 +46,8 @@ public class NGramTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new NGramExpression(new SimpleLinguistics(), 69);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
+        assertVerifyThrows("Invalid expression 'ngram 69': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'ngram 69': Expected string input, got int", DataType.INT, exp);
     }
 
     @Test

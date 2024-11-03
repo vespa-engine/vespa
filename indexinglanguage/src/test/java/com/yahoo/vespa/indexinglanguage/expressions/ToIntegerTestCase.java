@@ -30,7 +30,7 @@ public class ToIntegerTestCase {
         Expression exp = new ToIntegerExpression();
         assertVerify(DataType.INT, exp, DataType.INT);
         assertVerify(DataType.STRING, exp, DataType.INT);
-        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
+        assertVerifyThrows("Invalid expression 'to_int': Expected any input, but no input is specified", null, exp);
     }
 
     @Test
