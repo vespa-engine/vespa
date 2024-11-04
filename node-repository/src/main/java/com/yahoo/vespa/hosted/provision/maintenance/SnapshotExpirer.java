@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  */
 public class SnapshotExpirer extends NodeRepositoryMaintainer {
 
+    private static final Logger LOG = Logger.getLogger(SnapshotExpirer.class.getName());
     private static final Duration MIN_IDLE_PERIOD = Duration.ofDays(1);
 
     public SnapshotExpirer(NodeRepository nodeRepository, Duration interval, Metric metric) {
@@ -49,6 +51,7 @@ public class SnapshotExpirer extends NodeRepositoryMaintainer {
     }
 
     private void remove(Snapshot snapshot, HostName hostname) {
+        LOG.info("Removing snapshot " + snapshot.id() + " of " + hostname);
         nodeRepository().snapshots().remove(snapshot.id(), hostname.value(), true);
     }
 
