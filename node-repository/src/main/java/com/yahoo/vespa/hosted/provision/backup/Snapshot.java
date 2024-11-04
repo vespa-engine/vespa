@@ -1,21 +1,26 @@
 package com.yahoo.vespa.hosted.provision.backup;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A backup snapshot of a node's local data. Only {@link ClusterSpec.Type#content} nodes support snapshots.
+ * A backup snapshot of a {@link com.yahoo.vespa.hosted.provision.Node}'s local data. Snapshots can only be created for
+ * {@link ClusterSpec.Type#content} nodes.
  *
  * @author mpolden
  */
-public record Snapshot(SnapshotId id, HostName hostname, State state, History history, ClusterId cluster, int clusterIndex) {
+public record Snapshot(SnapshotId id, HostName hostname, State state, History history, ClusterId cluster,
+                       int clusterIndex, CloudAccount cloudAccount) {
 
     public Snapshot {
         Objects.requireNonNull(id);
@@ -28,11 +33,20 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
         }
     }
 
+    /** Returns how long this snapshot has been idle at given instant */
+    public Duration idle(Instant instant) {
+        Instant latestEvent = history.events().values().stream()
+                                     .max(Comparator.comparing(History.Event::at))
+                                     .map(History.Event::at)
+                                     .get();
+        return Duration.between(latestEvent, instant);
+    }
+
     public Snapshot with(State state, Instant at) {
         if (!canChangeTo(state)) {
             throw new IllegalArgumentException("Cannot change state of " + this + " to " + state);
         }
-        return new Snapshot(id, hostname, state, history.with(state, at), cluster, clusterIndex);
+        return new Snapshot(id, hostname, state, history.with(state, at), cluster, clusterIndex, cloudAccount);
     }
 
     private boolean canChangeTo(State state) {
@@ -103,13 +117,12 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
 
     }
 
-
     public static SnapshotId generateId() {
         return new SnapshotId(UUID.randomUUID());
     }
 
-    public static Snapshot create(SnapshotId id, HostName hostname, Instant at, ClusterId cluster, int clusterIndex) {
-        return new Snapshot(id, hostname, State.creating, History.of(State.creating, at), cluster, clusterIndex);
+    public static Snapshot create(SnapshotId id, HostName hostname, CloudAccount cloudAccount, Instant at, ClusterId cluster, int clusterIndex) {
+        return new Snapshot(id, hostname, State.creating, History.of(State.creating, at), cluster, clusterIndex, cloudAccount);
     }
 
 }

@@ -44,6 +44,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
+import com.yahoo.vespa.hosted.provision.backup.SnapshotStoreMock;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -95,6 +96,7 @@ public class ProvisioningTester {
     private final NodeRepositoryProvisioner provisioner;
     private final InMemoryProvisionLogger provisionLogger;
     private final LoadBalancerServiceMock loadBalancerService;
+    private final SnapshotStoreMock snapshotStore;
 
     private int nextHost = 0;
     private int nextIP = 0;
@@ -115,7 +117,8 @@ public class ProvisioningTester {
         this.nodeFlavors = nodeFlavors;
         this.clock = clock;
         this.hostProvisioner = hostProvisioner;
-        ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator);
+        this.snapshotStore = new SnapshotStoreMock();
+        ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator, snapshotStore);
         this.nodeRepository = new NodeRepository(nodeFlavors,
                                                  provisionServiceProvider,
                                                  curator,
@@ -158,6 +161,7 @@ public class ProvisioningTester {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public HostProvisioner hostProvisioner() { return hostProvisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
+    public SnapshotStoreMock snapshotStore() { return snapshotStore; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
     public InMemoryFlagSource flagSource() { return (InMemoryFlagSource) nodeRepository.flagSource(); }
     public InMemoryProvisionLogger provisionLogger() { return provisionLogger; }

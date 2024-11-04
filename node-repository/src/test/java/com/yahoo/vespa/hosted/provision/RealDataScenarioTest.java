@@ -136,7 +136,7 @@ public class RealDataScenarioTest {
     }
 
     private static void initFromZk(NodeRepository nodeRepository, Path pathToZkSnapshot) throws Exception {
-        NodeSerializer nodeSerializer = new NodeSerializer(nodeRepository.flavors());
+        NodeSerializer nodeSerializer = new NodeSerializer(nodeRepository.flavors(), CloudAccount.from("aws:999123456789"));
         Map<Pattern, BiConsumer<byte[], NestedTransaction>> jsonConsumerByPathPattern = Map.of(
                 Pattern.compile(".?/provision/v1/nodes/[a-z0-9.-]+\\.(com|cloud).?"), (json, transaction) -> {
                     Node node = nodeSerializer.fromJson(json);

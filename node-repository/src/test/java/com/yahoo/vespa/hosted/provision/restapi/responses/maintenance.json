@@ -68,6 +68,9 @@
       "name": "ScalingSuggestionsMaintainer"
     },
     {
+      "name": "SnapshotExpirer"
+    },
+    {
       "name": "SpareCapacityMaintainer"
     },
     {
