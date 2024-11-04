@@ -23,12 +23,12 @@ public class AthenzUtil {
         return String.join(".", PREFIX, systemName, tenantName).toLowerCase();
     }
 
-    /* tenant-secret.<system>.<tenant>.<vault>.reader */
+    /* tenant-secret.<system>.<tenant>.<vaultName>.reader */
     public static String resourceEntityName(String system, String tenant, VaultName vault) {
         // Note that the domain name is added by AthenzDomainName, such that actual resource name will be
         // e.g. vespa.external.tenant-secret:<aws-role-name>
         return "%s.%s".formatted(roleAndPolicyPrefix(system, tenant),
-                                 readerRoleName(vault))
+                                 athenzReaderRoleName(vault))
                 .toLowerCase();
     }
 
@@ -37,13 +37,18 @@ public class AthenzUtil {
         return AwsPath.of(PREFIX, systemName, tenantName);
     }
 
-    /* Path: /tenant-secret/<system>/<tenant>/ + Role: <vault>.reader */
+    /*
+     * Path: /tenant-secret/<system>/<tenant>/ + Role: <vaultId>.reader
+     *
+     * We use vaultId instead of vaultName because vaultName is not unique across tenants,
+     * and role names must be unique across paths within an account.
+     */
     public static AwsRolePath awsReaderRole(String systemName, String tenantName, VaultName vault) {
-        return new AwsRolePath(awsPath(systemName, tenantName), new AwsRole(readerRoleName(vault)));
+        return new AwsRolePath(awsPath(systemName, tenantName), new AwsRole(athenzReaderRoleName(vault)));
     }
 
-    /* <vault>.reader */
-    private static String readerRoleName(VaultName vault) {
+    /* <vaultName>.reader */
+    private static String athenzReaderRoleName(VaultName vault) {
         return "%s.%s".formatted(vault.value(), Role.READER.value());
     }
 
