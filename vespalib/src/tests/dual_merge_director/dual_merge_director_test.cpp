@@ -7,6 +7,7 @@ using namespace vespalib;
 struct MySource : public DualMergeDirector::Source {
 
     bool typeA;
+    size_t id;
     std::string data;
     std::string diff;
 
@@ -15,6 +16,7 @@ struct MySource : public DualMergeDirector::Source {
     void merge(Source &mt) override {
         MySource &rhs = static_cast<MySource&>(mt);
         ASSERT_EQUAL(typeA, rhs.typeA);
+        ASSERT_GREATER(rhs.id, id);
         ASSERT_EQUAL(data.size(), rhs.data.size());
         for (size_t i = 0; i < data.size(); ++i) {
             int d = (rhs.data[i] - '0');
@@ -34,6 +36,7 @@ struct MySource : public DualMergeDirector::Source {
 
 MySource::MySource(bool a, size_t num_sources, size_t source_id)
     : typeA(a),
+      id(source_id),
       data(num_sources, '0'),
       diff(num_sources, '5')
 {
