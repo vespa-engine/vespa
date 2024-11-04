@@ -75,19 +75,10 @@ class NormalState : public FeedState {
     FeedHandler         &_handler;
 
 public:
-    NormalState(FeedHandler &handler) noexcept
-        : FeedState(NORMAL),
-          _handler(handler) {
-    }
-
-    void handleOperation(FeedToken token, FeedOperationUP op) override {
-        _handler.performOperation(std::move(token), std::move(op));
-    }
-
-    void receive(const PacketWrapperSP &wrap, vespalib::Executor &) override {
-        throwExceptionInReceive(_handler.getDocTypeName().c_str(), wrap->packet.range().from(),
-                                wrap->packet.range().to(), wrap->packet.size());
-    }
+    NormalState(FeedHandler &handler) noexcept;
+    ~NormalState() override;
+    void handleOperation(FeedToken token, FeedOperationUP op) override;
+    void receive(const PacketWrapperSP &wrap, vespalib::Executor &) override;
 };
 }  // namespace proton
 
