@@ -197,6 +197,14 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
     return visitor.getResult();
 }
 
+std::unique_ptr<queryeval::Blueprint>
+MemoryIndex::createBlueprint(const queryeval::IRequestContext & requestContext,
+                             const queryeval::FieldSpecList &fields,
+                             const query::Node &term)
+{
+    return queryeval::Searchable::createBlueprint(requestContext, fields, term);
+}
+
 vespalib::MemoryUsage
 MemoryIndex::getMemoryUsage() const
 {
