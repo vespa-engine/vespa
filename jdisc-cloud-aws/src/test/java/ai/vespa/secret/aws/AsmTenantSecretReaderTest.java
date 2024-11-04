@@ -46,9 +46,9 @@ public class AsmTenantSecretReaderTest {
     @Test
     void it_creates_one_credentials_and_client_per_vault_and_closes_them() {
         var vault1 = VaultName.of("vault1");
-        var awsRole1 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault1.reader");
+        var clientId1 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault1.reader");
         var vault2 = VaultName.of("vault2");
-        var awsRole2 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault2.reader");
+        var clientId2 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault2.reader");
 
         var secret1 = new SecretVersion("1", SecretVersionState.CURRENT, "secret1");
         var secret2 = new SecretVersion("2", SecretVersionState.CURRENT, "secret2");
@@ -63,8 +63,8 @@ public class AsmTenantSecretReaderTest {
             reader.getSecret(key1);
             reader.getSecret(key2);
 
-            // Verify correct AWS roles
-            assertEquals(Set.of(awsRole1, awsRole2), reader.clientRoleNames());
+            // Verify correct client IDs. Aws role names are verified in the test for cloud tenant role service.
+            assertEquals(Set.of(clientId1, clientId2), reader.clientIds());
         }
         assertTrue(tester.clients().stream().allMatch(c -> c.isClosed));
     }

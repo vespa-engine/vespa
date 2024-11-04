@@ -5,6 +5,7 @@ import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.VaultName;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
@@ -36,8 +37,10 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
     }
 
     @Override
-    protected AwsRolePath awsRole(VaultName vault) {
-        return AthenzUtil.awsReaderRole(system, tenant, vault);
+    protected AwsRolePath clientId(VaultName vault) {
+        // Note that this is not the actual aws role, because the role uses VaultId rather than VaultName.
+        // VaultId is unfortunately not easily accessible here.
+        return new AwsRolePath(AthenzUtil.awsPath(system, tenant), new AwsRole(AthenzUtil.athenzReaderRoleName(vault)));
     }
 
     @Override

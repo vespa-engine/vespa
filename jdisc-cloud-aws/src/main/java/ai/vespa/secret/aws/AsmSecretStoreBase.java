@@ -44,14 +44,18 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
         this.clientAndCredentialsSupplier = clientAndCredentialsSupplier;
     }
 
-    /** Returns the AWS role associated with the given vault. */
-    protected abstract AwsRolePath awsRole(VaultName vault);
+    /**
+     * Returns a unique id for the client associated with the given vault.
+     * Note that for {@link AsmTenantSecretReader}, this is not the actual aws role,
+     * because its role uses VaultId rather than VaultName.
+     */
+    protected abstract AwsRolePath clientId(VaultName vault);
 
 
     protected SecretsManagerClient getClient(VaultName vault) {
-        var awsRole = awsRole(vault);
-        clientMap.putIfAbsent(awsRole, clientAndCredentialsSupplier.apply(awsRole));
-        return clientMap.get(awsRole);
+        var clientId = clientId(vault);
+        clientMap.putIfAbsent(clientId, clientAndCredentialsSupplier.apply(clientId));
+        return clientMap.get(clientId);
     }
 
     private static AwsCredentialsProvider getAwsSessionCredsProvider(AwsRolePath role,
@@ -84,8 +88,8 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
         super.deconstruct();
     }
 
-    // Only for testing
-    public Set<AwsRolePath> clientRoleNames() {
+    // Only for testing. The client id is equal to aws role name, except for the tenant reader.
+    public Set<AwsRolePath> clientIds() {
         return new HashSet<>(clientMap.keySet());
     }
 
