@@ -519,7 +519,7 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                            getChild(i).getState().estimate().estHits);
     }
     bool readonly_scores_heap = (_matching_phase != MatchingPhase::FIRST_PHASE);
-    wand::MatchParams innerParams{*_scores, _stop_word_strategy, wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY};
+    wand::MatchParams innerParams{*_scores, _stop_word_strategy, wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, get_docid_limit()};
     return (_idf_range == 0.0)
         ? WeakAndSearch::create(terms, innerParams, wand::TermFrequencyScorer(), _n, strict(),
                                 readonly_scores_heap)
