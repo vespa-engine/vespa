@@ -14,6 +14,7 @@ class DirectIORandRead : public FileRandRead
 {
 public:
     DirectIORandRead(const std::string & fileName);
+    ~DirectIORandRead() override;
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
     int64_t getSize() const override;
 private:
@@ -27,6 +28,7 @@ class MMapRandRead : public FileRandRead
 {
 public:
     MMapRandRead(const std::string & fileName, int mmapFlags, int fadviseOptions);
+    ~MMapRandRead() override;
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
     int64_t getSize() const override;
     const void * getMapping();
@@ -38,6 +40,7 @@ class MMapRandReadDynamic : public FileRandRead
 {
 public:
     MMapRandReadDynamic(const std::string & fileName, int mmapFlags, int fadviseOptions);
+    ~MMapRandReadDynamic() override;
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
     int64_t getSize() const override;
 private:
@@ -54,6 +57,7 @@ class NormalRandRead : public FileRandRead
 {
 public:
     NormalRandRead(const std::string & fileName);
+    ~NormalRandRead() override;
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
     int64_t getSize() const override;
 private:
