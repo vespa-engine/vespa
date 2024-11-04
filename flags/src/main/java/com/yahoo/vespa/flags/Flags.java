@@ -480,7 +480,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag OVERRIDE_S1_TOKEN = defineFeatureFlag(
             "override-s1-token", false,
-            List.of("mortent"), "2024-09-23", "2024-11-01",
+            List.of("mortent"), "2024-09-23", "2024-12-01",
             "Override the S1 token",
             "Takes effect on next host-admin run",
             HOSTNAME);
