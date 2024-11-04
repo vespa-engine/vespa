@@ -7,6 +7,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,7 +43,13 @@ public class SnapshotExpirer extends NodeRepositoryMaintainer {
                 snapshots = nodeRepository().snapshots().read(hostname.value());
                 for (var snapshot : snapshots) {
                     if (shouldRemove(snapshot, nodes, now)) {
-                        remove(snapshot, hostname);
+                        try {
+                            remove(snapshot, hostname);
+                        } catch (Exception e) {
+                            LOG.warning("Failed to remove snapshot " + snapshot.id() + " of " + hostname + ": " +
+                                        Exceptions.toMessageString(e) +
+                                        ". Will retry in " + interval());
+                        }
                     }
                 }
             }
