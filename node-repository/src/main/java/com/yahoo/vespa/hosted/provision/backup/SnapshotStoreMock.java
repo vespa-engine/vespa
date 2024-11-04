@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.backup;
 
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.provisioning.SnapshotStore;
 
 import java.util.Collections;

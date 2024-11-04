@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
 import java.time.Duration;

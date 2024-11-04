@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
+import com.yahoo.config.provision.SnapshotId;
 
 /**
  * A service that stores the actual files of a {@link com.yahoo.vespa.hosted.provision.backup.Snapshot}.
