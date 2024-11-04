@@ -43,15 +43,17 @@ public class AsmTenantSecretReaderTest {
     }
 
     AsmTenantSecretReader secretReader() {
-        return new AsmTenantSecretReader(tester::newClient, system, tenant, Map.of());
+        return new AsmTenantSecretReader(tester::newClient, system, tenant,
+                                         Map.of(VaultName.of("vault1"), VaultId.of("vaultId1"),
+                                                VaultName.of("vault2"), VaultId.of("vaultId2")));
     }
 
     @Test
     void it_creates_one_credentials_and_client_per_vault_and_closes_them() {
         var vault1 = VaultName.of("vault1");
-        var awsRole1 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault1.reader");
+        var awsRole1 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vaultId1.reader");
         var vault2 = VaultName.of("vault2");
-        var awsRole2 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vault2.reader");
+        var awsRole2 = AwsRolePath.fromStrings("/tenant-secret/publiccd/tenant1/", "vaultId2.reader");
 
         var secret1 = new SecretVersion("1", SecretVersionState.CURRENT, "secret1");
         var secret2 = new SecretVersion("2", SecretVersionState.CURRENT, "secret2");
