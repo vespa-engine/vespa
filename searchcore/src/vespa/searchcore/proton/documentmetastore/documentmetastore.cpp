@@ -711,6 +711,7 @@ DocumentMetaStore::getGid(DocId lid, GlobalId &gid) const
 bool
 DocumentMetaStore::getGidEvenIfMoved(DocId lid, GlobalId &gid) const
 {
+    static GlobalId empty = GlobalId();
     if (!validButMaybeUnusedLid(lid)) {
         return false;
     }
@@ -720,6 +721,9 @@ DocumentMetaStore::getGidEvenIfMoved(DocId lid, GlobalId &gid) const
         if (!getLid(gid, newLid)) {
             return false;
         }
+    }
+    if (gid == empty) {
+        LOG(warning, "empty GlobalId for local docid=%u", lid);
     }
     return true;
 }
