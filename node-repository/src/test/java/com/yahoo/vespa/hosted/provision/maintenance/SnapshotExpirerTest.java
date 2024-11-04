@@ -10,7 +10,7 @@ import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
-import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.jupiter.api.Test;
 

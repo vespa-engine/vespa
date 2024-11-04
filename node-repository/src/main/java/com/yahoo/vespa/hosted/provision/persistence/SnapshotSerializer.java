@@ -12,7 +12,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
-import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
 import java.time.Instant;
