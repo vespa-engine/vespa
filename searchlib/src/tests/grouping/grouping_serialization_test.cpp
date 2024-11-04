@@ -235,6 +235,29 @@ TEST_F("testAggregatorResults", Fixture("testAggregatorResults")) {
     f.checkObject(stddev);
 }
 
+TEST("testHitList") {
+    search::aggregation::HitList h;
+    uint32_t maxHits = 5;
+    h.addHit(FS4Hit{1, 17.0}, maxHits);
+    h.addHit(FS4Hit{2, 11.0}, maxHits);
+    h.addHit(FS4Hit{3, 42.0}, maxHits);
+    h.addHit(FS4Hit{4, 12.0}, maxHits);
+    EXPECT_EQUAL(4u, h.size());
+    h.addHit(FS4Hit{5, 21.0}, maxHits);
+    EXPECT_EQUAL(5u, h.size());
+    h.addHit(FS4Hit{6, 23.0}, maxHits); // removes 11
+    h.addHit(FS4Hit{7, 16.0}, maxHits); // removes 12
+    h.addHit(FS4Hit{8, 17.0}, maxHits); // removes 16
+    h.addHit(FS4Hit{9, 17.0}, maxHits); // not better than 17
+    EXPECT_EQUAL(5u, h.size());
+    EXPECT_EQUAL(1u, static_cast<const FS4Hit &>(h.front()).getDocId());
+    EXPECT_EQUAL(17.0, h.front().getRank());
+    h.sort();
+    EXPECT_EQUAL(5u, h.size());
+    EXPECT_EQUAL(42.0, h.front().getRank());
+    EXPECT_EQUAL(3u, static_cast<const FS4Hit &>(h.front()).getDocId());
+}
+
 TEST_F("testHitCollection", Fixture("testHitCollection")) {
     f.checkObject(FS4Hit());
     f.checkObject(FS4Hit(0, 50.0).setGlobalId(getGlobalId(100)));
