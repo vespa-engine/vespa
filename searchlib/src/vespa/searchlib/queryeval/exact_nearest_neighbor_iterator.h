@@ -31,12 +31,9 @@ public:
         Params(fef::TermFieldMatchData &tfmd_in,
                std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
-               const GlobalFilter &filter_in)
-          : tfmd(tfmd_in),
-            distance_calc(std::move(distance_calc_in)),
-            distanceHeap(distanceHeap_in),
-            filter(filter_in)
-        {}
+               const GlobalFilter &filter_in);
+        Params(Params&& rhs);
+        ~Params();
     };
 
     explicit ExactNearestNeighborIterator(Params params_in)
