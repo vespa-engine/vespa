@@ -1,24 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchcore/proton/common/statusreport.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace proton {
 
-TEST("require that default status report works")
+TEST(StatusReportTest, require_that_default_status_report_works)
 {
     StatusReport sr(StatusReport::Params("foo"));
 
-    EXPECT_EQUAL("foo", sr.getComponent());
-    EXPECT_EQUAL(StatusReport::DOWN, sr.getState());
-    EXPECT_EQUAL("", sr.getInternalState());
-    EXPECT_EQUAL("", sr.getInternalConfigState());
+    EXPECT_EQ("foo", sr.getComponent());
+    EXPECT_EQ(StatusReport::DOWN, sr.getState());
+    EXPECT_EQ("", sr.getInternalState());
+    EXPECT_EQ("", sr.getInternalConfigState());
     EXPECT_FALSE(sr.hasProgress());
-    EXPECT_EQUAL("", sr.getMessage());
-    EXPECT_EQUAL("state=", sr.getInternalStatesStr());
+    EXPECT_EQ("", sr.getMessage());
+    EXPECT_EQ("state=", sr.getInternalStatesStr());
 }
 
-TEST("require that custom status report works")
+TEST(StatusReportTest, require_that_custom_status_report_works)
 {
     StatusReport sr(StatusReport::Params("foo").
             state(StatusReport::UPOK).
@@ -27,14 +26,14 @@ TEST("require that custom status report works")
             progress(65).
             message("mymessage"));
 
-    EXPECT_EQUAL("foo", sr.getComponent());
-    EXPECT_EQUAL(StatusReport::UPOK, sr.getState());
-    EXPECT_EQUAL("mystate", sr.getInternalState());
-    EXPECT_EQUAL("myconfigstate", sr.getInternalConfigState());
+    EXPECT_EQ("foo", sr.getComponent());
+    EXPECT_EQ(StatusReport::UPOK, sr.getState());
+    EXPECT_EQ("mystate", sr.getInternalState());
+    EXPECT_EQ("myconfigstate", sr.getInternalConfigState());
     EXPECT_TRUE(sr.hasProgress());
-    EXPECT_EQUAL(65, sr.getProgress());
-    EXPECT_EQUAL("mymessage", sr.getMessage());
-    EXPECT_EQUAL("state=mystate configstate=myconfigstate", sr.getInternalStatesStr());
+    EXPECT_EQ(65, sr.getProgress());
+    EXPECT_EQ("mymessage", sr.getMessage());
+    EXPECT_EQ("state=mystate configstate=myconfigstate", sr.getInternalStatesStr());
 }
 
 }  // namespace proton
