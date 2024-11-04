@@ -9,6 +9,7 @@
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/field_index_stats.h>
+#include <mutex>
 #include <string>
 
 namespace search::diskindex {
