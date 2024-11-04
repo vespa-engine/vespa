@@ -2,6 +2,7 @@
 package ai.vespa.secret.aws;
 
 import ai.vespa.secret.model.Role;
+import ai.vespa.secret.model.VaultId;
 import ai.vespa.secret.model.VaultName;
 import com.yahoo.vespa.athenz.api.AwsRole;
 
@@ -32,6 +33,11 @@ public class AthenzUtil {
                 .toLowerCase();
     }
 
+    /* <vaultName>.reader */
+    public static String athenzReaderRoleName(VaultName vault) {
+        return "%s.%s".formatted(vault.value(), Role.READER.value());
+    }
+
     /* Path: /tenant-secret/<system>/<tenant>/ */
     public static AwsPath awsPath(String systemName, String tenantName) {
         return AwsPath.of(PREFIX, systemName, tenantName);
@@ -43,13 +49,13 @@ public class AthenzUtil {
      * We use vaultId instead of vaultName because vaultName is not unique across tenants,
      * and role names must be unique across paths within an account.
      */
-    public static AwsRolePath awsReaderRole(String systemName, String tenantName, VaultName vault) {
-        return new AwsRolePath(awsPath(systemName, tenantName), new AwsRole(athenzReaderRoleName(vault)));
+    public static AwsRolePath awsReaderRole(String systemName, String tenantName, VaultId vaultId) {
+        return new AwsRolePath(awsPath(systemName, tenantName), new AwsRole(awsReaderRoleName(vaultId)));
     }
 
     /* <vaultName>.reader */
-    private static String athenzReaderRoleName(VaultName vault) {
-        return "%s.%s".formatted(vault.value(), Role.READER.value());
+    private static String awsReaderRoleName(VaultId vaultId) {
+        return "%s.%s".formatted(vaultId.value(), Role.READER.value());
     }
 
 }
