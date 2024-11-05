@@ -260,13 +260,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
-            "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2025-01-01",
-            "Determines whether one metrics config check should be written per Vespa node",
-            "Takes effect on next tick",
-            HOSTNAME);
-
     public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
             "tls-capabilities-enforcement-mode", "disable",
             List.of("bjorncs", "vekterli"), "2022-07-21", "2025-01-01",
