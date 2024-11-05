@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <cstdlib>
 
 namespace vespalib { class GenericHeader; }
 

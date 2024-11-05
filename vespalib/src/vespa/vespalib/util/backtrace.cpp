@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <execinfo.h>
 #include <csignal>
+#include <cstdlib>
 #include <string>
 
 namespace {
