@@ -1,6 +1,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-primetime notime -> default:primetime default:in default:no default:time;
-primetime -> default:primetime default:in default:no default:time;
-prime time in no time -> default:primetime default:in default:no default:time;
-prime time -> default:primetime default:in default:no default:time;
-pint -> default:primetime default:in default:no default:time;
+primetime notime -> replacemarker:pint;
+primetime -> replacemarker:pint;
+prime time in no time -> replacemarker:pint;
+prime time -> replacemarker:pint;
+pint -> replacemarker:pint;
+replacemarker:pint -> default:primetime default:in default:no default:time;
