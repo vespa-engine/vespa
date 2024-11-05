@@ -66,6 +66,11 @@ public class IndexingParser {
         return this;
     }
 
+    public IndexingParser setGenerators(Map<String, Generator> generators) {
+        this.generators = generators;
+        return this;
+    }
+
     public IndexingParser setAnnotatorConfig(AnnotatorConfig cfg) {
         annotatorCfg = cfg;
         return this;

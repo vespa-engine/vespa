@@ -17,6 +17,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.Generator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.schema.DistributableResource;
@@ -91,13 +92,15 @@ public class SchemaParser {
      * @param multiline Whether or not to allow multi-line expressions.
      * @param linguistics What to use for tokenizing.
      */
-    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+    private IndexingOperation newIndexingOperation(
+            boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders, 
+            Map<String, Generator> generators) throws ParseException {
         SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
         if (token.next != null) {
             input.backup(token.next.image.length());
         }
         try {
-            return IndexingOperation.fromStream(input, multiline, linguistics, embedders);
+            return IndexingOperation.fromStream(input, multiline, linguistics, embedders, generators);
         } finally {
             token.next = null;
             jj_ntk = -1;

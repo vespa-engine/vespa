@@ -120,7 +120,9 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
         return newInstance(new ScriptParserContext(linguistics, embedders, Map.of()).setInputStream(new IndexingInput(expression)));
     }
 
-    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders, Map<String, Generator> generators) throws ParseException {
+    public static Expression fromString(
+            String expression, Linguistics linguistics, Map<String, Embedder> embedders, 
+            Map<String, Generator> generators) throws ParseException {
         return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 

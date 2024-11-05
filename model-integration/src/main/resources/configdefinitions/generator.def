@@ -1,0 +1,11 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package=ai.vespa.generative
+
+# The external LLM provider - the id of a LanguageModel component
+providerId string default=""
+
+# The default prompt to use if not overridden in query
+prompt string default=""
+
+# The default prompt template file to use if not overridden in query. Above prompt has precedence if it is set.
+promptTemplate path optional

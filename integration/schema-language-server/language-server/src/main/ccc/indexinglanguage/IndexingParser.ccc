@@ -33,6 +33,7 @@ INJECT IndexingParser:
     import com.yahoo.vespa.indexinglanguage.expressions.*;
     import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
     import com.yahoo.language.process.Embedder;
+    import com.yahoo.language.process.Generator;
     import com.yahoo.language.Linguistics;
 {
 /**
@@ -43,6 +44,7 @@ INJECT IndexingParser:
     private String defaultFieldName;
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
+    private Map<String, Generator> generators;    
     private AnnotatorConfig annotatorCfg;
 
     private PrintStream logger = new PrintStream(
@@ -71,6 +73,11 @@ INJECT IndexingParser:
 
     public IndexingParser setEmbedders(Map<String, Embedder> embedders) {
         this.embedders = embedders;
+        return this;
+    }
+    
+    public IndexingParser setGenerators(Map<String, Generator> generators) {
+        this.generators = generators;
         return this;
     }
 
