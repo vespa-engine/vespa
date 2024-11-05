@@ -50,6 +50,7 @@ class HostFlavorUpgraderTest {
         // Provision hosts and deploy application
         tester.makeReadyNodes(2, flavor0, NodeType.host);
         tester.activateTenantHosts();
+        tester.patchNodes(node -> node.type() == NodeType.host, (host) -> host.withExclusiveToApplicationId(app));
         tester.deploy(app, spec, capacity);
         Node host = tester.nodeRepository().nodes().list().hosts().first().get();
         assertEquals(flavor0, host.flavor().name());

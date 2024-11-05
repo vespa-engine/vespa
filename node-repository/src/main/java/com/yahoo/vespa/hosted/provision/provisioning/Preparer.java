@@ -238,9 +238,9 @@ public class Preparer {
         if ( hostType.isSharable())
             return nodeRepository.exclusivity().provisioning(cluster) ? HostSharing.provision :
                    nodeRepository.exclusivity().allocation(cluster) ? HostSharing.exclusive :
-                   HostSharing.any;
+                   HostSharing.shared;
         else
-            return HostSharing.any;
+            return HostSharing.shared;
     }
 
 }
