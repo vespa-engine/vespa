@@ -12,5 +12,6 @@ vespa_add_executable(searchcore_docid_range_scheduler_bench_app
     docid_range_scheduler_bench.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_docid_range_scheduler_bench_app COMMAND searchcore_docid_range_scheduler_bench_app BENCHMARK)
