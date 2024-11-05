@@ -149,7 +149,6 @@ createWand(const wand::Terms &terms,
                                            VectorizedIteratorTerms(termsWithMonitoring,
                                                                    DotProductScorer(),
                                                                    matchParams.docIdLimit,
-                                                                   StopWordStrategy::none(),
                                                                    std::move(rankParams.childrenMatchData)),
                                            matchParams, readonly_scores_heap),
                 false);
@@ -159,7 +158,6 @@ createWand(const wand::Terms &terms,
                                       VectorizedIteratorTerms(terms,
                                                               DotProductScorer(),
                                                               matchParams.docIdLimit,
-                                                              StopWordStrategy::none(),
                                                               std::move(rankParams.childrenMatchData)),
                                       matchParams, readonly_scores_heap);
 }

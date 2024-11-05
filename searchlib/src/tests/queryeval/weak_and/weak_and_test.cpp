@@ -39,10 +39,7 @@ struct MyWandSpec : public WandSpec
     }
     void set_second_phase() { matching_phase = MatchingPhase::SECOND_PHASE; }
     void set_abs_stop_word_adjust_limit(double limit) {
-        my_params.stop_words = wand::StopWordStrategy(-limit, 1.0, 1.0, 0);
-    }
-    void set_abs_stop_word_score_limit(double limit) {
-        my_params.stop_words = wand::StopWordStrategy(1.0, -limit, 1.0, 0);
+        my_params.stop_words = wand::StopWordStrategy(-limit, 1.0, 0);
     }
     SimpleResult search() {
         SearchIterator::UP search(create());
@@ -174,30 +171,6 @@ TEST(WeakAndTest, require_that_the_selected_adjust_word_must_match_when_using_st
               .seek("2", 1).step("2", 5).seek("1", 5).step("1", search::endDocId) // 1+2 can compete with 3
               .step("WAND", 8)
               .unpack("WAND", 8).seek("2", 8).step("2", search::endDocId).unpack("3", 8)
-              .seek("WAND", 9).seek("3", 9).step("3", 9).step("WAND", 9)
-              .unpack("WAND", 9).unpack("3", 9)
-              .seek("WAND", 10).seek("3", 10).step("3", search::endDocId).step("WAND", search::endDocId),
-              spec.getHistory());
-}
-
-TEST(WeakAndTest, require_that_the_worst_scored_word_must_match_when_using_stop_word_score_limit) {
-    MyWandSpec spec(1000); // avoid limiting hits with heap
-    spec.leaf(LeafSpec("1").doc(1).doc(2).doc(3).doc(4));
-    spec.leaf(LeafSpec("2").doc(5).doc(6).doc(7));
-    spec.leaf(LeafSpec("3").doc(8).doc(9));
-    spec.set_abs_stop_word_score_limit(4);
-    EXPECT_EQ(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(4).addHit(5)
-                      .addHit(6).addHit(7).addHit(8).addHit(9), spec.search());
-    spec.set_abs_stop_word_score_limit(3);
-    EXPECT_EQ(SimpleResult().addHit(5).addHit(6).addHit(7).addHit(8).addHit(9), spec.search());
-    spec.set_abs_stop_word_score_limit(2);
-    EXPECT_EQ(SimpleResult().addHit(8).addHit(9), spec.search());
-    spec.set_abs_stop_word_score_limit(1);
-    spec.getHistory()._entries.clear(); // only check history for last case
-    EXPECT_EQ(SimpleResult().addHit(8).addHit(9), spec.search()); // Note: must score at lest one word
-    EXPECT_EQ(History()
-              .seek("WAND", 1).seek("3", 1).step("3", 8).step("WAND", 8) // 1+2 cannot compete with 3
-              .unpack("WAND", 8).seek("1", 8).step("1", search::endDocId).seek("2", 8).step("2", search::endDocId).unpack("3", 8)
               .seek("WAND", 9).seek("3", 9).step("3", 9).step("WAND", 9)
               .unpack("WAND", 9).unpack("3", 9)
               .seek("WAND", 10).seek("3", 10).step("3", search::endDocId).step("WAND", search::endDocId),

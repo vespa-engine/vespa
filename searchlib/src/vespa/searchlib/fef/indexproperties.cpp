@@ -451,13 +451,6 @@ double WeakAndStopWordAdjustLimit::lookup(const Properties &props, double defaul
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string WeakAndStopWordScoreLimit::NAME("vespa.matching.weakand.stop_word_score_limit");
-const double WeakAndStopWordScoreLimit::DEFAULT_VALUE(1.0);
-double WeakAndStopWordScoreLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
-double WeakAndStopWordScoreLimit::lookup(const Properties &props, double defaultValue) {
-    return lookupDouble(props, NAME, defaultValue);
-}
-
 const std::string WeakAndStopWordDropLimit::NAME("vespa.matching.weakand.stop_word_drop_limit");
 const double WeakAndStopWordDropLimit::DEFAULT_VALUE(1.0);
 double WeakAndStopWordDropLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }

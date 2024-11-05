@@ -354,7 +354,6 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
     auto fuzzy_matching_algorithm = FuzzyAlgorithm::lookup(rank_properties, rank_setup.get_fuzzy_matching_algorithm());
     double weakand_range = temporary::WeakAndRange::lookup(rank_properties, rank_setup.get_weakand_range());
     double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
-    double weakand_stop_word_score_limit = WeakAndStopWordScoreLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_score_limit());
     double weakand_stop_word_drop_limit = WeakAndStopWordDropLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_drop_limit());
 
     // Note that we count the reserved docid 0 as active.
@@ -367,7 +366,6 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
             fuzzy_matching_algorithm,
             weakand_range,
             StopWordStrategy(weakand_stop_word_adjust_limit,
-                                                      weakand_stop_word_score_limit,
                                                       weakand_stop_word_drop_limit, docid_limit)};
 }
 

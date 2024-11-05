@@ -353,17 +353,6 @@ namespace matching {
     };
 
     /**
-     * Terms matching more than this will not contribute to the internal weak and score.
-     * The value is given as a fraction of the corpus in the range [0,1]
-     **/
-    struct WeakAndStopWordScoreLimit {
-        static const std::string NAME;
-        static const double DEFAULT_VALUE;
-        static double lookup(const Properties &props);
-        static double lookup(const Properties &props, double defaultValue);
-    };
-
-    /**
      * Terms matching more than this will be dropped from the query altogether.
      * The value is given as a fraction of the corpus in the range [0,1]
      **/

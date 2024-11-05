@@ -31,7 +31,6 @@ const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
 class StopWordStrategy {
 private:
     uint32_t _adjust_limit;
-    uint32_t _score_limit;
     uint32_t _drop_limit;
 
     static uint32_t to_abs(double rate, uint32_t docid_limit) {
@@ -48,19 +47,16 @@ private:
     }
 
 public:
-    StopWordStrategy(double adjust_limit, double score_limit, double drop_limit, uint32_t docid_limit) noexcept
+    StopWordStrategy(double adjust_limit, double drop_limit, uint32_t docid_limit) noexcept
         : _adjust_limit(to_abs(adjust_limit, docid_limit)),
-          _score_limit(to_abs(score_limit, docid_limit)),
           _drop_limit(to_abs(drop_limit, docid_limit)) {}
     [[nodiscard]] bool auto_adjust() const noexcept { return _adjust_limit != uint32_t(-1); }
     [[nodiscard]] uint32_t adjust_distance(uint32_t hits) const noexcept {
         return (hits > _adjust_limit) ? (hits - _adjust_limit) : (_adjust_limit - hits);
     }
-    [[nodiscard]] bool score_all() const noexcept { return _score_limit == uint32_t(-1); }
-    [[nodiscard]] bool should_score(uint32_t hits) const noexcept { return hits <= _score_limit; }
     [[nodiscard]] bool keep_all() const noexcept { return _drop_limit == uint32_t(-1); }
     [[nodiscard]] bool should_drop(uint32_t hits) const noexcept { return hits > _drop_limit; }
-    [[nodiscard]] static StopWordStrategy none() noexcept { return {1.0, 1.0, 1.0, 0}; }
+    [[nodiscard]] static StopWordStrategy none() noexcept { return {1.0, 1.0, 0}; }
 };
 
 /**
@@ -223,7 +219,7 @@ public:
     ~VectorizedState();
 
     template <typename Scorer, typename Input>
-    std::vector<ref_t> init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit, const StopWordStrategy &stop_words);
+    std::vector<ref_t> init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit);
 
     docid_t *docId() { return &(_docId[0]); }
     const int32_t *weight() const { return &(_weight[0]); }
@@ -263,30 +259,14 @@ VectorizedState<IteratorPack>::operator=(VectorizedState &&) noexcept = default;
 template <typename IteratorPack>
 template <typename Scorer, typename Input>
 std::vector<ref_t>
-VectorizedState<IteratorPack>::init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit, const StopWordStrategy &stop_words) {
+VectorizedState<IteratorPack>::init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit) {
     std::vector<ref_t> order;
     std::vector<score_t> max_scores;
     order.reserve(input.size());
     max_scores.reserve(input.size());
-    uint32_t num_erased_max_scores = 0;
-    score_t best_erased_max_score = 0;
-    uint32_t best_erased_max_score_idx = 0;
     for (size_t i = 0; i < input.size(); ++i) {
         order.push_back(i);
-        score_t max_score = scorer.calculate_max_score(input, i);
-        if (!stop_words.should_score(input.get_est_hits(i))) {
-            if (num_erased_max_scores == 0 || max_score > best_erased_max_score) {
-                best_erased_max_score = max_score;
-                best_erased_max_score_idx = i;
-            }
-            ++num_erased_max_scores;
-            max_score = 0;
-        }
-        max_scores.push_back(max_score);
-    }
-    if (num_erased_max_scores == max_scores.size()) {
-        // un-erase best max score if all max scores got erased
-        max_scores[best_erased_max_score_idx] = best_erased_max_score;
+        max_scores.push_back(scorer.calculate_max_score(input, i));
     }
     std::sort(order.begin(), order.end(), MaxSkipOrder<Input>(docIdLimit, input, max_scores));
     _docId = assemble([&input](ref_t ref){ return input.get_initial_docid(ref); }, order);
@@ -316,7 +296,7 @@ private:
 public:
     template <typename Scorer>
     VectorizedIteratorTerms(const Terms &t, const Scorer & scorer, uint32_t docIdLimit,
-                            const StopWordStrategy &stop_words, fef::MatchData::UP childrenMatchData);
+                            fef::MatchData::UP childrenMatchData);
     VectorizedIteratorTerms(VectorizedIteratorTerms &&) noexcept;
     VectorizedIteratorTerms & operator=(VectorizedIteratorTerms &&) noexcept;
 
@@ -335,10 +315,10 @@ public:
 
 template <typename Scorer>
 VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer & scorer, uint32_t docIdLimit,
-                                                 const StopWordStrategy &stop_words, fef::MatchData::UP childrenMatchData)
+                                                 fef::MatchData::UP childrenMatchData)
     : _terms()
 {
-    std::vector<ref_t> order = init_state<Scorer>(TermInput(t), scorer, docIdLimit, stop_words);
+    std::vector<ref_t> order = init_state<Scorer>(TermInput(t), scorer, docIdLimit);
     _terms = assemble([&t](ref_t ref){ return t[ref].copy_from(ref); }, order);
     iteratorPack() = SearchIteratorPack(assemble([&t](ref_t ref){ return t[ref].search; }, order),
                                         assemble([&t](ref_t ref){ return t[ref].matchData; }, order),
@@ -355,7 +335,7 @@ struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
                              const Scorer & scorer,
                              docid_t docIdLimit)
     {
-        std::vector<ref_t> order = init_state<Scorer>(AttrInput(weights, dict_entries), scorer, docIdLimit, StopWordStrategy::none());
+        std::vector<ref_t> order = init_state<Scorer>(AttrInput(weights, dict_entries), scorer, docIdLimit);
         std::vector<DocidWithWeightIterator> iterators;
         iterators.reserve(order.size());
         for (size_t i = 0; i < order.size(); ++i) {

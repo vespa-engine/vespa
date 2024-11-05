@@ -15,12 +15,10 @@ score_t initial_wand_threshold(const auto &scorer, const Terms &terms, const Sto
     uint32_t distance = 0;
     if (stop_words.auto_adjust()) {
         for (const auto &t: terms) {
-            if (stop_words.should_score(t.estHits)) {
-                uint32_t my_distance = stop_words.adjust_distance(t.estHits);
-                if (score == 0 || my_distance < distance) {
-                    score = scorer.calculateMaxScore(t);
-                    distance = my_distance;
-                }
+            uint32_t my_distance = stop_words.adjust_distance(t.estHits);
+            if (score == 0 || my_distance < distance) {
+                score = scorer.calculateMaxScore(t);
+                distance = my_distance;
             }
         }
     }
@@ -68,7 +66,7 @@ private:
 public:
     template<typename Scorer>
     WeakAndSearchLR(const Terms &terms, const MatchParams & matchParams, const Scorer & scorer, uint32_t n, bool readonly_scores_heap)
-        : _terms(terms, scorer, matchParams.docid_limit, matchParams.stop_words, {}),
+        : _terms(terms, scorer, matchParams.docid_limit, {}),
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
           _algo(),
           _threshold(initial_wand_threshold(scorer, terms, matchParams.stop_words)),
