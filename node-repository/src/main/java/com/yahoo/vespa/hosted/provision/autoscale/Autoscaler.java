@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**

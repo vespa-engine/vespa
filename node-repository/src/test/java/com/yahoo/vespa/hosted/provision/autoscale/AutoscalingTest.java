@@ -500,6 +500,19 @@ public class AutoscalingTest {
     }
 
     @Test
+    public void suggests_max_1_group_in_container_clusters() {
+        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
+        var fixture = DynamicProvisioningTester.fixture()
+                                               .clusterType(ClusterSpec.Type.container)
+                                               .awsProdSetup(true).capacity(Capacity.from(min, min)).build();
+        fixture.setScalingDuration(Duration.ofHours(6));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.loader().applyCpuLoad(1.0, 120);
+        List<Autoscaling> suggestions = fixture.tester().suggest(fixture.applicationId, fixture.clusterSpec.id(), min, min);
+        assertTrue(suggestions.stream().allMatch(s -> s.resources().get().groups() == 1));
+    }
+
+    @Test
     public void suggestions_ignores_limits_exclusive() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         var fixture = DynamicProvisioningTester.fixture().awsProdSetup(false).capacity(Capacity.from(min, min)).build();
