@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -10,6 +10,8 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -50,7 +52,18 @@ public class Autoscaler {
         if (model.isEmpty() || ! model.isStable(nodeRepository)) return List.of();
 
         var targets = allocationOptimizer.findBestAllocations(model.loadAdjustment(), model, Limits.empty(), false);
-        return targets.stream()
+
+        // Keep just the first suggestion of a given node resource
+        List<AllocatableResources> deduplicatedTargets = new ArrayList<>();
+        Set<NodeResources> suggestedNodeResources = new HashSet<>();
+        for (var target : targets) {
+            var nodeResources = target.advertisedResources().nodeResources();
+            if (suggestedNodeResources.contains(nodeResources)) continue;
+            suggestedNodeResources.add(nodeResources);
+            deduplicatedTargets.add(target);
+        }
+
+        return deduplicatedTargets.stream()
                 .map(target -> toAutoscaling(target, model))
                 .toList();
     }

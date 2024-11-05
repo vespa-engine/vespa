@@ -17,13 +17,16 @@ import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -497,6 +500,23 @@ public class AutoscalingTest {
         fixture.tester().assertResources("Suggesting above capacity limit",
                                          5, 1, 10.9,  11.9, 50.5,
                                          fixture.tester().suggest(fixture.applicationId, fixture.clusterSpec.id(), min, min));
+    }
+
+    @Test
+    public void suggestions_avoid_duplicate_resources() {
+        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
+        var fixture = DynamicProvisioningTester.fixture().awsProdSetup(false).capacity(Capacity.from(min, min)).build();
+        fixture.setScalingDuration(Duration.ofHours(6));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.loader().applyCpuLoad(1.0, 120);
+        List<Autoscaling> suggestions = fixture.tester().suggest(fixture.applicationId, fixture.clusterSpec.id(), min, min);
+        Set<NodeResources> seenResources = new HashSet<>();
+        for (var suggestion : suggestions) {
+            var nodeResources = suggestion.resources().get().nodeResources();
+            if (seenResources.contains(nodeResources))
+                fail("Duplicate suggestion with resources " + nodeResources);
+            seenResources.add(nodeResources);
+        }
     }
 
     @Test
