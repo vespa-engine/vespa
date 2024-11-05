@@ -30,8 +30,11 @@ public interface HostProvisioner {
         /** The host must be exclusive to a single application ID */
         exclusive,
 
-        /** The host may be provisioned to be shared with other applications, otherwise falls back to exclusive. */
-        shared;
+        /** The host must be provisioned to be shared with other applications. */
+        shared,
+
+        /** The client has no requirements on whether the host must be provisioned exclusively or shared. */
+        any;
 
         public boolean isExclusiveAllocation() {
             return this == provision || this == exclusive;
