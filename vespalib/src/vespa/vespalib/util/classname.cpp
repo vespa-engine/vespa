@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/util/classname.h>
 #include <cxxabi.h>
+#include <cstdlib>
 
 namespace vespalib {
 

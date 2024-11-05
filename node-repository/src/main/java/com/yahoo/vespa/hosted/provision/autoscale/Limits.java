@@ -30,8 +30,6 @@ public class Limits {
         this.groupSize = groupSize;
     }
 
-    public static Limits empty() { return empty; }
-
     public boolean isEmpty() { return this == empty; }
 
     public ClusterResources min() {
@@ -79,6 +77,12 @@ public class Limits {
         return value;
     }
 
+    @Override
+    public String toString() {
+        if (isEmpty()) return "no limits";
+        return "limits: from " + min + " to " + max + ( groupSize.isEmpty() ? "" : " with group size " + groupSize);
+    }
+
     public static Limits of(Cluster cluster) {
         return new Limits(cluster.minResources(), cluster.maxResources(), cluster.groupSize());
     }
@@ -93,10 +97,6 @@ public class Limits {
                           Objects.requireNonNull(groupSize, "groupSize"));
     }
 
-    @Override
-    public String toString() {
-        if (isEmpty()) return "no limits";
-        return "limits: from " + min + " to " + max + ( groupSize.isEmpty() ? "" : " with group size " + groupSize);
-    }
+    public static Limits empty() { return empty; }
 
 }
