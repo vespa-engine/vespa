@@ -37,6 +37,7 @@
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
+#include <vespa/searchlib/diskindex/posting_list_cache.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
@@ -63,6 +64,8 @@ LOG_SETUP(".proton.server.proton");
 using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
+using search::diskindex::IPostingListCache;
+using search::diskindex::PostingListCache;
 using search::engine::MonitorReply;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
@@ -157,6 +160,15 @@ void ensureWritableDir(const std::string &dirName) {
     probe.write("probe\n", 6, 0);
     probe.close();
     probe.unlink();
+}
+
+std::shared_ptr<IPostingListCache>
+make_posting_list_cache(const ProtonConfig& cfg)
+{
+    if (cfg.search.io == ProtonConfig::Search::Io::MMAP || cfg.index.postinglist.cache.maxbytes == 0) {
+        return {};
+    }
+    return std::make_shared<PostingListCache>(cfg.index.postinglist.cache.maxbytes);
 }
 
 } // namespace <unnamed>
@@ -299,6 +311,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, hwInfo);
+    _posting_list_cache = make_posting_list_cache(protonConfig);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
     _metricsEngine->addMetricsHook(*_metricsHook);
