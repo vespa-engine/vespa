@@ -58,6 +58,10 @@ public class FS4Hit extends Hit {
         return path;
     }
 
+    public void setPath(int value) {
+        this.path = value;
+    }
+
     /** Returns the global document id on the search node returning this hit. */
     public GlobalId getGlobalId() {
         return globalId;
