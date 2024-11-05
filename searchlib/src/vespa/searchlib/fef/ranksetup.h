@@ -85,7 +85,6 @@ private:
     double                   _target_hits_max_adjustment_factor;
     double                   _weakand_range;
     double                   _weakand_stop_word_adjust_limit;
-    double                   _weakand_stop_word_score_limit;
     double                   _weakand_stop_word_drop_limit;
     vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
     MutateOperation          _mutateOnMatch;
@@ -417,8 +416,6 @@ public:
     double get_weakand_range() const { return _weakand_range; }
     void set_weakand_stop_word_adjust_limit(double v) { _weakand_stop_word_adjust_limit = v; }
     double get_weakand_stop_word_adjust_limit() const { return _weakand_stop_word_adjust_limit; }
-    void set_weakand_stop_word_score_limit(double v) { _weakand_stop_word_score_limit = v; }
-    double get_weakand_stop_word_score_limit() const { return _weakand_stop_word_score_limit; }
     void set_weakand_stop_word_drop_limit(double v) { _weakand_stop_word_drop_limit = v; }
     double get_weakand_stop_word_drop_limit() const { return _weakand_stop_word_drop_limit; }
 

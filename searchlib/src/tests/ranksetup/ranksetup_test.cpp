@@ -562,7 +562,6 @@ TEST_F(RankSetupTest, rank_setup)
     env.getProperties().add(matching::TargetHitsMaxAdjustmentFactor::NAME, "5.0");
     env.getProperties().add(matching::FuzzyAlgorithm::NAME, "dfa_implicit");
     env.getProperties().add(matching::WeakAndStopWordAdjustLimit::NAME, "0.05");
-    env.getProperties().add(matching::WeakAndStopWordScoreLimit::NAME, "0.2");
     env.getProperties().add(matching::WeakAndStopWordDropLimit::NAME, "0.5");
 
     RankSetup rs(_factory, env);
@@ -608,7 +607,6 @@ TEST_F(RankSetupTest, rank_setup)
     EXPECT_EQ(rs.get_target_hits_max_adjustment_factor(), 5.0);
     EXPECT_EQ(rs.get_fuzzy_matching_algorithm(), vespalib::FuzzyMatchingAlgorithm::DfaImplicit);
     EXPECT_EQ(rs.get_weakand_stop_word_adjust_limit(), 0.05);
-    EXPECT_EQ(rs.get_weakand_stop_word_score_limit(), 0.2);
     EXPECT_EQ(rs.get_weakand_stop_word_drop_limit(), 0.5);
 }
 
