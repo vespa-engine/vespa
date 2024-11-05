@@ -69,6 +69,11 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
         for (var node : activeNodes) {
             Optional<Node> parent = allNodes.parentOf(node);
             if (parent.isEmpty()) continue;
+
+            // Limit upgrades to exclusive hosts because it is hard to predict which flavor will be provisioned when
+            // retiring nodes on shared hosts
+            if (parent.get().exclusiveToApplicationId().isEmpty()) continue;
+
             if (exhaustedFlavors.contains(parent.get().flavor().name())) continue;
             Allocation allocation = node.allocation().get();
             Predicate<NodeResources> realHostResourcesWithinLimits =
