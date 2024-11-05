@@ -4,6 +4,7 @@ vespa_add_executable(searchcore_docid_range_scheduler_test_app TEST
     docid_range_scheduler_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_docid_range_scheduler_test_app COMMAND searchcore_docid_range_scheduler_test_app)
 vespa_add_executable(searchcore_docid_range_scheduler_bench_app
