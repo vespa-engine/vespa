@@ -2,6 +2,7 @@
 
 #include "log.h"
 #include <cstdio>
+#include <cstdlib>
 LOG_SETUP("");
 
 namespace ns_log {
