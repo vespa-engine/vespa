@@ -3,25 +3,19 @@ package ai.vespa.generative;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
 import ai.vespa.llm.completion.StringPrompt;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.document.DataType;
 
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Generator extends AbstractComponent implements com.yahoo.language.process.Generator {
-    private static final Logger log = Logger.getLogger(Generator.class.getName());
-    private final LanguageModel languageModel;
 
-    @Inject
-    public Generator(GeneratorConfig config, ComponentRegistry<LanguageModel> languageModels) {
-        this.languageModel = findLanguageModel(config.providerId(), languageModels);
-    }
-    
-    private LanguageModel findLanguageModel(String providerId, ComponentRegistry<LanguageModel> languageModels)
+/**
+ *  Provide utilities to implement Generator interface.
+ *  It is used by language models as well as other generators.
+ */
+public class GeneratorUtils {
+    public static LanguageModel findLanguageModel(String providerId, ComponentRegistry<LanguageModel> languageModels, Logger log)
             throws IllegalArgumentException
     {
         if (languageModels.allComponents().isEmpty()) {
@@ -52,8 +46,9 @@ public class Generator extends AbstractComponent implements com.yahoo.language.p
         return languageModel;
     }
     
-    @Override
-    public String generate(String prompt, Context context, DataType dataType) {
+    public static String generate(
+            String prompt, LanguageModel languageModel)
+    {
         var options = new InferenceParameters(s -> "");
         var promptObj = StringPrompt.from(prompt);
         var completions = languageModel.complete(promptObj, options);

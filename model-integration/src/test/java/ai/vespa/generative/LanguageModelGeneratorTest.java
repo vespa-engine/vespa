@@ -18,30 +18,30 @@ import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class GeneratorTest {
+public class LanguageModelGeneratorTest {
     @Test
     public void testGeneration() {
         LanguageModel languageModel1 = new RepeatMockLanguageModel(1);
         LanguageModel languageModel2 = new RepeatMockLanguageModel(2);
         var languageModels = Map.of("mock1", languageModel1, "mock2", languageModel2);
         
-        var config1 = new GeneratorConfig.Builder().providerId("mock1").build();
+        var config1 = new LanguageModelGeneratorConfig.Builder().providerId("mock1").build();
         var generator1 = createGenerator(config1, languageModels);
         var context = new com.yahoo.language.process.Generator.Context("schema.indexing");
         var result1 = generator1.generate("hello", context, DataType.STRING);
         assertEquals("hello", result1);
     
-        var config2 = new GeneratorConfig.Builder().providerId("mock2").build();
+        var config2 = new LanguageModelGeneratorConfig.Builder().providerId("mock2").build();
         var generator2 = createGenerator(config2, Map.of("mock1", languageModel1, "mock2", languageModel2));
         var result2 = generator2.generate("hello", context, DataType.STRING);
         assertEquals("hello hello", result2);
     }
 
-    private static Generator createGenerator(GeneratorConfig config, Map<String, LanguageModel> languageModels) {
+    private static LanguageModelGenerator createGenerator(LanguageModelGeneratorConfig config, Map<String, LanguageModel> languageModels) {
         ComponentRegistry<LanguageModel> models = new ComponentRegistry<>();
         languageModels.forEach((key, value) -> models.register(ComponentId.fromString(key), value));
         models.freeze();
-        return new Generator(config, models);
+        return new LanguageModelGenerator(config, models);
     }
     
     public static class RepeatMockLanguageModel implements LanguageModel {

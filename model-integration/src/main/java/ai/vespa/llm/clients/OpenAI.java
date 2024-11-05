@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.clients;
 
+import ai.vespa.generative.GeneratorUtils;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.client.openai.OpenAiClient;
 import ai.vespa.llm.completion.Completion;
@@ -8,6 +9,8 @@ import ai.vespa.llm.completion.Prompt;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.document.DataType;
+import com.yahoo.language.process.Generator;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -19,7 +22,7 @@ import java.util.function.Consumer;
  * @author lesters
  */
 @Beta
-public class OpenAI extends ConfigurableLanguageModel {
+public class OpenAI extends ConfigurableLanguageModel implements Generator {
 
     private final OpenAiClient client;
 
@@ -43,6 +46,11 @@ public class OpenAI extends ConfigurableLanguageModel {
         setApiKey(parameters);
         setEndpoint(parameters);
         return client.completeAsync(prompt, parameters, consumer);
+    }
+
+    @Override
+    public String generate(String prompt, Context context, DataType dataType) {
+        return GeneratorUtils.generate(prompt, this);
     }
 }
 
