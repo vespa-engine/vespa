@@ -475,6 +475,10 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     public Redundancy getRedundancy() { return redundancy; }
 
+    public int groupSize() {
+        return getNodeCount() / getRootGroup().getNumberOfLeafGroups();
+    }
+
     public ContentCluster setRedundancy(Redundancy redundancy) {
         this.redundancy = redundancy;
         return this;

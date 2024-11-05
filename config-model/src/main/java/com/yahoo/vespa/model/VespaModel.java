@@ -644,12 +644,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     /** If provisioning through the node repo, returns the provision requests issued during build of this */
     public Provisioned provisioned() { return provisioned; }
 
-    /** Returns the id of all clusters in this */
-    public Set<ClusterSpec.Id> allClusters() {
+    /** Returns the spedc of all clusters in this */
+    public Set<ClusterSpec> allClusters() {
         return hostSystem().getHosts().stream()
                                       .map(HostResource::spec)
                                       .filter(spec -> spec.membership().isPresent())
-                                      .map(spec -> spec.membership().get().cluster().id())
+                                      .map(spec -> spec.membership().get().cluster())
                                       .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
