@@ -231,6 +231,7 @@ public abstract class Condition {
         if (label == null)
             label = e.getCurrentLabel();
         if ("".equals(indexName) && label == null) return true;
+        if ("default".equals(indexName) && label == null) return true;
         if (indexName.equals(label)) return true;
         if (e.getTraceLevel() >= 4)
             e.trace(4, "'" + this + "' does not match, label of " + e.currentItem() + " was required to be " + label);
