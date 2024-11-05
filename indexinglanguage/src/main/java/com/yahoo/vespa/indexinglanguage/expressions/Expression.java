@@ -105,7 +105,7 @@ public abstract class Expression extends Selectable {
      * This implementation returns the same type, which is appropriate for all statements
      * that do not change the type.
      *
-     * @param actualOutput the type actually produced by this, musyt be assignable to the requiredOutput,
+     * @param actualOutput the type actually produced by this, must be assignable to the requiredOutput,
      *                     or null if not known
      * @param requiredOutput the type required by the next expression, which actualOutput must be assignable to,
      *                       or null if it cannot be uniquely determined.

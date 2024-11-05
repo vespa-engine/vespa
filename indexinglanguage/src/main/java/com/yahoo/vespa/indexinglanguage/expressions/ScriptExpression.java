@@ -57,7 +57,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
         super.setOutputType(outputType, context);
         DataType currentInput = null;
         for (var expression : expressions())
-            currentInput = expression.setInputType(outputType, context);
+            currentInput = expression.setOutputType(outputType, context);
         return currentInput != null ? currentInput : getInputType(context);
     }
 
