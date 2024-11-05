@@ -539,6 +539,14 @@ indexing.threads int default=1 restart
 ## TODO Still relevant, check config model, seems unused.
 index.cache.size long default=0 restart
 
+## Configure a shared disk index posting list cache across all document dbs.
+##
+## Is default turned off (maxbytes == 0).
+## The cache will not be used if search.io == MMAP.
+## A postive number specifies the max size of the cache in bytes.
+## A negative number specifies the max size of the cache as a percentage of total memory.
+index.postinglist.cache.maxbytes long default=0 restart
+
 ## Specifies which tensor implementation to use for all backend code.
 ##
 ## TENSOR_ENGINE (default) uses DefaultTensorEngine, which has been the production implementation for years.
