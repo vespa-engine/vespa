@@ -25,21 +25,35 @@ public final class ToWsetExpression extends Expression {
     public boolean getRemoveIfZero() { return removeIfZero; }
 
     @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
+        return outputType(input);
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        if ( ! (output instanceof WeightedSetDataType))
+            throw new VerificationException(this, "This creates a WeightedSet, but type " + output.getName() + " is needed");
+        super.setOutputType(output, context);
+        return getInputType(context);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
-        context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), createIfNonExistent, removeIfZero));
+        context.setCurrentType(outputType(context.getCurrentType()));
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
-        DataType inputType = input.getDataType();
-
-        WeightedSetDataType outputType = DataType.getWeightedSet(inputType, createIfNonExistent, removeIfZero);
-        WeightedSet output = outputType.createFieldValue();
+        WeightedSet output = outputType(input.getDataType()).createFieldValue();
         output.add(input);
-
         context.setCurrentValue(output);
+    }
+
+    private WeightedSetDataType outputType(DataType inputType) {
+        return DataType.getWeightedSet(inputType, createIfNonExistent, removeIfZero);
     }
 
     @Override

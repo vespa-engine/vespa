@@ -53,9 +53,9 @@ public class ForEachTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.getArray(DataType.INT), exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected Array, Struct, WeightedSet or Map input, got int");
-        assertVerifyThrows(DataType.getArray(DataType.STRING), exp, "Expected int input, got string");
+        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected Array, Struct, WeightedSet or Map input, got int", DataType.INT, exp);
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.getArray(DataType.STRING), exp);
     }
 
     @Test
@@ -63,10 +63,8 @@ public class ForEachTestCase {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("foo", DataType.INT));
         assertVerify(type, new ForEachExpression(new SimpleExpression()), type);
-        assertVerifyThrows(type, new ForEachExpression(SimpleExpression.newConversion(DataType.STRING, DataType.INT)),
-                           "Expected string input, got int");
-        assertVerifyThrows(type, new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
-                           "Expected int output, got string");
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected string input, got int", type, new ForEachExpression(SimpleExpression.newConversion(DataType.STRING, DataType.INT)));
+        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected int output, got string", type, new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
     }
 
     @Test
@@ -215,7 +213,7 @@ public class ForEachTestCase {
             new ForEachExpression(new ToArrayExpression()).verify(ctx);
             fail();
         } catch (VerificationException e) {
-            assertEquals("Expected int output, got Array<int>", e.getMessage());
+            assertEquals("Invalid expression 'for_each { to_array }': Expected int output, got Array<int>", e.getMessage());
         }
     }
 

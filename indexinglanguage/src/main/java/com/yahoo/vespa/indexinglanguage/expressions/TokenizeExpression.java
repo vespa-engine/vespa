@@ -28,6 +28,16 @@ public final class TokenizeExpression extends Expression {
     public AnnotatorConfig getConfig() { return config; }
 
     @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        return super.setInputType(input, DataType.STRING, context);
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        return super.setOutputType(DataType.STRING, output, null, context);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         // empty
     }

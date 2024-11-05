@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.PrimitiveDataType;
 
 /**
  * @author Simon Thoresen Hult
@@ -11,6 +12,18 @@ public final class ToPositionExpression extends Expression {
 
     public ToPositionExpression() {
         super(DataType.STRING);
+    }
+
+    @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, DataType.STRING, context);
+        return PositionDataType.INSTANCE;
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(PositionDataType.INSTANCE, output, null, context);
+        return DataType.STRING;
     }
 
     @Override
