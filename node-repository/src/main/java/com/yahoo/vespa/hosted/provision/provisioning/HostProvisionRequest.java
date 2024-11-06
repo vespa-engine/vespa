@@ -28,9 +28,9 @@ import java.util.Optional;
  * @param clusterId               The ID of the cluster we are provisioning for, or empty if we are provisioning hosts
  *                                to be shared by multiple cluster nodes.
  * @param cloudAccount            The cloud account to use.
- * @param requireLatestGeneration Whether to require the latest generation when choosing a flavor. Latest generation will
- *                                always be preferred, but setting this to true disallows falling back to an older
- *                                generation.
+ * @param requireBestMatchingFlavor Whether to only try provisioning with the best matching flavor. If that flavor is
+ *                                unavailable for whatever reason, the request will fail without trying other
+ *                                flavors that could satisfy the request.
  * @author mpolden
  */
 public record HostProvisionRequest(List<Integer> indices,
@@ -42,12 +42,12 @@ public record HostProvisionRequest(List<Integer> indices,
                                    Optional<ClusterSpec.Type> clusterType,
                                    Optional<ClusterSpec.Id> clusterId,
                                    CloudAccount cloudAccount,
-                                   boolean requireLatestGeneration) {
+                                   boolean requireBestMatchingFlavor) {
 
     public HostProvisionRequest(List<Integer> indices, NodeType type, NodeResources resources,
                                 ApplicationId owner, Version osVersion, HostProvisioner.HostSharing sharing,
                                 Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId,
-                                CloudAccount cloudAccount, boolean requireLatestGeneration) {
+                                CloudAccount cloudAccount, boolean requireBestMatchingFlavor) {
         this.indices = List.copyOf(Objects.requireNonNull(indices));
         this.type = Objects.requireNonNull(type);
         this.resources = Objects.requireNonNull(resources);
@@ -57,7 +57,7 @@ public record HostProvisionRequest(List<Integer> indices,
         this.clusterType = Objects.requireNonNull(clusterType);
         this.clusterId = Objects.requireNonNull(clusterId);
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
-        this.requireLatestGeneration = requireLatestGeneration;
+        this.requireBestMatchingFlavor = requireBestMatchingFlavor;
     }
 
 }
