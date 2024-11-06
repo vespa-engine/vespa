@@ -53,6 +53,7 @@ public class TimeoutManagerImpl {
             done.set(true);
             done.notify();
         }
+        if (Thread.currentThread() == thread) return;
         try {
             thread.join();
         } catch (InterruptedException e) {}
