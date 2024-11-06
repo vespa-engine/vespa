@@ -39,6 +39,38 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     @Override
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+
+        DataType outputType = null;
+        boolean outputNeverAssigned = true; // Needed to separate this null case from the "cannot be inferred" case
+        for (Pair<String, Expression> entry : cases) {
+            DataType fieldType = context.getFieldType(entry.getFirst(), this);
+            if (fieldType == null)
+                throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
+            var entryOutputType = entry.getSecond().setInputType(fieldType, context);
+            outputType = outputNeverAssigned ? entryOutputType : mostGeneralOf(outputType, entryOutputType);
+            outputNeverAssigned = false;
+        }
+        return outputType;
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+
+        for (Pair<String, Expression> entry : cases) {
+            DataType fieldType = context.getFieldType(entry.getFirst(), this);
+            if (fieldType == null)
+                throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
+            DataType inputType = entry.getSecond().setOutputType(outputType, context);
+            if ( ! fieldType.isAssignableTo(inputType))
+                throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found");
+        }
+        return AnyDataType.instance;
+    }
+
+    @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         for (var casePair : cases)
             casePair.getSecond().setStatementOutput(documentType, field);

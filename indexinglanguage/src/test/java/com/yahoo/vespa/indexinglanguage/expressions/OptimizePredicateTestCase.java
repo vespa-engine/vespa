@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyCtx;
-import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyCtxThrows;
+import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.*;
 
@@ -76,22 +76,24 @@ public class OptimizePredicateTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new OptimizePredicateExpression();
-        assertVerifyThrows(null, exp, "Expected predicate input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected predicate input, got int");
-        assertVerifyThrows(DataType.PREDICATE, exp, "Variable 'arity' must be set");
+        String prefix = "Invalid expression 'optimize_predicate': ";
+        assertVerifyThrows(prefix + "Expected predicate input, but no input is specified", null, exp);
+        assertVerifyThrows(prefix + "Expected predicate input, got int", DataType.INT, exp);
+        assertVerifyThrows(prefix + "Variable 'arity' must be set", DataType.PREDICATE, exp);
 
         VerificationContext context = new VerificationContext().setCurrentType(DataType.PREDICATE);
         context.setVariable("arity", DataType.STRING);
-        assertVerifyCtxThrows(context, exp, "Variable 'arity' must have type int");
+        ExpressionAssert.assertVerifyThrows(prefix + "Variable 'arity' must have type int", exp, context);
         context.setVariable("arity", DataType.INT);
-        assertVerifyCtx(context, exp, DataType.PREDICATE);
+        assertVerifyCtx(exp, DataType.PREDICATE, context);
         context.setVariable("lower_bound", DataType.INT);
-        assertVerifyCtxThrows(context, exp, "Variable 'lower_bound' must have type long");
+        ExpressionAssert.assertVerifyThrows(prefix + "Variable 'lower_bound' must have type long", exp, context);
         context.setVariable("lower_bound", DataType.LONG);
-        assertVerifyCtx(context, exp, DataType.PREDICATE);
+        assertVerifyCtx(exp, DataType.PREDICATE, context);
         context.setVariable("upper_bound", DataType.INT);
-        assertVerifyCtxThrows(context, exp,  "Variable 'upper_bound' must have type long");
+        ExpressionAssert.assertVerifyThrows(prefix + "Variable 'upper_bound' must have type long", exp, context);
         context.setVariable("upper_bound", DataType.LONG);
-        assertVerifyCtx(context, exp, DataType.PREDICATE);
+        assertVerifyCtx(exp, DataType.PREDICATE, context);
     }
+
 }

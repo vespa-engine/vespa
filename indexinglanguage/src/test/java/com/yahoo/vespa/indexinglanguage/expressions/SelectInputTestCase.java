@@ -58,9 +58,9 @@ public class SelectInputTestCase {
         assertVerify(adapter, DataType.STRING, exp);
 
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_str"),
-                           "Can not assign string to field 'my_int' which is int.");
+                           "Invalid expression 'attribute my_int': Can not assign string to field 'my_int' which is int.");
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_unknown"),
-                           "Input field 'my_unknown' not found.");
+                           "Invalid expression 'select_input { my_unknown: attribute my_int; }': Input field 'my_unknown' not found.");
     }
 
     @Test

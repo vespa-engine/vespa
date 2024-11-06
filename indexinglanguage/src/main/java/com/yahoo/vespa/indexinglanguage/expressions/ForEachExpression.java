@@ -42,20 +42,75 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        // TODO: Activate type checking
-        // if ( ! inputType.isMultivalue())
-        //    throw new IllegalArgumentException("for_each requires a multivalue type, but gets " + inputType);
-        expression.setInputType(inputType.getNestedType(), context);
-        return super.setInputType(inputType, context);
+        super.setInputType(inputType, context);
+
+        if (inputType instanceof ArrayDataType || inputType instanceof WeightedSetDataType) {
+            // Value type outside block becomes the collection type having the block output type as argument
+            return withInnerType(expression.setInputType(inputType.getNestedType(), context), inputType);
+        }
+        else if (inputType instanceof StructDataType struct) {
+            return verifyStructFields(struct, context);
+        }
+        if (inputType instanceof MapDataType) {
+            // Inner value will be MapEntryFieldValue which has the same type as the map
+            DataType outputType = expression.setInputType(inputType, context);
+            if (outputType == null) return getOutputType(context);
+            return DataType.getArray(outputType);
+        }
+        else {
+            throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
+                                                  inputType.getName());
+        }
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        // TODO: Activate type checking
-        // if ( ! outputType.isMultivalue())
-        //    throw new IllegalArgumentException("for_each produces a multivalue type, but " + outputType + " is required");
-        expression.setOutputType(outputType.getNestedType(), context);
-        return super.setOutputType(outputType, context);
+        super.setOutputType(outputType, context);
+
+        if (outputType instanceof ArrayDataType || outputType instanceof WeightedSetDataType) {
+            DataType innerInputType = expression.setOutputType(outputType.getNestedType(), context);
+            if (innerInputType instanceof MapDataType mapDataType) // A map converted to an array of entries
+                return mapDataType;
+            else
+                return withInnerType(innerInputType, outputType);
+        }
+        else if (outputType instanceof StructDataType struct) {
+            return verifyStructFields(struct, context);
+        }
+        else {
+            throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
+                                                  outputType.getName());
+        }
+    }
+
+    private DataType withInnerType(DataType innerType, DataType collectionType) {
+        if (innerType == null) return null;
+        if (collectionType instanceof WeightedSetDataType wset)
+            return DataType.getWeightedSet(innerType, wset.createIfNonExistent(), wset.removeIfZero());
+        else
+            return DataType.getArray(innerType);
+    }
+
+    /**
+     * Verifies that each struct field is compatible with the expression.
+     * This is symmetric in both verification directions since the expression just need to be compatible with
+     * all the struct fields.
+     */
+    private DataType verifyStructFields(StructDataType struct, VerificationContext context) {
+        for (Field field : struct.getFields()) {
+            DataType fieldType = field.getDataType();
+            DataType fieldOutputType = expression.setInputType(fieldType, context);
+            if (fieldOutputType != null && ! fieldOutputType.isAssignableTo(fieldType))
+                throw new VerificationException(this, "Struct field " + field.getName() + " has type " + fieldType.getName() +
+                                                      " but expression produces " + fieldOutputType);
+            DataType fieldInputType = expression.setOutputType(fieldType, context);
+            if (fieldOutputType != null && ! fieldType.isAssignableTo(fieldInputType))
+                throw new VerificationException(this, "Struct field " + field.getName() + " has type " + fieldType.getName() +
+                                                      " but expression requires " + fieldInputType);
+            if (fieldOutputType == null && fieldInputType == null)
+                return null; // Neither direction could be inferred
+        }
+        return struct;
     }
 
     @Override
