@@ -33,7 +33,7 @@ public class ToBoolTestCase {
         Expression exp = new ToBoolExpression();
         assertVerify(DataType.INT, exp, DataType.BOOL);
         assertVerify(DataType.STRING, exp, DataType.BOOL);
-        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
+        assertVerifyThrows("Invalid expression 'to_bool': Expected any input, but no input is specified", null, exp);
     }
 
     @Test

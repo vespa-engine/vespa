@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
@@ -22,43 +21,36 @@ public class HashExpression extends Expression  {
 
     private final HashFunction hasher = Hashing.sipHash24();
 
-    /** The target *primitive* type we are hashing into. */
-    private DataType targetType;
-
     public HashExpression() {
         super(DataType.STRING);
     }
 
     @Override
-    public void setStatementOutput(DocumentType documentType, Field field) {
-        if ( ! canStoreHash(field.getDataType()))
-            throw new IllegalArgumentException("Cannot use the hash function on an indexing statement for " +
-                                               field.getName() +
-                                               ": The hash function can only be used when the target field " +
-                                               "is int or long or an array of int or long, not " + field.getDataType());
-        targetType = field.getDataType().getPrimitiveType();
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, DataType.STRING, context);
+        return getOutputType(context); // Can not infer int or long
+    }
+
+    @Override
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(outputType, context);
+        if ( ! isHashCompatible(outputType))
+            throw new VerificationException(this, "An " + outputType.getName() +
+                                                  " output is required, but this produces int or long");
+        return DataType.STRING;
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        String outputField = context.getOutputField();
-        if (outputField == null)
-            throw new VerificationException(this, "No output field in this statement: " +
-                                                  "Don't know what value to hash to");
-        DataType outputFieldType = context.getFieldType(this);
-        if ( ! canStoreHash(outputFieldType))
-            throw new VerificationException(this, "The type of the output field " + outputField +
-                                                  " is not int or long but " + outputFieldType);
-        targetType = outputFieldType.getPrimitiveType();
         context.setCurrentType(createdOutputType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
-        if (targetType.equals(DataType.INT))
+        if (requireOutputType().equals(DataType.INT))
             context.setCurrentValue(new IntegerFieldValue(hashToInt(input.getString())));
-        else if (targetType.equals(DataType.LONG))
+        else if (requireOutputType().equals(DataType.LONG))
             context.setCurrentValue(new LongFieldValue(hashToLong(input.getString())));
         else
             throw new IllegalStateException(); // won't happen
@@ -72,15 +64,14 @@ public class HashExpression extends Expression  {
         return hasher.hashString(value, StandardCharsets.UTF_8).asLong();
     }
 
-    private boolean canStoreHash(DataType type) {
+    private boolean isHashCompatible(DataType type) {
         if (type.equals(DataType.INT)) return true;
         if (type.equals(DataType.LONG)) return true;
-        if (type instanceof ArrayDataType) return canStoreHash(((ArrayDataType)type).getNestedType());
         return false;
     }
 
     @Override
-    public DataType createdOutputType() { return targetType; }
+    public DataType createdOutputType() { return requireOutputType(); }
 
     @Override
     public String toString() { return "hash"; }

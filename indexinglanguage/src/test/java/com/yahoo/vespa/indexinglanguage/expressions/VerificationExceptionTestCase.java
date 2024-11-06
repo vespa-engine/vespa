@@ -15,7 +15,7 @@ public class VerificationExceptionTestCase {
         Expression exp = new SimpleExpression();
         VerificationException e = new VerificationException(exp, "foo");
         assertEquals(exp.toString(), e.getExpression());
-        assertEquals("foo", e.getMessage());
+        assertEquals("Invalid expression 'SimpleExpression': foo", e.getMessage());
         assertTrue(e.toString().contains(exp.toString()));
         assertTrue(e.toString().contains(e.getMessage()));
     }

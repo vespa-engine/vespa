@@ -48,7 +48,7 @@ public class SimpleDocumentAdapterTestCase {
             adapter.getInputType(null, "foo");
             fail();
         } catch (VerificationException e) {
-            assertEquals("Input field 'foo' not found", e.getMessage());
+            assertEquals("Invalid expression 'null': Input field 'foo' not found", e.getMessage());
         }
         assertNull(adapter.getInputValue("foo"));
     }

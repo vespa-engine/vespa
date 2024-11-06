@@ -51,16 +51,16 @@ public class CatTestCase {
                      new SimpleExpression(DataType.STRING), DataType.STRING);
         assertVerifyThrows(new SimpleExpression().setCreatedOutput(null),
                            new SimpleExpression().setCreatedOutput(DataType.STRING), null,
-                           "In SimpleExpression: Attempting to concatenate a null value");
+                           "Invalid expression 'SimpleExpression . SimpleExpression': In SimpleExpression: Attempting to concatenate a null value");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.INT), null,
-                           "Operands require conflicting input types, string vs int");
+                           "Invalid expression of type 'CatExpression': Operands require conflicting input types, string vs int");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), null,
-                           "Expected string input, but no input is specified");
+                           "Invalid expression 'SimpleExpression . SimpleExpression': Expected string input, but no input is specified");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), DataType.INT,
-                           "Expected string input, got int");
+                           "Invalid expression 'SimpleExpression . SimpleExpression': Expected string input, got int");
     }
 
     @Test
