@@ -103,14 +103,11 @@ public class ScriptTestCase {
         var intField = new Field("myInt", DataType.INT);
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
-        expression.setStatementOutput(new DocumentType("myDocument"), intField);
 
-        // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
         assertEquals(DataType.INT, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setCurrentValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myInt"));
         assertEquals(-1425622096, adapter.values.get("myInt").getWrappedValue());
@@ -129,14 +126,11 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("first"));
         array.add(new StringFieldValue("second"));
         adapter.setValue("myTextArray", array);
-        expression.setStatementOutput(new DocumentType("myDocument"), intField);
 
-        // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
         assertEquals(new ArrayDataType(DataType.INT), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myIntArray"));
         var intArray = (Array<IntegerFieldValue>)adapter.values.get("myIntArray");
@@ -153,14 +147,11 @@ public class ScriptTestCase {
         var intField = new Field("myLong", DataType.LONG);
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
-        expression.setStatementOutput(new DocumentType("myDocument"), intField);
 
-        // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
         assertEquals(DataType.LONG, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setCurrentValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myLong"));
         assertEquals(7678158186624760752L, adapter.values.get("myLong").getWrappedValue());
@@ -179,14 +170,11 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("30;40"));
         array.add(new StringFieldValue("50;60"));
         adapter.setValue("location_str", array);
-        expression.setStatementOutput(new DocumentType("myDocument"), zcurveField);
 
-        // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
         assertEquals(DataType.getArray(DataType.LONG), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("location_zcurve"));
         var longArray = (Array<LongFieldValue>)adapter.values.get("location_zcurve");

@@ -71,7 +71,9 @@ public class HashExpression extends Expression  {
     }
 
     @Override
-    public DataType createdOutputType() { return requireOutputType(); }
+    public DataType createdOutputType() {
+        return getOutputType();
+    }
 
     @Override
     public String toString() { return "hash"; }

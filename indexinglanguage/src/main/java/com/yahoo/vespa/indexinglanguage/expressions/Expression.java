@@ -92,6 +92,9 @@ public abstract class Expression extends Selectable {
      */
     public DataType getOutputType(VerificationContext context) { return outputType; }
 
+    /** Returns the already assigned (during verification) output type, or null if no type is assigned. */
+    public DataType getOutputType() { return outputType; }
+
     /** Returns the already assigned (during verification) output type, or throws an exception if no type is assigned. */
     public DataType requireOutputType() {
         if (outputType == null)

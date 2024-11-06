@@ -71,17 +71,17 @@ public class IndexingValidation extends Processor {
         }
 
         @Override
-        protected boolean shouldConvert(Expression exp) {
-            if (exp instanceof OutputExpression) {
-                String fieldName = ((OutputExpression)exp).getFieldName();
+        protected boolean shouldConvert(Expression expression) {
+            if (expression instanceof OutputExpression) {
+                String fieldName = ((OutputExpression)expression).getFieldName();
                 if (outputs.contains(fieldName) && !prevNames.contains(fieldName)) {
-                    throw new VerificationException(exp, "Attempting to assign conflicting values to field '" +
-                                                         fieldName + "'");
+                    throw new VerificationException(expression, "Attempting to assign conflicting values to field '" +
+                                                                fieldName + "'");
                 }
                 outputs.add(fieldName);
                 prevNames.add(fieldName);
             }
-            if (exp.createdOutputType() != null) {
+            if (expression.createdOutputType() != null) {
                 prevNames.clear();
             }
             return false;
