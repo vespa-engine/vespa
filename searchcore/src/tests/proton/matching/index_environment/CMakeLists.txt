@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_index_environment_test_app TEST
     DEPENDS
     searchcore_matching
     searchcore_documentmetastore
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_index_environment_test_app COMMAND searchcore_index_environment_test_app)
