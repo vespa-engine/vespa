@@ -9,6 +9,14 @@ import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
 
+import java.io.BufferedReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -106,56 +114,171 @@ public class TensorFunctionBenchmark {
         return builder.build();
     }
 
+    public static String getProcessorName() {
+        String os = System.getProperty("os.name").toLowerCase();
+        String command;
+
+        if (os.contains("win")) {
+            // Windows command to get CPU name
+            command = "wmic cpu get Name";
+        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+            // Linux command to get CPU name
+            command = "cat /proc/cpuinfo | grep 'model name' | head -1";
+        } else if (os.contains("mac")) {
+            // MacOS command to get CPU name
+            command = "sysctl -n machdep.cpu.brand_string";
+        } else {
+            return "Unknown Processor";
+        }
+
+        try {
+            var process = Runtime.getRuntime().exec(command);
+            var reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Return the first meaningful line of output
+                if (!line.trim().isEmpty() && !line.toLowerCase().contains("name")) {
+                    return line.trim();
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("An error occurred while retrieving the processor name: " + e.getMessage());
+        }
+
+        return "Unknown Processor";
+    }
+
+    public static String getCPU() {
+        String os = System.getProperty("os.name").toLowerCase();
+        String command;
+
+        if (os.contains("win")) {
+            command = "wmic cpu get Name";
+        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+            command = "cat /proc/cpuinfo | grep 'model name' | head -1";
+        } else if (os.contains("mac")) {
+            command = "sysctl -n machdep.cpu.brand_string";
+        } else {
+            return "Unknown Processor";
+        }
+
+        try {
+            var process = Runtime.getRuntime().exec(command);
+            var reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Return the first meaningful line of output
+                if (!line.trim().isEmpty() && !line.toLowerCase().contains("name")) {
+                    return line.trim();
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("An error occurred while retrieving the processor name: " + e.getMessage());
+        }
+
+        return "Unknown Processor";
+    }
+    
+    private static String generateFileName() {
+        var cpu = getCPU().replace(" ", "-");
+        int cores = Runtime.getRuntime().availableProcessors();
+        var timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss")).replace(":", "-");
+        var fileName = String.format("%s-%dc_%s.txt", cpu, cores, timestamp);
+        return fileName;
+    }
+
     public static void main(String[] args) {
-        double time = 0;
+        var fileName = generateFileName();
+        var filePath = "vespajlib/src/test/resources/TensorFunctionBenchmark/" + fileName;
 
-        // ---------------- Indexed unbound:
+        try (var writer = new PrintWriter(new FileWriter(filePath))) {
+            double time;
+            String result;
 
-        time = new TensorFunctionBenchmark().benchmark(50000, vectors(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, false);
-        System.out.printf("Indexed unbound vectors, time per join: %1$8.3f ms\n", time);
-        time = new TensorFunctionBenchmark().benchmark(50000, matrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, false);
-        System.out.printf("Indexed unbound matrix,  time per join: %1$8.3f ms\n", time);
+            // ---------------- Indexed Unbound:
+            time = new TensorFunctionBenchmark().benchmark(50000, vectors(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, false);
+            result = String.format("Indexed unbound vectors, time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        // ---------------- Indexed bound:
-        time = new TensorFunctionBenchmark().benchmark(50000, vectors(100, 300, TensorType.Dimension.Type.indexedBound), TensorType.Dimension.Type.indexedBound, false);
-        System.out.printf("Indexed bound vectors,   time per join: %1$8.3f ms\n", time);
+            time = new TensorFunctionBenchmark().benchmark(50000, matrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, false);
+            result = String.format("Indexed unbound matrix,  time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        time = new TensorFunctionBenchmark().benchmark(50000, matrix(100, 300, TensorType.Dimension.Type.indexedBound), TensorType.Dimension.Type.indexedBound, false);
-        System.out.printf("Indexed bound matrix,    time per join: %1$8.3f ms\n", time);
+            // ---------------- Indexed Bound:
+            time = new TensorFunctionBenchmark().benchmark(50000, vectors(100, 300, TensorType.Dimension.Type.indexedBound), TensorType.Dimension.Type.indexedBound, false);
+            result = String.format("Indexed bound vectors,   time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        // ---------------- Mapped:
-        time = new TensorFunctionBenchmark().benchmark(5000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
-        System.out.printf("Mapped vectors,          time per join: %1$8.3f ms\n", time);
+            time = new TensorFunctionBenchmark().benchmark(50000, matrix(100, 300, TensorType.Dimension.Type.indexedBound), TensorType.Dimension.Type.indexedBound, false);
+            result = String.format("Indexed bound matrix,    time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
-        System.out.printf("Mapped matrix,           time per join: %1$8.3f ms\n", time);
+            // ---------------- Mapped:
+            time = new TensorFunctionBenchmark().benchmark(5000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
+            result = String.format("Mapped vectors,          time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        // ---------------- Indexed (unbound) with extra space (sidesteps current special-case optimizations):
-        time = new TensorFunctionBenchmark().benchmark(500, vectors(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
-        System.out.printf("Indexed vectors, x space time per join: %1$8.3f ms\n", time);
+            time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
+            result = String.format("Mapped matrix,           time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        time = new TensorFunctionBenchmark().benchmark(500, matrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
-        System.out.printf("Indexed matrix, x space  time per join: %1$8.3f ms\n", time);
+            // ---------------- Indexed (unbound) with extra space:
+            time = new TensorFunctionBenchmark().benchmark(500, vectors(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
+            result = String.format("Indexed vectors, x space time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        // ---------------- Mapped with extra space (sidesteps current special-case optimizations):
-        time = new TensorFunctionBenchmark().benchmark(1000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
-        System.out.printf("Mapped vectors, x space  time per join: %1$8.3f ms\n", time);
+            time = new TensorFunctionBenchmark().benchmark(500, matrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
+            result = String.format("Indexed matrix, x space  time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
-        System.out.printf("Mapped matrix, x space   time per join: %1$8.3f ms\n", time);
+            // ---------------- Mapped with extra space:
+            time = new TensorFunctionBenchmark().benchmark(1000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
+            result = String.format("Mapped vectors, x space  time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
 
-        /* 2.4Ghz Intel Core i9, Macbook Pro 2019
-         Indexed unbound vectors, time per join:    0,066 ms
-         Indexed unbound matrix,  time per join:    0,108 ms
-         Indexed bound vectors,   time per join:    0,068 ms
-         Indexed bound matrix,    time per join:    0,106 ms
-         Mapped vectors,          time per join:    0,845 ms
-         Mapped matrix,           time per join:    1,779 ms
-         Indexed vectors, x space time per join:    5,778 ms
-         Indexed matrix, x space  time per join:    3,342 ms
-         Mapped vectors, x space  time per join:    8,184 ms
-         Mapped matrix, x space   time per join:   11,547 ms
-         */
+            time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
+            result = String.format("Mapped matrix, x space   time per join: %1$8.3f ms\n", time);
+            System.out.print(result);
+            writer.print(result);
+
+            /*
+            2.4Ghz Intel Core i9, Macbook Pro 2019
+            Indexed unbound vectors, time per join:    0,066 ms
+            Indexed unbound matrix,  time per join:    0,108 ms
+            Indexed bound vectors,   time per join:    0,068 ms
+            Indexed bound matrix,    time per join:    0,106 ms
+            Mapped vectors,          time per join:    0,845 ms
+            Mapped matrix,           time per join:    1,779 ms
+            Indexed vectors, x space time per join:    5,778 ms
+            Indexed matrix, x space  time per join:    3,342 ms
+            Mapped vectors, x space  time per join:    8,184 ms
+            Mapped matrix, x space   time per join:   11,547 ms
+            */
+            /*
+            Apple-M3-Pro-12c_2024-11-06T14-09-25
+            Indexed unbound vectors, time per join:    0.035 ms
+            Indexed unbound matrix,  time per join:    0.047 ms
+            Indexed bound vectors,   time per join:    0.039 ms
+            Indexed bound matrix,    time per join:    0.046 ms
+            Mapped vectors,          time per join:    0.517 ms
+            Mapped matrix,           time per join:    0.832 ms
+            Indexed vectors, x space time per join:    3.734 ms
+            Indexed matrix, x space  time per join:    2.426 ms
+            Mapped vectors, x space  time per join:    4.893 ms
+            Mapped matrix, x space   time per join:    6.153 ms
+             */
+        } catch (IOException e) {
+            System.err.println("An error occurred while writing to the file: " + e.getMessage());
+        }
     }
 
 }
