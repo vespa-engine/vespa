@@ -21,6 +21,10 @@ class MapEntryFieldValue extends FieldValue {
     private FieldValue key = null;
     private FieldValue value = null;
 
+    MapEntryFieldValue(MapDataType type) {
+        this.type = type;
+    }
+
     MapEntryFieldValue(FieldValue key, FieldValue value) {
         this.type = new MapDataType(key.getDataType(), value.getDataType());
         this.key = key;

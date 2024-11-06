@@ -23,17 +23,6 @@ public final class NowExpression extends Expression {
     public Timer getTimer() { return timer; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        return super.setInputType(inputType, context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(DataType.LONG, outputType, null, context);
-        return AnyDataType.instance;
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());
     }

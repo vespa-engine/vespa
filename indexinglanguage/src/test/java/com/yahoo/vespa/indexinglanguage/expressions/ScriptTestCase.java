@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
@@ -61,12 +62,12 @@ public class ScriptTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
         assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected int input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected int input, got string", DataType.STRING, exp);
+        assertVerifyThrows(null, exp, "Expected int input, but no input is specified");
+        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string");
 
-        assertVerifyThrows("Invalid expression of type 'ScriptExpression': Statements require conflicting input types, int vs string", null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
-                                                                                                                                                          newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT)))
-                          );
+        assertVerifyThrows(null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
+                                           newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT))),
+                           "Statements require conflicting input types, int vs string");
     }
 
     @Test

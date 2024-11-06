@@ -26,18 +26,6 @@ public final class RandomExpression extends Expression {
     public Integer getMaxValue() { return max; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
-        return DataType.INT;
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(DataType.INT, outputType, null, context);
-        return AnyDataType.instance;
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());
     }

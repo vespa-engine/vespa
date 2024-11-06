@@ -33,8 +33,8 @@ public final class ConstantExpression extends Expression {
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         // TODO:
         //if (outputType != value.getDataType())
-        //    throw new VerificationException(this, "Produces type " + value.getDataType() + ", but type " +
-        //                                    outputType + " is required");
+        //    throw new IllegalArgumentException(this + " produces a " + value.getDataType() + ", but a " +
+        //                                       outputType + " is required");
         return super.setOutputType(outputType, context);
     }
 

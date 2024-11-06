@@ -19,21 +19,12 @@ class AnyDataType extends DataType {
     }
 
     @Override
-    public boolean isAssignableFrom(DataType other) { return true; }
-
-    @Override
-    public boolean isAssignableTo(DataType other) {
-        return other instanceof AnyDataType;
-    }
-
-    @Override
-    public boolean isValueCompatible(FieldValue value) { return true; }
-
-    @Override
     public FieldValue createFieldValue() { throw new UnsupportedOperationException(); }
 
     @Override
     public Class<?> getValueClass() { throw new UnsupportedOperationException(); }
 
+    @Override
+    public boolean isValueCompatible(FieldValue value) { return true; }
 
 }

@@ -16,16 +16,6 @@ public final class SetLanguageExpression extends Expression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        return super.setInputType(inputType, DataType.STRING, context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        return super.setOutputType(outputType, context);
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         // empty
     }

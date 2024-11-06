@@ -16,20 +16,6 @@ public final class ToArrayExpression extends Expression {
     }
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
-        super.setInputType(input, context);
-        return new ArrayDataType(input);
-    }
-
-    @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
-        super.setOutputType(output, context);
-        if ( ! (output instanceof ArrayDataType arrayType))
-            throw new VerificationException(this, "Produces an array,  but " + output + " is required");
-        return arrayType.getNestedType();
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(DataType.getArray(context.getCurrentType()));
     }

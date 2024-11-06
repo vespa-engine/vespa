@@ -29,8 +29,8 @@ public class HexEncodeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new HexEncodeExpression();
         assertVerify(DataType.LONG, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'hexencode': Expected long input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression 'hexencode': Expected long input, got string", DataType.STRING, exp);
+        assertVerifyThrows(null, exp, "Expected long input, but no input is specified");
+        assertVerifyThrows(DataType.STRING, exp, "Expected long input, got string");
     }
 
     @Test
