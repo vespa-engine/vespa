@@ -58,7 +58,7 @@ public abstract class AsmSecretStoreBase extends AbstractComponent implements Au
                                                                      ZtsClient ztsClient,
                                                                      AthenzDomain athenzDomain) {
 
-        AwsCredentials credentials = new AwsCredentials(ztsClient, athenzDomain, role.fullRole());
+        AwsCredentials credentials = new AwsCredentials(ztsClient, athenzDomain, role.athenzAwsRole());
         return () -> {
             AwsTemporaryCredentials temporary = credentials.get();
             return AwsSessionCredentials.create(temporary.accessKeyId(),
