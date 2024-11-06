@@ -1,14 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/matching/docid_range_scheduler.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <barrier>
 
 using namespace proton::matching;
 using namespace vespalib;
+using vespalib::test::Nexus;
 
 //-----------------------------------------------------------------------------
 
@@ -33,7 +36,8 @@ size_t do_work(size_t cost) {
 
 //-----------------------------------------------------------------------------
 
-TEST("measure do_work overhead for different cost inputs") {
+TEST(DocidRangeSchedulerBench, measure_do_work_overhead_for_different_cost_inputs)
+{
     for (size_t cost: {0, 1, 10, 100, 1000}) {
         BenchmarkTimer timer(1.0);
         while (timer.has_budget()) {
@@ -235,44 +239,52 @@ RangeChecker::~RangeChecker() = default;
 
 const size_t my_docid_limit = 100001;
 
-TEST_MT_FFFF("benchmark different combinations of schedulers and work loads", 8,
-             DocidRangeScheduler::UP(), SchedulerList(num_threads), WorkList(),
-             RangeChecker(num_threads, my_docid_limit))
+TEST(DocidRangeSchedulerBench, benchmark_different_combinations_of_schedulers_and_work_loads)
 {
-    if (thread_id == 0) {
-        fprintf(stderr, "Benchmarking with %zu threads:\n", num_threads);
-    }
-    for (size_t scheduler = 0; scheduler < f2.factory_list.size(); ++scheduler) {
-        for (size_t work = 0; work < f3.work_list.size(); ++work) {
-            if (thread_id == 0) {
-                fprintf(stderr, "  scheduler: %s, work load: %s ",
-                        f2.factory_list[scheduler]->desc().c_str(),
-                        f3.work_list[work]->desc().c_str());
-            }
-            BenchmarkTimer timer(1.0);
-            for (size_t i = 0; i < 5; ++i) {
-                WorkTracker tracker;
-                TEST_BARRIER();
+    constexpr size_t num_threads = 8;
+    std::unique_ptr<DocidRangeScheduler> f1;
+    SchedulerList f2(num_threads);
+    WorkList f3;
+    RangeChecker f4(num_threads, my_docid_limit);
+    std::barrier barrier(num_threads);
+    auto task = [&f1,&f2,&f3,&f4,&barrier](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            fprintf(stderr, "Benchmarking with %zu threads:\n", num_threads);
+        }
+        for (size_t scheduler = 0; scheduler < f2.factory_list.size(); ++scheduler) {
+            for (size_t work = 0; work < f3.work_list.size(); ++work) {
                 if (thread_id == 0) {
-                    f1 = f2.factory_list[scheduler]->create(my_docid_limit);
+                    fprintf(stderr, "  scheduler: %s, work load: %s ",
+                            f2.factory_list[scheduler]->desc().c_str(),
+                            f3.work_list[work]->desc().c_str());
                 }
-                TEST_BARRIER();
-                timer.before();
-                worker(*f1, *f3.work_list[work], thread_id, tracker);
-                TEST_BARRIER();
-                timer.after();
+                BenchmarkTimer timer(1.0);
+                for (size_t i = 0; i < 5; ++i) {
+                    WorkTracker tracker;
+                    barrier.arrive_and_wait();
+                    if (thread_id == 0) {
+                        f1 = f2.factory_list[scheduler]->create(my_docid_limit);
+                    }
+                    barrier.arrive_and_wait();
+                    timer.before();
+                    worker(*f1, *f3.work_list[work], thread_id, tracker);
+                    barrier.arrive_and_wait();
+                    timer.after();
+                    if (thread_id == 0) {
+                        fprintf(stderr, ".");
+                    }
+                    EXPECT_TRUE(f4.rendezvous(tracker));
+                }
                 if (thread_id == 0) {
-                    fprintf(stderr, ".");
+                    fprintf(stderr, " real time: %g ms\n", timer.min_time() * 1000.0);
                 }
-                EXPECT_TRUE(f4.rendezvous(tracker));
-            }
-            if (thread_id == 0) {
-                fprintf(stderr, " real time: %g ms\n", timer.min_time() * 1000.0);
             }
         }
-    }
+    };
+    Nexus::run(num_threads, task);
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
