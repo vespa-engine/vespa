@@ -6,6 +6,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
@@ -65,9 +66,10 @@ public abstract class Expression extends Selectable {
      */
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
         // TODO: Activate type checking
-        // if ( ! (inputType.isAssignableTo(requiredType))
-        //    throw new VerificationException(this, "This requires type " + requiredType.getName() + ", but gets " + inputType.getName());
-        return assignInputType(inputType);
+        // if ( ! (inputType instanceof TensorDataType))
+        //    throw new IllegalArgumentException(this + " requires a " + requiredType + ", but gets " + inputType);
+        this.inputType = inputType;
+        return inputType;
     }
 
     /**
@@ -76,14 +78,8 @@ public abstract class Expression extends Selectable {
      * Subtypes may implement this by calling setInputType(inputType, requiredType, VerificationContext context).
      */
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        return assignInputType(inputType);
-    }
-
-    private DataType assignInputType(DataType inputType) {
-        // Since we assign in both directions, in both orders, we may already know
-        if (this.inputType == null)
-            this.inputType = inputType;
-        return this.inputType;
+        this.inputType = inputType;
+        return inputType;
     }
 
     /**
@@ -92,36 +88,23 @@ public abstract class Expression extends Selectable {
      */
     public DataType getOutputType(VerificationContext context) { return outputType; }
 
-    /** Returns the already assigned (during verification) output type, or throws an exception if no type is assigned. */
-    public DataType requireOutputType() {
-        if (outputType == null)
-            throw new IllegalStateException("The output type of " + this + " is unresolved");
-        return outputType;
-    }
-
     /**
      * Sets the output type of this and returns the resulting input type, or null if it cannot be
-     * uniquely determined, with additional arguments for convenience type checking.
+     * uniquely determined.
      * This implementation returns the same type, which is appropriate for all statements
      * that do not change the type.
      *
-     * @param actualOutput the type actually produced by this, must be assignable to the requiredOutput,
-     *                     or null if not known
-     * @param requiredOutput the type required by the next expression, which actualOutput must be assignable to,
-     *                       or null if it cannot be uniquely determined.
-     * @param requiredType a type the required output must be assignable to, or null to not verify this
+     * @param outputType the type to set as the output type of this, or null if it cannot be determined
+     * @param requiredType the type the output type must be assignable to
      * @param context the context of this
-     * @return the actualOutput if set, requiredOutput otherwise
-     * @throws IllegalArgumentException if actualOutput
+     * @throws IllegalArgumentException if outputType isn't assignable to requiredType
      */
-    protected final DataType setOutputType(DataType actualOutput, DataType requiredOutput, DataType requiredType,
-                                           VerificationContext context) {
+    protected final DataType setOutputType(DataType outputType, DataType requiredType, VerificationContext context) {
         // TODO: Activate type checking
-        // if (actualOutput != null && requiredOutput != null && ! actualOutput.isAssignableTo(requiredOutput))
-        //     throw new VerificationException(this, "This produces type " + actualOutput.getName() + " but " + requiredOutput.getName() + " is required");
-        // if (requiredType != null && requiredOutput != null && ! requiredOutputOutput.isAssignableTo(requiredType))
-        //     throw new VerificationException(this, "This is required to produce type " + requiredOutput.getName() + " but is produces " + requiredType.getName());;
-        return assignOutputType(actualOutput != null ? actualOutput : requiredOutput); // Use the more precise type when known
+        // if (outputType != null && ! requiredType.isAssignableFrom(outputType))
+        //     throw new IllegalArgumentException(this + " produces a " + outputType + " but " + requiredType + " is required");
+        this.outputType = outputType;
+        return outputType;
     }
 
     /**
@@ -130,14 +113,8 @@ public abstract class Expression extends Selectable {
      * Subtypes implement this by calling setOutputType(outputType, requiredType, VerificationContext context).
      */
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        return assignOutputType(outputType);
-    }
-
-    private DataType assignOutputType(DataType outputType) {
-        // Since we assign in both directions, in both orders, we may already know
-        if (this.outputType == null)
-            this.outputType = outputType;
-        return this.outputType;
+        this.outputType = outputType;
+        return outputType;
     }
 
     public abstract DataType createdOutputType();
@@ -325,16 +302,6 @@ public abstract class Expression extends Selectable {
 
     public final FieldValue execute() {
         return execute(new ExecutionContext());
-    }
-
-    protected DataType mostGeneralOf(DataType left, DataType right) {
-        if (left == null || right == null) return null;
-        return left.isAssignableTo(right) ? right : left;
-    }
-
-    protected DataType leastGeneralOf(DataType left, DataType right) {
-        if (left == null || right == null) return null;
-        return left.isAssignableTo(right) ? left : right;
     }
 
 }

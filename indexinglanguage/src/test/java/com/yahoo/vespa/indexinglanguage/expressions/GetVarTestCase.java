@@ -41,7 +41,7 @@ public class GetVarTestCase {
             new GetVarExpression("bar").verify(ctx);
             fail();
         } catch (VerificationException e) {
-            assertEquals("Invalid expression 'get_var bar': Variable 'bar' not found", e.getMessage());
+            assertEquals("Variable 'bar' not found", e.getMessage());
         }
     }
 

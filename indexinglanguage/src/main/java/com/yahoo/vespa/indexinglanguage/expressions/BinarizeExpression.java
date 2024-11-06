@@ -38,14 +38,14 @@ public class BinarizeExpression extends Expression  {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        return super.setOutputType(null, outputType, TensorDataType.any(), context);
+        return super.setOutputType(outputType, TensorDataType.any(), context);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
         type = context.getCurrentType();
         if (! (type instanceof TensorDataType))
-            throw new VerificationException(this, "Require a tensor, but got " + type);
+            throw new IllegalArgumentException("The 'binarize' function requires a tensor, but got " + type);
     }
 
     @Override

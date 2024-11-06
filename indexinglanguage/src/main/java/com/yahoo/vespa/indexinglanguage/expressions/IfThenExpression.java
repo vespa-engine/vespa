@@ -67,28 +67,6 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
-        left.setInputType(inputType, context);
-        right.setInputType(inputType, context);
-        var trueOutputType = ifTrue.setInputType(inputType, context);
-        var falseOutputType = ifFalse.setInputType(inputType, context);
-        DataType output = mostGeneralOf(trueOutputType, falseOutputType);
-        return output != null ? output : getOutputType(context);
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(outputType, context);
-        left.setOutputType(AnyDataType.instance, context);
-        right.setOutputType(AnyDataType.instance, context);
-        var trueInputType = ifTrue.setOutputType(outputType, context);
-        var falseInputType = ifFalse.setOutputType(outputType, context);
-        DataType input = leastGeneralOf(trueInputType, falseInputType);
-        return input != null ? input : getInputType(context);
-    }
-
-    @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         left.setStatementOutput(documentType, field);
         right.setStatementOutput(documentType, field);
@@ -113,7 +91,9 @@ public final class IfThenExpression extends CompositeExpression {
         context.setCurrentType(input).verify(right);
         var trueValue = context.setCurrentType(input).verify(ifTrue);
         var falseValue = context.setCurrentType(input).verify(ifFalse);
-        context.setCurrentType(mostGeneralOf(trueValue.getCurrentType(), falseValue.getCurrentType()));
+        var valueType = trueValue.getCurrentType().isAssignableFrom(falseValue.getCurrentType()) ?
+                                trueValue.getCurrentType() : falseValue.getCurrentType();
+        context.setCurrentType(valueType);
     }
 
     @Override
@@ -180,12 +160,24 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     public boolean equals(Object obj) {
-        if ( ! (obj instanceof IfThenExpression exp)) return false;
-        if ( ! left.equals(exp.left)) return false;
-        if ( ! comparator.equals(exp.comparator)) return false;
-        if ( ! right.equals(exp.right)) return false;
-        if ( ! ifTrue.equals(exp.ifTrue)) return false;
-        if ( ! equals(ifFalse, exp.ifFalse)) return false;
+        if (!(obj instanceof IfThenExpression exp)) {
+            return false;
+        }
+        if (!left.equals(exp.left)) {
+            return false;
+        }
+        if (!comparator.equals(exp.comparator)) {
+            return false;
+        }
+        if (!right.equals(exp.right)) {
+            return false;
+        }
+        if (!ifTrue.equals(exp.ifTrue)) {
+            return false;
+        }
+        if (!equals(ifFalse, exp.ifFalse)) {
+            return false;
+        }
         return true;
     }
 
@@ -212,16 +204,16 @@ public final class IfThenExpression extends CompositeExpression {
         return prev;
     }
 
-    private static boolean isTrue(FieldValue left, Comparator comparator, FieldValue right) {
+    private static boolean isTrue(FieldValue lhs, Comparator cmp, FieldValue rhs) {
         int res;
-        if (left instanceof NumericFieldValue && right instanceof NumericFieldValue) {
-            BigDecimal lhsVal = ArithmeticExpression.asBigDecimal((NumericFieldValue)left);
-            BigDecimal rhsVal = ArithmeticExpression.asBigDecimal((NumericFieldValue)right);
+        if (lhs instanceof NumericFieldValue && rhs instanceof NumericFieldValue) {
+            BigDecimal lhsVal = ArithmeticExpression.asBigDecimal((NumericFieldValue)lhs);
+            BigDecimal rhsVal = ArithmeticExpression.asBigDecimal((NumericFieldValue)rhs);
             res = lhsVal.compareTo(rhsVal);
         } else {
-            res = left.compareTo(right);
+            res = lhs.compareTo(rhs);
         }
-        return switch (comparator) {
+        return switch (cmp) {
             case EQ -> res == 0;
             case NE -> res != 0;
             case GT -> res > 0;

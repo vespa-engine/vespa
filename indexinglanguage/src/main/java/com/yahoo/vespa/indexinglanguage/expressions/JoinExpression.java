@@ -25,24 +25,10 @@ public final class JoinExpression extends Expression {
     public String getDelimiter() { return delimiter; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, context);
-        if ( ! (inputType instanceof ArrayDataType))
-            throw new VerificationException(this, "Expected Array input, got type " + inputType.getName());
-        return DataType.STRING;
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(DataType.STRING, outputType, null, context);
-        return getInputType(context); // Cannot deduce since any array type is accepted
-    }
-
-    @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
         if (!(input instanceof ArrayDataType)) {
-            throw new VerificationException(this, "Expected Array input, got type " + input.getName());
+            throw new VerificationException(this, "Expected Array input, got " + input.getName());
         }
         context.setCurrentType(createdOutputType());
     }

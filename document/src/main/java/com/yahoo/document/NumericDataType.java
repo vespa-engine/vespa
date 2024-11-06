@@ -11,7 +11,6 @@ public class NumericDataType extends PrimitiveDataType {
 
     // The global class identifier shared with C++.
     public static int classId = registerClass(Ids.document + 52, NumericDataType.class);
-
     /**
      * Creates a datatype
      *
@@ -19,7 +18,7 @@ public class NumericDataType extends PrimitiveDataType {
      * @param code      the code (id) of the type
      * @param type      the field value used for this type
      */
-    protected NumericDataType(String name, int code, Class<? extends FieldValue> type, Factory factory) {
+    protected NumericDataType(java.lang.String name, int code, Class<? extends FieldValue> type, Factory factory) {
         super(name, code, type, factory);
     }
 

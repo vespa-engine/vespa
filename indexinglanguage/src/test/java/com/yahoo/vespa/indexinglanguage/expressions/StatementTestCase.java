@@ -91,9 +91,9 @@ public class StatementTestCase {
     public void requireThatInternalVerificationIsPerformed() {
         Expression exp = newStatement(SimpleExpression.newOutput(DataType.STRING),
                                       SimpleExpression.newConversion(DataType.INT, DataType.STRING));
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", null, exp);
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.INT, exp);
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, exp);
+        assertVerifyThrows(null, exp, "Expected int input, got string");
+        assertVerifyThrows(DataType.INT, exp, "Expected int input, got string");
+        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string");
 
         exp = newStatement(SimpleExpression.newOutput(DataType.INT),
                            SimpleExpression.newConversion(DataType.INT, DataType.STRING));

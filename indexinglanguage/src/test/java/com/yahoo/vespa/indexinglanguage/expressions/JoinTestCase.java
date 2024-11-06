@@ -36,8 +36,8 @@ public class JoinTestCase {
         Expression exp = new JoinExpression(";");
         assertVerify(DataType.getArray(DataType.INT), exp, DataType.STRING);
         assertVerify(DataType.getArray(DataType.STRING), exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'join \";\"': Expected any input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got type int", DataType.INT, exp);
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected Array input, got int");
     }
 
     @Test
