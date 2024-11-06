@@ -27,7 +27,10 @@ public enum ValidationId {
     zoneEndpointChange("zone-endpoint-change"), // Changing zone (possibly private) endpoint settings
     redundancyOne("redundancy-one"), // redundancy=1 requires a validation override on first deployment
     pagedSettingRemoval("paged-setting-removal"), // May cause content nodes to run out of memory
-    certificateRemoval("certificate-removal"); // Remove data plane certificates
+    certificateRemoval("certificate-removal"), // Remove data plane certificates
+
+    @Deprecated
+    redundancyIncrease("redundancy-increase"); // Not in use. TODO: Remove on Vespa 9
 
     private final String id;
 
