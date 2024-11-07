@@ -80,7 +80,8 @@ public class FetchDocumentation {
 
             for (var entry : markdownContent.entrySet()) {
                 if (entry.getKey().contains("/")) continue;
-                Files.write(writePath.resolve(entry.getKey() + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
+                String fileName = entry.getKey().toLowerCase();
+                Files.write(writePath.resolve(fileName + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
             }
         }
     }
