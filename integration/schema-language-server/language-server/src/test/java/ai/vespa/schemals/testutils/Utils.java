@@ -44,7 +44,6 @@ public class Utils {
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
         schemaIndex.clearDocument(fileName);
         ParseContext context = new ParseContext(input, logger, fileName, schemaIndex, scheduler);
-        context.useDocumentIdentifiers();
         return context;
     }
 }

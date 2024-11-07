@@ -29,6 +29,7 @@ public class SchemaParserTest {
 
     ParseResult parseString(String input, String fileName) throws Exception {
         ParseContext context = Utils.createTestContext(input, fileName);
+        context.useDocumentIdentifiers();
         return SchemaDocument.parseContent(context);
     }
 

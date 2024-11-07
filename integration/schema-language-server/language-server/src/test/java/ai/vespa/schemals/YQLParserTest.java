@@ -16,13 +16,12 @@ import ai.vespa.schemals.schemadocument.YQLDocument;
 import ai.vespa.schemals.schemadocument.YQLDocument.ParseResult;
 
 import ai.vespa.schemals.testutils.*;
-import ai.vespa.schemals.tree.YQLNode;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLParserTest {
 
     ParseResult parseString(String input, String fileName) throws Exception {
         ParseContext context = Utils.createTestContext(input, fileName);
+        context.useVespaGroupingIdentifiers();
         return YQLDocument.parseContent(context);
     }
 
@@ -64,9 +63,6 @@ public class YQLParserTest {
             "select * from doc where is_public = true",
             "select * from doc where my_map contains sameElement(key contains \"Coldplay\", value > 10)",
             "select * from music where artist matches \"Meta..ica\"",
-
-
-            "asdf asdf"
         };
 
 
@@ -76,15 +72,9 @@ public class YQLParserTest {
 
     @Test
     void InvalidQuery() throws Exception {
-        var result = parseString("asdfasdfasdf");
+        var result = parseString("seltc *");
 
-        YQLNode node = result.CST().get();
-        TestLogger logger = new TestLogger();
-        YQLUtils.printTree(logger, node);
-
-        logger.info(node);
-
-        assertEquals(1, result.diagnostics().size(), "treeeeeee " + logger.getLog());
+        assertEquals(1, result.diagnostics().size());
     }
 
 
