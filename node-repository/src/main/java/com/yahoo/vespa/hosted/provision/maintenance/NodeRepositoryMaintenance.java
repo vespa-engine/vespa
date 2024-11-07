@@ -18,6 +18,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.yahoo.config.provision.CloudName.YAHOO;
+
 /**
  * A component which sets up all the node repo maintenance jobs.
  *
@@ -144,7 +146,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             hostResumeProvisionerInterval = Duration.ofMinutes(3);
             diskReplacerInterval = Duration.ofMinutes(3);
             failedExpirerInterval = Duration.ofMinutes(10);
-            failGrace = Duration.ofMinutes(10);
+            // Nodes in Yahoo cloud need more time to start, so give those longer time before failing them (need more than 10 mins)
+            failGrace = zone.cloud().name() == YAHOO ? Duration.ofMinutes(20) : Duration.ofMinutes(10);
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             loadBalancerPreProvisionerInterval = Duration.ofMinutes(1);
