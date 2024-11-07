@@ -10,7 +10,9 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
@@ -180,6 +182,40 @@ public class ScriptTestCase {
         var longArray = (Array<LongFieldValue>)adapter.values.get("location_zcurve");
         assertEquals(  2516, longArray.get(0).getLong());
         assertEquals(4004, longArray.get(1).getLong());
+    }
+
+    @Test
+    public void testForEachFollowedByGetVar() {
+        String expressionString =
+                """
+                input uris | for_each {
+                    if ((_ | substring 0 7) == "http://") {
+                         _ | substring 7 1000 | set_var selected
+                    } else {
+                        _
+                    }
+                    } | get_var selected | attribute id
+                """;
+
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom(expressionString);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var uris = new Field("uris", new ArrayDataType(DataType.STRING));
+        var id = new Field("id", DataType.STRING);
+        adapter.createField(uris);
+        adapter.createField(id);
+        var array = new Array<StringFieldValue>(uris.getDataType());
+        array.add(new StringFieldValue("value1"));
+        array.add(new StringFieldValue("http://value2"));
+        adapter.setValue("uris", array);
+
+        expression.verify(adapter);
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("id"));
+        assertEquals("value2", ((StringFieldValue)adapter.values.get("id")).getString());
     }
 
 }
