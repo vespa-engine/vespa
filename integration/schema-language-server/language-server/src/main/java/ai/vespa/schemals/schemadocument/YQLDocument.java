@@ -4,6 +4,7 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.parser.yqlplus.ParseException;
 import ai.vespa.schemals.parser.yqlplus.YQLPlusParser;
@@ -26,6 +27,11 @@ public class YQLDocument implements DocumentManager {
         this.fileURI = fileURI;
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
+    }
+
+    @Override
+    public ParseContext getParseContext() {
+        return null;
     }
 
     @Override

@@ -181,11 +181,12 @@ public class SymbolReferenceResolver {
             context.schemaIndex().insertSymbolReference(referencedSymbol.get(), node.getSymbol());
 
         } else if (referencedType != SymbolType.QUERY_INPUT)  {
-
+            context.schemaIndex().addUnresolvedSymbol(node.getSymbol());
             diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange( node.getRange())
                     .setMessage( "Undefined symbol " + node.getText())
                     .setSeverity(DiagnosticSeverity.Error)
+                    .setCode(DiagnosticCode.UNDEFINED_SYMBOL)
                     .build() );
         }
     }
