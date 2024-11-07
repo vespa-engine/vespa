@@ -384,6 +384,7 @@ testSingleValue(Attribute & svsa, Config &cfg)
     Attribute load("load", cfg);
     svsa.save(load.getBaseFileName());
     load.load();
+    EXPECT_EQUAL(svsa.size_on_disk(), load.size_on_disk());
 }
 
 TEST("testSingleValue")

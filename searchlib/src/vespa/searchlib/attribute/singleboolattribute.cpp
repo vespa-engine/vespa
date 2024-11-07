@@ -209,6 +209,7 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
         assert(bytesRead == _bv.writer().sizeBytes());
         setNumDocs(numDocs);
         setCommittedDocIdLimit(numDocs);
+        set_size_on_disk(attrReader.size_on_disk());
     }
 
     return ok;

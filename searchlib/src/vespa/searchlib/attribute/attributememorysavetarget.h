@@ -37,7 +37,8 @@ private:
     AttributeMemoryFileWriter _idxWriter;
     AttributeMemoryFileWriter _weightWriter;
     AttributeMemoryFileWriter _udatWriter;
-    WriterMap _writers;
+    WriterMap                 _writers;
+    uint64_t                  _size_on_disk;
 
 public:
     AttributeMemorySaveTarget();
@@ -59,7 +60,7 @@ public:
     bool setup_writer(const std::string& file_suffix,
                       const std::string& desc) override;
     IAttributeFileWriter& get_writer(const std::string& file_suffix) override;
-
+    uint64_t size_on_disk() const noexcept override;
 };
 
 } // namespace search

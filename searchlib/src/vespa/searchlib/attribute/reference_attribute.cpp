@@ -257,6 +257,7 @@ ReferenceAttribute::onLoad(vespalib::Executor *)
     builder.makeDictionary();
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
+    set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
     buildReverseMapping();
     incGeneration();
     return true;

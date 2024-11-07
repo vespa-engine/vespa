@@ -85,7 +85,6 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
-    
     if (numValues > 0)
         _bitVectorSize = numDocs;
 
@@ -96,7 +95,8 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, std::span<const uint32_t>(), saver);
     this->checkSetMaxValueCount(maxvc);
-    
+    this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
+
     return true;
 }
 

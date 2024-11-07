@@ -493,25 +493,36 @@ void AttributeTest::testReload(const AttributePtr & a)
     auto c = createAttribute(replace_suffix(*a, "3"), a->getConfig());
 
     a->setCreateSerialNum(43u);
-    EXPECT_TRUE( a->save(b->getBaseFileName()) );
-    a->commit(true);
-    if (preciseEstimatedSize(*a)) {
-        EXPECT_EQ(statSize(*b), a->getEstimatedSaveByteSize());
+    if (a->getCommittedDocIdLimit() == 0) {
+        EXPECT_EQ(0, a->size_on_disk());
     } else {
-        double estSize = a->getEstimatedSaveByteSize();
-        double actSize = statSize(*b);
-        EXPECT_LE(actSize * 1.0, estSize * 1.3);
-        EXPECT_GE(actSize * 1.0, estSize * 0.7);
+        EXPECT_NE(0, a->size_on_disk());
     }
-    EXPECT_TRUE( a->save(c->getBaseFileName()) );
-    if (preciseEstimatedSize(*a)) {
-        EXPECT_EQ(statSize(*c), a->getEstimatedSaveByteSize());
+    EXPECT_TRUE( a->save(b->getBaseFileName()) );
+    EXPECT_NE(0, a->size_on_disk());
+    a->commit(true);
+    {
+        double actSize = statSize(*b);
+        EXPECT_LE(actSize, a->size_on_disk());
+        if (preciseEstimatedSize(*a)) {
+            EXPECT_EQ(actSize, a->getEstimatedSaveByteSize());
+        } else {
+            double estSize = a->getEstimatedSaveByteSize();
+            EXPECT_LE(actSize * 1.0, estSize * 1.3);
+            EXPECT_GE(actSize * 1.0, estSize * 0.7);
+        }
+        EXPECT_TRUE( a->save(c->getBaseFileName()) );
+        if (preciseEstimatedSize(*a)) {
+            EXPECT_EQ(statSize(*c), a->getEstimatedSaveByteSize());
+        }
     }
     EXPECT_TRUE( b->load() );
     EXPECT_EQ(43u, b->getCreateSerialNum());
+    EXPECT_EQ(a->size_on_disk(), b->size_on_disk());
     compare<VectorType, BufferType>
         (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
     EXPECT_TRUE( c->load() );
+    EXPECT_EQ(a->size_on_disk(), c->size_on_disk());
     compare<VectorType, BufferType>
         (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(c.get())));
 
@@ -700,7 +711,10 @@ AttributeTest::testMemorySaver(const AttributePtr & a)
     EXPECT_FALSE(fs::exists(fs::path(datFile)));
     EXPECT_TRUE(saveTarget.writeToFile(TuneFileAttributes(), DummyFileHeaderContext()));
     EXPECT_TRUE(fs::exists(fs::path(datFile)));
+    EXPECT_EQ(0, a->size_on_disk());
+    EXPECT_NE(0, saveTarget.size_on_disk());
     EXPECT_TRUE(b->load());
+    EXPECT_EQ(saveTarget.size_on_disk(), b->size_on_disk());
     compare<VectorType, BufferType>(*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
 }
 
