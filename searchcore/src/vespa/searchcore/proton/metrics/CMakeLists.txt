@@ -3,6 +3,7 @@ vespa_add_library(searchcore_proton_metrics STATIC
     SOURCES
     attribute_metrics.cpp
     attribute_metrics_entry.cpp
+    cache_metrics.cpp
     content_proton_metrics.cpp
     disk_usage_metrics.cpp
     documentdb_job_trackers.cpp

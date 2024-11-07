@@ -223,33 +223,6 @@ updateDocumentsMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
 }
 
 void
-updateDocumentStoreCacheHitRate(const CacheStats &current, const CacheStats &last,
-                                metrics::LongAverageMetric &cacheHitRate)
-{
-    if (current.lookups() < last.lookups() || current.hits < last.hits) {
-        LOG(warning, "Not adding document store cache hit rate metrics as values calculated "
-                     "are corrupt. current.lookups=%zu, last.lookups=%zu, current.hits=%zu, last.hits=%zu.",
-            current.lookups(), last.lookups(), current.hits, last.hits);
-    } else {
-        if ((current.lookups() - last.lookups()) > 0xffffffffull
-            || (current.hits - last.hits) > 0xffffffffull)
-        {
-            LOG(warning, "Document store cache hit rate metrics to add are suspiciously high."
-                         " lookups diff=%zu, hits diff=%zu.",
-                current.lookups() - last.lookups(), current.hits - last.hits);
-        }
-        cacheHitRate.addTotalValueWithCount(current.hits - last.hits, current.lookups() - last.lookups());
-    }
-}
-
-void
-updateCountMetric(uint64_t currVal, uint64_t lastVal, metrics::LongCountMetric &metric)
-{
-    uint64_t delta = (currVal >= lastVal) ? (currVal - lastVal) : 0;
-    metric.inc(delta);
-}
-
-void
 updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics &metrics,
                            const IDocumentSubDB *subDb,
                            CacheStats &lastCacheStats,
@@ -265,11 +238,7 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreM
 
     vespalib::CacheStats cacheStats = backingStore.getCacheStats();
     totalStats.memoryUsage.incAllocatedBytes(cacheStats.memory_used);
-    metrics.cache.memoryUsage.set(cacheStats.memory_used);
-    metrics.cache.elements.set(cacheStats.elements);
-    updateDocumentStoreCacheHitRate(cacheStats, lastCacheStats, metrics.cache.hitRate);
-    updateCountMetric(cacheStats.lookups(), lastCacheStats.lookups(), metrics.cache.lookups);
-    updateCountMetric(cacheStats.invalidations, lastCacheStats.invalidations, metrics.cache.invalidations);
+    metrics.cache.update_metrics(cacheStats, lastCacheStats);
     lastCacheStats = cacheStats;
 }
 
