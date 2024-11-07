@@ -44,7 +44,7 @@ public class RunVespaQuery implements SchemaCommand {
 
         context.logger.info(result.result());
 
-        return null;
+        return result.result();
     }
 
     private record QueryResult(boolean success, String result) {};
@@ -56,7 +56,7 @@ public class RunVespaQuery implements SchemaCommand {
         ProcessBuilder builder = new ProcessBuilder();
 
         if (isWindows) {
-            builder.command(String.format("cmd.exe /c %s", query));
+            builder.command(String.format("cmd.exe /c %s", query)); // TODO: Fix this for window
         } else {
             builder.command("/usr/local/bin/vespa", "query", query);
         }
