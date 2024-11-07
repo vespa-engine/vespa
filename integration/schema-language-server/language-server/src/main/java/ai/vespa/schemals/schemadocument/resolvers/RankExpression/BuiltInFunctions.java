@@ -334,7 +334,7 @@ public class BuiltInFunctions {
         // === ML Model features ===
         put("onnx", new GenericFunction("onnx", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
         put("onnxModel", new GenericFunction("onnxModel", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
-        put("lightbgm", new GenericFunction("lightbgm", new FunctionSignature(new StringArgument("\"/path/to/lightbgm-model.json\""))));
+        put("lightgbm", new GenericFunction("lightgbm", new FunctionSignature(new StringArgument("\"/path/to/lightgbm-model.json\""))));
         put("xgboost", new GenericFunction("xgboost", new FunctionSignature(new StringArgument("\"/path/to/xgboost-model.json\""))));
     }};
 
