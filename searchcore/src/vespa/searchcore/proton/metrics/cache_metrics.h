@@ -10,6 +10,9 @@ namespace vespalib { struct CacheStats; }
 
 namespace proton {
 
+/**
+ * Metrics for an lru cache, e.g. vespalib::cache.
+ */
 class CacheMetrics : public metrics::MetricSet {
     metrics::LongValueMetric memoryUsage;
     metrics::LongValueMetric elements;
