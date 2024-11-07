@@ -20,7 +20,7 @@ schema onnxmodel {
         }
 
         function func_b() {
-            expression: sum(lightbgm("/path/to/lightbgm-model.json"))
+            expression: sum(lightgbm("/path/to/lightbgm-model.json"))
         }
     }
 }
