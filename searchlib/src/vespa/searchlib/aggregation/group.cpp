@@ -434,7 +434,7 @@ Group::Value::prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel) 
     auto keep = new ChildP[b.getChildrenSize()];
     size_t kept(0);
     ChildP * px = _children;
-    ChildP * ex = _children + getAllChildrenSize();
+    ChildP * ex = _children + getChildrenSize();
     const ChildP * py = b._children;
     const ChildP * ey = b._children + b.getChildrenSize();
     // Assumes that both lists are ordered by group id
