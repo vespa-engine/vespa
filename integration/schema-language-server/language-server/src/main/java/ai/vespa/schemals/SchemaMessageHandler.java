@@ -3,6 +3,8 @@ package ai.vespa.schemals;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
+import org.eclipse.lsp4j.ApplyWorkspaceEditResponse;
 import org.eclipse.lsp4j.LogTraceParams;
 import org.eclipse.lsp4j.MessageActionItem;
 import org.eclipse.lsp4j.MessageParams;
@@ -57,5 +59,9 @@ public class SchemaMessageHandler {
 
     public CompletableFuture<ShowDocumentResult> showDocument(String fileURI) {
         return client.showDocument(new ShowDocumentParams(fileURI));
+    }
+
+    public CompletableFuture<ApplyWorkspaceEditResponse>  applyEdit(ApplyWorkspaceEditParams params) {
+        return client.applyEdit(params);
     }
 }

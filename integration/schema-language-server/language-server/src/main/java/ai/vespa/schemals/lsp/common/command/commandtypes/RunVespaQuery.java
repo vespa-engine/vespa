@@ -3,21 +3,34 @@ package ai.vespa.schemals.lsp.common.command.commandtypes;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.apache.commons.math3.analysis.function.Pow;
+import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
+import org.eclipse.lsp4j.CreateFile;
 import org.eclipse.lsp4j.MessageType;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.WorkspaceEdit;
 
 import com.google.gson.JsonPrimitive;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.editbuilder.WorkspaceEditBuilder;
 import ai.vespa.schemals.context.EventExecuteCommandContext;
 
 public class RunVespaQuery implements SchemaCommand {
 
     private String queryCommand;
+    private String sourceFileURI;
 
     public int getArity() {
-        return 1;
+        return 2;
     }
 
     public boolean setArguments(List<Object> arguments) {
@@ -26,14 +39,19 @@ public class RunVespaQuery implements SchemaCommand {
         if (!(arguments.get(0) instanceof JsonPrimitive))
             return false;
 
-        JsonPrimitive arg = (JsonPrimitive) arguments.get(0);
-        queryCommand = arg.getAsString();
+        if (!(arguments.get(1) instanceof JsonPrimitive))
+            return false;
+
+        JsonPrimitive arg0 = (JsonPrimitive) arguments.get(0);
+        queryCommand = arg0.getAsString();
+
+        JsonPrimitive arg1 = (JsonPrimitive) arguments.get(1);
+        sourceFileURI = arg1.getAsString();
         return true;
     }
 
     public Object execute(EventExecuteCommandContext context) {
-        context.logger.info("Running Vespa query...");
-        context.logger.info(queryCommand);
+        context.logger.info("Running Vespa query: " + queryCommand);
 
         QueryResult result = runVespaQuery(queryCommand, context.logger);
 
@@ -42,9 +60,39 @@ public class RunVespaQuery implements SchemaCommand {
             return null;
         }
 
-        context.logger.info(result.result());
+        String response = result.result();
 
-        return result.result();
+        String targetFileURI = getTargetFileURI(sourceFileURI);
+
+        CreateFile newFile = new CreateFile(targetFileURI);
+
+        TextEdit textEdit = new TextEdit(new Range(new Position(0, 0), new Position(0, 0)), response);
+
+        WorkspaceEdit wsEdit = new WorkspaceEditBuilder()
+            .addResourceOperation(newFile)
+            .addTextEdit(targetFileURI, textEdit)
+            .build();
+
+        context.messageHandler.applyEdit(new ApplyWorkspaceEditParams(wsEdit)).thenRun(() -> {
+            context.messageHandler.showDocument(targetFileURI);
+        });
+
+
+        return null;
+    }
+
+    private static String getTargetFileURI(String sourceFileURI) {
+        Path filePath = Paths.get(sourceFileURI);
+        String fileName = filePath.getFileName().toString();
+
+        fileName = fileName.substring(0, fileName.lastIndexOf('.'));
+
+        ZonedDateTime now = ZonedDateTime.now();
+        String isoDateTime = now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+        fileName += "." + isoDateTime + ".json";
+
+        return filePath.getParent().resolve(fileName).toString();
     }
 
     private record QueryResult(boolean success, String result) {};

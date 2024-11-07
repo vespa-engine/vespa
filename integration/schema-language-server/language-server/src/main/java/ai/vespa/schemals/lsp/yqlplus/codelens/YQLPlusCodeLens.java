@@ -32,7 +32,7 @@ public class YQLPlusCodeLens {
             Range range = child.get(0).getRange();
             ret.add(new CodeLens(
                 range,
-                CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of(command)),
+                CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of(command, context.document.getFileURI())),
                 null
             ));
         }

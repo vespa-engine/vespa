@@ -89,6 +89,8 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         serverPath = Paths.get(SchemaLanguageServer.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
     }    
 
+    public LanguageClient getClient() { return client; }
+
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {
         final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
