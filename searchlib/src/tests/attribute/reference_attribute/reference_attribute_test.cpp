@@ -165,11 +165,13 @@ struct ReferenceAttributeTest : public ::testing::Test {
 
     void save() {
         attr().save();
+        EXPECT_NE(0, attr().size_on_disk());
     }
 
     void load() {
         resetAttr();
         attr().load();
+        EXPECT_NE(0, attr().size_on_disk());
     }
 
     void triggerCompaction(uint64_t iterLimit) {

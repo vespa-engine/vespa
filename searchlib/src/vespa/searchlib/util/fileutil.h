@@ -16,6 +16,7 @@ class LoadedBuffer
 protected:
     void * _buffer;
     size_t _size;
+    uint64_t _size_on_disk;
     std::unique_ptr<GenericHeader> _header;
 public:
     LoadedBuffer(const LoadedBuffer & rhs) = delete;
@@ -25,7 +26,8 @@ public:
     LoadedBuffer(void * buf, size_t sz) noexcept
         : _buffer(buf),
           _size(sz),
-          _header(nullptr)
+          _size_on_disk(0),
+          _header()
     { }
 
     virtual ~LoadedBuffer() = default;
@@ -34,6 +36,7 @@ public:
     size_t size() const { return _size; }
     bool  empty() const { return _size == 0; }
     size_t size(size_t elemSize) const { return  _size/elemSize; }
+    uint64_t size_on_disk() const noexcept { return _size_on_disk; }
     const GenericHeader &getHeader() const { return *_header; }
 };
 

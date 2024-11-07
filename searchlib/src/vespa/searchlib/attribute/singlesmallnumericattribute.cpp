@@ -137,6 +137,7 @@ SingleValueSmallNumericAttribute::onLoad(vespalib::Executor *)
         assert(((numDocs + _valueShiftMask) >> _wordShift) + 1 == sz);
         B::setNumDocs(numDocs);
         B::setCommittedDocIdLimit(numDocs);
+        set_size_on_disk(attrReader.size_on_disk());
     }
 
     return ok;

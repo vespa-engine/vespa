@@ -140,4 +140,10 @@ ReaderBase::getNextValueCount()
     return numValues;
 }
 
+uint64_t
+ReaderBase::size_on_disk() const
+{
+    return _datFile.size_on_disk() + _idxFile.size_on_disk() + _weightFile.size_on_disk();
+}
+
 }

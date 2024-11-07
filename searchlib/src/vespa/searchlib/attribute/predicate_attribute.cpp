@@ -240,6 +240,7 @@ PredicateAttribute::onLoad(vespalib::Executor *)
     _index->adjustDocIdLimit(highest_doc_id);
     setNumDocs(highest_doc_id + 1);
     setCommittedDocIdLimit(highest_doc_id + 1);
+    set_size_on_disk(loaded_buffer->size_on_disk());
     _index->onDeserializationCompleted();
     return true;
 }
