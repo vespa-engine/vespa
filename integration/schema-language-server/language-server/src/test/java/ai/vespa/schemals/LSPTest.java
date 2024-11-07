@@ -54,7 +54,7 @@ public class LSPTest {
         File file = new File(fileName);
         String fileURI = file.toURI().toString();
         String fileContent = IOUtils.readFile(file);
-        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
         ClientLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
         TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());

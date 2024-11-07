@@ -25,7 +25,7 @@ import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
 
-    static class ParseResult {
+    public static class ParseResult {
         public List<Diagnostic> diagnostics;
         public Optional<YQLNode> CST;
 

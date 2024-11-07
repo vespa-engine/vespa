@@ -2,9 +2,7 @@ package ai.vespa.schemals;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.PrintStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,8 +10,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
@@ -30,36 +26,9 @@ import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.testutils.*;
 
 public class SchemaParserTest {
-    static long countErrors(List<Diagnostic> diagnostics) {
-        return diagnostics.stream()
-                          .filter(diag -> diag.getSeverity() == DiagnosticSeverity.Error || diag.getSeverity() == null)
-                          .count();
-    }
-
-    static String constructDiagnosticMessage(List<Diagnostic> diagnostics, int indent) {
-        String message = "";
-        for (var diagnostic : diagnostics) {
-            String severityString = "";
-            if (diagnostic.getSeverity() == null) severityString = "No Severity";
-            else severityString = diagnostic.getSeverity().toString();
-
-            Position start = diagnostic.getRange().getStart();
-            message += "\n" + new String(new char[indent]).replace('\0', '\t') +
-                "Diagnostic" + "[" + severityString + "]: \"" + diagnostic.getMessage() + "\", at position: (" + start.getLine() + ", " + start.getCharacter() + ")";
-
-        }
-        return message;
-    }
 
     ParseResult parseString(String input, String fileName) throws Exception {
-        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
-        ClientLogger logger = new TestLogger(messageHandler);
-        SchemaIndex schemaIndex = new SchemaIndex(logger);
-        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
-        schemaIndex.clearDocument(fileName);
-        ParseContext context = new ParseContext(input, logger, fileName, schemaIndex, scheduler);
-        context.useDocumentIdentifiers();
+        ParseContext context = Utils.createTestContext(input, fileName);
         return SchemaDocument.parseContent(context);
     }
 
@@ -75,8 +44,8 @@ public class SchemaParserTest {
     void checkFileParses(String fileName) throws Exception {
         try {
             var parseResult = parseFile(fileName);
-            String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
-            assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
+            String testMessage = "For file: " + fileName + Utils.constructDiagnosticMessage(parseResult.diagnostics(), 1);
+            assertEquals(0, Utils.countErrors(parseResult.diagnostics()), testMessage);
         } catch(Exception e) {
             throw new Exception(fileName + "\n" + e.getMessage());
         }
@@ -84,14 +53,14 @@ public class SchemaParserTest {
 
     void checkFileFails(String fileName, int expectedErrors) throws Exception {
         var parseResult = parseFile(fileName);
-        String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
-        assertEquals(expectedErrors, countErrors(parseResult.diagnostics()), testMessage);
+        String testMessage = "For file: " + fileName + Utils.constructDiagnosticMessage(parseResult.diagnostics(), 1);
+        assertEquals(expectedErrors, Utils.countErrors(parseResult.diagnostics()), testMessage);
     }
 
     void checkDirectoryParses(String directoryPath) throws Exception {
         String directoryURI = new File(directoryPath).toURI().toString();
 
-        SchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
         ClientLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
 
@@ -112,18 +81,18 @@ public class SchemaParserTest {
             diagnostics.clear();
             var documentHandle = scheduler.getRankProfileDocument(rankProfileURI);
             documentHandle.reparseContent();
-            testMessage += "\n    File: " + rankProfileURI + constructDiagnosticMessage(diagnostics, 2);
+            testMessage += "\n    File: " + rankProfileURI + Utils.constructDiagnosticMessage(diagnostics, 2);
 
-            numErrors += countErrors(diagnostics);
+            numErrors += Utils.countErrors(diagnostics);
         }
 
         for (String schemaURI : schemaFiles) {
             diagnostics.clear();
             var documentHandle = scheduler.getSchemaDocument(schemaURI);
             documentHandle.reparseContent();
-            testMessage += "\n    File: " + schemaURI + constructDiagnosticMessage(diagnostics, 2);
+            testMessage += "\n    File: " + schemaURI + Utils.constructDiagnosticMessage(diagnostics, 2);
 
-            numErrors += countErrors(diagnostics);
+            numErrors += Utils.countErrors(diagnostics);
         }
 
         assertEquals(0, numErrors, testMessage);
