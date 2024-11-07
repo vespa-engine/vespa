@@ -156,7 +156,7 @@ public class ScriptTestCase {
     public void testGetStructField() {
         var structType = new StructDataType("myStruct");
         var stringField = new Field("stringField", DataType.STRING);
-        var intField = new Field("intField", DataType.INT); // Nopt accesseed
+        var intField = new Field("intField", DataType.INT); // Not accessed
         structType.addField(stringField);
         structType.addField(intField);
 

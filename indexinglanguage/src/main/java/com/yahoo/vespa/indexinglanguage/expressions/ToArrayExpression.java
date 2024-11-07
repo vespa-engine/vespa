@@ -24,9 +24,12 @@ public final class ToArrayExpression extends Expression {
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         super.setOutputType(output, context);
-        if ( ! (output instanceof ArrayDataType arrayType))
+        if (output instanceof ArrayDataType arrayType)
+            return arrayType.getNestedType();
+        if (output instanceof AnyDataType)
+            return AnyDataType.instance;
+        else
             throw new VerificationException(this, "Produces an array,  but " + output + " is required");
-        return arrayType.getNestedType();
     }
 
     @Override

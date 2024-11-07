@@ -77,6 +77,9 @@ public final class ForEachExpression extends CompositeExpression {
         else if (outputType instanceof StructDataType struct) {
             return verifyStructFields(struct, context);
         }
+        else if (outputType instanceof AnyDataType) {
+            return outputType;
+        }
         else {
             throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
                                                   outputType.getName());
