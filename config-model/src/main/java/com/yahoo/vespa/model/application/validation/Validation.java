@@ -17,7 +17,6 @@ import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeV
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseValidator;
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLocalLLMValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
@@ -128,7 +127,6 @@ public class Validation {
         new ResourcesReductionValidator().validate(execution);
         new ContainerRestartValidator().validate(execution);
         new NodeResourceChangeValidator().validate(execution);
-        new RedundancyIncreaseValidator().validate(execution);
         new CertificateRemovalChangeValidator().validate(execution);
         new RedundancyValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
