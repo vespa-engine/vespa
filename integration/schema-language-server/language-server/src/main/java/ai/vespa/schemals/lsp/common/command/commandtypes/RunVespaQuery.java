@@ -56,6 +56,10 @@ public class RunVespaQuery implements SchemaCommand {
         QueryResult result = runVespaQuery(queryCommand, context.logger);
 
         if (!result.success()) {
+            if (result.result().toLowerCase().contains("command not found")) {
+                context.messageHandler.sendMessage(MessageType.Error, "Could not find vespa CLI. Make sure vespa CLI is installed and added to path. Download vespa CLI here: https://docs.vespa.ai/en/vespa-cli.html");
+                return null;
+            }
             context.messageHandler.sendMessage(MessageType.Error, "Failed to run query:\n" + result.result());
             return null;
         }
@@ -103,24 +107,27 @@ public class RunVespaQuery implements SchemaCommand {
 
         ProcessBuilder builder = new ProcessBuilder();
 
+        String queryEscaped = query.replace("\"", "\\\"");
+        String vespaCommand = String.format("vespa query \"%s\"", queryEscaped);
+
         if (isWindows) {
-            builder.command(String.format("cmd.exe /c %s", query)); // TODO: Fix this for window
+            builder.command("cmd.exe", "/c", vespaCommand); // TODO: Test this on windows
         } else {
-            builder.command("/usr/local/bin/vespa", "query", query);
+            builder.command("/bin/sh", "-c", vespaCommand);
         }
 
         try {
 
             Process process = builder.start();
-    
+
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            
+
             String line;
             StringBuilder output = new StringBuilder();
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
             }
-    
+
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {
@@ -134,7 +141,7 @@ public class RunVespaQuery implements SchemaCommand {
             }
 
             return new QueryResult(false, error.toString());
-    
+
         } catch (InterruptedException e) {
             return new QueryResult(false, "Program interrupted");
         } catch (IOException e) {
@@ -142,5 +149,5 @@ public class RunVespaQuery implements SchemaCommand {
             return new QueryResult(false, "IOException occurred.");
         }
     }
-    
+
 }
