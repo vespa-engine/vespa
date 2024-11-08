@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.math3.analysis.function.Pow;
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
@@ -53,34 +54,33 @@ public class RunVespaQuery implements SchemaCommand {
     public Object execute(EventExecuteCommandContext context) {
         context.logger.info("Running Vespa query: " + queryCommand);
 
-        QueryResult result = runVespaQuery(queryCommand, context.logger);
-
-        if (!result.success()) {
-            if (result.result().toLowerCase().contains("command not found")) {
-                context.messageHandler.sendMessage(MessageType.Error, "Could not find vespa CLI. Make sure vespa CLI is installed and added to path. Download vespa CLI here: https://docs.vespa.ai/en/vespa-cli.html");
-                return null;
+        runVespaQuery(queryCommand, context.logger).thenAccept(result -> {
+            if (!result.success()) {
+                if (result.result().toLowerCase().contains("command not found")) {
+                    context.messageHandler.sendMessage(MessageType.Error, "Could not find vespa CLI. Make sure vespa CLI is installed and added to path. Download vespa CLI here: https://docs.vespa.ai/en/vespa-cli.html");
+                    return;
+                }
+                context.messageHandler.sendMessage(MessageType.Error, "Failed to run query:\n" + result.result());
+                return;
             }
-            context.messageHandler.sendMessage(MessageType.Error, "Failed to run query:\n" + result.result());
-            return null;
-        }
 
-        String response = result.result();
+            String response = result.result();
 
-        String targetFileURI = getTargetFileURI(sourceFileURI);
+            String targetFileURI = getTargetFileURI(sourceFileURI);
 
-        CreateFile newFile = new CreateFile(targetFileURI);
+            CreateFile newFile = new CreateFile(targetFileURI);
 
-        TextEdit textEdit = new TextEdit(new Range(new Position(0, 0), new Position(0, 0)), response);
+            TextEdit textEdit = new TextEdit(new Range(new Position(0, 0), new Position(0, 0)), response);
 
-        WorkspaceEdit wsEdit = new WorkspaceEditBuilder()
-            .addResourceOperation(newFile)
-            .addTextEdit(targetFileURI, textEdit)
-            .build();
+            WorkspaceEdit wsEdit = new WorkspaceEditBuilder()
+                .addResourceOperation(newFile)
+                .addTextEdit(targetFileURI, textEdit)
+                .build();
 
-        context.messageHandler.applyEdit(new ApplyWorkspaceEditParams(wsEdit)).thenRun(() -> {
-            context.messageHandler.showDocument(targetFileURI);
+            context.messageHandler.applyEdit(new ApplyWorkspaceEditParams(wsEdit)).thenRun(() -> {
+                context.messageHandler.showDocument(targetFileURI);
+            });
         });
-
 
         return null;
     }
@@ -101,7 +101,7 @@ public class RunVespaQuery implements SchemaCommand {
 
     private record QueryResult(boolean success, String result) {};
 
-    private QueryResult runVespaQuery(String query, ClientLogger logger) {
+    private CompletableFuture<QueryResult> runVespaQuery(String query, ClientLogger logger) {
 
         boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
@@ -116,38 +116,40 @@ public class RunVespaQuery implements SchemaCommand {
             builder.command("/bin/sh", "-c", vespaCommand);
         }
 
-        try {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
 
-            Process process = builder.start();
+                Process process = builder.start();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-            String line;
-            StringBuilder output = new StringBuilder();
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+                String line;
+                StringBuilder output = new StringBuilder();
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+
+                int exitCode = process.waitFor();
+
+                if (exitCode == 0) {
+                    return new QueryResult(true, output.toString());
+                }
+
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                StringBuilder error = new StringBuilder();
+                while ((line = errorReader.readLine()) != null) {
+                    error.append(line).append("\n");
+                }
+
+                return new QueryResult(false, error.toString());
+
+            } catch (InterruptedException e) {
+                return new QueryResult(false, "Program interrupted");
+            } catch (IOException e) {
+                logger.error(e.getMessage());
+                return new QueryResult(false, "IOException occurred.");
             }
-
-            int exitCode = process.waitFor();
-
-            if (exitCode == 0) {
-                return new QueryResult(true, output.toString());
-            }
-
-            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            StringBuilder error = new StringBuilder();
-            while ((line = errorReader.readLine()) != null) {
-                error.append(line).append("\n");
-            }
-
-            return new QueryResult(false, error.toString());
-
-        } catch (InterruptedException e) {
-            return new QueryResult(false, "Program interrupted");
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-            return new QueryResult(false, "IOException occurred.");
-        }
+        });
     }
 
 }
