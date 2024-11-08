@@ -16,7 +16,6 @@ public interface RpcConnectionPool extends AutoCloseable {
     /** Returns a connection to the given node id. */
     Client.NodeConnection getConnection(int nodeId);
 
-
     /** Will return a list of items that need a delayed close when updating node set. */
     default Collection<? extends AutoCloseable> updateNodes(DispatchNodesConfig nodesConfig) { return List.of(); }
 
@@ -24,4 +23,5 @@ public interface RpcConnectionPool extends AutoCloseable {
     @Override
     void close();
 
+    default Collection<Integer> knownNodeIds() { return List.of(); }
 }
