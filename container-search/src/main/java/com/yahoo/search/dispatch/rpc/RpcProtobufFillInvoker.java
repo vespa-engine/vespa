@@ -22,6 +22,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.BinaryView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -71,11 +72,15 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
+        int queueSize = Math.max(hitsByNode.size(), resourcePool.knownNodeIds().size());
+        responses = new LinkedBlockingQueue<>(queueSize);
+        sendFillRequestByNode(result, summaryClass, hitsByNode);
+    }
 
+    void sendFillRequestByNode(Result result, String summaryClass, ListMap<Integer, FastHit> hitsByNode) {
         result.getQuery().trace(false, 5, "Sending ", hitsByNode.size(), " summary fetch requests with jrt/protobuf");
 
         outstandingResponses = hitsByNode.size();
-        responses = new LinkedBlockingQueue<>(outstandingResponses);
 
         var timeout = TimeoutHelper.calculateTimeout(result.getQuery());
         if (timeout.timedOut()) {
@@ -144,7 +149,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private void processResponses(Result result, String summaryClass) throws TimeoutException {
         try {
-            int skippedHits = 0;
+            List<Integer> alternates = new ArrayList<>();
+            alternates.addAll(resourcePool.knownNodeIds());
+            List<FastHit> skippedHits = new ArrayList<>();
             while (outstandingResponses > 0) {
                 long timeLeftMs = result.getQuery().getTimeLeft();
                 if (timeLeftMs <= 0) {
@@ -159,10 +166,46 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     throwTimeout();
                 }
                 var hitsContext = responseAndHits.getSecond();
-                skippedHits += processResponse(result, response, hitsContext, summaryClass);
+                skippedHits.addAll(processResponse(result, response, hitsContext, summaryClass));
                 outstandingResponses--;
             }
-            if (skippedHits != 0) {
+
+            if (! skippedHits.isEmpty()) {
+                ListMap<Integer, FastHit> retryMap = new ListMap<>();
+                while (alternates.size() > 0) {
+                    int nodeId = alternates.remove(0);
+                    for (var hit : skippedHits) {
+                        if (hit.getDistributionKey() != nodeId) {
+                            retryMap.put(nodeId, hit);
+                        }
+                    }
+                }
+                if (retryMap.size() > 0) {
+                    sendFillRequestByNode(result, summaryClass, retryMap);
+                }
+                while (outstandingResponses > 0) {
+                    long timeLeftMs = result.getQuery().getTimeLeft();
+                    if (timeLeftMs <= 0) {
+                        log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
+                        break;
+                    }
+                    var responseAndHits = responses.poll(timeLeftMs, TimeUnit.MILLISECONDS);
+                    if (responseAndHits == null) {
+                        log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
+                        break;
+                    }
+                    var response = responseAndHits.getFirst();
+                    if (response.timeout()) {
+                        log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
+                        break;
+                    }
+                    var hitsContext = responseAndHits.getSecond();
+                    speculativeProcessResponse(result, response, hitsContext, summaryClass);
+                    outstandingResponses--;
+                }
+                skippedHits.removeIf(hit -> hit.isFilled(summaryClass));
+            }
+            if (! skippedHits.isEmpty()) {
                 result.hits().addError(ErrorMessage
                         .createEmptyDocsums("Missing hit summary data for summary " + summaryClass + " for " + skippedHits + " hits"));
             }
@@ -171,11 +214,11 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private int processResponse(Result result, Client.ResponseOrError<ProtobufResponse> responseOrError, List<FastHit> hitsContext,
+    private List<FastHit> processResponse(Result result, Client.ResponseOrError<ProtobufResponse> responseOrError, List<FastHit> hitsContext,
             String summaryClass) {
         if (responseOrError.error().isPresent()) {
             if (hasReportedError) {
-                return 0;
+                return List.of();
             }
             String error = responseOrError.error().get();
             result.hits().addError(ErrorMessage.createBackendCommunicationError(error));
@@ -186,7 +229,21 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             byte[] responseBytes = compressor.decompress(response);
             return fill(result, hitsContext, summaryClass, responseBytes);
         }
-        return 0;
+        return List.of();
+    }
+
+    private void speculativeProcessResponse(
+            Result result,
+            Client.ResponseOrError<ProtobufResponse> responseOrError,
+            List<FastHit> hitsContext,
+            String summaryClass)
+    {
+        if (responseOrError.error().isPresent()) {
+            return;
+        }
+        Client.ProtobufResponse response = responseOrError.response().get();
+        byte[] responseBytes = compressor.decompress(response);
+        speculativeFill(result, hitsContext, summaryClass, responseBytes);
     }
 
     private void addErrors(Result result, com.yahoo.slime.Inspector errors) {
@@ -202,7 +259,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private int fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload) {
+    private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
             var root = (decodePolicy == DecodePolicy.ONDEMAND)
@@ -217,9 +274,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
             Inspector summaries = new SlimeAdapter(root.field("docsums"));
             if (!summaries.valid()) {
-                return 0; // No summaries; Perhaps we requested a non-existing summary class
+                return List.of(); // No summaries; Perhaps we requested a non-existing summary class
             }
-            int skippedHits = 0;
+            List<FastHit> skippedHits = new ArrayList<>();
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
                 if (summary.valid()) {
@@ -227,14 +284,40 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                     hits.get(i).setFilled(summaryClass);
                 } else {
-                    skippedHits++;
+                    skippedHits.add(hits.get(i));
                 }
             }
             return skippedHits;
         } catch (InvalidProtocolBufferException ex) {
             log.log(Level.WARNING, "Invalid response to docsum request", ex);
             result.hits().addError(ErrorMessage.createInternalServerError("Invalid response to docsum request from backend"));
-            return 0;
+            return List.of();
+        }
+    }
+
+    private void speculativeFill(Result result, List<FastHit> hits, String summaryClass, byte[] payload) {
+        try {
+            var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
+            var root = (decodePolicy == DecodePolicy.ONDEMAND)
+                    ? BinaryView.inspect(protobuf.getSlimeSummaries().toByteArray())
+                    : BinaryFormat.decode(protobuf.getSlimeSummaries().toByteArray()).get();
+            Inspector summaries = new SlimeAdapter(root.field("docsums"));
+            if (!summaries.valid()) {
+                return; // No summaries; Perhaps we requested a non-existing summary class
+            }
+            for (int i = 0; i < hits.size(); i++) {
+                Inspector summary = summaries.entry(i).field("docsum");
+                if (summary.valid()) {
+                    FastHit hit = hits.get(i);
+                    if (! hit.getFilled().contains(summaryClass)) {
+                        hit.setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
+                        hit.addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
+                        hit.setFilled(summaryClass);
+                    }
+                }
+            }
+        } catch (InvalidProtocolBufferException ex) {
+            log.log(Level.WARNING, "Invalid response to docsum request", ex);
         }
     }
 
