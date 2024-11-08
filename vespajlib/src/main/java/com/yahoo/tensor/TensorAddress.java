@@ -31,12 +31,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public static TensorAddress of(int... labels) {
         return TensorAddressAny.of(labels);
     }
-
-    public static TensorAddress of(Label... labels) {
-        return TensorAddressAny.of(labels);
-    }
     
-
     /** Returns the number of labels in this */
     public abstract int size();
 
@@ -122,16 +117,16 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     /** Creates a complete address by taking the mapped dimensions of this and adding the indexed from the indexedPart */
     public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int[] indexedPart) {
-        long[] labels = new long[dimensions.size()];
+        var labels = new Label[dimensions.size()];
         int mappedIndex = 0;
         int indexedIndex = 0;
         for (int i = 0; i < labels.length; i++) {
             TensorType.Dimension d = dimensions.get(i);
             if (d.isIndexed()) {
-                labels[i] = indexedPart[indexedIndex];
+                labels[i] = labelObject(indexedPart[indexedIndex]);
                 indexedIndex++;
             } else {
-                labels[i] = numericLabel(mappedIndex);
+                labels[i] = labelObject(mappedIndex);
                 mappedIndex++;
             }
         }
