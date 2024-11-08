@@ -14,16 +14,16 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class Label {
     private final String string;
-    private final long number;
+    private final long numeric;
 
-    public Label(String string) {
+    Label(String string) {
         this.string = string;
-        this.number = 0;
+        this.numeric = 0;
     }
 
-    public Label(long numeric) {
+    Label(long numeric) {
         this.string = null;
-        this.number = numeric;
+        this.numeric = numeric;
     }
 
     public String getString() {
@@ -31,7 +31,7 @@ public class Label {
     }
 
     public long getNumeric() {
-        return number;
+        return numeric;
     }
 
     @Override
@@ -39,12 +39,12 @@ public class Label {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         var label = (Label) o;
-        return number == label.number;
+        return numeric == label.numeric;
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(number);
+        return Long.hashCode(numeric);
     }
 
     private static final String[] SMALL_INDEXES = createSmallIndexesAsStrings(1000);

@@ -20,7 +20,7 @@ final class TensorAddressEmpty extends TensorAddressAny {
     @Override public long numericLabel(int i) { throw new IllegalArgumentException("Empty address with no labels"); }
 
     @Override
-    public TensorAddress withLabel(int labelIndex, long label) {
+    public TensorAddress withLabel(int labelIndex, Label label) {
         throw new IllegalArgumentException("No label " + labelIndex);
     }
 
