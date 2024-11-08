@@ -1,0 +1,16 @@
+schema subqueries {
+    document subqueries {
+        field predicate_field type predicate {
+            indexing: attribute
+            index {
+                arity: 2
+                lower-bound: 3
+                upper-bound: 200
+                dense-posting-list-threshold: 0.25
+            }
+        }
+    }
+    rank-profile default {
+        summary-features: subqueries(predicate_field).lsb subqueries(predicate_field).msb
+    }
+}
