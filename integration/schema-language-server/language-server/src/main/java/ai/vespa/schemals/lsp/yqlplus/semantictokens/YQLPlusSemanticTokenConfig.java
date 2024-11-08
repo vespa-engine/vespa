@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.SemanticTokenTypes;
 import ai.vespa.schemals.parser.yqlplus.ast.FALSE;
 import ai.vespa.schemals.parser.yqlplus.ast.TRUE;
 import ai.vespa.schemals.parser.yqlplus.ast.AT;
+import ai.vespa.schemals.parser.yqlplus.ast.CONTAINS;
 import ai.vespa.schemals.parser.yqlplus.ast.FLOAT;
 import ai.vespa.schemals.parser.yqlplus.ast.FROM;
 import ai.vespa.schemals.parser.yqlplus.ast.INT;
@@ -24,6 +25,14 @@ import ai.vespa.schemals.parser.yqlplus.ast.identifierStr;
 import ai.vespa.schemals.parser.yqlplus.ast.mult_op;
 import ai.vespa.schemals.parser.yqlplus.ast.relational_op;
 import ai.vespa.schemals.parser.yqlplus.ast.unary_op;
+import ai.vespa.schemals.parser.yqlplus.ast.OR;
+import ai.vespa.schemals.parser.yqlplus.ast.AND;
+import ai.vespa.schemals.parser.yqlplus.ast.NOT_IN;
+import ai.vespa.schemals.parser.yqlplus.ast.IN;
+import ai.vespa.schemals.parser.yqlplus.ast.LIKE;
+import ai.vespa.schemals.parser.yqlplus.ast.NOTLIKE;
+import ai.vespa.schemals.parser.yqlplus.ast.MATCHES;
+import ai.vespa.schemals.parser.yqlplus.ast.NOTMATCHES;
 
 class YQLPlusSemanticTokenConfig {
 
@@ -34,6 +43,11 @@ class YQLPlusSemanticTokenConfig {
         add(WHERE.class);
         add(SOURCES.class);
         add(LIMIT.class);
+        add(CONTAINS.class);
+        add(LIKE.class);
+        add(NOTLIKE.class);
+        add(MATCHES.class);
+        add(NOTMATCHES.class);
     }};
 
     static final Map<Class<?>, String> tokensMap = new HashMap<Class<?>, String>() {{
@@ -49,5 +63,9 @@ class YQLPlusSemanticTokenConfig {
         put(LONG_INT.class, SemanticTokenTypes.Number);
         put(INT.class, SemanticTokenTypes.Number);
         put(FLOAT.class, SemanticTokenTypes.Number);
+        put(AND.class, SemanticTokenTypes.Operator);
+        put(OR.class, SemanticTokenTypes.Operator);
+        put(NOT_IN.class, SemanticTokenTypes.Operator);
+        put(IN.class, SemanticTokenTypes.Operator);
     }};
 }

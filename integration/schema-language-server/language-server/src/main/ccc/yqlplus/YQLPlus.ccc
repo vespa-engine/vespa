@@ -112,7 +112,7 @@ TOKEN :
 | < HEX_DIGIT: ["0"-"9","a"-"f","A"-"F"] >
 | < UNICODE_ESC: '\\' 'u' <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> >
 | < ESC_SEQ: '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\'|'/') | <UNICODE_ESC> >
-| < STRING: (<DQ> ( <ESC_SEQ> | ~['\\','"'])* <DQ>) | ( <SQ> ( <ESC_SEQ> | ~['\\','"'])* <SQ> ) >
+| < STRING: (<DQ> ( <ESC_SEQ> | ~['\\','"'])* <DQ>) | ( <SQ> ( <ESC_SEQ> | ~['\\','\''])* <SQ> ) >
 
 ;
 
