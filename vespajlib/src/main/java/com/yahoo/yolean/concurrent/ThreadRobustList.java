@@ -20,8 +20,9 @@ import java.util.NoSuchElementException;
  *
  * @author Steinar Knutsen
  * @author bratseth
- * @since 5.1.15
+ * @deprecated Not used, will be removed in next major release
  */
+@Deprecated(forRemoval = true) // TODO: Remove on Vespa 9
 public class ThreadRobustList<T> implements Iterable<T> {
 
     private Object[] items;

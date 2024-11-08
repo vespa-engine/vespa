@@ -38,17 +38,25 @@ public class ConvertParsedFields {
         this.structProxies = structProxies;
     }
 
+    static void caseHandling(SDField field, Case casing) {
+        field.setMatchingCase(casing);
+        if (casing == Case.CASED) {
+            var dictionary = field.getOrSetDictionary();
+            dictionary.updateMatch(casing);
+        }
+    }
+
     static void convertMatchSettings(SDField field, ParsedMatchSettings parsed) {
         parsed.getMatchType().ifPresent(matchingType -> field.setMatchingType(matchingType));
-        parsed.getMatchCase().ifPresent(casing -> field.setMatchingCase(casing));
+        parsed.getMatchCase().ifPresent(casing -> caseHandling(field, casing));
         parsed.getGramSize().ifPresent(gramSize -> field.getMatching().setGramSize(gramSize));
         parsed.getMaxLength().ifPresent(maxLength -> field.getMatching().maxLength(maxLength));
         parsed.getMaxTermOccurrences().ifPresent(maxTermOccurrences -> field.getMatching().maxTermOccurrences(maxTermOccurrences));
         parsed.getMaxTokenLength().ifPresent(maxTokenLength -> field.getMatching().maxTokenLength(maxTokenLength));
         parsed.getMatchAlgorithm().ifPresent
-            (matchingAlgorithm -> field.setMatchingAlgorithm(matchingAlgorithm));
+                (matchingAlgorithm -> field.setMatchingAlgorithm(matchingAlgorithm));
         parsed.getExactTerminator().ifPresent
-            (exactMatchTerminator -> field.getMatching().setExactMatchTerminator(exactMatchTerminator));
+                (exactMatchTerminator -> field.getMatching().setExactMatchTerminator(exactMatchTerminator));
     }
 
     void convertSorting(Schema schema, SDField field, ParsedSorting parsed, String name) {
@@ -142,7 +150,11 @@ public class ConvertParsedFields {
 
     // from grammar, things that can be inside struct-field block
     private void convertCommonFieldSettings(Schema schema, SDField field, ParsedField parsed) {
-        convertMatchSettings(field, parsed.matchSettings());
+        try {
+            convertMatchSettings(field, parsed.matchSettings());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("For schema '" + schema.getName() + "', field '" + field.getName() + "': " + e.getMessage());
+        }
         var indexing = parsed.getIndexing();
         if (indexing.isPresent()) {
             field.setIndexingScript(schema.getName(), indexing.get().script());
@@ -199,11 +211,15 @@ public class ConvertParsedFields {
         String name = parsed.name();
         for (var dictOp : parsed.getDictionaryOptions()) {
             var dictionary = field.getOrSetDictionary();
-            switch (dictOp) {
-                case HASH -> dictionary.updateType(Dictionary.Type.HASH);
-                case BTREE -> dictionary.updateType(Dictionary.Type.BTREE);
-                case CASED -> dictionary.updateMatch(Case.CASED);
-                case UNCASED -> dictionary.updateMatch(Case.UNCASED);
+            try {
+                switch (dictOp) {
+                    case HASH -> dictionary.updateType(Dictionary.Type.HASH);
+                    case BTREE -> dictionary.updateType(Dictionary.Type.BTREE);
+                    case CASED -> dictionary.updateMatch(Case.CASED);
+                    case UNCASED -> dictionary.updateMatch(Case.UNCASED);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("For schema '" + schema.getName() + "', field '" + name + "': " + e.getMessage());
             }
         }
         for (var index : parsed.getIndexes()) {
@@ -285,7 +301,7 @@ public class ConvertParsedFields {
         }
         parsed.getEnableBm25().ifPresent(enableBm25 -> index.setInterleavedFeatures(enableBm25));
         parsed.getHnswIndexParams().ifPresent
-            (hnswIndexParams -> index.setHnswIndexParams(hnswIndexParams));
+                (hnswIndexParams -> index.setHnswIndexParams(hnswIndexParams));
     }
 
     SDField convertDocumentField(Schema schema, SDDocumentType document, ParsedField parsed) {

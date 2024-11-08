@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression.Operator;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Simon Thoresen Hult
@@ -64,19 +65,19 @@ public class ArithmeticTestCase {
                      SimpleExpression.newOutput(DataType.INT), null);
         assertVerifyThrows(SimpleExpression.newOutput(null), Operator.ADD,
                            SimpleExpression.newOutput(DataType.INT), null,
-                           "Attempting to perform arithmetic on a null value");
+                           "Expected any output, but no output is specified");
         assertVerifyThrows(SimpleExpression.newOutput(DataType.INT), Operator.ADD,
                            SimpleExpression.newOutput(null), null,
-                           "Attempting to perform arithmetic on a null value");
+                           "Expected any output, but no output is specified");
         assertVerifyThrows(SimpleExpression.newOutput(null), Operator.ADD,
                            SimpleExpression.newOutput(null), null,
-                           "Attempting to perform arithmetic on a null value");
+                           "Expected any output, but no output is specified");
         assertVerifyThrows(SimpleExpression.newOutput(DataType.INT), Operator.ADD,
                            SimpleExpression.newOutput(DataType.STRING), null,
-                           "Attempting to perform unsupported arithmetic: [int] + [string]");
+                           "The second argument must be a number, but has type string");
         assertVerifyThrows(SimpleExpression.newOutput(DataType.STRING), Operator.ADD,
                            SimpleExpression.newOutput(DataType.STRING), null,
-                           "Attempting to perform unsupported arithmetic: [string] + [string]");
+                           "The first argument must be a number, but has type string");
     }
 
     @Test
@@ -101,13 +102,13 @@ public class ArithmeticTestCase {
     @Test
     public void requireThatResultIsCalculated() {
         for (int i = 0; i < 50; ++i) {
-            LongFieldValue lhs = new LongFieldValue(i);
-            LongFieldValue rhs = new LongFieldValue(100 - i);
-            assertResult(lhs, Operator.ADD, rhs, new LongFieldValue(lhs.getLong() + rhs.getLong()));
-            assertResult(lhs, Operator.SUB, rhs, new LongFieldValue(lhs.getLong() - rhs.getLong()));
-            assertResult(lhs, Operator.DIV, rhs, new LongFieldValue(lhs.getLong() / rhs.getLong()));
-            assertResult(lhs, Operator.MOD, rhs, new LongFieldValue(lhs.getLong() % rhs.getLong()));
-            assertResult(lhs, Operator.MUL, rhs, new LongFieldValue(lhs.getLong() * rhs.getLong()));
+            LongFieldValue left = new LongFieldValue(i);
+            LongFieldValue right = new LongFieldValue(100 - i);
+            assertResult(left, Operator.ADD, right, new LongFieldValue(left.getLong() + right.getLong()));
+            assertResult(left, Operator.SUB, right, new LongFieldValue(left.getLong() - right.getLong()));
+            assertResult(left, Operator.DIV, right, new LongFieldValue(left.getLong() / right.getLong()));
+            assertResult(left, Operator.MOD, right, new LongFieldValue(left.getLong() % right.getLong()));
+            assertResult(left, Operator.MUL, right, new LongFieldValue(left.getLong() * right.getLong()));
         }
     }
 
@@ -195,11 +196,15 @@ public class ArithmeticTestCase {
 
     private static void assertVerifyThrows(Expression lhs, Operator op, Expression rhs, DataType val,
                                            String expectedException) {
+        ArithmeticExpression expression = null;
         try {
-            new ArithmeticExpression(lhs, op, rhs).verify(val);
-            fail();
+            expression = new ArithmeticExpression(lhs, op, rhs);
+            expression.verify(val);
+            fail("Expected exception");
         } catch (VerificationException e) {
-            assertEquals(expectedException, e.getMessage());
+            String expressionString = expression == null ? "of type '" + ArithmeticExpression.class.getSimpleName() + "'"
+                                                         : "'" + expression + "'";
+            assertEquals("Invalid expression " + expressionString + ": " + expectedException, e.getMessage());
         }
     }
 }

@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-attributes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/searchcore/proton/server/documentdbconfigscout.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
-#include <vespa/config-attributes.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <ostream>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace document;
 using namespace proton;
@@ -54,19 +53,22 @@ bool
 assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
                        const std::string &name)
 {
-    if (!EXPECT_EQUAL(name, attribute.name)) {
+    SCOPED_TRACE(name);
+    bool failed = false;
+    EXPECT_EQ(name, attribute.name) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_FALSE(attribute.fastsearch)) {
+    EXPECT_FALSE(attribute.fastsearch) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_FALSE(attribute.paged)) {
+    EXPECT_FALSE(attribute.paged) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_FALSE(attribute.enableonlybitvector)) {
-        return false;
-    }
-    return true;
+    EXPECT_FALSE(attribute.enableonlybitvector) << (failed = true, "");
+    return !failed;
 }
 
 bool
@@ -74,34 +76,42 @@ assert_string_attribute(const AttributesConfig::Attribute& attribute,
                         const std::string& name,
                         std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
 {
+    SCOPED_TRACE(name);
     using Attribute = AttributesConfig::Attribute;
     using Dictionary = Attribute::Dictionary;
     using Match = Attribute::Match;
     if (!assertDefaultAttribute(attribute, name)) {
         return false;
     }
-    if (!EXPECT_EQUAL(name, attribute.name)) {
+    bool failed = false;
+    EXPECT_EQ(name, attribute.name) << (failed = true, "");
+    if (failed) {
         return false;
     }
     if (uncased.has_value()) {
         if (uncased.value()) {
-            if (!EXPECT_EQUAL(Match::UNCASED, attribute.match)) {
+            EXPECT_EQ(Match::UNCASED, attribute.match) << (failed = true, "");
+            if (failed) {
                 return false;
             }
-            if (!EXPECT_EQUAL(Dictionary::Match::UNCASED, attribute.dictionary.match)) {
+            EXPECT_EQ(Dictionary::Match::UNCASED, attribute.dictionary.match) << (failed = true, "");
+            if (failed) {
                 return false;
             }
         } else {
-            if (!EXPECT_EQUAL(Match::CASED, attribute.match)) {
+            EXPECT_EQ(Match::CASED, attribute.match) << (failed = true, "");
+            if (failed) {
                 return false;
             }
-            if (!EXPECT_EQUAL(Dictionary::Match::CASED, attribute.dictionary.match)) {
+            EXPECT_EQ(Dictionary::Match::CASED, attribute.dictionary.match) << (failed = true, "");
+            if (failed) {
                 return false;
             }
         }
     }
     if (dictionary_type.has_value()) {
-        if (!EXPECT_EQUAL(dictionary_type.value(), attribute.dictionary.type)) {
+        EXPECT_EQ(dictionary_type.value(), attribute.dictionary.type) << (failed = true, "");
+        if (failed) {
             return false;
         }
     }
@@ -112,19 +122,22 @@ bool
 assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
                           const std::string &name)
 {
-    if (!EXPECT_EQUAL(name, attribute.name)) {
+    SCOPED_TRACE(name);
+    bool failed = false;
+    EXPECT_EQ(name, attribute.name) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_TRUE(attribute.fastsearch)) {
+    EXPECT_TRUE(attribute.fastsearch) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_FALSE(attribute.paged)) {
+    EXPECT_FALSE(attribute.paged) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_FALSE(attribute.enableonlybitvector)) {
-        return false;
-    }
-    return true;
+    EXPECT_FALSE(attribute.enableonlybitvector) << (failed = true, "");
+    return !failed;
 }
 
 
@@ -132,47 +145,56 @@ bool
 assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
                                  const std::string &name)
 {
-    if (!EXPECT_EQUAL(name, attribute.name)) {
+    SCOPED_TRACE(name);
+    bool failed = false;
+    EXPECT_EQ(name, attribute.name) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_TRUE(attribute.fastsearch)) {
+    EXPECT_TRUE(attribute.fastsearch) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_TRUE(attribute.paged)) {
+    EXPECT_TRUE(attribute.paged) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_TRUE(attribute.enableonlybitvector)) {
-        return false;
-    }
-    return true;
+    EXPECT_TRUE(attribute.enableonlybitvector) << (failed = true, "");
+    return !failed;
 }
 
 bool
 assertTensorAttribute(const AttributesConfig::Attribute &attribute,
                       const std::string &name, const std::string &spec, int max_links_per_node)
 {
-    if (!EXPECT_EQUAL(attribute.name, name)) {
+    SCOPED_TRACE(name);
+    bool failed = false;
+    EXPECT_EQ(attribute.name, name) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_EQUAL((int)attribute.datatype, (int)AttributesConfig::Attribute::Datatype::TENSOR)) {
+    EXPECT_EQ((int)attribute.datatype, (int)AttributesConfig::Attribute::Datatype::TENSOR) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_EQUAL(attribute.tensortype, spec)) {
+    EXPECT_EQ(attribute.tensortype, spec) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_TRUE(attribute.index.hnsw.enabled)) {
+    EXPECT_TRUE(attribute.index.hnsw.enabled) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_EQUAL(attribute.index.hnsw.maxlinkspernode, max_links_per_node)) {
-        return false;
-    }
-    return true;
+    EXPECT_EQ(attribute.index.hnsw.maxlinkspernode, max_links_per_node) << (failed = true, "");
+    return !failed;
 }
 
 bool
 assertAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(8u, attributes.size())) {
+    bool failed = false;
+    EXPECT_EQ(8u, attributes.size()) << (failed = true, "");
+    if (failed) {
         return false;
     }
     if (!assertDefaultAttribute(attributes[0], "a1")) {
@@ -206,7 +228,9 @@ assertAttributes(const AttributesConfig::AttributeVector &attributes)
 bool
 assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(9u, attributes.size())) {
+    bool failed = false;
+    EXPECT_EQ(9u, attributes.size()) << (failed = true, "");
+    if (failed) {
         return false;
     }
     if (!assertFastSearchAttribute(attributes[0], "a0")) {
@@ -243,7 +267,9 @@ assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
 bool
 assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(8u, attributes.size())) {
+    bool failed = false;
+    EXPECT_EQ(8u, attributes.size()) << (failed = true, "");
+    if (failed) {
         return false;
     }
     if (!assertFastSearchAndMoreAttribute(attributes[0], "a1")) {
@@ -373,7 +399,7 @@ setupLiveAttributes(AttributesConfigBuilder::AttributeVector &attributes)
 
 }
 
-TEST("Test that DocumentDBConfigScout::scout looks ahead")
+TEST(DocumentDBConfigScoutTest, Test_that_DocumentDBConfigScout_scout_looks_ahead)
 {
     AttributesConfigBuilder attributes;
     setupDefaultAttributes(attributes.attribute);

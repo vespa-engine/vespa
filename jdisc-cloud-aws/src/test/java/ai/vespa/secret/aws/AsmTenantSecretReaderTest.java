@@ -1,7 +1,7 @@
 package ai.vespa.secret.aws;
 
-import ai.vespa.secret.aws.testutil.AsmSecretStoreTester;
-import ai.vespa.secret.aws.testutil.AsmSecretStoreTester.SecretVersion;
+import ai.vespa.secret.aws.testutil.AsmSecretReaderTester;
+import ai.vespa.secret.aws.testutil.AsmSecretTesterBase.SecretVersion;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretName;
@@ -10,6 +10,8 @@ import ai.vespa.secret.model.SecretVersionState;
 import ai.vespa.secret.model.VaultName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,14 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class AsmTenantSecretReaderTest {
 
-    AsmSecretStoreTester tester = new AsmSecretStoreTester(this::awsSecretId);
+    AsmSecretReaderTester tester = new AsmSecretReaderTester(this::awsSecretId);
     
     String system = "publiccd";
     String tenant = "tenant1";
 
     // The mapping from Key to AWS secret id for tenant secrets
+    // Do NOT use the production code here, as we want to fail upon changes.
     private String awsSecretId(Key key) {
-        return "%s.%s.%s/%s".formatted(
+        return "tenant-secret.%s.%s.%s/%s".formatted(
                 system, tenant, key.vaultName().value(), key.secretName().value());
     }
 
@@ -43,7 +46,9 @@ public class AsmTenantSecretReaderTest {
     @Test
     void it_creates_one_credentials_and_client_per_vault_and_closes_them() {
         var vault1 = VaultName.of("vault1");
+        var awsRole1 = "tenant-secret.publiccd.tenant1.vault1.reader";
         var vault2 = VaultName.of("vault2");
+        var awsRole2 = "tenant-secret.publiccd.tenant1.vault2.reader";
 
         var secret1 = new SecretVersion("1", SecretVersionState.CURRENT, "secret1");
         var secret2 = new SecretVersion("2", SecretVersionState.CURRENT, "secret2");
@@ -58,7 +63,8 @@ public class AsmTenantSecretReaderTest {
             reader.getSecret(key1);
             reader.getSecret(key2);
 
-            assertEquals(2, tester.clients().size());
+            // Verify correct AWS roles
+            assertEquals(Set.of(awsRole1, awsRole2), reader.clientRoleNames());
         }
         assertTrue(tester.clients().stream().allMatch(c -> c.isClosed));
     }
@@ -90,8 +96,8 @@ public class AsmTenantSecretReaderTest {
         var pending = new SecretVersion("2", SecretVersionState.PENDING, "pending");
         tester.put(key, current, pending);
 
-        try (var store = secretReader()) {
-            var retrieved = store.getSecret(key);
+        try (var reader = secretReader()) {
+            var retrieved = reader.getSecret(key);
             assertSame(current, retrieved);
         }
     }
@@ -100,11 +106,11 @@ public class AsmTenantSecretReaderTest {
     void it_throws_exception_if_secret_not_found() {
         var vault = VaultName.of("vault1");
         var key = new Key(vault, SecretName.of("secret1"));
-        try (var store = secretReader()) {
-            var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key));
+        try (var reader = secretReader()) {
+            var e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key));
             assertEquals("Failed to retrieve current version of secret with key vault1/secret1", e.getMessage());
 
-            e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key, SecretVersionId.of("1")));
+            e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key, SecretVersionId.of("1")));
             assertEquals("Failed to retrieve secret with key vault1/secret1, version: 1", e.getMessage());
         }
     }
@@ -134,8 +140,8 @@ public class AsmTenantSecretReaderTest {
         var pend = new SecretVersion("3", SecretVersionState.PENDING, "v3");
 
         tester.put(key, prev, pend, curr);
-        try (var store = secretReader()) {
-            var versions = store.listSecretVersions(key);
+        try (var reader = secretReader()) {
+            var versions = reader.listSecretVersions(key);
             assertEquals(3, versions.size());
             assertSame(pend, versions.get(0));
             assertSame(curr, versions.get(1));
@@ -147,8 +153,8 @@ public class AsmTenantSecretReaderTest {
     void it_returns_empty_list_of_versions_for_unknown_secret() {
         var vault = VaultName.of("vault1");
         var key = new Key(vault, SecretName.of("secret1"));
-        try (var store = secretReader()) {
-            var versions = store.listSecretVersions(key);
+        try (var reader = secretReader()) {
+            var versions = reader.listSecretVersions(key);
             assertEquals(0, versions.size());
         }
     }

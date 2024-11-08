@@ -60,6 +60,16 @@ LogDataStore::Config::operator == (const Config & rhs) const {
             (_fileConfig == rhs._fileConfig);
 }
 
+class LogDataStore::FileChunkHolder
+{
+private:
+    LogDataStore &_store;
+    FileId _fileId;
+public:
+    FileChunkHolder(LogDataStore &store, FileId fileId) : _store(store), _fileId(fileId) { }
+    ~FileChunkHolder() { _store.unholdFileChunk(_fileId); }
+};
+
 LogDataStore::LogDataStore(vespalib::Executor &executor, const std::string &dirName, const Config &config,
                            const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                            const FileHeaderContext &fileHeaderContext, transactionlog::SyncProxy &tlSyncer,
@@ -1101,16 +1111,6 @@ LogDataStore::getVisitCost() const
     }
     return totalChunks;
 }
-
-class LogDataStore::FileChunkHolder
-{
-private:
-    LogDataStore &_store;
-    FileId _fileId;
-public:
-    FileChunkHolder(LogDataStore &store, FileId fileId) : _store(store), _fileId(fileId) { }
-    ~FileChunkHolder() { _store.unholdFileChunk(_fileId); }
-};
 
 std::unique_ptr<LogDataStore::FileChunkHolder>
 LogDataStore::holdFileChunk(const MonitorGuard & guard, FileId fileId)

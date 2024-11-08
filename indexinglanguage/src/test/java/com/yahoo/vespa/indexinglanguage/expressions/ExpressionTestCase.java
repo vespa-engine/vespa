@@ -34,22 +34,22 @@ public class ExpressionTestCase {
     public void requireThatInputTypeIsCheckedBeforeVerify() {
         assertVerify(newRequiredInput(DataType.INT), DataType.INT);
         assertVerifyThrows(newRequiredInput(DataType.INT), null,
-                           "Expected int input, but no input is specified");
+                           "Invalid expression 'SimpleExpression': Expected int input, but no input is specified");
         assertVerifyThrows(newRequiredInput(DataType.INT), UnresolvedDataType.INSTANCE,
-                           "Failed to resolve input type");
+                           "Invalid expression 'SimpleExpression': Failed to resolve input type");
         assertVerifyThrows(newRequiredInput(DataType.INT), DataType.STRING,
-                           "Expected int input, got string");
+                           "Invalid expression 'SimpleExpression': Expected int input, got string");
     }
 
     @Test
     public void requireThatOutputTypeIsCheckedAfterVerify() {
         assertVerify(newCreatedOutput(DataType.INT, DataType.INT), null);
         assertVerifyThrows(newCreatedOutput(DataType.INT, (DataType)null), null,
-                           "Expected int output, but no output is specified");
+                           "Invalid expression 'SimpleExpression': Expected int output, but no output is specified");
         assertVerifyThrows(newCreatedOutput(DataType.INT, UnresolvedDataType.INSTANCE), null,
-                           "Failed to resolve output type");
+                           "Invalid expression 'SimpleExpression': Failed to resolve output type");
         assertVerifyThrows(newCreatedOutput(DataType.INT, DataType.STRING), null,
-                           "Expected int output, got string");
+                           "Invalid expression 'SimpleExpression': Expected int output, got string");
     }
 
     @Test

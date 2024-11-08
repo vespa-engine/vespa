@@ -28,6 +28,7 @@ import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.query.profiling.Profiling;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
@@ -253,6 +254,7 @@ public class ProtobufSerialization {
             for (int i = 0; i < cnt; i++) {
                 Grouping g = new Grouping();
                 g.deserialize(buf);
+                g.select(obj -> (obj instanceof FS4Hit), obj -> ((FS4Hit) obj).setPath(partId));
                 list.add(g);
             }
             GroupingListHit hit = new GroupingListHit(list, documentDatabase, query);

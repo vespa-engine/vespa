@@ -12,12 +12,14 @@
 #include <vespa/searchlib/attribute/blob_sequence_reader.h>
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <mutex>
 #include <condition_variable>
+#include <filesystem>
+#include <mutex>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.tensor.tensor_attribute_loader");
@@ -290,6 +292,17 @@ TensorAttributeLoader::load_index()
     return true;
 }
 
+uint64_t
+TensorAttributeLoader::get_index_size_on_disk()
+{
+    auto name = _attr.getBaseFileName() + "." + TensorAttributeSaver::index_file_suffix();
+    if (!std::filesystem::exists(name)) {
+        return 0;
+    }
+    DiskSpaceCalculator disk_space_calculator;
+    return disk_space_calculator(std::filesystem::file_size(name));
+}
+
 bool
 TensorAttributeLoader::on_load(vespalib::Executor* executor)
 {
@@ -312,6 +325,7 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
     _attr.commit();
     _attr.getStatus().setNumDocs(docid_limit);
     _attr.setCommittedDocIdLimit(docid_limit);
+    _attr.set_size_on_disk(reader.size_on_disk() + get_index_size_on_disk());
     if (_index != nullptr) {
         bool use_index_file = false;
         if (has_index_file(_attr)) {

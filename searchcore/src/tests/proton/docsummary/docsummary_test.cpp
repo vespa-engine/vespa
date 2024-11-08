@@ -289,7 +289,8 @@ public:
                                   _shared_service, _tls, _dummy, _fileHeaderContext,
                                   std::make_shared<search::attribute::Interlock>(),
                                   std::make_unique<MemoryConfigStore>(),
-                                  std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo),
+                                  std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo,
+                                  std::shared_ptr<search::diskindex::IPostingListCache>()),
             _ddb->start();
         _ddb->waitForOnlineState();
         _aw = std::make_unique<AttributeWriter>(_ddb->getReadySubDB()->getAttributeManager());

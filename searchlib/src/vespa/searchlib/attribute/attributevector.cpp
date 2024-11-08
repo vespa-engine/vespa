@@ -101,7 +101,8 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
       _loaded(false),
       _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig())),
       _nextStatUpdateTime(),
-      _memory_allocator(make_memory_allocator(_baseFileName.getAttributeName(), c))
+      _memory_allocator(make_memory_allocator(_baseFileName.getAttributeName(), c)),
+      _size_on_disk(0)
 {
 }
 
@@ -272,7 +273,11 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileNam
     if (saver) {
         // Normally, new style save happens in background, but here it
         // will occur in the foreground.
-        return saver->save(saveTarget);
+        auto result = saver->save(saveTarget);
+        if (result) {
+            set_size_on_disk(saveTarget);
+        }
+        return result;
     }
     // New style save not available, use old style save
     saveTarget.setHeader(createAttributeHeader(fileName));
@@ -281,6 +286,7 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileNam
     }
     onSave(saveTarget);
     saveTarget.close();
+    set_size_on_disk(saveTarget);
     return true;
 }
 
@@ -730,6 +736,15 @@ vespalib::alloc::Alloc
 AttributeVector::get_initial_alloc()
 {
     return (_memory_allocator ? vespalib::alloc::Alloc::alloc_with_allocator(_memory_allocator.get()) : vespalib::alloc::Alloc::alloc());
+}
+
+void
+AttributeVector::set_size_on_disk(const IAttributeSaveTarget& target)
+{
+    auto save_target_size_on_disk = target.size_on_disk();
+    if (save_target_size_on_disk != 0) {
+        set_size_on_disk(save_target_size_on_disk);
+    }
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);

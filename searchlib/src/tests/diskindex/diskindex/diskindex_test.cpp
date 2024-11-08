@@ -106,13 +106,16 @@ struct IOSettings
 {
     bool _use_directio;
     bool _use_mmap;
+    bool _use_posting_list_cache;
     IOSettings()
         : _use_directio(false),
-          _use_mmap(false)
+          _use_mmap(false),
+          _use_posting_list_cache(false)
     {
     }
     IOSettings use_directio() && { _use_directio = true; return *this; }
     IOSettings use_mmap() && { _use_mmap = true; return *this; }
+    IOSettings use_posting_list_cache() && { _use_posting_list_cache = true; return *this; }
 };
 
 class DiskIndexTest : public ::testing::Test, public TestDiskIndex {
@@ -199,45 +202,44 @@ DiskIndexTest::requireThatLookupIsWorking(const EmptySettings& empty_settings)
     uint32_t f1(_schema.getIndexFieldId("f1"));
     uint32_t f2(_schema.getIndexFieldId("f2"));
     uint32_t f3(_schema.getIndexFieldId("f3"));
-    LookupResult::UP r;
-    r = _index->lookup(f1, "not");
-    EXPECT_TRUE(!r || r->counts._numDocs == 0);
+    auto r = _index->lookup(f1, "not");
+    EXPECT_EQ(0, r.counts._numDocs);
     r = _index->lookup(f1, "w1not");
-    EXPECT_TRUE(!r || r->counts._numDocs == 0);
+    EXPECT_EQ(0, r.counts._numDocs);
     r = _index->lookup(f1, "wnot");
-    EXPECT_TRUE(!r || r->counts._numDocs == 0);
+    EXPECT_EQ(0, r.counts._numDocs);
     { // field 'f1'
         r = _index->lookup(f1, "w1");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(!r || r->counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
-            EXPECT_EQ(1u, r->wordNum);
-            EXPECT_EQ(2u, r->counts._numDocs);
+            EXPECT_EQ(1u, r.wordNum);
+            EXPECT_EQ(2u, r.counts._numDocs);
         }
         r = _index->lookup(f1, "w2");
-        EXPECT_TRUE(!r || r->counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
     }
     { // field 'f2'
         r = _index->lookup(f2, "w1");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(!r || r->counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
-            EXPECT_EQ(1u, r->wordNum);
-            EXPECT_EQ(3u, r->counts._numDocs);
+            EXPECT_EQ(1u, r.wordNum);
+            EXPECT_EQ(3u, r.counts._numDocs);
         }
         r = _index->lookup(f2, "w2");
         if (wordEmpty || fieldEmpty || docEmpty) {
-            EXPECT_TRUE(!r || r->counts._numDocs == 0);
+            EXPECT_EQ(0, r.counts._numDocs);
         } else {
-            EXPECT_EQ(2u, r->wordNum);
-            EXPECT_EQ(17u, r->counts._numDocs);
+            EXPECT_EQ(2u, r.wordNum);
+            EXPECT_EQ(17u, r.counts._numDocs);
         }
     }
     { // field 'f3' doesn't exist
         r = _index->lookup(f3, "w1");
-        EXPECT_TRUE(!r || r->counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
         r = _index->lookup(f3, "w2");
-        EXPECT_TRUE(!r || r->counts._numDocs == 0);
+        EXPECT_EQ(0, r.counts._numDocs);
     }
 }
 
@@ -246,9 +248,9 @@ DiskIndexTest::requireThatWeCanReadPostingList()
 {
     TermFieldMatchDataArray mda;
     { // field 'f1'
-        LookupResult::UP r = _index->lookup(0, "w1");
-        PostingListHandle::UP h = _index->readPostingList(*r);
-        auto sb = h->createIterator(r->counts, mda);
+        auto r = _index->lookup(0, "w1");
+        auto h = _index->readPostingList(r);
+        auto sb = _index->create_iterator(r, h, mda);
         EXPECT_EQ(SimpleResult({1,3}), SimpleResult().search(*sb));
     }
 }
@@ -271,17 +273,16 @@ void
 DiskIndexTest::requireThatWeCanReadBitVector()
 {
     { // word 'w1'
-        LookupResult::UP r = _index->lookup(1, "w1");
+        auto r = _index->lookup(1, "w1");
         // not bit vector for 'w1'
-        EXPECT_TRUE(_index->readBitVector(*r).get() == NULL);
+        EXPECT_TRUE(_index->readBitVector(r).get() == NULL);
     }
     { // word 'w2'
         BitVector::UP exp(BitVector::create(32));
         for (uint32_t docId = 1; docId < 18; ++docId) exp->setBit(docId);
         { // field 'f2'
-            LookupResult::UP r =
-                _index->lookup(1, "w2");
-            BitVector::UP bv = _index->readBitVector(*r);
+            auto r = _index->lookup(1, "w2");
+            BitVector::UP bv = _index->readBitVector(r);
             EXPECT_TRUE(bv.get() != NULL);
             EXPECT_TRUE(*bv == *exp);
         }
@@ -394,6 +395,9 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
     if (io_settings._use_mmap) {
         io_settings_num += 2;
     }
+    if (io_settings._use_posting_list_cache) {
+        io_settings_num += 4;
+    }
     name << test_dir << "/" << io_settings_num;
     if (empty_settings._empty_field) {
         name << "fe";
@@ -406,7 +410,8 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
     if (empty_settings._empty_word) {
         name << "we";
     }
-    openIndex(std::string(name.view()), io_settings._use_directio, io_settings._use_mmap, empty_settings._empty_field,
+    openIndex(std::string(name.view()), io_settings._use_directio, io_settings._use_mmap, io_settings._use_posting_list_cache,
+              empty_settings._empty_field,
               empty_settings._empty_doc, empty_settings._empty_word);
 }
 
@@ -446,6 +451,15 @@ DiskIndexTest::test_io_settings(const IOSettings& io_settings)
     requireThatBlueprintIsCreated();
     requireThatBlueprintCanCreateSearchIterators();
     require_that_get_stats_works();
+    auto posting_list_cache = getIndex().get_posting_list_cache();
+    if (io_settings._use_posting_list_cache) {
+        ASSERT_TRUE(posting_list_cache);
+        auto stats = posting_list_cache->get_stats();
+        EXPECT_EQ(2, stats.misses);
+        EXPECT_EQ(1, stats.hits);
+    } else {
+        ASSERT_FALSE(posting_list_cache);
+    }
 }
 
 TEST_F(DiskIndexTest, empty_settings_empty_field_empty_doc_empty_word)
@@ -501,6 +515,11 @@ TEST_F(DiskIndexTest, io_settings_mmap)
 TEST_F(DiskIndexTest, io_settings_directio_mmap)
 {
     test_io_settings(IOSettings().use_directio().use_mmap());
+}
+
+TEST_F(DiskIndexTest, io_settings_directio_posting_list_cache)
+{
+    test_io_settings(IOSettings().use_directio().use_posting_list_cache());
 }
 
 TEST_F(DiskIndexTest, search_iterators_conformance)

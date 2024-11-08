@@ -259,7 +259,7 @@ MySearchableContext::MySearchableContext(IThreadingService &writeService,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
     : _fastUpdCtx(writeService, std::move(bucketDB), bucketDBHandlerInitializer),
       _queryLimiter(), _clock(),
-      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock.nowRef(), writeService.shared())
+      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock.nowRef(), writeService.shared(), {})
 {}
 MySearchableContext::~MySearchableContext() = default;
 

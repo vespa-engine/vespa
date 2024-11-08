@@ -29,6 +29,7 @@ DocStoreValidator::DocStoreValidator(IDocumentMetaStore &dms)
     }
 }
 
+DocStoreValidator::~DocStoreValidator() = default;
 
 void
 DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document> &doc)

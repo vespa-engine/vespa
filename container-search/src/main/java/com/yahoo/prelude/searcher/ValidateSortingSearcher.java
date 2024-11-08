@@ -29,27 +29,32 @@ import static com.yahoo.prelude.querytransform.NormalizingSearcher.ACCENT_REMOVA
 @After(ACCENT_REMOVAL)
 public class ValidateSortingSearcher extends Searcher {
 
+    // TODO: Use SchemaInfo instead and validate with streaming as well
+
+    private final boolean isStreaming;
+
     private Map<String, AttributesConfig.Attribute> attributeNames = null;
     private String clusterName = "";
-    private final boolean enabled;
 
     public ValidateSortingSearcher(ClusterConfig clusterConfig, AttributesConfig attributesConfig) {
         initAttributeNames(attributesConfig);
         setClusterName(clusterConfig.clusterName());
-        enabled = clusterConfig.indexMode() != ClusterConfig.IndexMode.Enum.STREAMING;
+        isStreaming = clusterConfig.indexMode() == ClusterConfig.IndexMode.Enum.STREAMING;
     }
 
-    public String getClusterName() {
-        return clusterName;
+    @Override
+    public Result search(Query query, Execution execution) {
+        ErrorMessage error = validate(query);
+        if (! isStreaming && error != null)
+            return new Result(query, error);
+        return execution.search(query);
     }
 
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
+    public String getClusterName() { return clusterName; }
 
-    private Map<String, AttributesConfig.Attribute> getAttributeNames() {
-        return attributeNames;
-    }
+    public void setClusterName(String clusterName) { this.clusterName = clusterName; }
+
+    private Map<String, AttributesConfig.Attribute> getAttributeNames() { return attributeNames; }
 
     public void setAttributeNames(Map<String, AttributesConfig.Attribute> attributeNames) {
         this.attributeNames = attributeNames;
@@ -62,32 +67,6 @@ public class ValidateSortingSearcher extends Searcher {
             attributes.put(attr.name(), attr);
         }
         setAttributeNames(attributes);
-    }
-
-    @Override
-    public Result search(Query query, Execution execution) {
-        ErrorMessage e = validate(query);
-        if (enabled && e != null) {
-            Result r = new Result(query);
-            r.hits().addError(e);
-            return r;
-        }
-        return execution.search(query);
-    }
-
-    private static Sorting.UcaSorter.Strength config2Strength(AttributesConfig.Attribute.Sortstrength.Enum s) {
-        if (s == AttributesConfig.Attribute.Sortstrength.PRIMARY) {
-            return Sorting.UcaSorter.Strength.PRIMARY;
-        } else if (s == AttributesConfig.Attribute.Sortstrength.SECONDARY) {
-            return Sorting.UcaSorter.Strength.SECONDARY;
-        } else if (s == AttributesConfig.Attribute.Sortstrength.TERTIARY) {
-            return Sorting.UcaSorter.Strength.TERTIARY;
-        } else if (s == AttributesConfig.Attribute.Sortstrength.QUATERNARY) {
-            return Sorting.UcaSorter.Strength.QUATERNARY;
-        } else if (s == AttributesConfig.Attribute.Sortstrength.IDENTICAL) {
-            return Sorting.UcaSorter.Strength.IDENTICAL;
-        }
-        return Sorting.UcaSorter.Strength.PRIMARY;
     }
 
     private ErrorMessage validate(Query query) {
@@ -145,6 +124,11 @@ public class ValidateSortingSearcher extends Searcher {
                             f.setSorter(new Sorting.LowerCaseSorter(name));
                         }
                     }
+                    else if (attrConfig.datatype() == AttributesConfig.Attribute.Datatype.TENSOR) {
+                        throw new IllegalArgumentException("Cannot sort on field '" + attrConfig.name() +
+                                                           "' because it is a tensor");
+                    }
+
                 }
                 if (f.getSorter() instanceof Sorting.UcaSorter sorter) {
                     String locale = sorter.getLocale();
@@ -176,6 +160,21 @@ public class ValidateSortingSearcher extends Searcher {
             }
         }
         return null;
+    }
+
+    private static Sorting.UcaSorter.Strength config2Strength(AttributesConfig.Attribute.Sortstrength.Enum s) {
+        if (s == AttributesConfig.Attribute.Sortstrength.PRIMARY) {
+            return Sorting.UcaSorter.Strength.PRIMARY;
+        } else if (s == AttributesConfig.Attribute.Sortstrength.SECONDARY) {
+            return Sorting.UcaSorter.Strength.SECONDARY;
+        } else if (s == AttributesConfig.Attribute.Sortstrength.TERTIARY) {
+            return Sorting.UcaSorter.Strength.TERTIARY;
+        } else if (s == AttributesConfig.Attribute.Sortstrength.QUATERNARY) {
+            return Sorting.UcaSorter.Strength.QUATERNARY;
+        } else if (s == AttributesConfig.Attribute.Sortstrength.IDENTICAL) {
+            return Sorting.UcaSorter.Strength.IDENTICAL;
+        }
+        return Sorting.UcaSorter.Strength.PRIMARY;
     }
 
 }

@@ -57,25 +57,13 @@ DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSe
 
 DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::~LidSpaceMetrics() = default;
 
-DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::CacheMetrics(MetricSet *parent)
-    : MetricSet("cache", {}, "Document store cache metrics", parent),
-      memoryUsage("memory_usage", {}, "Memory usage of the cache (in bytes)", this),
-      elements("elements", {}, "Number of elements in the cache", this),
-      hitRate("hit_rate", {}, "Rate of hits in the cache compared to number of lookups", this),
-      lookups("lookups", {}, "Number of lookups in the cache (hits + misses)", this),
-      invalidations("invalidations", {}, "Number of invalidations (erased elements) in the cache. ", this)
-{
-}
-
-DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::~CacheMetrics() = default;
-
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetrics(MetricSet *parent)
     : MetricSet("document_store", {}, "Document store metrics for this document sub DB", parent),
       diskUsage("disk_usage", {}, "Disk space usage in bytes", this),
       diskBloat("disk_bloat", {}, "Disk space bloat in bytes", this),
       maxBucketSpread("max_bucket_spread", {}, "Max bucket spread in underlying files (sum(unique buckets in each chunk)/unique buckets in file)", this),
       memoryUsage(this),
-      cache(this)
+      cache(this, "cache", "Document store cache metrics", "Document store")
 {
 }
 

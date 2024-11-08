@@ -505,6 +505,11 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
+            "allowed-athenz-proxy-identities", List.of(), String.class,
+            "Allowed Athenz proxy identities",
+            "takes effect at redeployment");
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

@@ -334,8 +334,19 @@ public class BuiltInFunctions {
         // === ML Model features ===
         put("onnx", new GenericFunction("onnx", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
         put("onnxModel", new GenericFunction("onnxModel", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
-        put("lightbgm", new GenericFunction("lightbgm", new FunctionSignature(new StringArgument("\"/path/to/lightbgm-model.json\""))));
+        put("lightgbm", new GenericFunction("lightgbm", new FunctionSignature(new StringArgument("\"/path/to/lightgbm-model.json\""))));
         put("xgboost", new GenericFunction("xgboost", new FunctionSignature(new StringArgument("\"/path/to/xgboost-model.json\""))));
+
+        // TODO: I think this needs to be inside summary-features
+        // https://docs.vespa.ai/en/predicate-fields.html#identifying-subqueries-in-results
+        put("subqueries", new GenericFunction("subqueries", new FunctionSignature(
+            new FieldArgument(FieldType.PREDICATE),
+            Set.of(
+                "",
+                "lsb",
+                "msb"
+            )
+        )));
     }};
 
     // Some features that have not gotten a signature for various reasons

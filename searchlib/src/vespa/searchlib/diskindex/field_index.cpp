@@ -3,6 +3,7 @@
 #include "field_index.h"
 #include "fileheader.h"
 #include "pagedict4randread.h"
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <filesystem>
 
@@ -27,6 +28,8 @@ const std::vector<std::string> field_file_names{
 
 }
 
+std::atomic<uint64_t> FieldIndex::_file_id_source(0);
+
 FieldIndex::LockedDiskIoStats::LockedDiskIoStats() noexcept
     : DiskIoStats(),
       _mutex()
@@ -39,9 +42,17 @@ FieldIndex::FieldIndex()
     : _posting_file(),
       _bit_vector_dict(),
       _dict(),
+      _file_id(0),
       _size_on_disk(0),
-      _disk_io_stats(std::make_shared<LockedDiskIoStats>())
+      _disk_io_stats(std::make_shared<LockedDiskIoStats>()),
+      _posting_list_cache()
 {
+}
+
+FieldIndex::FieldIndex(std::shared_ptr<IPostingListCache> posting_list_cache)
+    : FieldIndex()
+{
+    _posting_list_cache = std::move(posting_list_cache);
 }
 
 FieldIndex::FieldIndex(FieldIndex&&) = default;
@@ -131,6 +142,7 @@ FieldIndex::open(const std::string& field_dir, const TuneFileSearch& tune_file_s
     }
     _posting_file = std::move(pFile);
     _bit_vector_dict = std::move(bDict);
+    _file_id = get_next_file_id();
     _size_on_disk = calculate_field_index_size_on_disk(field_dir);
     return true;
 }
@@ -140,24 +152,46 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
 {
     _posting_file = rhs._posting_file;
     _bit_vector_dict = rhs._bit_vector_dict;
+    _file_id = rhs._file_id;
     _size_on_disk = rhs._size_on_disk;
+    _disk_io_stats = rhs._disk_io_stats;
 }
 
-std::unique_ptr<PostingListHandle>
-FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
+PostingListHandle
+FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result) const
 {
-    auto handle = std::make_unique<PostingListHandle>();
-    handle->_bitOffset = lookup_result.bitOffset;
-    handle->_bitLength = lookup_result.counts._bitLength;
-    handle->_file = _posting_file.get();
-    if (handle->_file == nullptr) {
-        return {};
-    }
-    handle->_file->readPostingList(*handle);
-    if (handle->_read_bytes != 0) {
-        _disk_io_stats->add_read_operation(handle->_read_bytes);
+    auto handle = _posting_file->read_posting_list(lookup_result);
+    if (handle._read_bytes != 0) {
+        _disk_io_stats->add_read_operation(handle._read_bytes);
     }
     return handle;
+}
+
+PostingListHandle
+FieldIndex::read(const IPostingListCache::Key& key) const
+{
+    DictionaryLookupResult lookup_result;
+    lookup_result.bitOffset = key.bit_offset;
+    lookup_result.counts._bitLength = key.bit_length;
+    return read_uncached_posting_list(lookup_result);
+}
+
+PostingListHandle
+FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
+{
+    auto file = _posting_file.get();
+    if (file == nullptr || lookup_result.counts._bitLength == 0) {
+        return {};
+    }
+    if (file->getMemoryMapped() || !_posting_list_cache) {
+        return read_uncached_posting_list(lookup_result);
+    }
+    IPostingListCache::Key key;
+    key.backing_store_file = this;
+    key.file_id = _file_id;
+    key.bit_offset = lookup_result.bitOffset;
+    key.bit_length = lookup_result.counts._bitLength;
+    return _posting_list_cache->read(key);
 }
 
 std::unique_ptr<BitVector>
@@ -168,6 +202,15 @@ FieldIndex::read_bit_vector(const DictionaryLookupResult& lookup_result) const
     }
     return _bit_vector_dict->lookup(lookup_result.wordNum);
 }
+
+std::unique_ptr<search::queryeval::SearchIterator>
+FieldIndex::create_iterator(const search::index::DictionaryLookupResult& lookup_result,
+                            const index::PostingListHandle& handle,
+                            const search::fef::TermFieldMatchDataArray& tfmda) const
+{
+    return _posting_file->createIterator(lookup_result, handle, tfmda);
+}
+
 
 index::FieldLengthInfo
 FieldIndex::get_field_length_info() const

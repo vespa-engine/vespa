@@ -2,6 +2,7 @@ package ai.vespa.schemals.schemadocument;
 
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
 
@@ -16,6 +17,8 @@ public interface DocumentManager {
         PROFILE,
         YQL
     }
+
+    public ParseContext getParseContext();
 
     public void updateFileContent(String content);
     public void updateFileContent(String content, Integer version);

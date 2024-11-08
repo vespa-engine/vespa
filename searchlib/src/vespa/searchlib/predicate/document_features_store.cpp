@@ -10,6 +10,7 @@
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.hpp>
 #include <vespa/vespalib/datastore/dynamic_array_buffer_type.hpp>
+#include <iterator>
 
 using vespalib::btree::BTreeNoLeafData;
 using vespalib::datastore::ArrayStore;

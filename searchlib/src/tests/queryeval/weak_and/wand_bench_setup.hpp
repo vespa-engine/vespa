@@ -110,7 +110,7 @@ struct VespaWandFactory : WandFactory {
     ~VespaWandFactory() override;
     std::string name() const override { return make_string("VESPA WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::create(terms, wand::MatchParams(_scores, 1, -1, 1), n, true, false);
+        return WeakAndSearch::create(terms, wand::MatchParams(_scores, wand::StopWordStrategy::none(), 1, 0), n, true, false);
     }
 };
 
@@ -126,7 +126,7 @@ struct VespaArrayWandFactory : WandFactory {
     ~VespaArrayWandFactory() override;
     std::string name() const override { return make_string("VESPA ARRAY WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createArrayWand(terms, wand::MatchParams(_scores, 1, -1, 1), wand::TermFrequencyScorer(), n, true, false);
+        return WeakAndSearch::createArrayWand(terms, wand::MatchParams(_scores, wand::StopWordStrategy::none(), 1, 0), wand::TermFrequencyScorer(), n, true, false);
     }
 };
 
@@ -142,7 +142,7 @@ struct VespaHeapWandFactory : WandFactory {
     ~VespaHeapWandFactory() override;
     std::string name() const override { return make_string("VESPA HEAP WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createHeapWand(terms, wand::MatchParams(_scores, 1, -1, 1), wand::TermFrequencyScorer(), n, true, false);
+        return WeakAndSearch::createHeapWand(terms, wand::MatchParams(_scores, wand::StopWordStrategy::none(), 1, 0), wand::TermFrequencyScorer(), n, true, false);
     }
 };
 
@@ -156,7 +156,7 @@ struct VespaParallelWandFactory : public WandFactory {
     std::string name() const override { return make_string("VESPA PWAND (n=%u)", scores.getScoresToTrack()); }
     SearchIterator::UP create(const wand::Terms &terms) override {
         return ParallelWeakAndSearch::create(terms,
-                        PWMatchParams(scores, 0, 1, 1),
+                        PWMatchParams(scores, 0, 1, 1, 0),
                         PWRankParams(rootMatchData, {}), true, false);
     }
 };
@@ -169,7 +169,7 @@ struct VespaParallelArrayWandFactory : public VespaParallelWandFactory {
     std::string name() const override { return make_string("VESPA ARRAY PWAND (n=%u)", scores.getScoresToTrack()); }
     SearchIterator::UP create(const wand::Terms &terms) override {
         return ParallelWeakAndSearch::createArrayWand(terms,
-                        PWMatchParams(scores, 0, 1, 1),
+                        PWMatchParams(scores, 0, 1, 1, 0),
                         PWRankParams(rootMatchData, {}), true, false);
     }
 };
@@ -182,7 +182,7 @@ struct VespaParallelHeapWandFactory : public VespaParallelWandFactory {
     std::string name() const override { return make_string("VESPA HEAP PWAND (n=%u)", scores.getScoresToTrack()); }
     SearchIterator::UP create(const wand::Terms &terms) override {
         return ParallelWeakAndSearch::createHeapWand(terms,
-                        PWMatchParams(scores, 0, 1, 1),
+                        PWMatchParams(scores, 0, 1, 1, 0),
                         PWRankParams(rootMatchData, {}), true, false);
     }
 };

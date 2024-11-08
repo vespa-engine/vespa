@@ -1,11 +1,14 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.backup;
 
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -13,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.provision.provisioning.SnapshotStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,10 +34,12 @@ public class Snapshots {
 
     private final NodeRepository nodeRepository;
     private final CuratorDb db;
+    private final Optional<SnapshotStore> snapshotStore;
 
-    public Snapshots(NodeRepository nodeRepository) {
+    public Snapshots(NodeRepository nodeRepository, Optional<SnapshotStore> snapshotStore) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.db = nodeRepository.database();
+        this.snapshotStore = Objects.requireNonNull(snapshotStore);
     }
 
     /** Read known backup snapshots, for all hosts */
@@ -46,6 +52,11 @@ public class Snapshots {
         return db.readSnapshots(hostname);
     }
 
+    /** Lock snapshots for given hostname */
+    public Lock lock(String hostname) {
+        return db.lockSnapshots(hostname);
+    }
+
     /** Read given snapshot or throw */
     public Snapshot require(SnapshotId id, String hostname) {
         return read(hostname).stream()
@@ -56,7 +67,7 @@ public class Snapshots {
 
     /** Trigger a new snapshot for node of given hostname */
     public Snapshot create(String hostname, Instant instant) {
-        try (var lock = db.lockSnapshots(hostname)) {
+        try (var lock = lock(hostname)) {
             SnapshotId id = Snapshot.generateId();
             return write(id, hostname, (node) -> {
                 if (busy(node)) {
@@ -64,14 +75,15 @@ public class Snapshots {
                                                        " is busy with snapshot " + node.status().snapshot().get().id());
                 }
                 ClusterId cluster = new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id());
-                return Optional.of(Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), instant, cluster, node.allocation().get().membership().index()));
-            }, lock).get();
+                return Snapshot.create(id, com.yahoo.config.provision.HostName.of(hostname), node.cloudAccount(),
+                                       instant, cluster, node.allocation().get().membership().index());
+            }, lock);
         }
     }
 
     /** Restore a node to given snapshot */
     public Snapshot restore(SnapshotId id, String hostname) {
-        try (var lock = db.lockSnapshots(hostname)) {
+        try (var lock = lock(hostname)) {
             Snapshot snapshot = require(id, hostname);
             Instant now = nodeRepository.clock().instant();
             return write(id, hostname, (node) -> {
@@ -80,27 +92,49 @@ public class Snapshots {
                                                        " is busy with snapshot " + node.status().snapshot().get().id() + " in "+
                                                        node.status().snapshot().get().state() + " state");
                 }
-                return Optional.of(snapshot.with(Snapshot.State.restoring, now));
-            }, lock).get();
+                return snapshot.with(Snapshot.State.restoring, now);
+            }, lock);
         }
     }
 
-    /** Remove given snapshot. Note that this only removes metadata about the snapshot, and not the underlying data */
+    /** Remove given snapshot */
     public void remove(SnapshotId id, String hostname, boolean force) {
-        try (var lock = db.lockSnapshots(hostname)) {
-            write(id, hostname, node -> {
-                if (busyWith(id, node) && !force) {
-                    throw new IllegalArgumentException("Cannot remove snapshot " + id +
-                                                       ": Node " + hostname + " is working on this snapshot");
+        try (var lock = lock(hostname)) {
+            List<Snapshot> snapshots = read(hostname);
+            Optional<Snapshot> snapshot = snapshots.stream().filter(s -> s.id().equals(id)).findFirst();
+            // Delete data if we have a snapshot store available
+            if (snapshot.isPresent() && snapshotStore.isPresent()) {
+                snapshotStore.get().delete(id, HostName.of(hostname), snapshot.get().cloudAccount());
+            }
+            Optional<NodeMutex> nodeMutex = nodeRepository.nodes().lockAndGet(hostname);
+            try (var transaction = new NestedTransaction()) {
+                boolean removingActive = nodeMutex.isPresent() && active(id, nodeMutex.get().node());
+                if (removingActive) {
+                    Node node = nodeMutex.get().node();
+                    if (busyWith(id, node) && !force) {
+                        throw new IllegalArgumentException("Cannot remove snapshot " + id +
+                                                           ": Node " + hostname + " is working on this snapshot");
+                    }
+                    Node updatedNode = node.with(node.status().withSnapshot(Optional.empty()));
+                    db.writeTo(updatedNode.state(),
+                               List.of(updatedNode),
+                               Agent.system,
+                               Optional.empty(),
+                               transaction);
                 }
-                return Optional.empty();
-            }, lock);
+                List<Snapshot> updated = new ArrayList<>(snapshots);
+                snapshot.ifPresent(updated::remove);
+                db.writeSnapshots(hostname, updated, transaction);
+                transaction.commit();
+            } finally {
+                nodeMutex.ifPresent(NodeMutex::close);
+            }
         }
     }
 
     /** Change state of an active snapshot */
     public Snapshot move(SnapshotId id, String hostname, Snapshot.State newState) {
-        try (var lock = db.lockSnapshots(hostname)) {
+        try (var lock = lock(hostname)) {
             Snapshot current = require(id, hostname);
             Instant now = nodeRepository.clock().instant();
             return write(id, hostname, node -> {
@@ -108,8 +142,8 @@ public class Snapshots {
                     throw new IllegalArgumentException("Cannot move snapshot " + id + " to " + newState +
                                                        ": Node " + hostname + " is not working on this snapshot");
                 }
-                return Optional.of(current.with(newState, now));
-            }, lock).get();
+                return current.with(newState, now);
+            }, lock);
         }
     }
 
@@ -125,25 +159,21 @@ public class Snapshots {
         return active(id, node) && busy(node);
     }
 
-    private Optional<Snapshot> write(SnapshotId id, String hostname, Function<Node, Optional<Snapshot>> snapshotFunction, @SuppressWarnings("unused") Mutex snapshotLock) {
+    private Snapshot write(SnapshotId id, String hostname, Function<Node, Snapshot> snapshotFunction, @SuppressWarnings("unused") Mutex snapshotLock) {
         List<Snapshot> snapshots = read(hostname);
         try (var nodeMutex = nodeRepository.nodes().lockAndGetRequired(hostname)) {
             Node node = requireNode(nodeMutex);
-            Optional<Snapshot> snapshot = snapshotFunction.apply(node);
+            Snapshot snapshot = snapshotFunction.apply(node);
             try (var transaction = new NestedTransaction()) {
-                boolean removingActive = snapshot.isEmpty() && active(id, node);
-                boolean updating = snapshot.isPresent();
-                if (removingActive || updating) {
-                    Node updatedNode = node.with(node.status().withSnapshot(snapshot));
-                    db.writeTo(updatedNode.state(),
-                               List.of(updatedNode),
-                               Agent.system,
-                               Optional.empty(),
-                               transaction);
-                }
+                Node updatedNode = node.with(node.status().withSnapshot(Optional.of(snapshot)));
+                db.writeTo(updatedNode.state(),
+                           List.of(updatedNode),
+                           Agent.system,
+                           Optional.empty(),
+                           transaction);
                 List<Snapshot> updated = new ArrayList<>(snapshots);
                 updated.removeIf(s -> s.id().equals(id));
-                snapshot.ifPresent(updated::add);
+                updated.add(snapshot);
                 db.writeSnapshots(hostname, updated, transaction);
                 transaction.commit();
             }

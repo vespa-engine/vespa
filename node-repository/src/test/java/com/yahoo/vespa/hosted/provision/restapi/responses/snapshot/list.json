@@ -1,6 +1,7 @@
 {
   "snapshots": [
     {
+      "cloudAccount": "aws:111222333444",
       "cluster": "id2",
       "clusterIndex": 0,
       "hostname": "host2.yahoo.com",
@@ -15,6 +16,7 @@
       ]
     },
     {
+      "cloudAccount": "aws:111222333444",
       "cluster": "id3",
       "clusterIndex": 0,
       "hostname": "host4.yahoo.com",

@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/queryeval/flow.h>
+#include <vespa/searchlib/queryeval/wand/wand_parts.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -36,6 +37,7 @@ using search::fef::Properties;
 using search::fef::RankSetup;
 using search::fef::IIndexEnvironment;
 using search::queryeval::InFlow;
+using search::queryeval::wand::StopWordStrategy;
 
 using namespace vespalib::literals;
 
@@ -351,11 +353,8 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
     double target_hits_max_adjustment_factor = TargetHitsMaxAdjustmentFactor::lookup(rank_properties, rank_setup.get_target_hits_max_adjustment_factor());
     auto fuzzy_matching_algorithm = FuzzyAlgorithm::lookup(rank_properties, rank_setup.get_fuzzy_matching_algorithm());
     double weakand_range = temporary::WeakAndRange::lookup(rank_properties, rank_setup.get_weakand_range());
-    double weakand_stop_word_limit = WeakAndStopWordLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_limit());
-
-    // make sure no words are stop words if the limit is 1.0, even those claiming to match more than everything
-    uint32_t abs_weakand_stop_word_limit = (weakand_stop_word_limit >= 0.0 && weakand_stop_word_limit < 1.0)
-                                           ? uint32_t(weakand_stop_word_limit * docid_limit) : uint32_t(-1);
+    double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
+    double weakand_stop_word_drop_limit = WeakAndStopWordDropLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_drop_limit());
 
     // Note that we count the reserved docid 0 as active.
     // This ensures that when searchable-copies=1, the ratio is 1.0.
@@ -366,7 +365,8 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
             target_hits_max_adjustment_factor,
             fuzzy_matching_algorithm,
             weakand_range,
-            abs_weakand_stop_word_limit};
+            StopWordStrategy(weakand_stop_word_adjust_limit,
+                                                      weakand_stop_word_drop_limit, docid_limit)};
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

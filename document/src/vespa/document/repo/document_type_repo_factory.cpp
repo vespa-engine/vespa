@@ -32,6 +32,13 @@ EmptyFactoryCheck emptyFactoryCheck;
 
 }
 
+DocumentTypeRepoFactory::DocumentTypeRepoEntry::DocumentTypeRepoEntry(std::weak_ptr<const DocumentTypeRepo> repo_in,
+                                                                      std::unique_ptr<const DocumenttypesConfig> config_in)
+    : repo(std::move(repo_in)),
+      config(std::move(config_in))
+{
+}
+
 DocumentTypeRepoFactory::DocumentTypeRepoEntry::~DocumentTypeRepoEntry() = default;
 
 /*

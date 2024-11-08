@@ -2,11 +2,13 @@
 
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton;
 using namespace vespalib::slime;
 using vespalib::Slime;
+
+namespace {
 
 std::string
 toString(const StatusReport &statusReport)
@@ -16,9 +18,11 @@ toString(const StatusReport &statusReport)
     return slime.toString();
 }
 
-TEST("require that simple status report is correctly converted to slime")
+}
+
+TEST(StateReporterUtilsTest, require_that_simple_status_report_is_correctly_converted_to_slime)
 {
-    EXPECT_EQUAL(
+    EXPECT_EQ(
             "{\n"
             "    \"state\": \"ONLINE\"\n"
             "}\n",
@@ -26,9 +30,9 @@ TEST("require that simple status report is correctly converted to slime")
                     internalState("ONLINE"))));
 }
 
-TEST("require that advanced status report is correctly converted to slime")
+TEST(StateReporterUtilsTest, require_that_advanced_status_report_is_correctly_converted_to_slime)
 {
-    EXPECT_EQUAL(
+    EXPECT_EQ(
             "{\n"
             "    \"state\": \"REPLAY\",\n"
             "    \"progress\": 65.5,\n"

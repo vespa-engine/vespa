@@ -35,11 +35,11 @@ public class RetiringOsUpgrader extends OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RetiringOsUpgrader.class.getName());
 
-    private final boolean softRebuild;
+    private final boolean localStorageOnly;
 
-    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
+    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean localStorageOnly) {
         super(nodeRepository);
-        this.softRebuild = softRebuild;
+        this.localStorageOnly = localStorageOnly;
     }
 
     @Override
@@ -59,9 +59,9 @@ public class RetiringOsUpgrader extends OsUpgrader {
     /** Returns nodes that can be deprovisioned at given instant */
     private List<Node> deprovisionable(Instant instant, OsVersionTarget target, NodeList allNodes) {
         NodeList nodes = allNodes.state(Node.State.active, Node.State.provisioned).nodeType(target.nodeType());
-        if (softRebuild) {
-            // Consider only hosts which do not have a replaceable root disk
-            nodes = nodes.not().replaceableRootDisk();
+        if (localStorageOnly) {
+            // Consider only hosts with local storage
+            nodes = nodes.not().remoteStorage();
         }
         // Retire hosts up to slot limit while ensuring that only one group is retired at a time
         NodeList activeNodes = allNodes.state(Node.State.active);

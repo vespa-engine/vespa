@@ -22,6 +22,9 @@ private:
     bool _eof = false;
     SimpleBuffer _input;
 public:
+    struct Broken : std::exception {
+        const char *what() const noexcept override { return "stdin is broken"; }
+    };
     ~StdIn() {}
     Memory obtain() override;
     Input &evict(size_t bytes) override;
@@ -34,6 +37,9 @@ class StdOut : public Output {
 private:
     SimpleBuffer _output;
 public:
+    struct Broken : std::exception {
+        const char *what() const noexcept override { return "stdout is broken"; }
+    };
     ~StdOut() {}
     WritableMemory reserve(size_t bytes) override;
     Output &commit(size_t bytes) override;

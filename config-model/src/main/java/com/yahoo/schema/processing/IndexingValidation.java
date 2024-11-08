@@ -52,7 +52,7 @@ public class IndexingValidation extends Processor {
                     converter.convert(exp); // TODO: stop doing this explicitly when visiting a script does not branch
                 }
             } catch (VerificationException e) {
-                fail(schema, field, "For expression '" + e.getExpression() + "': " + Exceptions.toMessageString(e));
+                fail(schema, field, Exceptions.toMessageString(e));
             }
         }
     }
@@ -71,17 +71,17 @@ public class IndexingValidation extends Processor {
         }
 
         @Override
-        protected boolean shouldConvert(Expression exp) {
-            if (exp instanceof OutputExpression) {
-                String fieldName = ((OutputExpression)exp).getFieldName();
+        protected boolean shouldConvert(Expression expression) {
+            if (expression instanceof OutputExpression) {
+                String fieldName = ((OutputExpression)expression).getFieldName();
                 if (outputs.contains(fieldName) && !prevNames.contains(fieldName)) {
-                    throw new VerificationException(exp, "Attempting to assign conflicting values to field '" +
-                                                         fieldName + "'");
+                    throw new VerificationException(expression, "Attempting to assign conflicting values to field '" +
+                                                                fieldName + "'");
                 }
                 outputs.add(fieldName);
                 prevNames.add(fieldName);
             }
-            if (exp.createdOutputType() != null) {
+            if (expression.createdOutputType() != null) {
                 prevNames.clear();
             }
             return false;
@@ -155,7 +155,7 @@ public class IndexingValidation extends Processor {
 
         private static DataType createCompatType(DataType origType) {
             if (origType instanceof ArrayDataType) {
-                return DataType.getArray(createCompatType(((ArrayDataType)origType).getNestedType()));
+                return DataType.getArray(createCompatType(origType.getNestedType()));
             } else if (origType instanceof MapDataType) {
                 MapDataType mapType = (MapDataType)origType;
                 return DataType.getMap(createCompatType(mapType.getKeyType()),

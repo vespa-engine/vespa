@@ -15,9 +15,9 @@
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::BucketId;
 using document::DataType;
@@ -59,7 +59,7 @@ public:
 std::shared_ptr<const DocumentTypeRepo> myGetDocumentTypeRepo() {
     DocBuilder builder;
     std::shared_ptr<const DocumentTypeRepo> repo = builder.get_repo_sp();
-    ASSERT_TRUE(repo.get());
+    EXPECT_TRUE(repo.get());
     return repo;
 }
 
@@ -148,26 +148,26 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
     ~MoveOperationFeedView() override;
     void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, const OnPutDoneType& onWriteDone) override {
         ++putAttributesCount;
-        EXPECT_EQUAL(1, outstandingMoveOps);
+        EXPECT_EQ(1, outstandingMoveOps);
         std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
      void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
                            const OnOperationDoneType& onWriteDone) override {
         ++putIndexFieldsCount;
-        EXPECT_EQUAL(1, outstandingMoveOps);
+        EXPECT_EQ(1, outstandingMoveOps);
          std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
     void removeAttributes(SerialNum, search::DocumentIdT, const OnRemoveDoneType& onWriteDone) override {
         ++removeAttributesCount;
-        EXPECT_EQUAL(1, outstandingMoveOps);
+        EXPECT_EQ(1, outstandingMoveOps);
         std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
     void removeIndexedFields(SerialNum, search::DocumentIdT, const OnRemoveDoneType& onWriteDone) override {
         ++removeIndexFieldsCount;
-        EXPECT_EQUAL(1, outstandingMoveOps);
+        EXPECT_EQ(1, outstandingMoveOps);
         std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
@@ -198,7 +198,7 @@ struct MoveOperationCallback : public IDestructorCallback {
         ++outstandingMoveOps;
     }
     ~MoveOperationCallback() override {
-        ASSERT_GREATER(outstandingMoveOps, 0);
+        EXPECT_GT(outstandingMoveOps, 0);
         --outstandingMoveOps;
     }
 };
@@ -247,7 +247,7 @@ struct FixtureBase {
         DocumentId id(make_string("id:test:foo:g=foo:%d", expected_lid));
         Result inspect = metaStore->inspect(id.getGlobalId(), 0u);
         uint32_t docSize = 1;
-        EXPECT_EQUAL(expected_lid,
+        EXPECT_EQ(expected_lid,
                      metaStore->put(id.getGlobalId(),
                                      id.getGlobalId().convertToBucketId(),
                                      Timestamp(10), docSize, inspect.getLid(), 0u).getLid());
@@ -287,21 +287,21 @@ struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
     }
 
     void assertPutCount(int expCnt) {
-        EXPECT_EQUAL(expCnt, putCount);
-        EXPECT_EQUAL(expCnt, feedview->putAttributesCount);
-        EXPECT_EQUAL(expCnt, feedview->putIndexFieldsCount);
+        EXPECT_EQ(expCnt, putCount);
+        EXPECT_EQ(expCnt, feedview->putAttributesCount);
+        EXPECT_EQ(expCnt, feedview->putIndexFieldsCount);
     }
 
     void assertRemoveCount(int expCnt) {
-        EXPECT_EQUAL(expCnt, removeCount);
-        EXPECT_EQUAL(expCnt, feedview->removeAttributesCount);
-        EXPECT_EQUAL(expCnt, feedview->removeIndexFieldsCount);
+        EXPECT_EQ(expCnt, removeCount);
+        EXPECT_EQ(expCnt, feedview->removeAttributesCount);
+        EXPECT_EQ(expCnt, feedview->removeIndexFieldsCount);
     }
 
     void assertAndClearMoveOp() {
-        EXPECT_EQUAL(1, outstandingMoveOps);
+        EXPECT_EQ(1, outstandingMoveOps);
         feedview->clearWriteDoneContexts();
-        EXPECT_EQUAL(0, outstandingMoveOps);
+        EXPECT_EQ(0, outstandingMoveOps);
     }
 
     void handleMove(const MoveOperation & op, long expected) {
@@ -318,15 +318,16 @@ struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
     }
 };
 
-TEST_F("require that prepareMove sets target db document id", Fixture)
+TEST(StoreOnlyFeedViewTest, require_that_prepareMove_sets_target_db_document_id)
 {
+    Fixture f;
     auto doc = std::make_shared<Document>();
     MoveOperation op(BucketId(20, 42), Timestamp(10), doc, 1, subdb_id + 1);
     f.runInMasterAndSync([&]() { f.feedview->prepareMove(op); });
 
     DbDocumentId targetId = op.getDbDocumentId();
-    EXPECT_EQUAL(subdb_id, targetId.getSubDbId());
-    EXPECT_EQUAL(1u, targetId.getLid());
+    EXPECT_EQ(subdb_id, targetId.getSubDbId());
+    EXPECT_EQ(1u, targetId.getLid());
 }
 
 MoveOperation::UP
@@ -344,34 +345,48 @@ makeMoveOp(DbDocumentId sourceDbdId, uint32_t targetSubDbId)
     return makeMoveOp(std::make_shared<Document>(), sourceDbdId, targetSubDbId);
 }
 
-TEST_F("require that handleMove() adds document to target and removes it from source and propagates destructor callback", MoveFixture)
+TEST(StoreOnlyFeedViewTest, require_that_handleMove_adds_document_to_target_and_removes_it_from_source_and_propagates_destructor_callback)
 {
+    MoveFixture f;
     uint32_t lid = 0;
     { // move from (subdb_id + 1) -> this (subdb_id)
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id + 1, 1), subdb_id);
-        TEST_DO(f.assertPutCount(0));
-        f.runInMasterAndSync([&]() { f.feedview->prepareMove(*op); });
+        {
+            SCOPED_TRACE("before move here");
+            f.assertPutCount(0);
+            f.runInMasterAndSync([&]() { f.feedview->prepareMove(*op); });
+        }
         f.handleMove(*op, 1);
-        TEST_DO(f.assertPutCount(1));
-        TEST_DO(f.assertAndClearMoveOp());
+        {
+            SCOPED_TRACE("after move here");
+            f.assertPutCount(1);
+            f.assertAndClearMoveOp();
+        }
         lid = op->getDbDocumentId().getLid();
-        EXPECT_EQUAL(1u, lid);
+        EXPECT_EQ(1u, lid);
         EXPECT_TRUE(f.metaStore->validLid(lid));
     }
 
     { // move from this (subdb_id) -> (subdb_id + 1)
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id, 1), subdb_id + 1);
         op->setDbDocumentId(DbDocumentId(subdb_id + 1, 1));
-        TEST_DO(f.assertRemoveCount(0));
+        {
+            SCOPED_TRACE("before move there");
+            f.assertRemoveCount(0);
+        }
         f.handleMove(*op, 1);
         EXPECT_FALSE(f.metaStore->validLid(lid));
-        TEST_DO(f.assertRemoveCount(1));
-        TEST_DO(f.assertAndClearMoveOp());
+        {
+            SCOPED_TRACE("after move there");
+            f.assertRemoveCount(1);
+            f.assertAndClearMoveOp();
+        }
     }
 }
 
-TEST_F("require that handleMove() handles move within same subdb and propagates destructor callback", MoveFixture)
+TEST(StoreOnlyFeedViewTest, require_that_handleMove_handles_move_within_same_subdb_and_propagates_destructor_callback)
 {
+    MoveFixture f;
     auto doc = std::make_shared<Document>();
     DocumentId doc1id("id:test:foo:g=foo:1");
     uint32_t docSize = 1;
@@ -389,20 +404,26 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     f.metaStore->removes_complete({ 1 });
     MoveOperation::UP op = makeMoveOp(doc, DbDocumentId(subdb_id, 2), subdb_id);
     op->setTargetLid(1);
-    TEST_DO(f.assertPutCount(0));
-    TEST_DO(f.assertRemoveCount(0));
+    {
+        SCOPED_TRACE("before move within");
+        f.assertPutCount(0);
+        f.assertRemoveCount(0);
+    }
     f.handleMove(*op, 2);
-    TEST_DO(f.assertPutCount(1));
-    TEST_DO(f.assertRemoveCount(1));
-    TEST_DO(f.assertAndClearMoveOp());
+    {
+        SCOPED_TRACE("after move within");
+        f.assertPutCount(1);
+        f.assertRemoveCount(1);
+        f.assertAndClearMoveOp();
+    }
     uint32_t lid = op->getDbDocumentId().getLid();
-    EXPECT_EQUAL(1u, lid);
+    EXPECT_EQ(1u, lid);
     EXPECT_TRUE(f.metaStore->validLid(lid));
 }
 
-TEST_F("require that prune removed documents removes documents",
-       Fixture(SubDbType::REMOVED))
+TEST(StoreOnlyFeedViewTest, require_that_prune_removed_documents_removes_documents)
 {
+    Fixture f(SubDbType::REMOVED);
     f.addDocsToMetaStore(3);
 
     auto lids = std::make_shared<LidVectorContext>(4);
@@ -417,29 +438,30 @@ TEST_F("require that prune removed documents removes documents",
     });
     gate.await();
 
-    EXPECT_EQUAL(2, f.removeCount);
+    EXPECT_EQ(2, f.removeCount);
     EXPECT_FALSE(f.metaStore->validLid(1));
     EXPECT_TRUE(f.metaStore->validLid(2));
     EXPECT_FALSE(f.metaStore->validLid(3));
-    EXPECT_EQUAL(0, f.feedview->removeMultiAttributesCount);
-    EXPECT_EQUAL(0, f.feedview->removeMultiIndexFieldsCount);
+    EXPECT_EQ(0, f.feedview->removeMultiAttributesCount);
+    EXPECT_EQ(0, f.feedview->removeMultiIndexFieldsCount);
 }
 
-TEST_F("require that heartbeat propagates and commits meta store", Fixture)
+TEST(StoreOnlyFeedViewTest, require_that_heartbeat_propagates_and_commits_meta_store)
 {
-    EXPECT_EQUAL(0u, f.metaStore->getStatus().getLastSyncToken());
-    EXPECT_EQUAL(0, f.feedview->heartBeatIndexedFieldsCount);
-    EXPECT_EQUAL(0, f.feedview->heartBeatAttributesCount);
-    EXPECT_EQUAL(0, f.heartbeatCount);
+    Fixture f;
+    EXPECT_EQ(0u, f.metaStore->getStatus().getLastSyncToken());
+    EXPECT_EQ(0, f.feedview->heartBeatIndexedFieldsCount);
+    EXPECT_EQ(0, f.feedview->heartBeatAttributesCount);
+    EXPECT_EQ(0, f.heartbeatCount);
     vespalib::Gate gate;
     f.runInMaster([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
         f.feedview->heartBeat(2, std::move(onDone));
     });
     gate.await();
-    EXPECT_EQUAL(2u, f.metaStore->getStatus().getLastSyncToken());
-    EXPECT_EQUAL(1, f.feedview->heartBeatIndexedFieldsCount);
-    EXPECT_EQUAL(1, f.feedview->heartBeatAttributesCount);
-    EXPECT_EQUAL(1, f.heartbeatCount);
+    EXPECT_EQ(2u, f.metaStore->getStatus().getLastSyncToken());
+    EXPECT_EQ(1, f.feedview->heartBeatIndexedFieldsCount);
+    EXPECT_EQ(1, f.feedview->heartBeatAttributesCount);
+    EXPECT_EQ(1, f.heartbeatCount);
 }
 
 }  // namespace

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -8,6 +9,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
@@ -641,6 +643,51 @@ public class ContentClusterTest extends ContentBaseTest {
 
         ContentCluster stagingNot16Bits = createWithZone(xml, new Zone(Environment.staging, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(stagingNot16Bits, 8);
+    }
+
+    @Test
+    void testDistributionBitsNotChangingWhenReducingNumberOfNodes() {
+        var fiveNodes =
+                """
+                        <content version="1.0" id="storage">
+                          <redundancy>2</redundancy>\
+                          <documents/>\
+                          <group>
+                            <node distribution-key="0" hostalias="mockhost"/>
+                            <node distribution-key="1" hostalias="mockhost"/>
+                            <node distribution-key="2" hostalias="mockhost"/>
+                            <node distribution-key="3" hostalias="mockhost"/>
+                            <node distribution-key="4" hostalias="mockhost"/>
+                          </group>
+                        </content>""";
+
+        var appFiveNodes = new MockApplicationPackage.Builder().withHosts(null).withServices(fiveNodes).build();
+        var root = new TestDriver().buildModel(appFiveNodes);
+        var modelForAppWithFiveNodes =  root.getModel();
+        // 16 bits when 5 or more nodes
+        assertDistributionBitsInConfig(root.getConfigModels(Content.class).get(0).getCluster(), 16);
+
+        var twoNodes =
+                """
+                       <content version="1.0" id="storage">
+                         <redundancy>2</redundancy>\
+                         <documents/>\
+                         <group>
+                           <node distribution-key="0" hostalias="mockhost"/>
+                           <node distribution-key="1" hostalias="mockhost"/>
+                         </group>
+                       </content>""";
+
+        var appTwoNodes = new MockApplicationPackage.Builder().withHosts(null).withServices(twoNodes).build();
+        root = new TestDriver().buildModel(appTwoNodes);
+        // 8 bits when fewer than 5 nodes
+        assertDistributionBitsInConfig(root.getConfigModels(Content.class).get(0).getCluster(), 8);
+
+        // Build model and supply previous model that was a model built with 5 nodes
+        var deployState = new DeployState.Builder().applicationPackage(appTwoNodes).previousModel(modelForAppWithFiveNodes).build();
+        root = new TestDriver().buildModel(deployState);
+        // But reducing number of nodes for a running system should not change distribution bits (should still be 16 bits)
+        assertDistributionBitsInConfig(root.getConfigModels(Content.class).get(0).getCluster(), 16);
     }
 
     @Test

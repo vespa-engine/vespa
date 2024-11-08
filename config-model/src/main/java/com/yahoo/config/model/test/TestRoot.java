@@ -21,6 +21,8 @@ public class TestRoot {
         this.model = model;
     }
 
+    public VespaModel getModel() { return model; }
+
     /**
      * Get a list of all config models of a particular type.
      *

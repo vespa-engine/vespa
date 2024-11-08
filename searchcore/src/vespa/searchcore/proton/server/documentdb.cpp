@@ -152,14 +152,16 @@ DocumentDB::create(const std::string &baseDir,
                    std::shared_ptr<search::attribute::Interlock> attribute_interlock,
                    ConfigStore::UP config_store,
                    InitializeThreads initializeThreads,
-                   const vespalib::HwInfo &hwInfo)
+                   const vespalib::HwInfo &hwInfo,
+                   std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache)
 {
     return DocumentDB::SP(
             new DocumentDB(baseDir, std::move(currentSnapshot), tlsSpec, queryLimiter, docTypeName, bucketSpace,
                            protonCfg, owner, shared_service, tlsWriterFactory,
                            metricsWireService, fileHeaderContext, std::move(attribute_interlock),
-                           std::move(config_store), std::move(initializeThreads), hwInfo));
+                           std::move(config_store), std::move(initializeThreads), hwInfo, std::move(posting_list_cache)));
 }
+
 DocumentDB::DocumentDB(const std::string &baseDir,
                        DocumentDBConfig::SP configSnapshot,
                        const std::string &tlsSpec,
@@ -175,7 +177,8 @@ DocumentDB::DocumentDB(const std::string &baseDir,
                        std::shared_ptr<search::attribute::Interlock> attribute_interlock,
                        ConfigStore::UP config_store,
                        InitializeThreads initializeThreads,
-                       const vespalib::HwInfo &hwInfo)
+                       const vespalib::HwInfo &hwInfo,
+                       std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache)
     : DocumentDBConfigOwner(),
       IReplayConfig(),
       IFeedHandlerOwner(),
@@ -219,7 +222,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _subDBs(*this, *this, *_feedHandler, _docTypeName,
               _writeService, shared_service.shared(), fileHeaderContext, std::move(attribute_interlock),
               metricsWireService, getMetrics(), queryLimiter, shared_service.nowRef(),
-              _configMutex, _baseDir, hwInfo),
+              _configMutex, _baseDir, hwInfo, posting_list_cache),
       _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),

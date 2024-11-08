@@ -36,6 +36,10 @@ public class InheritanceGraph<NodeType> {
 
     public InheritanceGraph() { }
 
+    // Note: does not remove childrenOfNode
+    //       because if this node is added back we 
+    //       lazily remember the children, and access valid children through
+    //       getValidChildren
     public void clearInheritsList(NodeType node) {
         if (!nodeExists(node)) return;
 
@@ -45,7 +49,7 @@ public class InheritanceGraph<NodeType> {
         }
 
         parentsOfNode.remove(node);
-        childrenOfNode.remove(node);
+
     }
 
     public void createNodeIfNotExists(NodeType node) {

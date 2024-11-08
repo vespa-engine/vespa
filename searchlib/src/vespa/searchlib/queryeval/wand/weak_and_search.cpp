@@ -10,21 +10,19 @@
 namespace search::queryeval {
 namespace wand {
 
-score_t calculate_initial_wand_threshold(const auto &scorer, const Terms &terms, const MatchParams &matchParams) {
-    std::optional<score_t> best_stop_word;
-    std::optional<score_t> worst_normal_word;
-    for (const auto &t: terms) {
-        score_t s = scorer.calculateMaxScore(t);
-        if (t.estHits > matchParams.abs_stop_word_limit) {
-            best_stop_word = std::max(s, best_stop_word.value_or(s));
-        } else {
-            worst_normal_word = std::min(s, worst_normal_word.value_or(s));
+score_t initial_wand_threshold(const auto &scorer, const Terms &terms, const StopWordStrategy &stop_words) {
+    score_t score = 0;
+    uint32_t distance = 0;
+    if (stop_words.auto_adjust()) {
+        for (const auto &t: terms) {
+            uint32_t my_distance = stop_words.adjust_distance(t.estHits);
+            if (score == 0 || my_distance < distance) {
+                score = scorer.calculateMaxScore(t);
+                distance = my_distance;
+            }
         }
     }
-    score_t limit = matchParams.scoreThreshold;
-    limit = std::max(limit, best_stop_word.value_or(limit));
-    limit = std::max(limit, worst_normal_word.value_or(limit));
-    return limit;
+    return std::max(score_t(1), score);
 }
 
 template <typename FutureHeap, typename PastHeap, bool IS_STRICT>
@@ -68,10 +66,10 @@ private:
 public:
     template<typename Scorer>
     WeakAndSearchLR(const Terms &terms, const MatchParams & matchParams, const Scorer & scorer, uint32_t n, bool readonly_scores_heap)
-        : _terms(terms, scorer, 0, {}),
+        : _terms(terms, scorer, matchParams.docid_limit, {}),
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
           _algo(),
-          _threshold(calculate_initial_wand_threshold(scorer, terms, matchParams)),
+          _threshold(initial_wand_threshold(scorer, terms, matchParams.stop_words)),
           _matchParams(matchParams),
           _localScores(),
           _n(n),

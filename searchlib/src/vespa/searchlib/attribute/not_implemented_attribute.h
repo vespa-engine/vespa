@@ -9,7 +9,8 @@ namespace search {
 struct NotImplementedAttribute : AttributeVector {
     NotImplementedAttribute(std::string_view name);
     NotImplementedAttribute(std::string_view name, const Config & config);
-    [[noreturn]] void notImplemented() const;
+    [[noreturn]] __attribute__((noinline)) // Preserve caller in backtrace
+    void notImplemented() const;
 
     uint32_t getValueCount(DocId) const override;
     largeint_t getInt(DocId) const override;

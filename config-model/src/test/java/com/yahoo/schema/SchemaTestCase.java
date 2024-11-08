@@ -1,7 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.Document;
+import com.yahoo.schema.derived.DerivedConfiguration;
+import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.processing.ImportedFieldsResolver;
@@ -477,6 +480,25 @@ public class SchemaTestCase {
             assertEquals("rank profile 'r3' inherits rank profile 'r2' which contains function 'f1', but this function is already defined in another profile this inherits",
                     e.getMessage());
         }
+    }
+
+    @Test
+    void testDeriving() throws Exception {
+        String schema =
+                """
+                schema test {
+                    field my_hash type long {
+                        indexing: input my_string | hash | attribute
+                    }
+                    document test {
+                        field my_string type string {
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(false); // validate=false to test config deriving without validation
+        new DerivedConfiguration(application.schemas().get("test"), application.rankProfileRegistry());
     }
 
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {

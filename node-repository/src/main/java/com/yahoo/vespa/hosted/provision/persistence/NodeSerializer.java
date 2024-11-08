@@ -59,6 +59,7 @@ public class NodeSerializer {
 
     /** The configured node flavors */
     private final NodeFlavors flavors;
+    private final CloudAccount systemAccount;
 
     // Node fields
     private static final String stateKey = "state";
@@ -136,8 +137,9 @@ public class NodeSerializer {
 
     // ---------------- Serialization ----------------------------------------------------
 
-    public NodeSerializer(NodeFlavors flavors) {
+    public NodeSerializer(NodeFlavors flavors, CloudAccount systemAccount) {
         this.flavors = flavors;
+        this.systemAccount = systemAccount;
     }
 
     public byte[] toJson(Node node) {
@@ -308,7 +310,7 @@ public class NodeSerializer {
                           object.field(wantToUpgradeFlavorKey).asBool(),
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
                                                        versionFromSlime(object.field(wantedOsVersionKey))), SlimeUtils.optionalInstant(object.field(firmwareCheckKey)),
-                          SlimeUtils.optional(object.field(snapshotKey), SnapshotSerializer::fromInspector));
+                          SlimeUtils.optional(object.field(snapshotKey), (i) -> SnapshotSerializer.fromInspector(i, systemAccount)));
     }
 
     private Flavor flavorFromSlime(Inspector object) {

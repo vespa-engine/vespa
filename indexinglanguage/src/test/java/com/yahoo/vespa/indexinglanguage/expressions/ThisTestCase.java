@@ -29,7 +29,7 @@ public class ThisTestCase {
         Expression exp = new ThisExpression();
         assertVerify(DataType.INT, exp, DataType.INT);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
+        assertVerifyThrows("Invalid expression 'this': Expected any input, but no input is specified", null, exp);
     }
 
     @Test

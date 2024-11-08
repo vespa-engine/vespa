@@ -28,9 +28,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
     /** The names of the fields consumed by this. */
     private final List<String> inputFields;
 
-    /** The name of the (last) output field this statement will write to, or null if none */
-    private String outputField;
-
     public StatementExpression(Expression... list) {
         this(Arrays.asList(list)); // TODO: Can contain null - necessary ?
     }
@@ -56,31 +53,57 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        if (expressions().isEmpty()) return;
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
+        resolveBackwards(context);
+        return resolveForwards(context);
+    }
 
-        outputField = outputFieldName();
-        if (outputField != null)
-            context.setOutputField(outputField);
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(output, context);
+        resolveForwards(context);
+        return resolveBackwards(context);
+    }
 
-        // Result input and output types:
-        // Some expressions can only determine their input from their output, and others only their output from
-        // their input. Therefore, we try resolving in both directions, which should always meet up to produce
-        // uniquely determined inputs and outputs of all expressions.
-        // forward:
+    // Result input and output types:
+    // Some expressions can only determine their input from their output, and others only their output from
+    // their input. Therefore, we try resolving in both directions, which should always meet up to produce
+    // uniquely determined inputs and outputs of all expressions.
+    // forward:
+
+    /** Resolves types forward and returns the final output, or null if resolution could not progress to the end. */
+    private DataType resolveForwards(VerificationContext context) {
         int i = 0;
         var inputType = getInputType(context); // A nested statement; input imposed from above
         if (inputType == null) // otherwise the first expression will be an input deciding the type
             inputType = expressions().get(i++).getOutputType(context);
         while (i < expressions().size() && inputType != null)
             inputType = expressions().get(i++).setInputType(inputType, context);
-        // reverse:
-        int j = expressions().size();
+        return inputType;
+    }
+
+    /** Resolves types backwards and returns the required input, or null if resolution could not progress to the start. */
+    private DataType resolveBackwards(VerificationContext context) {
+        int i = expressions().size();
         var outputType = getOutputType(context); // A nested statement; output imposed from above
         if (outputType == null) // otherwise the last expression will be an output deciding the type
-            outputType = expressions().get(--j).getInputType(context);
-        while (--j >= 0 && outputType != null)
-            outputType = expressions().get(j).setOutputType(outputType, context);
+            outputType = expressions().get(--i).getInputType(context);
+        while (--i >= 0 && outputType != null)
+            outputType = expressions().get(i).setOutputType(outputType, context);
+        return outputType;
+    }
+
+    @Override
+    protected void doVerify(VerificationContext context) {
+        if (expressions().isEmpty()) return;
+
+        String outputField = outputFieldName();
+        if (outputField != null)
+            context.setOutputField(outputField);
+
+        resolveForwards(context);
+        resolveBackwards(context);
 
         for (Expression expression : expressions())
             context.verify(expression);

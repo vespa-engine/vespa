@@ -375,7 +375,7 @@ TEST(WeightedSetTermTest, require_that_children_get_a_common_yet_separate_term_f
     auto match_data = layout.createMatchData();
     blueprint.basic_plan(true, 1000);
     {
-        Blueprint &bp = blueprint;
+        queryeval::Blueprint &bp = blueprint;
         bp.fetchPostings(ExecuteInfo::FULL);
     }
     auto search = blueprint.createSearch(*match_data);

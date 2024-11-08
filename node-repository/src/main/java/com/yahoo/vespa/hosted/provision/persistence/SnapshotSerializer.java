@@ -1,8 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.slime.ArrayTraverser;
@@ -11,7 +12,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
-import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
 import java.time.Instant;
@@ -32,28 +33,34 @@ public class SnapshotSerializer {
     private static final String HISTORY_FIELD = "history";
     private static final String EVENT_FIELD = "event";
     private static final String AT_FIELD = "at";
+    private static final String CLOUD_ACCOUNT_FIELD = "cloudAccount";
 
     private SnapshotSerializer() {}
 
-    public static Snapshot fromInspector(Inspector object) {
+    public static Snapshot fromInspector(Inspector object, CloudAccount systemAccount) {
         ImmutableMap.Builder<Snapshot.State, Snapshot.History.Event> history = ImmutableMap.builder();
         object.field(HISTORY_FIELD).traverse((ArrayTraverser) (idx, inspector) -> {
             Snapshot.State type = stateFromSlime(inspector.field(EVENT_FIELD).asString());
             Instant at = Instant.ofEpochMilli(inspector.field(AT_FIELD).asLong());
             history.put(type, new Snapshot.History.Event(type, at));
         });
+        // TODO(mpolden): Require field after 2024-12-01
+        CloudAccount cloudAccount = SlimeUtils.optionalString(object.field(CLOUD_ACCOUNT_FIELD))
+                                              .map(CloudAccount::from)
+                                              .orElse(systemAccount);
         return new Snapshot(SnapshotId.of(object.field(ID_FIELD).asString()),
                             HostName.of(object.field(HOSTNAME_FIELD).asString()),
                             stateFromSlime(object.field(STATE_FIELD).asString()),
                             new Snapshot.History(history.build()),
                             new ClusterId(ApplicationId.fromSerializedForm(object.field(INSTANCE_FIELD).asString()),
                                           ClusterSpec.Id.from(object.field(CLUSTER_FIELD).asString())),
-                            (int) object.field(CLUSTER_INDEX_FIELD).asLong()
+                            (int) object.field(CLUSTER_INDEX_FIELD).asLong(),
+                            cloudAccount
         );
     }
 
-    public static Snapshot fromSlime(Slime slime) {
-        return fromInspector(slime.get());
+    public static Snapshot fromSlime(Slime slime, CloudAccount cloudAccount) {
+        return fromInspector(slime.get(), cloudAccount);
     }
 
     public static Slime toSlime(Snapshot snapshot) {
@@ -62,10 +69,10 @@ public class SnapshotSerializer {
         return slime;
     }
 
-    public static List<Snapshot> listFromSlime(Slime slime) {
+    public static List<Snapshot> listFromSlime(Slime slime, CloudAccount systemAccount) {
         Cursor root = slime.get();
         return SlimeUtils.entriesStream(root.field(SNAPSHOTS_FIELD))
-                         .map(SnapshotSerializer::fromInspector)
+                         .map(i -> SnapshotSerializer.fromInspector(i, systemAccount))
                          .toList();
     }
 
@@ -92,6 +99,7 @@ public class SnapshotSerializer {
             eventObject.setString(EVENT_FIELD, asString(event.type()));
             eventObject.setLong(AT_FIELD, event.at().toEpochMilli());
         });
+        object.setString(CLOUD_ACCOUNT_FIELD, snapshot.cloudAccount().value());
     }
 
     public static String asString(Snapshot.State state) {

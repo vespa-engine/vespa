@@ -21,7 +21,6 @@ public:
      **/
     struct LookupResult : public search::index::DictionaryLookupResult {
         uint32_t                         indexId;
-        using UP = std::unique_ptr<LookupResult>;
         LookupResult() noexcept;
         void swap(LookupResult & rhs) noexcept {
             DictionaryLookupResult::swap(rhs);
@@ -58,11 +57,12 @@ private:
     using Cache = vespalib::cache<vespalib::CacheParam<vespalib::LruParam<Key, LookupResultVector>, DiskIndex>>;
 
     std::string                       _indexDir;
-    size_t                                 _cacheSize;
+    size_t                                 _dictionary_cache_size;
     index::Schema                          _schema;
     std::vector<FieldIndex>                _field_indexes;
     uint32_t                               _nonfield_size_on_disk;
     TuneFileSearch                         _tuneFileSearch;
+    std::shared_ptr<IPostingListCache>     _posting_list_cache;
     Cache                                  _cache;
 
     void calculate_nonfield_size_on_disk();
@@ -74,9 +74,10 @@ public:
      * Create a view of the disk index located in the given directory.
      *
      * @param indexDir the directory where the disk index is located.
-     * @param cacheSize optional size (in bytes) of the disk dictionary lookup cache.
+     * @param dictionary_cache_size optional size (in bytes) of the disk dictionary lookup cache.
      */
-    explicit DiskIndex(const std::string &indexDir, size_t cacheSize=0);
+    explicit DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache,
+                       size_t dictionary_cache_size = 0);
     ~DiskIndex() override;
 
     /**
@@ -94,7 +95,7 @@ public:
      * @param word the word to lookup.
      * @return the lookup result or nullptr if the word is not found.
      */
-    LookupResult::UP lookup(uint32_t indexId, std::string_view word);
+    LookupResult lookup(uint32_t indexId, std::string_view word);
 
     LookupResultVector lookup(const std::vector<uint32_t> & indexes, std::string_view word);
 
@@ -104,7 +105,12 @@ public:
      * @param lookupRes the result of the previous dictionary lookup.
      * @return a handle for the posting list in memory.
      */
-    index::PostingListHandle::UP readPostingList(const LookupResult &lookupRes) const;
+    index::PostingListHandle readPostingList(const LookupResult &lookupRes) const;
+
+    std::unique_ptr<search::queryeval::SearchIterator>
+    create_iterator(const LookupResult& lookup_result,
+                    const index::PostingListHandle& handle,
+                    const search::fef::TermFieldMatchDataArray& tfmda) const;
 
     /**
      * Read the bit vector corresponding to the given lookup result.
@@ -136,6 +142,7 @@ public:
     bool read(const Key & key, LookupResultVector & result);
 
     index::FieldLengthInfo get_field_length_info(const std::string& field_name) const;
+    const std::shared_ptr<IPostingListCache>& get_posting_list_cache() const noexcept { return _posting_list_cache; }
 };
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b);

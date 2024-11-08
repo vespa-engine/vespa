@@ -12,8 +12,9 @@ import org.junit.Test;
 /**
  * Check we keep the consistent view when reading and writing in parallell.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
+@SuppressWarnings("removal")
 public class ThreadRobustListTestCase {
 
     private static class Writer implements Runnable {

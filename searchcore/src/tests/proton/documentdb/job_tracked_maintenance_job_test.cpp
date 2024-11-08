@@ -4,7 +4,7 @@
 #include <vespa/searchcore/proton/server/i_blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/job_tracked_maintenance_job.h>
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -61,24 +61,16 @@ struct Fixture
     GateVector _runGates;
     size_t _runIdx;
     ThreadStackExecutor _exec;
-    Fixture(size_t numRuns = 1)
-        : _tracker(std::make_shared<SimpleJobTracker>(1)),
-          _job(std::make_unique<MyMaintenanceJob>(numRuns)),
-          _myJob(static_cast<MyMaintenanceJob *>(_job.get())),
-          _trackedJob(std::make_unique<JobTrackedMaintenanceJob>(_tracker, std::move(_job))),
-          _runRetval(false),
-          _runGates(getGateVector(numRuns)),
-          _runIdx(0),
-          _exec(1)
-    {
-    }
+
+    Fixture(size_t numRuns = 1);
+    ~Fixture();
     void runJob() {
         _runRetval = _trackedJob->run();
         _runGates[_runIdx++]->countDown();
     }
     void assertTracker(size_t startedGateCount, size_t endedGateCount) {
-        EXPECT_EQUAL(startedGateCount, _tracker->_started.getCount());
-        EXPECT_EQUAL(endedGateCount, _tracker->_ended.getCount());
+        EXPECT_EQ(startedGateCount, _tracker->_started.getCount());
+        EXPECT_EQ(endedGateCount, _tracker->_ended.getCount());
     }
     void runJobAndWait(size_t runIdx, size_t startedGateCount, size_t endedGateCount) {
         _exec.execute(vespalib::makeLambdaTask([this]() { runJob(); }));
@@ -89,23 +81,40 @@ struct Fixture
     }
 };
 
-TEST_F("require that maintenance job name, delay and interval are preserved", Fixture)
+Fixture::Fixture(size_t numRuns)
+    : _tracker(std::make_shared<SimpleJobTracker>(1)),
+      _job(std::make_unique<MyMaintenanceJob>(numRuns)),
+      _myJob(static_cast<MyMaintenanceJob *>(_job.get())),
+      _trackedJob(std::make_unique<JobTrackedMaintenanceJob>(_tracker, std::move(_job))),
+      _runRetval(false),
+      _runGates(getGateVector(numRuns)),
+      _runIdx(0),
+      _exec(1)
 {
-    EXPECT_EQUAL("myjob", f._trackedJob->getName());
-    EXPECT_EQUAL(10s, f._trackedJob->getDelay());
-    EXPECT_EQUAL(20s, f._trackedJob->getInterval());
 }
 
-TEST_F("require that maintenance job that needs 1 run is tracked", Fixture)
+Fixture::~Fixture() = default;
+
+TEST(JobTrackedMaintenanceJobTest, require_that_maintenance_job_name_delay_and_interval_are_preserved)
 {
+    Fixture f;
+    EXPECT_EQ("myjob", f._trackedJob->getName());
+    EXPECT_EQ(10s, f._trackedJob->getDelay());
+    EXPECT_EQ(20s, f._trackedJob->getInterval());
+}
+
+TEST(JobTrackedMaintenanceJobTest, require_that_maintenance_job_that_needs_1_run_is_tracked)
+{
+    Fixture f;
     f.assertTracker(1, 1);
     f.runJobAndWait(0, 0, 1);
     f.assertTracker(0, 0);
     EXPECT_TRUE(f._runRetval);
 }
 
-TEST_F("require that maintenance job that needs several runs is tracked", Fixture(2))
+TEST(JobTrackedMaintenanceJobTest, require_that_maintenance_job_that_needs_several_runs_is_tracked)
 {
+    Fixture f(2);
     f.assertTracker(1, 1);
     f.runJobAndWait(0, 0, 1);
     f.assertTracker(0, 1);
@@ -116,8 +125,9 @@ TEST_F("require that maintenance job that needs several runs is tracked", Fixtur
     EXPECT_TRUE(f._runRetval);
 }
 
-TEST_F("require that maintenance job that is destroyed is tracked", Fixture(2))
+TEST(JobTrackedMaintenanceJobTest, require_that_maintenance_job_that_is_destroyed_is_tracked)
 {
+    Fixture f(2);
     f.assertTracker(1, 1);
     f.runJobAndWait(0, 0, 1);
     f.assertTracker(0, 1);
@@ -127,8 +137,9 @@ TEST_F("require that maintenance job that is destroyed is tracked", Fixture(2))
     f.assertTracker(0, 0);
 }
 
-TEST_F("require that block calls are sent to underlying jobs", Fixture)
+TEST(JobTrackedMaintenanceJobTest, require_that_block_calls_are_sent_to_underlying_jobs)
 {
+    Fixture f;
     EXPECT_FALSE(f._trackedJob->isBlocked());
     EXPECT_TRUE(f._trackedJob->asBlockable() != nullptr);
     f._myJob->block();
@@ -139,8 +150,9 @@ TEST_F("require that block calls are sent to underlying jobs", Fixture)
     EXPECT_FALSE(f._trackedJob->isBlocked());
 }
 
-TEST_F("require that stop calls are sent to underlying jobs", Fixture)
+TEST(JobTrackedMaintenanceJobTest, require_that_stop_calls_are_sent_to_underlying_jobs)
 {
+    Fixture f;
     EXPECT_FALSE(f._myJob->stopped());
     f._trackedJob->stop();
     EXPECT_TRUE(f._myJob->stopped());

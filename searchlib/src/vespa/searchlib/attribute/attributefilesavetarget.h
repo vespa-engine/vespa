@@ -23,7 +23,7 @@ private:
     AttributeFileWriter _idxWriter;
     AttributeFileWriter _weightWriter;
     AttributeFileWriter _udatWriter;
-    WriterMap _writers;
+    WriterMap           _writers;
 
 public:
     AttributeFileSaveTarget(const TuneFileAttributes& tune_file,
@@ -45,7 +45,7 @@ public:
     bool setup_writer(const std::string& file_suffix,
                       const std::string& desc) override;
     IAttributeFileWriter& get_writer(const std::string& file_suffix) override;
-
+    uint64_t size_on_disk() const noexcept override;
 };
 
 } // namespace search

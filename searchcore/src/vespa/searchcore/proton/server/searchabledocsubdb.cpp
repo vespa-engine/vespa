@@ -31,6 +31,8 @@ using namespace searchcorespi;
 
 namespace proton {
 
+SearchableDocSubDB::Context::~Context() = default;
+
 SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
     : FastAccessDocSubDB(cfg, ctx._fastUpdCtx),
       IIndexManager::Reconfigurer(),
@@ -44,7 +46,8 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _warmupExecutor(ctx._warmupExecutor),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
-      _flushConfig()
+      _flushConfig(),
+      _posting_list_cache(ctx._posting_list_cache)
 {
     _gidToLidChangeHandler = _realGidToLidChangeHandler;
 }
@@ -91,7 +94,7 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot, SerialNum 
     return std::make_shared<IndexManagerInitializer>
         (vespaIndexDir, indexCfg, schema, configSerialNum, const_cast<SearchableDocSubDB &>(*this),
          _writeService, _warmupExecutor, configSnapshot.getTuneFileDocumentDBSP()->_index,
-         configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext, std::move(indexManager));
+         configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext, _posting_list_cache, std::move(indexManager));
 }
 
 void

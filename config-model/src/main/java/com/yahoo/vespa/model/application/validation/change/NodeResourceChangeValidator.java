@@ -26,12 +26,12 @@ public class NodeResourceChangeValidator implements ChangeValidator {
 
     @Override
     public void validate(ChangeContext context) {
-        for (ClusterSpec.Id clusterId : context.previousModel().allClusters()) {
-            Optional<NodeResources> currentResources = resourcesOf(clusterId, context.previousModel());
-            Optional<NodeResources> nextResources = resourcesOf(clusterId, context.model());
+        for (ClusterSpec cluster : context.previousModel().allClusters()) {
+            Optional<NodeResources> currentResources = resourcesOf(cluster, context.previousModel());
+            Optional<NodeResources> nextResources = resourcesOf(cluster, context.model());
             if (currentResources.isEmpty() || nextResources.isEmpty()) continue; // new or removed cluster
             if ( changeRequiresRestart(currentResources.get(), nextResources.get()))
-                createRestartActionsFor(clusterId, context.previousModel()).forEach(context::require);
+                createRestartActionsFor(cluster, context.previousModel()).forEach(context::require);
         }
     }
 
@@ -39,19 +39,19 @@ public class NodeResourceChangeValidator implements ChangeValidator {
         return currentResources.memoryGiB() != nextResources.memoryGiB();
     }
 
-    private Optional<NodeResources> resourcesOf(ClusterSpec.Id clusterId, VespaModel model) {
+    private Optional<NodeResources> resourcesOf(ClusterSpec cluster, VespaModel model) {
         return model.allocatedHosts().getHosts().stream().filter(host -> host.membership().isPresent())
-                                                         .filter(host -> host.membership().get().cluster().id().equals(clusterId))
+                                                         .filter(host -> host.membership().get().cluster().id().equals(cluster.id()))
                                                          .findFirst()
                                                          .map(HostSpec::advertisedResources);
     }
 
-    private List<ConfigChangeAction> createRestartActionsFor(ClusterSpec.Id clusterId, VespaModel model) {
-        ApplicationContainerCluster containerCluster = model.getContainerClusters().get(clusterId.value());
+    private List<ConfigChangeAction> createRestartActionsFor(ClusterSpec cluster, VespaModel model) {
+        ApplicationContainerCluster containerCluster = model.getContainerClusters().get(cluster.id().value());
         if (containerCluster != null)
             return createRestartActionsFor(containerCluster);
 
-        ContentCluster contentCluster = model.getContentClusters().get(clusterId.value());
+        ContentCluster contentCluster = model.getContentClusters().get(cluster.id().value());
         if (contentCluster != null)
             return createRestartActionsFor(contentCluster);
 

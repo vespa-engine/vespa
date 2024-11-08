@@ -7,6 +7,11 @@
 
 namespace vespalib::slime {
 
+ExternalDataValueFactory::ExternalDataValueFactory(std::unique_ptr<ExternalMemory> in)
+    : input(std::move(in))
+{
+}
+
 ExternalDataValueFactory::~ExternalDataValueFactory() = default;
 
 Value *

@@ -45,6 +45,7 @@ SingleRawAttributeLoader::on_load(vespalib::Executor*)
     _attr.commit();
     _attr.getStatus().setNumDocs(docid_limit);
     _attr.setCommittedDocIdLimit(docid_limit);
+    _attr.set_size_on_disk(reader.size_on_disk());
     return true;
 }
 

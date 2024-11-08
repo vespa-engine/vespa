@@ -3,12 +3,18 @@ package ai.vespa.schemals.schemadocument;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.TextDocumentItem;
 
@@ -16,11 +22,15 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.common.SchemaDiagnostic;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
 import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
+import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
 
 /**
  * Class responsible for maintaining the set of open documents and reparsing them.
@@ -83,47 +93,96 @@ public class SchemaDocumentScheduler {
 
         // TODO: a lot of parsing going on. It mostly should be reference resolving, not necessarily reparsing of entire contents.
         workspaceFiles.get(fileURI).updateFileContent(content, version);
-        boolean needsReparse = false;
 
-        if (documentType.get() == DocumentType.SCHEMA && reparseDescendants) {
+        if (reparseDescendants) {
             Set<String> parsedURIs = new HashSet<>() {{ add(fileURI); }};
-            for (String descendantURI : schemaIndex.getDocumentInheritanceGraph().getAllDescendants(fileURI)) {
-                if (descendantURI.equals(fileURI)) continue;
+            if (documentType.get() == DocumentType.SCHEMA) {
 
-                if (workspaceFiles.containsKey(descendantURI)) {
-                    workspaceFiles.get(descendantURI).reparseContent();
-                    parsedURIs.add(descendantURI);
-                }
-            }
+                reparseSchemaFileDescendants(fileURI, parsedURIs);
 
-            // Reparse documents that holds references to this document
-            String schemaIdentifier = ((SchemaDocument)workspaceFiles.get(fileURI)).getSchemaIdentifier();
-            Optional<Symbol> documentDefinition = schemaIndex.findSymbol(null, SymbolType.DOCUMENT, schemaIdentifier);
+            } else if (documentType.get() == DocumentType.PROFILE) {
+                // Find the schema this rank profile belongs to and reparse from there
+                RankProfileDocument document = getRankProfileDocument(fileURI);
+                Optional<Symbol> schemaSymbol = document.schemaSymbol();
 
-            if (documentDefinition.isPresent()) {
-                for (Symbol referencesThisDocument : schemaIndex.getDocumentReferenceGraph().getAllDescendants(documentDefinition.get())) {
-                    String descendantURI = referencesThisDocument.getFileURI();
-                    if (!parsedURIs.contains(descendantURI) && workspaceFiles.containsKey(descendantURI)) {
-                        workspaceFiles.get(referencesThisDocument.getFileURI()).reparseContent();
-                        parsedURIs.add(descendantURI);
-                    }
-                }
-            }
-
-            // reparse rank profile files belonging to this document
-            for (var entry : workspaceFiles.entrySet()) {
-                if ((entry.getValue() instanceof RankProfileDocument)) {
-                    RankProfileDocument document  = (RankProfileDocument)entry.getValue();
-                    if (document.schemaSymbol().isPresent() && document.schemaSymbol().get().fileURIEquals(fileURI)) {
-                        entry.getValue().reparseContent();
-                        needsReparse = true;
-                    }
+                if (schemaSymbol.isPresent()) {
+                    reparseSchemaFileDescendants(schemaSymbol.get().getFileURI(), parsedURIs);
                 }
             }
         }
 
-        if (needsReparse) {
-            workspaceFiles.get(fileURI).reparseContent();
+        // Resolve remaining unresolved symbols after everything has parsed
+        Map<String, List<Diagnostic>> undefinedSymbolDiagnostics = new HashMap<>();
+        while (true) {
+            boolean didResolve = false;
+            for (var symbol : schemaIndex.getUnresolvedSymbols()) {
+                String symbolURI = symbol.getFileURI();
+
+                DocumentManager symbolDocument = getDocument(symbolURI);
+                if (symbolDocument == null) continue; // bad situation
+
+                if (!undefinedSymbolDiagnostics.containsKey(symbolURI))undefinedSymbolDiagnostics.put(symbolURI, new ArrayList<>());
+
+                ParseContext context = symbolDocument.getParseContext();
+                List<Diagnostic> diagnostics = new ArrayList<>();
+                SymbolReferenceResolver.resolveSymbolReference(symbol.getNode(), context, diagnostics);
+                if (diagnostics.isEmpty()) {
+                    didResolve = true;
+                    break;
+                }
+            }
+            if (!didResolve) break;
+        }
+
+
+        for (var symbol : schemaIndex.getUnresolvedSymbols()) {
+            undefinedSymbolDiagnostics.get(symbol.getFileURI()).add(
+            new SchemaDiagnostic.Builder()
+                    .setRange( symbol.getNode().getRange())
+                    .setMessage( "Undefined symbol " + symbol.getNode().getText())
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .setCode(DiagnosticCode.UNDEFINED_SYMBOL)
+                    .build()
+            );
+        }
+
+        for (var entry : undefinedSymbolDiagnostics.entrySet()) {
+            diagnosticsHandler.replaceUndefinedSymbolDiagnostics(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void reparseSchemaFileDescendants(String fileURI, Set<String> parsedURIs) {
+        for (String descendantURI : schemaIndex.getDocumentInheritanceGraph().getAllDescendants(fileURI)) {
+            if (parsedURIs.contains(descendantURI)) continue;
+            if (workspaceFiles.containsKey(descendantURI)) {
+                workspaceFiles.get(descendantURI).reparseContent();
+                parsedURIs.add(descendantURI);
+            }
+        }
+
+        // Reparse documents that holds references to this document
+        String schemaIdentifier = ((SchemaDocument)workspaceFiles.get(fileURI)).getSchemaIdentifier();
+        Optional<Symbol> documentDefinition = schemaIndex.findSymbol(null, SymbolType.DOCUMENT, schemaIdentifier);
+
+        if (documentDefinition.isPresent()) {
+            for (Symbol referencesThisDocument : schemaIndex.getDocumentReferenceGraph().getAllDescendants(documentDefinition.get())) {
+                String descendantURI = referencesThisDocument.getFileURI();
+                if (!parsedURIs.contains(descendantURI) && workspaceFiles.containsKey(descendantURI)) {
+                    workspaceFiles.get(referencesThisDocument.getFileURI()).reparseContent();
+                    parsedURIs.add(descendantURI);
+                }
+            }
+        }
+        // reparse rank profile files belonging to this document
+        for (var entry : workspaceFiles.entrySet()) {
+            if (parsedURIs.contains(entry.getKey())) continue;
+            if ((entry.getValue() instanceof RankProfileDocument)) {
+                RankProfileDocument document  = (RankProfileDocument)entry.getValue();
+                if (document.schemaSymbol().isPresent() && document.schemaSymbol().get().fileURIEquals(fileURI)) {
+                    entry.getValue().reparseContent();
+                    parsedURIs.add(entry.getKey());
+                }
+            }
         }
     }
 
@@ -180,6 +239,10 @@ public class SchemaDocumentScheduler {
         if (!file.exists()) {
             cleanUpDocument(fileURI);
         }
+
+        if (!isInWorkspace(fileURI)) {
+            diagnosticsHandler.clearDiagnostics(fileURI);
+        }
     }
 
     private void cleanUpDocument(String fileURI) {
@@ -187,6 +250,7 @@ public class SchemaDocumentScheduler {
 
         schemaIndex.clearDocument(fileURI);
         workspaceFiles.remove(fileURI);
+        diagnosticsHandler.clearDiagnostics(fileURI);
     }
 
     public boolean removeDocument(String fileURI) {
@@ -252,5 +316,12 @@ public class SchemaDocumentScheduler {
         }
         reparseInInheritanceOrder();
         setReparseDescendants(true);
+    }
+
+    private boolean isInWorkspace(String fileURI) {
+        if (workspaceURI == null) return false;
+        Path filePath = Paths.get(URI.create(fileURI));
+        Path workspacePath = Paths.get(workspaceURI);
+        return filePath.startsWith(workspacePath);
     }
 }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "attribute_metrics.h"
+#include "cache_metrics.h"
 #include "memory_usage_metrics.h"
 #include "executor_threading_service_metrics.h"
 #include "document_db_feeding_metrics.h"
@@ -53,18 +54,6 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
 
         struct DocumentStoreMetrics : metrics::MetricSet
         {
-            struct CacheMetrics : metrics::MetricSet
-            {
-                metrics::LongValueMetric memoryUsage;
-                metrics::LongValueMetric elements;
-                metrics::LongAverageMetric hitRate;
-                metrics::LongCountMetric lookups;
-                metrics::LongCountMetric invalidations;
-
-                CacheMetrics(metrics::MetricSet *parent);
-                ~CacheMetrics() override;
-            };
-
             metrics::LongValueMetric diskUsage;
             metrics::LongValueMetric diskBloat;
             metrics::DoubleValueMetric maxBucketSpread;

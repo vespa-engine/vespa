@@ -29,10 +29,7 @@
 #include <vespa/searchlib/queryeval/sourceblendersearch.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("querynodes_test");
+#include <vespa/vespalib/gtest/gtest.h>
 
 using search::fef::FieldInfo;
 using search::fef::FieldType;
@@ -80,8 +77,8 @@ template <typename T> void checkOneFieldNoAttributesTwoIndexes();
 template <typename T> void checkTwoFieldsNoAttributesTwoIndexes();
 template <typename T> void checkOneFieldNoAttributesOneIndex();
 
-template <typename T> void checkProperBlending();
-template <typename T> void checkProperBlendingWithParent();
+template <typename T> void checkProperBlending(const std::string& label);
+template <typename T> void checkProperBlendingWithParent(const std::string& label);
 
 const string term = "term";
 const string phrase_term1 = "hello";
@@ -331,6 +328,7 @@ template <> bool bothStrict<Or>() { return true; }
 
 template <typename T>
 void checkTwoFieldsTwoAttributesTwoIndexes() {
+    SCOPED_TRACE("checkTwoFieldsTwoAttributesTwoIndexes");
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(2);
     structure_test.setAttributeCount(2);
@@ -347,11 +345,12 @@ void checkTwoFieldsTwoAttributesTwoIndexes() {
                  .add(SourceId(1), MyOr()
                       .add(getLeaf<T>(field[0], source_tag[1]))
                       .add(getLeaf<T>(field[1], source_tag[1])))));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
 template <typename T>
 void checkTwoFieldsTwoAttributesOneIndex() {
+    SCOPED_TRACE("checkTwoFieldsTwoAttributesOneIndex");
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(2);
     structure_test.setAttributeCount(2);
@@ -365,11 +364,12 @@ void checkTwoFieldsTwoAttributesOneIndex() {
                  .add(SourceId(0), MyOr()
                       .add(getLeaf<T>(field[0], source_tag[0]))
                       .add(getLeaf<T>(field[1], source_tag[0])))));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
 template <typename T>
 void checkOneFieldOneAttributeTwoIndexes() {
+    SCOPED_TRACE("checkOneFieldOneAttributeTwoIndexes");
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(1);
     structure_test.setAttributeCount(1);
@@ -383,11 +383,12 @@ void checkOneFieldOneAttributeTwoIndexes() {
                       getLeaf<T>(field[0], source_tag[0]))
                  .add(SourceId(1),
                       getLeaf<T>(field[0], source_tag[1]))));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
 template <typename T>
 void checkOneFieldNoAttributesTwoIndexes() {
+    SCOPED_TRACE("checkOneFieldNoAttributesTwoIndexes");
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(1);
     structure_test.setAttributeCount(0);
@@ -397,11 +398,12 @@ void checkOneFieldNoAttributesTwoIndexes() {
             Blender()
             .add(SourceId(0), getLeaf<T>(field[0], source_tag[0]))
             .add(SourceId(1), getLeaf<T>(field[0], source_tag[1])));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
 template <typename T>
 void checkTwoFieldsNoAttributesTwoIndexes() {
+    SCOPED_TRACE("checkTwoFieldsNoAttributesTwoIndexes");
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(2);
     structure_test.setAttributeCount(0);
@@ -415,11 +417,12 @@ void checkTwoFieldsNoAttributesTwoIndexes() {
             .add(SourceId(1), MyOr()
                  .add(getLeaf<T>(field[0], source_tag[1]))
                  .add(getLeaf<T>(field[1], source_tag[1]))));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
 template <typename T>
 void checkOneFieldNoAttributesOneIndex() {
+    SCOPED_TRACE("checkOneFieldNoAttributesOneIndex");
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(1);
     structure_test.setAttributeCount(0);
@@ -428,22 +431,24 @@ void checkOneFieldNoAttributesOneIndex() {
     SearchIterator::UP expected(
             Blender()
             .add(SourceId(0), getLeaf<T>(field[0], source_tag[0])));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
 template <typename T>
-void checkProperBlending() {
-    TEST_DO(checkTwoFieldsTwoAttributesTwoIndexes<T>());
-    TEST_DO(checkTwoFieldsTwoAttributesOneIndex<T>());
-    TEST_DO(checkOneFieldOneAttributeTwoIndexes<T>());
-    TEST_DO(checkOneFieldNoAttributesTwoIndexes<T>());
-    TEST_DO(checkTwoFieldsNoAttributesTwoIndexes<T>());
-    TEST_DO(checkOneFieldNoAttributesOneIndex<T>());
+void checkProperBlending(const std::string& label) {
+    SCOPED_TRACE("checkProperBlending<" + label + ">()");
+    checkTwoFieldsTwoAttributesTwoIndexes<T>();
+    checkTwoFieldsTwoAttributesOneIndex<T>();
+    checkOneFieldOneAttributeTwoIndexes<T>();
+    checkOneFieldNoAttributesTwoIndexes<T>();
+    checkTwoFieldsNoAttributesTwoIndexes<T>();
+    checkOneFieldNoAttributesOneIndex<T>();
 }
 
 
 template <typename T>
-void checkProperBlendingWithParent() {
+void checkProperBlendingWithParent(const std::string& label) {
+    SCOPED_TRACE("checkProperBlendingWithParent<" + label + ">()");
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(2);
     structure_test.setAttributeCount(2);
@@ -471,11 +476,12 @@ void checkProperBlendingWithParent() {
                          .add(SourceId(1), MyOr(bothStrict<T>())
                               .add(getTerm(phrase_term2, field[0], source_tag[1]))
                               .add(getTerm(phrase_term2, field[1], source_tag[1]))))));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
 template <>
-void checkProperBlendingWithParent<SameElement>() {
+void checkProperBlendingWithParent<SameElement>(const std::string& label) {
+    SCOPED_TRACE("checkProperBlendingWithParent<" + label + ">()");
     using T = SameElement;
     IteratorStructureTest structure_test;
     structure_test.setFieldCount(1);
@@ -489,44 +495,51 @@ void checkProperBlendingWithParent<SameElement>() {
                          Blender(bothStrict<T>())
                          .add(SourceId(0), getTerm(phrase_term2, field[0], source_tag[0]))
                          .add(SourceId(1), getTerm(phrase_term2, field[0], source_tag[1]))));
-    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+    EXPECT_EQ(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
-TEST("requireThatTermNodeSearchIteratorsGetProperBlending") {
-    TEST_DO(checkProperBlending<Term>());
+TEST(QueryNodesTest, requireThatTermNodeSearchIteratorsGetProperBlending)
+{
+    checkProperBlending<Term>("Term");
 }
 
-TEST("requireThatPhrasesGetProperBlending") {
-    TEST_DO(checkProperBlending<Phrase>());
+TEST(QueryNodesTest, requireThatPhrasesGetProperBlending)
+{
+    checkProperBlending<Phrase>("Phrase");
 }
 
-TEST("requireThatSameElementGetProperBlending") {
-    TEST_DO(checkProperBlendingWithParent<SameElement>());
+TEST(QueryNodesTest, requireThatSameElementGetProperBlending)
+{
+    checkProperBlendingWithParent<SameElement>("SameElement");
 }
 
-TEST("requireThatNearGetProperBlending") {
-    TEST_DO(checkProperBlendingWithParent<Near>());
+TEST(QueryNodesTest, requireThatNearGetProperBlending)
+{
+    checkProperBlendingWithParent<Near>("Near");
 }
 
-TEST("requireThatONearGetProperBlending") {
-    TEST_DO(checkProperBlendingWithParent<ONear>());
+TEST(QueryNodesTest, requireThatONearGetProperBlending)
+{
+    checkProperBlendingWithParent<ONear>("ONear");
 }
 
-TEST("requireThatSimpleIntermediatesGetProperBlending") {
-    TEST_DO(checkProperBlendingWithParent<And>());
-    TEST_DO(checkProperBlendingWithParent<AndNot>());
-    TEST_DO(checkProperBlendingWithParent<Or>());
-    TEST_DO(checkProperBlendingWithParent<Rank>());
+TEST(QueryNodesTest, requireThatSimpleIntermediatesGetProperBlending)
+{
+    checkProperBlendingWithParent<And>("And");
+    checkProperBlendingWithParent<AndNot>("AndNot");
+    checkProperBlendingWithParent<Or>("Or");
+    checkProperBlendingWithParent<Rank>("Rank");
 }
 
-TEST("control query nodes size") {
-    EXPECT_EQUAL(64u + sizeof(std::string), sizeof(ProtonTermData));
-    EXPECT_EQUAL(32u + 2 * sizeof(std::string), sizeof(search::query::NumberTerm));
-    EXPECT_EQUAL(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::NumberTerm));
-    EXPECT_EQUAL(32u + 2 * sizeof(std::string), sizeof(search::query::StringTerm));
-    EXPECT_EQUAL(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::StringTerm));
+TEST(QueryNodesTest, control_query_nodes_size)
+{
+    EXPECT_EQ(64u + sizeof(std::string), sizeof(ProtonTermData));
+    EXPECT_EQ(32u + 2 * sizeof(std::string), sizeof(search::query::NumberTerm));
+    EXPECT_EQ(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::NumberTerm));
+    EXPECT_EQ(32u + 2 * sizeof(std::string), sizeof(search::query::StringTerm));
+    EXPECT_EQ(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::StringTerm));
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
