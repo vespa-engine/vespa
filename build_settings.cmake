@@ -150,6 +150,15 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_HARDENING)
 endif()
 
 # Linker flags
+if (APPLE)
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        # We use the libc++ header files bundled with homebrew llvm, use the
+        # bundled libraries too.
+        set(HOMEBREW_CLANGXX_EXTRA_LINKER_FLAGS "-L${VESPA_HOMEBREW_PREFIX}/opt/llvm/lib/c++ -L${VESPA_HOMEBREW_PREFIX}/opt/llvm/lib/unwind -lunwind")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${HOMEBREW_CLANGXX_EXTRA_LINKER_FLAGS}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${HOMEBREW_CLANGXX_EXTRA_LINKER_FLAGS}")
+    endif()
+endif()
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ldl")

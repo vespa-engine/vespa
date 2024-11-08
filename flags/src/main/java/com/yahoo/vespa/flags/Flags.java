@@ -260,13 +260,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
-            "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2025-01-01",
-            "Determines whether one metrics config check should be written per Vespa node",
-            "Takes effect on next tick",
-            HOSTNAME);
-
     public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
             "tls-capabilities-enforcement-mode", "disable",
             List.of("bjorncs", "vekterli"), "2022-07-21", "2025-01-01",
@@ -421,7 +414,7 @@ public class Flags {
             TENANT_ID);
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
-            "enforce-strictly-increasing-cluster-state-versions", false,
+            "enforce-strictly-increasing-cluster-state-versions", true,
             List.of("vekterli"), "2024-06-03", "2024-12-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
@@ -470,12 +463,6 @@ public class Flags {
             "Whether to sync companies to HubSpot",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
-            "sdm-enabled-provisioning", true,
-            List.of("olaa"), "2024-07-31", "2024-11-01",
-            "Whether to provision with SDM enabled",
-            "Takes effect immediately");
-
     public static final UnboundStringFlag HOSTNAME_SCHEME = defineStringFlag(
             "hostname-scheme", "legacy",
             List.of("mpolden"), "2024-08-07", "2024-12-01",
@@ -486,7 +473,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag OVERRIDE_S1_TOKEN = defineFeatureFlag(
             "override-s1-token", false,
-            List.of("mortent"), "2024-09-23", "2024-11-01",
+            List.of("mortent"), "2024-09-23", "2024-12-01",
             "Override the S1 token",
             "Takes effect on next host-admin run",
             HOSTNAME);

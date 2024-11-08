@@ -12,6 +12,20 @@ using vespalib::eval::CellType;
 
 namespace search::queryeval {
 
+ExactNearestNeighborIterator::Params::Params(fef::TermFieldMatchData &tfmd_in,
+                                             std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
+                                             NearestNeighborDistanceHeap &distanceHeap_in,
+                                             const GlobalFilter &filter_in)
+    : tfmd(tfmd_in),
+      distance_calc(std::move(distance_calc_in)),
+      distanceHeap(distanceHeap_in),
+      filter(filter_in)
+{}
+
+ExactNearestNeighborIterator::Params::Params(Params&& rhs) = default;
+
+ExactNearestNeighborIterator::Params::~Params() = default;
+
 /**
  * Search iterator for K nearest neighbor matching.
  * Uses unpack() as feedback mechanism to track which matches actually became hits.

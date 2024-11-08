@@ -6,6 +6,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -93,7 +94,8 @@ AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
       _fileHeaderContext(fileHeaderContext),
       _header(header),
       _desc(desc),
-      _fileBitSize(0)
+      _fileBitSize(0),
+      _size_on_disk(0)
 { }
 
 AttributeFileWriter::~AttributeFileWriter() = default;
@@ -160,6 +162,8 @@ AttributeFileWriter::close()
         bool close_ok = _file->Close();
         assert(close_ok);
         updateHeader(_file->GetFileName(), _fileBitSize);
+        DiskSpaceCalculator disk_space_calculator;
+        _size_on_disk = disk_space_calculator(_fileBitSize / 8);
     }
 }
 

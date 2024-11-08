@@ -17,7 +17,8 @@ AttributeMemorySaveTarget::AttributeMemorySaveTarget()
       _idxWriter(),
       _weightWriter(),
       _udatWriter(),
-      _writers()
+      _writers(),
+      _size_on_disk(0)
 {
 }
 
@@ -48,9 +49,8 @@ AttributeMemorySaveTarget::udatWriter()
 }
 
 bool
-AttributeMemorySaveTarget::
-writeToFile(const TuneFileAttributes &tuneFileAttributes,
-            const FileHeaderContext &fileHeaderContext)
+AttributeMemorySaveTarget::writeToFile(const TuneFileAttributes &tuneFileAttributes,
+                                       const FileHeaderContext &fileHeaderContext)
 {
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
     saveTarget.setHeader(_header);
@@ -75,6 +75,7 @@ writeToFile(const TuneFileAttributes &tuneFileAttributes,
         entry.second.writer->writeTo(file_writer);
     }
     saveTarget.close();
+    _size_on_disk = saveTarget.size_on_disk();
     return true;
 }
 
@@ -99,6 +100,12 @@ AttributeMemorySaveTarget::get_writer(const std::string& file_suffix)
         throw IllegalArgumentException("File writer with suffix '" + file_suffix + "' does not exist");
     }
     return *itr->second.writer;
+}
+
+uint64_t
+AttributeMemorySaveTarget::size_on_disk() const noexcept
+{
+    return _size_on_disk;
 }
 
 } // namespace search

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>

@@ -26,7 +26,8 @@ public class FieldArgument extends SymbolArgument {
         NUMERIC_ARRAY,
         STRING,
         STRING_ARRAY,
-        POSITION
+        POSITION,
+        PREDICATE
     };
 
     public static final EnumSet<FieldType> AnyFieldType = EnumSet.allOf(FieldType.class);

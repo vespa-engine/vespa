@@ -18,6 +18,8 @@ public interface ProvisionServiceProvider {
 
     Optional<HostProvisioner> getHostProvisioner();
 
+    Optional<SnapshotStore> getSnapshotStore();
+
     HostResourcesCalculator getHostResourcesCalculator();
 
     default ProtoHealthChecker getHealthChecker() {

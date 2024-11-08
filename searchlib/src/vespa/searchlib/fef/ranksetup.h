@@ -6,7 +6,6 @@
 #include "iindexenvironment.h"
 #include "iqueryenvironment.h"
 #include "blueprintresolver.h"
-#include "indexproperties.h"
 #include "rank_program.h"
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
@@ -26,7 +25,6 @@ namespace search::fef {
 class RankSetup
 {
 public:
-    using WeakAndStopWordStrategy = indexproperties::matching::WeakAndStopWordStrategy::Value;
     using Warnings = BlueprintResolver::Warnings;
     struct MutateOperation {
     public:
@@ -86,8 +84,8 @@ private:
     double                   _global_filter_upper_limit;
     double                   _target_hits_max_adjustment_factor;
     double                   _weakand_range;
-    double                   _weakand_stop_word_limit;
-    WeakAndStopWordStrategy  _weakand_stop_word_strategy;
+    double                   _weakand_stop_word_adjust_limit;
+    double                   _weakand_stop_word_drop_limit;
     vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
     MutateOperation          _mutateOnMatch;
     MutateOperation          _mutateOnFirstPhase;
@@ -416,10 +414,10 @@ public:
     vespalib::FuzzyMatchingAlgorithm get_fuzzy_matching_algorithm() const { return _fuzzy_matching_algorithm; }
     void set_weakand_range(double v) { _weakand_range = v; }
     double get_weakand_range() const { return _weakand_range; }
-    void set_weakand_stop_word_limit(double v) { _weakand_stop_word_limit = v; }
-    double get_weakand_stop_word_limit() const { return _weakand_stop_word_limit; }
-    void set_weakand_stop_word_strategy(WeakAndStopWordStrategy v) { _weakand_stop_word_strategy = v; }
-    auto get_weakand_stop_word_strategy() const { return _weakand_stop_word_strategy; }
+    void set_weakand_stop_word_adjust_limit(double v) { _weakand_stop_word_adjust_limit = v; }
+    double get_weakand_stop_word_adjust_limit() const { return _weakand_stop_word_adjust_limit; }
+    void set_weakand_stop_word_drop_limit(double v) { _weakand_stop_word_drop_limit = v; }
+    double get_weakand_stop_word_drop_limit() const { return _weakand_stop_word_drop_limit; }
 
     /**
      * This method may be used to indicate that certain features

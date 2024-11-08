@@ -49,10 +49,10 @@ public class QuotaValidator implements Validator {
         var application = context.model().applicationPackage().getApplicationId();
 
         var maxSpend = 0.0;
-        for (var id : context.model().allClusters()) {
-            if (adminClusterIds(context.model()).contains(id)) continue;
-            var cluster = context.model().provisioned().clusters().get(id);
-            var capacity = context.model().provisioned().capacities().getOrDefault(id, zeroCapacity);
+        for (var spec : context.model().allClusters()) {
+            if (adminClusterIds(context.model()).contains(spec.id())) continue;
+            var cluster = context.model().provisioned().clusters().get(spec.id());
+            var capacity = context.model().provisioned().capacities().getOrDefault(spec.id(), zeroCapacity);
             maxSpend += capacityPolicies.applyOn(capacity, cluster.isExclusive()).maxResources().cost();
         }
 

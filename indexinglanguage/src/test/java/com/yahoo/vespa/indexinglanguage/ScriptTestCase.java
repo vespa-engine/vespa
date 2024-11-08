@@ -9,7 +9,10 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
@@ -60,7 +63,7 @@ public class ScriptTestCase {
             fail();
         } catch (VerificationException e) {
             assertEquals(e.getExpressionType(), ScriptExpression.class);
-            assertEquals("Expected any input, but no input is specified", e.getMessage());
+            assertEquals("Invalid expression '{ input in-1 | attribute out-1; attribute out-2; }': Expected any input, but no input is specified", e.getMessage());
         }
     }
 
@@ -102,14 +105,11 @@ public class ScriptTestCase {
         var intField = new Field("myInt", DataType.INT);
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
-        expression.setStatementOutput(new DocumentType("myDocument"), intField);
 
-        // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
         assertEquals(DataType.INT, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setCurrentValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myInt"));
         assertEquals(-1425622096, adapter.values.get("myInt").getWrappedValue());
@@ -128,14 +128,11 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("first"));
         array.add(new StringFieldValue("second"));
         adapter.setValue("myTextArray", array);
-        expression.setStatementOutput(new DocumentType("myDocument"), intField);
 
-        // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
         assertEquals(new ArrayDataType(DataType.INT), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setCurrentValue(array);
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myIntArray"));
         var intArray = (Array<IntegerFieldValue>)adapter.values.get("myIntArray");
@@ -152,17 +149,73 @@ public class ScriptTestCase {
         var intField = new Field("myLong", DataType.LONG);
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
-        expression.setStatementOutput(new DocumentType("myDocument"), intField);
 
-        // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
         assertEquals(DataType.LONG, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
-        context.setCurrentValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myLong"));
         assertEquals(7678158186624760752L, adapter.values.get("myLong").getWrappedValue());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testZCurveArray() throws ParseException {
+        var expression = Expression.fromString("input location_str | for_each { to_pos } | for_each { zcurve } | attribute location_zcurve");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("location_str", DataType.getArray(DataType.STRING)));
+        var zcurveField = new Field("location_zcurve", DataType.getArray(DataType.LONG));
+        adapter.createField(zcurveField);
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("30;40"));
+        array.add(new StringFieldValue("50;60"));
+        adapter.setValue("location_str", array);
+
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(DataType.getArray(DataType.LONG), expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("location_zcurve"));
+        var longArray = (Array<LongFieldValue>)adapter.values.get("location_zcurve");
+        assertEquals(  2516, longArray.get(0).getLong());
+        assertEquals(4004, longArray.get(1).getLong());
+    }
+
+    @Test
+    public void testForEachFollowedByGetVar() {
+        String expressionString =
+                """
+                input uris | for_each {
+                    if ((_ | substring 0 7) == "http://") {
+                         _ | substring 7 1000 | set_var selected
+                    } else {
+                        _
+                    }
+                    } | get_var selected | attribute id
+                """;
+
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom(expressionString);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var uris = new Field("uris", new ArrayDataType(DataType.STRING));
+        var id = new Field("id", DataType.STRING);
+        adapter.createField(uris);
+        adapter.createField(id);
+        var array = new Array<StringFieldValue>(uris.getDataType());
+        array.add(new StringFieldValue("value1"));
+        array.add(new StringFieldValue("http://value2"));
+        adapter.setValue("uris", array);
+
+        expression.verify(adapter);
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("id"));
+        assertEquals("value2", ((StringFieldValue)adapter.values.get("id")).getString());
     }
 
 }

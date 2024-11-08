@@ -444,46 +444,18 @@ GlobalFilterUpperLimit::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string WeakAndStopWordLimit::NAME("vespa.matching.weakand.stop_word_limit");
-
-const double WeakAndStopWordLimit::DEFAULT_VALUE(1.0);
-
-double
-WeakAndStopWordLimit::lookup(const Properties &props)
-{
-    return lookup(props, DEFAULT_VALUE);
-}
-
-double
-WeakAndStopWordLimit::lookup(const Properties &props, double defaultValue)
-{
+const std::string WeakAndStopWordAdjustLimit::NAME("vespa.matching.weakand.stop_word_adjust_limit");
+const double WeakAndStopWordAdjustLimit::DEFAULT_VALUE(1.0);
+double WeakAndStopWordAdjustLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+double WeakAndStopWordAdjustLimit::lookup(const Properties &props, double defaultValue) {
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string WeakAndStopWordStrategy::NAME("vespa.matching.weakand.stop_word_strategy");
-
-const WeakAndStopWordStrategy::Value WeakAndStopWordStrategy::DEFAULT_VALUE(Value::KEEP);
-
-WeakAndStopWordStrategy::Value
-WeakAndStopWordStrategy::lookup(const Properties &props)
-{
-    return lookup(props, DEFAULT_VALUE);
-}
-
-WeakAndStopWordStrategy::Value
-WeakAndStopWordStrategy::lookup(const Properties &props, Value default_value)
-{
-    Property p = props.lookup(NAME);
-    if (!p.found()) {
-        return default_value;
-    }
-    if (p.get() == "keep") {
-        return Value::KEEP;
-    }
-    if (p.get() == "drop") {
-        return Value::DROP;
-    }
-    return DEFAULT_VALUE;
+const std::string WeakAndStopWordDropLimit::NAME("vespa.matching.weakand.stop_word_drop_limit");
+const double WeakAndStopWordDropLimit::DEFAULT_VALUE(1.0);
+double WeakAndStopWordDropLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+double WeakAndStopWordDropLimit::lookup(const Properties &props, double defaultValue) {
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");

@@ -7,20 +7,22 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
 
+namespace search::diskindex { class IPostingListCache; }
+
 namespace proton::index {
 
 struct IndexConfig {
     using WarmupConfig = searchcorespi::index::WarmupConfig;
     IndexConfig() : IndexConfig(WarmupConfig(), 2, 0) { }
-    IndexConfig(WarmupConfig warmup_, size_t maxFlushed_, size_t cacheSize_)
+    IndexConfig(WarmupConfig warmup_, size_t maxFlushed_, size_t dictionary_cache_size_in)
         : warmup(warmup_),
           maxFlushed(maxFlushed_),
-          cacheSize(cacheSize_)
+          dictionary_cache_size(dictionary_cache_size_in)
     { }
 
     const WarmupConfig warmup;
     const size_t       maxFlushed;
-    const size_t       cacheSize;
+    const size_t       dictionary_cache_size;
 };
 
 /**
@@ -36,7 +38,8 @@ public:
     private:
         using IDiskIndex = searchcorespi::index::IDiskIndex;
         using IMemoryIndex = searchcorespi::index::IMemoryIndex;
-        const size_t _cacheSize;
+        std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
+        const size_t _dictionary_cache_size;
         const search::common::FileHeaderContext &_fileHeaderContext;
         const search::TuneFileIndexing _tuneFileIndexing;
         const search::TuneFileSearch _tuneFileSearch;
@@ -45,7 +48,8 @@ public:
     public:
         MaintainerOperations(const search::common::FileHeaderContext &fileHeaderContext,
                              const search::TuneFileIndexManager &tuneFileIndexManager,
-                             size_t cacheSize,
+                             std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
+                             size_t dictionary_cache_size,
                              searchcorespi::index::IThreadingService &threadingService);
 
         IMemoryIndex::SP createMemoryIndex(const Schema& schema,
@@ -68,6 +72,7 @@ public:
     IndexManager(const IndexManager &) = delete;
     IndexManager & operator = (const IndexManager &) = delete;
     IndexManager(const std::string &baseDir,
+                 std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
                  const IndexConfig & indexConfig,
                  const Schema &schema,
                  SerialNum serialNum,

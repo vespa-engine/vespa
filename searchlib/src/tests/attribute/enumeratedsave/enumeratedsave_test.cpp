@@ -121,6 +121,8 @@ public:
     bool bufEqual(const Buffer &lhs, const Buffer &rhs) const;
  
     bool operator==(const MemAttr &rhs) const;
+
+    uint64_t size_on_disk() const noexcept override { return 0; }
 };
 
 MemAttr::MemAttr() = default;
@@ -550,15 +552,18 @@ EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
         search::index::DummyFileHeaderContext fileHeaderContext;
         EXPECT_TRUE(v.save(ms, "convert"));
         EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
+        EXPECT_NOT_EQUAL(0u, ms.size_on_disk());
         auto cfg = v.getConfig();
         cfg.set_dictionary_config(search::DictionaryConfig(search::DictionaryConfig::Type::BTREE));
         auto v2 = AttributeFactory::createAttribute("convert", cfg);
         EXPECT_TRUE(v2->load());
+        EXPECT_NOT_EQUAL(0u, v2->size_on_disk());
         MemAttr m2;
         EXPECT_TRUE(v2->save(m2, v.getBaseFileName()));
         ASSERT_TRUE(m2 == e);
         auto v3 = AttributeFactory::createAttribute("convert", v.getConfig());
         EXPECT_TRUE(v3->load());
+        EXPECT_NOT_EQUAL(0u, v3->size_on_disk());
     }
 }
 
@@ -567,9 +572,11 @@ MemAttr::SP
 EnumeratedSaveTest::saveBoth(AttributePtr v)
 {
     EXPECT_TRUE(v->save());
+    EXPECT_NOT_EQUAL(0u, v->size_on_disk());
     std::string basename = v->getBaseFileName();
     AttributePtr v2 = make(v->getConfig(), basename, true);
     EXPECT_TRUE(v2->load());
+    EXPECT_EQUAL(v->size_on_disk(), v2->size_on_disk());
     EXPECT_TRUE(v2->save(basename + "_e"));
 
     search::AttributeMemorySaveTarget ms;
@@ -596,6 +603,7 @@ EnumeratedSaveTest::load(AttributePtr v, const std::string &name)
 {
     v->setBaseFileName(name);
     EXPECT_TRUE(v->load());
+    EXPECT_NOT_EQUAL(0u, v->size_on_disk());
 }
 
 template <typename VectorType, typename BufferType>
@@ -605,6 +613,7 @@ EnumeratedSaveTest::checkLoad(Config cfg, const std::string &name,
 {
     AttributePtr v = AttributeFactory::createAttribute(name, cfg);
     EXPECT_TRUE(v->load());
+    EXPECT_NOT_EQUAL(0u, v->size_on_disk());
     compare<VectorType, BufferType>(as<VectorType>(v), as<VectorType>(ev));
     return v;
 }

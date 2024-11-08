@@ -2,6 +2,7 @@
 
 #include "testdiskindex.h"
 #include <vespa/searchlib/diskindex/indexbuilder.h>
+#include <vespa/searchlib/diskindex/posting_list_cache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -106,7 +107,7 @@ TestDiskIndex::buildIndex(const std::string & dir, bool directio,
 }
 
 void
-TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap,
+TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap, bool use_posting_list_cache,
                          bool fieldEmpty, bool docEmpty, bool wordEmpty)
 {
     buildIndex(dir, directio, fieldEmpty, docEmpty, wordEmpty);
@@ -117,7 +118,11 @@ TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap,
     if (readmmap) {
         tuneFileRead.setWantMemoryMap();
     }
-    _index = std::make_unique<DiskIndex>(dir);
+    std::shared_ptr<IPostingListCache> posting_list_cache;
+    if (use_posting_list_cache) {
+        posting_list_cache = std::make_shared<PostingListCache>(256_Ki);
+    }
+    _index = std::make_unique<DiskIndex>(dir, posting_list_cache);
     bool ok(_index->setup(tuneFileRead));
     assert(ok);
     (void) ok;

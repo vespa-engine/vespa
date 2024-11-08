@@ -53,15 +53,20 @@ public class RankProfileDocument implements DocumentManager {
 
         this.schemaIndex.clearDocument(this.fileURI);
 
-        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, this.scheduler);
-        context.useRankProfileIdentifiers();
-        var result = parseContent(context);
+        var result = parseContent(getParseContext());
 
         diagnosticsHandler.publishDiagnostics(this.fileURI, result.diagnostics());
         if (result.CST().isPresent()) {
             this.CST = result.CST().get();
             lexer.setCST(CST);
         }
+    }
+
+    @Override
+    public ParseContext getParseContext() {
+        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, this.scheduler);
+        context.useRankProfileIdentifiers();
+        return context;
     }
 
     public static SchemaDocument.ParseResult parseContent(ParseContext context) {

@@ -212,4 +212,25 @@ ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap, Executor &exec
     }));
 }
 
+NormalState::NormalState(FeedHandler &handler) noexcept
+    : FeedState(NORMAL),
+      _handler(handler)
+{
+}
+
+NormalState::~NormalState() = default;
+
+void
+NormalState::handleOperation(FeedToken token, FeedOperationUP op)
+{
+    _handler.performOperation(std::move(token), std::move(op));
+}
+
+void
+NormalState::receive(const PacketWrapperSP &wrap, vespalib::Executor &)
+{
+    throwExceptionInReceive(_handler.getDocTypeName().c_str(), wrap->packet.range().from(),
+                            wrap->packet.range().to(), wrap->packet.size());
+}
+
 }  // namespace proton

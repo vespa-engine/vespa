@@ -51,6 +51,8 @@ public:
     virtual IAttributeFileWriter& get_writer(const std::string& file_suffix) = 0;
 
     virtual ~IAttributeSaveTarget();
+
+    virtual uint64_t size_on_disk() const noexcept = 0;
 };
 
 } // namespace search

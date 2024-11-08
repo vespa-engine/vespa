@@ -8,7 +8,6 @@
 #include <cctype>
 #include <filesystem>
 #include <unistd.h>
-#include <assert.h>
 
 using vespalib::Memory;
 using vespalib::WritableMemory;
@@ -33,7 +32,9 @@ StdIn::obtain()
         WritableMemory buf = _input.reserve(CHUNK_SIZE);
         ssize_t res = read(STDIN_FILENO, buf.data, buf.size);
         _eof = (res == 0);
-        assert(res >= 0); // fail on stdio read errors
+        if (res < 0) {
+            throw Broken();
+        }
         _input.commit(res);
     }
     return _input.obtain();
@@ -60,8 +61,12 @@ StdOut::commit(size_t bytes)
     _output.commit(bytes);
     Memory buf = _output.obtain();
     ssize_t res = write(STDOUT_FILENO, buf.data, buf.size);
-    assert(res == ssize_t(buf.size)); // fail on stdout write failures
-    _output.evict(res);
+    if (res > 0) {
+        _output.evict(res);
+    }
+    if (res != ssize_t(buf.size)) {
+        throw Broken();
+    }
     return *this;
 }
 

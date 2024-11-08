@@ -2,4 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("proton_common_test");
+
 GTEST_MAIN_RUN_ALL_TESTS()

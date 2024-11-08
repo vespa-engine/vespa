@@ -592,13 +592,17 @@ struct Fixture {
     }
 
     bool save() {
-        return _attr->save();
+        auto result = _attr->save();
+        EXPECT_NE(0, _attr->size_on_disk());
+        return result;
     }
 
     bool load() {
         _tensorAttr = makeAttr();
         _attr = _tensorAttr;
-        return _attr->load();
+        auto result = _attr->load();
+        EXPECT_NE(0, _attr->size_on_disk());
+        return result;
     }
 
     void loadWithExecutor() {
@@ -606,6 +610,7 @@ struct Fixture {
         _attr = _tensorAttr;
         bool loadok = _attr->load(&_executor);
         EXPECT_TRUE(loadok);
+        EXPECT_NE(0, _attr->size_on_disk());
     }
 
     TensorSpec expDenseTensor3() const {

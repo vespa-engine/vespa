@@ -68,7 +68,8 @@ public class YQLDocument implements DocumentManager {
         this.scheduler = scheduler;
     }
 
-    private ParseContext getParseContext() {
+    @Override
+    public ParseContext getParseContext() {
         ParseContext context = new ParseContext(fileContent, logger, fileURI, schemaIndex, scheduler);
         context.useVespaGroupingIdentifiers();
         return context;

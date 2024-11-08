@@ -163,7 +163,8 @@ Fixture::Fixture(bool file_config)
                              _fileHeaderContext,
                              std::make_shared<search::attribute::Interlock>(),
                              make_config_store(),
-                             std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo);
+                             std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo,
+                             std::shared_ptr<search::diskindex::IPostingListCache>());
     _db->start();
     _db->waitForOnlineState();
 }

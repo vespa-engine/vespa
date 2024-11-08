@@ -19,7 +19,7 @@ public:
     ~TestDiskIndex();
     DiskIndex & getIndex() { return *_index; }
     void buildSchema();
-    void openIndex(const std::string &dir, bool directio, bool readmmap,
+    void openIndex(const std::string &dir, bool directio, bool readmmap, bool use_posting_list_cache,
                    bool fieldEmpty, bool docEmpty, bool wordEmpty);
 };
 

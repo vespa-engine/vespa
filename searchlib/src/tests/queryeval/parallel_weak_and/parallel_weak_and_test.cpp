@@ -113,7 +113,7 @@ WandTestSpec<HeapType>::WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdju
     : WandSpec(),
       heap(scoresToTrack),
       rootMatchData(),
-      matchParams(heap, scoreThreshold, thresholdBoostFactor, scoresAdjustFrequency),
+      matchParams(heap, scoreThreshold, thresholdBoostFactor, scoresAdjustFrequency, 0),
       matching_phase(MatchingPhase::FIRST_PHASE)
 {}
 
@@ -739,7 +739,7 @@ public:
     explicit Verifier(bool use_dww) : _use_dww(use_dww) { }
 private:
     SearchIterator::UP create(bool strict) const override {
-        MatchParams match_params(_dummy_heap, _dummy_heap.getMinScore(), 1.0, 1);
+        MatchParams match_params(_dummy_heap, _dummy_heap.getMinScore(), 1.0, 1, 0);
         std::vector<IDirectPostingStore::LookupResult> dict_entries;
         for (size_t i = 0; i < _num_children; ++i) {
             dict_entries.push_back(_helper.dww().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dww().get_dictionary_snapshot()));

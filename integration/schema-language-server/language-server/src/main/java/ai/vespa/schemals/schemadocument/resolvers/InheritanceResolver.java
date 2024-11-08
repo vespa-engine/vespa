@@ -156,16 +156,17 @@ public class InheritanceResolver {
         if (myRankProfileDefinitionNode == null) return;
         if (!myRankProfileDefinitionNode.hasSymbol() || myRankProfileDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;
 
-        if (inheritedIdentifier.equals("default")) {
-            inheritanceNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
-            return;
-        }
-
-
         List<Symbol> parentSymbols = context.schemaIndex().findSymbols(inheritanceNode.getSymbol());
 
-        if (parentSymbols.isEmpty()) {
-            // Handled in resolve symbol ref
+        if (parentSymbols.isEmpty() || 
+            // prevents rank-profile default inherits default from causing cyclic inheritance
+            (inheritedIdentifier.equals("default") && myRankProfileDefinitionNode.getSymbol().getShortIdentifier().equals("default"))
+        ) {
+            if (inheritedIdentifier.equals("default")) {
+                inheritanceNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+                return;
+            }
+            // Otherwise handled in resolve symbol ref
             return;
         }
 

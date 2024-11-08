@@ -1324,35 +1324,26 @@ TEST_F(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
     EXPECT_EQ(0.48, params.global_filter_upper_limit);
 }
 
-TEST_F(MatchingTest, abs_weak_and_stop_word_limit_is_calculated_correctly)
-{
-    AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
-    EXPECT_EQ(WeakAndStopWordLimit::DEFAULT_VALUE, 1.0);
-    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 1.0);
-    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(-1));
-    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(-1));
-    f.rank_setup.set_weakand_stop_word_limit(0.0);
-    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 0.0);
-    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(0));
-    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(0));
-    f.rank_setup.set_weakand_stop_word_limit(0.25);
-    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 0.25);
-    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(25));
-    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(250));
-    f.rank_setup.set_weakand_stop_word_limit(0.99);
-    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_limit(), 0.99);
-    EXPECT_EQ(f.extract(5, 100).abs_weakand_stop_word_limit, uint32_t(99));
-    EXPECT_EQ(f.extract(5, 1000).abs_weakand_stop_word_limit, uint32_t(990));
-}
-
 TEST_F(MatchingTest, weak_and_stop_word_strategy_is_resolved_correctly)
 {
     AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
-    EXPECT_EQ(WeakAndStopWordStrategy::DEFAULT_VALUE, WeakAndStopWordStrategy::Value::KEEP);
-    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_strategy(), WeakAndStopWordStrategy::Value::KEEP);
-    EXPECT_EQ(f.extract().weakand_stop_word_strategy, WeakAndStopWordStrategy::Value::KEEP);
-    f.rank_setup.set_weakand_stop_word_strategy(WeakAndStopWordStrategy::Value::DROP);
-    EXPECT_EQ(f.extract().weakand_stop_word_strategy, WeakAndStopWordStrategy::Value::DROP);
+    EXPECT_EQ(WeakAndStopWordAdjustLimit::DEFAULT_VALUE, 1.0);
+    EXPECT_EQ(WeakAndStopWordDropLimit::DEFAULT_VALUE, 1.0);
+    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_adjust_limit(), 1.0);
+    EXPECT_EQ(f.rank_setup.get_weakand_stop_word_drop_limit(), 1.0);
+    auto stop_words = f.extract(5, 1000).weakand_stop_word_strategy;
+    EXPECT_FALSE(stop_words.auto_adjust());
+    EXPECT_TRUE(stop_words.keep_all());
+    EXPECT_EQ(stop_words.adjust_distance(uint32_t(-1)), 0);
+    EXPECT_FALSE(stop_words.should_drop(uint32_t(-1)));
+    f.rank_setup.set_weakand_stop_word_adjust_limit(0.05);
+    f.rank_setup.set_weakand_stop_word_drop_limit(0.5);
+    stop_words = f.extract(5, 1000).weakand_stop_word_strategy;
+    EXPECT_EQ(stop_words.adjust_distance(49), 1);
+    EXPECT_EQ(stop_words.adjust_distance(50), 0);
+    EXPECT_EQ(stop_words.adjust_distance(51), 1);
+    EXPECT_FALSE(stop_words.should_drop(500));
+    EXPECT_TRUE(stop_words.should_drop(501));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

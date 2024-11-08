@@ -4,8 +4,10 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Optional;
 
 import ai.vespa.schemals.common.ClientLogger;
@@ -56,6 +58,7 @@ public class SchemaIndex {
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
     private Map<Symbol, List<Symbol>> symbolReferences;
     private Map<Symbol, Symbol> definitionOfReference;
+    private Set<Symbol> unresolvedSymbols;
 
     // TODO: bad to use string as node type here.
     private InheritanceGraph<String> documentInheritanceGraph;
@@ -77,6 +80,7 @@ public class SchemaIndex {
         this.symbolDefinitions     = new HashMap<>();
         this.symbolReferences      = new HashMap<>();
         this.definitionOfReference = new HashMap<>();
+        this.unresolvedSymbols     = new HashSet<>();
 
         for (SymbolType type : SymbolType.values()) {
             this.symbolDefinitions.put(type, new ArrayList<Symbol>());
@@ -153,6 +157,9 @@ public class SchemaIndex {
                 }
             }
         }
+
+        // Clear unresolved symbols from this document
+        this.unresolvedSymbols.removeIf(symbol -> symbol.fileURIEquals(fileURIURI));
 
         this.fieldIndex.clearFieldsByURI(fileURIURI);
 
@@ -442,6 +449,18 @@ public class SchemaIndex {
 
         definitionOfReference.put(reference, definition);
         list.add(reference);
+
+        if (reference.getType() == SymbolType.RANK_PROFILE && reference.getScope() != null) {
+            tryRegisterRankProfileInheritance(reference.getScope(), definition);
+        }
+
+        if (reference.getType() == SymbolType.STRUCT && reference.getScope() != null) {
+            tryRegisterStructInheritance(reference.getScope(), definition);
+        }
+
+        if (reference.getType() == SymbolType.DOCUMENT_SUMMARY && reference.getScope() != null) {
+            tryRegisterDocumentSummaryInheritance(reference.getScope(), definition);
+        }
     }
 
 
@@ -536,6 +555,15 @@ public class SchemaIndex {
             );
         }
         return ret;
+    }
+
+    public void addUnresolvedSymbol(Symbol unresolvedSymbol) {
+        unresolvedSymbols.add(unresolvedSymbol);
+    }
+
+    public List<Symbol> getUnresolvedSymbols() {
+        unresolvedSymbols.removeIf(symbol -> getSymbolDefinition(symbol).isPresent());
+        return List.copyOf(unresolvedSymbols);
     }
 
     /**

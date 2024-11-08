@@ -37,7 +37,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
-import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;

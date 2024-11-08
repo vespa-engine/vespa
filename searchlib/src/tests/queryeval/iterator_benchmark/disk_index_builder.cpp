@@ -79,7 +79,7 @@ DiskIndexBuilder::build()
 {
     _field_builder.reset();
     _selector.extractSaveInfo(_index_dir + "/selector")->save(_tune_file_attributes, _file_header_ctx);
-    auto index = std::make_unique<DiskIndex>(_index_dir);
+    auto index = std::make_unique<DiskIndex>(_index_dir, std::shared_ptr<search::diskindex::IPostingListCache>());
     bool setup = index->setup(_tune_file_search);
     assert(setup);
     return std::make_unique<DiskIndexSearchable>(std::move(index));

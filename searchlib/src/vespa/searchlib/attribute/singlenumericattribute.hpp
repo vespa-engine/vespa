@@ -119,6 +119,7 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(T)) == 0);
+    this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
     std::span<const T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));
     attribute::loadFromEnumeratedSingleValue(_data, getGenerationHolder(), attrReader,
@@ -153,6 +154,7 @@ SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
 
     B::setNumDocs(sz);
     B::setCommittedDocIdLimit(sz);
+    this->set_size_on_disk(attrReader.size_on_disk());
 
     return true;
 }

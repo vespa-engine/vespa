@@ -46,16 +46,20 @@ public:
         matching::QueryLimiter            &_queryLimiter;
         const std::atomic<steady_time>    &_now_ref;
         vespalib::Executor                &_warmupExecutor;
+        std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
 
         Context(const FastAccessDocSubDB::Context &fastUpdCtx,
                 matching::QueryLimiter &queryLimiter,
                 const std::atomic<steady_time> & now_ref,
-                vespalib:: Executor &warmupExecutor)
+                vespalib:: Executor &warmupExecutor,
+                std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache)
             : _fastUpdCtx(fastUpdCtx),
               _queryLimiter(queryLimiter),
               _now_ref(now_ref),
-              _warmupExecutor(warmupExecutor)
+              _warmupExecutor(warmupExecutor),
+              _posting_list_cache(std::move(posting_list_cache))
         { }
+        ~Context();
     };
 
 private:
@@ -72,6 +76,7 @@ private:
     vespalib::Executor                         &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
     DocumentDBFlushConfig                       _flushConfig;
+    std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
 
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>

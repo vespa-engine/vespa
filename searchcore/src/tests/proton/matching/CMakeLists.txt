@@ -52,6 +52,7 @@ vespa_add_executable(searchcore_resolveviewvisitor_test_app TEST
     resolveviewvisitor_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_resolveviewvisitor_test_app COMMAND searchcore_resolveviewvisitor_test_app)
 vespa_add_executable(searchcore_querynodes_test_app TEST

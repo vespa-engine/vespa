@@ -75,7 +75,8 @@ public class SchemaDocument implements DocumentManager {
         this.scheduler = scheduler;
     }
     
-    public ParseContext getParseContext(String content) {
+    @Override
+    public ParseContext getParseContext() {
         ParseContext context = new ParseContext(content, this.logger, this.fileURI, this.schemaIndex, this.scheduler);
         context.useDocumentIdentifiers();
         return context;
@@ -100,7 +101,7 @@ public class SchemaDocument implements DocumentManager {
         schemaIndex.clearDocument(fileURI);
 
         logger.info("Parsing: " + fileURI);
-        ParseContext context = getParseContext(content);
+        ParseContext context = getParseContext();
         var parsingResult = parseContent(context);
 
         parsingResult.diagnostics().addAll(verifyFileName());

@@ -46,8 +46,8 @@ public class GuardTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new GuardExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected int input, but no input is specified");
-        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string");
+        assertVerifyThrows("Invalid expression 'guard { SimpleExpression; }': Expected int input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'guard { SimpleExpression; }': Expected int input, got string", DataType.STRING, exp);
     }
 
     @Test

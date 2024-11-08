@@ -69,7 +69,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
     _saver = attr.initSave(_flushFile);
     if (!_saver) {
-        // New style background save not available, use old style save.
+        // New style background save not available, use old style save and flush to memory buffer.
         attr.save(_saveTarget, _flushFile);
     }
 }
@@ -82,8 +82,7 @@ FlushableAttribute::Flusher::saveAttribute()
     std::filesystem::create_directory(std::filesystem::path(vespalib::dirname(_flushFile)));
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext, _syncToken);
     bool saveSuccess = true;
-    if (_saver && _saver->hasGenerationGuard() &&
-        _fattr._hwInfo.disk().slow()) {
+    if (_saver && _saver->hasGenerationGuard() && _fattr._hwInfo.disk().slow()) {
         saveSuccess = _saver->save(_saveTarget);
         _saver.reset();
     }
@@ -94,6 +93,7 @@ FlushableAttribute::Flusher::saveAttribute()
             _saver.reset();
         } else {
             saveSuccess = _saveTarget.writeToFile(_fattr._tuneFileAttributes, fileHeaderContext);
+            _fattr._attr->set_size_on_disk(_saveTarget.size_on_disk());
         }
     }
     return saveSuccess;

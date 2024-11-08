@@ -41,29 +41,30 @@ public class IfThenTestCase {
         Expression exp = newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
                                           DataType.STRING, DataType.STRING);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
-        assertVerifyThrows(null, () -> newRequiredInput(DataType.INT, Comparator.EQ, DataType.STRING,
-                                                  DataType.STRING, DataType.STRING),
-                           "Operands require conflicting input types, int vs string");
-        assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.INT,
-                                                  DataType.STRING, DataType.STRING),
-                           "Operands require conflicting input types, string vs int");
-        assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
-                                                  DataType.INT, DataType.STRING),
-                           "Operands require conflicting input types, string vs int");
-        assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
-                                                  DataType.STRING, DataType.INT),
-                           "Operands require conflicting input types, string vs int");
+        String prefix = "Invalid expression 'if (SimpleExpression == SimpleExpression) { SimpleExpression; } else { SimpleExpression; }': ";
+        assertVerifyThrows(prefix + "Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows(prefix + "Expected string input, got int", DataType.INT, exp);
+        assertVerifyThrows("Invalid expression of type 'IfThenExpression': Operands require conflicting input types, int vs string", null, () -> newRequiredInput(DataType.INT, Comparator.EQ, DataType.STRING,
+                                                                                                                            DataType.STRING, DataType.STRING)
+                          );
+        assertVerifyThrows("Invalid expression of type 'IfThenExpression': Operands require conflicting input types, string vs int", null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.INT,
+                                                                                                                            DataType.STRING, DataType.STRING)
+                          );
+        assertVerifyThrows("Invalid expression of type 'IfThenExpression': Operands require conflicting input types, string vs int", null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
+                                                                                                                            DataType.INT, DataType.STRING)
+                          );
+        assertVerifyThrows("Invalid expression of type 'IfThenExpression': Operands require conflicting input types, string vs int", null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
+                                                                                                                            DataType.STRING, DataType.INT)
+                          );
     }
 
     @Test
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.STRING, new FlattenExpression(), DataType.STRING);
-        assertVerifyThrows(null, new FlattenExpression(),
-                           "Expected string input, but no input is specified");
-        assertVerifyThrows(DataType.INT, new FlattenExpression(),
-                           "Expected string input, got int");
+        assertVerifyThrows("Invalid expression 'flatten': Expected string input, but no input is specified", null, new FlattenExpression()
+                          );
+        assertVerifyThrows("Invalid expression 'flatten': Expected string input, got int", DataType.INT, new FlattenExpression()
+                          );
     }
 
     @Test

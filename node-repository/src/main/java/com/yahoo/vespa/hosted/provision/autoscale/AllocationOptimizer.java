@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
@@ -57,12 +59,15 @@ public class AllocationOptimizer {
      *         fully or partially, within the limits. The list contains the three best allocations, sorted from most to least preferred.
      */
     public List<AllocatableResources> findBestAllocations(Load loadAdjustment, ClusterModel model, Limits limits, boolean logDetails) {
-        if (limits.isEmpty())
-            limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
-                               new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
+        if (limits.isEmpty()) {
+            int maximumGroups = model.clusterSpec().type() == ClusterSpec.Type.container ? 1 : maximumNodes;
+            limits = Limits.of(new ClusterResources(minimumNodes, 1, NodeResources.unspecified()),
+                               new ClusterResources(maximumNodes, maximumGroups, NodeResources.unspecified()),
                                IntRange.empty());
-        else
+        }
+        else {
             limits = atLeast(minimumNodes, limits).fullySpecified(model.current().clusterSpec(), nodeRepository, model.application().id());
+        }
         List<AllocatableResources> bestAllocations = new ArrayList<>();
         List<NodeResources> availableRealHostResources = availableRealHostResources(model);
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {

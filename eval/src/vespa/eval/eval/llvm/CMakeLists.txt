@@ -7,3 +7,8 @@ vespa_add_library(eval_eval_llvm OBJECT
     deinline_forest.cpp
     llvm_wrapper.cpp
 )
+if (APPLE)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set_source_files_properties(addr_to_symbol.cpp PROPERTIES COMPILE_OPTIONS "-Wno-error=deprecated-declarations")
+    endif()
+endif()

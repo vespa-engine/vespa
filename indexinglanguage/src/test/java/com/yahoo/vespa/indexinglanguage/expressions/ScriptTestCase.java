@@ -6,7 +6,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.Array;
-import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
@@ -62,12 +61,12 @@ public class ScriptTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
         assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected int input, but no input is specified");
-        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string");
+        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected int input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected int input, got string", DataType.STRING, exp);
 
-        assertVerifyThrows(null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
-                                           newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT))),
-                           "Statements require conflicting input types, int vs string");
+        assertVerifyThrows("Invalid expression of type 'ScriptExpression': Statements require conflicting input types, int vs string", null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
+                                                                                                                                                          newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT)))
+                          );
     }
 
     @Test
@@ -157,7 +156,7 @@ public class ScriptTestCase {
     public void testGetStructField() {
         var structType = new StructDataType("myStruct");
         var stringField = new Field("stringField", DataType.STRING);
-        var intField = new Field("intField", DataType.INT); // Nopt accesseed
+        var intField = new Field("intField", DataType.INT); // Not accessed
         structType.addField(stringField);
         structType.addField(intField);
 

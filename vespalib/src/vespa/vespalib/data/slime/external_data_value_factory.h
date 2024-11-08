@@ -14,7 +14,7 @@ struct ExternalMemory;
  **/
 struct ExternalDataValueFactory : public ValueFactory {
     mutable std::unique_ptr<ExternalMemory> input;
-    ExternalDataValueFactory(std::unique_ptr<ExternalMemory> in) : input(std::move(in)) {}
+    ExternalDataValueFactory(std::unique_ptr<ExternalMemory> in);
     ~ExternalDataValueFactory() override;
     Value *create(Stash &stash) const override;
 };
