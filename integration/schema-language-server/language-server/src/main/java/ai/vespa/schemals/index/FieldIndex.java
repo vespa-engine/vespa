@@ -17,7 +17,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.importField;
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 
 /**
  * FieldIndex
@@ -36,11 +36,11 @@ public class FieldIndex {
      * Simulating a struct because record is immutable
      */
     public class FieldIndexEntry {
-        public SchemaNode dataTypeNode;
+        public Node dataTypeNode;
         public EnumSet<IndexingType> indexingTypes = EnumSet.noneOf(IndexingType.class);
         public boolean isInsideDoc = true;
 
-        FieldIndexEntry(SchemaNode dataTypeNode, boolean isInsideDoc) {
+        FieldIndexEntry(Node dataTypeNode, boolean isInsideDoc) {
             this.dataTypeNode = dataTypeNode;
             this.isInsideDoc = isInsideDoc;
         }
@@ -76,7 +76,7 @@ public class FieldIndex {
         }
         if (database.containsKey(fieldDefinition)) return;
 
-        SchemaNode dataTypeNode = resolveFieldDataTypeNode(fieldDefinition);
+        Node dataTypeNode = resolveFieldDataTypeNode(fieldDefinition);
         database.put(fieldDefinition, new FieldIndexEntry(dataTypeNode, resolveIsInsideDoc(fieldDefinition)));
     }
 
@@ -95,7 +95,7 @@ public class FieldIndex {
         }
     }
 
-    public Optional<SchemaNode> getFieldDataTypeNode(Symbol fieldDefinition) {
+    public Optional<Node> getFieldDataTypeNode(Symbol fieldDefinition) {
         FieldIndexEntry entry = database.get(fieldDefinition);
         if (entry == null) return Optional.empty();
         if (entry.dataTypeNode != null) return Optional.of(entry.dataTypeNode);
@@ -126,7 +126,7 @@ public class FieldIndex {
      * This function tries to find the definition of said struct (or map) if it exists.
      */
     public Optional<Symbol> findFieldStructDefinition(Symbol fieldDefinition) {
-        Optional<SchemaNode> dataTypeNode = getFieldDataTypeNode(fieldDefinition);
+        Optional<Node> dataTypeNode = getFieldDataTypeNode(fieldDefinition);
         if (dataTypeNode.isEmpty()) return Optional.empty();
 
         if (dataTypeNode.get().hasSymbol()) {
@@ -135,13 +135,16 @@ public class FieldIndex {
 
             return schemaIndex.getSymbolDefinition(dataTypeNode.get().getSymbol());
         }
-        dataType originalNode = (dataType)dataTypeNode.get().getOriginalSchemaNode();
+
+        if (!dataTypeNode.get().isSchemaNode()) return Optional.empty();
+        dataType originalNode = (dataType)dataTypeNode.get().getSchemaNode().getOriginalSchemaNode();
+        
         if (originalNode.getParsedType().getVariant() == Variant.MAP) {
             return Optional.of(fieldDefinition);
         } else if (originalNode.getParsedType().getVariant() == Variant.ARRAY) {
             if (dataTypeNode.get().size() < 3 || !dataTypeNode.get().get(2).isASTInstance(dataType.class)) return Optional.empty();
 
-            SchemaNode innerType = dataTypeNode.get().get(2);
+            Node innerType = dataTypeNode.get().get(2);
 
             if (!innerType.hasSymbol() || innerType.getSymbol().getType() != SymbolType.STRUCT) return Optional.empty();
 
@@ -156,15 +159,15 @@ public class FieldIndex {
      * Try to find the node that holds the dataType element
      * Also try to not fall into an infinite loop. It could possibly happen if there are cyclic field references somehow
      */
-    private SchemaNode resolveFieldDataTypeNode(Symbol fieldDefinition) { 
+    private Node resolveFieldDataTypeNode(Symbol fieldDefinition) { 
         fieldDefinition = schemaIndex.getFirstSymbolDefinition(fieldDefinition).get();
         return resolveFieldDataTypeNode(fieldDefinition, new HashSet<>()); 
     }
 
-    private SchemaNode resolveFieldDataTypeNode(Symbol fieldDefinition, Set<Symbol> visited) {
+    private Node resolveFieldDataTypeNode(Symbol fieldDefinition, Set<Symbol> visited) {
         if (visited.contains(fieldDefinition)) return null;
         visited.add(fieldDefinition);
-        SchemaNode fieldDefinitionNode = fieldDefinition.getNode();
+        Node fieldDefinitionNode = fieldDefinition.getNode();
 
         if (fieldDefinitionNode.isASTInstance(dataType.class)) {
             // For map key and value
@@ -172,7 +175,7 @@ public class FieldIndex {
         }
 
         if (fieldDefinitionNode.getParent().isASTInstance(importField.class)) {
-            SchemaNode importReferenceNode = fieldDefinitionNode.getPreviousSibling().getPreviousSibling();
+            Node importReferenceNode = fieldDefinitionNode.getPreviousSibling().getPreviousSibling();
             if (!importReferenceNode.hasSymbol() || importReferenceNode.getSymbol().getStatus() != SymbolStatus.REFERENCE) return null;
             Optional<Symbol> referencedField = schemaIndex.getSymbolDefinition(importReferenceNode.getSymbol());
             if (referencedField.isEmpty()) return null;
@@ -190,7 +193,7 @@ public class FieldIndex {
         if (fieldDefinition.getScope() != null && fieldDefinition.getScope().getType() == SymbolType.FIELD && fieldDefinition.getScope().getStatus() == SymbolStatus.DEFINITION) {
             return resolveIsInsideDoc(fieldDefinition.getScope());
         }
-        SchemaNode fieldDefinitionNode = fieldDefinition.getNode();
+        Node fieldDefinitionNode = fieldDefinition.getNode();
         if (fieldDefinitionNode.getParent().isASTInstance(importField.class)) return false;
         if (fieldDefinitionNode.getParent().getParent().isASTInstance(fieldOutsideDoc.class)) return false;
         return true;

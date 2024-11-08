@@ -27,8 +27,9 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 
 /**
  * SymbolReferenceResolver goes through the unresolved symbol references and searches for their definition and marks the symbols as reference.
@@ -48,17 +49,17 @@ public class SymbolReferenceResolver {
 
             // Two cases for where the parent field is defined. Either inside a struct or "global".
             if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
-                SchemaNode outNode = node.getParent();
-                SchemaNode parentNode = outNode.getParent();
+                Node outNode = node.getParent();
+                Node parentNode = outNode.getParent();
 
                 int outNodeIndex = parentNode.indexOf(outNode);
                 if (outNodeIndex == 0) {
-                    SchemaNode fieldDefinitionNode = parentNode.getSibling(-2);
+                    Node fieldDefinitionNode = parentNode.getSibling(-2);
                     if (fieldDefinitionNode != null && fieldDefinitionNode.hasSymbol()) {
                         parentFieldDefinition = context.schemaIndex().getSymbolDefinition(fieldDefinitionNode.getSymbol());
                     }
                 } else {
-                    SchemaNode previousOutNode = parentNode.get(outNodeIndex - 2);
+                    Node previousOutNode = parentNode.get(outNodeIndex - 2);
                     if (previousOutNode != null && previousOutNode.size() > 0 && previousOutNode.get(0).hasSymbol()) {
                         parentFieldDefinition = context.schemaIndex().getSymbolDefinition(previousOutNode.get(0).getSymbol());
                     }
@@ -66,8 +67,8 @@ public class SymbolReferenceResolver {
 
             } else {
 
-                SchemaNode parentField = node.getPreviousSibling();
-                if (parentField.isASTInstance(DOT.class))parentField = parentField.getPreviousSibling();
+                Node parentField = node.getPreviousSibling();
+                if (parentField.getASTClass() == DOT.class) parentField = parentField.getPreviousSibling();
 
                 if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
                     parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
@@ -83,7 +84,7 @@ public class SymbolReferenceResolver {
 
             if (referencedSymbol.isEmpty()) {
                 // could be built in
-                SchemaNode parent = node.getParent();
+                SchemaNode parent = node.getParent().getSchemaNode();
 
                 if ((parent.getOriginalRankExpressionNode() instanceof BaseNode) && ((BaseNode)parent.getOriginalRankExpressionNode()).expressionNode instanceof FunctionNode) {
                     node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
@@ -125,7 +126,7 @@ public class SymbolReferenceResolver {
 
         } else if (
             referencedType == SymbolType.RANK_PROFILE 
-         && node.getParent().isASTInstance(featureListElm.class)
+         && node.getParent().getASTClass() == featureListElm.class
          && node.getSymbol().getScope() != null 
          && node.getSymbol().getScope().getType() == SymbolType.RANK_PROFILE) {
             // This happens if you write i.e. summary-features inherits some_profile
@@ -228,11 +229,11 @@ public class SymbolReferenceResolver {
         SchemaNode dataTypeNode = null;
         Optional<Symbol> referencedSymbol = Optional.empty();
         if (fieldDefinition.getType() == SymbolType.MAP_VALUE) {
-            dataTypeNode = fieldDefinition.getNode();
+            dataTypeNode = fieldDefinition.getNode().getSchemaNode();
         } else if (fieldDefinition.getType() == SymbolType.FIELD) {
             if (fieldDefinition.getNode().getNextSibling() == null || fieldDefinition.getNode().getNextSibling().getNextSibling() == null) return Optional.empty();
-            dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
-            if (!dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
+            dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling().getSchemaNode();
+            if (!(dataTypeNode.getASTClass() == dataType.class)) return Optional.empty();
 
 
             if (dataTypeNode.hasSymbol()) {
@@ -242,7 +243,7 @@ public class SymbolReferenceResolver {
                 Symbol structReference = dataTypeNode.getSymbol();
                 Symbol structDefinition = context.schemaIndex().getSymbolDefinition(structReference).get();
                 return resolveFieldInStructReference(node, structDefinition, context);
-            } else if (dataTypeNode.get(0).isASTInstance(REFERENCE.class)) {
+            } else if (dataTypeNode.get(0).getASTClass() == REFERENCE.class) {
                 if (dataTypeNode.size() < 3 || !dataTypeNode.get(2).get(0).hasSymbol()) return Optional.empty();
                 Symbol documentReference = dataTypeNode.get(2).get(0).getSymbol();
 
@@ -265,7 +266,7 @@ public class SymbolReferenceResolver {
                     // We identified the reference and found the definition,
                     // however this case is actually only valid in an import field statement.
                     // So we should add an error if thats not the case
-                    if (!node.getParent().isASTInstance(importField.class)) {
+                    if (node.getParent().getASTClass() != importField.class) {
                         diagnostics.add(new SchemaDiagnostic.Builder()
                                 .setRange( node.getRange())
                                 .setMessage( "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly. Hint: Add an import field statement to access the field.")
@@ -309,9 +310,9 @@ public class SymbolReferenceResolver {
         if (originalNode.getParsedType().getVariant() == Variant.MAP) {
             return resolveMapValueReference(node, fieldDefinition, context);
         } else if (originalNode.getParsedType().getVariant() == Variant.ARRAY) {
-            if (dataTypeNode.size() < 3 || !dataTypeNode.get(2).isASTInstance(dataType.class)) return Optional.empty();
+            if (dataTypeNode.size() < 3 || dataTypeNode.get(2).getASTClass() != dataType.class) return Optional.empty();
 
-            SchemaNode innerType = dataTypeNode.get(2);
+            Node innerType = dataTypeNode.get(2);
             if (!isStructReference(innerType)) return Optional.empty();
 
             Symbol structReference = innerType.getSymbol();
@@ -354,19 +355,19 @@ public class SymbolReferenceResolver {
         return referencedSymbol;
     }
 
-    private static boolean isStructReference(SchemaNode node) {
+    private static boolean isStructReference(Node node) {
         return node != null && node.hasSymbol() && node.getSymbol().getType() == SymbolType.STRUCT && node.getSymbol().getStatus() == SymbolStatus.REFERENCE;
     }
 
     private static Optional<Symbol> findMapValueDefinition(ParseContext context, Symbol fieldDefinition) {
         if (fieldDefinition.getType() != SymbolType.FIELD) return Optional.empty();
-        SchemaNode dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
+        Node dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
 
-        if (dataTypeNode == null || !dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
+        if (dataTypeNode == null || !(dataTypeNode.getASTClass() == dataType.class)) return Optional.empty();
 
-        if (dataTypeNode.size() == 0 || !dataTypeNode.get(0).isASTInstance(mapDataType.class)) return Optional.empty();
+        if (dataTypeNode.size() == 0 || !(dataTypeNode.get(0).getASTClass() == mapDataType.class)) return Optional.empty();
 
-        SchemaNode valueNode = dataTypeNode.get(0).get(4);
+        Node valueNode = dataTypeNode.get(0).get(4);
 
         if (!valueNode.hasSymbol()) return Optional.empty();
 
@@ -389,18 +390,18 @@ public class SymbolReferenceResolver {
      * TODO: refactor. Not everything here should be label
      */
     private static boolean didExpectLabel(SchemaNode node, List<Diagnostic> diagnostics) {
-        SchemaNode argsNode = node.getParent();
+        Node argsNode = node.getParent();
         SchemaNode argsChild = node;
 
-        while (argsNode != null && !argsNode.isASTInstance(args.class)) {
-            argsChild = argsNode;
+        while (argsNode != null && argsNode.getASTClass() != args.class) {
+            argsChild = argsNode.getSchemaNode();
             argsNode = argsNode.getParent();
         }
 
         if (argsNode == null) return false;
 
-        SchemaNode identifierNode = argsNode.getParent().get(0);
-        SchemaNode containingFeature = argsNode.getParent();
+        Node identifierNode = argsNode.getParent().get(0);
+        SchemaNode containingFeature = argsNode.getParent().getSchemaNode();
 
         // we can be certain that this is a ReferenceNode
         ReferenceNode functionExpressionNode = (ReferenceNode)((BaseNode)containingFeature.getOriginalRankExpressionNode()).expressionNode;

@@ -12,6 +12,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -54,7 +55,7 @@ public class TypeCompletion implements CompletionProvider {
     }
 
     private boolean isInsideTensor(EventCompletionContext context) {
-        SchemaNode lastClean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
+        Node lastClean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
 
         if (!lastClean.getText().startsWith("tensor")) return false;
 

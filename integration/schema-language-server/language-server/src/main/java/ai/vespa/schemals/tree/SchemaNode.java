@@ -1,8 +1,5 @@
 package ai.vespa.schemals.tree;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Position;
@@ -16,7 +13,6 @@ import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
@@ -29,33 +25,17 @@ import ai.vespa.schemals.parser.ast.featureListElm;
  * SchemaNode represents a node in the AST of a file the language server parses.
  * The node exposes a general interface to handle different AST from different parsers.
  */
-public class SchemaNode implements Iterable<SchemaNode> {
-
-    public enum LanguageType {
-        SCHEMA,
-        INDEXING,
-        RANK_EXPRESSION,
-        CUSTOM
-    }
-
-    private LanguageType language; // Language specifies which parser the node comes from
+public class SchemaNode extends Node {
+    
     private String identifierString;
-    private Range range;
-    private boolean isDirty = false;
-
-    private Symbol symbolAtNode;
     
-    // This array has to be in order, without overlapping elements
-    private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
-    private SchemaNode parent;
-    
-    private Node originalSchemaNode;
+    private ai.vespa.schemals.parser.Node originalSchemaNode;
     private ai.vespa.schemals.parser.indexinglanguage.Node originalIndexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node originalRankExpressionNode;
 
     // Special properties for node in the CUSTOM language
     private String contentString;
-    private Class<? extends Node> simulatedSchemaClass;
+    private Class<? extends ai.vespa.schemals.parser.Node> simulatedSchemaClass;
 
     // The tokenType for leaf nodes for different languages
     private TokenType schemaType;
@@ -65,10 +45,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private Optional<RankNode> rankNode = Optional.empty();
 
     private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
-        this.language = language;
-        this.range = range;
+        super(language, range, isDirty);
         this.identifierString = identifierString;
-        this.isDirty = isDirty;
     }
 
     // To create tokens outside the other languages
@@ -77,7 +55,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.contentString = contentString;
     }
     
-    public SchemaNode(Node node) {
+    public SchemaNode(ai.vespa.schemals.parser.Node node) {
         this(
             LanguageType.SCHEMA,
             CSTUtils.getNodeRange(node),
@@ -91,8 +69,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         for (var child : node) {
             if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child);
-            newNode.setParent(this);
-            children.add(newNode);
+            addChild(newNode);
         }
     }
 
@@ -113,8 +90,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         for (var child : node) {
             if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
-            newNode.setParent(this);
-            children.add(newNode);
+            addChild(newNode);
         }
 
     }
@@ -135,33 +111,9 @@ public class SchemaNode implements Iterable<SchemaNode> {
         for (var child : node) {
             if (child == null) continue;
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
-            newNode.setParent(this);
-            children.add(newNode);
+            addChild(newNode);
         }
 
-    }
-
-    private void setParent(SchemaNode parent) {
-        this.parent = parent;
-    }
-
-    public void addChild(SchemaNode child) {
-        child.setParent(this);
-        this.children.add(child);
-    }
-
-    public void addChildren(List<SchemaNode> children) {
-        for (SchemaNode child : children) {
-            addChild(child);
-        }
-    }
-
-    public void clearChildren() {
-        for (SchemaNode child : children) {
-            child.setParent(null);
-        }
-
-        children.clear();
     }
 
     private TokenType calculateSchemaType() {
@@ -190,7 +142,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     // Return token type (if the node is a token), even if the node is dirty
     public TokenType getDirtyType() {
         if (language != LanguageType.SCHEMA) return null;
-        Node.NodeType originalType = originalSchemaNode.getType();
+        ai.vespa.schemals.parser.Node.NodeType originalType = originalSchemaNode.getType();
         if (originalType instanceof TokenType)return (TokenType)originalType;
         return null;
     }
@@ -203,61 +155,19 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return type;
     }
 
-    public void setSymbol(SymbolType type, String fileURI) {
-        if (this.hasSymbol()) {
-            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
-        }
-        this.symbolAtNode = new Symbol(this, type, fileURI);
-    }
-
-    public void setSymbol(SymbolType type, String fileURI, Symbol scope) {
-        if (this.hasSymbol()) {
-            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
-        }
-        this.symbolAtNode = new Symbol(this, type, fileURI, scope);
-    }
-
-    public void setSymbol(SymbolType type, String fileURI, Optional<Symbol> scope) {
-        if (scope.isPresent()) {
-            setSymbol(type, fileURI, scope.get());
-        } else {
-            setSymbol(type, fileURI);
-        }
-    }
-
-    public void setSymbol(SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
-        if (this.hasSymbol()) {
-            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
-        }
-        this.symbolAtNode = new Symbol(this, type, fileURI, scope, shortIdentifier);
-    }
-
-    public void removeSymbol() {
-        this.symbolAtNode = null;
-    }
-
     public void setSymbolType(SymbolType newType) {
         if (!this.hasSymbol()) return;
-        this.symbolAtNode.setType(newType);
+        this.symbol.setType(newType);
     }
 
     public void setSymbolStatus(SymbolStatus newStatus) {
         if (!this.hasSymbol()) return;
-        this.symbolAtNode.setStatus(newStatus);
+        this.symbol.setStatus(newStatus);
     }
 
     public void setSymbolScope(Symbol newScope) {
         if (!this.hasSymbol()) return;
-        this.symbolAtNode.setScope(newScope);
-    }
-
-    public boolean hasSymbol() {
-        return this.symbolAtNode != null;
-    }
-
-    public Symbol getSymbol() {
-        if (!hasSymbol()) throw new IllegalArgumentException("get Symbol called on node without a symbol!");
-        return this.symbolAtNode;
+        this.symbol.setScope(newScope);
     }
 
     public boolean containsOtherLanguageData(LanguageType language) {
@@ -304,7 +214,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return false; // this.rankExpressionNode != null;
     }
 
-    public Node getOriginalSchemaNode() {
+    public ai.vespa.schemals.parser.Node getOriginalSchemaNode() {
         return originalSchemaNode;
     }
 
@@ -316,7 +226,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return this.originalRankExpressionNode;
     }
 
-    public void setSimulatedASTClass(Class<? extends Node> astClass) {
+    public void setSimulatedASTClass(Class<? extends ai.vespa.schemals.parser.Node> astClass) {
         if (language != LanguageType.CUSTOM) throw new IllegalArgumentException("Cannot set Simulated AST Class on a Schema node of type other than Custom");
 
         simulatedSchemaClass = astClass;
@@ -330,7 +240,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return false;
     }
 
-    public boolean isSchemaASTInstance(Class<? extends Node> astClass) {
+    public boolean isSchemaASTInstance(Class<? extends ai.vespa.schemals.parser.Node> astClass) {
         if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchemaClass);
         
         return astClass.isInstance(originalSchemaNode);
@@ -380,7 +290,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.range = CSTUtils.getNodeRange(originalSchemaNode);
     }
 
-    public int getOriginalBeginOffset() {
+    @Override
+    public int getBeginOffset() {
         switch (language) {
             case SCHEMA:
                 if (originalSchemaNode == null) return -1;
@@ -404,118 +315,6 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return identifierString.substring(lastIndex + 1);
     }
 
-    public Range getRange() {
-        return range;
-    }
-
-    public SchemaNode getParent(int levels) {
-        if (levels == 0) {
-            return this;
-        }
-
-        if (parent == null) {
-            return null;
-        }
-
-        return parent.getParent(levels - 1);
-    }
-
-    public SchemaNode getParent() {
-        return getParent(1);
-    }
-
-    public void insertChildAfter(int index, SchemaNode child) {
-        this.children.add(index+1, child);
-        child.setParent(this);
-    }
-
-    /**
-     * Returns the previous SchemaNode of the sibilings of the node.
-     * If there is no previous node, it moves upwards to the parent and tries to get the previous node.
-     *
-     * @return the previous SchemaNode, or null if there is no previous node
-     */
-    public SchemaNode getPrevious() {
-        if (parent == null)return null;
-
-        int parentIndex = parent.indexOf(this);
-
-        if (parentIndex == -1)return null; // invalid setup
-
-        if (parentIndex == 0)return parent;
-        return parent.get(parentIndex - 1);
-    }
-
-    /**
-     * Returns the next SchemaNode of the sibilings of the node.
-     * If there is no next node, it returns the next node of the parent node.
-     *
-     * @return the next SchemaNode or null if there is no next node
-     */
-    public SchemaNode getNext() {
-        if (parent == null) return null;
-
-        int parentIndex = parent.indexOf(this);
-
-        if (parentIndex == -1) return null;
-        
-        if (parentIndex == parent.size() - 1) return parent.getNext();
-
-        return parent.get(parentIndex + 1);
-    }
-
-    /**
-     * Returns the sibling node at the specified relative index.
-     * A sibling node is a node that shares the same parent node.
-     *
-     * @param relativeIndex the relative index of the sibling node
-     * @return the sibling node at the specified relative index, or null if the sibling node does not exist
-     */
-    public SchemaNode getSibling(int relativeIndex) {
-        if (parent == null)return null;
-
-        int parentIndex = parent.indexOf(this);
-
-        if (parentIndex == -1) return null; // invalid setup
-
-        int siblingIndex = parentIndex + relativeIndex;
-        if (siblingIndex < 0 || siblingIndex >= parent.size()) return null;
-        
-        return parent.get(siblingIndex);
-    }
-
-    /**
-     * Returns the previous sibling of this schema node.
-     * A sibling node is a node that shares the same parent node. 
-     *
-     * @return the previous sibling of this schema node, or null if there is no previous sibling
-     */
-    public SchemaNode getPreviousSibling() {
-        return getSibling(-1);
-    }
-
-    /**
-     * Returns the next sibling of this schema node.
-     * A sibling node is a node that shares the same parent node.
-     *
-     * @return the next sibling of this schema node, or null if there is no previous sibling
-     */
-    public SchemaNode getNextSibling() {
-        return getSibling(1);
-    }
-
-    public int indexOf(SchemaNode child) {
-        return this.children.indexOf(child);
-    }
-
-    public int size() {
-        return children.size();
-    }
-
-    public SchemaNode get(int i) {
-        return children.get(i);
-    }
-
     public String getText() {
         
         if (language == LanguageType.SCHEMA) {
@@ -537,20 +336,12 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return null;
     }
 
-    public boolean isLeaf() {
-        return children.size() == 0;
-    }
-
     public SchemaNode findFirstLeaf() {
-        SchemaNode ret = this;
+        Node ret = this;
         while (ret.size() > 0) {
             ret = ret.get(0);
         }
-        return ret;
-    }
-
-    public boolean getIsDirty() {
-        return isDirty;
+        return ret.getSchemaNode();
     }
 
     public IllegalArgumentException getIllegalArgumentException() {
@@ -587,13 +378,17 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return null;
     }
 
-    public LanguageType getLanguageType() { return language; }
-
     public void setRankNode(RankNode node) {
         rankNode = Optional.of(node);
     }
 
     public Optional<RankNode> getRankNode() { return rankNode; }
+
+    @Override
+    public boolean isSchemaNode() { return true; }
+
+    @Override
+    public SchemaNode getSchemaNode() { return this; }
 
     public String toString() {
         Position pos = getRange().getStart();
@@ -606,21 +401,4 @@ public class SchemaNode implements Iterable<SchemaNode> {
         ret += ")";
         return ret;
     }
-
-	@Override
-	public Iterator<SchemaNode> iterator() {
-        return new Iterator<SchemaNode>() {
-            int currentIndex = 0;
-
-			@Override
-			public boolean hasNext() {
-                return currentIndex < children.size();
-			}
-
-			@Override
-			public SchemaNode next() {
-                return children.get(currentIndex++);
-			}
-        };
-	}
 }

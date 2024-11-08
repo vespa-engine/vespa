@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 
 public class SemanticTokenMarker {
     private static final int LINE_INDEX = 0;
@@ -15,7 +15,7 @@ public class SemanticTokenMarker {
     private int modifierValue = 0;
     private Range range;
 
-    public SemanticTokenMarker(int tokenType, SchemaNode node) {
+    public SemanticTokenMarker(int tokenType, Node node) {
         this(tokenType, node.getRange());
     }
     

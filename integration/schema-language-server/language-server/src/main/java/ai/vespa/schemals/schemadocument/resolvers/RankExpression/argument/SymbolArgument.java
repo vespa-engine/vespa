@@ -32,7 +32,7 @@ public class SymbolArgument implements Argument {
         SchemaNode symbolNode = node.getSchemaNode();
 
         while (!symbolNode.hasSymbol() && symbolNode.size() > 0) {
-            symbolNode = symbolNode.get(0);
+            symbolNode = symbolNode.get(0).getSchemaNode();
         }
 
         return symbolNode;

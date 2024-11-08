@@ -3,7 +3,9 @@ package ai.vespa.schemals.common;
 import java.util.List;
 
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -56,8 +58,8 @@ public class StringUtils {
         return offsetToPosition(content, totalOffset);
     }
 
-    public static String getIndentString(String content, SchemaNode node) {
-        int offset = node.getOriginalBeginOffset();
+    public static String getIndentString(String content, Node node) {
+        int offset = node.getBeginOffset();
         int nl = content.lastIndexOf('\n', offset) + 1;
         return content.substring(nl, offset);
     }
@@ -123,6 +125,33 @@ public class StringUtils {
 
         }
         return false;
+    }
+
+    public static Position getStringPosition(String str) {
+        int lines = 0;
+        int column = str.length();
+        for (int i = str.length() - 1; i >= 0; i--) {
+            if (str.charAt(i) == '\n') {
+                if (lines == 0) {
+                    column = str.length() - i - 1;
+                }
+                lines++;
+            }
+        }
+
+        return new Position(lines, column);
+    }
+
+    public static int countNewLines(String str) {
+        int ret = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == '\n') ret++;
+        }
+        return ret;
+    }
+
+    public static Range getStringRange(String str) {
+        return new Range(new Position(0, 0), getStringPosition(str));
     }
 
 }

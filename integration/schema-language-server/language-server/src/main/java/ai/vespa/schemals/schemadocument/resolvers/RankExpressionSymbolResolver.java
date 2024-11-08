@@ -15,8 +15,9 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.RankNodeType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
@@ -41,8 +42,8 @@ public class RankExpressionSymbolResolver {
             diagnostics.addAll(resolveRankExpression(node, context));
 
         } else {
-            for (SchemaNode child : node) {
-                diagnostics.addAll(resolveRankExpressionReferences(child, context));
+            for (Node child : node) {
+                diagnostics.addAll(resolveRankExpressionReferences(child.getSchemaNode(), context));
             }
         }
 
@@ -113,7 +114,7 @@ public class RankExpressionSymbolResolver {
                 node.removeSymbol();
                 return;
             }
-            if (node.size() > 0)node = node.get(0);
+            if (node.size() > 0)node = node.get(0).getSchemaNode();
             else break;
         }
     }

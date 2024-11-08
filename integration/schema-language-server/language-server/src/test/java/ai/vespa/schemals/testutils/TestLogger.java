@@ -9,10 +9,16 @@ import ai.vespa.schemals.SchemaMessageHandler;
  * TestLogger
  */
 public class TestLogger extends ClientLogger {
+    private TestSchemaMessageHandler testMessageHandler;
 
-	public TestLogger(SchemaMessageHandler messageHandler) {
-		super(messageHandler);
-	}
+    public TestLogger(TestSchemaMessageHandler messageHandler) {
+        super(messageHandler);
+        testMessageHandler = messageHandler;
+    }
+
+    public TestLogger() {
+        this(new TestSchemaMessageHandler());
+    }
 
     public void info(Object message) {
         if (!messageHandler.connected()) return;
@@ -27,5 +33,9 @@ public class TestLogger extends ClientLogger {
     public void warning(Object message) {
         if (!messageHandler.connected()) return;
         messageHandler.logMessage(MessageType.Warning, message.toString());
+    }
+
+    public String getLog() {
+        return testMessageHandler.getLog();
     }
 }

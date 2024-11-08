@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument.parser;
+package ai.vespa.schemals.schemadocument.parser.schema;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
@@ -20,7 +21,7 @@ import ai.vespa.schemals.tree.SchemaNode;
  * 
  * Should run after symbol definition identifiers
  */
-public class IdentifyNamedDocument extends Identifier {
+public class IdentifyNamedDocument extends Identifier<SchemaNode> {
 
 	public IdentifyNamedDocument(ParseContext context) {
 		super(context);
@@ -31,7 +32,7 @@ public class IdentifyNamedDocument extends Identifier {
         ArrayList<Diagnostic> ret = new ArrayList<>();
         if (!node.isSchemaASTInstance(documentElm.class))return ret;
 
-        if (node.size() < 2 || !node.get(1).isSchemaASTInstance(identifierStr.class))return ret;
+        if (node.size() < 2 || !node.get(1).getSchemaNode().isSchemaASTInstance(identifierStr.class))return ret;
 
         Range identifierRange = node.get(1).getRange();
         String documentName = node.get(1).getText();

@@ -14,6 +14,7 @@ import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -23,7 +24,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 public class ValidateFieldSettings {
 
     public static void validateFieldSettings(ParseContext context, SchemaNode fieldElmNode, List<Diagnostic> diagnostics) {
-        SchemaNode fieldIdentifierNode = fieldElmNode.get(1);
+        Node fieldIdentifierNode = fieldElmNode.get(1);
         if (!fieldIdentifierNode.hasSymbol() || fieldIdentifierNode.getSymbol().getType() != SymbolType.FIELD || fieldIdentifierNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;
 
         /*
@@ -31,9 +32,9 @@ public class ValidateFieldSettings {
          * */
         if (fieldIdentifierNode.getNextSibling() != null 
                 && fieldIdentifierNode.getNextSibling().getNextSibling() != null  
-                && fieldIdentifierNode.getNextSibling().getNextSibling().isASTInstance(dataType.class)) {
+                && fieldIdentifierNode.getNextSibling().getNextSibling().getASTClass() == dataType.class) {
             // check if it is a document reference
-            dataType dataTypeNode = (dataType)fieldIdentifierNode.getNextSibling().getNextSibling().getOriginalSchemaNode();
+            dataType dataTypeNode = (dataType)fieldIdentifierNode.getNextSibling().getNextSibling().getSchemaNode().getOriginalSchemaNode();
 
             if (dataTypeNode.getParsedType() != null && dataTypeNode.getParsedType().getVariant() == Variant.DOCUMENT) {
                 var indexingTypes = context.fieldIndex().getFieldIndexingTypes(fieldIdentifierNode.getSymbol());

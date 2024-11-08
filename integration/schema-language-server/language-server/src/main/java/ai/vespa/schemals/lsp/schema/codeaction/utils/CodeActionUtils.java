@@ -10,7 +10,7 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import ai.vespa.schemals.common.editbuilder.WorkspaceEditBuilder;
 import ai.vespa.schemals.context.EventCodeActionContext;
 import ai.vespa.schemals.schemadocument.DocumentManager;
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 
 /**
  * CodeActionUtils
@@ -38,7 +38,7 @@ public class CodeActionUtils {
         return simpleEditList(context, List.of(new TextEdit(range, newText)), document);
     }
 
-    public static WorkspaceEdit createInheritsEdit(EventCodeActionContext context, SchemaNode identifierNode, Class<?> inheritsASTClass, String toInherit) {
+    public static WorkspaceEdit createInheritsEdit(EventCodeActionContext context, Node identifierNode, Class<?> inheritsASTClass, String toInherit) {
         if (identifierNode.getNextSibling() != null && identifierNode.getNextSibling().isASTInstance(inheritsASTClass)) {
             Position insertPosition = identifierNode.getNextSibling().getRange().getEnd();
             return simpleEdit(context, new Range(insertPosition, insertPosition), ", " + toInherit);

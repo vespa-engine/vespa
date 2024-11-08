@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument.parser;
+package ai.vespa.schemals.schemadocument.parser.schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,14 +41,16 @@ import ai.vespa.schemals.parser.rankingexpression.ast.LCURLY;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorType;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorTypeDimension;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 
 /**
  * IdentifySymbolDefinition identifies symbol definitions, and mark the SchemaNode as a symbol and adds it to the index
  */
-public class IdentifySymbolDefinition extends Identifier {
+public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
 
     public IdentifySymbolDefinition(ParseContext context) {
 		super(context);
@@ -72,15 +74,15 @@ public class IdentifySymbolDefinition extends Identifier {
             return identifyDefinitionInRankExpression(node);
         }
         
-        boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
-        boolean isIdentifierWithDash = node.isSchemaASTInstance(identifierWithDashStr.class);
+        boolean isIdentifier = node.isASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
 
         if (!isIdentifier && !isIdentifierWithDash) return ret;
 
-        SchemaNode parent = node.getParent();
+        Node parent = node.getParent();
         if (parent == null) return ret;
 
-        if (handleSpecialCases(node, parent, ret)) {
+        if (handleSpecialCases(node.getSchemaNode(), parent.getSchemaNode(), ret)) {
             return ret;
         }
 
@@ -237,7 +239,7 @@ public class IdentifySymbolDefinition extends Identifier {
         }
     }
 
-    private Optional<Symbol> findMapScope(SchemaNode mapDataTypeNode) {
+    private Optional<Symbol> findMapScope(Node mapDataTypeNode) {
         while (mapDataTypeNode != null) {
             mapDataTypeNode = mapDataTypeNode.getParent();
             if (mapDataTypeNode == null) return Optional.empty();
@@ -247,7 +249,7 @@ public class IdentifySymbolDefinition extends Identifier {
             }
 
             if (mapDataTypeNode.isASTInstance(fieldElm.class) || mapDataTypeNode.isASTInstance(structFieldDefinition.class)) {
-                SchemaNode fieldIdentifierNode = mapDataTypeNode.get(1);
+                Node fieldIdentifierNode = mapDataTypeNode.get(1);
                 if (fieldIdentifierNode == null) return Optional.empty();
                 if (!fieldIdentifierNode.hasSymbol() || fieldIdentifierNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
                 return Optional.of(fieldIdentifierNode.getSymbol());
@@ -277,14 +279,14 @@ public class IdentifySymbolDefinition extends Identifier {
             return ret;
         }
 
-        SchemaNode parent = node.getParent();
+        Node parent = node.getParent();
         if (parent == null) return ret;
 
-        SchemaNode grandParent = parent.getParent();
+        Node grandParent = parent.getParent();
         if (grandParent == null) return ret;
 
         if (parent.isASTInstance(tensorTypeDimension.class) && grandParent.isASTInstance(tensorType.class)) {
-            handleTensorTypeDefinitions(node, grandParent, ret);
+            handleTensorTypeDefinitions(node, grandParent.getSchemaNode(), ret);
             return ret;
         }
 
@@ -293,7 +295,7 @@ public class IdentifySymbolDefinition extends Identifier {
         }
 
         // This is specific to lambda function definitions
-        SchemaNode lambdaDefinitionNode = grandParent.get(0);
+        SchemaNode lambdaDefinitionNode = grandParent.get(0).getSchemaNode();
         if (!lambdaDefinitionNode.hasSymbol()) {
 
             Optional<Symbol> parentScope = CSTUtils.findScope(parent);
