@@ -370,8 +370,8 @@ public class PermanentFlags {
     public static final UnboundBooleanFlag ALLOW_STATUS_PAGE = defineFeatureFlag(
             "allow-status-page", false,
             "Shows link to status page for nodes of a specific tenant",
-            "takes effect on browser reload of api/user/v1/user",
-            CONSOLE_USER_EMAIL);
+            "Takes effect on browser reload of /user/v1/user",
+            CONSOLE_USER_EMAIL, TENANT_ID);
 
     public static final UnboundIntFlag PRE_PROVISIONED_LB_COUNT = defineIntFlag(
             "pre-provisioned-lb-count", 0,
