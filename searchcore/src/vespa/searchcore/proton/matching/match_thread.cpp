@@ -437,6 +437,7 @@ MatchThread::processResult(const Doom & doom, search::ResultSet::UP result, Resu
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
         man.groupInRelevanceOrder(_distributionKey, hits, numHits);
+        man.convertToGlobalId(matchToolsFactory.metaStore());
     }
     if (doom.hard_doom()) return;
     fillPartialResult(context, totalHits, numHits, hits, bits);
