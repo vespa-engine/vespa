@@ -152,11 +152,11 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public static class Builder {
 
         final TensorType type;
-        final long[] labels;
+        final Label[] labels;
 
-        private static long[] createEmptyLabels(int size) {
-            long[] labels = new long[size];
-            Arrays.fill(labels, Tensor.invalidIndex);
+        private static Label[] createEmptyLabels(int size) {
+            var labels = new Label[size];
+            Arrays.fill(labels, Label.invalidIndex);
             return labels;
         }
 
@@ -164,7 +164,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             this(type, createEmptyLabels(type.dimensions().size()));
         }
 
-        private Builder(TensorType type, long[] labels) {
+        private Builder(TensorType type, Label[] labels) {
             this.type = type;
             this.labels = labels;
         }
@@ -194,7 +194,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             int labelIndex = type.indexOfDimensionAsInt(dimension);
             if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex] = Label.toNumber(label);
+            labels[labelIndex] = Label.of(label);
             return this;
         }
 
@@ -208,7 +208,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             int labelIndex = type.indexOfDimensionAsInt(dimension);
             if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex] = label;
+            labels[labelIndex] = Label.of(label);
             return this;
         }
 
@@ -222,7 +222,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == Tensor.invalidIndex)
+                if (labels[i] == Label.invalidIndex)
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }
@@ -241,7 +241,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             super(type);
         }
 
-        private PartialBuilder(TensorType type, long[] labels) {
+        private PartialBuilder(TensorType type, Label[] labels) {
             super(type, labels);
         }
 

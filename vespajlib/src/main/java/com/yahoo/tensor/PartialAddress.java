@@ -18,7 +18,7 @@ public class PartialAddress {
     // Two arrays which contains corresponding dimension:label pairs.
     // The sizes of these are always equal.
     private final String[] dimensionNames;
-    private final long[] labels;
+    private final Label[] labels;
 
     private PartialAddress(Builder builder) {
         this.dimensionNames = builder.dimensionNames;
@@ -35,15 +35,15 @@ public class PartialAddress {
     public long numericLabel(String dimensionName) {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
-                return labels[i];
+                return labels[i].getNumeric();
         return Tensor.invalidIndex;
     }
 
-    /** Returns the label of this dimension, or null if no label is specified for it */
+    /** Returns the string label of this dimension, or null if no label is specified for it */
     public String label(String dimensionName) {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
-                return Label.fromNumber(labels[i]);
+                return labels[i].getString();
         return null;
     }
 
@@ -55,7 +55,7 @@ public class PartialAddress {
     public String label(int i) {
         if (i >= size())
             throw new IllegalArgumentException("No label at position " + i + " in " + this);
-        return Label.fromNumber(labels[i]);
+        return labels[i].getString();
     }
 
     public int size() { return dimensionNames.length; }
@@ -88,24 +88,24 @@ public class PartialAddress {
     public static class Builder {
 
         private String[] dimensionNames;
-        private long[] labels;
+        private Label[] labels;
         private int index = 0;
 
         public Builder(int size) {
             dimensionNames = new String[size];
-            labels = new long[size];
+            labels = new Label[size];
         }
 
         public Builder add(String dimensionName, long label) {
             dimensionNames[index] = dimensionName;
-            labels[index] = label;
+            labels[index] = Label.of(label);
             index++;
             return this;
         }
 
         public Builder add(String dimensionName, String label) {
             dimensionNames[index] = dimensionName;
-            labels[index] = Label.toNumber(label);
+            labels[index] = Label.of(label);
             index++;
             return this;
         }

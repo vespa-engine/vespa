@@ -12,10 +12,9 @@ import static java.lang.Math.abs;
  * @author baldersheim
  */
 final class TensorAddressAny2 extends TensorAddressAny {
+    private final Label label0, label1;
 
-    private final long label0, label1;
-
-    TensorAddressAny2(long label0, long label1) {
+    TensorAddressAny2(Label label0, Label label1) {
         this.label0 = label0;
         this.label1 = label1;
     }
@@ -25,14 +24,14 @@ final class TensorAddressAny2 extends TensorAddressAny {
     @Override
     public long numericLabel(int i) {
         return switch (i) {
-            case 0 -> label0;
-            case 1 -> label1;
+            case 0 -> label0.getNumeric();
+            case 1 -> label1.getNumeric();
             default -> throw new IndexOutOfBoundsException("Index is not in [0,1]: " + i);
         };
     }
 
     @Override
-    public TensorAddress withLabel(int labelIndex, long label) {
+    public TensorAddress withLabel(int labelIndex, Label label) {
         return switch (labelIndex) {
             case 0 -> new TensorAddressAny2(label, label1);
             case 1 -> new TensorAddressAny2(label0, label);
@@ -42,13 +41,15 @@ final class TensorAddressAny2 extends TensorAddressAny {
 
     @Override
     public int hashCode() {
-        long hash =  abs(label0) | (abs(label1) << (64 - Long.numberOfLeadingZeros(abs(label0))));
+        long hash =  abs(label0.getNumeric()) |
+                (abs(label1.getNumeric()) << (1*64 - Long.numberOfLeadingZeros(abs(label0.getNumeric()))));
         return (int) hash;
     }
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof TensorAddressAny2 any) && (label0 == any.label0) && (label1 == any.label1);
+        return (o instanceof TensorAddressAny2 any) &&
+                (label0.equals(any.label0)) &&
+                (label1.equals(any.label1));
     }
-
 }

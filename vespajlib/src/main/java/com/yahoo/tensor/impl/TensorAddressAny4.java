@@ -12,10 +12,9 @@ import static java.lang.Math.abs;
  * @author baldersheim
  */
 final class TensorAddressAny4 extends TensorAddressAny {
+    private final Label label0, label1, label2, label3;
 
-    private final long label0, label1, label2, label3;
-
-    TensorAddressAny4(long label0, long label1, long label2, long label3) {
+    TensorAddressAny4(Label label0, Label label1, Label label2, Label label3) {
         this.label0 = label0;
         this.label1 = label1;
         this.label2 = label2;
@@ -27,10 +26,10 @@ final class TensorAddressAny4 extends TensorAddressAny {
     @Override
     public long numericLabel(int i) {
         return switch (i) {
-            case 0 -> label0;
-            case 1 -> label1;
-            case 2 -> label2;
-            case 3 -> label3;
+            case 0 -> label0.getNumeric();
+            case 1 -> label1.getNumeric();
+            case 2 -> label2.getNumeric();
+            case 3 -> label3.getNumeric();
             default -> throw new IndexOutOfBoundsException("Index is not in [0,3]: " + i);
         };
     }
@@ -38,30 +37,29 @@ final class TensorAddressAny4 extends TensorAddressAny {
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
         return switch (labelIndex) {
-            case 0 -> new TensorAddressAny4(label, label1, label2, label3);
-            case 1 -> new TensorAddressAny4(label0, label, label2, label3);
-            case 2 -> new TensorAddressAny4(label0, label1,label, label3);
-            case 3 -> new TensorAddressAny4(label0, label1, label2, label);
+            case 0 -> new TensorAddressAny4(Label.of(label), label1, label2, label3);
+            case 1 -> new TensorAddressAny4(label0, Label.of(label), label2, label3);
+            case 2 -> new TensorAddressAny4(label0, label1, Label.of(label), label3);
+            case 3 -> new TensorAddressAny4(label0, label1, label2, Label.of(label));
             default -> throw new IllegalArgumentException("No label " + labelIndex);
         };
     }
 
     @Override
     public int hashCode() {
-        long hash =  abs(label0) |
-                (abs(label1) << (1*64 - Long.numberOfLeadingZeros(abs(label0)))) |
-                (abs(label2) << (2*64 - (Long.numberOfLeadingZeros(abs(label0)) + Long.numberOfLeadingZeros(abs(label1))))) |
-                (abs(label3) << (3*64 - (Long.numberOfLeadingZeros(abs(label0)) + Long.numberOfLeadingZeros(abs(label1)) + Long.numberOfLeadingZeros(abs(label1)))));
+        long hash =  abs(label0.getNumeric()) |
+                (abs(label1.getNumeric()) << (1*64 - Long.numberOfLeadingZeros(abs(label0.getNumeric())))) |
+                (abs(label2.getNumeric()) << (2*64 - (Long.numberOfLeadingZeros(abs(label0.getNumeric())) + Long.numberOfLeadingZeros(abs(label1.getNumeric()))))) |
+                (abs(label3.getNumeric()) << (3*64 - (Long.numberOfLeadingZeros(abs(label0.getNumeric())) + Long.numberOfLeadingZeros(abs(label1.getNumeric())) + Long.numberOfLeadingZeros(abs(label1.getNumeric())))));
         return (int) hash;
     }
 
     @Override
     public boolean equals(Object o) {
         return (o instanceof TensorAddressAny4 any) &&
-                (label0 == any.label0) &&
-                (label1 == any.label1) &&
-                (label2 == any.label2) &&
-                (label3 == any.label3);
+                (label0.equals(any.label0)) &&
+                (label1.equals(any.label1)) &&
+                (label2.equals(any.label2)) &&
+                (label3.equals(any.label3));
     }
-
 }

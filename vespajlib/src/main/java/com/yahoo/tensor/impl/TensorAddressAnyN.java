@@ -15,28 +15,28 @@ import static java.lang.Math.abs;
  */
 final class TensorAddressAnyN extends TensorAddressAny {
 
-    private final long[] labels;
+    private final Label[] labels;
 
-    TensorAddressAnyN(long[] labels) {
+    TensorAddressAnyN(Label[] labels) {
         if (labels.length < 1) throw new IllegalArgumentException("Need at least 1 label");
         this.labels = labels;
     }
 
     @Override public int size() { return labels.length; }
 
-    @Override public long numericLabel(int i) { return labels[i]; }
+    @Override public long numericLabel(int i) { return labels[i].getNumeric(); }
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
-        long[] copy = Arrays.copyOf(labels, labels.length);
-        copy[labelIndex] = label;
+        var copy = Arrays.copyOf(labels, labels.length);
+        copy[labelIndex] = Label.of(label);
         return new TensorAddressAnyN(copy);
     }
 
     @Override public int hashCode() {
-        long hash = abs(labels[0]);
+        long hash = abs(labels[0].getNumeric());
         for (int i = 0; i < size(); i++) {
-            hash = hash | (abs(labels[i]) << (32 - Long.numberOfLeadingZeros(hash)));
+            hash = hash | (abs(labels[i].getNumeric()) << (32 - Long.numberOfLeadingZeros(hash)));
         }
         return (int) hash;
     }
@@ -45,7 +45,7 @@ final class TensorAddressAnyN extends TensorAddressAny {
     public boolean equals(Object o) {
         if (! (o instanceof TensorAddressAnyN any) || (size() != any.size())) return false;
         for (int i = 0; i < size(); i++) {
-            if (labels[i] != any.labels[i]) return false;
+            if (!labels[i].equals(any.labels[i])) return false;
         }
         return true;
     }

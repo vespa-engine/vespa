@@ -626,7 +626,8 @@ public interface Tensor {
             public TensorType type() { return tensorBuilder.type(); }
 
             public CellBuilder label(String dimension, long label) {
-                return label(dimension, Label.fromNumber(label));
+                addressBuilder.add(dimension, label);
+                return this;
             }
 
             public Builder value(double cellValue) {

@@ -11,16 +11,16 @@ import com.yahoo.tensor.TensorAddress;
  */
 final class TensorAddressAny1 extends TensorAddressAny {
 
-    private final long label;
+    private final Label label;
 
-    TensorAddressAny1(long label) { this.label = label; }
+    TensorAddressAny1(Label label) { this.label = label; }
 
     @Override public int size() { return 1; }
 
     @Override
     public long numericLabel(int i) {
         if (i == 0) {
-            return label;
+            return label.getNumeric();
         }
         throw new IndexOutOfBoundsException("Index is not zero: " + i);
     }
