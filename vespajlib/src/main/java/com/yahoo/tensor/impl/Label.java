@@ -4,6 +4,7 @@ package com.yahoo.tensor.impl;
 import com.google.common.collect.MapMaker;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A label is a value of a mapped dimension of a tensor.
@@ -13,25 +14,28 @@ import java.util.concurrent.ConcurrentMap;
  * @author baldersheim
  */
 public class Label {
-    private final String string;
     private final long numeric;
-
-    Label(String string) {
-        this.string = string;
-        this.numeric = 0;
-    }
-
-    Label(long numeric) {
-        this.string = null;
+    private String string = null;
+    
+    private Label(long numeric) {
         this.numeric = numeric;
     }
 
-    public String getString() {
-        return string;
+    private Label(long numeric, String string) {
+        this.numeric = numeric;
+        this.string = string;
     }
 
-    public long getNumeric() {
+    public long toNumeric() {
         return numeric;
+    }
+    
+    public String toString() {
+        if (string == null) {
+            string = String.valueOf(numeric);
+        }
+        
+        return string;
     }
 
     @Override
@@ -46,120 +50,104 @@ public class Label {
     public int hashCode() {
         return Long.hashCode(numeric);
     }
+    
+    public static final Label INVALID_INDEX_LABEL = new Label(-1, null);
+    public static final Label[] SMALL_INDEX_LABELS = creatSmallIndexLabels(1000);
+    
+    private static Label[] creatSmallIndexLabels(int count) {
+        var labels = new Label[count];
+        
+        for (var i = 0; i < count; i++) {
+            labels[i] = new Label(i, String.valueOf(i));
+        }
+        
+        return labels;
+    }
+    
+    private static final ConcurrentMap<String, Label> byString = new MapMaker()
+            .concurrencyLevel(1).weakValues().makeMap();
 
-    private static final String[] SMALL_INDEXES = createSmallIndexesAsStrings(1000);
+    private static final ConcurrentMap<Long, Label> byNumeric = new MapMaker()
+            .concurrencyLevel(1).weakValues().makeMap();
 
-    private static String[] createSmallIndexesAsStrings(int count) {
-        String[] asStrings = new String[count];
+    private static final AtomicLong idCounter = new AtomicLong(-2);
+    
+    private static Label add(long numeric, String string) {
+        var newLabel = new Label(numeric, string);
+        var existingLabel = byString.putIfAbsent(string, newLabel);
 
-        for (int i = 0; i < count; i++) {
-            asStrings[i] = String.valueOf(i);
+        if (existingLabel != null) {
+            return existingLabel;
         }
 
-        return asStrings;
+        byNumeric.put(newLabel.numeric, newLabel);
+        return newLabel;
     }
 
-    private static final ConcurrentMap<String, Label> stringToLabel = new MapMaker()
-            .concurrencyLevel(1).weakValues().makeMap();
+    private static boolean validNumericIndex(String s) {
+        if (s.isEmpty() || ((s.length() > 1) && (s.charAt(0) == '0'))) return false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if ((c < '0') || (c > '9')) return false;
+        }
+        return true;
+    }
     
     public static Label of(String string) {
-            
-    }
-    
-    public static Label of(long numeric) {
-        
-    }
-}
-//    
-//    private static final String[] SMALL_INDEXES = createSmallIndexesAsStrings(1000);
-//
-//    // Map from String labels to Long values with weak references to values
-//    private static final ConcurrentMap<String, Id> stringToIdMap = new MapMaker()
-//            .concurrencyLevel(1)
-//            .weakValues()
-//            .makeMap();
-//
-//    // Index 0 is unused, that is a valid positive number
-//    // 1(-1) is reserved for the Tensor.INVALID_INDEX
-//    static {
-//        add("UNIQUE_UNUSED_MAGIC", 0);
-//        add("Tensor.INVALID_INDEX", -Tensor.invalidIndex);
-//    }
-//
-//    private static final AtomicLong uniqueCounter = new AtomicLong(-2);
-//
-//    private static void add(String s, long l) {
-//        stringToIdMap.put(s, new Id(l));
-//        idToStringMap.put(new Id(l), s);
-//    }
-//    
-//    private static String[] createSmallIndexesAsStrings(int count) {
-//        String[] asStrings = new String[count];
-//        
-//        for (int i = 0; i < count; i++) {
-//            asStrings[i] = String.valueOf(i);
-//        }
-//        
-//        return asStrings;
-//    }
-//    
-//    private static String asNumericString(long index) {
-//        return ((index >= 0) && (index < SMALL_INDEXES.length)) ? SMALL_INDEXES[(int)index] : String.valueOf(index);
-//    }
-//
-//    private static boolean validNumericIndex(String s) {
-//        if (s.isEmpty() || ((s.length() > 1) && (s.charAt(0) == '0'))) return false;
-//        for (int i = 0; i < s.length(); i++) {
-//            char c = s.charAt(i);
-//            if ((c < '0') || (c > '9')) return false;
-//        }
-//        return true;
-//    }
-//
-//    private static Id addNewUniqueString(String s) {
-//        var newLong = new Id(uniqueCounter.getAndDecrement());
-//        var existingLong = stringToIdMap.putIfAbsent(s, newLong);
-//
-//        if (existingLong == null) {
-//            // This thread inserted new value.
-//            idToStringMap.put(newLong, s);
-//            return newLong;
-//        } else {
-//            // Another thread inserted new value.
-//            return existingLong;
-//        }
-//    }
-//
-//
-//    public static Id toNumber(String s) {
-//        if (s == null) { 
-//            return new Id(Tensor.invalidIndex); 
-//        }
-//        
-//        try {
-//            if (validNumericIndex(s)) {
-//                return new Id(Long.parseLong(s, 10));
-//            }
-//        } catch (NumberFormatException e) {
-//            // Continue with map
-//        }
-//        
-//        // stringToLongMap.computeIfAbsent is not used here because new entries to longToStringMap and stringToLongMap
-//        // should be added in a specific order to handle concurrency, see addNewUniqueString.
-//        var l = stringToIdMap.get(s);
-//        return l != null ? l : addNewUniqueString(s);
-//     }
-//
-//    public static String fromNumber(long v) {
-//        if (v >= 0) {
-//            return asNumericString(v);
-//        } else {
-//            if (v == Tensor.invalidIndex) { 
-//                return null; 
-//            }
-//            
-//            return longToStringMap.get(v);
-//        }
-//    }
+        if (string == null) {
+            return INVALID_INDEX_LABEL;
+        }
 
+        // Index labels are not cached.
+        // They are not cached, but rather pre-computed for small values or created on demand.
+        if (validNumericIndex(string)) {
+            try {
+                var numeric = Long.parseLong(string, 10);
+                
+                if (numeric < SMALL_INDEX_LABELS.length) {
+                    return SMALL_INDEX_LABELS[(int) numeric];
+                }
+                
+                return new Label(numeric, string);
+            } catch(NumberFormatException e){
+                // Continue with cached labels
+            }
+        }
+        
+        // Non-index labels are cached.
+        var existingLabel = byString.get(string);
+        
+        if (existingLabel != null) {
+            return existingLabel;
+        }
+        
+        var numeric = idCounter.getAndDecrement();
+        return add(numeric, string);
+    }
+
+    public static Label of(long numeric) {
+        // Positive numeric labels are indexes.
+        // They are not cached, but rather pre-computed for small values or created on demand.
+        if (numeric >= 0) {
+            if (numeric < SMALL_INDEX_LABELS.length) {
+                return SMALL_INDEX_LABELS[(int) numeric];
+            }
+            
+            return new Label(numeric);
+        }
+        
+        if (numeric == INVALID_INDEX_LABEL.numeric) {
+            return INVALID_INDEX_LABEL;
+        }
+        
+        // Negative numeric labels are mapped to string labels.
+        // They are cached.
+        var existingLabel = byNumeric.get(numeric);
+        
+        if (existingLabel != null) {
+            return existingLabel;
+        }
+        
+        throw new IllegalArgumentException("No negative numeric label " + numeric);
+    }
 }

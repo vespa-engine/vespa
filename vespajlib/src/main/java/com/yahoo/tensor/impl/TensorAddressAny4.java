@@ -26,31 +26,31 @@ final class TensorAddressAny4 extends TensorAddressAny {
     @Override
     public long numericLabel(int i) {
         return switch (i) {
-            case 0 -> label0.getNumeric();
-            case 1 -> label1.getNumeric();
-            case 2 -> label2.getNumeric();
-            case 3 -> label3.getNumeric();
+            case 0 -> label0.toNumeric();
+            case 1 -> label1.toNumeric();
+            case 2 -> label2.toNumeric();
+            case 3 -> label3.toNumeric();
             default -> throw new IndexOutOfBoundsException("Index is not in [0,3]: " + i);
         };
     }
 
     @Override
-    public TensorAddress withLabel(int labelIndex, Label label) {
+    public TensorAddress withLabel(int labelIndex, long label) {
         return switch (labelIndex) {
-            case 0 -> new TensorAddressAny4(label, label1, label2, label3);
-            case 1 -> new TensorAddressAny4(label0, label, label2, label3);
-            case 2 -> new TensorAddressAny4(label0, label1, label, label3);
-            case 3 -> new TensorAddressAny4(label0, label1, label2, label);
+            case 0 -> new TensorAddressAny4(Label.of(label), label1, label2, label3);
+            case 1 -> new TensorAddressAny4(label0, Label.of(label), label2, label3);
+            case 2 -> new TensorAddressAny4(label0, label1, Label.of(label), label3);
+            case 3 -> new TensorAddressAny4(label0, label1, label2, Label.of(label));
             default -> throw new IllegalArgumentException("No label " + labelIndex);
         };
     }
 
     @Override
     public int hashCode() {
-        long hash =  abs(label0.getNumeric()) |
-                (abs(label1.getNumeric()) << (1*64 - Long.numberOfLeadingZeros(abs(label0.getNumeric())))) |
-                (abs(label2.getNumeric()) << (2*64 - (Long.numberOfLeadingZeros(abs(label0.getNumeric())) + Long.numberOfLeadingZeros(abs(label1.getNumeric()))))) |
-                (abs(label3.getNumeric()) << (3*64 - (Long.numberOfLeadingZeros(abs(label0.getNumeric())) + Long.numberOfLeadingZeros(abs(label1.getNumeric())) + Long.numberOfLeadingZeros(abs(label1.getNumeric())))));
+        long hash =  abs(label0.toNumeric()) |
+                (abs(label1.toNumeric()) << (64 - Long.numberOfLeadingZeros(abs(label0.toNumeric())))) |
+                (abs(label2.toNumeric()) << (2*64 - (Long.numberOfLeadingZeros(abs(label0.toNumeric())) + Long.numberOfLeadingZeros(abs(label1.toNumeric()))))) |
+                (abs(label3.toNumeric()) << (3*64 - (Long.numberOfLeadingZeros(abs(label0.toNumeric())) + Long.numberOfLeadingZeros(abs(label1.toNumeric())) + Long.numberOfLeadingZeros(abs(label1.toNumeric())))));
         return (int) hash;
     }
 

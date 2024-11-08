@@ -24,7 +24,7 @@ final class TensorAddressAnyN extends TensorAddressAny {
 
     @Override public int size() { return labels.length; }
 
-    @Override public long numericLabel(int i) { return labels[i].getNumeric(); }
+    @Override public long numericLabel(int i) { return labels[i].toNumeric(); }
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
@@ -34,9 +34,9 @@ final class TensorAddressAnyN extends TensorAddressAny {
     }
 
     @Override public int hashCode() {
-        long hash = abs(labels[0].getNumeric());
+        long hash = abs(labels[0].toNumeric());
         for (int i = 0; i < size(); i++) {
-            hash = hash | (abs(labels[i].getNumeric()) << (32 - Long.numberOfLeadingZeros(hash)));
+            hash = hash | (abs(labels[i].toNumeric()) << (32 - Long.numberOfLeadingZeros(hash)));
         }
         return (int) hash;
     }

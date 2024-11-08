@@ -10,7 +10,6 @@ import com.yahoo.tensor.TensorAddress;
  * @author baldersheim
  */
 final class TensorAddressAny1 extends TensorAddressAny {
-
     private final Label label;
 
     TensorAddressAny1(Label label) { this.label = label; }
@@ -18,24 +17,24 @@ final class TensorAddressAny1 extends TensorAddressAny {
     @Override public int size() { return 1; }
     
     @Override
-    public Label label(int i) {
+    public long numericLabel(int i) {
         if (i == 0) {
-            return label;
+            return label.toNumeric();
         }
         throw new IndexOutOfBoundsException("Index is not zero: " + i);
     }
 
     @Override
-    public TensorAddress withLabel(int labelIndex, Label label) {
-        if (labelIndex == 0) return new TensorAddressAny1(label);
+    public TensorAddress withLabel(int labelIndex, long label) {
+        if (labelIndex == 0) return new TensorAddressAny1(Label.of(label));
         throw new IllegalArgumentException("No label " + labelIndex);
     }
 
-    @Override public int hashCode() { return (int)Math.abs(label.getNumeric()); }
+    @Override public int hashCode() { return (int)Math.abs(label.toNumeric()); }
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof TensorAddressAny1 any) && (label.getNumeric() == any.label.getNumeric());
+        return (o instanceof TensorAddressAny1 any) && (label.toNumeric() == any.label.toNumeric());
     }
 
 }

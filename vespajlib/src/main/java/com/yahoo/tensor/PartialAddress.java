@@ -35,7 +35,7 @@ public class PartialAddress {
     public long numericLabel(String dimensionName) {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
-                return labels[i].getNumeric();
+                return labels[i].toNumeric();
         return Tensor.invalidIndex;
     }
 
@@ -43,7 +43,7 @@ public class PartialAddress {
     public String label(String dimensionName) {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
-                return labels[i].getString();
+                return labels[i].toString();
         return null;
     }
 
@@ -55,7 +55,7 @@ public class PartialAddress {
     public String label(int i) {
         if (i >= size())
             throw new IllegalArgumentException("No label at position " + i + " in " + this);
-        return labels[i].getString();
+        return labels[i].toString();
     }
 
     public int size() { return dimensionNames.length; }

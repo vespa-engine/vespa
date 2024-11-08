@@ -381,7 +381,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         mapContent(a, joinedLabels, aToIndexes);
         boolean compatible = mapContent(b, joinedLabels, bToIndexes);
         if ( ! compatible) return null;
-        return TensorAddressAny.ofUnsafe(joinedLabels);
+        return TensorAddressAny.of(joinedLabels);
     }
 
     /**

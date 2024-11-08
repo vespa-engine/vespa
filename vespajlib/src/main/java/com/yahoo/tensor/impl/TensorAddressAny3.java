@@ -20,14 +20,14 @@ final class TensorAddressAny3 extends TensorAddressAny {
         this.label2 = label2;
     }
 
-    @Override public int size() { return 4; }
+    @Override public int size() { return 3; }
 
     @Override
     public long numericLabel(int i) {
         return switch (i) {
-            case 0 -> label0.getNumeric();
-            case 1 -> label1.getNumeric();
-            case 2 -> label2.getNumeric();
+            case 0 -> label0.toNumeric();
+            case 1 -> label1.toNumeric();
+            case 2 -> label2.toNumeric();
             default -> throw new IndexOutOfBoundsException("Index is not in [0,2]: " + i);
         };
     }
@@ -44,9 +44,9 @@ final class TensorAddressAny3 extends TensorAddressAny {
 
     @Override
     public int hashCode() {
-        long hash =  abs(label0.getNumeric()) |
-                (abs(label1.getNumeric()) << (1*64 - Long.numberOfLeadingZeros(abs(label0.getNumeric())))) |
-                (abs(label2.getNumeric()) << (2*64 - (Long.numberOfLeadingZeros(abs(label0.getNumeric())) + Long.numberOfLeadingZeros(abs(label1.getNumeric())))));
+        long hash =  abs(label0.toNumeric()) |
+                (abs(label1.toNumeric()) << (64 - Long.numberOfLeadingZeros(abs(label0.toNumeric())))) |
+                (abs(label2.toNumeric()) << (2*64 - (Long.numberOfLeadingZeros(abs(label0.toNumeric())) + Long.numberOfLeadingZeros(abs(label1.toNumeric())))));
         return (int) hash;
     }
 

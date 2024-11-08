@@ -50,7 +50,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
      */
     public abstract long numericLabel(int i);
     
-    public abstract TensorAddress withLabel(int labelIndex, Label label);
+    public abstract TensorAddress withLabel(int labelIndex, long label);
 
     public final boolean isEmpty() { return size() == 0; }
 
@@ -104,31 +104,29 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     /** Returns an address with only some of the dimension. Ordering will also be according to indexMap */
     public TensorAddress partialCopy(int[] indexMap) {
-        var labels = new Label[indexMap.length];
-        
+        long[] labels = new long[indexMap.length];
         for (int i = 0; i < labels.length; ++i) {
-            labels[i] = labelObject(indexMap[i]);
+            labels[i] = numericLabel(indexMap[i]);
         }
-        
         return TensorAddressAny.of(labels);
     }
 
     /** Creates a complete address by taking the mapped dimensions of this and adding the indexed from the indexedPart */
     public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int[] indexedPart) {
-        var labels = new Label[dimensions.size()];
+        long[] labels = new long[dimensions.size()];
         int mappedIndex = 0;
         int indexedIndex = 0;
         for (int i = 0; i < labels.length; i++) {
             TensorType.Dimension d = dimensions.get(i);
             if (d.isIndexed()) {
-                labels[i] = labelObject(indexedPart[indexedIndex]);
+                labels[i] = indexedPart[indexedIndex];
                 indexedIndex++;
             } else {
-                labels[i] = labelObject(mappedIndex);
+                labels[i] = numericLabel(mappedIndex);
                 mappedIndex++;
             }
         }
-        return TensorAddressAny.ofUnsafe(labels);
+        return TensorAddressAny.of(labels);
     }
 
     /**
@@ -158,7 +156,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         private static Label[] createEmptyLabels(int size) {
             var labels = new Label[size];
-            Arrays.fill(labels, Label.INVALID_INDEX);
+            Arrays.fill(labels, Label.INVALID_INDEX_LABEL);
             return labels;
         }
 
@@ -224,7 +222,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == Label.INVALID_INDEX)
+                if (labels[i] == Label.INVALID_INDEX_LABEL)
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }

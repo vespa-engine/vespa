@@ -5,8 +5,6 @@ package com.yahoo.tensor.impl;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 
-import static com.yahoo.tensor.impl.Label.fromNumber;
-
 /**
  * Parent of tensor address family centered around each dimension as int.
  * A positive number represents a numeric index usable as a direct addressing.
@@ -18,7 +16,7 @@ import static com.yahoo.tensor.impl.Label.fromNumber;
 abstract public class TensorAddressAny extends TensorAddress {
     @Override
     public String label(int i) {
-        return labelObject(i).getString();
+        return Label.of(numericLabel(i)).toString();
     }
     
     public static TensorAddress of() {
@@ -93,20 +91,20 @@ abstract public class TensorAddressAny extends TensorAddress {
     }
 
     public static TensorAddress of(long label) {
-        return new TensorAddressAny1(Label.of(sanitize(label)));
+        return new TensorAddressAny1(Label.of(label));
     }
     
     public static TensorAddress of(long label0, long label1) {
-        return new TensorAddressAny2(Label.of(sanitize(label0)), Label.of(sanitize(label1)));
+        return new TensorAddressAny2(Label.of(label0), Label.of(label1));
     }
     
     public static TensorAddress of(long label0, long label1, long label2) {
-        return new TensorAddressAny3(Label.of(sanitize(label0)), Label.of(sanitize(label1)), Label.of(sanitize(label2)));
+        return new TensorAddressAny3(Label.of(label0), Label.of(label1), Label.of(label2));
     }
     
     public static TensorAddress of(long label0, long label1, long label2, long label3) {
-        return new TensorAddressAny4(Label.of(sanitize(label0)), Label.of(sanitize(label1)), 
-                Label.of(sanitize(label2)), Label.of(sanitize(label3)));
+        return new TensorAddressAny4(Label.of(label0), Label.of(label1), 
+                Label.of(label2), Label.of(label3));
     }
     
     public static TensorAddress of(long ... labels) {
@@ -119,13 +117,12 @@ abstract public class TensorAddressAny extends TensorAddress {
             default -> {
                 var labelObjs = new Label[labels.length];
                 for (int i = 0; i < labels.length; i++) {
-                    labelObjs[i] = Label.of(sanitize(labels[i]));
+                    labelObjs[i] = Label.of(labels[i]);
                 }
                 yield new TensorAddressAnyN(labelObjs);
             }
         };
     }
-    
     
     private static TensorAddress of(Label label) {
         return new TensorAddressAny1(label);
