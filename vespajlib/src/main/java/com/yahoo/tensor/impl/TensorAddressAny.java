@@ -5,6 +5,8 @@ package com.yahoo.tensor.impl;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 
+import static com.yahoo.tensor.impl.Label.fromNumber;
+
 /**
  * Parent of tensor address family centered around each dimension as int.
  * A positive number represents a numeric index usable as a direct addressing.
@@ -14,6 +16,11 @@ import com.yahoo.tensor.TensorAddress;
  * @author baldersheim
  */
 abstract public class TensorAddressAny extends TensorAddress {
+    @Override
+    public String label(int i) {
+        return labelObject(i).getString();
+    }
+    
     public static TensorAddress of() {
         return TensorAddressEmpty.empty;
     }

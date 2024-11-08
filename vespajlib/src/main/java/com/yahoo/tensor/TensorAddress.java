@@ -41,7 +41,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
      * @throws IllegalArgumentException if there is no label at this index
      */
     public abstract String label(int i);
-
+    
     /**
      * Returns the i'th label in this as a long.
      * Prefer this if you know that this is a numeric address, but not otherwise.
@@ -49,8 +49,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
      * @throws IllegalArgumentException if there is no label at this index
      */
     public abstract long numericLabel(int i);
-    
-    public abstract Label labelObject(int i);
     
     public abstract TensorAddress withLabel(int labelIndex, Label label);
 
@@ -160,7 +158,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         private static Label[] createEmptyLabels(int size) {
             var labels = new Label[size];
-            Arrays.fill(labels, Label.invalidIndex);
+            Arrays.fill(labels, Label.INVALID_INDEX);
             return labels;
         }
 
@@ -226,7 +224,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == Label.invalidIndex)
+                if (labels[i] == Label.INVALID_INDEX)
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }

@@ -16,11 +16,11 @@ final class TensorAddressAny1 extends TensorAddressAny {
     TensorAddressAny1(Label label) { this.label = label; }
 
     @Override public int size() { return 1; }
-
+    
     @Override
-    public long numericLabel(int i) {
+    public Label label(int i) {
         if (i == 0) {
-            return label.getNumeric();
+            return label;
         }
         throw new IndexOutOfBoundsException("Index is not zero: " + i);
     }

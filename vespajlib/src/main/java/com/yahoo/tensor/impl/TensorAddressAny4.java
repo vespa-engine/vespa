@@ -35,12 +35,12 @@ final class TensorAddressAny4 extends TensorAddressAny {
     }
 
     @Override
-    public TensorAddress withLabel(int labelIndex, long label) {
+    public TensorAddress withLabel(int labelIndex, Label label) {
         return switch (labelIndex) {
-            case 0 -> new TensorAddressAny4(Label.of(label), label1, label2, label3);
-            case 1 -> new TensorAddressAny4(label0, Label.of(label), label2, label3);
-            case 2 -> new TensorAddressAny4(label0, label1, Label.of(label), label3);
-            case 3 -> new TensorAddressAny4(label0, label1, label2, Label.of(label));
+            case 0 -> new TensorAddressAny4(label, label1, label2, label3);
+            case 1 -> new TensorAddressAny4(label0, label, label2, label3);
+            case 2 -> new TensorAddressAny4(label0, label1, label, label3);
+            case 3 -> new TensorAddressAny4(label0, label1, label2, label);
             default -> throw new IllegalArgumentException("No label " + labelIndex);
         };
     }
