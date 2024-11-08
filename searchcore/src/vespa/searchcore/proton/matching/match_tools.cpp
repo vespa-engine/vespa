@@ -170,8 +170,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
                   search::engine::Trace      & root_trace,
-                  std::string_view          queryStack,
-                  const std::string     & location,
+                  std::string_view             queryStack,
+                  const std::string          & location,
                   const ViewResolver         & viewResolver,
                   const IDocumentMetaStore   & metaStore,
                   const IIndexEnvironment    & indexEnv,
@@ -194,7 +194,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _featureOverrides(featureOverrides),
       _diversityParams(),
       _valid(false),
-      _first_phase_rank_lookup(nullptr)
+      _first_phase_rank_lookup(nullptr),
+      _metaStore(metaStore)
 {
     if (doom.soft_doom()) return;
     auto trace = root_trace.make_trace();
