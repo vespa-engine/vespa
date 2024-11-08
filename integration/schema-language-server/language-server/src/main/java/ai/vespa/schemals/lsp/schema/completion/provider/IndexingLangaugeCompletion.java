@@ -21,6 +21,7 @@ public class IndexingLangaugeCompletion implements CompletionProvider {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
         Node last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
+        if (last == null) return false;
 
         if (last.isASTInstance(INDEXING.class)) return true;
         if (last.isASTInstance(COLON.class) && last.getPreviousSibling() != null && last.getPreviousSibling().isASTInstance(INDEXING.class))return true;

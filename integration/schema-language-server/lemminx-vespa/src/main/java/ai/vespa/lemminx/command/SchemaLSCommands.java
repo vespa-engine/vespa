@@ -71,4 +71,21 @@ public class SchemaLSCommands {
             return List.of();
         }
     }
+
+    public List<String> getDefinedSchemas() {
+        Object getDefinedSchemasResult = commandService.executeClientCommand(
+            new ExecuteCommandParams("vespaSchemaLS.commands.schema.getDefinedSchemas", List.of())
+        ).join();
+
+        if (getDefinedSchemasResult == null) return List.of();
+
+        try {
+            String json = gson.toJson(getDefinedSchemasResult);
+            Type listOfStringType = new TypeToken<List<String>>() {}.getType();
+            return gson.fromJson(json, listOfStringType);
+        } catch (Exception ex) {
+            logger.severe("Error when parsing json: " + ex.getMessage());
+            return List.of();
+        }
+    }
 }

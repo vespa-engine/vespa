@@ -78,6 +78,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
 	@Override
 	public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         Node clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
+        if (clean == null) return List.of();
 
         List<CompletionItem> result = new ArrayList<>();
         if (matchFunctionCompletion(context,clean)) {
