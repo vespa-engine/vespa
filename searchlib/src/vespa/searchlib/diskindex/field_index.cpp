@@ -135,8 +135,11 @@ FieldIndex::open(const std::string& field_dir, const TuneFileSearch& tune_file_s
         return false;
     }
 
-    bDict.reset(new BitVectorDictionary());
-    if (!bDict->open(field_dir, tune_file_search._read, BitVectorKeyScope::PERFIELD_WORDS)) {
+    bDict = std::make_shared<BitVectorDictionary>();
+    // Always memory map bitvectors for now
+    auto force_mmap = tune_file_search._read;
+    force_mmap.setWantMemoryMap();
+    if (!bDict->open(field_dir, force_mmap, BitVectorKeyScope::PERFIELD_WORDS)) {
         LOG(warning, "Could not open bit vector dictionary in '%s'", field_dir.c_str());
         return false;
     }
