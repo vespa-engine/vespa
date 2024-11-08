@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -75,7 +76,7 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
                                     .flatMap(node -> node.history()
                                                          .events()
                                                          .stream()
-                                                         .filter(event -> expediteChangeBy(event.agent()))
+                                                         .filter(this::expediteChange)
                                                          .filter(event -> activationTime.get().isBefore(event.at()))
                                                          .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
                                     .sorted()
@@ -101,9 +102,10 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
     }
 
     /** Returns whether to expedite changes performed by agent */
-    private boolean expediteChangeBy(Agent agent) {
-        return switch (agent) {
-            case operator, HostEncrypter, HostResumeProvisioner, RebuildingOsUpgrader -> true;
+    private boolean expediteChange(History.Event event) {
+        return switch (event.agent()) {
+            case operator -> event.type() != History.Event.Type.resized;
+            case HostEncrypter, HostResumeProvisioner, RebuildingOsUpgrader -> true;
             default -> false;
         };
     }
