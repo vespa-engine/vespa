@@ -10,6 +10,7 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.rankingexpression.ast.INTEGER;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
@@ -32,14 +33,14 @@ public class IntegerArgument implements Argument {
 
     @Override
     public boolean validateArgument(RankNode node) {
-        SchemaNode leaf = node.getSchemaNode().findFirstLeaf();
+        Node leaf = node.getSchemaNode().findFirstLeaf();
         return leaf.isASTInstance(INTEGER.class);
     }
 
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode argument) {
 
-        SchemaNode leaf = argument.getSchemaNode();
+        Node leaf = argument.getSchemaNode();
 
         while (leaf.size() > 0) {
             if (leaf.hasSymbol()) {

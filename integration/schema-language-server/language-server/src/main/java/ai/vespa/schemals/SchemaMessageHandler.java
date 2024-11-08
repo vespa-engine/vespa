@@ -62,8 +62,7 @@ public class SchemaMessageHandler {
         return client.showDocument(new ShowDocumentParams(fileURI));
     }
 
-    public CompletableFuture<ApplyWorkspaceEditResponse> applyEdit(WorkspaceEdit edit) {
-        ApplyWorkspaceEditParams params = new ApplyWorkspaceEditParams(edit);
+    public CompletableFuture<ApplyWorkspaceEditResponse>  applyEdit(ApplyWorkspaceEditParams params) {
         return client.applyEdit(params);
     }
 }

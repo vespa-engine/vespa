@@ -31,6 +31,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 
 import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
 import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
+import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * Class responsible for maintaining the set of open documents and reparsing them.
@@ -86,7 +87,7 @@ public class SchemaDocumentScheduler {
                     workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
                     break;
                 case YQL:
-                    workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, fileURI));
+                    workspaceFiles.put(fileURI, new YQLDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
                     break;
             }
         }
@@ -124,11 +125,13 @@ public class SchemaDocumentScheduler {
                 if (!undefinedSymbolDiagnostics.containsKey(symbolURI))undefinedSymbolDiagnostics.put(symbolURI, new ArrayList<>());
 
                 ParseContext context = symbolDocument.getParseContext();
-                List<Diagnostic> diagnostics = new ArrayList<>();
-                SymbolReferenceResolver.resolveSymbolReference(symbol.getNode(), context, diagnostics);
-                if (diagnostics.isEmpty()) {
-                    didResolve = true;
-                    break;
+                if (symbol.getNode() instanceof SchemaNode) {
+                    List<Diagnostic> diagnostics = new ArrayList<>();
+                    SymbolReferenceResolver.resolveSymbolReference(symbol.getNode().getSchemaNode(), context, diagnostics);
+                    if (diagnostics.isEmpty()) {
+                        didResolve = true;
+                        break;
+                    }
                 }
             }
             if (!didResolve) break;

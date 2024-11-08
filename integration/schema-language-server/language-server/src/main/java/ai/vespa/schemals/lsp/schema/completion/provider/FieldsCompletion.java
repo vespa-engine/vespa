@@ -18,6 +18,7 @@ import ai.vespa.schemals.lsp.schema.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -50,7 +51,7 @@ public class FieldsCompletion implements CompletionProvider {
         int beforeDotDelta = previousBeforeDot(context.document.getCurrentContent(), context.position);
 
         if (beforeDotDelta != -1) {
-            SchemaNode prevSymbol = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), new Position(context.position.getLine(), context.position.getCharacter() - beforeDotDelta));
+            Node prevSymbol = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), new Position(context.position.getLine(), context.position.getCharacter() - beforeDotDelta));
             if (prevSymbol == null) return List.of();
 
             Optional<Symbol> prevSymbolDefinition = context.schemaIndex.getSymbolDefinition(prevSymbol.getSymbol());

@@ -21,7 +21,6 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.schema.codeaction.utils.CodeActionUtils;
 import ai.vespa.schemals.lsp.schema.rename.SchemaRename;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.attributeElm;
@@ -38,6 +37,7 @@ import ai.vespa.schemals.parser.ast.rootSchemaItem;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -75,8 +75,8 @@ public class QuickFixProvider implements CodeActionProvider {
         return action;
     }
 
-    private Position firstPositionInBlock(SchemaNode blockNode) {
-        for (SchemaNode child : blockNode) {
+    private Position firstPositionInBlock(Node blockNode) {
+        for (Node child : blockNode) {
             if (child.isASTInstance(openLbrace.class)) {
                 return child.get(0).getRange().getEnd();
             }
@@ -84,8 +84,8 @@ public class QuickFixProvider implements CodeActionProvider {
         return null;
     }
 
-    private SchemaNode findRootSchemaItemNode(SchemaNode start) {
-        SchemaNode rootSchemaItemNode = start;
+    private Node findRootSchemaItemNode(Node start) {
+        Node rootSchemaItemNode = start;
 
         while (rootSchemaItemNode != null) {
             if (rootSchemaItemNode.isASTInstance(rootSchemaItem.class)) break;
@@ -101,10 +101,10 @@ public class QuickFixProvider implements CodeActionProvider {
      * @return A CodeAction which will provide an import field statement and rename the field access.
      */
     private CodeAction fixAccessUnimportedField(EventCodeActionContext context, Diagnostic diagnostic) {
-        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (offendingNode == null) return null;
 
-        SchemaNode referenceFieldNode = offendingNode.getPreviousSibling();
+        Node referenceFieldNode = offendingNode.getPreviousSibling();
 
         if (referenceFieldNode == null)return null;
         if (!referenceFieldNode.hasSymbol()) return null;
@@ -112,7 +112,7 @@ public class QuickFixProvider implements CodeActionProvider {
 
         String newFieldName = referenceFieldNode.getSymbol().getShortIdentifier() + "_" + offendingNode.getSymbol().getShortIdentifier();
 
-        SchemaNode rootSchemaItemNode = findRootSchemaItemNode(offendingNode);
+        Node rootSchemaItemNode = findRootSchemaItemNode(offendingNode);
         if (rootSchemaItemNode == null) return null; // likely inside a rootDocument, where import field is impossible
 
         Position insertPosition = rootSchemaItemNode.getRange().getEnd();
@@ -142,14 +142,14 @@ public class QuickFixProvider implements CodeActionProvider {
         String schemaName = document.getSchemaIdentifier();
         CodeAction action = basicQuickFix("Insert document definition '" + schemaName + "'", diagnostic);
 
-        SchemaNode rootSchemaNode = document.getRootNode().get(0);
+        Node rootSchemaNode = document.getRootNode().get(0);
         Position insertPosition = firstPositionInBlock(rootSchemaNode);
 
         if (insertPosition == null) {
             insertPosition = CSTUtils.addPositions(diagnostic.getRange().getStart(), new Position(1, 0)); // one line below
             insertPosition.setCharacter(0);
         }
-        SchemaNode offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), diagnostic.getRange().getStart());
+        Node offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), diagnostic.getRange().getStart());
         String indentString = StringUtils.getIndentString(context.document.getCurrentContent(), offendingNode);
         int indent = StringUtils.countSpaceIndents(indentString) + StringUtils.TAB_SIZE;
         action.setEdit(CodeActionUtils.simpleEditList(context, List.of(
@@ -171,7 +171,7 @@ public class QuickFixProvider implements CodeActionProvider {
      * @return The CodeAction providing the quick fix.
      */
     private CodeAction fixDocumentReferenceAttribute(EventCodeActionContext context, Diagnostic diagnostic) {
-        SchemaNode fieldIdentifierNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node fieldIdentifierNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (fieldIdentifierNode == null) return null;
 
         // TODO: maybe append to existing indexing script if possible
@@ -200,7 +200,7 @@ public class QuickFixProvider implements CodeActionProvider {
      */
     private CodeAction fixImportFieldAttribute(EventCodeActionContext context, Diagnostic diagnostic) {
 
-        SchemaNode importReferenceNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node importReferenceNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (importReferenceNode == null) return null;
 
         Symbol referenceSymbol = importReferenceNode.getSymbol();
@@ -209,7 +209,7 @@ public class QuickFixProvider implements CodeActionProvider {
 
         if (definitionSymbol.isEmpty()) return null;
 
-        SchemaNode definitionFieldElm = definitionSymbol.get().getNode().getParent();
+        Node definitionFieldElm = definitionSymbol.get().getNode().getParent();
 
         DocumentManager definitionDocument = context.scheduler.getDocument(definitionSymbol.get().getFileURI());
 
@@ -229,7 +229,7 @@ public class QuickFixProvider implements CodeActionProvider {
     }
 
     private CodeAction fixExplicitlyInheritDocument(EventCodeActionContext context, Diagnostic diagnostic) {
-        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (offendingNode == null) return null;
 
         Symbol schemaReferenceSymbol = offendingNode.getSymbol();
@@ -241,7 +241,7 @@ public class QuickFixProvider implements CodeActionProvider {
         // findSymbol on DOCUMENT may return SCHEMA. In that case we are not interested
         if (myDocumentDefinition.isEmpty() || myDocumentDefinition.get().getType() != SymbolType.DOCUMENT) return null;
 
-        SchemaNode documentIdentifierNode = myDocumentDefinition.get().getNode();
+        Node documentIdentifierNode = myDocumentDefinition.get().getNode();
 
         CodeAction action = basicQuickFix("Inherit document '" + schemaReferenceSymbol.getShortIdentifier() + "'", diagnostic);
 
@@ -253,7 +253,7 @@ public class QuickFixProvider implements CodeActionProvider {
     }
 
     private CodeAction fixInheritsStructFieldRedeclared(EventCodeActionContext context, Diagnostic diagnostic) {
-        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (offendingNode == null) return null;
 
         CodeAction action = basicQuickFix("Remove field declaration '" + offendingNode.getText() + "'", diagnostic);
@@ -265,10 +265,10 @@ public class QuickFixProvider implements CodeActionProvider {
     }
 
     private CodeAction fixAnnotationReferenceOutsideAnnotation(EventCodeActionContext context, Diagnostic diagnostic) {
-        SchemaNode offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
+        Node offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
         if (offendingNode == null) return null;
 
-        SchemaNode fieldElmNode = offendingNode;
+        Node fieldElmNode = offendingNode;
 
         while (fieldElmNode != null && !fieldElmNode.isASTInstance(fieldElm.class)) fieldElmNode = fieldElmNode.getParent();
 
@@ -291,7 +291,7 @@ public class QuickFixProvider implements CodeActionProvider {
     }
 
     private CodeAction fixDeprecatedArraySyntax(EventCodeActionContext context, Diagnostic diagnostic) {
-        SchemaNode tokenNode = CSTUtils.getLeafNodeAtPosition(context.document.getRootNode(), context.position);
+        Node tokenNode = CSTUtils.getLeafNodeAtPosition(context.document.getRootNode(), context.position);
         if (tokenNode == null) return null;
         if (!tokenNode.getParent().getParent().isASTInstance(dataType.class))return null;
 
@@ -322,7 +322,7 @@ public class QuickFixProvider implements CodeActionProvider {
         // TODO: actually create an enclosing schema if it doesn't exist?
         if (!context.document.getRootNode().get(0).isASTInstance(rootSchema.class)) return null;
 
-        Class<? extends Node> offendingBodyClass;
+        Class<? extends ai.vespa.schemals.parser.Node> offendingBodyClass;
         String replacementKind;
 
         if (code == DiagnosticCode.DEPRECATED_TOKEN_ATTRIBUTE) {
@@ -333,26 +333,26 @@ public class QuickFixProvider implements CodeActionProvider {
             replacementKind = "index";
         }
 
-        SchemaNode offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
+        Node offendingNode = CSTUtils.getNodeAtPosition(context.document.getRootNode(), context.position);
 
         // Find the field definition containing the error as well as its data type
         Optional<Symbol> fieldDefinition = CSTUtils.findScope(offendingNode);
         if (fieldDefinition.isEmpty()) return null;
 
-        Optional<SchemaNode> dataTypeNode = context.schemaIndex.fieldIndex().getFieldDataTypeNode(fieldDefinition.get());
+        Optional<Node> dataTypeNode = context.schemaIndex.fieldIndex().getFieldDataTypeNode(fieldDefinition.get());
 
         // use some arbitrary default, the generated field will most likely require manual editing anyways
         String dataTypeString = dataTypeNode.isPresent() ? dataTypeNode.get().getText() : "string"; 
 
         // Find the node containing the entire index or attribute statement
-        SchemaNode offendingBodyElmNode = offendingNode;
+        Node offendingBodyElmNode = offendingNode;
         while (offendingBodyElmNode != null && !offendingBodyElmNode.isASTInstance(offendingBodyClass)) {
             offendingBodyElmNode = offendingBodyElmNode.getParent();
         }
         if (offendingBodyElmNode == null) return null;
 
         // Find the rootSchemaItemNode containing the document so we can insert after
-        SchemaNode rootSchemaItemNode = findRootSchemaItemNode(offendingNode);
+        Node rootSchemaItemNode = findRootSchemaItemNode(offendingNode);
         if (rootSchemaItemNode == null) return null;
 
 
@@ -388,7 +388,7 @@ public class QuickFixProvider implements CodeActionProvider {
     }
 
     private CodeAction fixFeaturesInheritsNonParent(EventCodeActionContext context, Diagnostic diagnostic) {
-        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (offendingNode == null || offendingNode.getSymbol().getScope() == null) return null;
 
         Symbol rankProfileSymbol = offendingNode.getSymbol().getScope();
@@ -399,17 +399,17 @@ public class QuickFixProvider implements CodeActionProvider {
 
     private CodeAction fixFieldArgumentMissingIndexingType(EventCodeActionContext context, Diagnostic diagnostic) {
 
-        SchemaNode offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node offendingNode = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (offendingNode == null || !offendingNode.hasSymbol()) return null;
         Optional<Symbol> symbol = context.schemaIndex.findSymbol(offendingNode.getSymbol());
         if (symbol.isEmpty()) return null;
 
-        SchemaNode node = symbol.get().getNode().getParent();
+        Node node = symbol.get().getNode().getParent();
 
-        Optional<SchemaNode> indexingNode = Optional.empty();
-        for (SchemaNode child : node) {
+        Optional<Node> indexingNode = Optional.empty();
+        for (Node child : node) {
             if (child.isASTInstance(fieldBodyElm.class)) {
-                SchemaNode grandChild = child.get(0);
+                Node grandChild = child.get(0);
                 if (grandChild != null && grandChild.isASTInstance(indexingElm.class)) {
                     indexingNode = Optional.of(grandChild);
                 }
@@ -423,10 +423,10 @@ public class QuickFixProvider implements CodeActionProvider {
 
         } else {
             // Add indexing node as well
-            Optional<SchemaNode> rBraceNode = Optional.empty();
+            Optional<Node> rBraceNode = Optional.empty();
 
             for (int i = 0; i < node.size(); i++) {
-                SchemaNode child = node.get(i);
+                Node child = node.get(i);
                 if (child.isASTInstance(RBRACE.class)) {
                     rBraceNode = Optional.of(child);
                     break;
@@ -436,7 +436,7 @@ public class QuickFixProvider implements CodeActionProvider {
             if (rBraceNode.isEmpty()) return null;
 
             // Calculate indent
-            SchemaNode fieldKeywordNode = node.get(0);
+            Node fieldKeywordNode = node.get(0);
             if (fieldKeywordNode == null) return null;
 
             String insertIndentString = StringUtils.getIndentString(context.document.getCurrentContent(), fieldKeywordNode);
@@ -445,12 +445,12 @@ public class QuickFixProvider implements CodeActionProvider {
             String newText = StringUtils.spaceIndent(StringUtils.TAB_SIZE) + "indexing: attribute\n" + StringUtils.spaceIndent(indent);
 
             // Check is a leading new line is necessary
-            SchemaNode prevSibling = rBraceNode.get().getPrevious();
+            Node prevSibling = rBraceNode.get().getPrevious();
             if (prevSibling == null) return null;
             boolean newLineNecessary = false;
             if (!prevSibling.isASTInstance(NL.class)) {
                 if (prevSibling.isASTInstance(openLbrace.class)) {
-                    SchemaNode lastLbraceChild = prevSibling.get(prevSibling.size() - 1);
+                    Node lastLbraceChild = prevSibling.get(prevSibling.size() - 1);
                     if (!lastLbraceChild.isASTInstance(NL.class)) {
                         newLineNecessary = true;
                     }

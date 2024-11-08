@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
+import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.CreateFile;
 import org.eclipse.lsp4j.CreateFileOptions;
 import org.eclipse.lsp4j.Position;
@@ -65,7 +66,7 @@ public class CreateSchemaFile implements SchemaCommand {
             .addTextEdit(writeUri, new TextEdit(insertRange, schemaText))
             .build();
 
-        Object result = context.messageHandler.applyEdit(edit).join();
+        Object result = context.messageHandler.applyEdit(new ApplyWorkspaceEditParams(edit)).join();
 
         context.logger.info(result);
 

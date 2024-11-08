@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Position;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /*
@@ -126,8 +127,8 @@ public class SchemaDocumentLexer {
         if (node.getDirtyType() != null) {
             tokens.add(node);
         }
-        for (SchemaNode child : node) {
-            collectAllTokens(child);
+        for (Node child : node) {
+            collectAllTokens(child.getSchemaNode());
         }
     }
 }

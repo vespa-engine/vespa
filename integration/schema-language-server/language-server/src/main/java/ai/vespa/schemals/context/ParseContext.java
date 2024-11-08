@@ -3,32 +3,36 @@ package ai.vespa.schemals.context;
 import java.util.List;
 import java.util.ArrayList;
 
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.FieldIndex;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 import ai.vespa.schemals.schemadocument.parser.Identifier;
-import ai.vespa.schemals.schemadocument.parser.IdentifyType;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
-import ai.vespa.schemals.schemadocument.parser.IdentifySymbolDefinition;
-import ai.vespa.schemals.schemadocument.parser.IdentifySymbolReferences;
-import ai.vespa.schemals.schemadocument.parser.IdentifySchemaInheritance;
-import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentInheritance;
-import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentSummaryInheritance;
-import ai.vespa.schemals.schemadocument.parser.IdentifyStructInheritance;
-import ai.vespa.schemals.schemadocument.parser.IdentifyRankProfileInheritance;
-import ai.vespa.schemals.schemadocument.parser.IdentifyDeprecatedToken;
 import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
-import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentlessSchema;
-import ai.vespa.schemals.schemadocument.parser.IdentifyNamedDocument;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDeprecatedToken;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDirtySchemaNodes;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDocumentInheritance;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDocumentSummaryInheritance;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDocumentlessSchema;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyNamedDocument;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyRankProfileInheritance;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifySchemaInheritance;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyStructInheritance;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolReferences;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyType;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
 
 public class ParseContext { 
     private String content;
     private String fileURI;
     private ClientLogger logger;
-    private List<Identifier> identifiers;
+    private List<Identifier<SchemaNode>> identifiers;
+    private List<Identifier<YQLNode>> YQLIdentifiers;
     private List<SchemaNode> unresolvedInheritanceNodes;
     private List<SchemaNode> unresolvedTypeNodes;
     private List<SchemaNode> unresolvedDocumentReferenceNodes;
@@ -48,6 +52,7 @@ public class ParseContext {
         this.unresolvedFieldArgumentNodes = new ArrayList<>();
         this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>();
+        this.YQLIdentifiers = new ArrayList<>();
         this.scheduler = scheduler;
     }
 
@@ -69,7 +74,7 @@ public class ParseContext {
             add(new IdentifyDocumentSummaryInheritance(context));
 
             add(new IdentifyDeprecatedToken(context));
-            add(new IdentifyDirtyNodes(context));
+            add(new IdentifyDirtySchemaNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
         }};
@@ -85,7 +90,15 @@ public class ParseContext {
             add(new IdentifySymbolDefinition(context));
             add(new IdentifySymbolReferences(context));
             add(new IdentifyRankProfileInheritance(context));
-            add(new IdentifyDirtyNodes(context));
+            add(new IdentifyDirtySchemaNodes(context));
+        }};
+    }
+
+    public void useVespaGroupingIdentifiers() {
+        ParseContext context = this;
+
+        this.YQLIdentifiers = new ArrayList<>() {{
+            add(new IdentifyDirtyNodes<YQLNode>(context));
         }};
     }
 
@@ -101,8 +114,12 @@ public class ParseContext {
         return this.fileURI;
     }
 
-    public List<Identifier> identifiers() {
+    public List<Identifier<SchemaNode>> identifiers() {
         return this.identifiers;
+    }
+
+    public List<Identifier<YQLNode>> YQLIdentifiers() {
+        return this.YQLIdentifiers;
     }
 
     public List<SchemaNode> unresolvedInheritanceNodes() {
@@ -134,7 +151,7 @@ public class ParseContext {
         return this.scheduler;
     }
 
-    public void addIdentifier(Identifier identifier) {
+    public void addIdentifier(Identifier<SchemaNode> identifier) {
         this.identifiers.add(identifier);
     }
 

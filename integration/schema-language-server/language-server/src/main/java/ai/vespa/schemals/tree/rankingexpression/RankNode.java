@@ -20,6 +20,7 @@ import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -117,11 +118,11 @@ public class RankNode implements Iterable<RankNode>  {
     private static List<RankNode> findChildren(SchemaNode node) {
         List<RankNode> ret = new ArrayList<>();
 
-        for (SchemaNode child : node) {
+        for (Node child : node) {
             if (rankNodeTypeMap.containsKey(child.getASTClass())) {
-                ret.add(new RankNode(child));
+                ret.add(new RankNode(child.getSchemaNode()));
             } else {
-                ret.addAll(findChildren(child));
+                ret.addAll(findChildren(child.getSchemaNode()));
             }
         }
 
@@ -129,10 +130,10 @@ public class RankNode implements Iterable<RankNode>  {
     }
 
     private static Optional<List<RankNode>> findParameters(SchemaNode node) {
-        SchemaNode parameterNode = null;
+        Node parameterNode = null;
 
         for (int i = 0; i < node.size(); i++) {
-            if (node.get(i).isASTInstance(args.class)) {
+            if (node.get(i).getASTClass() == args.class) {
                 parameterNode = node.get(i);
                 break;
             }
@@ -144,9 +145,9 @@ public class RankNode implements Iterable<RankNode>  {
 
         List<RankNode> ret = new ArrayList<>();
 
-        for (SchemaNode child : parameterNode) {
-            if (child.isASTInstance(expression.class)) {
-                ret.add(new RankNode(child));
+        for (Node child : parameterNode) {
+            if (child.getASTClass() == expression.class) {
+                ret.add(new RankNode(child.getSchemaNode()));
             }
         }
 
@@ -156,9 +157,9 @@ public class RankNode implements Iterable<RankNode>  {
     private static List<RankNode> findBuiltInChildren(SchemaNode node) {
         List<RankNode> ret = new ArrayList<>();
 
-        for (SchemaNode child : node) {
-            if (child.isASTInstance(expression.class)) {
-                ret.add(new RankNode(child));
+        for (Node child : node) {
+            if (child.getASTClass() == expression.class) {
+                ret.add(new RankNode(child.getSchemaNode()));
             }
         }
 
@@ -166,10 +167,10 @@ public class RankNode implements Iterable<RankNode>  {
     }
 
     private static Optional<SchemaNode> findProperty(SchemaNode node) {
-        SchemaNode propertyNode = null;
+        Node propertyNode = null;
 
         for (int i = 0; i < node.size(); i++) {
-            if (node.get(i).isASTInstance(outs.class)) {
+            if (node.get(i).getASTClass() == outs.class) {
                 propertyNode = node.get(i);
                 break;
             }
@@ -181,7 +182,7 @@ public class RankNode implements Iterable<RankNode>  {
             return Optional.empty();
         }
 
-        return Optional.of(propertyNode.get(0));
+        return Optional.of(propertyNode.get(0).getSchemaNode());
 
     }
 
@@ -226,12 +227,12 @@ public class RankNode implements Iterable<RankNode>  {
             return null;
         }
 
-        SchemaNode symbolNode = schemaNode.get(0);
+        Node symbolNode = schemaNode.get(0);
         if (!symbolNode.hasSymbol()) {
             return null;
         }
 
-        return symbolNode;
+        return symbolNode.getSchemaNode();
     }
 
     public boolean hasSymbol() {

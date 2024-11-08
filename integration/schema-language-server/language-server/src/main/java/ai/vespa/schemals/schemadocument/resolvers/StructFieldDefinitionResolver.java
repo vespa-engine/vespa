@@ -15,6 +15,7 @@ import ai.vespa.schemals.parser.ast.fieldBodyElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.structFieldBodyElm;
 import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -29,22 +30,22 @@ public class StructFieldDefinitionResolver {
     }
 
     private static void traverse(ParseContext context, SchemaNode node, List<Diagnostic> diagnostics) {
-        if (node.getParent() != null && node.isASTInstance(identifierStr.class) && node.getParent().isASTInstance(structFieldElm.class)) {
+        if (node.getParent() != null && node.isASTInstance(identifierStr.class) && node.getParent().getASTClass() == structFieldElm.class) {
             handleStructField(context, node, diagnostics);
         }
-        for (SchemaNode child : node) {
-            traverse(context, child, diagnostics);
+        for (Node child : node) {
+            traverse(context, child.getSchemaNode(), diagnostics);
         }
     }
 
     private static void handleStructField(ParseContext context, SchemaNode node, List<Diagnostic> diagnostics) {
-        SchemaNode prev = node.getPreviousSibling();
-        if (prev.isASTInstance(STRUCT_FIELD.class)) {
-            SchemaNode enclosingBodyNode = node.getParent().getParent();
+        Node prev = node.getPreviousSibling();
+        if (prev.getASTClass() == STRUCT_FIELD.class) {
+            Node enclosingBodyNode = node.getParent().getParent();
 
-            if (enclosingBodyNode.isASTInstance(fieldBodyElm.class)) {
+            if (enclosingBodyNode.getASTClass() == fieldBodyElm.class) {
                 // struct-field declared inside field
-                SchemaNode fieldIdentifierNode = enclosingBodyNode.getParent().get(1);
+                Node fieldIdentifierNode = enclosingBodyNode.getParent().get(1);
 
                 if (!fieldIdentifierNode.hasSymbol() || fieldIdentifierNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;
                 Optional<Symbol> subfieldInParent = SymbolReferenceResolver.resolveSubFieldReference(node, fieldIdentifierNode.getSymbol(), context, diagnostics);
@@ -53,11 +54,11 @@ public class StructFieldDefinitionResolver {
 
                 Symbol scope = fieldIdentifierNode.getSymbol();
                 createStructFieldDefinition(context, scope, node, subfieldInParent.get());
-            } else if (enclosingBodyNode.isASTInstance(structFieldBodyElm.class)) {
+            } else if (enclosingBodyNode.getASTClass() == structFieldBodyElm.class) {
                 // nested struct-field
                 // the referred field definition is the last component in the struct-field identifier
-                SchemaNode lastStructFieldIdentifier = enclosingBodyNode.getParent().get(1);
-                while (lastStructFieldIdentifier.getNextSibling() != null && lastStructFieldIdentifier.getNextSibling().isASTInstance(identifierStr.class)) {
+                Node lastStructFieldIdentifier = enclosingBodyNode.getParent().get(1);
+                while (lastStructFieldIdentifier.getNextSibling() != null && lastStructFieldIdentifier.getNextSibling().getASTClass() == identifierStr.class) {
                     lastStructFieldIdentifier = lastStructFieldIdentifier.getNextSibling();
                 }
                 if (!lastStructFieldIdentifier.hasSymbol() || lastStructFieldIdentifier.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;

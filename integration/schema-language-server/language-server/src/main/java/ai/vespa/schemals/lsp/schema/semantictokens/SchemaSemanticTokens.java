@@ -14,8 +14,9 @@ import org.eclipse.lsp4j.SemanticTokenTypes;
 import org.eclipse.lsp4j.SemanticTokens;
 
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -112,11 +113,11 @@ public class SchemaSemanticTokens {
             Integer tokenType = CommonSemanticTokens.getType("type");
             if (tokenType != -1) {
                 // this will leave <> uncolored, as we are only interested in marking the actual token
-                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                Range markerRange = node.findFirstLeaf().getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
-            for (SchemaNode child : node) {
-                ArrayList<SemanticTokenMarker> markers = traverseCST(child, logger);
+            for (Node child : node) {
+                ArrayList<SemanticTokenMarker> markers = traverseCST(child.getSchemaNode(), logger);
                 ret.addAll(markers);
             }
 
@@ -154,25 +155,25 @@ public class SchemaSemanticTokens {
         } else if (indexinglanguageType != null) {
             if (SchemaSemanticTokenConfig.indexingLanguageOutputs.contains(indexinglanguageType)) {
                 Integer tokenType = CommonSemanticTokens.getType("type");
-                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                Range markerRange = node.findFirstLeaf().getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             } else if (SchemaSemanticTokenConfig.indexingLanguageKeywords.contains(indexinglanguageType)) {
                 Integer tokenType = CommonSemanticTokens.getType("keyword");
-                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                Range markerRange = node.findFirstLeaf().getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             } else if (SchemaSemanticTokenConfig.indexingLanguageOperators.contains(indexinglanguageType)) {
                 Integer tokenType = CommonSemanticTokens.getType("function");
-                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                Range markerRange = node.findFirstLeaf().getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             } else if (indexinglanguageType == ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.STRING) {
                 Integer tokenType = CommonSemanticTokens.getType("string");
-                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                Range markerRange = node.findFirstLeaf().getRange();
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
         }  else {
             
-            for (SchemaNode child : node) {
-                ArrayList<SemanticTokenMarker> markers = traverseCST(child, logger);
+            for (Node child : node) {
+                ArrayList<SemanticTokenMarker> markers = traverseCST(child.getSchemaNode(), logger);
                 ret.addAll(markers);
             }
         }
@@ -193,7 +194,7 @@ public class SchemaSemanticTokens {
     private static boolean isEnumLike(SchemaNode node) {
         if (node.getLanguageType() != LanguageType.SCHEMA) return false;
         if (node.getParent() == null) return false;
-        if (node.getParent().isASTInstance(integerElm.class) || node.getParent().isASTInstance(quotedString.class) || node.getParent().isASTInstance(bool.class)) return false;
+        if (node.getParent().getASTClass() == integerElm.class || node.getParent().getASTClass() == quotedString.class || node.getParent().getASTClass() == bool.class) return false;
         if (!node.isLeaf()) return false;
 
         // ugly special case
@@ -201,7 +202,7 @@ public class SchemaSemanticTokens {
 
         if (node.isASTInstance(RANK_TYPE.class)) return false;
 
-        SchemaNode it = node.getParent();
+        Node it = node.getParent();
         while (it != null) {
             if (enumLikeItems.contains(it.getASTClass())) break;
             it = it.getParent();

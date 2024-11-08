@@ -112,7 +112,7 @@ TOKEN :
 | < HEX_DIGIT: ["0"-"9","a"-"f","A"-"F"] >
 | < UNICODE_ESC: '\\' 'u' <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> >
 | < ESC_SEQ: '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\'|'/') | <UNICODE_ESC> >
-| < STRING: (<DQ> ( <ESC_SEQ> | ~['\\','"'])* <DQ>) | ( <SQ> ( <ESC_SEQ> | ~['\\','"'])* <SQ> ) >
+| < STRING: (<DQ> ( <ESC_SEQ> | ~['\\','"'])* <DQ>) | ( <SQ> ( <ESC_SEQ> | ~['\\','\''])* <SQ> ) >
 
 ;
 
@@ -174,7 +174,6 @@ vespa_grouping_identifier:
         | <LBRACE>
         | <RBRACE>
         | <COLON>
-        | <PIPE>
         | <AND>
         | <OR>
         | <NOT_IN>
@@ -377,9 +376,9 @@ alias_def:
 
 data_source:
     (
-        call_source |
+        sequence_source |
         (<LPAREN> source_statement <RPAREN>) |
-        sequence_source
+        call_source
     )
 ;
 

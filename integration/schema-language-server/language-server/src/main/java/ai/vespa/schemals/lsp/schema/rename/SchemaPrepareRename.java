@@ -7,7 +7,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.tree.CSTUtils;
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 
 /**
  * Responsible for LSP textDocument/prepareRename requests.
@@ -17,7 +17,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 public class SchemaPrepareRename {
 
     public static Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior> prepareRename(EventPositionContext context) {
-        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
         if (node == null) {
             return null;
