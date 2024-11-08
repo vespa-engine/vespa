@@ -13,6 +13,7 @@ import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentOpen;
 import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
 import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
 import ai.vespa.schemals.lsp.common.command.commandtypes.FindDocument;
+import ai.vespa.schemals.lsp.common.command.commandtypes.GetDefinedSchemas;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SetupWorkspace;
 import ai.vespa.schemals.lsp.common.command.commandtypes.HasSetupWorkspace;
@@ -127,8 +128,14 @@ public class CommandRegistry {
              * boolean -- indicating success.
              *
              */
-            public String title() { return "Create Schema File"; }
+            public String title() { return "Create schema file"; }
             public SchemaCommand construct() { return new CreateSchemaFile(); }
+        },
+        GET_DEFINED_SCHEMAS {
+            /*
+             */
+            public String title() { return "Get defined schemas"; }
+            public SchemaCommand construct() { return new GetDefinedSchemas(); }
         }
     }
 

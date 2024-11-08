@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.Location;
 
 import com.google.common.reflect.TypeToken;
+import com.google.common.util.concurrent.ExecutionList;
 import com.google.gson.Gson;
 
 /**
@@ -66,6 +67,23 @@ public class SchemaLSCommands {
             String json = gson.toJson(findDocumentResult);
             Type listOfLocationType = new TypeToken<List<Location>>() {}.getType();
             return gson.fromJson(json, listOfLocationType);
+        } catch (Exception ex) {
+            logger.severe("Error when parsing json: " + ex.getMessage());
+            return List.of();
+        }
+    }
+
+    public List<String> getDefinedSchemas() {
+        Object getDefinedSchemasResult = commandService.executeClientCommand(
+            new ExecuteCommandParams("vespaSchemaLS.commands.schema.getDefinedSchemas", List.of())
+        ).join();
+
+        if (getDefinedSchemasResult == null) return List.of();
+
+        try {
+            String json = gson.toJson(getDefinedSchemasResult);
+            Type listOfStringType = new TypeToken<List<String>>() {}.getType();
+            return gson.fromJson(json, listOfStringType);
         } catch (Exception ex) {
             logger.severe("Error when parsing json: " + ex.getMessage());
             return List.of();

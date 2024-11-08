@@ -47,7 +47,7 @@ public class DiagnosticsParticipant implements IDiagnosticsParticipant {
     private void traverse(DOMNode node, DiagnosticsContext context) {
         if (node instanceof DOMElement) {
             DOMElement element = (DOMElement)node;
-            if (context.hasSetupWorkspace() && element.getTagName().equals("document")) {
+            if (context.hasSetupWorkspace() && "document".equals(element.getTagName())) {
                 validateDocumentElement(element, context);
             }
         }
@@ -58,7 +58,7 @@ public class DiagnosticsParticipant implements IDiagnosticsParticipant {
 
     private void validateDocumentElement(DOMElement element, DiagnosticsContext context) {
         DOMAttr typeAttribute = element.getAttributeNode("type");
-        if (typeAttribute != null) {
+        if (typeAttribute != null && typeAttribute.getValue() != null) {
             String docName = typeAttribute.getValue();
             Range range = XMLPositionUtility.createRange(typeAttribute.getStart(), typeAttribute.getEnd(), context.xmlDocument);
 

@@ -198,6 +198,19 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.getDefinedSchemas", async () => {
+        if (schemaClient === null) { return false; }
+        try {
+            const result = await schemaClient.sendRequest("workspace/executeCommand", {
+                command: "GET_DEFINED_SCHEMAS",
+                arguments: []
+            });
+            return result;
+        } catch (err) {
+            logger.error("Error when sending command: " + err);
+        }
+    }));
+
     logger.info("Vespa language client activated");
 }
 
