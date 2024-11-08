@@ -85,7 +85,7 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableSta
         if (entry) {
             entry->memoryUsage.update(field.second.memory_usage());
             entry->size_on_disk.set(field.second.size_on_disk());
-            entry->update_disk_io(field.second.disk_io_stats());
+            entry->update_disk_io(field.second.cache_disk_io_stats());
         }
     }
 }

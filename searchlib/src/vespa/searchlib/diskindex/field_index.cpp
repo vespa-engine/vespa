@@ -30,13 +30,13 @@ const std::vector<std::string> field_file_names{
 
 std::atomic<uint64_t> FieldIndex::_file_id_source(0);
 
-FieldIndex::LockedDiskIoStats::LockedDiskIoStats() noexcept
-    : DiskIoStats(),
+FieldIndex::LockedCacheDiskIoStats::LockedCacheDiskIoStats() noexcept
+    : _stats(),
       _mutex()
 {
 }
 
-FieldIndex::LockedDiskIoStats::~LockedDiskIoStats() = default;
+FieldIndex::LockedCacheDiskIoStats::~LockedCacheDiskIoStats() = default;
 
 FieldIndex::FieldIndex()
     : _posting_file(),
@@ -44,7 +44,7 @@ FieldIndex::FieldIndex()
       _dict(),
       _file_id(0),
       _size_on_disk(0),
-      _disk_io_stats(std::make_shared<LockedDiskIoStats>()),
+      _cache_disk_io_stats(std::make_shared<LockedCacheDiskIoStats>()),
       _posting_list_cache()
 {
 }
@@ -154,7 +154,7 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
     _bit_vector_dict = rhs._bit_vector_dict;
     _file_id = rhs._file_id;
     _size_on_disk = rhs._size_on_disk;
-    _disk_io_stats = rhs._disk_io_stats;
+    _cache_disk_io_stats = rhs._cache_disk_io_stats;
 }
 
 PostingListHandle
@@ -162,7 +162,7 @@ FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_resu
 {
     auto handle = _posting_file->read_posting_list(lookup_result);
     if (handle._read_bytes != 0) {
-        _disk_io_stats->add_read_operation(handle._read_bytes);
+        _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
     }
     return handle;
 }
@@ -173,6 +173,7 @@ FieldIndex::read(const IPostingListCache::Key& key) const
     DictionaryLookupResult lookup_result;
     lookup_result.bitOffset = key.bit_offset;
     lookup_result.counts._bitLength = key.bit_length;
+    key.backing_store_file = nullptr; // Signal cache miss back to layer above cache
     return read_uncached_posting_list(lookup_result);
 }
 
@@ -191,7 +192,12 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     key.file_id = _file_id;
     key.bit_offset = lookup_result.bitOffset;
     key.bit_length = lookup_result.counts._bitLength;
-    return _posting_list_cache->read(key);
+    auto result = _posting_list_cache->read(key);
+    auto cache_hit = key.backing_store_file == this;
+    if (cache_hit && result._read_bytes != 0) {
+        _cache_disk_io_stats->add_cached_read_operation(result._read_bytes);
+    }
+    return result;
 }
 
 std::unique_ptr<BitVector>
@@ -221,8 +227,8 @@ FieldIndex::get_field_length_info() const
 FieldIndexStats
 FieldIndex::get_stats() const
 {
-    auto disk_io_stats = _disk_io_stats->read_and_clear();
-    return FieldIndexStats().size_on_disk(_size_on_disk).disk_io_stats(disk_io_stats);
+    auto cache_disk_io_stats = _cache_disk_io_stats->read_and_clear();
+    return FieldIndexStats().size_on_disk(_size_on_disk).cache_disk_io_stats(cache_disk_io_stats);
 }
 
 }

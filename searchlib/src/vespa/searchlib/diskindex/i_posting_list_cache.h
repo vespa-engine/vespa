@@ -15,7 +15,7 @@ class IPostingListCache {
 public:
     class IPostingListFileBacking;
     struct Key {
-       const IPostingListFileBacking* backing_store_file; // Used by backing store on cache miss
+       mutable const IPostingListFileBacking* backing_store_file; // Used by backing store on cache miss
        uint64_t file_id;
        uint64_t bit_offset;
        uint64_t bit_length;
