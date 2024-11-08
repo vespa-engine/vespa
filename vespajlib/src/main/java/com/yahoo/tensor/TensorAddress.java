@@ -23,7 +23,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public static TensorAddress ofLabels(String... labels) {
         return TensorAddressAny.of(labels);
     }
-
+    
     public static TensorAddress of(long... labels) {
         return TensorAddressAny.of(labels);
     }
@@ -31,6 +31,11 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public static TensorAddress of(int... labels) {
         return TensorAddressAny.of(labels);
     }
+
+    public static TensorAddress of(Label... labels) {
+        return TensorAddressAny.of(labels);
+    }
+    
 
     /** Returns the number of labels in this */
     public abstract int size();
@@ -49,8 +54,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
      * @throws IllegalArgumentException if there is no label at this index
      */
     public abstract long numericLabel(int i);
-
-    public abstract TensorAddress withLabel(int labelIndex, long label);
+    
+    public abstract Label labelObject(int i);
+    
+    public abstract TensorAddress withLabel(int labelIndex, Label label);
 
     public final boolean isEmpty() { return size() == 0; }
 
@@ -58,7 +65,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public int compareTo(TensorAddress other) {
         // TODO: Formal issue (only): Ordering with different address sizes
         for (int i = 0; i < size(); i++) {
-            int elementComparison = this.label(i).compareTo(other.label(i));
+            int elementComparison = this.label(i).compareTo(other.label(i)); // TODO: Faster with numeric labels?
             if (elementComparison != 0) return elementComparison;
         }
         return 0;
@@ -104,11 +111,13 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     /** Returns an address with only some of the dimension. Ordering will also be according to indexMap */
     public TensorAddress partialCopy(int[] indexMap) {
-        long[] labels = new long[indexMap.length];
+        var labels = new Label[indexMap.length];
+        
         for (int i = 0; i < labels.length; ++i) {
-            labels[i] = numericLabel(indexMap[i]);
+            labels[i] = labelObject(indexMap[i]);
         }
-        return TensorAddressAny.ofUnsafe(labels);
+        
+        return TensorAddressAny.of(labels);
     }
 
     /** Creates a complete address by taking the mapped dimensions of this and adding the indexed from the indexedPart */

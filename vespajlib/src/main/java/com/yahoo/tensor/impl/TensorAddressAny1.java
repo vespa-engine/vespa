@@ -26,16 +26,16 @@ final class TensorAddressAny1 extends TensorAddressAny {
     }
 
     @Override
-    public TensorAddress withLabel(int labelIndex, long label) {
+    public TensorAddress withLabel(int labelIndex, Label label) {
         if (labelIndex == 0) return new TensorAddressAny1(label);
         throw new IllegalArgumentException("No label " + labelIndex);
     }
 
-    @Override public int hashCode() { return (int)Math.abs(label); }
+    @Override public int hashCode() { return (int)Math.abs(label.getNumeric()); }
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof TensorAddressAny1 any) && (label == any.label);
+        return (o instanceof TensorAddressAny1 any) && (label.getNumeric() == any.label.getNumeric());
     }
 
 }

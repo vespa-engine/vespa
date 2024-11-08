@@ -143,6 +143,21 @@ abstract public class TensorAddressAny extends TensorAddress {
             case 2 -> of(labels[0], labels[1]);
             case 3 -> of(labels[0], labels[1], labels[2]);
             case 4 -> of(labels[0], labels[1], labels[2], labels[3]);
+            default -> {
+                var copy = new Label[labels.length];
+                System.arraycopy(labels, 0, copy, 0, labels.length);
+                yield  new TensorAddressAnyN(copy);
+            }
+        };
+    }
+
+    public static TensorAddress ofUnsafe(Label ... labels) {
+        return switch (labels.length) {
+            case 0 -> of();
+            case 1 -> of(labels[0]);
+            case 2 -> of(labels[0], labels[1]);
+            case 3 -> of(labels[0], labels[1], labels[2]);
+            case 4 -> of(labels[0], labels[1], labels[2], labels[3]);
             default -> new TensorAddressAnyN(labels);
         };
     }
