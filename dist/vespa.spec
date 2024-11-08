@@ -158,9 +158,6 @@ Vespa - The open big data serving engine - base
 
 Summary: Vespa - The open big data serving engine - base C++ libraries
 
-%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
-Requires: epel-release
-%endif
 %if 0%{?amzn2023}
 Requires: vespa-xxhash >= 0.8.1
 %else
