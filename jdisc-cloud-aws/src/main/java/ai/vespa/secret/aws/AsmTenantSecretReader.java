@@ -5,7 +5,6 @@ import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.VaultName;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
@@ -29,7 +28,7 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
     }
 
     // For testing
-    AsmTenantSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier,
+    AsmTenantSecretReader(Function<AwsRolePath, SecretsManagerClient> clientAndCredentialsSupplier,
                           String system, String tenant) {
         super(clientAndCredentialsSupplier);
         this.system = system;
@@ -37,8 +36,8 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
     }
 
     @Override
-    protected AwsRole awsRole(VaultName vault) {
-        return new AwsRole(AthenzUtil.resourceEntityName(system, tenant, vault));
+    protected AwsRolePath awsRole(VaultName vault) {
+        return AthenzUtil.awsReaderRole(system, tenant, vault);
     }
 
     @Override
