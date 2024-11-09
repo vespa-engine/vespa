@@ -69,7 +69,8 @@ public class EmbedExpression extends Expression  {
         super.setInputType(type, context);
         if ( ! (type == DataType.STRING) &&
              ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-            throw new VerificationException(this, "This requires either a string or array<string> input type, but got " + type);
+            throw new VerificationException(this, "This requires either a string or array<string> input type, but got " +
+                                                  type.getName());
         return getOutputType(context); // embed cannot determine the output type from the input
     }
 

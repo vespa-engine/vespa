@@ -32,9 +32,8 @@ public final class SplitExpression extends Expression {
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         super.setOutputType(output, context);
-        // TODO: Activate type checking
-        // if ( ! (output instanceof ArrayDataType) && output.getNestedType() == DataType.STRING)
-        //    throw new VerificationException(this, "This produces a string array, but needs type " + output.getName());
+        if ( ! (output instanceof ArrayDataType) && output.getNestedType() == DataType.STRING)
+            throw new VerificationException(this, "This produces a string array, but " + output.getName() + " is required");
         return DataType.STRING;
     }
 
