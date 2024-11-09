@@ -62,6 +62,7 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     @Override
     public ArithmeticExpression convertChildren(ExpressionConverter converter) {
+        // TODO: branch()?
         return new ArithmeticExpression(converter.convert(left), op, converter.convert(right));
     }
 
@@ -76,11 +77,9 @@ public final class ArithmeticExpression extends CompositeExpression {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        DataType leftInput = left.setOutputType(AnyNumericDataType.instance, context);
-        DataType rightInput = right.setOutputType(AnyNumericDataType.instance, context);
-        if (leftInput.isAssignableTo(rightInput))
-            return rightInput;
-        else if (rightInput.isAssignableTo(leftInput))
+        DataType leftInput = left.setOutputType(outputType, context);
+        DataType rightInput = right.setOutputType(outputType, context);
+        if (leftInput == rightInput) // TODO: Generalize
             return leftInput;
         else
             return getInputType(context);
@@ -96,9 +95,9 @@ public final class ArithmeticExpression extends CompositeExpression {
     private DataType resultingType(DataType left, DataType right) {
         if (left == null || right == null)
             return null;
-        if ( ! (left instanceof NumericDataType))
+        if (!(left instanceof NumericDataType))
             throw new VerificationException(this, "The first argument must be a number, but has type " + left.getName());
-        if ( ! (right instanceof NumericDataType))
+        if (!(right instanceof NumericDataType))
             throw new VerificationException(this, "The second argument must be a number, but has type " + right.getName());
 
         if (left == DataType.FLOAT || left == DataType.DOUBLE || right == DataType.FLOAT || right == DataType.DOUBLE) {
