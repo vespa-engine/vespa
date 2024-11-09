@@ -79,7 +79,9 @@ public final class ArithmeticExpression extends CompositeExpression {
         super.setOutputType(outputType, context);
         DataType leftInput = left.setOutputType(outputType, context);
         DataType rightInput = right.setOutputType(outputType, context);
-        if (leftInput == rightInput) // TODO: Generalize
+        if (leftInput.isAssignableTo(rightInput))
+            return rightInput;
+        else if (rightInput.isAssignableTo(leftInput))
             return leftInput;
         else
             return getInputType(context);
