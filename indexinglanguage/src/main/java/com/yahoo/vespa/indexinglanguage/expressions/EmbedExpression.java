@@ -67,10 +67,10 @@ public class EmbedExpression extends Expression  {
     @Override
     public DataType setInputType(DataType type, VerificationContext context) {
         super.setInputType(type, context);
-        if ( ! (type == DataType.STRING) &&
-             ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-            throw new VerificationException(this, "This requires either a string or array<string> input type, but got " +
-                                                  type.getName());
+        // TODO: Activate type checking
+        // if ( ! (type == DataType.STRING)
+        //      && ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
+        //     throw new VerificationException(this, "This requires either a string or array<string> input type, but got " + type);
         return getOutputType(context); // embed cannot determine the output type from the input
     }
 
