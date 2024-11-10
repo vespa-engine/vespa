@@ -3803,6 +3803,19 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.yolean.Exceptions$SupplierThrowingInterruptedException" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.lang.Object get()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.yolean.Exceptions" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -3822,6 +3835,7 @@
       "public static java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException)",
       "public static varargs java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.String, java.lang.String[])",
       "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)",
+      "public static java.lang.Object uncheckInterrupted(com.yahoo.yolean.Exceptions$SupplierThrowingInterruptedException)",
       "public static java.lang.RuntimeException throwUnchecked(java.lang.Throwable)"
     ],
     "fields" : [ ]
