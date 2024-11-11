@@ -52,7 +52,7 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void requireThatEachStatementHasEmptyInput() {
+    public void failsWhenOneStatementIsMissingInput() {
         Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
 
@@ -61,11 +61,37 @@ public class ScriptTestCase {
                 new StatementExpression(new AttributeExpression("out-2")));
         try {
             exp.verify(input);
-            fail();
+            fail("Expected exception");
         } catch (VerificationException e) {
             assertEquals(e.getExpressionType(), ScriptExpression.class);
-            assertEquals("Invalid expression '{ input in-1 | attribute out-1; attribute out-2; }': Expected any input, but no input is specified", e.getMessage());
+            assertEquals("Invalid expression '{ input in-1 | attribute out-1; attribute out-2; }': Missing an input", e.getMessage());
         }
+    }
+
+    @Test
+    public void failsWhenAllStatementIsMissingInput() {
+        Document input = new Document(type, "id:scheme:mytype::");
+        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
+
+        Expression exp = new ScriptExpression(
+                new StatementExpression(new AttributeExpression("out-2")));
+        try {
+            exp.verify(input);
+            fail("Expected exception");
+        } catch (VerificationException e) {
+            assertEquals(e.getExpressionType(), ScriptExpression.class);
+            assertEquals("Invalid expression '{ attribute out-2; }': Missing an input", e.getMessage());
+        }
+    }
+
+    @Test
+    public void succeedsWhenAllStatementsHaveInput() {
+        Document input = new Document(type, "id:scheme:mytype::");
+        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
+
+        Expression exp = new ScriptExpression(
+                new StatementExpression(new InputExpression("in-1"), new AttributeExpression("out-1")));
+        exp.verify(input);
     }
 
     @Test

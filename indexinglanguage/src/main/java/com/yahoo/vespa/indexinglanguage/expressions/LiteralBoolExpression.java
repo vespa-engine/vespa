@@ -20,6 +20,9 @@ public class LiteralBoolExpression extends Expression {
     }
 
     @Override
+    public boolean requiresInput() { return false; }
+
+    @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
         return DataType.BOOL;

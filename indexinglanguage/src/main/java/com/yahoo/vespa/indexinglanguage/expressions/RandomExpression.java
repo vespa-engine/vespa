@@ -23,6 +23,9 @@ public final class RandomExpression extends Expression {
         this.max = max;
     }
 
+    @Override
+    public boolean requiresInput() { return false; }
+
     public Integer getMaxValue() { return max; }
 
     @Override

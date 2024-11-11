@@ -15,12 +15,10 @@ public class SimpleExpressionTestCase {
     @Test
     public void requireThatAccessorsWork() {
         SimpleExpression exp = new SimpleExpression();
-        assertNull(exp.requiredInputType());
         assertNull(exp.createdOutputType());
         assertNull(exp.execute());
         assertNull(exp.verify());
 
-        assertEquals(DataType.INT, new SimpleExpression(DataType.INT).requiredInputType());
         assertEquals(DataType.INT, new SimpleExpression().setCreatedOutput(DataType.INT).createdOutputType());
         assertEquals(DataType.INT, new SimpleExpression().setVerifyValue(DataType.INT).verify());
         assertEquals(new IntegerFieldValue(69),
@@ -51,7 +49,6 @@ public class SimpleExpressionTestCase {
         assertEquals(exp, new SimpleExpression().setVerifyValue(DataType.INT));
 
         exp = new SimpleExpression(DataType.INT);
-        assertFalse(exp.equals(new SimpleExpression(DataType.STRING)));
         assertEquals(exp, new SimpleExpression(DataType.INT));
 
         exp = new SimpleExpression().setCreatedOutput(DataType.INT);

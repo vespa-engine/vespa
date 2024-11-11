@@ -65,21 +65,6 @@ public class StatementTestCase {
     }
 
     @Test
-    public void requireThatRequiredInputIsDeterminedByFirstNonNullRequiredInput() {
-        assertEquals(DataType.INT, newStatement(SimpleExpression.newRequired(DataType.INT)).requiredInputType());
-        assertEquals(DataType.INT, newStatement(new SimpleExpression(),
-                                                SimpleExpression.newRequired(DataType.INT)).requiredInputType());
-        assertEquals(DataType.INT, newStatement(SimpleExpression.newRequired(DataType.INT),
-                                                SimpleExpression.newRequired(DataType.INT)).requiredInputType());
-    }
-
-    @Test
-    public void requireThatRequiredInputIsNullIfAnyOutputIsCreatedFirst() {
-        assertNull(newStatement(new SimpleExpression().setCreatedOutput(DataType.INT),
-                                new SimpleExpression(DataType.INT)).requiredInputType());
-    }
-
-    @Test
     public void requireThatCreatedOutputIsDeterminedByLastNonNullCreatedOutput() {
         assertEquals(DataType.STRING, newStatement(SimpleExpression.newOutput(DataType.STRING)).createdOutputType());
         assertEquals(DataType.STRING, newStatement(SimpleExpression.newOutput(DataType.INT),

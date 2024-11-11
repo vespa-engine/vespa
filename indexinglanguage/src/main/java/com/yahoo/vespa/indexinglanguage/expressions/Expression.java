@@ -18,7 +18,14 @@ import com.yahoo.vespa.objects.Selectable;
 import java.util.Map;
 
 /**
+ * Superclass of expressions.
+ *
+ * Rules:
+ * - All expressions produce an output.
+ * - Expressions that does not require an input overrides requiresInput() to return false
+ *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public abstract class Expression extends Selectable {
 
@@ -38,6 +45,9 @@ public abstract class Expression extends Selectable {
     protected Expression(DataType requiredInputType) {
         this.requiredInputType = requiredInputType;
     }
+
+    /** Returns whether this expression requires an input value. */
+    public boolean requiresInput() { return true; }
 
     /**
      * Returns an expression where the children of this has been converted using the given converter.
@@ -64,7 +74,7 @@ public abstract class Expression extends Selectable {
      * @throws IllegalArgumentException if inputType isn't assignable to requiredType
      */
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
-        if ( ! (inputType.isAssignableTo(requiredType)))
+        if ( requiredType != null && ! (inputType.isAssignableTo(requiredType)))
             throw new VerificationException(this, "This requires type " + requiredType.getName() + ", but gets " + inputType.getName());
         return assignInputType(inputType);
     }
@@ -200,33 +210,22 @@ public abstract class Expression extends Selectable {
     }
 
     public final DataType verify(VerificationContext context) {
+        //if (requiresInput() && context.getCurrentType() == null)   (My try, but since scriptexpression bafflingly requires input ...
+        //    throw new VerificationException(this, "Missing an input");
         if (requiredInputType != null) {
             DataType input = context.getCurrentType();
             if (input == null) {
                 throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, but no input is specified");
             }
-            if (input.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
+            if (input != null && input.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
                 throw new VerificationException(this, "Failed to resolve input type");
             }
-            if (!requiredInputType.isAssignableFrom(input)) {
+            if (input != null && !requiredInputType.isAssignableFrom(input)) {
                 throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, got " +
                                                       input.getName());
             }
         }
         doVerify(context);
-        DataType outputType = createdOutputType();
-        if (outputType != null) {
-            DataType output = context.getCurrentType();
-            if (output == null) {
-                throw new VerificationException(this, "Expected " + outputType.getName() + " output, but no output is specified");
-            }
-            if (output.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
-                throw new VerificationException(this, "Failed to resolve output type");
-            }
-            if (!outputType.isAssignableFrom(output)) {
-                throw new VerificationException(this, "Expected " + outputType.getName() + " output, got " + output.getName());
-            }
-        }
         return context.getCurrentType();
     }
 

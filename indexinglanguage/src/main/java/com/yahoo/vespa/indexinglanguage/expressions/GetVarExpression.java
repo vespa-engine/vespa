@@ -15,6 +15,9 @@ public final class GetVarExpression extends Expression {
         this.variableName = variableName;
     }
 
+    @Override
+    public boolean requiresInput() { return false; }
+
     public String getVariableName() { return variableName; }
 
     @Override

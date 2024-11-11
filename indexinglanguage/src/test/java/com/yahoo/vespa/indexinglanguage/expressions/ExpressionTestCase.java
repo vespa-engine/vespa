@@ -42,17 +42,6 @@ public class ExpressionTestCase {
     }
 
     @Test
-    public void requireThatOutputTypeIsCheckedAfterVerify() {
-        assertVerify(newCreatedOutput(DataType.INT, DataType.INT), null);
-        assertVerifyThrows(newCreatedOutput(DataType.INT, (DataType)null), null,
-                           "Invalid expression 'SimpleExpression': Expected int output, but no output is specified");
-        assertVerifyThrows(newCreatedOutput(DataType.INT, UnresolvedDataType.INSTANCE), null,
-                           "Invalid expression 'SimpleExpression': Failed to resolve output type");
-        assertVerifyThrows(newCreatedOutput(DataType.INT, DataType.STRING), null,
-                           "Invalid expression 'SimpleExpression': Expected int output, got string");
-    }
-
-    @Test
     public void requireThatEqualsMethodWorks() {
         assertTrue(Expression.equals(null, null));
         assertTrue(Expression.equals(1, 1));

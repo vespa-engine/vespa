@@ -25,6 +25,9 @@ public final class InputExpression extends Expression {
         this.fieldName = fieldName;
     }
 
+    @Override
+    public boolean requiresInput() { return false; }
+
     public String getFieldName() { return fieldName; }
 
     @Override

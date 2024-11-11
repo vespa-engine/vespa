@@ -63,31 +63,12 @@ public class ArithmeticTestCase {
     public void requireThatVerifyCallsAreForwarded() {
         assertVerify(SimpleExpression.newOutput(DataType.INT), Operator.ADD,
                      SimpleExpression.newOutput(DataType.INT), null);
-        assertVerifyThrows(SimpleExpression.newOutput(null), Operator.ADD,
-                           SimpleExpression.newOutput(DataType.INT), null,
-                           "Expected any output, but no output is specified");
-        assertVerifyThrows(SimpleExpression.newOutput(DataType.INT), Operator.ADD,
-                           SimpleExpression.newOutput(null), null,
-                           "Expected any output, but no output is specified");
-        assertVerifyThrows(SimpleExpression.newOutput(null), Operator.ADD,
-                           SimpleExpression.newOutput(null), null,
-                           "Expected any output, but no output is specified");
         assertVerifyThrows(SimpleExpression.newOutput(DataType.INT), Operator.ADD,
                            SimpleExpression.newOutput(DataType.STRING), null,
                            "The second argument must be a number, but has type string");
         assertVerifyThrows(SimpleExpression.newOutput(DataType.STRING), Operator.ADD,
                            SimpleExpression.newOutput(DataType.STRING), null,
                            "The first argument must be a number, but has type string");
-    }
-
-    @Test
-    public void requireThatOperandInputCanBeNull() {
-        SimpleExpression reqNull = new SimpleExpression();
-        SimpleExpression reqInt = new SimpleExpression(DataType.INT);
-        assertNull(newArithmetic(reqNull, Operator.ADD, reqNull).requiredInputType());
-        assertEquals(DataType.INT, newArithmetic(reqInt, Operator.ADD, reqNull).requiredInputType());
-        assertEquals(DataType.INT, newArithmetic(reqInt, Operator.ADD, reqInt).requiredInputType());
-        assertEquals(DataType.INT, newArithmetic(reqNull, Operator.ADD, reqInt).requiredInputType());
     }
 
     @Test
@@ -183,7 +164,14 @@ public class ArithmeticTestCase {
     }
 
     private static ArithmeticExpression newArithmetic(Expression lhs, Operator op, Expression rhs) {
-        return new ArithmeticExpression(lhs, op, rhs);
+        return newArithmetic(lhs, op, rhs, null);
+    }
+
+    private static ArithmeticExpression newArithmetic(Expression lhs, Operator op, Expression rhs, VerificationContext context) {
+        var expression = new ArithmeticExpression(lhs, op, rhs);
+        if (context != null)
+            expression.verify(context);
+        return expression;
     }
 
     private static ConstantExpression newLong(long val) {

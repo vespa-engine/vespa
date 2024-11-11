@@ -21,6 +21,9 @@ public final class ConstantExpression extends Expression {
         this.value = Objects.requireNonNull(value);
     }
 
+    @Override
+    public boolean requiresInput() { return false; }
+
     public FieldValue getValue() { return value; }
 
     @Override
