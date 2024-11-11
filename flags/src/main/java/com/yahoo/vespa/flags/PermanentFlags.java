@@ -344,7 +344,13 @@ public class PermanentFlags {
 
     public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
             "cloud-accounts", List.of(), String.class,
-            "A list of 12-digit AWS account IDs that are valid for the given tenant",
+            "A list of cloud accounts (e.g. AWS account or GCP project IDs) that are valid for the given tenant",
+            "Takes effect on next deployment through controller",
+            TENANT_ID);
+
+    public static final UnboundBooleanFlag REQUIRE_ENCLAVE = defineFeatureFlag(
+            "require-enclave", false,
+            "Whether the given tenant should only be allowed to deploy to enclave",
             "Takes effect on next deployment through controller",
             TENANT_ID);
 
