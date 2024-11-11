@@ -21,8 +21,15 @@ public class HashExpression extends Expression  {
 
     private final HashFunction hasher = Hashing.sipHash24();
 
+    private DataType targetType;
+
     public HashExpression() {
         super(DataType.STRING);
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        targetType = field.getDataType();
     }
 
     @Override
@@ -48,9 +55,9 @@ public class HashExpression extends Expression  {
     @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
-        if (requireOutputType().equals(DataType.INT))
+        if (DataType.INT.equals(targetType) || requireOutputType().equals(DataType.INT))
             context.setCurrentValue(new IntegerFieldValue(hashToInt(input.getString())));
-        else if (requireOutputType().equals(DataType.LONG))
+        else if (DataType.LONG.equals(targetType) || requireOutputType().equals(DataType.LONG))
             context.setCurrentValue(new LongFieldValue(hashToLong(input.getString())));
         else
             throw new IllegalStateException(); // won't happen
