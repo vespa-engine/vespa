@@ -4,7 +4,6 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.yahoo.collections.ListMap;
-import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.container.protect.Error;
 import com.yahoo.data.access.Inspector;
@@ -51,7 +50,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private final CompressPayload compressor;
     private final DecodePolicy decodePolicy;
 
-    private BlockingQueue<Pair<Client.ResponseOrError<ProtobufResponse>, List<FastHit>>> responses;
+    private record ResponseAndHits(Client.ResponseOrError<ProtobufResponse> response, List<FastHit> hits) {}
+
+    private BlockingQueue<ResponseAndHits> responses;
 
     /** Whether we have already logged/notified about an error - to avoid spamming */
     private boolean hasReportedError = false;
@@ -116,7 +117,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     /** Called by a thread belonging to the client when a valid response becomes available */
     public void receive(Client.ResponseOrError<ProtobufResponse> response, List<FastHit> hitsContext) {
-        responses.add(new Pair<>(response, hitsContext));
+        responses.add(new ResponseAndHits(response, hitsContext));
     }
 
     /** Return a map of hits by their search node (partition) id */
@@ -140,40 +141,38 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             log.warning("Got hits with node id " + nodeId + ", which is not included in the current dispatch config");
             return;
         }
-
         Query query = result.getQuery();
         Compressor.Compression compressionResult = compressor.compress(query, payload);
         node.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(),
                 roe -> receive(roe, hits), clientTimeout);
     }
 
+    private ResponseAndHits getNextResponse(Result result) throws InterruptedException {
+        long timeLeftMs = result.getQuery().getTimeLeft();
+        if (timeLeftMs <= 0) {
+            return null;
+        }
+        var responseAndHits = responses.poll(timeLeftMs, TimeUnit.MILLISECONDS);
+        if (responseAndHits == null || responseAndHits.response().timeout()) {
+            return null;
+        }
+        return responseAndHits;
+    }
+
     private void processResponses(Result result, String summaryClass) throws TimeoutException {
         try {
-            List<Integer> alternates = new ArrayList<>();
-            alternates.addAll(resourcePool.knownNodeIds());
             List<FastHit> skippedHits = new ArrayList<>();
             while (outstandingResponses > 0) {
-                long timeLeftMs = result.getQuery().getTimeLeft();
-                if (timeLeftMs <= 0) {
-                    throwTimeout();
-                }
-                var responseAndHits = responses.poll(timeLeftMs, TimeUnit.MILLISECONDS);
+                var responseAndHits = getNextResponse(result);
                 if (responseAndHits == null) {
                     throwTimeout();
                 }
-                var response = responseAndHits.getFirst();
-                if (response.timeout()) {
-                    throwTimeout();
-                }
-                var hitsContext = responseAndHits.getSecond();
-                skippedHits.addAll(processResponse(result, response, hitsContext, summaryClass));
+                skippedHits.addAll(processOneResponse(result, responseAndHits, summaryClass, false));
                 outstandingResponses--;
             }
-
             if (! skippedHits.isEmpty()) {
                 ListMap<Integer, FastHit> retryMap = new ListMap<>();
-                while (alternates.size() > 0) {
-                    int nodeId = alternates.remove(0);
+                for (Integer nodeId : resourcePool.knownNodeIds()) {
                     for (var hit : skippedHits) {
                         if (hit.getDistributionKey() != nodeId) {
                             retryMap.put(nodeId, hit);
@@ -184,23 +183,12 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     sendFillRequestByNode(result, summaryClass, retryMap);
                 }
                 while (outstandingResponses > 0) {
-                    long timeLeftMs = result.getQuery().getTimeLeft();
-                    if (timeLeftMs <= 0) {
-                        log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
-                        break;
-                    }
-                    var responseAndHits = responses.poll(timeLeftMs, TimeUnit.MILLISECONDS);
+                    var responseAndHits = getNextResponse(result);
                     if (responseAndHits == null) {
                         log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
                         break;
                     }
-                    var response = responseAndHits.getFirst();
-                    if (response.timeout()) {
-                        log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
-                        break;
-                    }
-                    var hitsContext = responseAndHits.getSecond();
-                    speculativeProcessResponse(result, response, hitsContext, summaryClass);
+                    processOneResponse(result, responseAndHits, summaryClass, true);
                     outstandingResponses--;
                 }
                 skippedHits.removeIf(hit -> hit.isFilled(summaryClass));
@@ -214,10 +202,15 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private List<FastHit> processResponse(Result result, Client.ResponseOrError<ProtobufResponse> responseOrError, List<FastHit> hitsContext,
-            String summaryClass) {
+    private List<FastHit> processOneResponse(
+            Result result,
+            ResponseAndHits responseAndHits,
+            String summaryClass,
+            boolean ignoreErrors)
+    {
+        var responseOrError = responseAndHits.response();
         if (responseOrError.error().isPresent()) {
-            if (hasReportedError) {
+            if (hasReportedError || ignoreErrors) {
                 return List.of();
             }
             String error = responseOrError.error().get();
@@ -227,23 +220,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         } else {
             Client.ProtobufResponse response = responseOrError.response().get();
             byte[] responseBytes = compressor.decompress(response);
-            return fill(result, hitsContext, summaryClass, responseBytes);
+            return fill(result, responseAndHits.hits(), summaryClass, responseBytes, ignoreErrors);
         }
         return List.of();
-    }
-
-    private void speculativeProcessResponse(
-            Result result,
-            Client.ResponseOrError<ProtobufResponse> responseOrError,
-            List<FastHit> hitsContext,
-            String summaryClass)
-    {
-        if (responseOrError.error().isPresent()) {
-            return;
-        }
-        Client.ProtobufResponse response = responseOrError.response().get();
-        byte[] responseBytes = compressor.decompress(response);
-        speculativeFill(result, hitsContext, summaryClass, responseBytes);
     }
 
     private void addErrors(Result result, com.yahoo.slime.Inspector errors) {
@@ -259,19 +238,20 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload) {
+    private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload, boolean ignoreErrors) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
             var root = (decodePolicy == DecodePolicy.ONDEMAND)
                     ? BinaryView.inspect(protobuf.getSlimeSummaries().toByteArray())
                     : BinaryFormat.decode(protobuf.getSlimeSummaries().toByteArray()).get();
-            var errors = root.field("errors");
-            boolean hasErrors = errors.valid() && (errors.entries() > 0);
-            if (hasErrors) {
-                addErrors(result, errors);
+            if (! ignoreErrors) {
+                var errors = root.field("errors");
+                boolean hasErrors = errors.valid() && (errors.entries() > 0);
+                if (hasErrors) {
+                    addErrors(result, errors);
+                }
+                convertErrorsFromDocsumReply(result, protobuf.getErrorsList());
             }
-            convertErrorsFromDocsumReply(result, protobuf.getErrorsList());
-
             Inspector summaries = new SlimeAdapter(root.field("docsums"));
             if (!summaries.valid()) {
                 return List.of(); // No summaries; Perhaps we requested a non-existing summary class
@@ -279,46 +259,23 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             List<FastHit> skippedHits = new ArrayList<>();
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
+                FastHit hit = hits.get(i);
                 if (summary.valid()) {
-                    hits.get(i).setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
-                    hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
-                    hits.get(i).setFilled(summaryClass);
+                    hit.setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
+                    hit.addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
+                    hit.setFilled(summaryClass);
                 } else {
-                    skippedHits.add(hits.get(i));
+                    skippedHits.add(hit);
                 }
             }
             return skippedHits;
         } catch (InvalidProtocolBufferException ex) {
-            log.log(Level.WARNING, "Invalid response to docsum request", ex);
-            result.hits().addError(ErrorMessage.createInternalServerError("Invalid response to docsum request from backend"));
-            return List.of();
-        }
-    }
-
-    private void speculativeFill(Result result, List<FastHit> hits, String summaryClass, byte[] payload) {
-        try {
-            var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
-            var root = (decodePolicy == DecodePolicy.ONDEMAND)
-                    ? BinaryView.inspect(protobuf.getSlimeSummaries().toByteArray())
-                    : BinaryFormat.decode(protobuf.getSlimeSummaries().toByteArray()).get();
-            Inspector summaries = new SlimeAdapter(root.field("docsums"));
-            if (!summaries.valid()) {
-                return; // No summaries; Perhaps we requested a non-existing summary class
+            if (! ignoreErrors) {
+                log.log(Level.WARNING, "Invalid response to docsum request", ex);
+                result.hits().addError(ErrorMessage.createInternalServerError("Invalid response to docsum request from backend"));
             }
-            for (int i = 0; i < hits.size(); i++) {
-                Inspector summary = summaries.entry(i).field("docsum");
-                if (summary.valid()) {
-                    FastHit hit = hits.get(i);
-                    if (! hit.getFilled().contains(summaryClass)) {
-                        hit.setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
-                        hit.addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
-                        hit.setFilled(summaryClass);
-                    }
-                }
-            }
-        } catch (InvalidProtocolBufferException ex) {
-            log.log(Level.WARNING, "Invalid response to docsum request", ex);
         }
+        return List.of();
     }
 
     private void throwTimeout() throws TimeoutException {
