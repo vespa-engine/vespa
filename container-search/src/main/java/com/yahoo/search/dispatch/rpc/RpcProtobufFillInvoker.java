@@ -45,7 +45,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private final DocumentDatabase documentDb;
     private final RpcConnectionPool resourcePool;
-    private final boolean summaryNeedsQuery;
+    private boolean summaryNeedsQuery;
     private final String serverId;
     private final CompressPayload compressor;
     private final DecodePolicy decodePolicy;
@@ -59,6 +59,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     /** The number of responses we should receive (and process) before this is complete */
     private int outstandingResponses;
+    private int hitsFilledOk = 0;
 
     RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb,
                            String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery) {
@@ -147,8 +148,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                 roe -> receive(roe, hits), clientTimeout);
     }
 
-    private ResponseAndHits getNextResponse(Result result) throws InterruptedException {
-        long timeLeftMs = result.getQuery().getTimeLeft();
+    private ResponseAndHits getNextResponse(Query query) throws InterruptedException {
+        long timeLeftMs = query.getTimeLeft();
         if (timeLeftMs <= 0) {
             return null;
         }
@@ -163,14 +164,28 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         try {
             List<FastHit> skippedHits = new ArrayList<>();
             while (outstandingResponses > 0) {
-                var responseAndHits = getNextResponse(result);
+                var responseAndHits = getNextResponse(result.getQuery());
                 if (responseAndHits == null) {
                     throwTimeout();
                 }
                 skippedHits.addAll(processOneResponse(result, responseAndHits, summaryClass, false));
                 outstandingResponses--;
             }
-            if (! skippedHits.isEmpty()) {
+            /*
+            if (skippedHits.isEmpty()) {
+                // all done OK
+                return;
+            }
+            */
+            int numSkipped = skippedHits.size();
+            int numTotal = numSkipped + hitsFilledOk;
+            log.log(Level.WARNING, "total hits: " + numTotal + " ok: " + hitsFilledOk + " skipped: " + numSkipped);
+            double absoluteRetryLimit = result.getQuery().properties().getInteger(Query.DOCSUM_RETRY_LIMIT, 10);
+            double retryLimitFactor = result.getQuery().properties().getDouble(Query.DOCSUM_RETRY_FACTOR, 0.5);
+            log.log(Level.WARNING, "retry limit: " + absoluteRetryLimit + " factor: " + retryLimitFactor);
+            double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numTotal);
+            // maybe retry:
+            if (numSkipped < retryLimit) {
                 ListMap<Integer, FastHit> retryMap = new ListMap<>();
                 for (Integer nodeId : resourcePool.knownNodeIds()) {
                     for (var hit : skippedHits) {
@@ -180,10 +195,11 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     }
                 }
                 if (retryMap.size() > 0) {
+                    summaryNeedsQuery = true;
                     sendFillRequestByNode(result, summaryClass, retryMap);
                 }
                 while (outstandingResponses > 0) {
-                    var responseAndHits = getNextResponse(result);
+                    var responseAndHits = getNextResponse(result.getQuery());
                     if (responseAndHits == null) {
                         log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
                         break;
@@ -264,6 +280,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     hit.setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
                     hit.addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                     hit.setFilled(summaryClass);
+                    ++hitsFilledOk;
                 } else {
                     skippedHits.add(hit);
                 }
