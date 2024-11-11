@@ -2,6 +2,7 @@
 package com.yahoo.tensor;
 
 import com.yahoo.tensor.impl.Label;
+import com.yahoo.tensor.impl.LabelCache;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.Arrays;
@@ -156,7 +157,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         private static Label[] createEmptyLabels(int size) {
             var labels = new Label[size];
-            Arrays.fill(labels, Label.INVALID_INDEX_LABEL);
+            Arrays.fill(labels, LabelCache.INVALID_INDEX_LABEL);
             return labels;
         }
 
@@ -194,7 +195,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             int labelIndex = type.indexOfDimensionAsInt(dimension);
             if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex] = Label.of(label);
+            labels[labelIndex] = LabelCache.getOrCreateLabel(label);
             return this;
         }
 
@@ -208,7 +209,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             int labelIndex = type.indexOfDimensionAsInt(dimension);
             if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex] = Label.of(label);
+            labels[labelIndex] = LabelCache.getOrCreateLabel(label);
             return this;
         }
 
@@ -222,7 +223,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == Label.INVALID_INDEX_LABEL)
+                if (labels[i] == LabelCache.INVALID_INDEX_LABEL)
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }

@@ -29,7 +29,7 @@ final class TensorAddressAnyN extends TensorAddressAny {
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
         var copy = Arrays.copyOf(labels, labels.length);
-        copy[labelIndex] = Label.of(label);
+        copy[labelIndex] = LabelCache.getOrCreateLabel(label);
         return new TensorAddressAnyN(copy);
     }
 

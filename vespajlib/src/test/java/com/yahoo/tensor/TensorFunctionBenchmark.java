@@ -23,9 +23,9 @@ public class TensorFunctionBenchmark {
 
     private final static Random random = new Random();
 
-    public double benchmark(int iterations, int vecorSize, List<Tensor> modelVectors, TensorType.Dimension.Type dimensionType,
+    public double benchmark(int iterations, int vectorSize, List<Tensor> modelVectors, TensorType.Dimension.Type dimensionType,
                             boolean extraSpace) {
-        Tensor queryVector = vectors(1, vecorSize, dimensionType).get(0);
+        Tensor queryVector = vectors(1, vectorSize, dimensionType).get(0);
         if (extraSpace) {
             queryVector = queryVector.multiply(unitVector("j"));
             modelVectors = modelVectors.stream().map(t -> t.multiply(unitVector("k"))).toList();

@@ -35,9 +35,9 @@ final class TensorAddressAny3 extends TensorAddressAny {
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
         return switch (labelIndex) {
-            case 0 -> new TensorAddressAny3(Label.of(label), label1, label2);
-            case 1 -> new TensorAddressAny3(label0, Label.of(label), label2);
-            case 2 -> new TensorAddressAny3(label0, label1, Label.of(label));
+            case 0 -> new TensorAddressAny3(LabelCache.getOrCreateLabel(label), label1, label2);
+            case 1 -> new TensorAddressAny3(label0, LabelCache.getOrCreateLabel(label), label2);
+            case 2 -> new TensorAddressAny3(label0, label1, LabelCache.getOrCreateLabel(label));
             default -> throw new IllegalArgumentException("No label " + labelIndex);
         };
     }

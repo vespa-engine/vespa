@@ -2,6 +2,7 @@
 package com.yahoo.tensor;
 
 import com.yahoo.tensor.impl.Label;
+import com.yahoo.tensor.impl.LabelCache;
 
 /**
  * An address to a subset of a tensors' cells, specifying a label for some, but not necessarily all, of the tensors
@@ -98,14 +99,14 @@ public class PartialAddress {
 
         public Builder add(String dimensionName, long label) {
             dimensionNames[index] = dimensionName;
-            labels[index] = Label.of(label);
+            labels[index] = LabelCache.getOrCreateLabel(label);
             index++;
             return this;
         }
 
         public Builder add(String dimensionName, String label) {
             dimensionNames[index] = dimensionName;
-            labels[index] = Label.of(label);
+            labels[index] = LabelCache.getOrCreateLabel(label);
             index++;
             return this;
         }
