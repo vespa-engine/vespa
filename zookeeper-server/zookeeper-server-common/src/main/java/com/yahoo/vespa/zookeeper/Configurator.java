@@ -56,6 +56,8 @@ public class Configurator {
         System.setProperty("zookeeper.learner.asyncSending", String.valueOf(zookeeperServerConfig.learnerAsyncSending()));
         // Enable creation of TTL Nodes.
         System.setProperty("zookeeper.extendedTypesEnabled", "true");
+        // Space in the transaction log file in kilobytes.
+        System.setProperty("zookeeper.preAllocSize", String.valueOf(zookeeperServerConfig.preAllocSizeKb()));
     }
 
     void writeConfigToDisk() {

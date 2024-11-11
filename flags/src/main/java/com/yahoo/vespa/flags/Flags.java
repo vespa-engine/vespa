@@ -484,6 +484,13 @@ public class Flags {
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
+    public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE = defineLongFlag(
+            "zookeeper-pre-alloc-size", 65536,
+            List.of("hmusum"), "2024-11-11", "2025-01-11",
+            "Setting for zookeeper.preAllocSize flag, can be reduced from default value "
+            + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
+            "Takes effect on restart of Docker container");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
