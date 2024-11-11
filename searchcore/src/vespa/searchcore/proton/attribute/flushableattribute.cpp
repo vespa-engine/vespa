@@ -90,10 +90,15 @@ FlushableAttribute::Flusher::saveAttribute()
         if (_saver) {
             search::AttributeFileSaveTarget saveTarget(_fattr._tuneFileAttributes, fileHeaderContext);
             saveSuccess = _saver->save(saveTarget);
+            if (saveSuccess) {
+                _fattr._attr->set_size_on_disk(saveTarget.size_on_disk());
+            }
             _saver.reset();
         } else {
             saveSuccess = _saveTarget.writeToFile(_fattr._tuneFileAttributes, fileHeaderContext);
-            _fattr._attr->set_size_on_disk(_saveTarget.size_on_disk());
+            if (saveSuccess) {
+                _fattr._attr->set_size_on_disk(_saveTarget.size_on_disk());
+            }
         }
     }
     return saveSuccess;
