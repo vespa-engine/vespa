@@ -105,7 +105,6 @@ public class LabelCache {
         }
 
         // Negative numeric labels are mapped to string labels.
-        // They are cached.
         var existingLabel = getLabel(numeric);
 
         if (existingLabel != null) {
@@ -139,8 +138,7 @@ public class LabelCache {
         var weakReference = byString.get(string);
         return weakReference != null ? weakReference.get() : null;
     }
-
-
+    
     private static Label createLabel(String string) {
         // Need a lock to avoid creating the same label twice if another thread is creating the same label.
         var lock = stripedLock.get(string);
