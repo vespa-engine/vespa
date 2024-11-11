@@ -2174,6 +2174,8 @@
       "public static final com.yahoo.processing.request.CompoundName NO_CACHE",
       "public static final com.yahoo.processing.request.CompoundName GROUPING_SESSION_CACHE",
       "public static final com.yahoo.processing.request.CompoundName TIMEOUT",
+      "public static final com.yahoo.processing.request.CompoundName DOCSUM_RETRY_LIMIT",
+      "public static final com.yahoo.processing.request.CompoundName DOCSUM_RETRY_FACTOR",
       "public static final com.yahoo.processing.request.CompoundName TRACE_LEVEL",
       "public static final com.yahoo.processing.request.CompoundName EXPLAIN_LEVEL",
       "public static final java.util.List nativeProperties"
