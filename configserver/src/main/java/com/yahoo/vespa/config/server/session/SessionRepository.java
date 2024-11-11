@@ -619,7 +619,8 @@ public class SessionRepository {
 
         // Avoid deleting too many in one run
         int deleteMax = (int) Math.min(1000, Math.max(50, sessions.size() * 0.05));
-        int deleted = 0;
+        int deletedRemoteSessions = 0;
+        int deletedLocalSessions = 0;
         for (Long sessionId : sessions) {
             try {
                 Session session = remoteSessionCache.get(sessionId);
@@ -638,36 +639,25 @@ public class SessionRepository {
 
                     log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                     deleteRemoteSessionFromZooKeeper(session);
-                    deleted++;
+                    deletedRemoteSessions++;
 
-                    log.log(Level.FINE, () -> "Expired local session is candidate for deletion: " + sessionId +
-                            ", created: " + createTime + ", status " + status + ", can be deleted: " + canBeDeleted(sessionId, status));
-                    // Need to check if it can be deleted, as we might have a (local) session in UNKNOWN
-                    // state that we should not delete
-                    if (canBeDeleted(sessionId, status)) {
+                    var localSessionCanBeDeleted = canBeDeleted(sessionId, status, createTime, activeForApplication);
+                    log.log(Level.FINE, () -> "Expired local session " + sessionId +
+                            ", status " + status + (status == UNKNOWN ? "" : ", created " + createTime) +
+                            ", can be deleted: " + localSessionCanBeDeleted);
+                    if (localSessionCanBeDeleted) {
                         deleteLocalSession(sessionId);
-                        deleted++;
-                        // This might happen if remote session is gone, but local session is not
-                    } else if (isOldAndCanBeDeleted(sessionId, createTime)) {
-                        var localSession = getOptionalSessionFromFileSystem(sessionId);
-                        if (localSession.isEmpty()) continue;
-
-                        // Defensive/paranoid: Check if session is active before deleting
-                        if (! activeForApplication) {
-                            log.log(Level.FINE, "Will delete expired session " + sessionId + " created " +
-                                    createTime + " for '" + applicationId.map(ApplicationId::toString).orElse("unknown") + "'");
-                            deleteLocalSession(sessionId);
-                            deleted++;
-                        }
+                        deletedLocalSessions++;
                     }
-                    if (deleted >= deleteMax)
-                        return;
+                    if (deletedRemoteSessions  + deletedLocalSessions >= deleteMax)
+                        break;
                 }
             } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
                 log.log(Level.WARNING, "Error when deleting expired sessions ", e);
             }
         }
-        log.log(Level.FINE, () -> "Done deleting expired sessions");
+        log.log(Level.FINE, "Deleted " + deletedRemoteSessions + " remote and " + deletedLocalSessions +
+                " local sessions that had expired");
     }
 
     private record ApplicationLock(Optional<Lock> lock) implements Closeable {
@@ -691,15 +681,10 @@ public class SessionRepository {
         return Optional.empty();
     }
 
-    private boolean isOldAndCanBeDeleted(long sessionId, Instant createTime) {
+    private boolean isOldAndCanBeDeleted(Instant createTime) {
         Duration oneDay = Duration.ofDays(1);
         Duration expiry = Duration.ofSeconds(Math.max(sessionLifeTimeInSeconds(), oneDay.getSeconds()));
-        if (createTime.plus(expiry).isBefore(clock.instant())) {
-            log.log(Level.FINE, () -> "more than 1 day old: " + sessionId);
-            return true;
-        } else {
-            return false;
-        }
+        return createTime.plus(expiry).isBefore(clock.instant());
     }
 
     private boolean hasExpired(Instant created) {
@@ -710,10 +695,13 @@ public class SessionRepository {
 
     private long sessionLifeTimeInSeconds() { return configserverConfig.sessionLifetime(); }
 
-    // Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
-    private boolean canBeDeleted(long sessionId, Session.Status status) {
-        return ( ! List.of(UNKNOWN, ACTIVATE).contains(status))
-                || oldSessionDirWithUnknownStatus(sessionId, status);
+    private boolean canBeDeleted(long sessionId, Session.Status status, Instant createTime, boolean activeForApplication) {
+        // Delete Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
+        if ( ! List.of(UNKNOWN, ACTIVATE).contains(status) || oldSessionDirWithUnknownStatus(sessionId, status))
+            return true;
+
+        // This might happen if remote session is gone, but local session is not
+        return isOldAndCanBeDeleted(createTime) && !activeForApplication;
     }
 
     private boolean oldSessionDirWithUnknownStatus(long sessionId, Session.Status status) {
