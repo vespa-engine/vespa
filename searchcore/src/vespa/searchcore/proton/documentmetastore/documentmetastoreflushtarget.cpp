@@ -78,10 +78,16 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
         _saver.reset();
         if (saveSuccess) {
             saveSuccess = memorySaveTarget.writeToFile(_dmsft._tuneFileAttributes, fileHeaderContext);
+            if (saveSuccess) {
+                _dmsft._dms->set_size_on_disk(memorySaveTarget.size_on_disk());
+            }
         }
     } else {
         search::AttributeFileSaveTarget saveTarget(_dmsft._tuneFileAttributes, fileHeaderContext);
         saveSuccess = _saver->save(saveTarget);
+        if (saveSuccess) {
+            _dmsft._dms->set_size_on_disk(saveTarget.size_on_disk());
+        }
         _saver.reset();
     }
     return saveSuccess;

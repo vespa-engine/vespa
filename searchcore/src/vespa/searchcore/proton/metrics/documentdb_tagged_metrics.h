@@ -84,6 +84,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             ~ResourceUsageMetrics() override;
         };
 
+        metrics::LongValueMetric diskUsage;
         ResourceUsageMetrics resourceUsage;
         MemoryUsageMetrics totalMemoryUsage;
 

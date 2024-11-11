@@ -71,6 +71,7 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetri
 
 DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
     : MetricSet("attribute", {}, "Attribute vector metrics for this document db", parent),
+      diskUsage("disk_usage", {}, "Disk space usage in bytes", this),
       resourceUsage(this),
       totalMemoryUsage(this)
 {

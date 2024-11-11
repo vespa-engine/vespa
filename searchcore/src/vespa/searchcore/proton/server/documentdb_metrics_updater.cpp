@@ -94,10 +94,12 @@ struct TempAttributeMetric
 {
     MemoryUsage memoryUsage;
     uint64_t    bitVectors;
+    uint64_t    size_on_disk;
 
     TempAttributeMetric()
         : memoryUsage(),
-          bitVectors(0)
+          bitVectors(0),
+          size_on_disk(0)
     {}
 };
 
@@ -122,13 +124,15 @@ isNotReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &subD
 
 void
 fillTempAttributeMetrics(TempAttributeMetrics &metrics, const std::string &attrName,
-                         const MemoryUsage &memoryUsage, uint32_t bitVectors)
+                         const MemoryUsage &memoryUsage, uint32_t bitVectors, uint64_t size_on_disk)
 {
     metrics.total.memoryUsage.merge(memoryUsage);
     metrics.total.bitVectors += bitVectors;
+    metrics.total.size_on_disk += size_on_disk;
     TempAttributeMetric &m = metrics.attrs[attrName];
     m.memoryUsage.merge(memoryUsage);
     m.bitVectors += bitVectors;
+    m.size_on_disk += size_on_disk;
 }
 
 void
@@ -149,9 +153,10 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
                 const search::attribute::Status &status = attr->getStatus();
                 MemoryUsage memoryUsage(status.getAllocated(), status.getUsed(), status.getDead(), status.getOnHold());
                 uint32_t bitVectors = status.getBitVectors();
-                fillTempAttributeMetrics(totalMetrics, attr->getName(), memoryUsage, bitVectors);
+                uint64_t size_on_disk = attr->size_on_disk();
+                fillTempAttributeMetrics(totalMetrics, attr->getName(), memoryUsage, bitVectors, size_on_disk);
                 if (subMetrics != nullptr) {
-                    fillTempAttributeMetrics(*subMetrics, attr->getName(), memoryUsage, bitVectors);
+                    fillTempAttributeMetrics(*subMetrics, attr->getName(), memoryUsage, bitVectors, size_on_disk);
                 }
             }
             auto imported = attrMgr->getImportedAttributes();
@@ -160,9 +165,9 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
                 imported->getAll(i_list);
                 for (const auto& attr : i_list) {
                     auto memory_usage = attr->get_memory_usage();
-                    fillTempAttributeMetrics(totalMetrics,  attr->getName(), memory_usage, 0);
+                    fillTempAttributeMetrics(totalMetrics,  attr->getName(), memory_usage, 0, 0);
                     if (subMetrics != nullptr) {
-                        fillTempAttributeMetrics(*subMetrics,  attr->getName(), memory_usage, 0);
+                        fillTempAttributeMetrics(*subMetrics,  attr->getName(), memory_usage, 0, 0);
                     }
                 }
             }
@@ -177,6 +182,7 @@ updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tm
         auto entry = metrics.get_field_metrics_entry(attr.first);
         if (entry) {
             entry->memoryUsage.update(attr.second.memoryUsage);
+            entry->size_on_disk.set(attr.second.size_on_disk);
         }
     }
 }
@@ -192,6 +198,7 @@ updateAttributeMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
     updateAttributeMetrics(metrics.ready.attributes, readyMetrics);
     updateAttributeMetrics(metrics.notReady.attributes, notReadyMetrics);
     updateMemoryUsageMetrics(metrics.attribute.totalMemoryUsage, totalMetrics.total.memoryUsage, totalStats);
+    updateDiskUsageMetric(metrics.attribute.diskUsage, totalMetrics.total.size_on_disk, totalStats);
 }
 
 void
