@@ -281,7 +281,8 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
       _nodeUp(),
-      _posting_list_cache()
+      _posting_list_cache(),
+      _last_posting_list_cache_stats()
 { }
 
 BootstrapConfig::SP
@@ -870,7 +871,11 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
             metrics.field_writer.update(_shared_service->field_writer().getStats());
         }
     }
-
+    if (_posting_list_cache) {
+        auto stats = _posting_list_cache->get_stats();
+        _metricsEngine->root().index.cache.postinglist.update_metrics(stats, _last_posting_list_cache_stats);
+        _last_posting_list_cache_stats = stats;
+    }
 }
 
 void
