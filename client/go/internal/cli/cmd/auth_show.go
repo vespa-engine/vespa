@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -69,16 +70,17 @@ func doAuthShow(cli *CLI, args []string) error {
 	if err = dec.Decode(&userResponse); err != nil {
 		return err
 	}
-	fmt.Printf("Logged in as: %s\n", userResponse.User.Email)
+	var output bytes.Buffer
+	fmt.Fprintf(&output, "Logged in as: %s\n", userResponse.User.Email)
 	for tenant, data := range userResponse.Tenants {
-		fmt.Printf("Available tenant: %s\n", tenant)
+		fmt.Fprintf(&output, "Available tenant: %s\n", tenant)
 		for idx, role := range data.Roles {
 			if idx == 0 {
-				fmt.Printf("    your roles:")
+				fmt.Fprintf(&output, "    your roles:")
 			}
-			fmt.Printf(" %s", role)
+			fmt.Fprintf(&output, " %s", role)
 		}
-		fmt.Printf("\n")
 	}
+	cli.printSuccess(output.String())
 	return nil
 }
