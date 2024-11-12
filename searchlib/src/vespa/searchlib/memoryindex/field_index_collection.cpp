@@ -59,6 +59,21 @@ FieldIndexCollection::getMemoryUsage() const
     return usage;
 }
 
+SearchableStats
+FieldIndexCollection::get_stats(const index::Schema& schema) const
+{
+    SearchableStats stats;
+    vespalib::MemoryUsage memory_usage;
+    for (uint32_t field_id = 0; field_id < _numFields; ++field_id) {
+        auto &field_index = _fieldIndexes[field_id];
+        auto field_memory_usage = field_index->getMemoryUsage();
+        memory_usage.merge(field_memory_usage);
+        stats.add_field_stats(schema.getIndexField(field_id).getName(), FieldIndexStats().memory_usage(field_memory_usage));
+    }
+    stats.memoryUsage(memory_usage);
+    return stats;
+}
+
 FieldIndexRemover &
 FieldIndexCollection::get_remover(uint32_t field_id)
 {

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/queryeval/searchable.h>
+#include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <atomic>
@@ -46,7 +47,7 @@ private:
     using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     using LidVector = std::vector<uint32_t>;
     using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
-    index::Schema     _schema;
+    const index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
     std::unique_ptr<FieldIndexCollection> _fieldIndexes;
@@ -168,6 +169,8 @@ public:
      * Gets an approximation of how much memory the index uses.
      */
     vespalib::MemoryUsage getMemoryUsage() const;
+
+    SearchableStats get_stats() const;
 
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }
 
