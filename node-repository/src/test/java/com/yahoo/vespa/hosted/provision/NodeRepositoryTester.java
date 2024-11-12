@@ -2,11 +2,9 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
@@ -19,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvid
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
+import com.yahoo.vespa.hosted.provision.testutils.SecretStoreMock;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +54,8 @@ public class NodeRepositoryTester {
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,
-                                            0);
+                                            0,
+                                            new SecretStoreMock());
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }

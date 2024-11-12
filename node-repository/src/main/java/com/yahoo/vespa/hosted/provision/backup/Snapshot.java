@@ -21,7 +21,7 @@ import java.util.UUID;
  * @author mpolden
  */
 public record Snapshot(SnapshotId id, HostName hostname, State state, History history, ClusterId cluster,
-                       int clusterIndex, CloudAccount cloudAccount) {
+                       int clusterIndex, CloudAccount cloudAccount, Optional<SnapshotKey> key) {
 
     public Snapshot {
         Objects.requireNonNull(id);
@@ -29,6 +29,7 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
         Objects.requireNonNull(hostname);
         Objects.requireNonNull(history);
         Objects.requireNonNull(cluster);
+        Objects.requireNonNull(key);
         if (clusterIndex < 0) {
             throw new IllegalArgumentException("clusterIndex cannot be negative, got " + cluster);
         }
@@ -47,7 +48,7 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
         if (!canChangeTo(state)) {
             throw new IllegalArgumentException("Cannot change state of " + this + " to " + state);
         }
-        return new Snapshot(id, hostname, state, history.with(state, at), cluster, clusterIndex, cloudAccount);
+        return new Snapshot(id, hostname, state, history.with(state, at), cluster, clusterIndex, cloudAccount, key);
     }
 
     private boolean canChangeTo(State state) {
@@ -122,8 +123,10 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
         return new SnapshotId(UUID.randomUUID());
     }
 
-    public static Snapshot create(SnapshotId id, HostName hostname, CloudAccount cloudAccount, Instant at, ClusterId cluster, int clusterIndex) {
-        return new Snapshot(id, hostname, State.creating, History.of(State.creating, at), cluster, clusterIndex, cloudAccount);
+    public static Snapshot create(SnapshotId id, HostName hostname, CloudAccount cloudAccount, Instant at,
+                                  ClusterId cluster, int clusterIndex, SnapshotKey encryptionKey) {
+        return new Snapshot(id, hostname, State.creating, History.of(State.creating, at), cluster, clusterIndex,
+                            cloudAccount, Optional.of(encryptionKey));
     }
 
 }

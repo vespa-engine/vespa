@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import ai.vespa.secret.internal.TypedSecretStore;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.JobControl;
@@ -90,7 +91,8 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                           Zone zone,
                           FlagSource flagSource,
                           MetricsDb metricsDb,
-                          Orchestrator orchestrator) {
+                          Orchestrator orchestrator,
+                          TypedSecretStore secretStore) {
         this(flavors,
              provisionServiceProvider,
              curator,
@@ -104,7 +106,8 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
              metricsDb,
              orchestrator,
              config.useCuratorClientCache(),
-             zone.environment().isProduction() && !zone.cloud().dynamicProvisioning() && !zone.system().isCd() ? 1 : 0);
+             zone.environment().isProduction() && !zone.cloud().dynamicProvisioning() && !zone.system().isCd() ? 1 : 0,
+             secretStore);
     }
 
     /**
@@ -124,7 +127,8 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                           MetricsDb metricsDb,
                           Orchestrator orchestrator,
                           boolean useCuratorClientCache,
-                          int spareCount) {
+                          int spareCount,
+                          TypedSecretStore secretStore) {
         if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.cloud().dynamicProvisioning())
             throw new IllegalArgumentException(String.format(
                     "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
@@ -135,7 +139,7 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
         this.clock = clock;
         this.zone = zone;
         this.applications = new Applications(db);
-        this.snapshots = new Snapshots(this, provisionServiceProvider.getSnapshotStore());
+        this.snapshots = new Snapshots(this, secretStore, provisionServiceProvider.getSnapshotStore());
         this.nodes = new Nodes(db, zone, clock, orchestrator, applications, snapshots, flagSource);
         this.flavors = flavors;
         this.resourcesCalculator = provisionServiceProvider.getHostResourcesCalculator();
