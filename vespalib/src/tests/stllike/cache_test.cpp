@@ -12,13 +12,19 @@ class Map : public std::map<K, V> {
     using const_iterator = typename std::map<K, V>::const_iterator;
     using M = std::map<K, V>;
 public:
-    bool read(const K & k, V & v) const {
+    mutable std::string _forwarded_arg;
+
+    bool read(const K& k, V& v) const {
         const_iterator found = M::find(k);
         bool ok(found != this->end());
         if (ok) {
             v = found->second;
         }
         return ok;
+    }
+    bool read(const K& k, V& v, std::string_view arg) const {
+        _forwarded_arg = arg;
+        return read(k, v);
     }
     void write(const K & k, const V & v) {
         (*this)[k] = v;
@@ -194,6 +200,19 @@ TEST("testOnInsertonRemoveCalledWhenFull") {
     EXPECT_EQUAL(4u, cache._insert_count);
     EXPECT_EQUAL(3u, cache._remove_count);
     EXPECT_FALSE(cache.hasKey(3));
+}
+
+TEST("Can forward arguments to backing store on cache miss") {
+    B m;
+    cache<CacheParam<P, B>> cache(m, -1);
+    m[123] = "foo";
+    EXPECT_EQUAL(cache.read(123, "hello cache world"), "foo");
+    EXPECT_EQUAL(m._forwarded_arg, "hello cache world");
+
+    // Already cached; no forwarding.
+    m._forwarded_arg.clear();
+    EXPECT_EQUAL(cache.read(123, "goodbye cache moon"), "foo");
+    EXPECT_EQUAL(m._forwarded_arg, "");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
