@@ -71,12 +71,12 @@ func doAuthShow(cli *CLI, args []string) error {
 		return err
 	}
 	var output bytes.Buffer
-	fmt.Fprintf(&output, "Logged in as: %s\n", userResponse.User.Email)
+	fmt.Fprintf(&output, "Logged in as: %s", userResponse.User.Email)
 	for tenant, data := range userResponse.Tenants {
-		fmt.Fprintf(&output, "Available tenant: %s\n", tenant)
+		fmt.Fprintf(&output, "\nAvailable tenant: %s", tenant)
 		for idx, role := range data.Roles {
 			if idx == 0 {
-				fmt.Fprintf(&output, "    your roles:")
+				fmt.Fprintf(&output, "\n    your roles:")
 			}
 			fmt.Fprintf(&output, " %s", role)
 		}
