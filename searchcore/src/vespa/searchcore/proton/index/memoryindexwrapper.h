@@ -50,10 +50,7 @@ public:
         return _index.createBlueprint(requestContext, fields, term);
     }
     search::SearchableStats getSearchableStats() const override {
-        return search::SearchableStats()
-            .memoryUsage(getMemoryUsage())
-            .docsInMemory(_index.getNumDocs())
-            .sizeOnDisk(0);
+        return _index.get_stats();
     }
 
     SerialNum getSerialNum() const override;

@@ -21,6 +21,7 @@
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
+#include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
@@ -34,6 +35,8 @@ LOG_SETUP("memory_index_test");
 using document::DataType;
 using document::Document;
 using document::FieldValue;
+using search::FieldIndexStats;
+using search::SearchableStats;
 using search::ScheduleTaskCallback;
 using search::index::FieldLengthInfo;
 using search::index::IFieldLengthInspector;
@@ -466,6 +469,15 @@ TEST(MemoryIndexTest, require_that_num_docs_and_doc_id_limit_is_returned)
     EXPECT_EQ(5u, index.index.getDocIdLimit());
 }
 
+namespace {
+
+FieldIndexStats get_field_stats(const SearchableStats &stats, const std::string& field_name)
+{
+    auto itr = stats.get_field_stats().find(field_name);
+    return itr == stats.get_field_stats().end() ? FieldIndexStats() : itr->second;
+}
+
+}
 TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint)
 {
     constexpr size_t BASE_ALLOCATED = 360936u;
@@ -488,6 +500,10 @@ TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint)
         EXPECT_EQ(2 * BASE_ALLOCATED, index.index.getStaticMemoryFootprint());
         EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
         EXPECT_EQ(2 * BASE_USED, index.index.getMemoryUsage().usedBytes());
+        EXPECT_EQ(2 * BASE_USED, index.index.get_stats().memoryUsage().usedBytes());
+        EXPECT_EQ(BASE_USED, get_field_stats(index.index.get_stats(), "f1").memory_usage().usedBytes());
+        EXPECT_EQ(BASE_USED, get_field_stats(index.index.get_stats(), "f2").memory_usage().usedBytes());
+        EXPECT_EQ(0, get_field_stats(index.index.get_stats(), "f3").memory_usage().usedBytes());
     }
 }
 

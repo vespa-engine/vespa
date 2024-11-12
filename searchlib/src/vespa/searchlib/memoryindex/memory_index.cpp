@@ -213,6 +213,14 @@ MemoryIndex::getMemoryUsage() const
     return usage;
 }
 
+SearchableStats
+MemoryIndex::get_stats() const
+{
+    auto stats = _fieldIndexes->get_stats(_schema);
+    stats.docsInMemory(getNumDocs());
+    return stats;
+}
+
 uint64_t
 MemoryIndex::getNumWords() const {
     return _fieldIndexes->getNumUniqueWords();
@@ -227,13 +235,13 @@ MemoryIndex::pruneRemovedFields(const Schema &schema)
         if (_schema == *newSchema) {
             return;
         }
-        _prunedSchema.reset(newSchema.release());
+        _prunedSchema = std::move(newSchema);
     } else {
         auto newSchema = Schema::intersect(*_prunedSchema, schema);
         if (*_prunedSchema == *newSchema) {
             return;
         }
-        _prunedSchema.reset(newSchema.release());
+        _prunedSchema = std::move(newSchema);
     }
     SchemaUtil::IndexIterator i(_schema);
     for (; i.isValid(); ++i) {
