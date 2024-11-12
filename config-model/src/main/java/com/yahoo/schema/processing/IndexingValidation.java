@@ -40,8 +40,6 @@ public class IndexingValidation extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        if ( ! validate) return;
-
         VerificationContext context = new VerificationContext(new MyAdapter(schema));
         for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
