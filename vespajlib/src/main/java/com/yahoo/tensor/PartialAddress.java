@@ -116,14 +116,14 @@ public class PartialAddress {
 
         public Builder add(String dimensionName, long label) {
             dimensionNames[index] = dimensionName;
-            labels[index] = LabelCache.getOrCreateLabel(label);
+            labels[index] = LabelCache.GLOBAL.getOrCreateLabel(label);
             index++;
             return this;
         }
 
         public Builder add(String dimensionName, String label) {
             dimensionNames[index] = dimensionName;
-            labels[index] = LabelCache.getOrCreateLabel(label);
+            labels[index] = LabelCache.GLOBAL.getOrCreateLabel(label);
             index++;
             return this;
         }

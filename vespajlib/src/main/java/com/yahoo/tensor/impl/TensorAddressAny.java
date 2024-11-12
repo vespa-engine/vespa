@@ -29,19 +29,19 @@ abstract public class TensorAddressAny extends TensorAddress {
     }
 
     public static TensorAddress of(String label) {
-        return new TensorAddressAny1(LabelCache.getOrCreateLabel(label));
+        return new TensorAddressAny1(LabelCache.GLOBAL.getOrCreateLabel(label));
     }
 
     public static TensorAddress of(String label0, String label1) {
-        return new TensorAddressAny2(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1));
+        return new TensorAddressAny2(LabelCache.GLOBAL.getOrCreateLabel(label0), LabelCache.GLOBAL.getOrCreateLabel(label1));
     }
 
     public static TensorAddress of(String label0, String label1, String label2) {
-        return new TensorAddressAny3(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1), LabelCache.getOrCreateLabel(label2));
+        return new TensorAddressAny3(LabelCache.GLOBAL.getOrCreateLabel(label0), LabelCache.GLOBAL.getOrCreateLabel(label1), LabelCache.GLOBAL.getOrCreateLabel(label2));
     }
 
     public static TensorAddress of(String label0, String label1, String label2, String label3) {
-        return new TensorAddressAny4(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1), LabelCache.getOrCreateLabel(label2), LabelCache.getOrCreateLabel(label3));
+        return new TensorAddressAny4(LabelCache.GLOBAL.getOrCreateLabel(label0), LabelCache.GLOBAL.getOrCreateLabel(label1), LabelCache.GLOBAL.getOrCreateLabel(label2), LabelCache.GLOBAL.getOrCreateLabel(label3));
     }
 
     public static TensorAddress of(String[] labels) {
@@ -54,7 +54,7 @@ abstract public class TensorAddressAny extends TensorAddress {
             default -> {
                 var labelObjs = new Label[labels.length];
                 for (int i = 0; i < labels.length; i++) {
-                    labelObjs[i] = LabelCache.getOrCreateLabel(labels[i]);
+                    labelObjs[i] = LabelCache.GLOBAL.getOrCreateLabel(labels[i]);
                 }
                 yield new TensorAddressAnyN(labelObjs);
             }
@@ -62,20 +62,20 @@ abstract public class TensorAddressAny extends TensorAddress {
     }
 
     public static TensorAddress of(int label) {
-        return new TensorAddressAny1(LabelCache.getOrCreateLabel(sanitize(label)));
+        return new TensorAddressAny1(LabelCache.GLOBAL.getOrCreateLabel(sanitize(label)));
     }
 
     public static TensorAddress of(int label0, int label1) {
-        return new TensorAddressAny2(LabelCache.getOrCreateLabel(sanitize(label0)), LabelCache.getOrCreateLabel(sanitize(label1)));
+        return new TensorAddressAny2(LabelCache.GLOBAL.getOrCreateLabel(sanitize(label0)), LabelCache.GLOBAL.getOrCreateLabel(sanitize(label1)));
     }
 
     public static TensorAddress of(int label0, int label1, int label2) {
-        return new TensorAddressAny3(LabelCache.getOrCreateLabel(sanitize(label0)), LabelCache.getOrCreateLabel(sanitize(label1)), LabelCache.getOrCreateLabel(sanitize(label2)));
+        return new TensorAddressAny3(LabelCache.GLOBAL.getOrCreateLabel(sanitize(label0)), LabelCache.GLOBAL.getOrCreateLabel(sanitize(label1)), LabelCache.GLOBAL.getOrCreateLabel(sanitize(label2)));
     }
 
     public static TensorAddress of(int label0, int label1, int label2, int label3) {
-        return new TensorAddressAny4(LabelCache.getOrCreateLabel(sanitize(label0)), LabelCache.getOrCreateLabel(sanitize(label1)), 
-                LabelCache.getOrCreateLabel(sanitize(label2)), LabelCache.getOrCreateLabel(sanitize(label3)));
+        return new TensorAddressAny4(LabelCache.GLOBAL.getOrCreateLabel(sanitize(label0)), LabelCache.GLOBAL.getOrCreateLabel(sanitize(label1)), 
+                LabelCache.GLOBAL.getOrCreateLabel(sanitize(label2)), LabelCache.GLOBAL.getOrCreateLabel(sanitize(label3)));
     }
 
     public static TensorAddress of(int ... labels) {
@@ -88,7 +88,7 @@ abstract public class TensorAddressAny extends TensorAddress {
             default -> {
                 var labelObjs = new Label[labels.length];
                 for (int i = 0; i < labels.length; i++) {
-                    labelObjs[i] = LabelCache.getOrCreateLabel(sanitize(labels[i]));
+                    labelObjs[i] = LabelCache.GLOBAL.getOrCreateLabel(sanitize(labels[i]));
                 }
                 yield new TensorAddressAnyN(labelObjs);
             }
@@ -96,20 +96,20 @@ abstract public class TensorAddressAny extends TensorAddress {
     }
 
     public static TensorAddress of(long label) {
-        return new TensorAddressAny1(LabelCache.getOrCreateLabel(label));
+        return new TensorAddressAny1(LabelCache.GLOBAL.getOrCreateLabel(label));
     }
 
     public static TensorAddress of(long label0, long label1) {
-        return new TensorAddressAny2(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1));
+        return new TensorAddressAny2(LabelCache.GLOBAL.getOrCreateLabel(label0), LabelCache.GLOBAL.getOrCreateLabel(label1));
     }
 
     public static TensorAddress of(long label0, long label1, long label2) {
-        return new TensorAddressAny3(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1), LabelCache.getOrCreateLabel(label2));
+        return new TensorAddressAny3(LabelCache.GLOBAL.getOrCreateLabel(label0), LabelCache.GLOBAL.getOrCreateLabel(label1), LabelCache.GLOBAL.getOrCreateLabel(label2));
     }
 
     public static TensorAddress of(long label0, long label1, long label2, long label3) {
-        return new TensorAddressAny4(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1), 
-                LabelCache.getOrCreateLabel(label2), LabelCache.getOrCreateLabel(label3));
+        return new TensorAddressAny4(LabelCache.GLOBAL.getOrCreateLabel(label0), LabelCache.GLOBAL.getOrCreateLabel(label1), 
+                LabelCache.GLOBAL.getOrCreateLabel(label2), LabelCache.GLOBAL.getOrCreateLabel(label3));
     }
 
     public static TensorAddress of(long ... labels) {
@@ -122,7 +122,7 @@ abstract public class TensorAddressAny extends TensorAddress {
             default -> {
                 var labelObjs = new Label[labels.length];
                 for (int i = 0; i < labels.length; i++) {
-                    labelObjs[i] = LabelCache.getOrCreateLabel(labels[i]);
+                    labelObjs[i] = LabelCache.GLOBAL.getOrCreateLabel(labels[i]);
                 }
                 yield new TensorAddressAnyN(labelObjs);
             }

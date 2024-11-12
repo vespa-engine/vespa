@@ -26,7 +26,7 @@ final class TensorAddressAny1 extends TensorAddressAny {
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
-        if (labelIndex == 0) return new TensorAddressAny1(LabelCache.getOrCreateLabel(label));
+        if (labelIndex == 0) return new TensorAddressAny1(LabelCache.GLOBAL.getOrCreateLabel(label));
         throw new IllegalArgumentException("No label " + labelIndex);
     }
 

@@ -37,10 +37,10 @@ final class TensorAddressAny4 extends TensorAddressAny {
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
         return switch (labelIndex) {
-            case 0 -> new TensorAddressAny4(LabelCache.getOrCreateLabel(label), label1, label2, label3);
-            case 1 -> new TensorAddressAny4(label0, LabelCache.getOrCreateLabel(label), label2, label3);
-            case 2 -> new TensorAddressAny4(label0, label1, LabelCache.getOrCreateLabel(label), label3);
-            case 3 -> new TensorAddressAny4(label0, label1, label2, LabelCache.getOrCreateLabel(label));
+            case 0 -> new TensorAddressAny4(LabelCache.GLOBAL.getOrCreateLabel(label), label1, label2, label3);
+            case 1 -> new TensorAddressAny4(label0, LabelCache.GLOBAL.getOrCreateLabel(label), label2, label3);
+            case 2 -> new TensorAddressAny4(label0, label1, LabelCache.GLOBAL.getOrCreateLabel(label), label3);
+            case 3 -> new TensorAddressAny4(label0, label1, label2, LabelCache.GLOBAL.getOrCreateLabel(label));
             default -> throw new IllegalArgumentException("No label " + labelIndex);
         };
     }

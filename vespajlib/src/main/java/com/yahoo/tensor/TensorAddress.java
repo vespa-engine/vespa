@@ -127,7 +127,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         for (int i = 0; i < labels.length; i++) {
             TensorType.Dimension d = dimensions.get(i);
             if (d.isIndexed()) {
-                labels[i] = LabelCache.getOrCreateLabel(indexedPart[indexedIndex]);
+                labels[i] = LabelCache.GLOBAL.getOrCreateLabel(indexedPart[indexedIndex]);
                 indexedIndex++;
             } else {
                 labels[i] = objectLabel(mappedIndex);
@@ -216,7 +216,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             int labelIndex = type.indexOfDimensionAsInt(dimension);
             if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex] = LabelCache.getOrCreateLabel(label);
+            labels[labelIndex] = LabelCache.GLOBAL.getOrCreateLabel(label);
             return this;
         }
 
@@ -245,7 +245,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             int labelIndex = type.indexOfDimensionAsInt(dimension);
             if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex] = LabelCache.getOrCreateLabel(label);
+            labels[labelIndex] = LabelCache.GLOBAL.getOrCreateLabel(label);
             return this;
         }
 

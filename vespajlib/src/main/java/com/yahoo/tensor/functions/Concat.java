@@ -368,7 +368,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                     case left -> labels[out++] = leftOnly.objectLabel(a++);
                     case right -> labels[out++] = rightOnly.objectLabel(b++);
                     case both -> labels[out++] = match.objectLabel(m++);
-                    case concat -> labels[out++] = LabelCache.getOrCreateLabel(concatDimIdx);
+                    case concat -> labels[out++] = LabelCache.GLOBAL.getOrCreateLabel(concatDimIdx);
                     default -> throw new IllegalArgumentException("cannot handle: " + how);
                 }
             }

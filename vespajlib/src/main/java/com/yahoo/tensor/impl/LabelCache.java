@@ -12,11 +12,14 @@ import java.util.concurrent.locks.Lock;
 
 /**
  * Cache for string labels so they can be mapped to unique numeric keys.
- * It uses weak references for automatic cleanup of labels that are not used.
+ * It uses weak references for automatic cleanup of unused labels.
  * 
  * @author baldersheim, glebashnik
  */
 public class LabelCache {
+    // Global cache used as default.
+    public static final LabelCache GLOBAL = new LabelCache(32, 1000);
+    
     // Stores string and numeric keys to clean the cache after Label is garbage collected.
     static class LabelWeakReference extends WeakReference<Label> {
         final String stringKey;
@@ -30,23 +33,33 @@ public class LabelCache {
     }
     
     // Caches labels by string and numeric keys.
-    private static final ConcurrentMap<String, LabelWeakReference> byString = new ConcurrentHashMap<>();
-    private static final ConcurrentMap<Long, LabelWeakReference> byNumeric = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, LabelWeakReference> byString = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, LabelWeakReference> byNumeric = new ConcurrentHashMap<>();
     
     // Used to generate unique numeric keys for string labels.
-    private static final AtomicLong uniqueCounter = new AtomicLong(-2);
+    private final AtomicLong uniqueCounter = new AtomicLong(-2);
 
     // Used to lock part of the label string space.
-    // Number of stripes is proportional to the number of threads expected to create labels concurrently.
-    private static final int NUMBER_OF_STRIPES = 32;
-    private static final Striped<Lock> stripedLock = Striped.lock(NUMBER_OF_STRIPES);
+    private final Striped<Lock> stripedLock;
 
     // Used to remove garbage collected labels.
-    private static final ReferenceQueue<Label> referenceQueue = new ReferenceQueue<>();
-    // Pre-computed labels for small indexes.
-    public static final Label[] SMALL_INDEX_LABELS = createSmallIndexLabels(1000);
+    private final ReferenceQueue<Label> referenceQueue = new ReferenceQueue<>();
     
-    private static Label[] createSmallIndexLabels(int count) {
+    // Pre-computed labels for small numeric labels used for indexed dimensions.
+    public final Label[] smallIndex;
+
+    /**
+     * Creates a label cache.
+     * 
+     * @param lockStripes number of lock stripes, should be proportional to the number of threads using the cache.
+     * @param smallIndexSize size of a cache used to store pre-computed labels for small index labels.
+     */
+    LabelCache(int lockStripes, int smallIndexSize) {
+        stripedLock = Striped.lock(lockStripes);
+        smallIndex = createSmallIndexLabels(smallIndexSize);
+    }
+
+    private Label[] createSmallIndexLabels(int count) {
         var labels = new Label[count];
 
         for (var i = 0; i < count; i++) {
@@ -56,7 +69,7 @@ public class LabelCache {
         return labels;
     }
 
-    public static Label getOrCreateLabel(String string) {
+    public Label getOrCreateLabel(String string) {
         if (string == null) {
             return Label.INVALID_INDEX_LABEL;
         }
@@ -67,8 +80,8 @@ public class LabelCache {
             try {
                 var numeric = Long.parseLong(string, 10);
 
-                if (numeric < SMALL_INDEX_LABELS.length) {
-                    return SMALL_INDEX_LABELS[(int) numeric];
+                if (numeric < smallIndex.length) {
+                    return smallIndex[(int) numeric];
                 }
 
                 return new Label(numeric, string);
@@ -85,12 +98,12 @@ public class LabelCache {
         return createLabel(string);
     }
 
-    public static Label getOrCreateLabel(long numeric) {
+    public Label getOrCreateLabel(long numeric) {
         // Positive numeric labels are indexes.
         // They are not cached, but rather pre-computed for small values or created on demand.
         if (numeric >= 0) {
-            if (numeric < SMALL_INDEX_LABELS.length) {
-                return SMALL_INDEX_LABELS[(int) numeric];
+            if (numeric < smallIndex.length) {
+                return smallIndex[(int) numeric];
             }
 
             return new Label(numeric);
@@ -110,7 +123,7 @@ public class LabelCache {
         throw new IllegalArgumentException("No negative numeric label " + numeric);
     }
     
-    private static boolean validNumericIndex(String s) {
+    private boolean validNumericIndex(String s) {
         if (s.isEmpty() || ((s.length() > 1) && (s.charAt(0) == '0'))) {
             return false;
         }
@@ -125,17 +138,17 @@ public class LabelCache {
         return true;
     }
 
-    private static Label getLabel(long numeric) {
+    private Label getLabel(long numeric) {
         var weakReference = byNumeric.get(numeric);
         return weakReference != null ? weakReference.get() : null;
     }
 
-    private static Label getLabel(String string) {
+    private Label getLabel(String string) {
         var weakReference = byString.get(string);
         return weakReference != null ? weakReference.get() : null;
     }
     
-    private static Label createLabel(String string) {
+    private Label createLabel(String string) {
         // Need a lock to avoid creating the same label twice if another thread is creating the same label.
         var lock = stripedLock.get(string);
         lock.lock();
@@ -163,7 +176,7 @@ public class LabelCache {
         }
     }
 
-    private static void removeStaleReferences() {
+    private void removeStaleReferences() {
         LabelWeakReference staleReference;
         while ((staleReference = (LabelWeakReference) referenceQueue.poll()) != null) {
             // No lock needed because concurrent map checks that the value has not changed.
@@ -171,5 +184,9 @@ public class LabelCache {
             byString.remove(staleReference.stringKey, staleReference);
             byNumeric.remove(staleReference.numericKey, staleReference);
         }
+    }
+    
+    public int size() {
+        return byString.size();
     }
 }
