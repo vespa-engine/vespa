@@ -5,11 +5,13 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -28,6 +30,7 @@ func newQueryCmd(cli *CLI) *cobra.Command {
 		queryTimeoutSecs int
 		waitSecs         int
 		format           string
+		postFile         string
 		headers          []string
 	)
 	cmd := &cobra.Command{
@@ -43,13 +46,17 @@ can be set by the syntax [parameter-name]=[value].`,
 		// TODO: Support referencing a query json file
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
-		Args:              cobra.MinimumNArgs(1),
+		Args:              cobra.MinimumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 && postFile == "" {
+				return fmt.Errorf("requires at least 1 arg")
+			}
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return query(cli, args, queryTimeoutSecs, printCurl, format, headers, waiter)
+			return query(cli, args, queryTimeoutSecs, printCurl, format, postFile, headers, waiter)
 		},
 	}
 	cmd.Flags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
+	cmd.Flags().StringVarP(&postFile, "postFile", "", "", "Use the given JSON file, POST to the query API")
 	cmd.Flags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (no formatting)")
 	cmd.Flags().StringSliceVarP(&headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
 	cmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
@@ -57,10 +64,19 @@ can be set by the syntax [parameter-name]=[value].`,
 	return cmd
 }
 
-func printCurl(stderr io.Writer, url string, service *vespa.Service) error {
-	cmd, err := curl.RawArgs(url)
+func printCurl(stderr io.Writer, req *http.Request, postFile string, service *vespa.Service) error {
+	cmd, err := curl.RawArgs(req.URL.String())
 	if err != nil {
 		return err
+	}
+	cmd.Method = req.Method
+	if postFile != "" {
+		cmd.WithBodyFile(postFile)
+	}
+	for k, vl := range req.Header {
+		for _, v := range vl {
+			cmd.Header(k, v)
+		}
 	}
 	cmd.Certificate = service.TLSOptions.CertificateFile
 	cmd.PrivateKey = service.TLSOptions.PrivateKeyFile
@@ -68,7 +84,11 @@ func printCurl(stderr io.Writer, url string, service *vespa.Service) error {
 	return err
 }
 
-func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format string, headers []string, waiter *Waiter) error {
+type nopCloser struct{ io.Reader }
+
+func (nopCloser) Close() error { return nil }
+
+func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format string, postFile string, headers []string, waiter *Waiter) error {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
@@ -83,6 +103,9 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 		return fmt.Errorf("invalid format: %s", format)
 	}
 	url, _ := url.Parse(service.BaseURL + "/search/")
+	if strings.HasSuffix(service.BaseURL, "/") {
+		url, _ = url.Parse(service.BaseURL + "search/")
+	}
 	urlQuery := url.Query()
 	for i := range len(arguments) {
 		key, value := splitArg(arguments[i])
@@ -94,21 +117,34 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 		queryTimeout = fmt.Sprintf("%ds", timeoutSecs)
 		urlQuery.Set("timeout", queryTimeout)
 	}
-	url.RawQuery = urlQuery.Encode()
 	deadline, err := time.ParseDuration(queryTimeout)
 	if err != nil {
 		return fmt.Errorf("invalid query timeout: %w", err)
-	}
-	if curl {
-		if err := printCurl(cli.Stderr, url.String(), service); err != nil {
-			return err
-		}
 	}
 	header, err := httputil.ParseHeader(headers)
 	if err != nil {
 		return err
 	}
-	response, err := service.Do(&http.Request{Header: header, URL: url}, deadline+time.Second) // Slightly longer than query timeout
+	hReq := &http.Request{Header: header, URL: url}
+	if postFile != "" {
+		json, err := getJsonFrom(postFile, urlQuery)
+		if err != nil {
+			return fmt.Errorf("bad JSON in postFile '%s': %w", postFile, err)
+		}
+		header.Set("Content-Type", "application/json")
+		hReq.Method = "POST"
+		hReq.Body = nopCloser{bytes.NewBuffer(bytes.Clone(json))}
+		if err != nil {
+			return fmt.Errorf("bad postFile '%s': %w", postFile, err)
+		}
+	}
+	url.RawQuery = urlQuery.Encode()
+	if curl {
+		if err := printCurl(cli.Stderr, hReq, postFile, service); err != nil {
+			return err
+		}
+	}
+	response, err := service.Do(hReq, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
@@ -206,4 +242,33 @@ func splitArg(argument string) (string, string) {
 		return "yql", argument
 	}
 	return parts[0], parts[1]
+}
+
+func getJsonFrom(fn string, query url.Values) ([]byte, error) {
+	parsed := make(map[string]any)
+	f, err := os.Open(fn)
+	if err != nil {
+		return nil, err
+	}
+	body, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &parsed)
+	if err != nil {
+		return nil, err
+	}
+	for k, vl := range query {
+		if len(vl) == 1 {
+			parsed[k] = vl[0]
+		} else {
+			parsed[k] = vl
+		}
+		query.Del(k)
+	}
+	b, err := json.Marshal(parsed)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
