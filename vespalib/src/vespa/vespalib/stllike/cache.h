@@ -95,8 +95,12 @@ public:
      * and the cache will be updated.
      * If none exist an empty one will be created.
      * Object is then put at head of LRU list.
+     *
+     * If any more arguments than `key` are present, they will be forwarded verbatim to the
+     * backing store in case of a cache miss. They are entirely ignored if there is a cache hit.
      */
-    V read(const K & key);
+    template <typename... BackingStoreArgs>
+    V read(const K& key, BackingStoreArgs&&... backing_store_args);
 
     /**
      * Update the cache and write through to backing store.

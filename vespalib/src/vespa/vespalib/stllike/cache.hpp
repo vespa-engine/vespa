@@ -81,9 +81,10 @@ cache<P>::getGuard() const {
     return UniqueLock(_hashLock);
 }
 
-template< typename P >
+template <typename P>
+template <typename... BackingStoreArgs>
 typename P::Value
-cache<P>::read(const K & key)
+cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args)
 {
     {
         std::lock_guard guard(_hashLock);
@@ -105,7 +106,7 @@ cache<P>::read(const K & key)
         }
     }
     V value;
-    if (_store.read(key, value)) {
+    if (_store.read(key, value, std::forward<BackingStoreArgs>(backing_store_args)...)) {
         std::lock_guard guard(_hashLock);
         Lru::insert(key, value);
         _sizeBytes.store(sizeBytes() + calcSize(key, value), std::memory_order_relaxed);
