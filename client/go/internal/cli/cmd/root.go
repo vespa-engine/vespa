@@ -288,6 +288,7 @@ func (c *CLI) configureCommands() {
 	authCmd.AddCommand(certCmd)                     // auth cert
 	authCmd.AddCommand(newAPIKeyCmd(c))             // auth api-key
 	authCmd.AddCommand(newLoginCmd(c))              // auth login
+	authCmd.AddCommand(newAuthShowCmd(c))           // auth show
 	authCmd.AddCommand(newLogoutCmd(c))             // auth logout
 	rootCmd.AddCommand(authCmd)                     // auth
 	rootCmd.AddCommand(newCloneCmd(c))              // clone
