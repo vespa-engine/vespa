@@ -268,7 +268,7 @@ public class ModelContextImpl implements ModelContext {
             this.distributionConfigFromClusterController = Flags.DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
-            this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE.bindTo(source).value();
+            this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
