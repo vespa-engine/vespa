@@ -43,14 +43,14 @@ public class IndexingProcessor extends DocumentProcessor {
     public final static String INDEXING_START = "indexingStart";
     public final static String INDEXING_END = "indexingEnd";
 
-    private final DocumentTypeManager docTypeMgr;
-    private final ScriptManager scriptMgr;
+    private final DocumentTypeManager documentTypeManager;
+    private final ScriptManager scriptManager;
     private final AdapterFactory adapterFactory;
 
     private class ExpressionSelector extends SimpleAdapterFactory.SelectExpression {
         @Override
         public Expression selectExpression(DocumentType documentType, String fieldName) {
-            return scriptMgr.getScript(documentType, fieldName).getExpression();
+            return scriptManager.getScript(documentType, fieldName).getExpression();
         }
     }
 
@@ -59,8 +59,8 @@ public class IndexingProcessor extends DocumentProcessor {
                              IlscriptsConfig ilscriptsConfig,
                              Linguistics linguistics,
                              ComponentRegistry<Embedder> embedders) {
-        docTypeMgr = documentTypeManager;
-        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics, toMap(embedders));
+        this.documentTypeManager = documentTypeManager;
+        scriptManager = new ScriptManager(this.documentTypeManager, ilscriptsConfig, linguistics, toMap(embedders));
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }
 
@@ -88,17 +88,17 @@ public class IndexingProcessor extends DocumentProcessor {
     }
 
     DocumentTypeManager getDocumentTypeManager() {
-        return docTypeMgr;
+        return documentTypeManager;
     }
 
     private void processDocument(DocumentPut input, List<DocumentOperation> out) {
         DocumentType hadType = input.getDocument().getDataType();
-        DocumentScript script = scriptMgr.getScript(hadType);
+        DocumentScript script = scriptManager.getScript(hadType);
         if (script == null) {
             out.add(input);
             return;
         }
-        DocumentType wantType = docTypeMgr.getDocumentType(hadType.getName());
+        DocumentType wantType = documentTypeManager.getDocumentType(hadType.getName());
         Document inputDocument = input.getDocument();
         if (hadType != wantType) {
             // this happens when you have a concrete document; we need to
@@ -108,7 +108,7 @@ public class IndexingProcessor extends DocumentProcessor {
             DocumentSerializer serializer = DocumentSerializerFactory.createHead(buffer);
             serializer.write(inputDocument);
             buffer.flip();
-            inputDocument = docTypeMgr.createDocument(buffer);
+            inputDocument = documentTypeManager.createDocument(buffer);
         }
         Document output = script.execute(adapterFactory, inputDocument);
         if (output == null) return;
@@ -117,7 +117,7 @@ public class IndexingProcessor extends DocumentProcessor {
     }
 
     private void processUpdate(DocumentUpdate input, List<DocumentOperation> out) {
-        DocumentScript script = scriptMgr.getScript(input.getType());
+        DocumentScript script = scriptManager.getScript(input.getType());
         if (script == null) {
             out.add(input);
             return;
