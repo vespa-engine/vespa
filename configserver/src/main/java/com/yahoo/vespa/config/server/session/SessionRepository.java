@@ -14,7 +14,6 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -578,11 +577,6 @@ public class SessionRepository {
 
     private void write(Session existingSession, LocalSession session, ApplicationId applicationId, Instant created) {
 
-        // TODO: remove when tenant secret store integration test passes
-        var tenantSecretStores = existingSession.getTenantSecretStores();
-        if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
-            tenantSecretStores.forEach(ss -> log.info("Existing tenant secret store:\n" + ss));
-        }
         SessionSerializer sessionSerializer = new SessionSerializer();
         sessionSerializer.write(session.getSessionZooKeeperClient(),
                                 applicationId,
@@ -592,7 +586,7 @@ public class SessionRepository {
                                 existingSession.getVespaVersion(),
                                 existingSession.getAthenzDomain(),
                                 existingSession.getQuota(),
-                                tenantSecretStores,
+                                existingSession.getTenantSecretStores(),
                                 existingSession.getOperatorCertificates(),
                                 existingSession.getCloudAccount(),
                                 existingSession.getDataplaneTokens(),
