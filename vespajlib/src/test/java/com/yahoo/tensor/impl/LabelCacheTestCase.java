@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LabelCacheTestCase {
     @Test
@@ -55,7 +55,7 @@ public class LabelCacheTestCase {
                 .build();
 
         var tensorType2 = new TensorType.Builder().mapped("d1").mapped("d2").mapped("d3").build();
-        var tensor2 = Tensor.Builder.of(tensorType1).cell()
+        var tensor2 = Tensor.Builder.of(tensorType2).cell()
                 .label("d1", "l1").label("d2", "l2").label("d3", "l3")
                 .value(1)
                 .build();
@@ -121,8 +121,10 @@ public class LabelCacheTestCase {
         var cache = new LabelCache(1, 10);
         var label1 = cache.getOrCreateLabel(10);
         var label2 = cache.getOrCreateLabel(10);
-        assertTrue(label1 != label2);
+        
+        // Positive numeric labels are created on the fly, not cached.
+        // Still they should be equal based on the numeric value.
+        assertNotSame(label1, label2); 
         assertEquals(label1, label2);
     }
-
 }
