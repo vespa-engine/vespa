@@ -64,12 +64,12 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_with_multiple_servers() throws IOException {
+    public void config_is_written_correctly_with_multiple_servers() {
         three_config_servers(false);
     }
 
     @Test
-    public void config_is_written_correctly_with_multiple_servers_on_hosted_vespa() throws IOException {
+    public void config_is_written_correctly_with_multiple_servers_on_hosted_vespa() {
         three_config_servers(true);
     }
 
@@ -155,7 +155,7 @@ public class ConfiguratorTest {
                      Files.readString(cfgFile.toPath()));
     }
 
-    private void three_config_servers(boolean hosted) throws IOException {
+    private void three_config_servers(boolean hosted) {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.server(newServer(0, "foo", 123, 321, false));

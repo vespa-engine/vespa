@@ -61,3 +61,7 @@ learnerAsyncSending bool default=false
 # Whether the ZooKeeper ensemble should be reconfigured automatically if servers change. This only has an effect if
 # dynamicReconfiguration=true.
 reconfigureEnsemble bool default=true
+
+# To avoid seeks ZooKeeper allocates space in the transaction log file in blocks of preAllocSize kilobytes. The default block size is 64M
+# Can/should be reduced for tests
+preAllocSizeKb long default=65536

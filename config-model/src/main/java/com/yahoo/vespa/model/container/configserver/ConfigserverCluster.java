@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.configserver;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -20,6 +21,8 @@ import com.yahoo.vespa.model.container.configserver.option.ConfigOptions.ConfigS
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import static com.yahoo.config.model.api.ModelContext.FeatureFlags;
+
 /**
  * Represents a config server cluster.
  *
@@ -34,11 +37,13 @@ public class ConfigserverCluster extends TreeConfigProducer
         ZookeeperServerConfig.Producer {
 
     private final ConfigOptions options;
+    private final FeatureFlags featureFlags;
     private ContainerCluster<?> containerCluster;
 
-    public ConfigserverCluster(TreeConfigProducer<?> parent, String subId, ConfigOptions options) {
+    public ConfigserverCluster(TreeConfigProducer<?> parent, String subId, ConfigOptions options, FeatureFlags featureFlags) {
         super(parent, subId);
         this.options = options;
+        this.featureFlags = featureFlags;
     }
 
     public void setContainerCluster(ContainerCluster<?> containerCluster) {
@@ -87,6 +92,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         builder.reconfigureEnsemble(!isHostedVespa);
         builder.snapshotMethod(options.zooKeeperSnapshotMethod());
         builder.juteMaxBuffer(options.zookeeperJuteMaxBuffer());
+        builder.preAllocSizeKb(featureFlags.zookeeperPreAllocSize());
     }
 
     @Override
