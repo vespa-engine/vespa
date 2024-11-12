@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
+import ai.vespa.secret.model.Key;
+import ai.vespa.secret.model.Secret;
+import ai.vespa.secret.model.SecretVersionId;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.ApplicationId;
@@ -8,6 +11,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -16,12 +20,16 @@ import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
 import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
+import com.yahoo.vespa.hosted.provision.testutils.SecretStoreMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.interfaces.XECPrivateKey;
+import java.security.interfaces.XECPublicKey;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -864,6 +872,14 @@ public class NodesV2ApiTest {
 
     @Test
     public void test_snapshots() throws IOException {
+        SecretStoreMock secretStore = (SecretStoreMock) tester.container().components()
+                                                              .getComponent(SecretStoreMock.class.getName());
+        KeyPair keyPair = KeyUtils.generateX25519KeyPair();
+        secretStore.add(new Secret(Key.fromString("snapshot/sealingPrivateKey"),
+                                   KeyUtils.toBase64EncodedX25519PrivateKey((XECPrivateKey) keyPair.getPrivate())
+                                           .getBytes(),
+                                   SecretVersionId.of("1")));
+
         // Trigger creation of snapshots
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
                                                   new byte[0], Request.Method.POST),
@@ -899,6 +915,12 @@ public class NodesV2ApiTest {
 
         // Get node
         tester.assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "snapshot/node4.json");
+
+        // Retrieve encryption key
+        String receiverPublicKey = KeyUtils.toBase64EncodedX25519PublicKey((XECPublicKey) KeyUtils.generateX25519KeyPair().getPublic());
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0 + "/unlock",
+                                                  "{\"sealingKey\":\"" + receiverPublicKey + "\"}", Request.Method.POST),
+                                      "{\"sealedSharedKey\"");
 
         // Trigger another snapshot
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
