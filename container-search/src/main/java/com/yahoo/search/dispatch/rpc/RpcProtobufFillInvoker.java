@@ -13,6 +13,7 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.ProtobufResponse;
 import com.yahoo.search.result.ErrorMessage;
@@ -171,21 +172,18 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                 skippedHits.addAll(processOneResponse(result, responseAndHits, summaryClass, false));
                 outstandingResponses--;
             }
-            /*
             if (skippedHits.isEmpty()) {
                 // all done OK
                 return;
             }
-            */
             int numSkipped = skippedHits.size();
             int numTotal = numSkipped + hitsFilledOk;
-            log.log(Level.WARNING, "total hits: " + numTotal + " ok: " + hitsFilledOk + " skipped: " + numSkipped);
-            double absoluteRetryLimit = result.getQuery().properties().getInteger(Query.DOCSUM_RETRY_LIMIT, 10);
-            double retryLimitFactor = result.getQuery().properties().getDouble(Query.DOCSUM_RETRY_FACTOR, 0.5);
-            log.log(Level.WARNING, "retry limit: " + absoluteRetryLimit + " factor: " + retryLimitFactor);
+            double absoluteRetryLimit = result.getQuery().properties().getInteger(Dispatcher.docsumRetryLimit, 10);
+            double retryLimitFactor = result.getQuery().properties().getDouble(Dispatcher.docsumRetryFactor, 0.5);
             double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numTotal);
             // maybe retry:
             if (numSkipped < retryLimit) {
+                log.log(Level.WARNING, "Retry docsum fetch for " + numSkipped + " hits (" + hitsFilledOk + " was ok)");
                 ListMap<Integer, FastHit> retryMap = new ListMap<>();
                 for (Integer nodeId : resourcePool.knownNodeIds()) {
                     for (var hit : skippedHits) {
@@ -208,6 +206,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     outstandingResponses--;
                 }
                 skippedHits.removeIf(hit -> hit.isFilled(summaryClass));
+            } else {
+                log.log(Level.WARNING, "Docsum fetch failed for " + numSkipped + " hits (" + hitsFilledOk + " was ok), no retry");
             }
             if (! skippedHits.isEmpty()) {
                 result.hits().addError(ErrorMessage

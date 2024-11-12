@@ -188,8 +188,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName NO_CACHE = CompoundName.from("noCache");
     public static final CompoundName GROUPING_SESSION_CACHE = CompoundName.from("groupingSessionCache");
     public static final CompoundName TIMEOUT = CompoundName.from("timeout");
-    public static final CompoundName DOCSUM_RETRY_LIMIT = CompoundName.from("docsumRetryLimit");
-    public static final CompoundName DOCSUM_RETRY_FACTOR  = CompoundName.from("docsumRetryFactor");
 
     /** @deprecated use Trace.LEVEL */
     @Deprecated // TODO: Remove on Vespa 9
@@ -213,8 +211,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(NO_CACHE.toString(), "boolean", "nocache"));
         argumentType.addField(new FieldDescription(GROUPING_SESSION_CACHE.toString(), "boolean", "groupingSessionCache"));
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));
-        argumentType.addField(new FieldDescription(DOCSUM_RETRY_LIMIT.toString(), "integer"));
-        argumentType.addField(new FieldDescription(DOCSUM_RETRY_FACTOR.toString(), "double"));
         argumentType.addField(new FieldDescription(FederationSearcher.SOURCENAME.toString(),"string"));
         argumentType.addField(new FieldDescription(FederationSearcher.PROVIDERNAME.toString(),"string"));
         argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
