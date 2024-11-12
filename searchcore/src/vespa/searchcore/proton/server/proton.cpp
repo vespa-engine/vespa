@@ -165,10 +165,10 @@ void ensureWritableDir(const std::string &dirName) {
 std::shared_ptr<IPostingListCache>
 make_posting_list_cache(const ProtonConfig& cfg)
 {
-    if (cfg.search.io == ProtonConfig::Search::Io::MMAP || cfg.index.postinglist.cache.maxbytes == 0) {
+    if (cfg.search.io == ProtonConfig::Search::Io::MMAP || cfg.index.cache.postinglist.maxbytes == 0) {
         return {};
     }
-    return std::make_shared<PostingListCache>(cfg.index.postinglist.cache.maxbytes);
+    return std::make_shared<PostingListCache>(cfg.index.cache.postinglist.maxbytes);
 }
 
 } // namespace <unnamed>
