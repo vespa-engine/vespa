@@ -16,11 +16,11 @@ import java.util.Objects;
  * @author bratseth
  */
 public abstract class TensorAddress implements Comparable<TensorAddress> {
-
+    
     public static TensorAddress of(String[] labels) {
         return TensorAddressAny.of(labels);
     }
-
+    
     public static TensorAddress ofLabels(String... labels) {
         return TensorAddressAny.of(labels);
     }
@@ -36,6 +36,13 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     /** Returns the number of labels in this */
     public abstract int size();
 
+    /**
+     * Returns the i'th label object in this
+     *
+     * @throws IllegalArgumentException if there is no label at this index
+     */
+    public abstract Label objectLabel(int i);
+    
     /**
      * Returns the i'th label in this
      *
@@ -105,25 +112,25 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     /** Returns an address with only some of the dimension. Ordering will also be according to indexMap */
     public TensorAddress partialCopy(int[] indexMap) {
-        long[] labels = new long[indexMap.length];
+        Label[] labels = new Label[indexMap.length];
         for (int i = 0; i < labels.length; ++i) {
-            labels[i] = numericLabel(indexMap[i]);
+            labels[i] = objectLabel(indexMap[i]);
         }
         return TensorAddressAny.of(labels);
     }
 
     /** Creates a complete address by taking the mapped dimensions of this and adding the indexed from the indexedPart */
     public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int[] indexedPart) {
-        long[] labels = new long[dimensions.size()];
+        Label[] labels = new Label[dimensions.size()];
         int mappedIndex = 0;
         int indexedIndex = 0;
         for (int i = 0; i < labels.length; i++) {
             TensorType.Dimension d = dimensions.get(i);
             if (d.isIndexed()) {
-                labels[i] = indexedPart[indexedIndex];
+                labels[i] = LabelCache.getOrCreateLabel(indexedPart[indexedIndex]);
                 indexedIndex++;
             } else {
-                labels[i] = numericLabel(mappedIndex);
+                labels[i] = objectLabel(mappedIndex);
                 mappedIndex++;
             }
         }
@@ -144,7 +151,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         for (int i = 0; i < dimensions.size(); ++i) {
             TensorType.Dimension dimension = dimensions.get(i);
             if ( ! dimension.isIndexed())
-                builder.add(dimension.name(), numericLabel(i));
+                builder.add(dimension.name(), objectLabel(i));
         }
         return builder.build();
     }
@@ -157,7 +164,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         private static Label[] createEmptyLabels(int size) {
             var labels = new Label[size];
-            Arrays.fill(labels, LabelCache.INVALID_INDEX_LABEL);
+            Arrays.fill(labels, Label.INVALID_INDEX_LABEL);
             return labels;
         }
 
@@ -185,6 +192,20 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         }
 
         /**
+         * Adds the label object to the only mapped dimension of this.
+         *
+         * @throws IllegalArgumentException if this does not have exactly one dimension
+         */
+        public Builder add(Label label) {
+            var mappedSubtype = type.mappedSubtype();
+            if (mappedSubtype.rank() != 1)
+                throw new IllegalArgumentException("Cannot add a label without explicit dimension to a tensor of type " +
+                        type + ": Must have exactly one mapped dimension");
+            add(mappedSubtype.dimensions().get(0).name(), label);
+            return this;
+        }
+
+        /**
          * Adds a label in a dimension to this.
          *
          * @return this for convenience
@@ -196,6 +217,21 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
             labels[labelIndex] = LabelCache.getOrCreateLabel(label);
+            return this;
+        }
+
+        /**
+         * Adds a label object in a dimension to this.
+         *
+         * @return this for convenience
+         */
+        public Builder add(String dimension, Label label) {
+            Objects.requireNonNull(dimension, "dimension cannot be null");
+            Objects.requireNonNull(label, "label cannot be null");
+            int labelIndex = type.indexOfDimensionAsInt(dimension);
+            if ( labelIndex < 0)
+                throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
+            labels[labelIndex] = label;
             return this;
         }
 
@@ -223,7 +259,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == LabelCache.INVALID_INDEX_LABEL)
+                if (labels[i] == Label.INVALID_INDEX_LABEL)
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }

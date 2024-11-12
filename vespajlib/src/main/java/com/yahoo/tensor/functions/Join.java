@@ -12,6 +12,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.Label;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.ArrayList;
@@ -281,7 +282,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (int i = 0; i < addressType.dimensions().size(); i++) {
             String dimension = addressType.dimensions().get(i).name();
             if (retainDimensions.contains(dimension))
-                builder.add(dimension, address.numericLabel(i));
+                builder.add(dimension, address.objectLabel(i));
         }
         return builder.build();
     }
@@ -376,8 +377,8 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
 
     private static TensorAddress joinAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                                TensorType joinedType) {
-        long[] joinedLabels = new long[joinedType.dimensions().size()];
-        Arrays.fill(joinedLabels, Tensor.invalidIndex);
+        Label[] joinedLabels = new Label[joinedType.dimensions().size()];
+        Arrays.fill(joinedLabels, Label.INVALID_INDEX_LABEL);
         mapContent(a, joinedLabels, aToIndexes);
         boolean compatible = mapContent(b, joinedLabels, bToIndexes);
         if ( ! compatible) return null;
@@ -390,11 +391,11 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
      * @return true if the mapping was successful, false if one of the destination positions was
      *         occupied by a different value
      */
-    private static boolean mapContent(TensorAddress from, long[] to, int[] indexMap) {
+    private static boolean mapContent(TensorAddress from, Label[] to, int[] indexMap) {
         for (int i = 0, size = from.size(); i < size; i++) {
             int toIndex = indexMap[i];
-            long label = from.numericLabel(i);
-            if (to[toIndex] != Tensor.invalidIndex && to[toIndex] != label)
+            Label label = from.objectLabel(i);
+            if (to[toIndex] != Label.INVALID_INDEX_LABEL && !to[toIndex].equals(label))
                 return false;
             to[toIndex] = label;
         }

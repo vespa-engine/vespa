@@ -12,6 +12,8 @@ import com.yahoo.tensor.Tensor;
  * @author glebashnik
  */
 public class Label {
+    public static final Label INVALID_INDEX_LABEL = new Label(Tensor.invalidIndex, null);
+
     private final long numeric;
     private String string = null;
     
@@ -29,7 +31,7 @@ public class Label {
     }
     
     public String toString() {
-        if (numeric == Tensor.invalidIndex) {
+        if (numeric == INVALID_INDEX_LABEL.numeric) {
             return null;
         }
         // String label for indexed dimension are created at runtime to reduce memory usage.
@@ -41,10 +43,10 @@ public class Label {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        var label = (Label) o;
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        var label = (Label) object;
         return numeric == label.numeric;
     }
 

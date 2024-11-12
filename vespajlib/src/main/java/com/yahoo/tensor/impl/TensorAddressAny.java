@@ -16,7 +16,12 @@ import com.yahoo.tensor.TensorAddress;
 abstract public class TensorAddressAny extends TensorAddress {
     @Override
     public String label(int i) {
-        return LabelCache.getOrCreateLabel(numericLabel(i)).toString();
+        return objectLabel(i).toString();
+    }
+
+    @Override
+    public long numericLabel(int i) {
+        return objectLabel(i).toNumeric();
     }
     
     public static TensorAddress of() {
@@ -93,20 +98,20 @@ abstract public class TensorAddressAny extends TensorAddress {
     public static TensorAddress of(long label) {
         return new TensorAddressAny1(LabelCache.getOrCreateLabel(label));
     }
-    
+
     public static TensorAddress of(long label0, long label1) {
         return new TensorAddressAny2(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1));
     }
-    
+
     public static TensorAddress of(long label0, long label1, long label2) {
         return new TensorAddressAny3(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1), LabelCache.getOrCreateLabel(label2));
     }
-    
+
     public static TensorAddress of(long label0, long label1, long label2, long label3) {
         return new TensorAddressAny4(LabelCache.getOrCreateLabel(label0), LabelCache.getOrCreateLabel(label1), 
                 LabelCache.getOrCreateLabel(label2), LabelCache.getOrCreateLabel(label3));
     }
-    
+
     public static TensorAddress of(long ... labels) {
         return switch (labels.length) {
             case 0 -> of();

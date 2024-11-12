@@ -22,10 +22,10 @@ final class TensorAddressAny2 extends TensorAddressAny {
     @Override public int size() { return 2; }
 
     @Override
-    public long numericLabel(int i) {
+    public Label objectLabel(int i) {
         return switch (i) {
-            case 0 -> label0.toNumeric();
-            case 1 -> label1.toNumeric();
+            case 0 -> label0;
+            case 1 -> label1;
             default -> throw new IndexOutOfBoundsException("Index is not in [0,1]: " + i);
         };
     }

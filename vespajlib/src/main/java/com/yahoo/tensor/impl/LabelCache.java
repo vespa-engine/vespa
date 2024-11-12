@@ -2,7 +2,6 @@
 package com.yahoo.tensor.impl;
 
 import com.google.common.util.concurrent.Striped;
-import com.yahoo.tensor.Tensor;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -21,7 +20,7 @@ public class LabelCache {
     // Stores string and numeric keys to clean the cache after Label is garbage collected.
     static class LabelWeakReference extends WeakReference<Label> {
         final String stringKey;
-        final Long numericKey;
+        final long numericKey;
 
         LabelWeakReference(Label label, ReferenceQueue<Label> referenceQueue) {
             super(label, referenceQueue);
@@ -44,9 +43,6 @@ public class LabelCache {
 
     // Used to remove garbage collected labels.
     private static final ReferenceQueue<Label> referenceQueue = new ReferenceQueue<>();
-    
-    public static final Label INVALID_INDEX_LABEL = new Label(Tensor.invalidIndex, null);
-    
     // Pre-computed labels for small indexes.
     public static final Label[] SMALL_INDEX_LABELS = createSmallIndexLabels(1000);
     
@@ -62,7 +58,7 @@ public class LabelCache {
 
     public static Label getOrCreateLabel(String string) {
         if (string == null) {
-            return INVALID_INDEX_LABEL;
+            return Label.INVALID_INDEX_LABEL;
         }
 
         // Index labels are not cached.
@@ -100,8 +96,8 @@ public class LabelCache {
             return new Label(numeric);
         }
 
-        if (numeric == INVALID_INDEX_LABEL.toNumeric()) {
-            return INVALID_INDEX_LABEL;
+        if (numeric == Label.INVALID_INDEX_LABEL.toNumeric()) {
+            return Label.INVALID_INDEX_LABEL;
         }
 
         // Negative numeric labels are mapped to string labels.
@@ -170,7 +166,7 @@ public class LabelCache {
     private static void removeStaleReferences() {
         LabelWeakReference staleReference;
         while ((staleReference = (LabelWeakReference) referenceQueue.poll()) != null) {
-            // No lock is needed here because concurrent map checks if the value is still the same.
+            // No lock needed because concurrent map checks that the value has not changed.
             // i.e. if another thread replaced the value, it will not be removed.
             byString.remove(staleReference.stringKey, staleReference);
             byNumeric.remove(staleReference.numericKey, staleReference);

@@ -23,11 +23,11 @@ final class TensorAddressAny3 extends TensorAddressAny {
     @Override public int size() { return 3; }
 
     @Override
-    public long numericLabel(int i) {
+    public Label objectLabel(int i) {
         return switch (i) {
-            case 0 -> label0.toNumeric();
-            case 1 -> label1.toNumeric();
-            case 2 -> label2.toNumeric();
+            case 0 -> label0;
+            case 1 -> label1;
+            case 2 -> label2;
             default -> throw new IndexOutOfBoundsException("Index is not in [0,2]: " + i);
         };
     }

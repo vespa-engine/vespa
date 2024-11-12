@@ -133,7 +133,6 @@ public class TensorFunctionBenchmark {
         double time = 0;
         // Important to use size larger than in Label.SMALL_INDEX_LABELS for more comprehensive benchmark
         int vectorSize = 2000;
-        boolean stringLabels = true;
 
         // ---------------- Indexed unbound:
         time = new TensorFunctionBenchmark().benchmark(

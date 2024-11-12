@@ -97,9 +97,9 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
             for (int i = 0; i < inputType.dimensions().size(); i++) {
                 var dim = inputType.dimensions().get(i);
                 if (dim.isMapped()) {
-                    mapAddrBuilder.add(dim.name(), fullAddr.numericLabel(i));
+                    mapAddrBuilder.add(dim.name(), fullAddr.objectLabel(i));
                 } else {
-                    idxAddrBuilder.add(dim.name(), fullAddr.numericLabel(i));
+                    idxAddrBuilder.add(dim.name(), fullAddr.objectLabel(i));
                 }
             }
             var mapAddr = mapAddrBuilder.build();
@@ -122,11 +122,11 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
                 var addrBuilder = new TensorAddress.Builder(outputType);
                 for (int i = 0; i < inputTypeMapped.dimensions().size(); i++) {
                     var dim = inputTypeMapped.dimensions().get(i);
-                    addrBuilder.add(dim.name(), mappedAddr.numericLabel(i));
+                    addrBuilder.add(dim.name(), mappedAddr.objectLabel(i));
                 }
                 for (int i = 0; i < denseOutputDims.size(); i++) {
                     var dim = denseOutputDims.get(i);
-                    addrBuilder.add(dim.name(), denseAddr.numericLabel(i));
+                    addrBuilder.add(dim.name(), denseAddr.objectLabel(i));
                 }
                 builder.cell(addrBuilder.build(), cell.getValue());
             }
