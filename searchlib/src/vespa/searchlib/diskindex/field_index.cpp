@@ -210,7 +210,7 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
 BitVectorDictionaryLookupResult
 FieldIndex::lookup_bit_vector(const DictionaryLookupResult& lookup_result) const
 {
-    if (!_bit_vector_dict) {
+    if (!_bit_vector_dict || !lookup_result.valid()) {
         return {};
     }
     return _bit_vector_dict->lookup(lookup_result.wordNum);
