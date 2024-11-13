@@ -9,6 +9,7 @@ import java.util.Optional;
  * @author bjorncs
  */
 public enum KeyAlgorithm {
+
     RSA("RSA", null),
     EC("EC", new ECGenParameterSpec("prime256v1")); // TODO Make curve configurable
 
@@ -25,4 +26,14 @@ public enum KeyAlgorithm {
     }
 
     Optional<AlgorithmParameterSpec> getSpec() { return Optional.ofNullable(spec); }
+
+    public static KeyAlgorithm from(String name) {
+        for (var algorithm : values()) {
+            if (name.equals(algorithm.getAlgorithmName())) {
+                return algorithm;
+            }
+        }
+        throw new IllegalArgumentException("Unknown key algorithm '" + name + "'");
+    }
+
 }
