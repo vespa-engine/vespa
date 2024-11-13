@@ -6,10 +6,13 @@ package cmd
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 )
 
@@ -132,6 +135,51 @@ data: {
 }
 `, bodyWithError)
 	assertStreamingQuery(t, bodyWithError, bodyWithError, "--format=plain")
+}
+
+func TestQueryPostFile(t *testing.T) {
+	mockResponse := `{"query":"result"}"`
+	client := &mock.HTTPClient{ReadBody: true}
+	client.NextResponseString(200, mockResponse)
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+
+	tmpFileName := filepath.Join(t.TempDir(), "tq1.json")
+	jsonQuery := []byte(`{"yql": "some yql here"}`)
+	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0644))
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "--file", tmpFileName))
+	assert.Equal(t, mockResponse+"\n", stdout.String())
+	assert.Equal(t, `{"timeout":"10s","yql":"some yql here"}`, string(client.LastBody))
+	assert.Equal(t, []string{"application/json"}, client.LastRequest.Header.Values("Content-Type"))
+	assert.Equal(t, "POST", client.LastRequest.Method)
+	assert.Equal(t, "http://127.0.0.1:8080/search/", client.LastRequest.URL.String())
+}
+
+func TestQueryPostFileWithArgs(t *testing.T) {
+	mockResponse := `{"query":"result"}"`
+	client := &mock.HTTPClient{ReadBody: true}
+	client.NextResponseString(200, mockResponse)
+	cli, _, _ := newTestCLI(t)
+	cli.httpClient = client
+
+	tmpFileName := filepath.Join(t.TempDir(), "tq2.json")
+	jsonQuery := []byte(`{"yql": "some yql here"}`)
+	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0644))
+
+	assert.Nil(t, cli.Run(
+		"-t", "http://foo.bar:1234/",
+		"query",
+		"--file", tmpFileName,
+		"yql=foo bar",
+		"tracelevel=3",
+		"dispatch.docsumRetryLimit=42"))
+	assert.Equal(t,
+		`{"dispatch.docsumRetryLimit":"42","timeout":"10s","tracelevel":"3","yql":"foo bar"}`,
+		string(client.LastBody))
+	assert.Equal(t, []string{"application/json"}, client.LastRequest.Header.Values("Content-Type"))
+	assert.Equal(t, "POST", client.LastRequest.Method)
+	assert.Equal(t, "http://foo.bar:1234/search/", client.LastRequest.URL.String())
 }
 
 func assertStreamingQuery(t *testing.T, expectedOutput, body string, args ...string) {
