@@ -2,13 +2,17 @@
 package ai.vespa.secret.aws;
 
 import ai.vespa.secret.config.aws.AsmSecretConfig;
+import ai.vespa.secret.config.aws.AsmTenantSecretConfig;
 import ai.vespa.secret.model.Key;
+import ai.vespa.secret.model.VaultId;
 import ai.vespa.secret.model.VaultName;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Secret reader for tenant nodes.
@@ -19,20 +23,32 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
 
     private final String system;
     private final String tenant;
+    private final Map<VaultName, VaultId> vaultIds;
 
     @Inject
-    public AsmTenantSecretReader(AsmSecretConfig config, ServiceIdentityProvider identities) {
-        super(config, identities);
-        this.system = config.system();
-        this.tenant = config.tenant();
+    public AsmTenantSecretReader(AsmSecretConfig secretConfig,
+                                 AsmTenantSecretConfig tenantConfig,
+                                 ServiceIdentityProvider identities) {
+        super(secretConfig, identities);
+        this.system = tenantConfig.system();
+        this.tenant = tenantConfig.tenant();
+        this.vaultIds = createVaultIdMap(tenantConfig);
     }
 
     // For testing
     AsmTenantSecretReader(Function<AwsRolePath, SecretsManagerClient> clientAndCredentialsSupplier,
-                          String system, String tenant) {
+                          String system, String tenant, Map<VaultName, VaultId> vaultIds) {
         super(clientAndCredentialsSupplier);
         this.system = system;
         this.tenant = tenant;
+        this.vaultIds = vaultIds;
+    }
+
+    static Map<VaultName, VaultId> createVaultIdMap(AsmTenantSecretConfig config) {
+        // Note: we can rightfully assume that the vaults are unique by name for a tenant.
+        return config.vaults().stream()
+                .map(vault -> Map.entry(VaultName.of(vault.name()), VaultId.of(vault.id())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @Override
