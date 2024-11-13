@@ -74,6 +74,7 @@ public class ModelContextImplTest {
                         Optional.empty(),
                         Optional.empty(),
                         List.of(),
+                        List.of(),
                         new SecretStoreProvider().get(),
                         List.of(),
                         Optional.empty(),

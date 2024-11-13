@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -30,12 +31,14 @@ import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
+import com.yahoo.vespa.config.server.tenant.TenantVaultSerializer;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.zookeeper.data.Stat;
+
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -55,6 +58,7 @@ import static com.yahoo.vespa.config.server.session.SessionData.OPERATOR_CERTIFI
 import static com.yahoo.vespa.config.server.session.SessionData.QUOTA_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.SESSION_DATA_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.TENANT_SECRET_STORES_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.TENANT_VAULTS_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.VERSION_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
@@ -203,6 +207,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(QUOTA_PATH);
     }
 
+    private Path tenantVaultPath() {
+        return sessionPath.append(TENANT_VAULTS_PATH);
+    }
+
     private Path tenantSecretStorePath() {
         return sessionPath.append(TENANT_SECRET_STORES_PATH);
     }
@@ -313,6 +321,20 @@ public class SessionZooKeeperClient {
         return curator.getData(quotaPath())
                       .map(SlimeUtils::jsonToSlime)
                       .map(slime -> Quota.fromSlime(slime.get()));
+    }
+
+    public void writeTenantVaults(List<TenantVault> tenantVaults) {
+        if (! tenantVaults.isEmpty()) {
+            var bytes = uncheck(() -> SlimeUtils.toJsonBytes(TenantVaultSerializer.toSlime(tenantVaults)));
+            curator.set(tenantVaultPath(), bytes);
+        }
+    }
+
+    public List<TenantVault> readTenantVaults() {
+        return curator.getData(tenantVaultPath())
+                .map(SlimeUtils::jsonToSlime)
+                .map(slime -> TenantVaultSerializer.listFromSlime(slime.get()))
+                .orElse(List.of());
     }
 
     public void writeTenantSecretStores(List<TenantSecretStore> tenantSecretStores) {
