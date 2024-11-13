@@ -56,7 +56,7 @@ can be set by the syntax [parameter-name]=[value].`,
 		},
 	}
 	cmd.Flags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
-	cmd.Flags().StringVarP(&postFile, "postFile", "", "", "Use the given JSON file, POST to the query API")
+	cmd.Flags().StringVarP(&postFile, "file", "", "", "Read query parameters from the given JSON file and send a POST request, with overrides from arguments")
 	cmd.Flags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (no formatting)")
 	cmd.Flags().StringSliceVarP(&headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
 	cmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
@@ -84,10 +84,6 @@ func printCurl(stderr io.Writer, req *http.Request, postFile string, service *ve
 	return err
 }
 
-type nopCloser struct{ io.Reader }
-
-func (nopCloser) Close() error { return nil }
-
 func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format string, postFile string, headers []string, waiter *Waiter) error {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
@@ -102,10 +98,7 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 	default:
 		return fmt.Errorf("invalid format: %s", format)
 	}
-	url, _ := url.Parse(service.BaseURL + "/search/")
-	if strings.HasSuffix(service.BaseURL, "/") {
-		url, _ = url.Parse(service.BaseURL + "search/")
-	}
+	url, _ := url.Parse(strings.TrimSuffix(service.BaseURL, "/") + "/search/")
 	urlQuery := url.Query()
 	for i := range len(arguments) {
 		key, value := splitArg(arguments[i])
@@ -133,7 +126,7 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 		}
 		header.Set("Content-Type", "application/json")
 		hReq.Method = "POST"
-		hReq.Body = nopCloser{bytes.NewBuffer(bytes.Clone(json))}
+		hReq.Body = io.NopCloser(bytes.NewBuffer(bytes.Clone(json)))
 		if err != nil {
 			return fmt.Errorf("bad postFile '%s': %w", postFile, err)
 		}
