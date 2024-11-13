@@ -24,15 +24,17 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
+type queryOptions struct {
+	printCurl        bool
+	queryTimeoutSecs int
+	waitSecs         int
+	format           string
+	postFile         string
+	headers          []string
+}
+
 func newQueryCmd(cli *CLI) *cobra.Command {
-	var (
-		printCurl        bool
-		queryTimeoutSecs int
-		waitSecs         int
-		format           string
-		postFile         string
-		headers          []string
-	)
+	opts := queryOptions{}
 	cmd := &cobra.Command{
 		Use:   "query query-parameters",
 		Short: "Issue a query to Vespa",
@@ -48,19 +50,19 @@ can be set by the syntax [parameter-name]=[value].`,
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 && postFile == "" {
+			if len(args) == 0 && opts.postFile == "" {
 				return fmt.Errorf("requires at least 1 arg")
 			}
-			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return query(cli, args, queryTimeoutSecs, printCurl, format, postFile, headers, waiter)
+			waiter := cli.waiter(time.Duration(opts.waitSecs)*time.Second, cmd)
+			return query(cli, args, &opts, waiter)
 		},
 	}
-	cmd.Flags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
-	cmd.Flags().StringVarP(&postFile, "file", "", "", "Read query parameters from the given JSON file and send a POST request, with overrides from arguments")
-	cmd.Flags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (no formatting)")
-	cmd.Flags().StringSliceVarP(&headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
-	cmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
-	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	cmd.Flags().BoolVarP(&opts.printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
+	cmd.Flags().StringVarP(&opts.postFile, "file", "", "", "Read query parameters from the given JSON file and send a POST request, with overrides from arguments")
+	cmd.Flags().StringVarP(&opts.format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (no formatting)")
+	cmd.Flags().StringSliceVarP(&opts.headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
+	cmd.Flags().IntVarP(&opts.queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
+	cli.bindWaitFlag(cmd, 0, &opts.waitSecs)
 	return cmd
 }
 
@@ -84,7 +86,7 @@ func printCurl(stderr io.Writer, req *http.Request, postFile string, service *ve
 	return err
 }
 
-func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format string, postFile string, headers []string, waiter *Waiter) error {
+func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) error {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
@@ -93,10 +95,10 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 	if err != nil {
 		return err
 	}
-	switch format {
+	switch opts.format {
 	case "plain", "human":
 	default:
-		return fmt.Errorf("invalid format: %s", format)
+		return fmt.Errorf("invalid format: %s", opts.format)
 	}
 	url, _ := url.Parse(strings.TrimSuffix(service.BaseURL, "/") + "/search/")
 	urlQuery := url.Query()
@@ -107,33 +109,33 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 	queryTimeout := urlQuery.Get("timeout")
 	if queryTimeout == "" {
 		// No timeout set by user, use the timeout option
-		queryTimeout = fmt.Sprintf("%ds", timeoutSecs)
+		queryTimeout = fmt.Sprintf("%ds", opts.queryTimeoutSecs)
 		urlQuery.Set("timeout", queryTimeout)
 	}
 	deadline, err := time.ParseDuration(queryTimeout)
 	if err != nil {
 		return fmt.Errorf("invalid query timeout: %w", err)
 	}
-	header, err := httputil.ParseHeader(headers)
+	header, err := httputil.ParseHeader(opts.headers)
 	if err != nil {
 		return err
 	}
 	hReq := &http.Request{Header: header, URL: url}
-	if postFile != "" {
-		json, err := getJsonFrom(postFile, urlQuery)
+	if opts.postFile != "" {
+		json, err := getJsonFrom(opts.postFile, urlQuery)
 		if err != nil {
-			return fmt.Errorf("bad JSON in postFile '%s': %w", postFile, err)
+			return fmt.Errorf("bad JSON in postFile '%s': %w", opts.postFile, err)
 		}
 		header.Set("Content-Type", "application/json")
 		hReq.Method = "POST"
 		hReq.Body = io.NopCloser(bytes.NewBuffer(bytes.Clone(json)))
 		if err != nil {
-			return fmt.Errorf("bad postFile '%s': %w", postFile, err)
+			return fmt.Errorf("bad postFile '%s': %w", opts.postFile, err)
 		}
 	}
 	url.RawQuery = urlQuery.Encode()
-	if curl {
-		if err := printCurl(cli.Stderr, hReq, postFile, service); err != nil {
+	if opts.printCurl {
+		if err := printCurl(cli.Stderr, hReq, opts.postFile, service); err != nil {
 			return err
 		}
 	}
@@ -144,7 +146,7 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
-		if err := printResponse(response.Body, response.Header.Get("Content-Type"), format, cli); err != nil {
+		if err := printResponse(response.Body, response.Header.Get("Content-Type"), opts.format, cli); err != nil {
 			return err
 		}
 	} else if response.StatusCode/100 == 4 {
