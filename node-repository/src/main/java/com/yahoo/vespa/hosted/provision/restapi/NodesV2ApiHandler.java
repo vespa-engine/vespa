@@ -246,7 +246,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         }
         if (path.matches("/nodes/v2/snapshot/{hostname}")) return snapshot(path.get("hostname"));
         if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}/restore")) return restoreSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"));
-        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}/unlock")) return snapshotEncryptionKey(SnapshotId.of(path.get("snapshot")), path.get("hostname"), toSlime(request));
+        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}/key")) return snapshotEncryptionKey(SnapshotId.of(path.get("snapshot")), path.get("hostname"), toSlime(request));
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }

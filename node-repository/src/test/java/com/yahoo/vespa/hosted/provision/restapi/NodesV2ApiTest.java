@@ -918,7 +918,7 @@ public class NodesV2ApiTest {
 
         // Retrieve encryption key
         String receiverPublicKey = KeyUtils.toBase64EncodedX25519PublicKey((XECPublicKey) KeyUtils.generateX25519KeyPair().getPublic());
-        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0 + "/unlock",
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0 + "/key",
                                                   "{\"sealingKey\":\"" + receiverPublicKey + "\"}", Request.Method.POST),
                                       "{\"sealedSharedKey\"");
 
