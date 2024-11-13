@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +61,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     /** The number of responses we should receive (and process) before this is complete */
     private int outstandingResponses;
-    private int hitsFilledOk = 0;
+    private int numOkFilledHits = 0;
 
     RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb,
                            String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery) {
@@ -149,8 +150,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                 roe -> receive(roe, hits), clientTimeout);
     }
 
-    private ResponseAndHits getNextResponse(Query query) throws InterruptedException {
-        long timeLeftMs = query.getTimeLeft();
+    private ResponseAndHits getNextResponse(long timeLeftMs) throws InterruptedException {
         if (timeLeftMs <= 0) {
             return null;
         }
@@ -165,7 +165,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         try {
             List<FastHit> skippedHits = new ArrayList<>();
             while (outstandingResponses > 0) {
-                var responseAndHits = getNextResponse(result.getQuery());
+                var responseAndHits = getNextResponse(result.getQuery().getTimeLeft());
                 if (responseAndHits == null) {
                     throwTimeout();
                 }
@@ -176,39 +176,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                 // all done OK
                 return;
             }
-            int numSkipped = skippedHits.size();
-            int numTotal = numSkipped + hitsFilledOk;
-            double absoluteRetryLimit = result.getQuery().properties().getInteger(Dispatcher.docsumRetryLimit, 10);
-            double retryLimitFactor = result.getQuery().properties().getDouble(Dispatcher.docsumRetryFactor, 0.5);
-            double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numTotal);
-            // maybe retry:
-            if (numSkipped < retryLimit) {
-                log.log(Level.WARNING, "Retry docsum fetch for " + numSkipped + " hits (" + hitsFilledOk + " was ok)");
-                ListMap<Integer, FastHit> retryMap = new ListMap<>();
-                for (Integer nodeId : resourcePool.knownNodeIds()) {
-                    for (var hit : skippedHits) {
-                        if (hit.getDistributionKey() != nodeId) {
-                            retryMap.put(nodeId, hit);
-                        }
-                    }
-                }
-                if (retryMap.size() > 0) {
-                    summaryNeedsQuery = true;
-                    sendFillRequestByNode(result, summaryClass, retryMap);
-                }
-                while (outstandingResponses > 0) {
-                    var responseAndHits = getNextResponse(result.getQuery());
-                    if (responseAndHits == null) {
-                        log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
-                        break;
-                    }
-                    processOneResponse(result, responseAndHits, summaryClass, true);
-                    outstandingResponses--;
-                }
-                skippedHits.removeIf(hit -> hit.isFilled(summaryClass));
-            } else {
-                log.log(Level.WARNING, "Docsum fetch failed for " + numSkipped + " hits (" + hitsFilledOk + " was ok), no retry");
-            }
+            maybeRetry(skippedHits, result, summaryClass);
             if (! skippedHits.isEmpty()) {
                 result.hits().addError(ErrorMessage
                         .createEmptyDocsums("Missing hit summary data for summary " + summaryClass + " for " + skippedHits + " hits"));
@@ -254,6 +222,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
+    private static int monkey = 0;
+
     private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload, boolean ignoreErrors) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
@@ -276,11 +246,11 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
                 FastHit hit = hits.get(i);
-                if (summary.valid()) {
+                if (((++monkey % 42) != 0) && summary.valid() && ! hit.isFilled(summaryClass)) {
                     hit.setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
                     hit.addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                     hit.setFilled(summaryClass);
-                    ++hitsFilledOk;
+                    ++numOkFilledHits;
                 } else {
                     skippedHits.add(hit);
                 }
@@ -297,6 +267,80 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private void throwTimeout() throws TimeoutException {
         throw new TimeoutException("Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
+    }
+
+    /*
+     * The content layer may return some empty docsums when redistribution is in progress,
+     * and in that case the document should be present on some other node, and we should
+     * be able to get the docsum from that node if we retry.  But we don't know where
+     * that would be, so we need to try all possible nodes.
+     * To avoid overloading the content layer, we only retry if the number of skipped hits
+     * is below a tunable limit, and if the ratio of failed to ok hits is below another
+     * tunable limit (if too much failed on first try, it's likely not helpful to retry).
+     */
+    private void maybeRetry(List<FastHit> skippedHits, Result result, String summaryClass) throws InterruptedException {
+        int numSkipped = skippedHits.size();
+        int numTotal = numSkipped + numOkFilledHits;
+        var query = result.getQuery();
+        double absoluteRetryLimit = query.properties().getInteger(Dispatcher.docsumRetryLimit, 10);
+        double retryLimitFactor = query.properties().getDouble(Dispatcher.docsumRetryFactor, 0.5);
+        double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numTotal);
+        if (numSkipped < retryLimit) {
+            ListMap<Integer, FastHit> retryMap = new ListMap<>();
+            for (Integer nodeId : resourcePool.knownNodeIds()) {
+                for (var hit : skippedHits) {
+                    if (hit.getDistributionKey() != nodeId) {
+                        retryMap.put(nodeId, hit);
+                    }
+                }
+            }
+            // no retry if there is only one node
+            if (retryMap.size() > 0) {
+                if (shouldLogRetry()) {
+                    log.log(Level.WARNING, "Retry docsum fetch for " + numSkipped + " hits (" + numOkFilledHits + " ok hits)");
+                }
+                summaryNeedsQuery = true;
+                sendFillRequestByNode(result, summaryClass, retryMap);
+                while (outstandingResponses > 0 && numOkFilledHits < numTotal) {
+                    var responseAndHits = getNextResponse(query.getTimeLeft());
+                    if (responseAndHits == null) {
+                        if (shouldLogRetryTimeout()) {
+                            log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
+                        }
+                        break;
+                    }
+                    processOneResponse(result, responseAndHits, summaryClass, true);
+                    outstandingResponses--;
+                }
+                skippedHits.removeIf(hit -> hit.isFilled(summaryClass));
+            }
+        } else {
+            if (shouldLogNoRetry()) {
+                log.log(Level.WARNING, "Docsum fetch failed for " + numSkipped + " hits (" + numOkFilledHits + " ok hits), no retry");
+            }
+        }
+    }
+
+    private static boolean shouldLogForCount(int count) {
+        if (count < 100) return true;
+        if (count < 1000) return (count % 100) == 0;
+        if (count < 100000) return (count % 1000) == 0;
+        return (count % 10000) == 0;
+    }
+    private static final AtomicInteger retryCounter = new AtomicInteger();
+    private static final AtomicInteger noRetryCounter = new AtomicInteger();
+    private static final AtomicInteger retryTimeoutCounter = new AtomicInteger();
+    private static boolean shouldLogRetry() {
+        int count = retryCounter.getAndAdd(1);
+        return shouldLogForCount(count);
+    }
+    private static boolean shouldLogNoRetry() {
+        int count = noRetryCounter.getAndAdd(1);
+        return shouldLogForCount(count);
+    }
+    private static boolean shouldLogRetryTimeout() {
+        int count = retryTimeoutCounter.getAndAdd(1);
+        return shouldLogForCount(count);
     }
 
 }
