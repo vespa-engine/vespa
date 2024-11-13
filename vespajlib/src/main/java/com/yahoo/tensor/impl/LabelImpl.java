@@ -5,7 +5,7 @@ import com.yahoo.tensor.Label;
 import com.yahoo.tensor.Tensor;
 
 /**
- * Basic implementation of @link Label.
+ * {@link Label} implementation used by {@link LabelCache}.
  * 
  * @author glebashnik
  */
