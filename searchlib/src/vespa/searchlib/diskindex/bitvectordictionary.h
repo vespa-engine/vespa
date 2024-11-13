@@ -2,7 +2,6 @@
 #pragma once
 
 #include "bitvectorkeyscope.h"
-//#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/index/bitvector_dictionary_lookup_result.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -60,7 +59,7 @@ public:
      **/
     index::BitVectorDictionaryLookupResult lookup(uint64_t word_num);
     /**
-     * load and return the associated bit vector if lookup result is valid.
+     * Load and return the associated bit vector if lookup result is valid.
      *
      * @param lookup_result the result returned from lookup.
      * @return the loaded bit vector or empty if lookup result was invalid.
