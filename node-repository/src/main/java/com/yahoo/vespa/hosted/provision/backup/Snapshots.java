@@ -49,12 +49,16 @@ public class Snapshots {
     private final CuratorDb db;
     private final Optional<SnapshotStore> snapshotStore;
     private final TypedSecretStore secretStore;
+    private final Optional<String> sealingPrivateKeySecretName;
 
-    public Snapshots(NodeRepository nodeRepository, TypedSecretStore secretStore, Optional<SnapshotStore> snapshotStore) {
+    public Snapshots(NodeRepository nodeRepository, TypedSecretStore secretStore,
+                     Optional<SnapshotStore> snapshotStore,
+                     Optional<String> sealingPrivateKeySecretName) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.db = nodeRepository.database();
         this.snapshotStore = Objects.requireNonNull(snapshotStore);
         this.secretStore = Objects.requireNonNull(secretStore);
+        this.sealingPrivateKeySecretName = Objects.requireNonNull(sealingPrivateKeySecretName);
     }
 
     /** Read known backup snapshots, for all hosts */
@@ -190,7 +194,10 @@ public class Snapshots {
 
     /** Returns the key pair to use when sealing the snapshot encryption key */
     private VersionedKeyPair sealingKeyPair(SecretVersionId version) {
-        Key key = Key.fromString("snapshot/sealingPrivateKey");
+        if (sealingPrivateKeySecretName.isEmpty()) {
+            throw new IllegalArgumentException("Cannot retrieve sealing key because its secret name is unset");
+        }
+        Key key = Key.fromString(sealingPrivateKeySecretName.get());
         Secret sealingPrivateKey = version == null ? secretStore.getSecret(key) : secretStore.getSecret(key, version);
         XECPrivateKey privateKey = KeyUtils.fromBase64EncodedX25519PrivateKey(sealingPrivateKey.secretValue().value());
         XECPublicKey publicKey = KeyUtils.extractX25519PublicKey(privateKey);

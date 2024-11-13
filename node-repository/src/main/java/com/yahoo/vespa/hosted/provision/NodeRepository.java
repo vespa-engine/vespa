@@ -139,7 +139,7 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
         this.clock = clock;
         this.zone = zone;
         this.applications = new Applications(db);
-        this.snapshots = new Snapshots(this, secretStore, provisionServiceProvider.getSnapshotStore());
+        this.snapshots = new Snapshots(this, secretStore, provisionServiceProvider.getSnapshotStore(), zone.cloud().snapshotPrivateKeySecretName());
         this.nodes = new Nodes(db, zone, clock, orchestrator, applications, snapshots, flagSource);
         this.flavors = flavors;
         this.resourcesCalculator = provisionServiceProvider.getHostResourcesCalculator();

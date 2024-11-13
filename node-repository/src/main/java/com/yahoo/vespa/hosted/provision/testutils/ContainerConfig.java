@@ -23,6 +23,7 @@ public class ContainerConfig {
                  </config>
                  <config name="config.provisioning.cloud">
                    <account>%s</account>
+                   <snapshotPrivateKeySecretName>snapshot/sealingPrivateKey</snapshotPrivateKeySecretName>
                  </config>
                  <accesslog type='disabled'/>
                  <component id='com.yahoo.test.ManualClock'/>

@@ -17,3 +17,6 @@ account string default=""
 
 # The cloud-specific region for this zone (as opposed to the Vespa region).
 region string default=""
+
+# Name of private key secret used for sealing snapshot encryption keys.
+snapshotPrivateKeySecretName string default=""
