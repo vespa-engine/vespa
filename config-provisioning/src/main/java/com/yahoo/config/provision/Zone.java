@@ -30,6 +30,7 @@ public class Zone {
                   .allowEnclave(configserverConfig.cloud().equals("aws") || configserverConfig.cloud().equals("gcp"))
                   .requireAccessControl(cloudConfig.requireAccessControl())
                   .account(CloudAccount.from(cloudConfig.account()))
+                  .snapshotPrivateKeySecretName(cloudConfig.snapshotPrivateKeySecretName())
                   .build(),
              SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),

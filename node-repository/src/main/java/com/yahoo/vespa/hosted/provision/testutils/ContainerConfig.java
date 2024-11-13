@@ -23,6 +23,7 @@ public class ContainerConfig {
                  </config>
                  <config name="config.provisioning.cloud">
                    <account>%s</account>
+                   <snapshotPrivateKeySecretName>snapshot/sealingPrivateKey</snapshotPrivateKeySecretName>
                  </config>
                  <accesslog type='disabled'/>
                  <component id='com.yahoo.test.ManualClock'/>
@@ -38,6 +39,7 @@ public class ContainerConfig {
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockMetricsFetcher'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider'/>
+                 <component id='com.yahoo.vespa.hosted.provision.testutils.SecretStoreMock'/>
                  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>
                  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>
                  <component id='com.yahoo.config.provision.Zone'/>

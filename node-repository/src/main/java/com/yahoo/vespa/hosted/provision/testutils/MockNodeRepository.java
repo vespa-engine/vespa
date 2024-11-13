@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
+import ai.vespa.secret.internal.TypedSecretStore;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
@@ -12,7 +13,6 @@ import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -20,7 +20,6 @@ import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.WireguardKeyWithTimestamp;
@@ -86,7 +85,7 @@ public class MockNodeRepository extends NodeRepository {
      * @param flavors flavors to have in node repo
      */
     @Inject
-    public MockNodeRepository(MockCurator curator, NodeFlavors flavors, Zone zone) {
+    public MockNodeRepository(MockCurator curator, NodeFlavors flavors, Zone zone, TypedSecretStore secretStore) {
         super(flavors,
               new EmptyProvisionServiceProvider(),
               curator,
@@ -100,7 +99,8 @@ public class MockNodeRepository extends NodeRepository {
               new MemoryMetricsDb(Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z"))),
               new OrchestratorMock(),
               true,
-              0);
+              0,
+              secretStore);
         this.flavors = flavors;
         defaultCloudAccount = zone.cloud().account();
 

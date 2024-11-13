@@ -7,6 +7,8 @@
       "hostname": "host2.yahoo.com",
       "id": "(ignore)",
       "instance": "tenant2:application2:instance2",
+      "sealedSharedKey": "(ignore)",
+      "sealingKeyVersion": "1",
       "state": "creating",
       "history": [
         {
@@ -22,6 +24,8 @@
       "hostname": "host4.yahoo.com",
       "id": "(ignore)",
       "instance": "tenant3:application3:instance3",
+      "sealedSharedKey": "(ignore)",
+      "sealingKeyVersion": "1",
       "state": "creating",
       "history": [
         {

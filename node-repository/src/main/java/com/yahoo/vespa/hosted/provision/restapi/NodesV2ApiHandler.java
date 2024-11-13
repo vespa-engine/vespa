@@ -13,6 +13,7 @@ import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.security.NodePrincipal;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -24,6 +25,8 @@ import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SealedSharedKey;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -37,7 +40,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
-import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -57,6 +59,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -243,8 +246,22 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         }
         if (path.matches("/nodes/v2/snapshot/{hostname}")) return snapshot(path.get("hostname"));
         if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}/restore")) return restoreSnapshot(SnapshotId.of(path.get("snapshot")), path.get("hostname"));
+        if (path.matches("/nodes/v2/snapshot/{hostname}/{snapshot}/key")) return snapshotEncryptionKey(SnapshotId.of(path.get("snapshot")), path.get("hostname"), toSlime(request));
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+    }
+
+    private HttpResponse snapshotEncryptionKey(SnapshotId id, String hostname, Inspector body) {
+        Inspector sealingKeyField = body.field("sealingKey");
+        if (!sealingKeyField.valid()) {
+            throw new IllegalArgumentException("No 'sealingKey' field present in body");
+        }
+        PublicKey sealingKey = KeyUtils.fromBase64EncodedX25519PublicKey(sealingKeyField.asString());
+        SealedSharedKey key = nodeRepository.snapshots().keyOf(id, hostname, sealingKey);
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("sealedSharedKey", key.toTokenString());
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse snapshot(String hostname) {
