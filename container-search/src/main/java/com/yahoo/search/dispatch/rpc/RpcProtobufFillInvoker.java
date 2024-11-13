@@ -222,8 +222,6 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private static int monkey = 0;
-
     private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload, boolean ignoreErrors) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
@@ -246,7 +244,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
                 FastHit hit = hits.get(i);
-                if (((++monkey % 42) != 0) && summary.valid() && ! hit.isFilled(summaryClass)) {
+                if (summary.valid() && ! hit.isFilled(summaryClass)) {
                     hit.setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
                     hit.addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                     hit.setFilled(summaryClass);
