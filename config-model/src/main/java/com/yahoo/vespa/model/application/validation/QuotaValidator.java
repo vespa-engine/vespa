@@ -37,7 +37,7 @@ public class QuotaValidator implements Validator {
         var exclusivity = new Exclusivity(zone, featureFlags.sharedHosts());
         var tuning = new CapacityPolicies.Tuning(featureFlags.adminClusterArchitecture(),
                                                  featureFlags.logserverNodeMemory(),
-                                                 featureFlags.logserverNodeMemory());
+                                                 featureFlags.clusterControllerNodeMemory());
         var capacityPolicies = new CapacityPolicies(zone, exclusivity, context.model().applicationPackage().getApplicationId(),
                                                     tuning);
         var quota = context.deployState().getProperties().quota();
