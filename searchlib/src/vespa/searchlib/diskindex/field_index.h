@@ -9,6 +9,7 @@
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/field_index_stats.h>
+#include <atomic>
 #include <mutex>
 #include <string>
 
@@ -55,11 +56,12 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     std::shared_ptr<LockedCacheDiskIoStats> _cache_disk_io_stats;
     std::shared_ptr<IPostingListCache> _posting_list_cache;
     static std::atomic<uint64_t> _file_id_source;
+    uint32_t _field_id;
 
     static uint64_t get_next_file_id() noexcept { return _file_id_source.fetch_add(1) + 1; }
 public:
     FieldIndex();
-    FieldIndex(std::shared_ptr<IPostingListCache> posting_list_cache);
+    FieldIndex(uint32_t field_id, std::shared_ptr<IPostingListCache> posting_list_cache);
     FieldIndex(const FieldIndex& rhs) = delete;
     FieldIndex(FieldIndex&& rhs);
     ~FieldIndex();
@@ -71,7 +73,8 @@ public:
     index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
     index::PostingListHandle read(const IPostingListCache::Key& key) const override;
     index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
-    std::unique_ptr<BitVector> read_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
+    index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
+    std::unique_ptr<BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
     std::unique_ptr<search::queryeval::SearchIterator> create_iterator(const search::index::DictionaryLookupResult& lookup_result,
                                                                        const index::PostingListHandle& handle,
                                                                        const search::fef::TermFieldMatchDataArray& tfmda) const;
@@ -79,6 +82,7 @@ public:
 
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
     FieldIndexStats get_stats() const;
+    uint32_t get_field_id() const noexcept { return _field_id; }
 };
 
 }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvectordictionary.h"
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadertags.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/fastos/file.h>
@@ -8,6 +9,8 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.bitvectordictionary");
+
+using search::index::BitVectorDictionaryLookupResult;
 
 namespace search::diskindex {
 
@@ -83,19 +86,25 @@ BitVectorDictionary::open(const std::string &pathPrefix,
     return true;
 }
 
-
-BitVector::UP
-BitVectorDictionary::lookup(uint64_t wordNum)
-{
+BitVectorDictionaryLookupResult
+BitVectorDictionary::lookup(uint64_t wordNum) {
     WordSingleKey key;
     key._wordNum = wordNum;
     auto itr = std::lower_bound(_entries.begin(), _entries.end(), key);
     if (itr == _entries.end() || key < *itr) {
         return {};
     }
-    int64_t pos = &*itr - &_entries[0];
-    int64_t offset = ((int64_t) _vectorSize) * pos + _datHeaderLen;
-    return BitVector::create(_docIdLimit, *_datFile, offset, itr->_numDocs);
+    return BitVectorDictionaryLookupResult(itr - _entries.begin());
+}
+
+std::unique_ptr<BitVector>
+BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result)
+{
+    if (!lookup_result.valid()) {
+        return {};
+    }
+    int64_t offset = ((int64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
+    return BitVector::create(_docIdLimit, *_datFile, offset, _entries[lookup_result.idx]._numDocs);
 }
 
 }

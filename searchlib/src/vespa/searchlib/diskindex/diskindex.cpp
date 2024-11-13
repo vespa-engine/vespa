@@ -81,7 +81,7 @@ DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
 {
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
         std::string field_dir = _indexDir + "/" + itr.getName();
-        _field_indexes.emplace_back(_posting_list_cache);
+        _field_indexes.emplace_back(itr.getIndex(), _posting_list_cache);
         if (!_field_indexes.back().open_dictionary(field_dir, tuneFileSearch)) {
             _field_indexes.clear();
             return false;
@@ -234,29 +234,6 @@ DiskIndex::read(const Key & key, LookupResultVector & result)
     return true;
 }
 
-index::PostingListHandle
-DiskIndex::readPostingList(const LookupResult &lookupRes) const
-{
-    auto& field_index = _field_indexes[lookupRes.indexId];
-    return field_index.read_posting_list(lookupRes);
-}
-
-BitVector::UP
-DiskIndex::readBitVector(const LookupResult &lookupRes) const
-{
-    auto& field_index = _field_indexes[lookupRes.indexId];
-    return field_index.read_bit_vector(lookupRes);
-}
-
-std::unique_ptr<search::queryeval::SearchIterator>
-DiskIndex::create_iterator(const LookupResult& lookup_result,
-                           const index::PostingListHandle& handle,
-                           const search::fef::TermFieldMatchDataArray& tfmda) const
-{
-    auto& field_index = _field_indexes[lookup_result.indexId];
-    return field_index.create_iterator(lookup_result, handle, tfmda);
-}
-
 namespace {
 
 const std::vector<std::string> nonfield_file_names{
@@ -334,7 +311,7 @@ public:
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
             bool useBitVector = _field.isFilter();
-            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex, termStr, lookupRes, useBitVector));
+            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex.get_field_index(_fieldId), termStr, lookupRes, useBitVector));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }

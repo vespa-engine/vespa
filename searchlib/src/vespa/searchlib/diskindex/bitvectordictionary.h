@@ -2,11 +2,16 @@
 #pragma once
 
 #include "bitvectorkeyscope.h"
-#include <vespa/searchlib/common/bitvector.h>
+//#include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/index/bitvector_dictionary_lookup_result.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <string>
 #include <vector>
+
+class FastOS_FileInterface;
+
+namespace search { class BitVector; }
 
 namespace search::diskindex {
 
@@ -48,13 +53,19 @@ public:
          BitVectorKeyScope scope);
 
     /**
-     * Lookup the given word number and load and return the associated
-     * bit vector if found.
+     * Lookup the given word number.
      *
-     * @param wordNum the word number to lookup a bit vector for.
-     * @return the loaded bit vector or nullptr if not found.
+     * @param word_num the word number to lookup a bit vector for.
+     * @return a bitvector dictionary lookup result that can be passed to read_bitvector member function.
      **/
-    BitVector::UP lookup(uint64_t wordNum);
+    index::BitVectorDictionaryLookupResult lookup(uint64_t word_num);
+    /**
+     * load and return the associated bit vector if lookup result is valid.
+     *
+     * @param lookup_result the result returned from lookup.
+     * @return the loaded bit vector or empty if lookup result was invalid.
+     **/
+    std::unique_ptr<BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result);
 
     uint32_t getDocIdLimit() const { return _docIdLimit; }
 

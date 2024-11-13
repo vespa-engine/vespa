@@ -249,8 +249,9 @@ DiskIndexTest::requireThatWeCanReadPostingList()
     TermFieldMatchDataArray mda;
     { // field 'f1'
         auto r = _index->lookup(0, "w1");
-        auto h = _index->readPostingList(r);
-        auto sb = _index->create_iterator(r, h, mda);
+        auto& field_index = _index->get_field_index(0);
+        auto h = field_index.read_posting_list(r);
+        auto sb = field_index.create_iterator(r, h, mda);
         EXPECT_EQ(SimpleResult({1,3}), SimpleResult().search(*sb));
     }
 }
@@ -274,16 +275,22 @@ DiskIndexTest::requireThatWeCanReadBitVector()
 {
     { // word 'w1'
         auto r = _index->lookup(1, "w1");
+        auto& field_index = _index->get_field_index(1);
         // not bit vector for 'w1'
-        EXPECT_TRUE(_index->readBitVector(r).get() == NULL);
+        auto blr = field_index.lookup_bit_vector(r);
+        EXPECT_FALSE(blr.valid());
+        EXPECT_TRUE(field_index.read_bit_vector(blr).get() == nullptr);
     }
     { // word 'w2'
         BitVector::UP exp(BitVector::create(32));
         for (uint32_t docId = 1; docId < 18; ++docId) exp->setBit(docId);
         { // field 'f2'
             auto r = _index->lookup(1, "w2");
-            BitVector::UP bv = _index->readBitVector(r);
-            EXPECT_TRUE(bv.get() != NULL);
+            auto& field_index = _index->get_field_index(1);
+            auto blr = field_index.lookup_bit_vector(r);
+            EXPECT_TRUE(blr.valid());
+            BitVector::UP bv = field_index.read_bit_vector(blr);
+            EXPECT_TRUE(bv.get() != nullptr);
             EXPECT_TRUE(*bv == *exp);
         }
     }
