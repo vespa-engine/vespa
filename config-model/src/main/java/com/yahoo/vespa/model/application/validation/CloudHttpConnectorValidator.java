@@ -37,7 +37,8 @@ public class CloudHttpConnectorValidator implements Validator {
 
     private static boolean isAllowedConnector(ConnectorFactory cf) {
         return cf instanceof HostedSslConnectorFactory
-                || cf.getClass().getSimpleName().endsWith("HealthCheckProxyConnector")
+                || cf.getClass().getSimpleName().endsWith("HealthCheckProxyConnector") // TODO(bjorncs, 2024-11-13): remove once migrated
+                || cf.getClass().getPackageName().startsWith("com.yahoo.vespa.model.container.amender")
                 || (cf.getListenPort() == Container.BASEPORT && cf.sslProvider() instanceof DefaultSslProvider);
     }
 }
