@@ -586,6 +586,7 @@ public class SessionRepository {
                                 existingSession.getVespaVersion(),
                                 existingSession.getAthenzDomain(),
                                 existingSession.getQuota(),
+                                existingSession.getTenantVaults(),
                                 existingSession.getTenantSecretStores(),
                                 existingSession.getOperatorCertificates(),
                                 existingSession.getCloudAccount(),

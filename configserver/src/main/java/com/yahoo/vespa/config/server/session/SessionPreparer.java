@@ -21,11 +21,11 @@ import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
@@ -362,6 +362,7 @@ public class SessionPreparer {
                                   prepareResult.allocatedHosts(),
                                   athenzDomain,
                                   params.quota(),
+                                  params.tenantVaults(),
                                   params.tenantSecretStores(),
                                   params.operatorCertificates(),
                                   params.cloudAccount(),
@@ -406,6 +407,7 @@ public class SessionPreparer {
                                        AllocatedHosts allocatedHosts,
                                        Optional<AthenzDomain> athenzDomain,
                                        Optional<Quota> quota,
+                                       List<TenantVault> tenantVaults,
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
                                        Optional<CloudAccount> cloudAccount,
@@ -422,6 +424,7 @@ public class SessionPreparer {
                                           vespaVersion,
                                           athenzDomain,
                                           quota,
+                                          tenantVaults,
                                           tenantSecretStores,
                                           operatorCertificates,
                                           cloudAccount,

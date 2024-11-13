@@ -71,8 +71,8 @@ public class TenantVaultSerializer {
 
     private static TenantVault.Secret secretFromSlime(Inspector inspector) {
         return new TenantVault.Secret(
-                inspector.field("name").asString(),
-                inspector.field("id").asString());
+                inspector.field("id").asString(), inspector.field("name").asString()
+        );
     }
 
     public static List<TenantVault> listFromSlime(Inspector inspector) {

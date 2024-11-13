@@ -255,6 +255,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .isInternalRedeployment(isInternalRedeployment)
                     .force(force)
                     .waitForResourcesInPrepare(waitForResourcesInPrepare)
+                    .tenantVaults(session.getTenantVaults())
                     .tenantSecretStores(session.getTenantSecretStores())
                     .dataplaneTokens(session.getDataplaneTokens());
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);

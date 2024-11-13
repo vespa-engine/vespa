@@ -222,6 +222,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                endpointCertificateSecrets,
                                                params.athenzDomain(),
                                                params.quota(),
+                                               params.tenantVaults(),
                                                params.tenantSecretStores(),
                                                secretStore,
                                                params.operatorCertificates(),

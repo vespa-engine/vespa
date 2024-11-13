@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
@@ -32,8 +33,9 @@ public class SessionSerializer {
     void write(SessionZooKeeperClient zooKeeperClient, ApplicationId applicationId,
                Instant created, Optional<FileReference> fileReference, Optional<DockerImage> dockerImageRepository,
                Version vespaVersion, Optional<AthenzDomain> athenzDomain, Optional<Quota> quota,
-               List<TenantSecretStore> tenantSecretStores, List<X509Certificate> operatorCertificates,
-               Optional<CloudAccount> cloudAccount, List<DataplaneToken> dataplaneTokens, ActivationTriggers activationTriggers,
+               List<TenantVault> tenantVaults, List<TenantSecretStore> tenantSecretStores,
+               List<X509Certificate> operatorCertificates, Optional<CloudAccount> cloudAccount,
+               List<DataplaneToken> dataplaneTokens, ActivationTriggers activationTriggers,
                BooleanFlag writeSessionData) {
         zooKeeperClient.writeApplicationId(applicationId);
         zooKeeperClient.writeApplicationPackageReference(fileReference);
@@ -54,6 +56,7 @@ public class SessionSerializer {
                                                              dockerImageRepository,
                                                              athenzDomain,
                                                              quota,
+                                                             tenantVaults,
                                                              tenantSecretStores,
                                                              operatorCertificates,
                                                              cloudAccount,
@@ -81,6 +84,7 @@ public class SessionSerializer {
                                zooKeeperClient.readDockerImageRepository(),
                                zooKeeperClient.readAthenzDomain(),
                                zooKeeperClient.readQuota(),
+                               zooKeeperClient.readTenantVaults(),
                                zooKeeperClient.readTenantSecretStores(),
                                zooKeeperClient.readOperatorCertificates(),
                                zooKeeperClient.readCloudAccount(),
